@@ -142,6 +142,14 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     );
 
     /**
+     * List of {@link PrimitiveType}s (int, long).
+     */
+    List<PrimitiveType> INT_LONG_TYPES = List.of(
+        ints(),
+        longs()
+    );
+
+    /**
      * List of all subword {@link PrimitiveType}s (byte, char, short).
      */
     List<PrimitiveType> SUBWORD_TYPES = List.of(

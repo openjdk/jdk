@@ -42,6 +42,7 @@ import static compiler.lib.template_framework.library.Float16Type.FLOAT16;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.PRIMITIVE_TYPES;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INTEGRAL_TYPES;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.FLOATING_TYPES;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INT_LONG_TYPES;
 
 /**
  * This class provides various lists of {@link Expression}s, that represent Java operators or library
@@ -349,12 +350,12 @@ public final class Operations {
         new VOP("BIT_COUNT",            VOPType.UNARY, INTEGRAL_TYPES),
         new VOP("BITWISE_BLEND",        VOPType.TERNARY, INTEGRAL_TYPES),
         //new VOP("CBRT",                 VOPType.UNARY, FLOATING_TYPES),
-        new VOP("COMPRESS_BITS",        VOPType.BINARY, Type.INT_LONG_TYPES),
+        new VOP("COMPRESS_BITS",        VOPType.BINARY, INT_LONG_TYPES),
         //new VOP("COS",                  VOPType.UNARY, FLOATING_TYPES),
         //new VOP("COSH",                 VOPType.UNARY, FLOATING_TYPES),
         new VOP("DIV",                  VOPType.BINARY, FLOATING_TYPES),
         //new VOP("EXP",                  VOPType.UNARY, FLOATING_TYPES),
-        new VOP("EXPAND_BITS",          VOPType.BINARY, Type.INT_LONG_TYPES),
+        new VOP("EXPAND_BITS",          VOPType.BINARY, INT_LONG_TYPES),
         //new VOP("EXPM1",                VOPType.UNARY, FLOATING_TYPES),
 
         // TODO: add back after JDK-8351941 [Graal]
@@ -478,7 +479,7 @@ public final class Operations {
             // TODO: non zero parts
             for (var type2 : CodeGenerationDataNameType.VECTOR_ALL_VECTOR_TYPES) {
                 // "convert" keeps the same shape, i.e. length of the vector in bits.
-                if (type.sizeInBits() == type2.sizeInBits()) {
+                if (type.byteSize() == type2.byteSize()) {
                     ops.add(Expression.make(type,
                                                 "((" + type.name() + ")",
                                                 type2 ,
@@ -513,10 +514,10 @@ public final class Operations {
                         if (type.elementType == DOUBLES) {
                             ops.add(Expression.make(type, "", type2, ".reinterpretAsDoubles()"));
                         }
-                        if (type.elementType.isFloating() && type.elementType.sizeInBits() == type2.elementType.sizeInBits()) {
+                        if (type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
                             ops.add(Expression.make(type, "", type2, ".viewAsFloatingLanes()"));
                         }
-                        if (!type.elementType.isFloating() && type.elementType.sizeInBits() == type2.elementType.sizeInBits()) {
+                        if (!type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
                             ops.add(Expression.make(type, "", type2, ".viewAsIntegralLanes()"));
                         }
                     }

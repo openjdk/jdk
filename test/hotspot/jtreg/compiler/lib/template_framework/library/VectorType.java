@@ -112,7 +112,7 @@ public abstract class VectorType implements CodeGenerationDataNameType {
             super(vectorTypeName(elementType));
             this.elementType = elementType;
             this.length = length;
-            this.speciesName = name() + ".SPECIES_" + (elementType.byteSize() * 8 * length);
+            this.speciesName = name() + ".SPECIES_" + (byteSize() * 8);
             this.maskType = new Mask(this);
             this.shuffleType = new Shuffle(this);
         }
@@ -122,6 +122,10 @@ public abstract class VectorType implements CodeGenerationDataNameType {
             int r = RANDOM.nextInt(64);
             if (r == 0) { return name() + ".zero(" + speciesName + ")"; }
             return List.of(name(), ".broadcast(", speciesName, ", ", elementType.con(), ")");
+        }
+
+        public int byteSize() {
+            return elementType.byteSize() * length;
         }
     }
 
