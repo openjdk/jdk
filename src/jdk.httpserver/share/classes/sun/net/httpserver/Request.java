@@ -25,6 +25,7 @@
 
 package sun.net.httpserver;
 
+import java.net.ProtocolException;
 import java.nio.*;
 import java.io.*;
 import java.nio.channels.*;
@@ -39,15 +40,18 @@ class Request {
     static final int BUF_LEN = 2048;
     static final byte CR = 13;
     static final byte LF = 10;
+    static final byte FIRST_CHAR = 32;
 
     private String startLine;
     private SocketChannel chan;
     private InputStream is;
     private OutputStream os;
     private final int maxReqHeaderSize;
+    private final boolean firstClearRequest;
 
-    Request(InputStream rawInputStream, OutputStream rawout) throws IOException {
+    Request(InputStream rawInputStream, OutputStream rawout, boolean firstClearRequest) throws IOException {
         this.maxReqHeaderSize = ServerConfig.getMaxReqHeaderSize();
+        this.firstClearRequest = firstClearRequest;
         is = rawInputStream;
         os = rawout;
         do {
@@ -78,6 +82,25 @@ class Request {
         boolean gotCR = false, gotLF = false;
         pos = 0; lineBuf = new StringBuffer();
         long lsize = 32;
+
+        // For the first request that comes on a clear connection
+        // we will check that the first non CR/LF char on the
+        // request line is eligible. This should be the first char
+        // of a method name, so it should be at least greater or equal
+        // to 32 (FIRST_CHAR) which is the space character.
+        // The main goal here is to fail fast if we receive 0x16 (22) which
+        // happens to be the first byte of a TLS handshake record.
+        // This is typically what would be received if a TLS client opened
+        // a TLS connection on a non-TLS server.
+        // If we receive 0x16 we should close the connection immediately as
+        // it indicates we're receiving a ClientHello on a clear
+        // connection, and we will never receive the expected CRLF that
+        // terminates the first request line.
+        // Though we could check only for 0x16, any characters < 32
+        // (excluding CRLF) is not expected at this position in a
+        // request line, so we can still fail here early if any of
+        // those are detected.
+        int offset = 0;
         while (!gotLF) {
             int c = is.read();
             if (c == -1) {
@@ -89,6 +112,12 @@ class Request {
                 } else {
                     gotCR = false;
                     consume(CR);
+                    if (firstClearRequest && offset == 0) {
+                        if (c < FIRST_CHAR) {
+                            throw new ProtocolException("Unexpected start of request line");
+                        }
+                        offset++;
+                    }
                     consume(c);
                     lsize = lsize + 2;
                 }
@@ -96,6 +125,12 @@ class Request {
                 if (c == CR) {
                     gotCR = true;
                 } else {
+                    if (firstClearRequest && offset == 0) {
+                        if (c < FIRST_CHAR) {
+                            throw new ProtocolException("Unexpected start of request line");
+                        }
+                        offset++;
+                    }
                     consume(c);
                     lsize = lsize + 1;
                 }
