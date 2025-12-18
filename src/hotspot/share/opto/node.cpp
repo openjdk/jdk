@@ -999,18 +999,22 @@ bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p, bool keep_deps) {
 #ifdef ASSERT
+  // If we end up traversing more nodes than we actually have,
+  // it is definitely an infinite loop.
+  uint max_depth = Compile::current()->unique();
   uint depth_count = 0;
   const Node* orig_p = p;
 #endif
 
   while (true) {
 #ifdef ASSERT
-    if (depth_count >= K) {
+    if (depth_count++ >= max_depth) {
       orig_p->dump(4);
-      if (p != orig_p)
+      if (p != orig_p) {
         p->dump(1);
+      }
+      fatal("infinite loop in Node::uncast_helper");
     }
-    assert(depth_count++ < K, "infinite loop in Node::uncast_helper");
 #endif
     if (p == nullptr || p->req() != 2) {
       break;
