@@ -189,7 +189,12 @@ void JavaThread::enter_critical() {
          (Thread::current()->is_VM_thread() &&
          SafepointSynchronize::is_synchronizing()),
          "this must be current thread or synchronizing");
-  _jni_active_critical++;
+  if (_jni_active_critical++ == 0) {
+#if INCLUDE_JVMTI
+    toggle_is_disable_suspend();
+    assert(is_disable_suspend(), "must be");
+#endif
+  }
 }
 
 inline void JavaThread::set_done_attaching_via_jni() {
