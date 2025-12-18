@@ -246,7 +246,11 @@ public class VectorExpressionFuzzer {
             // package and class name.
             "p.xyz", "InnerTest",
             // Set of imports.
-            Set.of("compiler.lib.verify.*", "jdk.incubator.vector.*"),
+            Set.of("compiler.lib.verify.*",
+                   "java.util.Random",
+                   "jdk.test.lib.Utils",
+                   "compiler.lib.generators.*",
+                   "jdk.incubator.vector.*"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
