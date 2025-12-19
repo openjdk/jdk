@@ -171,6 +171,7 @@ public:
 //------------------------------CmpUNode---------------------------------------
 // Compare 2 unsigned values (integer or pointer), returning condition codes (-1, 0 or 1).
 class CmpUNode : public CmpNode {
+  static const Type* Value_cmpu_and_mask(PhaseValues* phase, const Node* andI, const Node* rhs);
 public:
   CmpUNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
@@ -362,7 +363,6 @@ public:
   BoolNode* negate(PhaseGVN* phase);
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  const Type* Value_cmpu_and_mask(PhaseValues* phase) const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
   uint match_edge(uint idx) const { return 0; }
