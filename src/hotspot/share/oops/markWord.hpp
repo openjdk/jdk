@@ -60,13 +60,6 @@
 //    [ptr             | 10]  monitor            inflated lock (header is swapped out, UseObjectMonitorTable == false)
 //    [header          | 10]  monitor            inflated lock (UseObjectMonitorTable == true)
 //    [ptr             | 11]  marked             used to mark an object
-//    [0 ............ 0| 00]  inflating          inflation in progress (stack-locking in use)
-//
-//    We assume that stack/thread pointers have the lowest two bits cleared.
-//
-//  - INFLATING() is a distinguished markword value of all zeros that is
-//    used when inflating an existing stack-lock into an ObjectMonitor.
-//    See below for is_being_inflated() and INFLATING().
 
 class BasicLock;
 class ObjectMonitor;
@@ -173,19 +166,6 @@ class markWord {
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
   }
 
-  // Special temporary state of the markWord while being inflated.
-  // Code that looks at mark outside a lock need to take this into account.
-  bool is_being_inflated() const { return (value() == 0); }
-
-  // Distinguished markword value - used when inflating over
-  // an existing stack-lock.  0 indicates the markword is "BUSY".
-  // Lockword mutators that use a LD...CAS idiom should always
-  // check for and avoid overwriting a 0 value installed by some
-  // other thread.  (They should spin or block instead.  The 0 value
-  // is transient and *should* be short-lived).
-  // Fast-locking does not use INFLATING.
-  static markWord INFLATING() { return zero(); }    // inflate-in-progress
-
   // Should this header be preserved during GC?
   bool must_be_preserved() const {
     return (!is_unlocked() || !has_no_hash());
@@ -226,16 +206,7 @@ class markWord {
     tmp |= ((hash & hash_mask) << hash_shift);
     return markWord(tmp);
   }
-  // it is only used to be stored into BasicLock as the
-  // indicator that the lock is using heavyweight monitor
-  static markWord unused_mark() {
-    return markWord(marked_value);
-  }
-  // the following two functions create the markWord to be
-  // stored into object header, it encodes monitor info
-  static markWord encode(BasicLock* lock) {
-    return from_pointer(lock);
-  }
+
   static markWord encode(ObjectMonitor* monitor) {
     assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
     uintptr_t tmp = (uintptr_t) monitor;
