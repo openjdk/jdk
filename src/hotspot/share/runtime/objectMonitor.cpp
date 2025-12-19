@@ -1248,13 +1248,7 @@ bool ObjectMonitor::resume_operation(JavaThread* current, ObjectWaiter* node, Co
   // Retry acquiring monitor...
 
   int state = node->TState;
-  if (JvmtiExport::should_post_monitor_waited()){
-    guarantee(state == ObjectWaiter::TS_RUN || state == ObjectWaiter::TS_ENTER, "invariant");
-  } else {
-    guarantee(state == ObjectWaiter::TS_ENTER, "invariant");
-  }
-
-
+  guarantee(state == ObjectWaiter::TS_ENTER, "invariant");
 
   if (try_lock(current) == TryLockResult::Success) {
     vthread_epilog(current, node);
@@ -1281,11 +1275,7 @@ bool ObjectMonitor::resume_operation(JavaThread* current, ObjectWaiter* node, Co
 void ObjectMonitor::vthread_epilog(JavaThread* current, ObjectWaiter* node) {
   assert(has_owner(current), "invariant");
   add_to_contentions(-1);
-
-  if (!JvmtiExport::should_post_monitor_waited() && node->TState != ObjectWaiter::TS_RUN)
-  {
-    dec_unmounted_vthreads();
-  }
+  dec_unmounted_vthreads();
 
   if (has_successor(current)) clear_successor();
 
@@ -1386,12 +1376,6 @@ ObjectWaiter* ObjectMonitor::entry_list_tail(JavaThread* current) {
 
 void ObjectMonitor::unlink_after_acquire(JavaThread* current, ObjectWaiter* currentNode) {
   assert(has_owner(current), "invariant");
-
-  if (JvmtiExport::should_post_monitor_waited() && currentNode->TState == ObjectWaiter::TS_RUN) {
-    // Nothing to unlink from
-    return;
-  }
-
   assert((!currentNode->is_vthread() && currentNode->thread() == current) ||
          (currentNode->is_vthread() && currentNode->vthread() == current->vthread()), "invariant");
 
@@ -1946,7 +1930,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     guarantee(node.TState != ObjectWaiter::TS_WAIT, "invariant");
     OrderAccess::loadload();
     if (has_successor(current)) clear_successor();
-    was_notified = node.TState == ObjectWaiter::TS_ENTER;
 
     // Reentry phase -- reacquire the monitor.
     // re-enter contended monitor after object.wait().
@@ -1958,32 +1941,12 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // post monitor waited event. Note that this is past-tense, we are done waiting.
     if (JvmtiExport::should_post_monitor_waited() && node.TState != ObjectWaiter::TS_ENTER) {
 
-      ClearSuccOnSuspend csos(this);
-      { // Process suspend requests now if any, before posting the event.
-        // Clean the successor to address possible stale state.
-        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
+      // Process suspend requests now if any, before posting the event.
+      {
+        ThreadBlockInVM tbvm(current, true);
       }
 
       JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
-
-      if (was_notified && has_successor(current)) {
-        // In this part of the monitor wait-notify-reenter protocol it
-        // is possible (and normal) for another thread to do a fastpath
-        // monitor enter-exit while this thread is still trying to get
-        // to the reenter portion of the protocol.
-        //
-        // The ObjectMonitor was notified and the current thread is
-        // the successor which also means that an unpark() has already
-        // been done. The JVMTI_EVENT_MONITOR_WAITED event handler can
-        // consume the unpark() that was done when the successor was
-        // set because the same ParkEvent is shared between Java
-        // monitors and JVM/TI RawMonitors (for now).
-        //
-        // We redo the unpark() to ensure forward progress, i.e., we
-        // don't want all pending threads hanging (parked) with none
-        // entering the unlocked monitor.
-        current->_ParkEvent->unpark();
-      }
     }
 
     if (wait_event.should_commit()) {
@@ -2001,6 +1964,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       NoPreemptMark npm(current);
       enter(current);
     } else {
+      // This means the thread has been un-parked and added to the entry_list
+      // in notify_internal, i.e. notified while waiting.
       guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
       ExitOnSuspend eos(this);
       {
@@ -2094,15 +2059,20 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
       // Increment counter *before* adding the vthread to the _entry_list.
       // Adding to _entry_list uses Atomic::cmpxchg() which already provides
       // a fence that prevents reordering of the stores.
-      inc_unmounted_vthreads();
+      if (!JvmtiExport::should_post_monitor_waited()) {
+        inc_unmounted_vthreads();
+      }
     }
 
     iterator->_notifier_tid = JFR_THREAD_ID(current);
     did_notify = true;
+
     if (!JvmtiExport::should_post_monitor_waited()) {
       add_to_entry_list(current, iterator);
     } else {
       iterator->TState = ObjectWaiter::TS_RUN;
+
+      OrderAccess::fence();
 
       oop vthread = nullptr;
       ParkEvent* Trigger;
@@ -2287,18 +2257,19 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   // The first time we run after being preempted on Object.wait() we
   // need to check if we were interrupted or the wait timed-out, and
   // in that case remove ourselves from the _wait_set queue.
+  bool was_notified = true;
   if (node->TState == ObjectWaiter::TS_WAIT) {
     SpinCriticalSection scs(&_wait_set_lock);
     if (node->TState == ObjectWaiter::TS_WAIT) {
       dequeue_specific_waiter(node);       // unlink from wait_set
       node->TState = ObjectWaiter::TS_RUN;
+      was_notified = false;
     }
   }
 
   // If this was an interrupted case, set the _interrupted boolean so that
   // once we re-acquire the monitor we know if we need to throw IE or not.
   ObjectWaiter::TStates state = node->TState;
-  bool was_notified = JvmtiExport::should_post_monitor_waited() ? state == ObjectWaiter::TS_RUN : state == ObjectWaiter::TS_ENTER;
   assert(was_notified || state == ObjectWaiter::TS_RUN, "");
   node->_interrupted = node->_interruptible && !was_notified && current->is_interrupted(false);
 
@@ -2312,7 +2283,7 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   // Mark that we are at reenter so that we don't call this method again.
   node->_at_reenter = true;
 
-  if (!was_notified) {
+  if (state == ObjectWaiter::TS_RUN) {
     bool acquired = vthread_monitor_enter(current, node);
     if (acquired) {
       guarantee(_recursions == 0, "invariant");
