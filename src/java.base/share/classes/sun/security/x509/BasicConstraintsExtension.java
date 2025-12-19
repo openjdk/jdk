@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class BasicConstraintsExtension extends Extension {
     public static final String NAME = "BasicConstraints";
 
     // Private data members
-    private boolean     ca = false;
+    private boolean ca = false;
     private int pathLen = -1;
 
     // Encode this extension value
@@ -91,7 +91,7 @@ public class BasicConstraintsExtension extends Extension {
      */
     public BasicConstraintsExtension(Boolean critical, boolean ca, int len) {
         this.ca = ca;
-        this.pathLen = len;
+        this.pathLen = (len < 0 || len == Integer.MAX_VALUE) ? -1 : len;
         this.extensionId = PKIXExtensions.BasicConstraints_Id;
         this.critical = critical.booleanValue();
         encodeThis();
@@ -140,6 +140,11 @@ public class BasicConstraintsExtension extends Extension {
          if (opt.tag != DerValue.tag_Integer) {
              throw new IOException("Invalid encoding of BasicConstraints");
          }
+
+         if (opt.getInteger() < 0) {
+             throw new IOException("Invalid encoding of BasicConstraints: " +
+                 "pathLenConstraint cannot be negative");
+         }
          this.pathLen = opt.getInteger();
          /*
           * Activate this check once again after PKIX profiling
@@ -158,9 +163,7 @@ public class BasicConstraintsExtension extends Extension {
       */
      public String toString() {
          String pathLenAsString;
-         if (pathLen < 0) {
-             pathLenAsString = " undefined";
-         } else if (pathLen == Integer.MAX_VALUE) {
+         if (pathLen < 0 || pathLen == Integer.MAX_VALUE) {
              pathLenAsString = " no limit";
          } else {
              pathLenAsString = String.valueOf(pathLen);
@@ -180,7 +183,6 @@ public class BasicConstraintsExtension extends Extension {
      public void encode(DerOutputStream out) {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
-             critical = ca;
              encodeThis();
          }
          super.encode(out);
@@ -191,7 +193,7 @@ public class BasicConstraintsExtension extends Extension {
     }
 
     public int getPathLen() {
-        return pathLen;
+         return (pathLen < 0) ? Integer.MAX_VALUE : Integer.valueOf(pathLen);
     }
 
     /**
