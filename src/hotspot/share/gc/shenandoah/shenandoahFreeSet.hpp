@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "logging/logStream.hpp"
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -630,6 +631,8 @@ private:
 
   void reduce_young_reserve(size_t adjusted_young_reserve, size_t requested_young_reserve);
   void reduce_old_reserve(size_t adjusted_old_reserve, size_t requested_old_reserve);
+
+  void log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls);
 
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
