@@ -23,14 +23,6 @@
 
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.ITestContext;
-import org.testng.ITestResult;
-import org.testng.SkipException;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
 
 import javax.net.ssl.SSLContext;
 import java.io.BufferedReader;
@@ -49,7 +41,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -76,28 +67,37 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
 
 public abstract class AbstractThrowingSubscribers implements HttpServerAdapters {
 
-    SSLContext sslContext;
-    HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
-    String httpURI_fixed;
-    String httpURI_chunk;
-    String httpsURI_fixed;
-    String httpsURI_chunk;
-    String http2URI_fixed;
-    String http2URI_chunk;
-    String https2URI_fixed;
-    String https2URI_chunk;
-    String http3URI_fixed;
-    String http3URI_chunk;
-    String http3URI_head;
+    static SSLContext sslContext;
+    static HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
+    static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    static HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
+    static String httpURI_fixed;
+    static String httpURI_chunk;
+    static String httpsURI_fixed;
+    static String httpsURI_chunk;
+    static String http2URI_fixed;
+    static String http2URI_chunk;
+    static String https2URI_fixed;
+    static String https2URI_chunk;
+    static String http3URI_fixed;
+    static String http3URI_chunk;
+    static String http3URI_head;
 
     static final int ITERATION_COUNT = 1;
     static final int REPEAT_RESPONSE = 3;
@@ -116,8 +116,34 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
-    private volatile HttpClient sharedClient;
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+            }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
+        }
+    }
+
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static volatile HttpClient sharedClient;
 
     static class TestExecutor implements Executor {
         final AtomicLong tasks = new AtomicLong();
@@ -143,19 +169,8 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    protected static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
-    }
-
-    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
-    void checkSkip() {
-        var skip = skiptests.get();
-        if (skip != null) throw skip;
-    }
-    static String name(ITestResult result) {
-        var params = result.getParameters();
-        return result.getName()
-                + (params == null ? "()" : Arrays.toString(result.getParameters()));
     }
 
     static Version version(String uri) {
@@ -168,7 +183,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         return null;
     }
 
-    HttpRequest.Builder newRequestBuilder(String uri) {
+    static HttpRequest.Builder newRequestBuilder(String uri) {
         var builder = HttpRequest.newBuilder(URI.create(uri));
         if (version(uri) == HTTP_3) {
             builder.version(HTTP_3);
@@ -177,7 +192,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         return builder;
     }
 
-    HttpResponse<String> headRequest(HttpClient client)
+    static HttpResponse<String> headRequest(HttpClient client)
             throws IOException, InterruptedException
     {
         System.out.println("\n" + now() + "--- Sending HEAD request ----\n");
@@ -186,26 +201,15 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         var request = newRequestBuilder(http3URI_head)
                 .HEAD().version(HTTP_2).build();
         var response = client.send(request, BodyHandlers.ofString());
-        assertEquals(response.statusCode(), 200);
-        assertEquals(response.version(), HTTP_2);
+        assertEquals(200, response.statusCode());
+        assertEquals(HTTP_2, response.version());
         System.out.println("\n" + now() + "--- HEAD request succeeded ----\n");
         System.err.println("\n" + now() + "--- HEAD request succeeded ----\n");
         return response;
     }
 
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            if (skiptests.get() == null) {
-                SkipException skip = new SkipException("some tests failed");
-                skip.setStackTrace(new StackTraceElement[0]);
-                skiptests.compareAndSet(null, skip);
-            }
-        }
-    }
-
-    @AfterClass
-    static final void printFailedTests(ITestContext context) {
+    @AfterAll
+    static final void printFailedTests() {
         out.println("\n=========================");
         try {
             // Exceptions should already have been added to FAILURES
@@ -230,7 +234,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         }
     }
 
-    private String[] uris() {
+    private static String[] uris() {
         return new String[] {
                 http3URI_fixed,
                 http3URI_chunk,
@@ -245,10 +249,9 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         };
     }
 
-    static AtomicLong URICOUNT = new AtomicLong();
+    static final AtomicLong URICOUNT = new AtomicLong();
 
-    @DataProvider(name = "sanity")
-    public Object[][] sanity() {
+    public static Object[][] sanity() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
         int i = 0;
@@ -261,11 +264,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         return result;
     }
 
-    @DataProvider(name = "variants")
-    public Object[][] variants(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
+    public static Object[][] variants() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2 * 2][];
         int i = 0;
@@ -282,9 +281,9 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         return result;
     }
 
-    private HttpClient makeNewClient() {
+    private static HttpClient makeNewClient() {
         clientCount.incrementAndGet();
-        HttpClient client =  newClientBuilderForH3()
+        HttpClient client =  HttpServerAdapters.createClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
@@ -292,11 +291,11 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         return TRACKER.track(client);
     }
 
-    HttpClient newHttpClient(boolean share) {
+    static HttpClient newHttpClient(boolean share) {
         if (!share) return makeNewClient();
         HttpClient shared = sharedClient;
         if (shared != null) return shared;
-        synchronized (this) {
+        synchronized (AbstractThrowingSubscribers.class) {
             shared = sharedClient;
             if (shared == null) {
                 shared = sharedClient = makeNewClient();
@@ -357,7 +356,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
             HttpResponse<String> response = client.send(req, handler);
             String body = response.body();
             Stream.of(body.split("\n")).forEach(u ->
-                assertEquals(URI.create(u).getPath(), URI.create(uri2).getPath()));
+                assertEquals(URI.create(uri2).getPath(), URI.create(u).getPath()));
             if (!sameClient) {
                 // Wait for the client to be garbage collected.
                 // we use the ReferenceTracker API rather than HttpClient::close here,
@@ -469,7 +468,6 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
                                     boolean async, EnumSet<Where> excludes)
             throws Exception
     {
-        checkSkip();
         out.printf("%n%s%s%n", now(), name);
         try {
             testThrowing(uri, sameClient, handlers, finisher, thrower, async, excludes);
@@ -551,7 +549,6 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
                 if (error != null) throw error;
                 System.out.println(now() + "operation finished normally: " + tracker.getName());
                 System.err.println(now() + "operation finished normally: " + tracker.getName());
-
             }
         }
     }
@@ -819,8 +816,8 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
     }
 
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         System.out.println(now() + "setup");
         System.err.println(now() + "setup");
 
@@ -902,8 +899,8 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
         System.err.println(now() + "setup done");
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         System.out.println(now() + "teardown");
         System.err.println(now() + "teardown");
 
