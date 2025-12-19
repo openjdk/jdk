@@ -164,6 +164,8 @@ public class TestAlwaysPreTouchBehavior {
                                               "than or equal to heap size(" + heapSize + "b) (available memory: " + available + "). On Linux Kernel < 4.14 RSS can be inaccurate");
                     break;
                 }
+            } else {
+                throw new SkippedException("Available memory on host " + available + " is too small, not larger than required available memory " + requiredAvailable);
             }
         }
     }
