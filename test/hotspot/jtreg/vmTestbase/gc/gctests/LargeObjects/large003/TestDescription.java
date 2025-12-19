@@ -62,10 +62,13 @@
  *          /test/lib
  *
  * @comment generate and compile nsk.share.gc.newclass.* classes
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver nsk.share.gc.GenClassesBuilder
  *
  * @run main/othervm/timeout=1200
  *      -XX:-UseGCOverheadLimit
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      gc.gctests.LargeObjects.large001.large001
  *      -largeClassesPath classes
  *      -isOverLimitFields false

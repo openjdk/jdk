@@ -57,10 +57,13 @@
  *          /test/lib
  *
  * @comment generate and compile nsk.share.gc.newclass.* classes
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver nsk.share.gc.GenClassesBuilder
  *
  * @run main/othervm/timeout=1200
  *      -XX:-UseGCOverheadLimit
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xlog:gc*
  *      gc.gctests.LargeObjects.large001.large001
  *      -largeClassesPath classes
@@ -79,6 +82,7 @@ import nsk.share.TestFailure;
 
 import nsk.share.gc.*;
 import nsk.share.*;
+import jdk.test.whitebox.WhiteBox;
 
 public class large001 extends ThreadedGCTest {
 
@@ -147,7 +151,7 @@ public class large001 extends ThreadedGCTest {
                     addObjRef(loadedClassInstance, loadedClass, depth, refs);
 
                     // Drop all references to the class and try to unload it
-                    Algorithms.eatMemory(getExecutionController());
+                    WhiteBox.getWhiteBox().fullGC();
                     log.debug(id + ": Testing non-null after GC force for: " + name);
                     if (loadedClass == null || loadedClassInstance == null) {
                         throw new Exception("Null class");
@@ -164,7 +168,7 @@ public class large001 extends ThreadedGCTest {
 
                     log.debug(id + ": Unloading class: "
                             + name);
-                    boolean result = unloader.unloadClass(getExecutionController());
+                    boolean result = unloader.unloadClass();
                     log.debug(id + ": Result of uloading "
                             + "class " + name + ": " + result);
                 }
