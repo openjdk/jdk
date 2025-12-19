@@ -495,41 +495,12 @@ jint ShenandoahHeap::initialize() {
 
   // Certain initialization of heuristics must be deferred until after controller is initialized.
   post_initialize_heuristics();
-
-#ifdef KELVIN_DEPRECATE
-  {
-    ShenandoahHeapLocker locker(lock());
-    // We are initializing free set.  We ignore cset region tallies.
-    size_t young_cset_regions, old_cset_regions;
-    size_t first_old, last_old, num_old;
-    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
-#undef KELVIN_VERBOSE
-#ifdef KELVIN_VERBOSE
-    log_info(gc)("starting idle span after rebuilding free set");
-#endif
-#undef KELVIN_IDLE_SPAN
-#ifdef KELVIN_IDLE_SPAN
-    log_info(gc)("start_idle_span() at post_initialize of heap");
-#endif
-    start_idle_span();
-  }
-#endif
-
-#undef KELVIN_IDLE_SPAN
-#ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("start_idle_span() at post_initialize of heap");
-#endif
   start_idle_span();
-
   if (ShenandoahUncommit) {
     _uncommit_thread = new ShenandoahUncommitThread(this);
   }
-
   print_init_logger();
-
   FullGCForwarding::initialize(_heap_region);
-
   return JNI_OK;
 }
 
@@ -2620,13 +2591,6 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
   }
-#undef KELVIN_IDLE_SPAN
-#ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("deprecated start_idle_span() at heap->rebuild_free_set()");
-#endif
-#ifdef KELVIN_DEPRECATE
-  start_idle_span();
-#endif
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {

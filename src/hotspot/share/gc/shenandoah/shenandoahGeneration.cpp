@@ -156,20 +156,6 @@ void ShenandoahGeneration::post_initialize_heuristics() {
   _heuristics->post_initialize();
 }
 
-#ifdef KELVIN_DEPRECATE
-size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
-  return AtomicAccess::load(&_mutator_bytes_allocated_since_gc_start);
-}
-
-void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
-  AtomicAccess::store(&_mutator_bytes_allocated_since_gc_start, (size_t)0);
-}
-
-void ShenandoahGeneration::increase_allocated(size_t bytes) {
-  AtomicAccess::add(&_mutator_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
-}
-#endif
-
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
   shenandoah_assert_heaplocked();
   _evacuation_reserve = new_val;

@@ -203,14 +203,9 @@ public:
 
   // Returns number of words that can be allocated before we need to trigger next GC.
   inline size_t allocatable() const {
-    size_t allocated_words = _free_set->get_mutator_allocations_since_rebuild();
-    size_t result = (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
-#undef KELVIN_ALLOCATABLE
-#ifdef KELVIN_ALLOCATABLE
-    log_info(gc)("allocatable returns %zu words from allocated %zu, trigger_threshold: %zu",
-                 result, allocated_words, _trigger_threshold);
-#endif
-    return result;
+    size_t allocated_bytes = _free_set->get_bytes_allocated_since_gc_start();
+    size_t allocated_words = allocated_bytes / HeapWordSize;
+    return (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
   }
 
   double get_most_recent_wake_time() const;
@@ -291,11 +286,6 @@ protected:
   double* const _spike_acceleration_rate_timestamps;
 
   size_t _most_recent_headroom_at_start_of_idle;
-
-#ifdef KELVIN_DEPRECATE
-  double _acceleration_goodness_ratio;
-  size_t _consecutive_goodness;
-#endif
 
   // A conservative minimum threshold of free space that we'll try to maintain when possible.
   // For example, we might trigger a concurrent gc if we are likely to drop below

@@ -287,8 +287,14 @@ void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
   // else, old generation is already appropriately sized
 }
 
+
 void ShenandoahFreeSet::reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated) {
   shenandoah_assert_heaplocked();
+  // Future inquiries of get_total_bytes_allocated() will return the sum of
+  //    _total_bytes_previously_allocated and _mutator_bytes_allocated_since_gc_start.
+  // Since _mutator_bytes_allocated_since_gc_start does not start at zero, we subtract initial_bytes_allocated so as
+  // to not double count these allocated bytes.
+  _total_bytes_previously_allocated += _mutator_bytes_allocated_since_gc_start - initial_bytes_allocated;
   _mutator_bytes_allocated_since_gc_start = initial_bytes_allocated;
 }
 
@@ -1189,9 +1195,8 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
-  _mutator_words_allocated(0),
-  _mutator_words_allocated_at_rebuild(0),
-  _mutator_words_at_last_sample(0),
+  _total_bytes_previously_allocated(0),
+  _mutator_bytes_at_last_sample(0),
   _total_humongous_waste(0),
   _alloc_bias_weight(0),
   _total_young_used(0),
@@ -2508,36 +2513,6 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
                                                                       first_old_region, last_old_region, old_region_count);
 }
 
-#ifdef KELVIN_DEPRECATE_FROM_HEAD
-void ShenandoahFreeSet::establish_generation_sizes(size_t young_region_count, size_t old_region_count) {
-  assert(young_region_count + old_region_count == ShenandoahHeap::heap()->num_regions(), "Sanity");
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
-    ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-    ShenandoahOldGeneration* old_gen = heap->old_generation();
-    ShenandoahYoungGeneration* young_gen = heap->young_generation();
-    size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-
-    size_t original_old_capacity = old_gen->max_capacity();
-    size_t new_old_capacity = old_region_count * region_size_bytes;
-    size_t new_young_capacity = young_region_count * region_size_bytes;
-    old_gen->set_capacity(new_old_capacity);
-    young_gen->set_capacity(new_young_capacity);
-
-    if (new_old_capacity > original_old_capacity) {
-      size_t region_count = (new_old_capacity - original_old_capacity) / region_size_bytes;
-      log_info(gc, ergo)("Transfer %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
-                         region_count, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_old_capacity));
-    } else if (new_old_capacity < original_old_capacity) {
-      size_t region_count = (original_old_capacity - new_old_capacity) / region_size_bytes;
-      log_info(gc, ergo)("Transfer %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
-                         region_count, old_gen->name(), young_gen->name(), PROPERFMTARGS(new_young_capacity));
-    }
-    // This balances generations, so clear any pending request to balance.
-    old_gen->set_region_balance(0);
-  }
-}
-#endif
-
 // Return mutator free
 size_t ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_trashed_regions, size_t old_region_count,
                                        bool have_evacuation_reserves) {
@@ -2551,9 +2526,6 @@ size_t ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t ol
     young_reserve = (_heap->max_capacity() / 100) * ShenandoahEvacReserve;
     old_reserve = 0;
   }
-
-  _mutator_words_allocated_at_rebuild += _mutator_words_allocated;
-  _mutator_words_allocated = 0;
 
   // Move some of the mutator regions into the Collector and OldCollector partitions in order to satisfy
   // young_reserve and old_reserve.

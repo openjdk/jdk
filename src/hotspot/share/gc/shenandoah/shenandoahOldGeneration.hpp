@@ -337,12 +337,6 @@ public:
   size_t free_unaffiliated_regions() const override;
   size_t get_affiliated_region_count() const override;
   size_t max_capacity() const override;
-
-#ifdef KELVIN_DEPRECATE
-  inline size_t soft_max_capacity() const override {
-    return max_capacity();
-  }
-#endif
 };
 
 

@@ -285,7 +285,7 @@ void ShenandoahHeuristics::record_success_concurrent() {
 
 void ShenandoahHeuristics::record_success_degenerated() {
   adjust_penalty(Degenerated_Penalty);
-#define KELVIN_DEGEN_TRACE
+#undef KELVIN_DEGEN_TRACE
 #ifdef KELVIN_DEGEN_TRACE
   log_info(gc)("record_success_degenerated(), adjusts penalty by %zd, new penalty: %zd",
                Degenerated_Penalty, _gc_time_penalties);
