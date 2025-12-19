@@ -56,8 +56,8 @@ public class Test9a extends Test {
     private static final String TEMP_FILE_PREFIX =
             HttpServer.class.getPackageName() + '-' + Test9a.class.getSimpleName() + '-';
 
-    static SSLContext serverCtx;
-    static volatile SSLContext clientCtx = null;
+    private static final SSLContext serverCtx = SimpleSSLContext.findSSLContext();
+    private static final SSLContext clientCtx = SimpleSSLContext.findSSLContext();
     static volatile boolean error = false;
 
     public static void main (String[] args) throws Exception {
@@ -76,8 +76,6 @@ public class Test9a extends Test {
             HttpContext c1 = server.createContext ("/", h);
             executor = Executors.newCachedThreadPool();
             server.setExecutor (executor);
-            serverCtx = new SimpleSSLContext().get();
-            clientCtx = new SimpleSSLContext().get();
             server.setHttpsConfigurator(new HttpsConfigurator (serverCtx));
             server.start();
 

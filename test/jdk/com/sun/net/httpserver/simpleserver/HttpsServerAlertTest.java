@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,11 @@ public class HttpsServerAlertTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+
+    static {
+        SSLContext.setDefault(sslContext);
+    }
 
     @BeforeTest
     public void setup() throws IOException {
@@ -69,8 +73,6 @@ public class HttpsServerAlertTest {
             ch.setLevel(Level.ALL);
             LOGGER.addHandler(ch);
         }
-        sslContext = new SimpleSSLContext().get();
-        SSLContext.setDefault(sslContext);
     }
 
     @Test

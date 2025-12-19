@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,7 +66,11 @@ public class HttpsServerTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+
+    static {
+        SSLContext.setDefault(sslContext);
+    }
 
     @BeforeTest
     public void setup() throws IOException {
@@ -77,8 +80,6 @@ public class HttpsServerTest {
             ch.setLevel(Level.ALL);
             LOGGER.addHandler(ch);
         }
-        sslContext = new SimpleSSLContext().get();
-        SSLContext.setDefault(sslContext);
     }
 
     @Test

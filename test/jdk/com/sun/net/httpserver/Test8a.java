@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class Test8a extends Test {
             server = HttpsServer.create (addr, 0);
             HttpContext ctx = server.createContext ("/test", handler);
             executor = Executors.newCachedThreadPool();
-            SSLContext ssl = new SimpleSSLContext().get();
+            SSLContext ssl = SimpleSSLContext.findSSLContext();
             server.setHttpsConfigurator(new HttpsConfigurator (ssl));
             server.setExecutor (executor);
             server.start ();
