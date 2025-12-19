@@ -23,12 +23,16 @@
 
 package jdk.test.lib.net;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.io.*;
-import java.security.*;
-import javax.net.ssl.*;
+import java.security.KeyStore;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.StringTokenizer;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * Utility for creating a simple usable {@link SSLContext} for testing purposes.
