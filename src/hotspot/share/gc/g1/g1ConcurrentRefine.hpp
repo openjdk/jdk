@@ -246,8 +246,6 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
   NONCOPYABLE(G1ConcurrentRefine);
 
 public:
-  constexpr static uint ThreadLimit = (max_jint - 1) / wordSize;
-
   ~G1ConcurrentRefine();
 
   G1ConcurrentRefineSweepState& sweep_state() { return _sweep_state; }

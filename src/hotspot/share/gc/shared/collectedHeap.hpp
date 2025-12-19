@@ -194,6 +194,7 @@ protected:
     Z,
     Shenandoah
   };
+  constexpr static uint WorkerThreadLimit = (max_jint - 1) / wordSize;
 
  protected:
   // Get a pointer to the derived heap object.  Used to implement

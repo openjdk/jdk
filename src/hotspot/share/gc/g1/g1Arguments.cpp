@@ -190,7 +190,7 @@ void G1Arguments::initialize() {
     }
     FLAG_SET_DEFAULT(G1ConcRefinementThreads, 0);
   } else if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
-    FLAG_SET_ERGO(G1ConcRefinementThreads, MIN2(ParallelGCThreads, G1ConcurrentRefine::ThreadLimit));
+    FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
   }
 
   if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
