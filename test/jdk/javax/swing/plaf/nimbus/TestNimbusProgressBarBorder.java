@@ -28,7 +28,7 @@
  *          when border is not painted
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual TestSynthProgressBarBorder
+ * @run main/manual TestNimbusProgressBarBorder
  */
 
 import java.awt.BorderLayout;
@@ -42,7 +42,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JSlider;
 import javax.swing.UIManager;
 
-public class TestSynthProgressBarBorder {
+public class TestNimbusProgressBarBorder {
 
     static final String INSTRUCTIONS = """
         A frame containing progress bar will be shown with 50% value
@@ -51,7 +51,7 @@ public class TestSynthProgressBarBorder {
 
         Please check if 50% progress is rendered in the progress bar
         and rest 50% is rendered as blank bar
-        with Nimbus default background color.
+        with Nimbus default background color which is light gray.
 
         Please verify if "ProgressBar setBorder" checkbox is unchecked,
         the 50% blank bar should not disappear.
@@ -66,7 +66,7 @@ public class TestSynthProgressBarBorder {
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .columns(35)
-                .testUI(TestSynthProgressBarBorder::createUI)
+                .testUI(TestNimbusProgressBarBorder::createUI)
                 .build()
                 .awaitAndCheck();
     }
