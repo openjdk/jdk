@@ -83,6 +83,22 @@ enum CADistrustPolicy {
             }
             CamerfirmaTLSPolicy.checkDistrust(chain);
         }
+    },
+
+    /**
+     * Distrust TLS Server certificates anchored by a Chunghwa ePKI root CA and
+     * issued after March 17, 2026. If enabled, this policy is currently
+     * enforced by the PKIX and SunX509 TrustManager implementations
+     * of the SunJSSE provider implementation.
+     */
+    CHUNGHWA_TLS {
+        void checkDistrust(String variant, X509Certificate[] chain)
+                           throws ValidatorException {
+            if (!variant.equals(Validator.VAR_TLS_SERVER)) {
+                return;
+            }
+            ChunghwaTLSPolicy.checkDistrust(chain);
+        }
     };
 
     /**
