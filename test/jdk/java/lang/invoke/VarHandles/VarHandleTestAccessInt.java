@@ -295,26 +295,26 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         // Plain
         {
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"get int value");
+            assertEquals(0x01234567, x, "get int value");
         }
 
 
         // Volatile
         {
             int x = (int) vh.getVolatile(recv);
-            assertEquals(0x01234567, x,"getVolatile int value");
+            assertEquals(0x01234567, x, "getVolatile int value");
         }
 
         // Lazy
         {
             int x = (int) vh.getAcquire(recv);
-            assertEquals(0x01234567, x,"getRelease int value");
+            assertEquals(0x01234567, x, "getRelease int value");
         }
 
         // Opaque
         {
             int x = (int) vh.getOpaque(recv);
-            assertEquals(0x01234567, x,"getOpaque int value");
+            assertEquals(0x01234567, x, "getOpaque int value");
         }
     }
 
@@ -344,26 +344,26 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         // Plain
         {
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"get int value");
+            assertEquals(0x01234567, x, "get int value");
         }
 
 
         // Volatile
         {
             int x = (int) vh.getVolatile();
-            assertEquals(0x01234567, x,"getVolatile int value");
+            assertEquals(0x01234567, x, "getVolatile int value");
         }
 
         // Lazy
         {
             int x = (int) vh.getAcquire();
-            assertEquals(0x01234567, x,"getRelease int value");
+            assertEquals(0x01234567, x, "getRelease int value");
         }
 
         // Opaque
         {
             int x = (int) vh.getOpaque();
-            assertEquals(0x01234567, x,"getOpaque int value");
+            assertEquals(0x01234567, x, "getOpaque int value");
         }
     }
 
@@ -394,7 +394,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         {
             vh.set(recv, 0x01234567);
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"set int value");
+            assertEquals(0x01234567, x, "set int value");
         }
 
 
@@ -409,7 +409,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         {
             vh.setRelease(recv, 0x01234567);
             int x = (int) vh.getAcquire(recv);
-            assertEquals(0x01234567, x,"setRelease int value");
+            assertEquals(0x01234567, x, "setRelease int value");
         }
 
         // Opaque
@@ -440,14 +440,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             int r = (int) vh.compareAndExchange(recv, 0x89ABCDEF, 0x01234567);
             assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"success compareAndExchange int value");
+            assertEquals(0x01234567, x, "success compareAndExchange int value");
         }
 
         {
             int r = (int) vh.compareAndExchange(recv, 0x89ABCDEF, 0xCAFEBABE);
             assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"failing compareAndExchange int value");
+            assertEquals(0x01234567, x, "failing compareAndExchange int value");
         }
 
         {
@@ -468,14 +468,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             int r = (int) vh.compareAndExchangeRelease(recv, 0x89ABCDEF, 0x01234567);
             assertEquals(r, 0x89ABCDEF, "success compareAndExchangeRelease int");
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"success compareAndExchangeRelease int value");
+            assertEquals(0x01234567, x, "success compareAndExchangeRelease int value");
         }
 
         {
             int r = (int) vh.compareAndExchangeRelease(recv, 0x89ABCDEF, 0xCAFEBABE);
             assertEquals(r, 0x01234567, "failing compareAndExchangeRelease int");
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"failing compareAndExchangeRelease int value");
+            assertEquals(0x01234567, x, "failing compareAndExchangeRelease int value");
         }
 
         {
@@ -504,14 +504,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire int");
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"success weakCompareAndSetAcquire int");
+            assertEquals(0x01234567, x, "success weakCompareAndSetAcquire int");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire(recv, 0x89ABCDEF, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSetAcquire int");
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"failing weakCompareAndSetAcquire int value");
+            assertEquals(0x01234567, x, "failing weakCompareAndSetAcquire int value");
         }
 
         {
@@ -540,14 +540,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet int");
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"success weakCompareAndSet int value");
+            assertEquals(0x01234567, x, "success weakCompareAndSet int value");
         }
 
         {
             boolean success = vh.weakCompareAndSet(recv, 0x89ABCDEF, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSet int");
             int x = (int) vh.get(recv);
-            assertEquals(0x01234567, x,"failing weakCompareAndSet int value");
+            assertEquals(0x01234567, x, "failing weakCompareAndSet int value");
         }
 
         // Compare set and get
@@ -702,7 +702,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         {
             vh.set(0x01234567);
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"set int value");
+            assertEquals(0x01234567, x, "set int value");
         }
 
 
@@ -717,7 +717,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         {
             vh.setRelease(0x01234567);
             int x = (int) vh.getAcquire();
-            assertEquals(0x01234567, x,"setRelease int value");
+            assertEquals(0x01234567, x, "setRelease int value");
         }
 
         // Opaque
@@ -748,14 +748,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             int r = (int) vh.compareAndExchange(0x89ABCDEF, 0x01234567);
             assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"success compareAndExchange int value");
+            assertEquals(0x01234567, x, "success compareAndExchange int value");
         }
 
         {
             int r = (int) vh.compareAndExchange(0x89ABCDEF, 0xCAFEBABE);
             assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"failing compareAndExchange int value");
+            assertEquals(0x01234567, x, "failing compareAndExchange int value");
         }
 
         {
@@ -776,14 +776,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             int r = (int) vh.compareAndExchangeRelease(0x89ABCDEF, 0x01234567);
             assertEquals(r, 0x89ABCDEF, "success compareAndExchangeRelease int");
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"success compareAndExchangeRelease int value");
+            assertEquals(0x01234567, x, "success compareAndExchangeRelease int value");
         }
 
         {
             int r = (int) vh.compareAndExchangeRelease(0x89ABCDEF, 0xCAFEBABE);
             assertEquals(r, 0x01234567, "failing compareAndExchangeRelease int");
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"failing compareAndExchangeRelease int value");
+            assertEquals(0x01234567, x, "failing compareAndExchangeRelease int value");
         }
 
         {
@@ -812,14 +812,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire int");
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"success weakCompareAndSetAcquire int");
+            assertEquals(0x01234567, x, "success weakCompareAndSetAcquire int");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire(0x89ABCDEF, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSetAcquire int");
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"failing weakCompareAndSetAcquire int value");
+            assertEquals(0x01234567, x, "failing weakCompareAndSetAcquire int value");
         }
 
         {
@@ -848,14 +848,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet int");
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"success weakCompareAndSet int");
+            assertEquals(0x01234567, x, "success weakCompareAndSet int");
         }
 
         {
             boolean success = vh.weakCompareAndSet(0x89ABCDEF, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSet int");
             int x = (int) vh.get();
-            assertEquals(0x01234567, x,"failing weakCompareAndSet int value");
+            assertEquals(0x01234567, x, "failing weakCompareAndSet int value");
         }
 
         // Compare set and get
@@ -1013,7 +1013,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             {
                 vh.set(array, i, 0x01234567);
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"get int value");
+                assertEquals(0x01234567, x, "get int value");
             }
 
 
@@ -1028,7 +1028,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             {
                 vh.setRelease(array, i, 0x01234567);
                 int x = (int) vh.getAcquire(array, i);
-                assertEquals(0x01234567, x,"setRelease int value");
+                assertEquals(0x01234567, x, "setRelease int value");
             }
 
             // Opaque
@@ -1059,14 +1059,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
                 int r = (int) vh.compareAndExchange(array, i, 0x89ABCDEF, 0x01234567);
                 assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"success compareAndExchange int value");
+                assertEquals(0x01234567, x, "success compareAndExchange int value");
             }
 
             {
                 int r = (int) vh.compareAndExchange(array, i, 0x89ABCDEF, 0xCAFEBABE);
                 assertEquals(r, 0x01234567, "failing compareAndExchange int");
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"failing compareAndExchange int value");
+                assertEquals(0x01234567, x, "failing compareAndExchange int value");
             }
 
             {
@@ -1087,14 +1087,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
                 int r = (int) vh.compareAndExchangeRelease(array, i, 0x89ABCDEF, 0x01234567);
                 assertEquals(r, 0x89ABCDEF, "success compareAndExchangeRelease int");
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"success compareAndExchangeRelease int value");
+                assertEquals(0x01234567, x, "success compareAndExchangeRelease int value");
             }
 
             {
                 int r = (int) vh.compareAndExchangeRelease(array, i, 0x89ABCDEF, 0xCAFEBABE);
                 assertEquals(r, 0x01234567, "failing compareAndExchangeRelease int");
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"failing compareAndExchangeRelease int value");
+                assertEquals(0x01234567, x, "failing compareAndExchangeRelease int value");
             }
 
             {
@@ -1123,14 +1123,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire int");
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"success weakCompareAndSetAcquire int");
+                assertEquals(0x01234567, x, "success weakCompareAndSetAcquire int");
             }
 
             {
                 boolean success = vh.weakCompareAndSetAcquire(array, i, 0x89ABCDEF, 0xCAFEBABE);
                 assertEquals(success, false, "failing weakCompareAndSetAcquire int");
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"failing weakCompareAndSetAcquire int value");
+                assertEquals(0x01234567, x, "failing weakCompareAndSetAcquire int value");
             }
 
             {
@@ -1159,14 +1159,14 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSet int");
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"success weakCompareAndSet int");
+                assertEquals(0x01234567, x, "success weakCompareAndSet int");
             }
 
             {
                 boolean success = vh.weakCompareAndSet(array, i, 0x89ABCDEF, 0xCAFEBABE);
                 assertEquals(success, false, "failing weakCompareAndSet int");
                 int x = (int) vh.get(array, i);
-                assertEquals(0x01234567, x,"failing weakCompareAndSet int value");
+                assertEquals(0x01234567, x, "failing weakCompareAndSet int value");
             }
 
             // Compare set and get

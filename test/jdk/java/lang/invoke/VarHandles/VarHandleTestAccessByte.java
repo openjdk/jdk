@@ -295,26 +295,26 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         // Plain
         {
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"get byte value");
+            assertEquals((byte)0x01, x, "get byte value");
         }
 
 
         // Volatile
         {
             byte x = (byte) vh.getVolatile(recv);
-            assertEquals((byte)0x01, x,"getVolatile byte value");
+            assertEquals((byte)0x01, x, "getVolatile byte value");
         }
 
         // Lazy
         {
             byte x = (byte) vh.getAcquire(recv);
-            assertEquals((byte)0x01, x,"getRelease byte value");
+            assertEquals((byte)0x01, x, "getRelease byte value");
         }
 
         // Opaque
         {
             byte x = (byte) vh.getOpaque(recv);
-            assertEquals((byte)0x01, x,"getOpaque byte value");
+            assertEquals((byte)0x01, x, "getOpaque byte value");
         }
     }
 
@@ -344,26 +344,26 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         // Plain
         {
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"get byte value");
+            assertEquals((byte)0x01, x, "get byte value");
         }
 
 
         // Volatile
         {
             byte x = (byte) vh.getVolatile();
-            assertEquals((byte)0x01, x,"getVolatile byte value");
+            assertEquals((byte)0x01, x, "getVolatile byte value");
         }
 
         // Lazy
         {
             byte x = (byte) vh.getAcquire();
-            assertEquals((byte)0x01, x,"getRelease byte value");
+            assertEquals((byte)0x01, x, "getRelease byte value");
         }
 
         // Opaque
         {
             byte x = (byte) vh.getOpaque();
-            assertEquals((byte)0x01, x,"getOpaque byte value");
+            assertEquals((byte)0x01, x, "getOpaque byte value");
         }
     }
 
@@ -394,7 +394,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             vh.set(recv, (byte)0x01);
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"set byte value");
+            assertEquals((byte)0x01, x, "set byte value");
         }
 
 
@@ -409,7 +409,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             vh.setRelease(recv, (byte)0x01);
             byte x = (byte) vh.getAcquire(recv);
-            assertEquals((byte)0x01, x,"setRelease byte value");
+            assertEquals((byte)0x01, x, "setRelease byte value");
         }
 
         // Opaque
@@ -440,14 +440,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             byte r = (byte) vh.compareAndExchange(recv, (byte)0x23, (byte)0x01);
             assertEquals(r, (byte)0x23, "success compareAndExchange byte");
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"success compareAndExchange byte value");
+            assertEquals((byte)0x01, x, "success compareAndExchange byte value");
         }
 
         {
             byte r = (byte) vh.compareAndExchange(recv, (byte)0x23, (byte)0x45);
             assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"failing compareAndExchange byte value");
+            assertEquals((byte)0x01, x, "failing compareAndExchange byte value");
         }
 
         {
@@ -468,14 +468,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             byte r = (byte) vh.compareAndExchangeRelease(recv, (byte)0x23, (byte)0x01);
             assertEquals(r, (byte)0x23, "success compareAndExchangeRelease byte");
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"success compareAndExchangeRelease byte value");
+            assertEquals((byte)0x01, x, "success compareAndExchangeRelease byte value");
         }
 
         {
             byte r = (byte) vh.compareAndExchangeRelease(recv, (byte)0x23, (byte)0x45);
             assertEquals(r, (byte)0x01, "failing compareAndExchangeRelease byte");
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"failing compareAndExchangeRelease byte value");
+            assertEquals((byte)0x01, x, "failing compareAndExchangeRelease byte value");
         }
 
         {
@@ -504,14 +504,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire byte");
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"success weakCompareAndSetAcquire byte");
+            assertEquals((byte)0x01, x, "success weakCompareAndSetAcquire byte");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire(recv, (byte)0x23, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSetAcquire byte");
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"failing weakCompareAndSetAcquire byte value");
+            assertEquals((byte)0x01, x, "failing weakCompareAndSetAcquire byte value");
         }
 
         {
@@ -540,14 +540,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet byte");
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"success weakCompareAndSet byte value");
+            assertEquals((byte)0x01, x, "success weakCompareAndSet byte value");
         }
 
         {
             boolean success = vh.weakCompareAndSet(recv, (byte)0x23, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSet byte");
             byte x = (byte) vh.get(recv);
-            assertEquals((byte)0x01, x,"failing weakCompareAndSet byte value");
+            assertEquals((byte)0x01, x, "failing weakCompareAndSet byte value");
         }
 
         // Compare set and get
@@ -702,7 +702,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             vh.set((byte)0x01);
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"set byte value");
+            assertEquals((byte)0x01, x, "set byte value");
         }
 
 
@@ -717,7 +717,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         {
             vh.setRelease((byte)0x01);
             byte x = (byte) vh.getAcquire();
-            assertEquals((byte)0x01, x,"setRelease byte value");
+            assertEquals((byte)0x01, x, "setRelease byte value");
         }
 
         // Opaque
@@ -748,14 +748,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             byte r = (byte) vh.compareAndExchange((byte)0x23, (byte)0x01);
             assertEquals(r, (byte)0x23, "success compareAndExchange byte");
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"success compareAndExchange byte value");
+            assertEquals((byte)0x01, x, "success compareAndExchange byte value");
         }
 
         {
             byte r = (byte) vh.compareAndExchange((byte)0x23, (byte)0x45);
             assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"failing compareAndExchange byte value");
+            assertEquals((byte)0x01, x, "failing compareAndExchange byte value");
         }
 
         {
@@ -776,14 +776,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             byte r = (byte) vh.compareAndExchangeRelease((byte)0x23, (byte)0x01);
             assertEquals(r, (byte)0x23, "success compareAndExchangeRelease byte");
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"success compareAndExchangeRelease byte value");
+            assertEquals((byte)0x01, x, "success compareAndExchangeRelease byte value");
         }
 
         {
             byte r = (byte) vh.compareAndExchangeRelease((byte)0x23, (byte)0x45);
             assertEquals(r, (byte)0x01, "failing compareAndExchangeRelease byte");
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"failing compareAndExchangeRelease byte value");
+            assertEquals((byte)0x01, x, "failing compareAndExchangeRelease byte value");
         }
 
         {
@@ -812,14 +812,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire byte");
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"success weakCompareAndSetAcquire byte");
+            assertEquals((byte)0x01, x, "success weakCompareAndSetAcquire byte");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire((byte)0x23, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSetAcquire byte");
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"failing weakCompareAndSetAcquire byte value");
+            assertEquals((byte)0x01, x, "failing weakCompareAndSetAcquire byte value");
         }
 
         {
@@ -848,14 +848,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet byte");
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"success weakCompareAndSet byte");
+            assertEquals((byte)0x01, x, "success weakCompareAndSet byte");
         }
 
         {
             boolean success = vh.weakCompareAndSet((byte)0x23, (byte)0x45);
             assertEquals(success, false, "failing weakCompareAndSet byte");
             byte x = (byte) vh.get();
-            assertEquals((byte)0x01, x,"failing weakCompareAndSet byte value");
+            assertEquals((byte)0x01, x, "failing weakCompareAndSet byte value");
         }
 
         // Compare set and get
@@ -1013,7 +1013,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             {
                 vh.set(array, i, (byte)0x01);
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"get byte value");
+                assertEquals((byte)0x01, x, "get byte value");
             }
 
 
@@ -1028,7 +1028,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             {
                 vh.setRelease(array, i, (byte)0x01);
                 byte x = (byte) vh.getAcquire(array, i);
-                assertEquals((byte)0x01, x,"setRelease byte value");
+                assertEquals((byte)0x01, x, "setRelease byte value");
             }
 
             // Opaque
@@ -1059,14 +1059,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
                 byte r = (byte) vh.compareAndExchange(array, i, (byte)0x23, (byte)0x01);
                 assertEquals(r, (byte)0x23, "success compareAndExchange byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"success compareAndExchange byte value");
+                assertEquals((byte)0x01, x, "success compareAndExchange byte value");
             }
 
             {
                 byte r = (byte) vh.compareAndExchange(array, i, (byte)0x23, (byte)0x45);
                 assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"failing compareAndExchange byte value");
+                assertEquals((byte)0x01, x, "failing compareAndExchange byte value");
             }
 
             {
@@ -1087,14 +1087,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
                 byte r = (byte) vh.compareAndExchangeRelease(array, i, (byte)0x23, (byte)0x01);
                 assertEquals(r, (byte)0x23, "success compareAndExchangeRelease byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"success compareAndExchangeRelease byte value");
+                assertEquals((byte)0x01, x, "success compareAndExchangeRelease byte value");
             }
 
             {
                 byte r = (byte) vh.compareAndExchangeRelease(array, i, (byte)0x23, (byte)0x45);
                 assertEquals(r, (byte)0x01, "failing compareAndExchangeRelease byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"failing compareAndExchangeRelease byte value");
+                assertEquals((byte)0x01, x, "failing compareAndExchangeRelease byte value");
             }
 
             {
@@ -1123,14 +1123,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"success weakCompareAndSetAcquire byte");
+                assertEquals((byte)0x01, x, "success weakCompareAndSetAcquire byte");
             }
 
             {
                 boolean success = vh.weakCompareAndSetAcquire(array, i, (byte)0x23, (byte)0x45);
                 assertEquals(success, false, "failing weakCompareAndSetAcquire byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"failing weakCompareAndSetAcquire byte value");
+                assertEquals((byte)0x01, x, "failing weakCompareAndSetAcquire byte value");
             }
 
             {
@@ -1159,14 +1159,14 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSet byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"success weakCompareAndSet byte");
+                assertEquals((byte)0x01, x, "success weakCompareAndSet byte");
             }
 
             {
                 boolean success = vh.weakCompareAndSet(array, i, (byte)0x23, (byte)0x45);
                 assertEquals(success, false, "failing weakCompareAndSet byte");
                 byte x = (byte) vh.get(array, i);
-                assertEquals((byte)0x01, x,"failing weakCompareAndSet byte value");
+                assertEquals((byte)0x01, x, "failing weakCompareAndSet byte value");
             }
 
             // Compare set and get

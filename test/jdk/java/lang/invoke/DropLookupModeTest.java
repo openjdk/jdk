@@ -155,7 +155,7 @@ public class DropLookupModeTest {
             Integer.MAX_VALUE,
             Integer.MIN_VALUE,
     })
-    public void testBadInput(Integer modeToDrop) {
+    public void testBadInput(int modeToDrop) {
         Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.lookup().dropLookupMode(modeToDrop));
     }
 

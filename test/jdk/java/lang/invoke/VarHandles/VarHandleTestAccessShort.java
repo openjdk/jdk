@@ -295,26 +295,26 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         // Plain
         {
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"get short value");
+            assertEquals((short)0x0123, x, "get short value");
         }
 
 
         // Volatile
         {
             short x = (short) vh.getVolatile(recv);
-            assertEquals((short)0x0123, x,"getVolatile short value");
+            assertEquals((short)0x0123, x, "getVolatile short value");
         }
 
         // Lazy
         {
             short x = (short) vh.getAcquire(recv);
-            assertEquals((short)0x0123, x,"getRelease short value");
+            assertEquals((short)0x0123, x, "getRelease short value");
         }
 
         // Opaque
         {
             short x = (short) vh.getOpaque(recv);
-            assertEquals((short)0x0123, x,"getOpaque short value");
+            assertEquals((short)0x0123, x, "getOpaque short value");
         }
     }
 
@@ -344,26 +344,26 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         // Plain
         {
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"get short value");
+            assertEquals((short)0x0123, x, "get short value");
         }
 
 
         // Volatile
         {
             short x = (short) vh.getVolatile();
-            assertEquals((short)0x0123, x,"getVolatile short value");
+            assertEquals((short)0x0123, x, "getVolatile short value");
         }
 
         // Lazy
         {
             short x = (short) vh.getAcquire();
-            assertEquals((short)0x0123, x,"getRelease short value");
+            assertEquals((short)0x0123, x, "getRelease short value");
         }
 
         // Opaque
         {
             short x = (short) vh.getOpaque();
-            assertEquals((short)0x0123, x,"getOpaque short value");
+            assertEquals((short)0x0123, x, "getOpaque short value");
         }
     }
 
@@ -394,7 +394,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         {
             vh.set(recv, (short)0x0123);
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"set short value");
+            assertEquals((short)0x0123, x, "set short value");
         }
 
 
@@ -409,7 +409,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         {
             vh.setRelease(recv, (short)0x0123);
             short x = (short) vh.getAcquire(recv);
-            assertEquals((short)0x0123, x,"setRelease short value");
+            assertEquals((short)0x0123, x, "setRelease short value");
         }
 
         // Opaque
@@ -440,14 +440,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             short r = (short) vh.compareAndExchange(recv, (short)0x4567, (short)0x0123);
             assertEquals(r, (short)0x4567, "success compareAndExchange short");
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"success compareAndExchange short value");
+            assertEquals((short)0x0123, x, "success compareAndExchange short value");
         }
 
         {
             short r = (short) vh.compareAndExchange(recv, (short)0x4567, (short)0x89AB);
             assertEquals(r, (short)0x0123, "failing compareAndExchange short");
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"failing compareAndExchange short value");
+            assertEquals((short)0x0123, x, "failing compareAndExchange short value");
         }
 
         {
@@ -468,14 +468,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             short r = (short) vh.compareAndExchangeRelease(recv, (short)0x4567, (short)0x0123);
             assertEquals(r, (short)0x4567, "success compareAndExchangeRelease short");
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"success compareAndExchangeRelease short value");
+            assertEquals((short)0x0123, x, "success compareAndExchangeRelease short value");
         }
 
         {
             short r = (short) vh.compareAndExchangeRelease(recv, (short)0x4567, (short)0x89AB);
             assertEquals(r, (short)0x0123, "failing compareAndExchangeRelease short");
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"failing compareAndExchangeRelease short value");
+            assertEquals((short)0x0123, x, "failing compareAndExchangeRelease short value");
         }
 
         {
@@ -504,14 +504,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire short");
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"success weakCompareAndSetAcquire short");
+            assertEquals((short)0x0123, x, "success weakCompareAndSetAcquire short");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire(recv, (short)0x4567, (short)0x89AB);
             assertEquals(success, false, "failing weakCompareAndSetAcquire short");
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"failing weakCompareAndSetAcquire short value");
+            assertEquals((short)0x0123, x, "failing weakCompareAndSetAcquire short value");
         }
 
         {
@@ -540,14 +540,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet short");
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"success weakCompareAndSet short value");
+            assertEquals((short)0x0123, x, "success weakCompareAndSet short value");
         }
 
         {
             boolean success = vh.weakCompareAndSet(recv, (short)0x4567, (short)0x89AB);
             assertEquals(success, false, "failing weakCompareAndSet short");
             short x = (short) vh.get(recv);
-            assertEquals((short)0x0123, x,"failing weakCompareAndSet short value");
+            assertEquals((short)0x0123, x, "failing weakCompareAndSet short value");
         }
 
         // Compare set and get
@@ -702,7 +702,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         {
             vh.set((short)0x0123);
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"set short value");
+            assertEquals((short)0x0123, x, "set short value");
         }
 
 
@@ -717,7 +717,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         {
             vh.setRelease((short)0x0123);
             short x = (short) vh.getAcquire();
-            assertEquals((short)0x0123, x,"setRelease short value");
+            assertEquals((short)0x0123, x, "setRelease short value");
         }
 
         // Opaque
@@ -748,14 +748,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             short r = (short) vh.compareAndExchange((short)0x4567, (short)0x0123);
             assertEquals(r, (short)0x4567, "success compareAndExchange short");
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"success compareAndExchange short value");
+            assertEquals((short)0x0123, x, "success compareAndExchange short value");
         }
 
         {
             short r = (short) vh.compareAndExchange((short)0x4567, (short)0x89AB);
             assertEquals(r, (short)0x0123, "failing compareAndExchange short");
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"failing compareAndExchange short value");
+            assertEquals((short)0x0123, x, "failing compareAndExchange short value");
         }
 
         {
@@ -776,14 +776,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             short r = (short) vh.compareAndExchangeRelease((short)0x4567, (short)0x0123);
             assertEquals(r, (short)0x4567, "success compareAndExchangeRelease short");
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"success compareAndExchangeRelease short value");
+            assertEquals((short)0x0123, x, "success compareAndExchangeRelease short value");
         }
 
         {
             short r = (short) vh.compareAndExchangeRelease((short)0x4567, (short)0x89AB);
             assertEquals(r, (short)0x0123, "failing compareAndExchangeRelease short");
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"failing compareAndExchangeRelease short value");
+            assertEquals((short)0x0123, x, "failing compareAndExchangeRelease short value");
         }
 
         {
@@ -812,14 +812,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire short");
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"success weakCompareAndSetAcquire short");
+            assertEquals((short)0x0123, x, "success weakCompareAndSetAcquire short");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire((short)0x4567, (short)0x89AB);
             assertEquals(success, false, "failing weakCompareAndSetAcquire short");
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"failing weakCompareAndSetAcquire short value");
+            assertEquals((short)0x0123, x, "failing weakCompareAndSetAcquire short value");
         }
 
         {
@@ -848,14 +848,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet short");
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"success weakCompareAndSet short");
+            assertEquals((short)0x0123, x, "success weakCompareAndSet short");
         }
 
         {
             boolean success = vh.weakCompareAndSet((short)0x4567, (short)0x89AB);
             assertEquals(success, false, "failing weakCompareAndSet short");
             short x = (short) vh.get();
-            assertEquals((short)0x0123, x,"failing weakCompareAndSet short value");
+            assertEquals((short)0x0123, x, "failing weakCompareAndSet short value");
         }
 
         // Compare set and get
@@ -1013,7 +1013,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             {
                 vh.set(array, i, (short)0x0123);
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"get short value");
+                assertEquals((short)0x0123, x, "get short value");
             }
 
 
@@ -1028,7 +1028,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             {
                 vh.setRelease(array, i, (short)0x0123);
                 short x = (short) vh.getAcquire(array, i);
-                assertEquals((short)0x0123, x,"setRelease short value");
+                assertEquals((short)0x0123, x, "setRelease short value");
             }
 
             // Opaque
@@ -1059,14 +1059,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 short r = (short) vh.compareAndExchange(array, i, (short)0x4567, (short)0x0123);
                 assertEquals(r, (short)0x4567, "success compareAndExchange short");
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"success compareAndExchange short value");
+                assertEquals((short)0x0123, x, "success compareAndExchange short value");
             }
 
             {
                 short r = (short) vh.compareAndExchange(array, i, (short)0x4567, (short)0x89AB);
                 assertEquals(r, (short)0x0123, "failing compareAndExchange short");
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"failing compareAndExchange short value");
+                assertEquals((short)0x0123, x, "failing compareAndExchange short value");
             }
 
             {
@@ -1087,14 +1087,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 short r = (short) vh.compareAndExchangeRelease(array, i, (short)0x4567, (short)0x0123);
                 assertEquals(r, (short)0x4567, "success compareAndExchangeRelease short");
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"success compareAndExchangeRelease short value");
+                assertEquals((short)0x0123, x, "success compareAndExchangeRelease short value");
             }
 
             {
                 short r = (short) vh.compareAndExchangeRelease(array, i, (short)0x4567, (short)0x89AB);
                 assertEquals(r, (short)0x0123, "failing compareAndExchangeRelease short");
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"failing compareAndExchangeRelease short value");
+                assertEquals((short)0x0123, x, "failing compareAndExchangeRelease short value");
             }
 
             {
@@ -1123,14 +1123,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire short");
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"success weakCompareAndSetAcquire short");
+                assertEquals((short)0x0123, x, "success weakCompareAndSetAcquire short");
             }
 
             {
                 boolean success = vh.weakCompareAndSetAcquire(array, i, (short)0x4567, (short)0x89AB);
                 assertEquals(success, false, "failing weakCompareAndSetAcquire short");
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"failing weakCompareAndSetAcquire short value");
+                assertEquals((short)0x0123, x, "failing weakCompareAndSetAcquire short value");
             }
 
             {
@@ -1159,14 +1159,14 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSet short");
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"success weakCompareAndSet short");
+                assertEquals((short)0x0123, x, "success weakCompareAndSet short");
             }
 
             {
                 boolean success = vh.weakCompareAndSet(array, i, (short)0x4567, (short)0x89AB);
                 assertEquals(success, false, "failing weakCompareAndSet short");
                 short x = (short) vh.get(array, i);
-                assertEquals((short)0x0123, x,"failing weakCompareAndSet short value");
+                assertEquals((short)0x0123, x, "failing weakCompareAndSet short value");
             }
 
             // Compare set and get

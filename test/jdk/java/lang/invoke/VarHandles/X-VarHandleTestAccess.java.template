@@ -346,26 +346,26 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         // Plain
         {
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"get $type$ value");
+            assertEquals($value1$, x, "get $type$ value");
         }
 
 
         // Volatile
         {
             $type$ x = ($type$) vh.getVolatile(recv);
-            assertEquals($value1$, x,"getVolatile $type$ value");
+            assertEquals($value1$, x, "getVolatile $type$ value");
         }
 
         // Lazy
         {
             $type$ x = ($type$) vh.getAcquire(recv);
-            assertEquals($value1$, x,"getRelease $type$ value");
+            assertEquals($value1$, x, "getRelease $type$ value");
         }
 
         // Opaque
         {
             $type$ x = ($type$) vh.getOpaque(recv);
-            assertEquals($value1$, x,"getOpaque $type$ value");
+            assertEquals($value1$, x, "getOpaque $type$ value");
         }
     }
 
@@ -490,26 +490,26 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         // Plain
         {
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"get $type$ value");
+            assertEquals($value1$, x, "get $type$ value");
         }
 
 
         // Volatile
         {
             $type$ x = ($type$) vh.getVolatile();
-            assertEquals($value1$, x,"getVolatile $type$ value");
+            assertEquals($value1$, x, "getVolatile $type$ value");
         }
 
         // Lazy
         {
             $type$ x = ($type$) vh.getAcquire();
-            assertEquals($value1$, x,"getRelease $type$ value");
+            assertEquals($value1$, x, "getRelease $type$ value");
         }
 
         // Opaque
         {
             $type$ x = ($type$) vh.getOpaque();
-            assertEquals($value1$, x,"getOpaque $type$ value");
+            assertEquals($value1$, x, "getOpaque $type$ value");
         }
     }
 
@@ -635,7 +635,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             vh.set(recv, $value1$);
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"set $type$ value");
+            assertEquals($value1$, x, "set $type$ value");
         }
 
 
@@ -650,7 +650,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             vh.setRelease(recv, $value1$);
             $type$ x = ($type$) vh.getAcquire(recv);
-            assertEquals($value1$, x,"setRelease $type$ value");
+            assertEquals($value1$, x, "setRelease $type$ value");
         }
 
         // Opaque
@@ -682,14 +682,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             $type$ r = ($type$) vh.compareAndExchange(recv, $value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"success compareAndExchange $type$ value");
+            assertEquals($value1$, x, "success compareAndExchange $type$ value");
         }
 
         {
             $type$ r = ($type$) vh.compareAndExchange(recv, $value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"failing compareAndExchange $type$ value");
+            assertEquals($value1$, x, "failing compareAndExchange $type$ value");
         }
 
         {
@@ -710,14 +710,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             $type$ r = ($type$) vh.compareAndExchangeRelease(recv, $value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"success compareAndExchangeRelease $type$ value");
+            assertEquals($value1$, x, "success compareAndExchangeRelease $type$ value");
         }
 
         {
             $type$ r = ($type$) vh.compareAndExchangeRelease(recv, $value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"failing compareAndExchangeRelease $type$ value");
+            assertEquals($value1$, x, "failing compareAndExchangeRelease $type$ value");
         }
 
         {
@@ -746,14 +746,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"success weakCompareAndSetAcquire $type$");
+            assertEquals($value1$, x, "success weakCompareAndSetAcquire $type$");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire(recv, $value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"failing weakCompareAndSetAcquire $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSetAcquire $type$ value");
         }
 
         {
@@ -782,14 +782,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"success weakCompareAndSet $type$ value");
+            assertEquals($value1$, x, "success weakCompareAndSet $type$ value");
         }
 
         {
             boolean success = vh.weakCompareAndSet(recv, $value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals($value1$, x,"failing weakCompareAndSet $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSet $type$ value");
         }
 
         // Compare set and get
@@ -1044,7 +1044,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             vh.set($value1$);
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"set $type$ value");
+            assertEquals($value1$, x, "set $type$ value");
         }
 
 
@@ -1059,7 +1059,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         {
             vh.setRelease($value1$);
             $type$ x = ($type$) vh.getAcquire();
-            assertEquals($value1$, x,"setRelease $type$ value");
+            assertEquals($value1$, x, "setRelease $type$ value");
         }
 
         // Opaque
@@ -1091,14 +1091,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             $type$ r = ($type$) vh.compareAndExchange($value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"success compareAndExchange $type$ value");
+            assertEquals($value1$, x, "success compareAndExchange $type$ value");
         }
 
         {
             $type$ r = ($type$) vh.compareAndExchange($value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"failing compareAndExchange $type$ value");
+            assertEquals($value1$, x, "failing compareAndExchange $type$ value");
         }
 
         {
@@ -1119,14 +1119,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             $type$ r = ($type$) vh.compareAndExchangeRelease($value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"success compareAndExchangeRelease $type$ value");
+            assertEquals($value1$, x, "success compareAndExchangeRelease $type$ value");
         }
 
         {
             $type$ r = ($type$) vh.compareAndExchangeRelease($value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"failing compareAndExchangeRelease $type$ value");
+            assertEquals($value1$, x, "failing compareAndExchangeRelease $type$ value");
         }
 
         {
@@ -1155,14 +1155,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"success weakCompareAndSetAcquire $type$");
+            assertEquals($value1$, x, "success weakCompareAndSetAcquire $type$");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire($value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"failing weakCompareAndSetAcquire $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSetAcquire $type$ value");
         }
 
         {
@@ -1191,14 +1191,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"success weakCompareAndSet $type$");
+            assertEquals($value1$, x, "success weakCompareAndSet $type$");
         }
 
         {
             boolean success = vh.weakCompareAndSet($value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals($value1$, x,"failing weakCompareAndSet $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSet $type$ value");
         }
 
         // Compare set and get
@@ -1456,7 +1456,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             {
                 vh.set(array, i, $value1$);
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"get $type$ value");
+                assertEquals($value1$, x, "get $type$ value");
             }
 
 
@@ -1471,7 +1471,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             {
                 vh.setRelease(array, i, $value1$);
                 $type$ x = ($type$) vh.getAcquire(array, i);
-                assertEquals($value1$, x,"setRelease $type$ value");
+                assertEquals($value1$, x, "setRelease $type$ value");
             }
 
             // Opaque
@@ -1503,14 +1503,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 $type$ r = ($type$) vh.compareAndExchange(array, i, $value2$, $value1$);
                 assertEquals(r, $value2$, "success compareAndExchange $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"success compareAndExchange $type$ value");
+                assertEquals($value1$, x, "success compareAndExchange $type$ value");
             }
 
             {
                 $type$ r = ($type$) vh.compareAndExchange(array, i, $value2$, $value3$);
                 assertEquals(r, $value1$, "failing compareAndExchange $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"failing compareAndExchange $type$ value");
+                assertEquals($value1$, x, "failing compareAndExchange $type$ value");
             }
 
             {
@@ -1531,14 +1531,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, $value2$, $value1$);
                 assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"success compareAndExchangeRelease $type$ value");
+                assertEquals($value1$, x, "success compareAndExchangeRelease $type$ value");
             }
 
             {
                 $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, $value2$, $value3$);
                 assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"failing compareAndExchangeRelease $type$ value");
+                assertEquals($value1$, x, "failing compareAndExchangeRelease $type$ value");
             }
 
             {
@@ -1567,14 +1567,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"success weakCompareAndSetAcquire $type$");
+                assertEquals($value1$, x, "success weakCompareAndSetAcquire $type$");
             }
 
             {
                 boolean success = vh.weakCompareAndSetAcquire(array, i, $value2$, $value3$);
                 assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"failing weakCompareAndSetAcquire $type$ value");
+                assertEquals($value1$, x, "failing weakCompareAndSetAcquire $type$ value");
             }
 
             {
@@ -1603,14 +1603,14 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSet $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"success weakCompareAndSet $type$");
+                assertEquals($value1$, x, "success weakCompareAndSet $type$");
             }
 
             {
                 boolean success = vh.weakCompareAndSet(array, i, $value2$, $value3$);
                 assertEquals(success, false, "failing weakCompareAndSet $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals($value1$, x,"failing weakCompareAndSet $type$ value");
+                assertEquals($value1$, x, "failing weakCompareAndSet $type$ value");
             }
 
             // Compare set and get
