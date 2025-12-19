@@ -147,8 +147,9 @@ final class SigningIdentityBuilder {
         Objects.requireNonNull(keychain);
         switch (certs.size()) {
             case 0 -> {
-                Log.error(I18N.format("error.cert.not.found", certificateSelector.signingIdentities().getFirst(),
-                        keychain.map(Keychain::name).orElse("")));
+                var errMsg = I18N.format("error.cert.not.found", certificateSelector.signingIdentities().getFirst(),
+                        keychain.map(Keychain::name).orElse(""));
+                Log.error(I18N.format("message.error-header", errMsg));
                 throw I18N.buildConfigException("error.explicit-sign-no-cert")
                         .advice("error.explicit-sign-no-cert.advice").create();
             }

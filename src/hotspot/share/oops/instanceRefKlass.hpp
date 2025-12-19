@@ -126,7 +126,7 @@ class InstanceRefKlass: public InstanceKlass {
 
  public:
   // Verification
-  void oop_verify_on(oop obj, outputStream* st);
+  void oop_verify_on(oop obj, outputStream* st) override;
 };
 
 #endif // SHARE_OOPS_INSTANCEREFKLASS_HPP

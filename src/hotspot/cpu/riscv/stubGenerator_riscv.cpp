@@ -2655,8 +2655,7 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_cipherBlockChaining_encryptAESCrypt() {
-    assert(UseAESIntrinsics, "Must be");
-    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
@@ -2745,8 +2744,7 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
-    assert(UseAESIntrinsics, "Must be");
-    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
@@ -2950,9 +2948,7 @@ class StubGenerator: public StubCodeGenerator {
   //   x10       - input length
   //
   address generate_counterMode_AESCrypt() {
-    assert(UseAESCTRIntrinsics, "Must be");
-    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
-    assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) and Zbb extension support");
 
     __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
@@ -2995,6 +2991,63 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_exit);
     __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - current state address
+   *  c_rarg1   - H key address
+   *  c_rarg2   - data address
+   *  c_rarg3   - number of blocks
+   *
+   *  Output:
+   *  Updated state at c_rarg0
+   */
+  address generate_ghash_processBlocks() {
+    assert(UseGHASHIntrinsics, "need GHASH instructions (Zvkg extension) and Zvbb support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ pc();
+    __ enter();
+
+    Register state   = c_rarg0;
+    Register subkeyH = c_rarg1;
+    Register data    = c_rarg2;
+    Register blocks  = c_rarg3;
+
+    VectorRegister partial_hash = v1;
+    VectorRegister hash_subkey  = v2;
+    VectorRegister cipher_text  = v3;
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
+    __ vle64_v(hash_subkey, subkeyH);
+    __ vrev8_v(hash_subkey, hash_subkey);
+    __ vle64_v(partial_hash, state);
+    __ vrev8_v(partial_hash, partial_hash);
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    Label L_ghash_loop;
+    __ bind(L_ghash_loop);
+      __ vle32_v(cipher_text, data);
+      __ addi(data, data, BLOCK_SIZE);
+      __ vghsh_vv(partial_hash, hash_subkey, cipher_text);
+      __ subi(blocks, blocks, 1);
+      __ bnez(blocks, L_ghash_loop);
+
+    __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
+    __ vrev8_v(partial_hash, partial_hash);
+    __ vse64_v(partial_hash, state);
     __ leave();
     __ ret();
 
@@ -7225,6 +7278,10 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseAESCTRIntrinsics) {
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    }
+
+    if (UseGHASHIntrinsics) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     if (UsePoly1305Intrinsics) {

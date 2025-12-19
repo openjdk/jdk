@@ -206,6 +206,8 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
 
         if (ik->has_aot_safe_initializer() && (flags & WAS_INITED) != 0) {
           assert(ik->class_loader() == nullptr, "supported only for boot classes for now");
+          ResourceMark rm(THREAD);
+          log_info(aot, init)("Initializing %s", ik->external_name());
           ik->initialize(CHECK);
         }
       }
