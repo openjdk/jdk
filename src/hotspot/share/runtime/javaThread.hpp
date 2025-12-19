@@ -963,12 +963,7 @@ public:
   inline void enter_critical();
   void exit_critical() {
     assert(Thread::current() == this, "this must be current thread");
-    if (_jni_active_critical-- == 1) {
-#if INCLUDE_JVMTI
-      toggle_is_disable_suspend();
-      assert(!is_disable_suspend(), "must be");
-#endif
-    }
+    _jni_active_critical--;
     assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
   }
 
