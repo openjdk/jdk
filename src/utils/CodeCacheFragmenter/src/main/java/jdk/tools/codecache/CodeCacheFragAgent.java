@@ -1,4 +1,4 @@
-package vm.agent;
+package jdk.tools.codecache;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,7 +11,7 @@ import jdk.test.whitebox.code.CodeBlob;
 
 public class CodeCacheFragAgent {
 
-  // Configurable variables (can be overridden via system properties)
+  // Configurable variables (can be overridden via agent arguments)
   private static int minBlobSize = 500;
   private static int maxBlobSize = 10000;
   private static int avgBlobSize = 2000;
@@ -22,40 +22,77 @@ public class CodeCacheFragAgent {
   private static final WhiteBox WHITEBOX = WhiteBox.getWhiteBox();
   private static long seed = System.currentTimeMillis();
 
-  // Helper function to read and validate numeric properties
-  private static double readNumericProperty(String propertyName, double defaultValue) {
-    String prop = System.getProperty(propertyName);
-    if (prop == null) {
-      return defaultValue;
-    }
-
-    try {
-      return Double.parseDouble(prop);
-    } catch (NumberFormatException e) {
-      System.out.println("Invalid " + propertyName + ": " + prop +
-                       ". Must be a number. Using default: " + defaultValue);
-      return defaultValue;
-    }
-  }
-
-  // Parse system properties and update configurable variables
+  // Parse agent arguments and update configurable variables
   private static void parseArguments(String args) {
-    minBlobSize = (int) readNumericProperty("MinBlobSize", minBlobSize);
-    maxBlobSize = (int) readNumericProperty("MaxBlobSize", maxBlobSize);
-    avgBlobSize = (int) readNumericProperty("AvgBlobSize", avgBlobSize);
-    divBlobSize = (int) readNumericProperty("DivBlobSize", divBlobSize);
-    requiredStableGcRounds = (int) readNumericProperty("RequiredStableGcRounds", requiredStableGcRounds);
-    fillPercent = readNumericProperty("FillPercentage", fillPercent);
-    seed = (long) readNumericProperty("RandomSeed", seed);
+    if (args == null || args.trim().isEmpty()) {
+      return; // Use default values
+    }
+
+    String[] pairs = args.split(",");
+    for (String pair : pairs) {
+      String[] keyValue = pair.split("=", 2);
+      if (keyValue.length != 2) {
+        System.out.println("Invalid argument format: " + pair + ". Expected key=value");
+        continue;
+      }
+
+      String key = keyValue[0].trim();
+      String value = keyValue[1].trim();
+
+      try {
+        switch (key) {
+          case "MinBlobSize":
+            minBlobSize = Integer.parseInt(value);
+            break;
+          case "MaxBlobSize":
+            maxBlobSize = Integer.parseInt(value);
+            break;
+          case "AvgBlobSize":
+            avgBlobSize = Integer.parseInt(value);
+            break;
+          case "DivBlobSize":
+            divBlobSize = Integer.parseInt(value);
+            break;
+          case "RequiredStableGcRounds":
+            requiredStableGcRounds = Integer.parseInt(value);
+            break;
+          case "FillPercentage":
+            fillPercent = Double.parseDouble(value);
+            break;
+          case "RandomSeed":
+            seed = Long.parseLong(value);
+            break;
+          default:
+            System.out.println("Unknown parameter: " + key);
+        }
+      } catch (NumberFormatException e) {
+        System.out.println("Invalid value for " + key + ": " + value + ". Must be a number.");
+      }
+    }
   }
 
   public static void premain(String args) {
-    // Parse system properties to configure variables
+    // Parse agent arguments to configure variables
     parseArguments(args);
 
-    // Validate FillPercentage
+    // Validate parameters
     if (fillPercent < 0.0 || fillPercent > 100.0) {
       System.out.println("FillPercentage must be between 0 and 100: " + fillPercent);
+      return;
+    }
+
+    if (minBlobSize <= 0 || maxBlobSize <= 0 || avgBlobSize <= 0 || divBlobSize <= 0) {
+      System.out.println("Blob size parameters must be positive values");
+      return;
+    }
+
+    if (minBlobSize > maxBlobSize) {
+      System.out.println("MinBlobSize (" + minBlobSize + ") cannot be greater than MaxBlobSize (" + maxBlobSize + ")");
+      return;
+    }
+
+    if (requiredStableGcRounds <= 0) {
+      System.out.println("RequiredStableGcRounds must be positive: " + requiredStableGcRounds);
       return;
     }
 
