@@ -5,3 +5,21 @@
         assertReductionArraysEquals(r, ra, a,
                 $vectorteststype$::[[TEST]]Reduce, $vectorteststype$::[[TEST]]ReduceAll);
     }
+
+    @Test(dataProvider = "$type$UnaryOpProvider")
+    static void [[TEST]]ReduceIdentityValueTests(IntFunction<$type$[]> fa) {
+        $type$[] a = fa.apply(SPECIES.length());
+        $type$ id = [[TEST_INIT]];
+
+        Assert.assertEquals([[TEST_OP]](id, id), id,
+                            "[[TEST]]([[TEST_INIT]], [[TEST_INIT]]) != [[TEST_INIT]]");
+
+        for (int i = 0; i < a.length; i++) {
+            $type$ x = a[i];
+            Assert.assertEquals([[TEST_OP]](id, x), x,
+                                "[[TEST]]([[TEST_INIT]], " + x + ") != " + x);
+
+            Assert.assertEquals([[TEST_OP]](x, id), x,
+                                "[[TEST]](" + x + ", [[TEST_INIT]]) != " + x);
+        }
+    }

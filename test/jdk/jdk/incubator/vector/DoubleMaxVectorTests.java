@@ -68,13 +68,13 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
 
     private static final int Max = 256;  // juts so we can do N/Max
 
-
     // Identity values for reduction operations
     private static final double ADD_IDENTITY = (double)0;
     private static final double FIRST_NONZERO_IDENTITY = (double)0;
     private static final double MAX_IDENTITY = Double.NEGATIVE_INFINITY;
     private static final double MIN_IDENTITY = Double.POSITIVE_INFINITY;
     private static final double MUL_IDENTITY = (double)1;
+
     // for floating point addition reduction ops that may introduce rounding errors
     private static final double RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (double)10.0;
 
@@ -2423,13 +2423,32 @@ relativeError));
             ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD);
-                ra += r[i];
+                double v = av.reduceLanes(VectorOperators.ADD);
+                r[i] = v;
+                ra += v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 DoubleMaxVectorTests::ADDReduce, DoubleMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
+    }
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void ADDReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = ADD_IDENTITY;
+
+        Assert.assertEquals((double) (id + id), id,
+                            "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            double x = a[i];
+            Assert.assertEquals((double) (id + x), x,
+                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((double) (x + id), x,
+                                "ADD(" + x + ", ADD_IDENTITY) != " + x);
+        }
     }
 
     static double ADDReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2463,8 +2482,9 @@ relativeError));
             ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD, vmask);
-                ra += r[i];
+                double v = av.reduceLanes(VectorOperators.ADD, vmask);
+                r[i] = v;
+                ra += v;
             }
         }
 
@@ -2500,13 +2520,32 @@ relativeError));
             ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL);
-                ra *= r[i];
+                double v = av.reduceLanes(VectorOperators.MUL);
+                r[i] = v;
+                ra *= v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 DoubleMaxVectorTests::MULReduce, DoubleMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
+    }
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void MULReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = MUL_IDENTITY;
+
+        Assert.assertEquals((double) (id * id), id,
+                            "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            double x = a[i];
+            Assert.assertEquals((double) (id * x), x,
+                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((double) (x * id), x,
+                                "MUL(" + x + ", MUL_IDENTITY) != " + x);
+        }
     }
 
     static double MULReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2540,8 +2579,9 @@ relativeError));
             ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL, vmask);
-                ra *= r[i];
+                double v = av.reduceLanes(VectorOperators.MUL, vmask);
+                r[i] = v;
+                ra *= v;
             }
         }
 
@@ -2577,13 +2617,32 @@ relativeError));
             ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN);
-                ra = (double) Math.min(ra, r[i]);
+                double v = av.reduceLanes(VectorOperators.MIN);
+                r[i] = v;
+                ra = (double) Math.min(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 DoubleMaxVectorTests::MINReduce, DoubleMaxVectorTests::MINReduceAll);
+    }
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void MINReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = MIN_IDENTITY;
+
+        Assert.assertEquals((double) Math.min(id, id), id,
+                            "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            double x = a[i];
+            Assert.assertEquals((double) Math.min(id, x), x,
+                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((double) Math.min(x, id), x,
+                                "MIN(" + x + ", MIN_IDENTITY) != " + x);
+        }
     }
 
     static double MINReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2617,8 +2676,9 @@ relativeError));
             ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN, vmask);
-                ra = (double) Math.min(ra, r[i]);
+                double v = av.reduceLanes(VectorOperators.MIN, vmask);
+                r[i] = v;
+                ra = (double) Math.min(ra, v);
             }
         }
 
@@ -2654,13 +2714,32 @@ relativeError));
             ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX);
-                ra = (double) Math.max(ra, r[i]);
+                double v = av.reduceLanes(VectorOperators.MAX);
+                r[i] = v;
+                ra = (double) Math.max(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 DoubleMaxVectorTests::MAXReduce, DoubleMaxVectorTests::MAXReduceAll);
+    }
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void MAXReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = MAX_IDENTITY;
+
+        Assert.assertEquals((double) Math.max(id, id), id,
+                            "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            double x = a[i];
+            Assert.assertEquals((double) Math.max(id, x), x,
+                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((double) Math.max(x, id), x,
+                                "MAX(" + x + ", MAX_IDENTITY) != " + x);
+        }
     }
 
     static double MAXReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2694,8 +2773,9 @@ relativeError));
             ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX, vmask);
-                ra = (double) Math.max(ra, r[i]);
+                double v = av.reduceLanes(VectorOperators.MAX, vmask);
+                r[i] = v;
+                ra = (double) Math.max(ra, v);
             }
         }
 
@@ -2731,13 +2811,32 @@ relativeError));
             ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
-                ra = firstNonZero(ra, r[i]);
+                double v = av.reduceLanes(VectorOperators.FIRST_NONZERO);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 DoubleMaxVectorTests::FIRST_NONZEROReduce, DoubleMaxVectorTests::FIRST_NONZEROReduceAll);
+    }
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void FIRST_NONZEROReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = FIRST_NONZERO_IDENTITY;
+
+        Assert.assertEquals(firstNonZero(id, id), id,
+                            "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            double x = a[i];
+            Assert.assertEquals(firstNonZero(id, x), x,
+                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals(firstNonZero(x, id), x,
+                                "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
+        }
     }
 
     static double FIRST_NONZEROReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2771,8 +2870,9 @@ relativeError));
             ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
-                ra = firstNonZero(ra, r[i]);
+                double v = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
@@ -4952,57 +5052,6 @@ relativeError));
             }
         }
         assertArraysEquals(r, a, LONG_MASK_BITS);
-    }
-
-    @Test(dataProvider = "doubleUnaryOpProvider")
-    static void testIdentityValues(IntFunction<double[]> fa) {
-        double[] a = fa.apply(SPECIES.length());
-
-        for (int i = 0; i < a.length; i++) {
-            double x = a[i];
-
-            // ADD identity: 0 + x == x
-            Assert.assertEquals((double)(ADD_IDENTITY + x), x,
-                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
-
-            // FIRST_NONZERO identity: firstNonZero(0, x) == x
-            Assert.assertEquals(firstNonZero(FIRST_NONZERO_IDENTITY, x), x,
-                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
-
-            // MAX identity: max(Double.NEGATIVE_INFINITY, x) == x
-            Assert.assertEquals((double) Math.max(MAX_IDENTITY, x), x,
-                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
-
-            // MIN identity: min(Double.POSITIVE_INFINITY, x) == x
-            Assert.assertEquals((double) Math.min(MIN_IDENTITY, x), x,
-                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
-
-            // MUL identity: 1 * x == x
-            Assert.assertEquals((double)(MUL_IDENTITY * x), x,
-                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
-        }
-    }
-
-    @Test(dataProvider = "doubleUnaryOpProvider")
-    static void testMaskedReductionIdentityAllFalse(IntFunction<double[]> fa) {
-        double[] a = fa.apply(SPECIES.length());
-        VectorMask<Double> allFalseMask = SPECIES.maskAll(false);
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-
-            // When mask is all false, reduction should return identity value
-            Assert.assertEquals(av.reduceLanes(VectorOperators.ADD, allFalseMask), ADD_IDENTITY,
-                                "ADD with all-false mask should return ADD_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.FIRST_NONZERO, allFalseMask), FIRST_NONZERO_IDENTITY,
-                                "FIRST_NONZERO with all-false mask should return FIRST_NONZERO_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.MAX, allFalseMask), MAX_IDENTITY,
-                                "MAX with all-false mask should return MAX_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.MIN, allFalseMask), MIN_IDENTITY,
-                                "MIN with all-false mask should return MIN_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.MUL, allFalseMask), MUL_IDENTITY,
-                                "MUL with all-false mask should return MUL_IDENTITY");
-        }
     }
 
     @Test(dataProvider = "doubleCompareOpProvider")

@@ -6,8 +6,9 @@
             ra = [[TEST_INIT]];
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.[[TEST]]);
-                ra [[TEST_OP]]= r[i];
+                $type$ v = av.reduceLanes(VectorOperators.[[TEST]]);
+                r[i] = v;
+                ra [[TEST_OP]]= v;
             }
         }
 

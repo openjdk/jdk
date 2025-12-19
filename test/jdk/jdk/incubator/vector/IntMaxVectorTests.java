@@ -3700,13 +3700,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = AND_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.AND);
-                ra &= r[i];
+                int v = av.reduceLanes(VectorOperators.AND);
+                r[i] = v;
+                ra &= v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::ANDReduce, IntMaxVectorTests::ANDReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void ANDReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = AND_IDENTITY;
+
+        Assert.assertEquals((int) (id & id), id,
+                            "AND(AND_IDENTITY, AND_IDENTITY) != AND_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) (id & x), x,
+                                "AND(AND_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) (x & id), x,
+                                "AND(" + x + ", AND_IDENTITY) != " + x);
+        }
     }
 
     static int ANDReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -3740,8 +3759,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = AND_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.AND, vmask);
-                ra &= r[i];
+                int v = av.reduceLanes(VectorOperators.AND, vmask);
+                r[i] = v;
+                ra &= v;
             }
         }
 
@@ -3777,13 +3797,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = OR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.OR);
-                ra |= r[i];
+                int v = av.reduceLanes(VectorOperators.OR);
+                r[i] = v;
+                ra |= v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::ORReduce, IntMaxVectorTests::ORReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void ORReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = OR_IDENTITY;
+
+        Assert.assertEquals((int) (id | id), id,
+                            "OR(OR_IDENTITY, OR_IDENTITY) != OR_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) (id | x), x,
+                                "OR(OR_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) (x | id), x,
+                                "OR(" + x + ", OR_IDENTITY) != " + x);
+        }
     }
 
     static int ORReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -3817,8 +3856,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = OR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.OR, vmask);
-                ra |= r[i];
+                int v = av.reduceLanes(VectorOperators.OR, vmask);
+                r[i] = v;
+                ra |= v;
             }
         }
 
@@ -3854,13 +3894,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = XOR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.XOR);
-                ra ^= r[i];
+                int v = av.reduceLanes(VectorOperators.XOR);
+                r[i] = v;
+                ra ^= v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::XORReduce, IntMaxVectorTests::XORReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void XORReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = XOR_IDENTITY;
+
+        Assert.assertEquals((int) (id ^ id), id,
+                            "XOR(XOR_IDENTITY, XOR_IDENTITY) != XOR_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) (id ^ x), x,
+                                "XOR(XOR_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) (x ^ id), x,
+                                "XOR(" + x + ", XOR_IDENTITY) != " + x);
+        }
     }
 
     static int XORReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -3894,8 +3953,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = XOR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.XOR, vmask);
-                ra ^= r[i];
+                int v = av.reduceLanes(VectorOperators.XOR, vmask);
+                r[i] = v;
+                ra ^= v;
             }
         }
 
@@ -3931,13 +3991,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD);
-                ra += r[i];
+                int v = av.reduceLanes(VectorOperators.ADD);
+                r[i] = v;
+                ra += v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::ADDReduce, IntMaxVectorTests::ADDReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void ADDReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = ADD_IDENTITY;
+
+        Assert.assertEquals((int) (id + id), id,
+                            "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) (id + x), x,
+                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) (x + id), x,
+                                "ADD(" + x + ", ADD_IDENTITY) != " + x);
+        }
     }
 
     static int ADDReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -3971,8 +4050,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD, vmask);
-                ra += r[i];
+                int v = av.reduceLanes(VectorOperators.ADD, vmask);
+                r[i] = v;
+                ra += v;
             }
         }
 
@@ -4008,13 +4088,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL);
-                ra *= r[i];
+                int v = av.reduceLanes(VectorOperators.MUL);
+                r[i] = v;
+                ra *= v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::MULReduce, IntMaxVectorTests::MULReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void MULReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = MUL_IDENTITY;
+
+        Assert.assertEquals((int) (id * id), id,
+                            "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) (id * x), x,
+                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) (x * id), x,
+                                "MUL(" + x + ", MUL_IDENTITY) != " + x);
+        }
     }
 
     static int MULReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -4048,8 +4147,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL, vmask);
-                ra *= r[i];
+                int v = av.reduceLanes(VectorOperators.MUL, vmask);
+                r[i] = v;
+                ra *= v;
             }
         }
 
@@ -4085,13 +4185,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN);
-                ra = (int) Math.min(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.MIN);
+                r[i] = v;
+                ra = (int) Math.min(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::MINReduce, IntMaxVectorTests::MINReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void MINReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = MIN_IDENTITY;
+
+        Assert.assertEquals((int) Math.min(id, id), id,
+                            "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) Math.min(id, x), x,
+                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) Math.min(x, id), x,
+                                "MIN(" + x + ", MIN_IDENTITY) != " + x);
+        }
     }
 
     static int MINReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -4125,8 +4244,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN, vmask);
-                ra = (int) Math.min(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.MIN, vmask);
+                r[i] = v;
+                ra = (int) Math.min(ra, v);
             }
         }
 
@@ -4162,13 +4282,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX);
-                ra = (int) Math.max(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.MAX);
+                r[i] = v;
+                ra = (int) Math.max(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::MAXReduce, IntMaxVectorTests::MAXReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void MAXReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = MAX_IDENTITY;
+
+        Assert.assertEquals((int) Math.max(id, id), id,
+                            "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) Math.max(id, x), x,
+                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) Math.max(x, id), x,
+                                "MAX(" + x + ", MAX_IDENTITY) != " + x);
+        }
     }
 
     static int MAXReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -4202,8 +4341,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX, vmask);
-                ra = (int) Math.max(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.MAX, vmask);
+                r[i] = v;
+                ra = (int) Math.max(ra, v);
             }
         }
 
@@ -4239,13 +4379,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = UMIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.UMIN);
-                ra = (int) VectorMath.minUnsigned(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.UMIN);
+                r[i] = v;
+                ra = (int) VectorMath.minUnsigned(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::UMINReduce, IntMaxVectorTests::UMINReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void UMINReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = UMIN_IDENTITY;
+
+        Assert.assertEquals((int) VectorMath.minUnsigned(id, id), id,
+                            "UMIN(UMIN_IDENTITY, UMIN_IDENTITY) != UMIN_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) VectorMath.minUnsigned(id, x), x,
+                                "UMIN(UMIN_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) VectorMath.minUnsigned(x, id), x,
+                                "UMIN(" + x + ", UMIN_IDENTITY) != " + x);
+        }
     }
 
     static int UMINReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -4279,8 +4438,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = UMIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.UMIN, vmask);
-                ra = (int) VectorMath.minUnsigned(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.UMIN, vmask);
+                r[i] = v;
+                ra = (int) VectorMath.minUnsigned(ra, v);
             }
         }
 
@@ -4316,13 +4476,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = UMAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.UMAX);
-                ra = (int) VectorMath.maxUnsigned(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.UMAX);
+                r[i] = v;
+                ra = (int) VectorMath.maxUnsigned(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::UMAXReduce, IntMaxVectorTests::UMAXReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void UMAXReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = UMAX_IDENTITY;
+
+        Assert.assertEquals((int) VectorMath.maxUnsigned(id, id), id,
+                            "UMAX(UMAX_IDENTITY, UMAX_IDENTITY) != UMAX_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) VectorMath.maxUnsigned(id, x), x,
+                                "UMAX(UMAX_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) VectorMath.maxUnsigned(x, id), x,
+                                "UMAX(" + x + ", UMAX_IDENTITY) != " + x);
+        }
     }
 
     static int UMAXReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -4356,8 +4535,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = UMAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.UMAX, vmask);
-                ra = (int) VectorMath.maxUnsigned(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.UMAX, vmask);
+                r[i] = v;
+                ra = (int) VectorMath.maxUnsigned(ra, v);
             }
         }
 
@@ -4393,13 +4573,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
-                ra = firstNonZero(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.FIRST_NONZERO);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::FIRST_NONZEROReduce, IntMaxVectorTests::FIRST_NONZEROReduceAll);
+    }
+
+    @Test(dataProvider = "intUnaryOpProvider")
+    static void FIRST_NONZEROReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = FIRST_NONZERO_IDENTITY;
+
+        Assert.assertEquals(firstNonZero(id, id), id,
+                            "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals(firstNonZero(id, x), x,
+                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals(firstNonZero(x, id), x,
+                                "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
+        }
     }
 
     static int FIRST_NONZEROReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -4433,8 +4632,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
-                ra = firstNonZero(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
@@ -4518,13 +4718,32 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = SUADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.SUADD);
-                ra = (int) VectorMath.addSaturatingUnsigned(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.SUADD);
+                r[i] = v;
+                ra = (int) VectorMath.addSaturatingUnsigned(ra, v);
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
                 IntMaxVectorTests::SUADDReduce, IntMaxVectorTests::SUADDReduceAll);
+    }
+
+    @Test(dataProvider = "intSaturatingUnaryOpProvider")
+    static void SUADDReduceIdentityValueTests(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        int id = SUADD_IDENTITY;
+
+        Assert.assertEquals((int) VectorMath.addSaturatingUnsigned(id, id), id,
+                            "SUADD(SUADD_IDENTITY, SUADD_IDENTITY) != SUADD_IDENTITY");
+
+        for (int i = 0; i < a.length; i++) {
+            int x = a[i];
+            Assert.assertEquals((int) VectorMath.addSaturatingUnsigned(id, x), x,
+                                "SUADD(SUADD_IDENTITY, " + x + ") != " + x);
+
+            Assert.assertEquals((int) VectorMath.addSaturatingUnsigned(x, id), x,
+                                "SUADD(" + x + ", SUADD_IDENTITY) != " + x);
+        }
     }
 
     static int SUADDReduceMasked(int[] a, int idx, boolean[] mask) {
@@ -4557,8 +4776,9 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             ra = SUADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.SUADD, vmask);
-                ra = (int) VectorMath.addSaturatingUnsigned(ra, r[i]);
+                int v = av.reduceLanes(VectorOperators.SUADD, vmask);
+                r[i] = v;
+                ra = (int) VectorMath.addSaturatingUnsigned(ra, v);
             }
         }
 
@@ -6514,93 +6734,6 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             }
         }
         assertArraysEquals(r, a, LONG_MASK_BITS);
-    }
-
-    @Test(dataProvider = "intUnaryOpProvider")
-    static void testIdentityValues(IntFunction<int[]> fa) {
-        int[] a = fa.apply(SPECIES.length());
-
-        for (int i = 0; i < a.length; i++) {
-            int x = a[i];
-
-            // ADD identity: 0 + x == x
-            Assert.assertEquals((int)(ADD_IDENTITY + x), x,
-                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
-
-            // AND identity: -1 & x == x
-            Assert.assertEquals((int)(AND_IDENTITY & x), x,
-                                "AND(AND_IDENTITY, " + x + ") != " + x);
-
-            // FIRST_NONZERO identity: firstNonZero(0, x) == x
-            Assert.assertEquals(firstNonZero(FIRST_NONZERO_IDENTITY, x), x,
-                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
-
-            // MAX identity: max(Integer.MIN_VALUE, x) == x
-            Assert.assertEquals((int) Math.max(MAX_IDENTITY, x), x,
-                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
-
-            // MIN identity: min(Integer.MAX_VALUE, x) == x
-            Assert.assertEquals((int) Math.min(MIN_IDENTITY, x), x,
-                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
-
-            // MUL identity: 1 * x == x
-            Assert.assertEquals((int)(MUL_IDENTITY * x), x,
-                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
-
-            // OR identity: 0 | x == x
-            Assert.assertEquals((int)(OR_IDENTITY | x), x,
-                                "OR(OR_IDENTITY, " + x + ") != " + x);
-
-            // SUADD identity: addSaturatingUnsigned(0, x) == x
-            Assert.assertEquals((int) VectorMath.addSaturatingUnsigned(SUADD_IDENTITY, x), x,
-                                "SUADD(SUADD_IDENTITY, " + x + ") != " + x);
-
-            // UMAX identity: maxUnsigned(0, x) == x
-            Assert.assertEquals((int) VectorMath.maxUnsigned(UMAX_IDENTITY, x), x,
-                                "UMAX(UMAX_IDENTITY, " + x + ") != " + x);
-
-            // UMIN identity: minUnsigned(-1, x) == x
-            Assert.assertEquals((int) VectorMath.minUnsigned(UMIN_IDENTITY, x), x,
-                                "UMIN(UMIN_IDENTITY, " + x + ") != " + x);
-
-            // XOR identity: 0 ^ x == x
-            Assert.assertEquals((int)(XOR_IDENTITY ^ x), x,
-                                "XOR(XOR_IDENTITY, " + x + ") != " + x);
-        }
-    }
-
-    @Test(dataProvider = "intUnaryOpProvider")
-    static void testMaskedReductionIdentityAllFalse(IntFunction<int[]> fa) {
-        int[] a = fa.apply(SPECIES.length());
-        VectorMask<Integer> allFalseMask = SPECIES.maskAll(false);
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            IntVector av = IntVector.fromArray(SPECIES, a, i);
-
-            // When mask is all false, reduction should return identity value
-            Assert.assertEquals(av.reduceLanes(VectorOperators.ADD, allFalseMask), ADD_IDENTITY,
-                                "ADD with all-false mask should return ADD_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.AND, allFalseMask), AND_IDENTITY,
-                                "AND with all-false mask should return AND_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.FIRST_NONZERO, allFalseMask), FIRST_NONZERO_IDENTITY,
-                                "FIRST_NONZERO with all-false mask should return FIRST_NONZERO_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.MAX, allFalseMask), MAX_IDENTITY,
-                                "MAX with all-false mask should return MAX_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.MIN, allFalseMask), MIN_IDENTITY,
-                                "MIN with all-false mask should return MIN_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.MUL, allFalseMask), MUL_IDENTITY,
-                                "MUL with all-false mask should return MUL_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.OR, allFalseMask), OR_IDENTITY,
-                                "OR with all-false mask should return OR_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.SUADD, allFalseMask), SUADD_IDENTITY,
-                                "SUADD with all-false mask should return SUADD_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.UMAX, allFalseMask), UMAX_IDENTITY,
-                                "UMAX with all-false mask should return UMAX_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.UMIN, allFalseMask), UMIN_IDENTITY,
-                                "UMIN with all-false mask should return UMIN_IDENTITY");
-            Assert.assertEquals(av.reduceLanes(VectorOperators.XOR, allFalseMask), XOR_IDENTITY,
-                                "XOR with all-false mask should return XOR_IDENTITY");
-        }
     }
 
     @Test(dataProvider = "intCompareOpProvider")

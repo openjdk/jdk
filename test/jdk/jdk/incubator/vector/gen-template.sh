@@ -638,9 +638,6 @@ gen_op_tmpl $bool_binary_template "eq" "a == b"
 gen_op_tmpl $bool_unary_template "not" "!a"
 gen_op_tmpl $mask_fromtolong_template "FromToLong" ""
 
-# Identity value tests
-gen_op_tmpl "Identity-test" "Identity" "" ""
-
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""
 

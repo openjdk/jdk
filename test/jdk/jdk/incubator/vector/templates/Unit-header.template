@@ -86,16 +86,16 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #end[MaxBit]
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
-
 #if[MaxBit]
+
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
     }
 
     private static final int Max = 256;  // juts so we can do N/$bits$
 #end[MaxBit]
-
 #if[BITWISE]
+
     private static final $type$ CONST_SHIFT = $Boxtype$.SIZE / 2;
 #end[BITWISE]
 
@@ -116,6 +116,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
     private static final $type$ XOR_IDENTITY = ($type$)0;
 #end[BITWISE]
 #if[FP]
+
     // for floating point addition reduction ops that may introduce rounding errors
     private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_ADD = ($type$)10.0;
 
