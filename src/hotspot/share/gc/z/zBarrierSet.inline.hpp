@@ -331,6 +331,8 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline OopCopyResult ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_copy_one(zpointer* dst, zpointer* src) {
   const zaddress obj = oop_copy_one_barriers(dst, src);
 
+  // Future location for null-restriction check and failure reporting
+
   AtomicAccess::store(dst, ZAddress::store_good(obj));
 
   return OopCopyResult::ok;
