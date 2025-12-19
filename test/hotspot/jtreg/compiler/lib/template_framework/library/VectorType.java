@@ -153,6 +153,8 @@ public abstract class VectorType implements CodeGenerationDataNameType {
         @Override
         public final Object con() {
             // TODO: more options?
+            // fromArray
+            // fromValues
             return List.of("VectorMask.fromLong(", vectorType.speciesName, ", ",
                            CodeGenerationDataNameType.longs().con(), ")");
         }
@@ -169,6 +171,10 @@ public abstract class VectorType implements CodeGenerationDataNameType {
         @Override
         public final Object con() {
             // TODO: more options?
+            // fromArray
+            // fromOp
+            // fromValues
+            // makeZip / makeUnzip
             return List.of("VectorShuffle.iota(", vectorType.speciesName, ", ",
                            CodeGenerationDataNameType.ints().con(), ", ",
                            CodeGenerationDataNameType.ints().con(), ", true)");
