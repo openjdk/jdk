@@ -1979,10 +1979,12 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
   assert(!UseCompactObjectHeaders || tkls->offset() != in_bytes(Klass::prototype_header_offset()),
          "must not happen");
-  if (tkls->offset() == in_bytes(Klass::access_flags_offset())) {
-    // The field is Klass::_access_flags.  Return its (constant) value.
+
+  if (tkls->isa_instklassptr() && tkls->offset() == in_bytes(InstanceKlass::access_flags_offset())) {
+    // The field is InstanceKlass::_access_flags.  Return its (constant) value.
     assert(Opcode() == Op_LoadUS, "must load an unsigned short from _access_flags");
-    return TypeInt::make(klass->access_flags());
+    ciInstanceKlass* iklass = tkls->is_instklassptr()->instance_klass();
+    return TypeInt::make(iklass->access_flags());
   }
   if (tkls->offset() == in_bytes(Klass::misc_flags_offset())) {
     // The field is Klass::_misc_flags.  Return its (constant) value.
@@ -3101,7 +3103,7 @@ MergePrimitiveStores::CFGStatus MergePrimitiveStores::cfg_status_for_pair(const 
       ctrl_use->in(0)->outcnt() != 2) {
     return CFGStatus::Failure; // Not RangeCheck.
   }
-  ProjNode* other_proj = ctrl_use->as_IfProj()->other_if_proj();
+  IfProjNode* other_proj = ctrl_use->as_IfProj()->other_if_proj();
   Node* trap = other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check);
   if (trap != merge_mem->unique_out() ||
       ctrl_use->in(0)->in(0) != ctrl_def) {

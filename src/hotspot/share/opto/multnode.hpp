@@ -200,9 +200,6 @@ public:
   //                                             other_proj->[region->..]call_uct"
   // null otherwise
   CallStaticJavaNode* is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
-
-  // Return other proj node when this is a If proj node
-  ProjNode* other_if_proj() const;
 };
 
 // A ProjNode variant that captures an adr_type(). Used as a projection of InitializeNode to have the right adr_type()

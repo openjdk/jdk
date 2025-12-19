@@ -307,12 +307,12 @@ public final class BasicTest {
     @Test
     @Parameter("true")
     @Parameter("false")
-    public void testNoOutputDir(boolean appImage) throws Throwable {
+    public void testNoOutputDir(boolean appImage) throws IOException {
         var cmd = JPackageCommand.helloAppImage();
 
         final var execDir = cmd.outputDir();
 
-        final ThrowingConsumer<JPackageCommand> initializer = cmdNoOutputDir -> {
+        final ThrowingConsumer<JPackageCommand, IOException> initializer = cmdNoOutputDir -> {
             cmd.executePrerequisiteActions();
 
             final var pkgType = cmdNoOutputDir.packageType();
