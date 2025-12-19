@@ -36,7 +36,6 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
