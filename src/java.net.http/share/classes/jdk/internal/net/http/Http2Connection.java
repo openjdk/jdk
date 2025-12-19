@@ -1464,19 +1464,24 @@ class Http2Connection implements Closeable {
 
         final AtomicInteger numUnprocessed = new AtomicInteger();
 
-        streams.forEach((id, stream) -> {
-            if (id > lastProcessedStream) {
-                stream.closeAsUnprocessed();
-                numUnprocessed.incrementAndGet();
+        stateLock.lock();
+        try {
+            streams.forEach((id, stream) -> {
+                if (id > lastProcessedStream) {
+                    stream.closeAsUnprocessed();
+                    numUnprocessed.incrementAndGet();
+                }
+            });
+
+            if (debug.on()) {
+                debug.log("%d stream(s) marked as unprocessed, processed streams will be closed by termination",
+                        numUnprocessed.get());
             }
-        });
 
-        if (debug.on()) {
-            debug.log("%d stream(s) marked as unprocessed, processed streams will be closed by termination",
-                    numUnprocessed.get());
+            close(cause);
+        } finally {
+            stateLock.unlock();
         }
-
-        close(cause);
     }
 
     /**
