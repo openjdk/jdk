@@ -2544,15 +2544,14 @@ static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
 
 void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register rval, Register rtmp) {
   assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
-  if (t == TypeInt::INT) {
-    return;
-  }
-  BLOCK_COMMENT("verify_int_in_range {");
-  Label L_success, L_failure;
-
   jint lo = t->_lo;
   jint hi = t->_hi;
+  if (lo == min_jint && hi == max_jint) {
+    return;
+  }
 
+  BLOCK_COMMENT("verify_int_in_range {");
+  Label L_success, L_failure;
   if (lo != min_jint && hi != max_jint) {
     subsw(rtmp, rval, lo);
     br(Assembler::LT, L_failure);
@@ -2587,15 +2586,14 @@ static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) 
 
 void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register rval, Register rtmp) {
   assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
-  if (t == TypeLong::LONG) {
-    return;
-  }
-  BLOCK_COMMENT("verify_long_in_range {");
-  Label L_success, L_failure;
-
   jlong lo = t->_lo;
   jlong hi = t->_hi;
+  if (lo == min_jlong && hi == max_jlong) {
+    return;
+  }
 
+  BLOCK_COMMENT("verify_long_in_range {");
+  Label L_success, L_failure;
   if (lo != min_jlong && hi != max_jlong) {
     subs(rtmp, rval, lo);
     br(Assembler::LT, L_failure);

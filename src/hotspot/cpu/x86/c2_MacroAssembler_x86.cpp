@@ -610,7 +610,7 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   jint lo = t->_lo;
   jint hi = t->_hi;
   assert(lo < hi, "type should not be empty or constant, idx: %u, lo: %d, hi: %d", idx, lo, hi);
-  if (t == TypeInt::INT) {
+  if (lo == min_jint && hi == max_jint) {
     return;
   }
 
@@ -649,7 +649,7 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
   jlong lo = t->_lo;
   jlong hi = t->_hi;
   assert(lo < hi, "type should not be empty or constant, idx: %u, lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, lo, hi);
-  if (t == TypeLong::LONG) {
+  if (lo == min_jlong && hi == max_jlong) {
     return;
   }
 
