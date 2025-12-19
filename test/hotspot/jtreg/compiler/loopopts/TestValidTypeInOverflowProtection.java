@@ -25,7 +25,6 @@
  * @test
  * @bug 8373525
  * @summary Test for the check of a valid type (long) for the input variable of overflow protection
- * @requires vm.debug == true & vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.loopopts.TestValidTypeInOverflowProtection::test
  *                   compiler.loopopts.TestValidTypeInOverflowProtection
  * @run driver compiler.loopopts.TestValidTypeInOverflowProtection
