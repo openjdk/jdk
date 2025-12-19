@@ -39,10 +39,10 @@ import java.nio.file.Path;
  * @requires os.family == "linux"
  * @modules java.base/java.io:+open
  * @library /test/lib
- * @run main ConfigFileTestAnonymousPipes
+ * @run main LinuxAnonymousFiles
  */
 
-public class ConfigFileTestAnonymousPipes {
+public class LinuxAnonymousFiles {
     private static final String TEST_PROP = "property.name=PROPERTY_VALUE";
 
     private static final class AnonymousFile implements AutoCloseable {

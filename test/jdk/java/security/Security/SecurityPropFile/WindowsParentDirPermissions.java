@@ -40,10 +40,10 @@ import java.util.List;
  * @bug 8352728
  * @requires os.family == "windows"
  * @library /test/lib
- * @run main ConfigFileTestDirPermissions
+ * @run main WindowsParentDirPermissions
  */
 
-public class ConfigFileTestDirPermissions {
+public class WindowsParentDirPermissions {
     private static AutoCloseable restrictedAcl(Path path) throws IOException {
         AclFileAttributeView view =
                 Files.getFileAttributeView(path, AclFileAttributeView.class);

@@ -65,10 +65,10 @@ import java.util.stream.Stream;
  * @bug 8155246 8292297 8292177 8281658 8319332
  * @modules java.base/sun.net.www
  * @library /test/lib
- * @run main ConfigFileTest
+ * @run main ExtraFileAndIncludes
  */
 
-public class ConfigFileTest {
+public class ExtraFileAndIncludes {
     static final String SEPARATOR_THIN = "----------------------------";
 
     private static void printTestHeader(String testName) {
@@ -91,7 +91,8 @@ public class ConfigFileTest {
         } else {
             // Executed by the test JVM.
             try (FilesManager filesMgr = new FilesManager()) {
-                for (Method m : ConfigFileTest.class.getDeclaredMethods()) {
+                for (Method m :
+                        ExtraFileAndIncludes.class.getDeclaredMethods()) {
                     if (m.getName().startsWith("test")) {
                         printTestHeader(m.getName());
                         Executor.run(m, filesMgr);
@@ -606,8 +607,8 @@ final class ExtraPropsFile extends PropsFile {
 }
 
 final class FilesManager implements Closeable {
-    private static final Path ROOT_DIR =
-            Path.of(ConfigFileTest.class.getSimpleName()).toAbsolutePath();
+    private static final Path ROOT_DIR = Path.of(
+            ExtraFileAndIncludes.class.getSimpleName()).toAbsolutePath();
     private static final Path PROPS_DIR = ROOT_DIR.resolve("properties");
     private static final Path JDK_DIR = ROOT_DIR.resolve("jdk");
     private static final Path MASTER_FILE =
@@ -706,11 +707,11 @@ final class FilesManager implements Closeable {
         propsFile.addComment("Property to determine if this properties file " +
                 "was parsed and not overwritten:");
         propsFile.addRawProperty(fileName, APPLIED_PROP_VALUE);
-        propsFile.addComment(ConfigFileTest.SEPARATOR_THIN);
+        propsFile.addComment(ExtraFileAndIncludes.SEPARATOR_THIN);
         propsFile.addComment("Property to be overwritten by every properties " +
                 "file (master, extra or included):");
         propsFile.addRawProperty(LAST_FILE_PROP_NAME, fileName);
-        propsFile.addComment(ConfigFileTest.SEPARATOR_THIN);
+        propsFile.addComment(ExtraFileAndIncludes.SEPARATOR_THIN);
         createdFiles.add(propsFile);
         return propsFile;
     }
@@ -742,7 +743,7 @@ final class FilesManager implements Closeable {
         for (PropsFile propsFile : createdFiles) {
             System.err.println();
             System.err.println(propsFile.path.toString());
-            System.err.println(ConfigFileTest.SEPARATOR_THIN.repeat(3));
+            System.err.println(ExtraFileAndIncludes.SEPARATOR_THIN.repeat(3));
             try (Stream<String> lines = Files.lines(propsFile.path)) {
                 long lineNumber = 1L;
                 Iterator<String> it = lines.iterator();
@@ -850,7 +851,7 @@ final class Executor {
         List<String> command = new ArrayList<>(jvmArgs);
         Collections.addAll(command, Utils.getTestJavaOpts());
         addSystemPropertiesAsJvmArgs(command);
-        command.add(ConfigFileTest.class.getSimpleName());
+        command.add(ExtraFileAndIncludes.class.getSimpleName());
         command.add(RUNNER_ARG);
         oa = ProcessTools.executeProcess(new ProcessBuilder(command));
         oa.shouldHaveExitValue(successExpected ? 0 : 1);
