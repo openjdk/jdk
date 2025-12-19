@@ -35,7 +35,7 @@
  * @run main/othervm -XX:-UseGCOverheadLimit
  *      nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001.CollectionCounters001
  *      -testMode=directly
- *      -iterations 5
+ *      -iterations=5
  */
 
 package nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001;
