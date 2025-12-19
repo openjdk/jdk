@@ -24,6 +24,7 @@
 package compiler.lib.template_framework.library;
 
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
@@ -120,8 +121,20 @@ public abstract class VectorType implements CodeGenerationDataNameType {
         @Override
         public final Object con() {
             int r = RANDOM.nextInt(64);
-            if (r == 0) { return name() + ".zero(" + speciesName + ")"; }
-            return List.of(name(), ".broadcast(", speciesName, ", ", elementType.con(), ")");
+            if (r == 0) {
+                return List.of(name(), ".zero(", speciesName, ")");
+            } else if (r <= 8) {
+                return List.of(
+                    name(), ".fromArray(", speciesName, ", new ", elementType.name(), "[] {",
+                    elementType.con(),
+                    Stream.generate(() ->
+                        List.of(", ", elementType.con())
+                    ).limit(length - 1).toList(),
+                    "}, 0)"
+                );
+            } else {
+                return List.of(name(), ".broadcast(", speciesName, ", ", elementType.con(), ")");
+            }
         }
 
         public int byteSize() {
