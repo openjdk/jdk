@@ -866,6 +866,14 @@ public final class CommandOutputControl {
             return this;
         }
 
+        public UnexpectedResultException unexpected() {
+            return new UnexpectedResultException(this);
+        }
+
+        public UnexpectedResultException toUnexpectedResultException(String message) {
+            return new UnexpectedResultException(this, message);
+        }
+
         public Optional<List<String>> findContent() {
             return output.flatMap(CommandOutput::combined);
         }
@@ -975,12 +983,12 @@ public final class CommandOutputControl {
 
     public static sealed class UnexpectedResultException extends IOException {
 
-        public UnexpectedResultException(Result value, String message) {
+        private UnexpectedResultException(Result value, String message) {
             super(Objects.requireNonNull(message));
             this.value = Objects.requireNonNull(value);
         }
 
-        public UnexpectedResultException(Result value) {
+        private UnexpectedResultException(Result value) {
             this(value, String.format("Unexpected result from executing the command %s", value.execSpec()));
         }
 
