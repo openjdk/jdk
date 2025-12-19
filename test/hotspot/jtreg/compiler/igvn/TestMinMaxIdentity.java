@@ -26,7 +26,6 @@
  * @bug 8354244
  * @summary Verify that min/max add identity optimizations get applied correctly
  * @modules java.base/jdk.internal.misc
- *          jdk.incubator.vector
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
@@ -57,9 +56,12 @@ public class TestMinMaxIdentity {
         comp.addJavaSourceCode("compiler.igvn.templated.MinMaxIdentity", generate(comp));
 
         // Compile the source file.
-        comp.compile();
+        comp.compile("--add-modules=jdk.incubator.vector");
 
-        comp.invoke("compiler.igvn.templated.MinMaxIdentity", "main", new Object[] {new String[] {}});
+        comp.invoke("compiler.igvn.templated.MinMaxIdentity", "main", new Object[] {new String[] {
+            "--add-modules=jdk.incubator.vector",
+            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
+        }});
     }
 
     private static String generate(CompileFramework comp) {
