@@ -39,5 +39,3 @@
 # More than one label is allowed but must be on the same line.
 #
 #############################################################################
-
-jdk/javadoc/doccheck/checks/jdkCheckLinks.java 8370249 generic-all

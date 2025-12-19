@@ -344,10 +344,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             }
         }
         failHandshakeCFs();
-        // remap the connection to a draining connection
-        final QuicEndpoint endpoint = this.connection.endpoint();
-        assert endpoint != null : "QUIC endpoint is null";
-        endpoint.draining(connection);
         discardConnectionState();
         connection.streams.terminate(terminationCause);
         if (Log.quic()) {
@@ -439,7 +435,7 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         final ProtectionRecord protectionRecord = ProtectionRecord.single(packet,
                 connection::allocateDatagramForEncryption);
         // while sending the packet containing the CONNECTION_CLOSE frame, the pushDatagram will
-        // remap (or remove) the QuicConnectionImpl in QuicEndpoint.
+        // remap the QuicConnectionImpl in QuicEndpoint.
         connection.pushDatagram(protectionRecord);
     }
 

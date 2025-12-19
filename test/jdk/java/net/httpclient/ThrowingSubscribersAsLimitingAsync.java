@@ -35,15 +35,17 @@
  *        ReferenceTracker
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.internal.httpclient.debug=true ThrowingSubscribersAsLimitingAsync
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ThrowingSubscribersAsLimitingAsync
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ThrowingSubscribersAsLimitingAsync extends ThrowingSubscribersAsLimiting {
 
     @Override
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void test(String uri, boolean sameClient, Thrower thrower) throws Exception {
         test(uri, sameClient, thrower, true);
     }

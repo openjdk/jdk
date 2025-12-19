@@ -283,6 +283,8 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.13 (VS2022)"
       #elif _MSC_VER == 1944
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.14 (VS2022)"
+      #elif _MSC_VER == 1950
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 18.0 (VS2026)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif

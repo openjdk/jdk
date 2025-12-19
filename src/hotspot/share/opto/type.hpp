@@ -798,6 +798,7 @@ public:
   // must always specify w
   static const TypeInt* make(jint lo, jint hi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jint, juint>& t, int widen);
+  static const TypeInt* make(const TypeIntPrototype<jint, juint>& t, int widen) { return make_or_top(t, widen)->is_int(); }
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
@@ -879,6 +880,7 @@ public:
   // must always specify w
   static const TypeLong* make(jlong lo, jlong hi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen);
+  static const TypeLong* make(const TypeIntPrototype<jlong, julong>& t, int widen) { return make_or_top(t, widen)->is_long(); }
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
