@@ -116,7 +116,7 @@ public class TestVectorTypes {
             );
         });
 
-        for (var type : CodeGenerationDataNameType.VECTOR_ALL_VECTOR_TYPES) {
+        for (var type : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
             tests.add(vectorTemplate.asToken(type));
         }
 
