@@ -663,10 +663,6 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
-  if (t2 == TypeInt::ZERO) {
-    return Type::TOP;
-  }
-  
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
     return TypeInt::ONE;
@@ -738,10 +734,6 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
 
   if (t2 == TypeLong::ZERO) {
     // this division will always throw an exception
-    return Type::TOP;
-  }
-
-  if (t2 == TypeLong::ZERO) {
     return Type::TOP;
   }
 

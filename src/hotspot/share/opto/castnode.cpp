@@ -28,6 +28,7 @@
 
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/phaseX.hpp"
@@ -107,8 +108,15 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
 }
 
 Node* ConstraintCastNode::uncasted_adds_or_subs(Node* n, PhaseGVN *phase) {
+  auto node_of_interest = [&](Node* n) {
+    int op = n->Opcode();
+    return (op == Op_AddI || op == Op_SubI ||
+            op == Op_AddL || op == Op_SubL ||
+            op == Op_ConvI2L || op == Op_AddP);
+  };
+
   Node* uncasted = n->uncast();
-  if (uncasted->Opcode() != Op_AddI && uncasted->Opcode() != Op_SubI) {
+  if (!node_of_interest(uncasted)) {
     return uncasted;
   }
   ResourceMark rm;
@@ -117,7 +125,7 @@ Node* ConstraintCastNode::uncasted_adds_or_subs(Node* n, PhaseGVN *phase) {
   stack.push(uncasted, 0);
   do {
     Node* m = stack.node();
-    assert(m->Opcode() == Op_AddI || m->Opcode() == Op_SubI, "");
+    assert(node_of_interest(m), "");
     uint i = stack.index();
     if (i >= m->req()) {
       Node* clone = m;
@@ -147,7 +155,7 @@ Node* ConstraintCastNode::uncasted_adds_or_subs(Node* n, PhaseGVN *phase) {
       Node* in = m->in(i);
       if (in != nullptr) {
         Node* uncasted_in = in->uncast();
-        if (uncasted_in->Opcode() == Op_AddI || uncasted_in->Opcode() == Op_SubI) {
+        if (node_of_interest(uncasted_in)) {
           stack.push(uncasted_in, 0);
         }
       }
@@ -253,25 +261,25 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                       BasicType bt = elem_t->array_element_basic_type();
                       uint shift  = exact_log2(type2aelembytes(bt));
                       uint header = arrayOopDesc::base_offset_in_bytes(bt);
-                      assert(clones.size() > 0, "");
-                      jlong con = phase->type(clones.at(0)->in(AddPNode::Offset))->is_intptr_t()->get_con();
-                      if (con == header) {
-                        Node* index = nullptr;
-                        if (clones.size() > 1) {
-                          Node* offset = clones.at(1)->in(AddPNode::Offset);
-                          Node* unshifted_offset = nullptr;
-                          if (shift == 0) {
-                            unshifted_offset = offset;
-                          } else if (offset->Opcode() == Op_LShiftX && offset->in(2)->find_int_con(-1) == (int)shift) {
-                            unshifted_offset = offset->in(1);
-                          }
-                          if (unshifted_offset != nullptr && unshifted_offset->Opcode() == Op_ConvI2L) {
-                            index = unshifted_offset->in(1);
-                            if (index->uncast() == cmpu->in(1)) {
-                              safe_mem_access = true;
-                            }
-                          }
-                        }
+                      Node* addp1 = phase->transform(new AddPNode(base, base, phase->MakeConX(header)));
+                      Node* idx = Compile::conv_I2X_index(phase, cmpu->in(1), addr_t->is_aryptr()->size(), mem_ctrl);
+                      Node* scale = phase->transform( new LShiftXNode(idx, phase->intcon(shift)));
+                      Node* addp2 = phase->transform(new AddPNode(base, addp1, scale));
+                      Node* uncasted_addp2 = uncasted_adds_or_subs(addp2, phase);
+                      Node* uncasted_addr = uncasted_adds_or_subs(use->in(MemNode::Address), phase);
+
+                      if (uncasted_addr == uncasted_addp2) {
+                        safe_mem_access = true;
+                      }
+
+                      if (uncasted_addp2->outcnt() == 0) {
+                        igvn->remove_dead_node(uncasted_addp2);
+                      }
+                      if (uncasted_addr->outcnt() == 0) {
+                        igvn->remove_dead_node(uncasted_addr);
+                      }
+                      if (addp2->outcnt() == 0) {
+                        igvn->remove_dead_node(addp2);
                       }
                     }
                   }
@@ -280,6 +288,41 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   }
                   if (uncasted_cmpu_in2->outcnt() == 0) {
                     igvn->remove_dead_node(uncasted_cmpu_in2);
+                  }
+                    }
+                if (!safe_mem_access) {
+                  if (clones.size() <= 2) {
+                    assert(clones.at(0) == stack.node_at(stack.size()-1), "");
+                    assert(clones.size() == 2 && clones.at(1) == stack.node_at(stack.size()-2), "");
+                    Node* prev_before = this;
+                    Node* prev_after = in(1);
+                    for (uint i = 1; i < stack.size() - clones.size(); ++i) {
+                      Node* n = stack.node_at(i);
+                      Node* clone = n->clone();
+                      int nb = clone->replace_edge(prev_before, prev_after);
+                      assert(nb > 0, "");
+                      prev_before = n;
+                      prev_after = phase->transform(clone);
+                    }
+                    Node* offset = phase->transform(new AddXNode(prev_after, clones.at(0)->in(AddPNode::Offset)));
+                    const Type* elem_t = addr_t->make_oopptr()->is_aryptr()->elem();
+                    assert(elem_t != Type::BOTTOM, "");
+                    BasicType bt = elem_t->array_element_basic_type();
+                    uint shift  = exact_log2(type2aelembytes(bt));
+                    uint header = arrayOopDesc::base_offset_in_bytes(bt);
+                    offset = phase->transform(new SubXNode(offset, phase->MakeConX(header)));
+                    Node* range_addr = phase->transform(new AddPNode(base, base, phase->MakeConX( arrayOopDesc::length_offset_in_bytes())));
+                    Node* range = phase->transform(new LoadRangeNode(nullptr, phase->C->immutable_memory(), range_addr));
+                    range = phase->transform(new ConvI2LNode(range));
+                    range = phase->transform(new LShiftLNode(range, phase->intcon(shift)));
+                    Node* cmp = phase->transform(new CmpULNode(offset, range));
+                    if (phase->type(cmp) == TypeInt::CC_LT) {
+                      safe_mem_access = true;
+                    } else {
+                      if (cmp->outcnt() == 0) {
+                        igvn->remove_dead_node(cmp);
+                      }
+                    }
                   }
                 }
                 if (safe_mem_access) {
