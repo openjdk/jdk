@@ -539,7 +539,6 @@ static SpecialFlag const special_jvm_flags[] = {
 #endif
   { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
@@ -553,6 +552,8 @@ static SpecialFlag const special_jvm_flags[] = {
 #if defined(AARCH64)
   { "NearCpool",                    JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 #endif
+
+  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1089,6 +1090,13 @@ void Arguments::print_summary_on(outputStream* st) {
     st->print("%s", java_command());
   }
   st->cr();
+}
+
+void Arguments::set_jvm_flags_file(const char *value) {
+  if (_jvm_flags_file != nullptr) {
+    os::free(_jvm_flags_file);
+  }
+  _jvm_flags_file = os::strdup_check_oom(value);
 }
 
 void Arguments::print_jvm_flags_on(outputStream* st) {
@@ -2841,6 +2849,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
   fix_appclasspath();
 
   return JNI_OK;
+}
+
+void Arguments::set_ext_dirs(char *value) {
+  _ext_dirs = os::strdup_check_oom(value);
 }
 
 void Arguments::add_patch_mod_prefix(const char* module_name, const char* path) {
