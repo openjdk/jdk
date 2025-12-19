@@ -61,6 +61,10 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
 
 void ShenandoahGenerationalControlThread::run_service() {
 
+  // This is the only instance of request. It is important that request.generation
+  // does not change between a concurrent cycle failure and the start of a degenerated
+  // cycle. We initialize it with the young generation to handle the pathological case
+  // where the very first cycle is degenerated (some tests exercise this path).
   ShenandoahGCRequest request;
   request.generation = _heap->young_generation();
   while (!should_terminate()) {
@@ -703,6 +707,8 @@ void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause c
 void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation) {
   assert(_control_lock.is_locked(), "Request lock must be held here");
   if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+    // We have already observed a request to handle an allocation failure. We cannot allow
+    // another request (System.gc or regulator) to subvert the degenerated cycle.
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
   } else {
     log_debug(gc, thread)("Notify control (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(cause), generation->name());
@@ -720,6 +726,8 @@ void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause c
 void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause) {
   assert(_control_lock.is_locked(), "Request lock must be held here");
   if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+    // We have already observed a request to handle an allocation failure. We cannot allow
+    // another request (System.gc or regulator) to subvert the degenerated cycle.
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
   } else {
     log_debug(gc, thread)("Notify control (%s): %s", gc_mode_name(gc_mode()), GCCause::to_string(cause));
