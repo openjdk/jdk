@@ -62,7 +62,7 @@ import java.util.stream.Stream;
  * @test
  * @summary Tests security properties passed through java.security,
  *   java.security.properties or included from other properties files.
- * @bug 8155246 8292297 8292177 8281658 8319332
+ * @bug 4303068 8155246 8292297 8292177 8281658 8319332
  * @modules java.base/sun.net.www
  * @library /test/lib
  * @run main ExtraFileAndIncludes
