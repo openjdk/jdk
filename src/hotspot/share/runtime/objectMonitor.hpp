@@ -352,14 +352,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(TRAPS);
 
- private:
-   class ClearSuccOnSuspend {
-   protected:
-     ObjectMonitor* _om;
-   public:
-     ClearSuccOnSuspend(ObjectMonitor* om) : _om(om) {}
-     void operator()(JavaThread* current);
-   };
   class ExitOnSuspend {
    protected:
     ObjectMonitor* _om;
