@@ -84,12 +84,7 @@ public final class MacHelper {
         // Mount DMG under random temporary folder to avoid collisions when
         // mounting DMG with same name asynchroniusly multiple times.
         // See JDK-8373105. "hdiutil" does not handle such cases very good.
-        final Path mountRoot;
-        try {
-            mountRoot = Files.createTempDirectory("mountRoot");
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        final var mountRoot = TKit.createTempDirectory("mountRoot");
 
         // Explode DMG assuming this can require interaction, thus use `yes`.
         String attachCMD[] = {
@@ -173,7 +168,6 @@ public final class MacHelper {
                     }
                 }
             }
-            TKit.deleteDirectoryRecursive(mountRoot, "");
         }
     }
 
