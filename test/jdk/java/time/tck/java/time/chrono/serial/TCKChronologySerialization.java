@@ -73,7 +73,7 @@ import tck.java.time.AbstractTCKTest;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKChronologySerialization extends AbstractTCKTest {
 
-    static final int CHRONO_TYPE = 1;            // java.time.chrono.Ser.CHRONO_TYPE// java.time.chrono.Ser.CHRONO_TYPE
+    static final int CHRONO_TYPE = 1;            // java.time.chrono.Ser.CHRONO_TYPE
 
     //-----------------------------------------------------------------------
     // Regular data factory for available calendars

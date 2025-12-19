@@ -86,7 +86,7 @@ public class TCKChronoLocalDateSerialization extends AbstractTCKTest {
     static final int JAPANESE_DATE_TYPE = 4;     // java.time.chrono.Ser.JAPANESE_DATE_TYPE
     static final int HIJRAH_DATE_TYPE = 6;       // java.time.chrono.Ser.HIJRAH_DATE_TYPE
     static final int MINGUO_DATE_TYPE = 7;       // java.time.chrono.Ser.MINGUO_DATE_TYPE
-    static final int THAIBUDDHIST_DATE_TYPE = 8; // java.time.chrono.Ser.THAIBUDDHIST_DATE_TYPE// java.time.chrono.Ser.THAIBUDDHIST_DATE_TYPE
+    static final int THAIBUDDHIST_DATE_TYPE = 8; // java.time.chrono.Ser.THAIBUDDHIST_DATE_TYPE
 
     //-----------------------------------------------------------------------
     // Regular data factory for names and descriptions of available calendars

@@ -92,7 +92,7 @@ import tck.java.time.AbstractTCKTest;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKEraSerialization extends AbstractTCKTest {
 
-    static final int JAPANESE_ERA_TYPE = 5;     // java.time.chrono.Ser.JAPANESE_ERA// java.time.chrono.Ser.JAPANESE_ERA
+    static final int JAPANESE_ERA_TYPE = 5;     // java.time.chrono.Ser.JAPANESE_ERA
 
 
     //-----------------------------------------------------------------------
