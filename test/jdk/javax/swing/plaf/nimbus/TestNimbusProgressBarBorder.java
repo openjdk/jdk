@@ -24,82 +24,100 @@
 /*
  * @test
  * @bug 8192888
+ * @key headful
  * @summary Verifies ProgressBar in Synth L&F renders background
  *          when border is not painted
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual TestNimbusProgressBarBorder
+ * @run main TestNimbusProgressBarBorder
  */
+
+import java.io.File;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
+import java.awt.image.BufferedImage;
+import java.awt.Rectangle;
+import java.awt.Robot;
 
-import javax.swing.JCheckBox;
+import javax.imageio.ImageIO;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JSlider;
 import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
 
 public class TestNimbusProgressBarBorder {
 
-    static final String INSTRUCTIONS = """
-        A frame containing progress bar will be shown with 50% value
-        and "ProgressBar setBorder" checkbox at the top
-        and a slider at bottom.
-
-        Please check if 50% progress is rendered in the progress bar
-        and rest 50% is rendered as blank bar
-        with Nimbus default background color which is light gray.
-
-        Please verify if "ProgressBar setBorder" checkbox is unchecked,
-        the 50% blank bar should not disappear.
-        Also, now if you use slider to set progress value to 0%,
-        a blank progress bar with 0% value should be rendered and
-        the progress bar should not disappear.
-        If this verification is met,  press Pass else press Fail.""";
+    private static JFrame frame;
+    private static JProgressBar progressBar;
+    private static boolean failure = true;
+    private static volatile Rectangle rect;
 
     public static void main(String[] args) throws Exception {
-        // Set Nimbus L&F
-        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-        PassFailJFrame.builder()
-                .instructions(INSTRUCTIONS)
-                .columns(35)
-                .testUI(TestNimbusProgressBarBorder::createUI)
-                .build()
-                .awaitAndCheck();
+        int width = 200;
+        int height = 100;
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(() -> {
+                try {
+                    // Set Nimbus L&F
+                    UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                frame = new JFrame("Nimbus JProgressBar Test");
+                frame.setSize(width, height);
+
+                // ProgressBar setup
+                progressBar = new JProgressBar(0, 100);
+                progressBar.setValue(0);
+                progressBar.setBorderPainted(false);
+
+                JPanel center = new JPanel(new GridBagLayout());
+                center.setBackground(Color.WHITE);
+                center.add(progressBar);
+
+                frame.add(center, BorderLayout.CENTER);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+            });
+            robot.waitForIdle();
+            robot.delay(1000);
+            SwingUtilities.invokeAndWait(() -> {
+                rect = progressBar.getBounds();
+            });
+
+            BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = (Graphics2D) img.getGraphics();
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(0, 0, rect.width, rect.height);
+            progressBar.paint(g2d);
+            g2d.dispose();
+
+            robot.waitForIdle();
+            robot.delay(100);
+
+            for (int x = 10; x < (10 + rect.width / 2); x++) {
+                for (int y = 10; y < (10 + rect.height / 2); y++) {
+                    Color col = new Color(img.getRGB(x, y));
+                    if (!col.equals(Color.WHITE)) {
+                        failure = false;
+                        break;
+                    }
+                }
+            }
+            if (failure) {
+                ImageIO.write(img, "png", new File("ProgressBarTest.png"));
+                throw new RuntimeException("ProgressBar background not drawn");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
-
-    static JFrame createUI() {
-        JFrame frame = new JFrame("Synth JProgressBar Test");
-        frame.setSize(400, 200);
-
-        // ProgressBar setup
-        JProgressBar progressBar = new JProgressBar(0, 100);
-        progressBar.setValue(50);
-        progressBar.setStringPainted(true);
-        progressBar.setBorderPainted(true);
-
-        final JCheckBox checkBox = new JCheckBox("ProgressBar setBorder", true);
-        checkBox.addActionListener((e)->{
-            boolean isSelected = checkBox.isSelected();
-            progressBar.setBorderPainted(isSelected);
-            checkBox.setText("ProgressBar setBorder: " + isSelected);
-        });
-
-        JPanel center = new JPanel(new GridBagLayout());
-        center.setBackground(Color.CYAN);
-        center.add(progressBar);
-
-        // Slider to adjust progress bar
-        JSlider slider = new JSlider(0, 100, 50);
-        slider.addChangeListener(e -> progressBar.setValue(slider.getValue()));
-
-        frame.add(checkBox, BorderLayout.NORTH);
-        frame.add(center, BorderLayout.CENTER);
-        frame.add(slider, BorderLayout.SOUTH);
-        return frame;
-    }
-
 }
