@@ -2564,9 +2564,11 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
           int mirror_field = in_bytes(Klass::java_mirror_offset());
           if (tkls->offset() == mirror_field) {
 #ifdef ASSERT
-            const TypeKlassPtr* tkls2 = phase->type(adr2->in(AddPNode::Address))->isa_klassptr();
+            const TypeKlassPtr* tkls2 = phase->type(adr2->in(AddPNode::Address))->is_klassptr();
             assert(tkls2->offset() == 0, "not a load of java_mirror");
 #endif
+            assert(adr2->in(AddPNode::Base)->is_top(), "not an off heap load");
+            assert(adr2->in(AddPNode::Offset)->find_intptr_t_con(-1) == in_bytes(Klass::java_mirror_offset()), "incorrect offset");
             return adr2->in(AddPNode::Address);
           }
         }
