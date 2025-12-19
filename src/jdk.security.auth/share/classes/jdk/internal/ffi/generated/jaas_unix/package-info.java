@@ -35,11 +35,11 @@
  *
  * jextract --target-package jdk.internal.ffi.generated.jaas_unix \
  *    --include-function getgroups \
- * 	  --include-function getpwuid_r \
- * 	  --include-function getuid \
- * 	  --include-function getgid \
- * 	  --include-typedef gid_t \
- * 	  --include-struct passwd \
+ *    --include-function getpwuid_r \
+ *    --include-function getuid \
+ *    --include-function getgid \
+ *    --include-typedef gid_t \
+ *    --include-struct passwd \
  *    $HEADER_NAME
  * }
  * The classes in this package were generated on macOS. The result is mostly
