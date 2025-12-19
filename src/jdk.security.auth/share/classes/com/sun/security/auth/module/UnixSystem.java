@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,14 @@
 
 package com.sun.security.auth.module;
 
+import jdk.internal.ffi.generated.jaas_unix.passwd;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+
+import static jdk.internal.ffi.generated.jaas_unix.jaas_unix_h.*;
+
 /**
  * This class implementation retrieves and makes available Unix
  * UID/GID/groups information for the current user.
@@ -32,10 +40,6 @@ package com.sun.security.auth.module;
  * @since 1.4
  */
 public class UnixSystem {
-
-    private native void getUnixInfo();
-
-    // Warning: the following 4 fields are used by Unix.c
 
     /** The current username. */
     protected String username;
@@ -53,10 +57,42 @@ public class UnixSystem {
      * Instantiate a {@code UnixSystem} and load
      * the native library to access the underlying system information.
      */
-    @SuppressWarnings("restricted")
     public UnixSystem() {
-        System.loadLibrary("jaas");
-        getUnixInfo();
+        try (Arena scope = Arena.ofConfined()) {
+            int groupnum = getgroups(0, MemorySegment.NULL);
+            if (groupnum == -1) {
+                throw new RuntimeException("getgroups returns " + groupnum);
+            }
+
+            var gs = scope.allocate(gid_t, groupnum);
+            groupnum = getgroups(groupnum, gs);
+            if (groupnum == -1) {
+                throw new RuntimeException("getgroups returns " + groupnum);
+            }
+
+            groups = new long[groupnum];
+            for (int i = 0; i < groupnum; i++) {
+                groups[i] = gs.getAtIndex(gid_t, i);
+            }
+
+            var resbuf = passwd.allocate(scope);
+            var pwd = scope.allocate(C_POINTER);
+            var pwd_buf = scope.allocate(1024);
+            int out = getpwuid_r(getuid(), resbuf, pwd_buf, pwd_buf.byteSize(), pwd);
+            if (out != 0) {
+                throw new RuntimeException("getpwuid_r returns " + out);
+            }
+            if (pwd.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
+                throw new RuntimeException("getpwuid_r returns NULL result");
+            }
+            uid = passwd.pw_uid(resbuf);
+            gid = passwd.pw_gid(resbuf);
+            username = passwd.pw_name(resbuf).getString(0);
+        } catch (Throwable t) {
+            var error = new UnsatisfiedLinkError("FFM calls failed");
+            error.initCause(t);
+            throw error;
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.security.auth.module;
 
 import java.util.*;
-import java.io.IOException;
 import javax.security.auth.*;
 import javax.security.auth.callback.*;
 import javax.security.auth.login.*;
@@ -127,10 +126,14 @@ public class UnixLoginModule implements LoginModule {
             ss = new UnixSystem();
         } catch (UnsatisfiedLinkError ule) {
             succeeded = false;
-            throw new FailedLoginException
+            var error = new FailedLoginException
                                 ("Failed in attempt to import " +
                                 "the underlying system identity information" +
                                 " on " + System.getProperty("os.name"));
+            if (ule.getCause() != null) {
+                error.initCause(ule.getCause());
+            }
+            throw error;
         }
         userPrincipal = new UnixPrincipal(ss.getUsername());
         UIDPrincipal = new UnixNumericUserPrincipal(ss.getUid());
@@ -150,9 +153,10 @@ public class UnixLoginModule implements LoginModule {
                     "succeeded importing info: ");
             System.out.println("\t\t\tuid = " + ss.getUid());
             System.out.println("\t\t\tgid = " + ss.getGid());
-            unixGroups = ss.getGroups();
-            for (int i = 0; i < unixGroups.length; i++) {
-                System.out.println("\t\t\tsupp gid = " + unixGroups[i]);
+            if (unixGroups != null) {
+                for (int i = 0; i < unixGroups.length; i++) {
+                    System.out.println("\t\t\tsupp gid = " + unixGroups[i]);
+                }
             }
         }
         succeeded = true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,11 @@ public class AllPlatforms {
             lc.logout();
         } catch (FailedLoginException e) {
             // This exception can occur in other platform module than the running one.
-            if(e.getMessage().startsWith("Failed in attempt to import")) {
+            if (e.getMessage().startsWith("Failed in attempt to import")) {
                 System.out.println("Expected Exception found.");
                 e.printStackTrace(System.out);
+            } else {
+                throw new RuntimeException("Unexpected error", e);
             }
         }
     }

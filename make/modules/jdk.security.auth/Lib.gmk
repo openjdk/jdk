@@ -31,13 +31,14 @@ include LibCommon.gmk
 ## Build libjaas
 ################################################################################
 
-$(eval $(call SetupJdkLibrary, BUILD_LIBJAAS, \
-    NAME := jaas, \
-    OPTIMIZATION := LOW, \
-    EXTRA_HEADER_DIRS := java.base:libjava, \
-    LIBS_windows := advapi32.lib mpr.lib netapi32.lib user32.lib, \
-))
+ifeq ($(call isTargetOs, windows), true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJAAS, \
+      NAME := jaas, \
+      OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
+      LIBS_windows := advapi32.lib mpr.lib netapi32.lib user32.lib, \
+  ))
 
-TARGETS += $(BUILD_LIBJAAS)
-
+  TARGETS += $(BUILD_LIBJAAS)
+endif
 ################################################################################
