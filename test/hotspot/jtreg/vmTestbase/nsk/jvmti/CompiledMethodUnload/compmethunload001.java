@@ -47,7 +47,7 @@ public class compmethunload001 {
     private final static String CLS_TO_BE_UNLOADED =
         "nsk.jvmti.CompiledMethodUnload.compmethunload001u";
 
-    private final static int MAX_ITERATIONS = 5;
+    private final static int MAX_ITERATIONS = 50;
 
     static {
         try {
