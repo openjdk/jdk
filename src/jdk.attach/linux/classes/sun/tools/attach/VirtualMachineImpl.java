@@ -279,7 +279,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             } else {
                 throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
             }
-        } catch (IOException _) {
+        } catch (IOException ioe) {
             try {
                 boolean found = MonitoredHost.getMonitoredHost("//localhost")
                                              .activeVms()
@@ -291,7 +291,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     // The process with capsh/setcap would fall this pattern.
                     return TMPDIR.toString();
                 } else {
-                    throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
+                    throw new AttachNotSupportedException("Unable to access the filesystem of the target process", ioe);
                 }
             } catch (AttachNotSupportedException e) {
                 // AttachNotSupportedException happened in above should go through
