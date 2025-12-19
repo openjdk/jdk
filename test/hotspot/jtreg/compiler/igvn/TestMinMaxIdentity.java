@@ -26,6 +26,7 @@
  * @bug 8354244
  * @summary Verify that min/max add identity optimizations get applied correctly
  * @modules java.base/jdk.internal.misc
+ * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
