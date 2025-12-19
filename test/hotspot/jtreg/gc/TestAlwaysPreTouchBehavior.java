@@ -134,6 +134,18 @@ public class TestAlwaysPreTouchBehavior {
 
     public static void main(String [] args) {
         int maxIter = 20;
+        long heapSize = 256 * 1024 * 1024;
+        // On Linux, a JVM that runs with 256M pre-committed heap will use about 60MB (release JVM) RSS. Barring
+        // memory pressure that causes us to lose RSS, pretouching should increase RSS to >256MB. So there should be a
+        // clear distinction between non-pretouched and pretouched.
+        long minRequiredRss = heapSize;
+
+        // The minimum required available memory size to count test errors as errors (to somewhat safely disregard
+        // outside memory pressure as the culprit). We are over-cautious and require at least 1G free. We rather err
+        // on the side of disregarding true errors than to produce false positives (if pretouching is broken, at least
+        // some of the runs of this test will run on beefy enough machines and show the test as failed).
+        long requiredAvailable = 1024 * 1024 * 1024;
+
         // RSS values we get are sometimes somewhat delayed or inaccurate
         for (int iter=0; iter < maxIter; iter++) {
             long rss = WhiteBox.getWhiteBox().rss();
@@ -141,31 +153,19 @@ public class TestAlwaysPreTouchBehavior {
             long available = WhiteBox.getWhiteBox().hostAvailableMemory();
             System.out.println("Host available memory: " + available);
 
-            long heapSize = 256 * 1024 * 1024;
-
-            // On Linux, a JVM that runs with 256M pre-committed heap will use about 60MB (release JVM) RSS. Barring
-            // memory pressure that causes us to lose RSS, pretouching should increase RSS to >256MB. So there should be a
-            // clear distinction between non-pretouched and pretouched.
-            long minRequiredRss = heapSize;
-
-            // The minimum required available memory size to count test errors as errors (to somewhat safely disregard
-            // outside memory pressure as the culprit). We are over-cautious and require at least 1G free. We rather err
-            // on the side of disregarding true errors than to produce false positives (if pretouching is broken, at least
-            // some of the runs of this test will run on beefy enough machines and show the test as failed).
-            long requiredAvailable = 1024 * 1024 * 1024;
             if (rss == 0) {
                 throw new SkippedException("cannot get RSS?");
             }
-            if (available > requiredAvailable) {
-                if ((rss < minRequiredRss) && iter < maxIter-1) {
-                    System.out.println("We got only an RSS value of " + rss + " but require " + minRequiredRss + ", let's retry!");
-                } else {
-                    Asserts.assertGreaterThan(rss, minRequiredRss, "RSS of this process(" + rss + "b) should be bigger " +
-                                              "than or equal to heap size(" + heapSize + "b) (available memory: " + available + "). On Linux Kernel < 4.14 RSS can be inaccurate");
-                    break;
-                }
-            } else {
+            if (available <= requiredAvailable) {
                 throw new SkippedException("Available memory on host " + available + " is too small, not larger than required available memory " + requiredAvailable);
+            }
+
+            if ((rss < minRequiredRss) && iter < maxIter-1) {
+                System.out.println("We got only an RSS value of " + rss + " but require " + minRequiredRss + ", let's retry!");
+            } else {
+                Asserts.assertGreaterThan(rss, minRequiredRss, "RSS of this process(" + rss + "b) should be bigger " +
+                                          "than or equal to heap size(" + heapSize + "b) (available memory: " + available + "). On Linux Kernel < 4.14 RSS can be inaccurate");
+                break;
             }
         }
     }
