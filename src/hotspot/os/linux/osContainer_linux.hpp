@@ -65,6 +65,8 @@ class OSContainer: AllStatic {
   static void init();
   static void print_version_specific_info(outputStream* st);
   static void print_container_helper(outputStream* st, MetricResult& res, const char* metrics);
+  template <typename T>
+  static void print_container_metric(outputStream* st, const char* metrics, T value, const char* unit = "");
 
   static inline bool is_containerized();
   static const char * container_type();

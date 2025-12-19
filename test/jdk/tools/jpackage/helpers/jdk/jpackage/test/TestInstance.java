@@ -46,7 +46,7 @@ import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
-final class TestInstance implements ThrowingRunnable {
+final class TestInstance implements ThrowingRunnable<Exception> {
 
     static final class TestDesc {
         private TestDesc(Class<?> clazz, String functionName, String functionArgs, String instanceArgs) {
@@ -149,7 +149,7 @@ final class TestInstance implements ThrowingRunnable {
         private final String instanceArgs;
     }
 
-    TestInstance(ThrowingRunnable testBody, Path workDirRoot) {
+    TestInstance(ThrowingRunnable<? extends Exception> testBody, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = (unused) -> null;
         this.testBody = (unused) -> testBody.run();
@@ -160,8 +160,8 @@ final class TestInstance implements ThrowingRunnable {
         this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
     }
 
-    TestInstance(MethodCall testBody, List<ThrowingConsumer<Object>> beforeActions,
-            List<ThrowingConsumer<Object>> afterActions, boolean dryRun, Path workDirRoot) {
+    TestInstance(MethodCall testBody, List<ThrowingConsumer<Object, ? extends Exception>> beforeActions,
+            List<ThrowingConsumer<Object, ? extends Exception>> afterActions, boolean dryRun, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = v -> ((MethodCall)v).newInstance();
         this.testBody = testBody;
@@ -226,7 +226,7 @@ final class TestInstance implements ThrowingRunnable {
     }
 
     @Override
-    public void run() throws Throwable {
+    public void run() throws Exception {
         final String fullName = fullName();
         TKit.log(String.format("[ RUN      ] %s", fullName));
         try {
@@ -333,10 +333,10 @@ final class TestInstance implements ThrowingRunnable {
     private Status status;
     private RuntimeException skippedTestException;
     private final TestDesc testDesc;
-    private final ThrowingFunction<ThrowingConsumer<Object>, Object> testConstructor;
-    private final ThrowingConsumer<Object> testBody;
-    private final List<ThrowingConsumer<Object>> beforeActions;
-    private final List<ThrowingConsumer<Object>> afterActions;
+    private final ThrowingFunction<ThrowingConsumer<Object, ? extends Exception>, Object, ? extends Exception> testConstructor;
+    private final ThrowingConsumer<Object, ? extends Exception> testBody;
+    private final List<ThrowingConsumer<Object, ? extends Exception>> beforeActions;
+    private final List<ThrowingConsumer<Object, ? extends Exception>> afterActions;
     private final boolean dryRun;
     private final Path workDir;
 
