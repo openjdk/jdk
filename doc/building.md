@@ -380,7 +380,13 @@ sudo apt-get install build-essential autoconf
 For rpm-based distributions (Fedora, Red Hat, etc), try this:
 
 ```
-sudo yum groupinstall "Development Tools"
+sudo yum group install development-tools
+```
+
+or
+
+```
+sudo dnf group install development-tools
 ```
 
 For Alpine Linux, aside from basic tooling, install the GNU versions of some
