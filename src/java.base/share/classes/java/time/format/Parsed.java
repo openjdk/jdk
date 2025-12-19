@@ -87,7 +87,6 @@ import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
@@ -98,6 +97,7 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -128,7 +128,7 @@ final class Parsed implements TemporalAccessor {
     /**
      * The parsed fields.
      */
-    final Map<TemporalField, Long> fieldValues = new HashMap<>();
+    private Map<TemporalField, Long> fieldValues = initFieldValuesMap();
     /**
      * The parsed zone.
      */
@@ -178,6 +178,10 @@ final class Parsed implements TemporalAccessor {
     Parsed copy() {
         // only copy fields used in parsing stage
         Parsed cloned = new Parsed();
+        if (!(fieldValues instanceof EnumMap)) {
+            // Upgrade to a full TemporalField Map
+            cloned.fieldValues = new HashMap<>(this.fieldValues.size());
+        }
         cloned.fieldValues.putAll(this.fieldValues);
         cloned.zone = this.zone;
         cloned.zoneNameType = this.zoneNameType;
@@ -185,6 +189,29 @@ final class Parsed implements TemporalAccessor {
         cloned.leapSecond = this.leapSecond;
         cloned.dayPeriod = this.dayPeriod;
         return cloned;
+    }
+
+
+    // A bit contorted way to get the map created.
+    @SuppressWarnings("unchecked")
+    private Map<TemporalField, Long> initFieldValuesMap() {
+        return (Map<TemporalField, Long>) (Object)new EnumMap<ChronoField, Long>(ChronoField.class);
+    }
+
+    Long putFieldValue(TemporalField field, long value) {
+        try {
+            return fieldValues.put(field, value);
+        } catch (ClassCastException cce) {
+            // Upgrade to a full TemporalField Map
+            Map<TemporalField, Long> nmap = new HashMap<>(fieldValues.size() + 1);
+            nmap.putAll(fieldValues);
+            fieldValues = nmap;
+            return nmap.put(field, value);
+        }
+    }
+
+    Long getFieldValue(TemporalField field) {
+        return fieldValues.get(field);
     }
 
     //-----------------------------------------------------------------------
@@ -334,7 +361,7 @@ final class Parsed implements TemporalAccessor {
     }
 
     private void updateCheckConflict(TemporalField targetField, TemporalField changeField, Long changeValue) {
-        Long old = fieldValues.put(changeField, changeValue);
+        Long old = putFieldValue(changeField, changeValue);
         if (old != null && old.longValue() != changeValue.longValue()) {
             throw new DateTimeException("Conflict found: " + changeField + " " + old +
                     " differs from " + changeField + " " + changeValue +

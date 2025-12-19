@@ -345,7 +345,7 @@ final class DateTimeParseContext {
      * @return the value mapped to the specified field, null if field was not parsed
      */
     Long getParsed(TemporalField field) {
-        return currentParsed().fieldValues.get(field);
+        return currentParsed().getFieldValue(field);
     }
 
     /**
@@ -362,7 +362,7 @@ final class DateTimeParseContext {
      */
     int setParsedField(TemporalField field, long value, int errorPos, int successPos) {
         Objects.requireNonNull(field, "field");
-        Long old = currentParsed().fieldValues.put(field, value);
+        Long old = currentParsed().putFieldValue(field, value);
         return (old != null && old.longValue() != value) ? ~errorPos : successPos;
     }
 
