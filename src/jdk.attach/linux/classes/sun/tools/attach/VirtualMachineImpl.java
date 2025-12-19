@@ -277,19 +277,29 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
                 return TMPDIR.toString();
             } else {
+                throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
+            }
+        } catch (IOException _) {
+            try {
                 boolean found = MonitoredHost.getMonitoredHost("//localhost")
                                              .activeVms()
                                              .stream()
                                              .anyMatch(i -> pid == i.intValue());
                 if (found) {
                     // We can use /tmp because target process is on same host
+                    // even if we cannot access /proc/<PID>/root.
+                    // The process with capsh/setcap would fall this pattern.
                     return TMPDIR.toString();
                 } else {
                     throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
                 }
+            } catch (AttachNotSupportedException e) {
+                // AttachNotSupportedException happened in above should go through
+                throw e;
+            } catch (Exception e) {
+                // Other exceptions would be wrapped with AttachNotSupportedException
+                throw new AttachNotSupportedException("Unable to access the filesystem of the target process", e);
             }
-        } catch (Exception e) {
-            throw new AttachNotSupportedException("Unable to access the filesystem of the target process", e);
         }
     }
 
