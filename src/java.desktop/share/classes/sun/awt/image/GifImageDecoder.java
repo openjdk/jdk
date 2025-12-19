@@ -340,8 +340,8 @@ public class GifImageDecoder extends ImageDecoder {
         ImageConsumer.RANDOMPIXELORDER | ImageConsumer.COMPLETESCANLINES |
         ImageConsumer.SINGLEPASS | ImageConsumer.SINGLEFRAME;
 
-    private short[] prefix  = new short[4096];
-    private byte[]  suffix  = new byte[4096];
+    private short[] prefix  = new short[4097];
+    private byte[]  suffix  = new byte[4097];
     private byte[]  outCode = new byte[4097];
     private boolean isSavedModelReliable = true;
 
