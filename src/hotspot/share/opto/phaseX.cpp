@@ -1087,7 +1087,7 @@ void PhaseIterGVN::verify_optimize() {
       // If we get an assert here, check why the reported node was not processed again in IGVN.
       // We should either make sure that this node is properly added back to the IGVN worklist
       // in PhaseIterGVN::add_users_to_worklist to update it again or add an exception
-      // in the verification code above if that is not possible for some reason (like Load nodes).
+      // in the verification methods below if that is not possible for some reason (like Load nodes).
       if (is_verify_Value()) {
         verify_Value_for(n);
       }
