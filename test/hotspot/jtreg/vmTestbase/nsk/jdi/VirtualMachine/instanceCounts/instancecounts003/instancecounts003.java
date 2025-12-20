@@ -58,7 +58,8 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI"
+ *                      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                      -XX:+WhiteBoxAPI"
  *      -testClassPath ${test.class.path}
  */
 
