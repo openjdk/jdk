@@ -42,7 +42,7 @@
  *    debugger and debugee communicates with special commands.
  *    The debugger forces debuggee to load checked class, creates and
  *    enables ClassUnloadRequest. Next, debugger forces debuggee to
- *    unload class, using memory stressing techique, and waits for
+ *    unload class, using whitebox full GC techique, and waits for
  *    ClassUnloadEvent.
  *    If expected ClassUnloadEvent occurs, debugger tests method
  *    ClassUnloadEvent.className() and verifies that this event

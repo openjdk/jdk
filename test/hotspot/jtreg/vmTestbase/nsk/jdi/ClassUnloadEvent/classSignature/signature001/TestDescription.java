@@ -44,7 +44,7 @@
  *    debugger and debugee communicates with special commands.
  *    The debugger forces debugge to load checked classes, creates and
  *    enables ClassUnloadRequest. Next, debugger forces debuggee to
- *    unload classes, using memory stressing techique, and waits for
+ *    unload classes, using whitebox full GC techique, and waits for
  *    ClassUnloadEvent.
  *    If each expected ClassUnloadEvent occurs, debugger tests method
  *    ClassUnloadEvent.classSignature() and verifies that this event
