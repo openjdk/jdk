@@ -103,7 +103,7 @@ public class ShareTmpDir {
         t2.start();
 
         while (!started1.exists() || !started2.exists()) {
-            System.out.println("Waiting for all the two JVM started");
+            System.out.println("Waiting for all two JVMs to start");
             Thread.sleep(1000);
         }
 
