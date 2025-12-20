@@ -351,6 +351,7 @@ class GraphBuilder {
   // inliners
   bool try_inline(           ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = nullptr);
   bool try_inline_intrinsics(ciMethod* callee, bool ignore_return = false);
+  bool try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignore_return = false);
   bool try_inline_full(      ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = nullptr);
   bool try_inline_jsr(int jsr_dest_bci);
 
@@ -373,10 +374,13 @@ class GraphBuilder {
   void pop_scope();
   void pop_scope_for_jsr();
 
-  void append_unsafe_get(ciMethod* callee, BasicType t, bool is_volatile);
-  void append_unsafe_put(ciMethod* callee, BasicType t, bool is_volatile);
-  void append_unsafe_CAS(ciMethod* callee);
-  void append_unsafe_get_and_set(ciMethod* callee, bool is_add);
+  void append_unsafe_get(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, int prefix_size);
+  void append_unsafe_put(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, int prefix_size);
+  void append_unsafe_CAS(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, int prefix_size);
+  void append_unsafe_get_and_set(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, vmIntrinsics::BitsOperation op, int prefix_size);
+  Value adjust_unsafe_container(Value x, BasicType from, BasicType to);
+  Value adjust_unsafe_offset(Value offset);
+
   void append_char_access(ciMethod* callee, bool is_store);
   void append_alloc_array_copy(ciMethod* callee);
 

@@ -319,6 +319,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_inflateStringC:
   case vmIntrinsics::_inflateStringB:           return inline_string_copy(!is_compress);
 
+  //FIXME
   case vmIntrinsics::_getReference:             return inline_unsafe_access(!is_store, T_OBJECT,   Relaxed, false);
   case vmIntrinsics::_getBoolean:               return inline_unsafe_access(!is_store, T_BOOLEAN,  Relaxed, false);
   case vmIntrinsics::_getByte:                  return inline_unsafe_access(!is_store, T_BYTE,     Relaxed, false);
@@ -339,75 +340,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_putFloat:                 return inline_unsafe_access( is_store, T_FLOAT,    Relaxed, false);
   case vmIntrinsics::_putDouble:                return inline_unsafe_access( is_store, T_DOUBLE,   Relaxed, false);
 
-  case vmIntrinsics::_getReferenceVolatile:     return inline_unsafe_access(!is_store, T_OBJECT,   Volatile, false);
-  case vmIntrinsics::_getBooleanVolatile:       return inline_unsafe_access(!is_store, T_BOOLEAN,  Volatile, false);
-  case vmIntrinsics::_getByteVolatile:          return inline_unsafe_access(!is_store, T_BYTE,     Volatile, false);
-  case vmIntrinsics::_getShortVolatile:         return inline_unsafe_access(!is_store, T_SHORT,    Volatile, false);
-  case vmIntrinsics::_getCharVolatile:          return inline_unsafe_access(!is_store, T_CHAR,     Volatile, false);
-  case vmIntrinsics::_getIntVolatile:           return inline_unsafe_access(!is_store, T_INT,      Volatile, false);
-  case vmIntrinsics::_getLongVolatile:          return inline_unsafe_access(!is_store, T_LONG,     Volatile, false);
-  case vmIntrinsics::_getFloatVolatile:         return inline_unsafe_access(!is_store, T_FLOAT,    Volatile, false);
-  case vmIntrinsics::_getDoubleVolatile:        return inline_unsafe_access(!is_store, T_DOUBLE,   Volatile, false);
-
-  case vmIntrinsics::_putReferenceVolatile:     return inline_unsafe_access( is_store, T_OBJECT,   Volatile, false);
-  case vmIntrinsics::_putBooleanVolatile:       return inline_unsafe_access( is_store, T_BOOLEAN,  Volatile, false);
-  case vmIntrinsics::_putByteVolatile:          return inline_unsafe_access( is_store, T_BYTE,     Volatile, false);
-  case vmIntrinsics::_putShortVolatile:         return inline_unsafe_access( is_store, T_SHORT,    Volatile, false);
-  case vmIntrinsics::_putCharVolatile:          return inline_unsafe_access( is_store, T_CHAR,     Volatile, false);
-  case vmIntrinsics::_putIntVolatile:           return inline_unsafe_access( is_store, T_INT,      Volatile, false);
-  case vmIntrinsics::_putLongVolatile:          return inline_unsafe_access( is_store, T_LONG,     Volatile, false);
-  case vmIntrinsics::_putFloatVolatile:         return inline_unsafe_access( is_store, T_FLOAT,    Volatile, false);
-  case vmIntrinsics::_putDoubleVolatile:        return inline_unsafe_access( is_store, T_DOUBLE,   Volatile, false);
-
-  case vmIntrinsics::_getShortUnaligned:        return inline_unsafe_access(!is_store, T_SHORT,    Relaxed, true);
-  case vmIntrinsics::_getCharUnaligned:         return inline_unsafe_access(!is_store, T_CHAR,     Relaxed, true);
-  case vmIntrinsics::_getIntUnaligned:          return inline_unsafe_access(!is_store, T_INT,      Relaxed, true);
-  case vmIntrinsics::_getLongUnaligned:         return inline_unsafe_access(!is_store, T_LONG,     Relaxed, true);
-
-  case vmIntrinsics::_putShortUnaligned:        return inline_unsafe_access( is_store, T_SHORT,    Relaxed, true);
-  case vmIntrinsics::_putCharUnaligned:         return inline_unsafe_access( is_store, T_CHAR,     Relaxed, true);
-  case vmIntrinsics::_putIntUnaligned:          return inline_unsafe_access( is_store, T_INT,      Relaxed, true);
-  case vmIntrinsics::_putLongUnaligned:         return inline_unsafe_access( is_store, T_LONG,     Relaxed, true);
-
-  case vmIntrinsics::_getReferenceAcquire:      return inline_unsafe_access(!is_store, T_OBJECT,   Acquire, false);
-  case vmIntrinsics::_getBooleanAcquire:        return inline_unsafe_access(!is_store, T_BOOLEAN,  Acquire, false);
-  case vmIntrinsics::_getByteAcquire:           return inline_unsafe_access(!is_store, T_BYTE,     Acquire, false);
-  case vmIntrinsics::_getShortAcquire:          return inline_unsafe_access(!is_store, T_SHORT,    Acquire, false);
-  case vmIntrinsics::_getCharAcquire:           return inline_unsafe_access(!is_store, T_CHAR,     Acquire, false);
-  case vmIntrinsics::_getIntAcquire:            return inline_unsafe_access(!is_store, T_INT,      Acquire, false);
-  case vmIntrinsics::_getLongAcquire:           return inline_unsafe_access(!is_store, T_LONG,     Acquire, false);
-  case vmIntrinsics::_getFloatAcquire:          return inline_unsafe_access(!is_store, T_FLOAT,    Acquire, false);
-  case vmIntrinsics::_getDoubleAcquire:         return inline_unsafe_access(!is_store, T_DOUBLE,   Acquire, false);
-
-  case vmIntrinsics::_putReferenceRelease:      return inline_unsafe_access( is_store, T_OBJECT,   Release, false);
-  case vmIntrinsics::_putBooleanRelease:        return inline_unsafe_access( is_store, T_BOOLEAN,  Release, false);
-  case vmIntrinsics::_putByteRelease:           return inline_unsafe_access( is_store, T_BYTE,     Release, false);
-  case vmIntrinsics::_putShortRelease:          return inline_unsafe_access( is_store, T_SHORT,    Release, false);
-  case vmIntrinsics::_putCharRelease:           return inline_unsafe_access( is_store, T_CHAR,     Release, false);
-  case vmIntrinsics::_putIntRelease:            return inline_unsafe_access( is_store, T_INT,      Release, false);
-  case vmIntrinsics::_putLongRelease:           return inline_unsafe_access( is_store, T_LONG,     Release, false);
-  case vmIntrinsics::_putFloatRelease:          return inline_unsafe_access( is_store, T_FLOAT,    Release, false);
-  case vmIntrinsics::_putDoubleRelease:         return inline_unsafe_access( is_store, T_DOUBLE,   Release, false);
-
-  case vmIntrinsics::_getReferenceOpaque:       return inline_unsafe_access(!is_store, T_OBJECT,   Opaque, false);
-  case vmIntrinsics::_getBooleanOpaque:         return inline_unsafe_access(!is_store, T_BOOLEAN,  Opaque, false);
-  case vmIntrinsics::_getByteOpaque:            return inline_unsafe_access(!is_store, T_BYTE,     Opaque, false);
-  case vmIntrinsics::_getShortOpaque:           return inline_unsafe_access(!is_store, T_SHORT,    Opaque, false);
-  case vmIntrinsics::_getCharOpaque:            return inline_unsafe_access(!is_store, T_CHAR,     Opaque, false);
-  case vmIntrinsics::_getIntOpaque:             return inline_unsafe_access(!is_store, T_INT,      Opaque, false);
-  case vmIntrinsics::_getLongOpaque:            return inline_unsafe_access(!is_store, T_LONG,     Opaque, false);
-  case vmIntrinsics::_getFloatOpaque:           return inline_unsafe_access(!is_store, T_FLOAT,    Opaque, false);
-  case vmIntrinsics::_getDoubleOpaque:          return inline_unsafe_access(!is_store, T_DOUBLE,   Opaque, false);
-
-  case vmIntrinsics::_putReferenceOpaque:       return inline_unsafe_access( is_store, T_OBJECT,   Opaque, false);
-  case vmIntrinsics::_putBooleanOpaque:         return inline_unsafe_access( is_store, T_BOOLEAN,  Opaque, false);
-  case vmIntrinsics::_putByteOpaque:            return inline_unsafe_access( is_store, T_BYTE,     Opaque, false);
-  case vmIntrinsics::_putShortOpaque:           return inline_unsafe_access( is_store, T_SHORT,    Opaque, false);
-  case vmIntrinsics::_putCharOpaque:            return inline_unsafe_access( is_store, T_CHAR,     Opaque, false);
-  case vmIntrinsics::_putIntOpaque:             return inline_unsafe_access( is_store, T_INT,      Opaque, false);
-  case vmIntrinsics::_putLongOpaque:            return inline_unsafe_access( is_store, T_LONG,     Opaque, false);
-  case vmIntrinsics::_putFloatOpaque:           return inline_unsafe_access( is_store, T_FLOAT,    Opaque, false);
-  case vmIntrinsics::_putDoubleOpaque:          return inline_unsafe_access( is_store, T_DOUBLE,   Opaque, false);
+  //FIXME case vmIntrinsics::_getReferenceVolatile:     return inline_unsafe_access(!is_store, T_OBJECT,   Volatile, false);
+  //FIXME case vmIntrinsics::_getShortUnaligned:        return inline_unsafe_access(!is_store, T_SHORT,    Relaxed, true);
+  //FIXME case vmIntrinsics::_getReferenceAcquire:      return inline_unsafe_access(!is_store, T_OBJECT,   Acquire, false);
+  //FIXME case vmIntrinsics::_putReferenceRelease:      return inline_unsafe_access( is_store, T_OBJECT,   Release, false);
+  //FIXME case vmIntrinsics::_getReferenceOpaque:       return inline_unsafe_access(!is_store, T_OBJECT,   Opaque, false);
+  //FIXME case vmIntrinsics::_putReferenceOpaque:       return inline_unsafe_access( is_store, T_OBJECT,   Opaque, false);
 
   case vmIntrinsics::_compareAndSetReference:   return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap,      Volatile);
   case vmIntrinsics::_compareAndSetByte:        return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap,      Volatile);
@@ -415,53 +353,15 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_compareAndSetInt:         return inline_unsafe_load_store(T_INT,    LS_cmp_swap,      Volatile);
   case vmIntrinsics::_compareAndSetLong:        return inline_unsafe_load_store(T_LONG,   LS_cmp_swap,      Volatile);
 
-  case vmIntrinsics::_weakCompareAndSetReferencePlain:     return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSetReferenceAcquire:   return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSetReferenceRelease:   return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSetReference:          return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Volatile);
-  case vmIntrinsics::_weakCompareAndSetBytePlain:          return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSetByteAcquire:        return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSetByteRelease:        return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSetByte:               return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Volatile);
-  case vmIntrinsics::_weakCompareAndSetShortPlain:         return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSetShortAcquire:       return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSetShortRelease:       return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSetShort:              return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Volatile);
-  case vmIntrinsics::_weakCompareAndSetIntPlain:           return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSetIntAcquire:         return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSetIntRelease:         return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSetInt:                return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Volatile);
-  case vmIntrinsics::_weakCompareAndSetLongPlain:          return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSetLongAcquire:        return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSetLongRelease:        return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSetLong:               return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Volatile);
+  //FIXME case vmIntrinsics::_weakCompareAndSetReference:          return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Volatile);
 
-  case vmIntrinsics::_compareAndExchangeReference:         return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
-  case vmIntrinsics::_compareAndExchangeReferenceAcquire:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Acquire);
-  case vmIntrinsics::_compareAndExchangeReferenceRelease:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Release);
-  case vmIntrinsics::_compareAndExchangeByte:              return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Volatile);
-  case vmIntrinsics::_compareAndExchangeByteAcquire:       return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Acquire);
-  case vmIntrinsics::_compareAndExchangeByteRelease:       return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Release);
-  case vmIntrinsics::_compareAndExchangeShort:             return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Volatile);
-  case vmIntrinsics::_compareAndExchangeShortAcquire:      return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Acquire);
-  case vmIntrinsics::_compareAndExchangeShortRelease:      return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Release);
-  case vmIntrinsics::_compareAndExchangeInt:               return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Volatile);
-  case vmIntrinsics::_compareAndExchangeIntAcquire:        return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Acquire);
-  case vmIntrinsics::_compareAndExchangeIntRelease:        return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Release);
-  case vmIntrinsics::_compareAndExchangeLong:              return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Volatile);
-  case vmIntrinsics::_compareAndExchangeLongAcquire:       return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Acquire);
-  case vmIntrinsics::_compareAndExchangeLongRelease:       return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Release);
+  case vmIntrinsics::_compareAndExchangeReferenceMO:       return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:   return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Volatile);//FIXME
 
-  case vmIntrinsics::_getAndAddByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_add,       Volatile);
-  case vmIntrinsics::_getAndAddShort:                   return inline_unsafe_load_store(T_SHORT,  LS_get_add,       Volatile);
-  case vmIntrinsics::_getAndAddInt:                     return inline_unsafe_load_store(T_INT,    LS_get_add,       Volatile);
-  case vmIntrinsics::_getAndAddLong:                    return inline_unsafe_load_store(T_LONG,   LS_get_add,       Volatile);
+  //FIXME case vmIntrinsics::_getAndAddByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_add,       Volatile);
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:     return inline_unsafe_load_store(T_SHORT,  LS_get_add,       Volatile);//FIXME
 
-  case vmIntrinsics::_getAndSetByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_set,       Volatile);
-  case vmIntrinsics::_getAndSetShort:                   return inline_unsafe_load_store(T_SHORT,  LS_get_set,       Volatile);
-  case vmIntrinsics::_getAndSetInt:                     return inline_unsafe_load_store(T_INT,    LS_get_set,       Volatile);
-  case vmIntrinsics::_getAndSetLong:                    return inline_unsafe_load_store(T_LONG,   LS_get_set,       Volatile);
-  case vmIntrinsics::_getAndSetReference:               return inline_unsafe_load_store(T_OBJECT, LS_get_set,       Volatile);
+  //FIXME case vmIntrinsics::_getAndSetByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_set,       Volatile);
 
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:

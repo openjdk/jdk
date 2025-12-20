@@ -1725,7 +1725,7 @@ vmSymbolID Method::klass_id_for_intrinsics(const Klass* holder) {
 void Method::init_intrinsic_id(vmSymbolID klass_id) {
   assert(_intrinsic_id == static_cast<int>(vmIntrinsics::_none), "do this just once");
   const uintptr_t max_id_uint = right_n_bits((int)(sizeof(_intrinsic_id) * BitsPerByte));
-  assert((uintptr_t)vmIntrinsics::ID_LIMIT <= max_id_uint, "else fix size");
+  static_assert((uintptr_t)vmIntrinsics::ID_LIMIT <= max_id_uint, "else fix size");
   assert(intrinsic_id_size_in_bytes() == sizeof(_intrinsic_id), "");
 
   // the klass name is well-known:
@@ -1734,11 +1734,39 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
 
   // ditto for method and signature:
   vmSymbolID name_id = vmSymbols::find_sid(name());
-  if (klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
-      && klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
-      && name_id == vmSymbolID::NO_SID) {
-    return;
+  switch (klass_id) {
+  case VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
+  case VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle):
+    break;  // do not worry about the name yet
+
+  case VM_SYMBOL_ENUM_NAME(jdk_internal_misc_Unsafe):
+    {
+      if (!is_native())  break;
+      const char* native_suffix = "Native";
+      if (name_id == vmSymbolID::NO_SID && name()->ends_with(native_suffix)) {
+        // could be an alias for a non-native intrinsic (a JIT fallback)
+        ResourceMark rm;
+        int name_len = name()->utf8_length();
+        char* name_str = name()->as_utf8();
+        TempNewSymbol trial_name = SymbolTable::probe(name_str, name_len - strlen(native_suffix));
+        if (trial_name == nullptr) {
+          break;                  // no such symbol
+        }
+        Method* method = method_holder()->lookup_method(trial_name, signature());
+        if (method == nullptr || method->is_native() || method->is_static() != is_static()) {
+          break;                  // no such method
+        }
+        name_id = vmSymbols::find_sid(trial_name);
+      }
+    }
+    break;
+
+  default:
+    if (name_id == vmSymbolID::NO_SID) {
+      return;
+    }
   }
+
   vmSymbolID sig_id = vmSymbols::find_sid(signature());
   if (klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
       && klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)

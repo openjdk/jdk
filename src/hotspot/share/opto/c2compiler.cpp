@@ -366,7 +366,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     break;
 
   /* CompareAndSet, Object: */
-  case vmIntrinsics::_compareAndSetReference:
+  case vmIntrinsics::_compareAndSetReferenceMO:
 #ifdef _LP64
     if ( UseCompressedOops && !Matcher::match_rule_supported(Op_CompareAndSwapN)) return false;
     if (!UseCompressedOops && !Matcher::match_rule_supported(Op_CompareAndSwapP)) return false;
@@ -374,10 +374,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     if (!Matcher::match_rule_supported(Op_CompareAndSwapP)) return false;
 #endif
     break;
-  case vmIntrinsics::_weakCompareAndSetReferencePlain:
-  case vmIntrinsics::_weakCompareAndSetReferenceAcquire:
-  case vmIntrinsics::_weakCompareAndSetReferenceRelease:
-  case vmIntrinsics::_weakCompareAndSetReference:
+  case vmIntrinsics::_weakCompareAndSetReference:  //FIXME
 #ifdef _LP64
     if ( UseCompressedOops && !Matcher::match_rule_supported(Op_WeakCompareAndSwapN)) return false;
     if (!UseCompressedOops && !Matcher::match_rule_supported(Op_WeakCompareAndSwapP)) return false;
@@ -385,54 +382,45 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapP)) return false;
 #endif
     break;
+  //case vmIntrinsics::_compareAndSetPrimitiveBitsMO: //FIXME
   /* CompareAndSet, Long: */
-  case vmIntrinsics::_compareAndSetLong:
+  case vmIntrinsics::_compareAndSetLong:  //FIXME
     if (!Matcher::match_rule_supported(Op_CompareAndSwapL)) return false;
     break;
-  case vmIntrinsics::_weakCompareAndSetLongPlain:
-  case vmIntrinsics::_weakCompareAndSetLongAcquire:
-  case vmIntrinsics::_weakCompareAndSetLongRelease:
-  case vmIntrinsics::_weakCompareAndSetLong:
+  case vmIntrinsics::_weakCompareAndSetLong:  //FIXME
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapL)) return false;
     break;
 
   /* CompareAndSet, Int: */
-  case vmIntrinsics::_compareAndSetInt:
+  case vmIntrinsics::_compareAndSetInt:  //FIXME
     if (!Matcher::match_rule_supported(Op_CompareAndSwapI)) return false;
     break;
-  case vmIntrinsics::_weakCompareAndSetIntPlain:
-  case vmIntrinsics::_weakCompareAndSetIntAcquire:
-  case vmIntrinsics::_weakCompareAndSetIntRelease:
-  case vmIntrinsics::_weakCompareAndSetInt:
+  case vmIntrinsics::_weakCompareAndSetInt:  //FIXME
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapI)) return false;
     break;
 
   /* CompareAndSet, Byte: */
-  case vmIntrinsics::_compareAndSetByte:
+  case vmIntrinsics::_compareAndSetByte:  //FIXME
     if (!Matcher::match_rule_supported(Op_CompareAndSwapB)) return false;
     break;
-  case vmIntrinsics::_weakCompareAndSetBytePlain:
-  case vmIntrinsics::_weakCompareAndSetByteAcquire:
-  case vmIntrinsics::_weakCompareAndSetByteRelease:
-  case vmIntrinsics::_weakCompareAndSetByte:
+    /*FIXME
+  case vmIntrinsics::_weakCompareAndSetByte:  //FIXME
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapB)) return false;
     break;
+    */
 
   /* CompareAndSet, Short: */
-  case vmIntrinsics::_compareAndSetShort:
+  case vmIntrinsics::_compareAndSetShort:  //FIXME
     if (!Matcher::match_rule_supported(Op_CompareAndSwapS)) return false;
     break;
-  case vmIntrinsics::_weakCompareAndSetShortPlain:
-  case vmIntrinsics::_weakCompareAndSetShortAcquire:
-  case vmIntrinsics::_weakCompareAndSetShortRelease:
-  case vmIntrinsics::_weakCompareAndSetShort:
+    /*FIXME
+  case vmIntrinsics::_weakCompareAndSetShort:  //FIXME
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapS)) return false;
     break;
+    */
 
   /* CompareAndExchange, Object: */
-  case vmIntrinsics::_compareAndExchangeReference:
-  case vmIntrinsics::_compareAndExchangeReferenceAcquire:
-  case vmIntrinsics::_compareAndExchangeReferenceRelease:
+  case vmIntrinsics::_compareAndExchangeReferenceMO:
 #ifdef _LP64
     if ( UseCompressedOops && !Matcher::match_rule_supported(Op_CompareAndExchangeN)) return false;
     if (!UseCompressedOops && !Matcher::match_rule_supported(Op_CompareAndExchangeP)) return false;
@@ -441,60 +429,54 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #endif
     break;
 
+  //case vmIntrinsics::_compareAndExchangePrimitiveBitsMO: //FIXME
   /* CompareAndExchange, Long: */
-  case vmIntrinsics::_compareAndExchangeLong:
-  case vmIntrinsics::_compareAndExchangeLongAcquire:
-  case vmIntrinsics::_compareAndExchangeLongRelease:
+  case vmIntrinsics::_compareAndExchangeLong:  //FIXME
     if (!Matcher::match_rule_supported(Op_CompareAndExchangeL)) return false;
     break;
 
   /* CompareAndExchange, Int: */
-  case vmIntrinsics::_compareAndExchangeInt:
-  case vmIntrinsics::_compareAndExchangeIntAcquire:
-  case vmIntrinsics::_compareAndExchangeIntRelease:
+  case vmIntrinsics::_compareAndExchangeInt:  //FIXME
     if (!Matcher::match_rule_supported(Op_CompareAndExchangeI)) return false;
     break;
 
   /* CompareAndExchange, Byte: */
-  case vmIntrinsics::_compareAndExchangeByte:
-  case vmIntrinsics::_compareAndExchangeByteAcquire:
-  case vmIntrinsics::_compareAndExchangeByteRelease:
+  case vmIntrinsics::_compareAndExchangeByte:  //FIXME
     if (!Matcher::match_rule_supported(Op_CompareAndExchangeB)) return false;
     break;
 
   /* CompareAndExchange, Short: */
-  case vmIntrinsics::_compareAndExchangeShort:
-  case vmIntrinsics::_compareAndExchangeShortAcquire:
-  case vmIntrinsics::_compareAndExchangeShortRelease:
+  case vmIntrinsics::_compareAndExchangeShort:  //FIXME
     if (!Matcher::match_rule_supported(Op_CompareAndExchangeS)) return false;
     break;
 
-  case vmIntrinsics::_getAndAddByte:
+  //case vmIntrinsics::_getAndOperatePrimitiveBitsMO: //FIXME
+  case vmIntrinsics::_getAndAddByte:   //FIXME
     if (!Matcher::match_rule_supported(Op_GetAndAddB)) return false;
     break;
-  case vmIntrinsics::_getAndAddShort:
+  case vmIntrinsics::_getAndAddShort:   //FIXME
     if (!Matcher::match_rule_supported(Op_GetAndAddS)) return false;
     break;
-  case vmIntrinsics::_getAndAddInt:
+  case vmIntrinsics::_getAndAddInt:   //FIXME
     if (!Matcher::match_rule_supported(Op_GetAndAddI)) return false;
     break;
-  case vmIntrinsics::_getAndAddLong:
+  case vmIntrinsics::_getAndAddLong:   //FIXME
     if (!Matcher::match_rule_supported(Op_GetAndAddL)) return false;
     break;
 
-  case vmIntrinsics::_getAndSetByte:
+  case vmIntrinsics::_getAndSetByte:   //FIXME
     if (!Matcher::match_rule_supported(Op_GetAndSetB)) return false;
     break;
-  case vmIntrinsics::_getAndSetShort:
+  case vmIntrinsics::_getAndSetShort:   //FIXME
     if (!Matcher::match_rule_supported(Op_GetAndSetS)) return false;
     break;
-  case vmIntrinsics::_getAndSetInt:
+  case vmIntrinsics::_getAndSetInt:   //FIXME
     if (!Matcher::match_rule_supported(Op_GetAndSetI)) return false;
     break;
-  case vmIntrinsics::_getAndSetLong:
+  case vmIntrinsics::_getAndSetLong:   //FIXME
     if (!Matcher::match_rule_supported(Op_GetAndSetL)) return false;
     break;
-  case vmIntrinsics::_getAndSetReference:
+  case vmIntrinsics::_getAndSetReferenceMO:
 #ifdef _LP64
     if (!UseCompressedOops && !Matcher::match_rule_supported(Op_GetAndSetP)) return false;
     if (UseCompressedOops && !Matcher::match_rule_supported(Op_GetAndSetN)) return false;
@@ -658,86 +640,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_getCharsStringU:
   case vmIntrinsics::_getCharStringU:
   case vmIntrinsics::_putCharStringU:
-  case vmIntrinsics::_getReference:
-  case vmIntrinsics::_getBoolean:
-  case vmIntrinsics::_getByte:
-  case vmIntrinsics::_getShort:
-  case vmIntrinsics::_getChar:
-  case vmIntrinsics::_getInt:
-  case vmIntrinsics::_getLong:
-  case vmIntrinsics::_getFloat:
-  case vmIntrinsics::_getDouble:
-  case vmIntrinsics::_putReference:
-  case vmIntrinsics::_putBoolean:
-  case vmIntrinsics::_putByte:
-  case vmIntrinsics::_putShort:
-  case vmIntrinsics::_putChar:
-  case vmIntrinsics::_putInt:
-  case vmIntrinsics::_putLong:
-  case vmIntrinsics::_putFloat:
-  case vmIntrinsics::_putDouble:
-  case vmIntrinsics::_getReferenceVolatile:
-  case vmIntrinsics::_getBooleanVolatile:
-  case vmIntrinsics::_getByteVolatile:
-  case vmIntrinsics::_getShortVolatile:
-  case vmIntrinsics::_getCharVolatile:
-  case vmIntrinsics::_getIntVolatile:
-  case vmIntrinsics::_getLongVolatile:
-  case vmIntrinsics::_getFloatVolatile:
-  case vmIntrinsics::_getDoubleVolatile:
-  case vmIntrinsics::_putReferenceVolatile:
-  case vmIntrinsics::_putBooleanVolatile:
-  case vmIntrinsics::_putByteVolatile:
-  case vmIntrinsics::_putShortVolatile:
-  case vmIntrinsics::_putCharVolatile:
-  case vmIntrinsics::_putIntVolatile:
-  case vmIntrinsics::_putLongVolatile:
-  case vmIntrinsics::_putFloatVolatile:
-  case vmIntrinsics::_putDoubleVolatile:
-  case vmIntrinsics::_getReferenceAcquire:
-  case vmIntrinsics::_getBooleanAcquire:
-  case vmIntrinsics::_getByteAcquire:
-  case vmIntrinsics::_getShortAcquire:
-  case vmIntrinsics::_getCharAcquire:
-  case vmIntrinsics::_getIntAcquire:
-  case vmIntrinsics::_getLongAcquire:
-  case vmIntrinsics::_getFloatAcquire:
-  case vmIntrinsics::_getDoubleAcquire:
-  case vmIntrinsics::_putReferenceRelease:
-  case vmIntrinsics::_putBooleanRelease:
-  case vmIntrinsics::_putByteRelease:
-  case vmIntrinsics::_putShortRelease:
-  case vmIntrinsics::_putCharRelease:
-  case vmIntrinsics::_putIntRelease:
-  case vmIntrinsics::_putLongRelease:
-  case vmIntrinsics::_putFloatRelease:
-  case vmIntrinsics::_putDoubleRelease:
-  case vmIntrinsics::_getReferenceOpaque:
-  case vmIntrinsics::_getBooleanOpaque:
-  case vmIntrinsics::_getByteOpaque:
-  case vmIntrinsics::_getShortOpaque:
-  case vmIntrinsics::_getCharOpaque:
-  case vmIntrinsics::_getIntOpaque:
-  case vmIntrinsics::_getLongOpaque:
-  case vmIntrinsics::_getFloatOpaque:
-  case vmIntrinsics::_getDoubleOpaque:
-  case vmIntrinsics::_putReferenceOpaque:
-  case vmIntrinsics::_putBooleanOpaque:
-  case vmIntrinsics::_putByteOpaque:
-  case vmIntrinsics::_putShortOpaque:
-  case vmIntrinsics::_putCharOpaque:
-  case vmIntrinsics::_putIntOpaque:
-  case vmIntrinsics::_putLongOpaque:
-  case vmIntrinsics::_putFloatOpaque:
-  case vmIntrinsics::_putDoubleOpaque:
-  case vmIntrinsics::_getShortUnaligned:
-  case vmIntrinsics::_getCharUnaligned:
-  case vmIntrinsics::_getIntUnaligned:
-  case vmIntrinsics::_getLongUnaligned:
-  case vmIntrinsics::_putShortUnaligned:
-  case vmIntrinsics::_putCharUnaligned:
-  case vmIntrinsics::_putIntUnaligned:
-  case vmIntrinsics::_putLongUnaligned:
+  case vmIntrinsics::_getReferenceMO:
+  case vmIntrinsics::_putReferenceMO:
+  case vmIntrinsics::_getPrimitiveBitsMO:
+  case vmIntrinsics::_putPrimitiveBitsMO:
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:

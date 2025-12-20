@@ -109,21 +109,25 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
-  case vmIntrinsics::_compareAndSetLong:
+  case vmIntrinsics::_compareAndSetInt: //FIXME
+  case vmIntrinsics::_compareAndSetLong: //FIXME
+  case vmIntrinsics::_compareAndSetReferenceMO:
+    // all platforms must support at least these three
     break;
-  case vmIntrinsics::_getAndAddInt:
+  //case vmIntrinsics::_getAndOperatePrimitiveBitsMO: //FIXME
+  case vmIntrinsics::_getAndAddInt:    //FIXME
     if (!VM_Version::supports_atomic_getadd4()) return false;
     break;
-  case vmIntrinsics::_getAndAddLong:
+  case vmIntrinsics::_getAndAddLong:    //FIXME
     if (!VM_Version::supports_atomic_getadd8()) return false;
     break;
-  case vmIntrinsics::_getAndSetInt:
+  case vmIntrinsics::_getAndSetInt:    //FIXME
     if (!VM_Version::supports_atomic_getset4()) return false;
     break;
-  case vmIntrinsics::_getAndSetLong:
+  case vmIntrinsics::_getAndSetLong:    //FIXME
     if (!VM_Version::supports_atomic_getset8()) return false;
     break;
-  case vmIntrinsics::_getAndSetReference:
+  case vmIntrinsics::_getAndSetReferenceMO:
 #ifdef _LP64
     if (!UseCompressedOops && !VM_Version::supports_atomic_getset8()) return false;
     if (UseCompressedOops && !VM_Version::supports_atomic_getset4()) return false;
@@ -176,50 +180,10 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
-  case vmIntrinsics::_getReference:
-  case vmIntrinsics::_getBoolean:
-  case vmIntrinsics::_getByte:
-  case vmIntrinsics::_getShort:
-  case vmIntrinsics::_getChar:
-  case vmIntrinsics::_getInt:
-  case vmIntrinsics::_getLong:
-  case vmIntrinsics::_getFloat:
-  case vmIntrinsics::_getDouble:
-  case vmIntrinsics::_putReference:
-  case vmIntrinsics::_putBoolean:
-  case vmIntrinsics::_putByte:
-  case vmIntrinsics::_putShort:
-  case vmIntrinsics::_putChar:
-  case vmIntrinsics::_putInt:
-  case vmIntrinsics::_putLong:
-  case vmIntrinsics::_putFloat:
-  case vmIntrinsics::_putDouble:
-  case vmIntrinsics::_getReferenceVolatile:
-  case vmIntrinsics::_getBooleanVolatile:
-  case vmIntrinsics::_getByteVolatile:
-  case vmIntrinsics::_getShortVolatile:
-  case vmIntrinsics::_getCharVolatile:
-  case vmIntrinsics::_getIntVolatile:
-  case vmIntrinsics::_getLongVolatile:
-  case vmIntrinsics::_getFloatVolatile:
-  case vmIntrinsics::_getDoubleVolatile:
-  case vmIntrinsics::_putReferenceVolatile:
-  case vmIntrinsics::_putBooleanVolatile:
-  case vmIntrinsics::_putByteVolatile:
-  case vmIntrinsics::_putShortVolatile:
-  case vmIntrinsics::_putCharVolatile:
-  case vmIntrinsics::_putIntVolatile:
-  case vmIntrinsics::_putLongVolatile:
-  case vmIntrinsics::_putFloatVolatile:
-  case vmIntrinsics::_putDoubleVolatile:
-  case vmIntrinsics::_getShortUnaligned:
-  case vmIntrinsics::_getCharUnaligned:
-  case vmIntrinsics::_getIntUnaligned:
-  case vmIntrinsics::_getLongUnaligned:
-  case vmIntrinsics::_putShortUnaligned:
-  case vmIntrinsics::_putCharUnaligned:
-  case vmIntrinsics::_putIntUnaligned:
-  case vmIntrinsics::_putLongUnaligned:
+  case vmIntrinsics::_getPrimitiveBitsMO:
+  case vmIntrinsics::_putPrimitiveBitsMO:
+  case vmIntrinsics::_getReferenceMO:
+  case vmIntrinsics::_putReferenceMO:
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_updateCRC32:
@@ -230,8 +194,6 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
   case vmIntrinsics::_vectorizedMismatch:
-  case vmIntrinsics::_compareAndSetInt:
-  case vmIntrinsics::_compareAndSetReference:
   case vmIntrinsics::_getCharStringU:
   case vmIntrinsics::_putCharStringU:
 #ifdef JFR_HAVE_INTRINSICS

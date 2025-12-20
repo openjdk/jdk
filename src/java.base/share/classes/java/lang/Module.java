@@ -273,7 +273,7 @@ public final class Module implements AnnotatedElement {
         private static final long FIELD_OFFSET = UNSAFE.objectFieldOffset(Module.class, "enableNativeAccess");
 
         private static boolean isNativeAccessEnabled(Module target) {
-            return UNSAFE.getBooleanVolatile(target, FIELD_OFFSET);
+            return UNSAFE.getBooleanMO(Unsafe.MO_VOLATILE, target, FIELD_OFFSET);
         }
 
         // Atomically sets enableNativeAccess if not already set
@@ -350,7 +350,7 @@ public final class Module implements AnnotatedElement {
                 UNSAFE.objectFieldOffset(Module.class, "enableFinalMutation");
 
         private static boolean isEnableFinalMutation(Module module) {
-            return UNSAFE.getBooleanVolatile(module, ENABLE_FINAL_MUTATION_OFFSET);
+            return UNSAFE.getBooleanMO(Unsafe.MO_VOLATILE, module, ENABLE_FINAL_MUTATION_OFFSET);
         }
 
         private static boolean tryEnableFinalMutation(Module module) {

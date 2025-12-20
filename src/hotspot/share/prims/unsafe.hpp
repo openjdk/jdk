@@ -36,4 +36,7 @@ jlong Unsafe_field_offset_to_byte_offset(jlong field_offset);
 
 jlong Unsafe_field_offset_from_byte_offset(jlong byte_offset);
 
+// The low three bits of the 8 primitive BasicType values encode size.
+constexpr int UNSAFE_PRIMITIVE_SIZE_MASK = 3;
+
 #endif // SHARE_PRIMS_UNSAFE_HPP

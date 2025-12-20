@@ -104,8 +104,295 @@ public final class Unsafe {
     //--- peek and poke operations
     // (compilers should optimize these to memory ops)
 
-    // These work on object fields in the Java heap.
-    // They will not work on elements of packed arrays.
+    // These work on object fields (of all types) in the Java heap.
+    // They also work on array elements (of all types) in the Java heap.
+    // THey also work on off-heap values (of primitive types).
+
+    // These basic type codes are shared with the classfile format.  Do not change.
+    private static final byte BT_BOOLEAN = 4;
+    private static final byte BT_CHAR    = 5;
+    private static final byte BT_FLOAT   = 6;
+    private static final byte BT_DOUBLE  = 7;
+    private static final byte BT_BYTE    = 8;
+    private static final byte BT_SHORT   = 9;
+    private static final byte BT_INT     = 10;
+    private static final byte BT_LONG    = 11;
+
+    // The low three bits of each BT value encodes size of BT.
+    private static final byte PRIMITIVE_SIZE_MASK = 3;
+
+    // Operators for getAndOperatePrimitiveBitsMO
+    public static final byte OP_ADD     = '+';
+    public static final byte OP_BITAND  = '&';
+    public static final byte OP_BITOR   = '|';
+    public static final byte OP_BITXOR  = '^';
+    public static final byte OP_SWAP    = '=';
+
+    // These memory order codes are private to this API and its native methods.
+    /** Normal relaxed memory order, which is the default for Java. */
+    public static final byte MO_PLAIN    = 1;
+    /** Selects volatile memory order, as found in Java.  The default for CAS. */
+    public static final byte MO_VOLATILE = 2;
+    /** Selects an acquiring load. */
+    public static final byte MO_ACQUIRE  = 4;
+    /** Selects a releasing store. */
+    public static final byte MO_RELEASE  = 8;
+    private static final byte MO_MODE_MASK = MO_PLAIN|MO_VOLATILE|MO_ACQUIRE|MO_RELEASE;
+
+    // Except for unaligned loads and stores, primitive and single-reference
+    // accesses provided here are always atomic and always naturally aligned,
+    // as machine word loads and stores.  There is no direct way to select a
+    // truly unordered or nonatomic load or store, at the hardware level.
+    // (Such a thing would be quite ... unsafe.)
+    //
+    // There is a related (but distinct) set of MO codes in accessDecorators.hpp
+    // Other APIs may make further distinctions:
+    //
+    //  - MO_RELAXED (from C++) is effectively (*) the same as MO_PLAIN in Java
+    //  - MO_SEQ_CST (from C++) could be treated for Java as an alias for MO_VOLATILE
+    //  - MO_OPAQUE is an alias for MO_RELAXED, but guarantees atomicity (**)
+    //  - MO_UNORDERED is a looser order than MO_RELAXED, not provided here
+    //  - C++ acq_rel, as the union of acquire and release, is rare in HotSpot
+    //  - C++ consume is not used in HotSpot or the JDK
+
+    // (*) When a Java constructor writes to a final field, there is a memory
+    // effect beyond C++ relaxed semantics; the write is akin to a releasing
+    // store.  This effect is not implemented in this API, so MO_PLAIN here
+    // always implies MO_RELAXED (and also MO_OPAQUE).
+    //
+    // (**) A 64-bit access split into two 32-bit accesses might be called MO_RELAXED
+    // from a C++ perspective, but would not be MO_OPAQUE.  HotSpot never splits
+    // such accesses, except perhaps when an unaligned address is used explicitly.
+
+    // For these reasons, MO_RELAXED and MO_OPAQUE and MO_PLAIN are almost
+    // always aligned.  In theory, C++ "plain" struct access (MO_RELAXED)
+    // could fail to be non-atomic, so it could not be called MO_OPAQUE.
+
+    /** Alias for {@code MO_PLAIN}; see comments in code. */
+    public static final byte MO_OPAQUE = MO_PLAIN;
+
+    /** MO_WEAK_CAS is only for CAS ops, combining bitwise with lower MO values */
+    public static final byte MO_WEAK_CAS = 16;
+
+    /** MO_UNALIGNED is only for primitive load/store; atomicity can be broken */
+    private static final byte MO_UNALIGNED       = 32;
+    private static final byte MO_UNALIGNED_PLAIN = MO_UNALIGNED|MO_PLAIN;
+
+    // More useful bit combinations
+    public static final byte MO_WEAK_CAS_PLAIN    = MO_WEAK_CAS|MO_PLAIN;
+    public static final byte MO_WEAK_CAS_VOLATILE = MO_WEAK_CAS|MO_VOLATILE;
+    public static final byte MO_WEAK_CAS_ACQUIRE  = MO_WEAK_CAS|MO_ACQUIRE;
+    public static final byte MO_WEAK_CAS_RELEASE  = MO_WEAK_CAS|MO_RELEASE;
+
+    // Note that acquire and release modes are for loads and stores, respectively.
+    // If a load is requested with MO_RELEASE, it may decay to MO_PLAIN.
+    // If a store is requested with MO_ACQUIRE, it may decay to MO_PLAIN.
+    // However, debug versions of the VM may complain.
+
+    /**
+     * Loads from a variable of any primitive type, using any of a
+     * variety of access methods.  See {@link #getInt(Object, long)}
+     * for the connection to Java variables and off-heap variables.
+     *
+     * @param memoryOrder an encoding of the memory access order, one of
+     *        {@link #MO_PLAIN} or another of those constants
+     * @param o Java heap object in which the variable resides, if any, else
+     *        null
+     * @param offset indication of where the variable resides in a Java heap
+     *        object, if any, else a memory address locating the variable
+     *        statically
+     * @param basicType an encoding of the primitive type, one of
+     *        {@link #BT_BOOLEAN} or another of those constants
+     * @return the value fetched from the indicated Java variable,
+     *         padded by garbage high-order bits (if smaller than 64 bits)
+     * @throws RuntimeException No defined exceptions are thrown, not even
+     *         {@link NullPointerException}
+     * @see #getInt(Object, long)
+     */
+    @ForceInline
+    @IntrinsicCandidate
+    private long getPrimitiveBitsMO(byte memoryOrder, byte basicType,
+                                    Object o, long offset) {
+        // This intrinsic has a body so that the JIT can refuse to
+        // expand the intrinsic, when it sees a request it does not
+        // understand.
+
+        // The purpose of the decision tree is to present the JIT with
+        // optimizable statements, even if memoryOrder or basicType
+        // fail to be constant.  This allows the JIT to compile the
+        // body to serve calls from the interpreter and lukewarm code.
+        checkBasicType(basicType);
+        checkMemoryOrder(memoryOrder & ~MO_UNALIGNED);
+        long bits;
+        switch (basicType & PRIMITIVE_SIZE_MASK) {  // encodes size of BT
+            case 3 -> {
+                if (memoryOrder == MO_PLAIN && basicType == BT_LONG && basicType == BT_LONG) {
+                    return getPrimitiveBitsMONative(MO_PLAIN, BT_LONG, o, offset);
+                }
+            }
+            case 2 -> {
+                if (memoryOrder == MO_PLAIN && basicType == BT_INT) {
+                    return getPrimitiveBitsMONative(MO_PLAIN, BT_INT, o, offset);
+                }
+            }
+            case 1 -> {
+                if (memoryOrder == MO_PLAIN && basicType == BT_SHORT) {
+                    return getPrimitiveBitsMONative(MO_PLAIN, BT_SHORT, o, offset);
+                }
+            }
+            default -> {
+                if (memoryOrder == MO_PLAIN && basicType == BT_BYTE) {
+                    return getPrimitiveBitsMONative(MO_PLAIN, BT_BYTE, o, offset);
+                }
+            }
+        }
+
+        // this might end up in the native method
+        return getPrimitiveBitsMONative(memoryOrder, basicType, o, offset);
+    }
+
+    // Second try for the JIT, if it dislikes a memory order or alignment request.
+    // Both this method and the previous are handled by the same native code
+    // and the same compiler intrinsic logic.
+    // The native method can treat every non-plain memory access as MO_VOLATILE.
+    // The native method can assert on unaligned requests if !UNALIGNED_ACCESS.
+    // The native method can assert on combinations which do not make sense.
+    // Prefer this method when you don't need the case analysis of the previous one.
+    @IntrinsicCandidate
+    private native long getPrimitiveBitsMONative(byte memoryOrder, byte basicType,
+                                                 Object o, long offset);
+
+
+    /**
+     * Stores to a variable of any primitive type, using any of a
+     * variety of access methods.  See {@link #putInt(Object, long, int)}
+     * for the connection to Java variables and off-heap variables.
+     *
+     * @param memoryOrder an encoding of the memory access order, one of
+     *        {@link #MO_PLAIN} or another of those constants
+     * @param o Java heap object in which the variable resides, if any, else
+     *        null
+     * @param offset indication of where the variable resides in a Java heap
+     *        object, if any, else a memory address locating the variable
+     *        statically
+     * @return the value to be stored to the indicated Java variable,
+     *         padded by ignored high-order bits (if smaller than 64 bits)
+     * @param basicType an encoding of the primitive type, one of
+     *        {@link #BT_BOOLEAN} or another of those constants
+     * @throws RuntimeException No defined exceptions are thrown, not even
+     *         {@link NullPointerException}
+     * @see #getInt(Object, long)
+     */
+    @ForceInline
+    @IntrinsicCandidate
+    private void putPrimitiveBitsMO(byte memoryOrder, byte basicType,
+                                    Object o, long offset, long bits) {
+        // This intrinsic has a body so that the JIT can refuse to
+        // expand the intrinsic, when it sees a request it does not
+        // understand.
+
+        // The purpose of the decision tree is to present the JIT with
+        // optimizable statements, even if memoryOrder or basicType
+        // fail to be constant.  This allows the JIT to compile the
+        // body to serve calls from the interpreter and lukewarm code.
+        checkBasicType(basicType);
+        checkMemoryOrder(memoryOrder & ~MO_UNALIGNED);
+        switch (basicType & PRIMITIVE_SIZE_MASK) {  // encodes size of BT
+            case 3 -> {
+                if (memoryOrder == MO_PLAIN && basicType == BT_LONG && basicType == BT_LONG) {
+                    putPrimitiveBitsMONative(MO_PLAIN, BT_LONG, o, offset, bits);
+                    return;
+                }
+            }
+            case 2 -> {
+                if (memoryOrder == MO_PLAIN && basicType == BT_INT) {
+                    putPrimitiveBitsMONative(MO_PLAIN, BT_INT, o, offset, bits);
+                    return;
+                }
+            }
+            case 1 -> {
+                if (memoryOrder == MO_PLAIN && basicType == BT_SHORT) {
+                    putPrimitiveBitsMONative(MO_PLAIN, BT_SHORT, o, offset, bits);
+                    return;
+                }
+            }
+            default -> {
+                if (memoryOrder == MO_PLAIN && basicType == BT_BYTE) {
+                    putPrimitiveBitsMONative(MO_PLAIN, BT_BYTE, o, offset, bits);
+                    return;
+                } else if (basicType == BT_BOOLEAN) {
+                    bits = bool2byte(byte2bool((byte)bits)); // do not store garbage booleans
+                    break;
+                }
+            }
+        }
+
+        // this might end up in the native method
+        putPrimitiveBitsMONative(memoryOrder, basicType, o, offset, bits);
+    }
+
+    // Second try for the JIT, if it dislikes a memory order or alignment request.
+    // Both this method and the previous are handled by the same native code
+    // and the same compiler intrinsic logic.
+    // The native method can treat every non-plain memory access as MO_VOLATILE.
+    // The native method can assert on unaligned requests if !UNALIGNED_ACCESS.
+    // The native method can assert on combinations which do not make sense.
+    // Prefer this method when you don't need the case analysis of the previous one.
+    @IntrinsicCandidate
+    private native void putPrimitiveBitsMONative(byte memoryOrder, byte basicType,
+                                                 Object o, long offset, long bits);
+
+    @ForceInline
+    private static void checkMemoryOrder(int memoryOrder) {
+        if ((memoryOrder & (~MO_MODE_MASK | (memoryOrder-1))) == 0) {
+            // This tricky expression computes the answer to two questions:
+            //  1. is memoryOrder contained in MO_MODE_MASK?  (mo & ~MMM) == 0
+            //  2. is memoryOrder a power of two?             (mo & mo-1) == 0
+            // First we can rewrite the tests,  A==0 & B==0  ==> (A|B) == 0
+            // Then,  (mo & ~MMM) | (mo & mo-1)  ==>  (mo & (~MMM | mo-1)
+            return;
+        }
+        throw new IllegalArgumentException("bad memory order requested");
+    }
+
+    @ForceInline
+    private static void checkBasicType(byte basicType) {
+        if (basicType >= BT_BOOLEAN && basicType <= BT_LONG)  return;
+        throw new IllegalArgumentException("bad type");
+    }
+
+    // When converting from primitive bits, normal casts work fine for most types.
+    // But not boolean, float, or double.  They need these unsurprising operators.
+    // The methods are placed here because the native methods which work on the
+    // 64-bit primitive bit representations must make compatible conversions.
+    // It is ugly that byte, short, int, and float pad with up to 32 sign bits,
+    // but that is a harmless detail internal to this API.
+    // The native primitive getter method is allowed to pad with zeroes or any
+    // other kind of garbage.
+
+    /** Convert primitive representation bits to a float.  Ignore high half. */
+    @ForceInline
+    public static float bitsToFloat(long bits) {
+        return Float.intBitsToFloat((int)bits);
+    }
+
+    /** Convert a float to primitive representation bits.  Pad with 32 bits. */
+    @ForceInline
+    public static long floatToBits(float x) {
+        return Float.floatToRawIntBits(x);
+    }
+
+    /** Convert primitive representation bits to a double. */
+    @ForceInline
+    public static double bitsToDouble(long bits) {
+        return Double.longBitsToDouble(bits);
+    }
+
+    /** Convert a double to primitive representation bits. */
+    @ForceInline
+    public static long doubleToBits(double x) {
+        return Double.doubleToRawLongBits(x);
+    }
 
     /**
      * Fetches a value from a given Java variable.
@@ -160,8 +447,16 @@ public final class Unsafe {
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
      */
-    @IntrinsicCandidate
-    public native int getInt(Object o, long offset);
+    @ForceInline
+    public int getInt(Object o, long offset) {
+        return (int) getPrimitiveBitsMONative(MO_PLAIN, BT_INT, o, offset);
+    }
+
+    /** Special-access version of {@link #getInt(Object, long)}  */
+    @ForceInline
+    public int getIntMO(byte memoryOrder, Object o, long offset) {
+        return (int) getPrimitiveBitsMO(memoryOrder, BT_INT, o, offset);
+    }
 
     /**
      * Stores a value into a given Java variable.
@@ -183,15 +478,29 @@ public final class Unsafe {
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
      */
-    @IntrinsicCandidate
-    public native void putInt(Object o, long offset, int x);
+    @ForceInline
+    public void putInt(Object o, long offset, int x) {
+        putIntMO(MO_PLAIN, o, offset, x);
+    }
+
+    /** Special-access version of {@link #putInt(Object, long, int)}  */
+    @ForceInline
+    public void putIntMO(byte memoryOrder, Object o, long offset, int x) {
+        putPrimitiveBitsMO(memoryOrder, BT_INT, o, offset, (long)x);
+    }
 
     /**
      * Fetches a reference value from a given Java variable.
      * @see #getInt(Object, long)
      */
+    @ForceInline
+    public Object getReference(Object o, long offset) {
+        return getReferenceMO(MO_PLAIN, o, offset);
+    }
+
+    /** Special-access version of {@link #getReference(Object, long)}  */
     @IntrinsicCandidate
-    public native Object getReference(Object o, long offset);
+    public native Object getReferenceMO(byte memoryOrder, Object o, long offset);
 
     /**
      * Stores a reference value into a given Java variable.
@@ -203,64 +512,182 @@ public final class Unsafe {
      * are updated.
      * @see #putInt(Object, long, int)
      */
+    @ForceInline
+    public void putReference(Object o, long offset, Object x) {
+        putReferenceMO(MO_PLAIN, o, offset, x);
+    }
+
+    /** Special-access version of {@link #putReference(Object, long, Object)}  */
     @IntrinsicCandidate
-    public native void putReference(Object o, long offset, Object x);
+    public native void putReferenceMO(byte memoryOrder, Object o, long offset, Object x);
 
     /** @see #getInt(Object, long) */
-    @IntrinsicCandidate
-    public native boolean getBoolean(Object o, long offset);
+    @ForceInline
+    public boolean getBoolean(Object o, long offset) {
+        return byte2bool((byte)getPrimitiveBitsMO(MO_PLAIN, BT_BOOLEAN, o, offset));
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public boolean getBooleanMO(byte memoryOrder, Object o, long offset) {
+        return byte2bool((byte)getPrimitiveBitsMO(memoryOrder, BT_BOOLEAN, o, offset));
+    }
 
     /** @see #putInt(Object, long, int) */
-    @IntrinsicCandidate
-    public native void    putBoolean(Object o, long offset, boolean x);
+    @ForceInline
+    public void    putBoolean(Object o, long offset, boolean x) {
+        putPrimitiveBitsMO(MO_PLAIN, BT_BOOLEAN, o, offset, bool2byte(x));
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public void    putBooleanMO(byte memoryOrder, Object o, long offset, boolean x) {
+        putPrimitiveBitsMO(memoryOrder, BT_BOOLEAN, o, offset, bool2byte(x));
+    }
 
     /** @see #getInt(Object, long) */
-    @IntrinsicCandidate
-    public native byte    getByte(Object o, long offset);
+    @ForceInline
+    public byte    getByte(Object o, long offset) {
+        return (byte) getPrimitiveBitsMONative(MO_PLAIN, BT_BYTE, o, offset);
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public byte    getByteMO(byte memoryOrder, Object o, long offset) {
+        return (byte) getPrimitiveBitsMO(memoryOrder, BT_BYTE, o, offset);
+    }
 
     /** @see #putInt(Object, long, int) */
-    @IntrinsicCandidate
-    public native void    putByte(Object o, long offset, byte x);
+    @ForceInline
+    public void    putByte(Object o, long offset, byte x) {
+        putPrimitiveBitsMONative(MO_PLAIN, BT_BYTE, o, offset, (long)x);
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public void    putByteMO(byte memoryOrder, Object o, long offset, byte x) {
+        putPrimitiveBitsMO(memoryOrder, BT_BYTE, o, offset, (long)x);
+    }
 
     /** @see #getInt(Object, long) */
-    @IntrinsicCandidate
-    public native short   getShort(Object o, long offset);
+    @ForceInline
+    public short   getShort(Object o, long offset) {
+        return (short) getPrimitiveBitsMONative(MO_PLAIN, BT_SHORT, o, offset);
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public short   getShortMO(byte memoryOrder, Object o, long offset) {
+        return (short) getPrimitiveBitsMO(memoryOrder, BT_SHORT, o, offset);
+    }
 
     /** @see #putInt(Object, long, int) */
-    @IntrinsicCandidate
-    public native void    putShort(Object o, long offset, short x);
+    @ForceInline
+    public void    putShort(Object o, long offset, short x) {
+        putPrimitiveBitsMONative(MO_PLAIN, BT_SHORT, o, offset, (long)x);
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public void    putShortMO(byte memoryOrder, Object o, long offset, short x) {
+        putPrimitiveBitsMO(memoryOrder, BT_SHORT, o, offset, (long)x);
+    }
 
     /** @see #getInt(Object, long) */
-    @IntrinsicCandidate
-    public native char    getChar(Object o, long offset);
+    @ForceInline
+    public char    getChar(Object o, long offset) {
+        return (char) getPrimitiveBitsMONative(MO_PLAIN, BT_CHAR, o, offset);
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public char    getCharMO(byte memoryOrder, Object o, long offset) {
+        return (char) getPrimitiveBitsMO(memoryOrder, BT_CHAR, o, offset);
+    }
 
     /** @see #putInt(Object, long, int) */
-    @IntrinsicCandidate
-    public native void    putChar(Object o, long offset, char x);
+    @ForceInline
+    public void    putChar(Object o, long offset, char x) {
+        putPrimitiveBitsMONative(MO_PLAIN, BT_CHAR, o, offset, (long)x);
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public void    putCharMO(byte memoryOrder, Object o, long offset, char x) {
+        putPrimitiveBitsMO(memoryOrder, BT_CHAR, o, offset, (long)x);
+    }
 
     /** @see #getInt(Object, long) */
-    @IntrinsicCandidate
-    public native long    getLong(Object o, long offset);
+    @ForceInline
+    public long    getLong(Object o, long offset) {
+        return getPrimitiveBitsMONative(MO_PLAIN, BT_LONG, o, offset);
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public long    getLongMO(byte memoryOrder, Object o, long offset) {
+        return getPrimitiveBitsMO(memoryOrder, BT_LONG, o, offset);
+    }
 
     /** @see #putInt(Object, long, int) */
-    @IntrinsicCandidate
-    public native void    putLong(Object o, long offset, long x);
+    @ForceInline
+    public void    putLong(Object o, long offset, long x) {
+        putPrimitiveBitsMONative(MO_PLAIN, BT_LONG, o, offset, x);
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public void    putLongMO(byte memoryOrder, Object o, long offset, long x) {
+        putPrimitiveBitsMO(memoryOrder, BT_LONG, o, offset, x);
+    }
 
     /** @see #getInt(Object, long) */
-    @IntrinsicCandidate
-    public native float   getFloat(Object o, long offset);
+    @ForceInline
+    public float   getFloat(Object o, long offset) {
+        return bitsToFloat(getPrimitiveBitsMO(MO_PLAIN, BT_FLOAT, o, offset));
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public float   getFloatMO(byte memoryOrder, Object o, long offset) {
+        return bitsToFloat(getPrimitiveBitsMO(memoryOrder, BT_FLOAT, o, offset));
+    }
 
     /** @see #putInt(Object, long, int) */
-    @IntrinsicCandidate
-    public native void    putFloat(Object o, long offset, float x);
+    @ForceInline
+    public void    putFloat(Object o, long offset, float x) {
+        putPrimitiveBitsMO(MO_PLAIN, BT_FLOAT, o, offset, floatToBits(x));
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public void    putFloatMO(byte memoryOrder, Object o, long offset, float x) {
+        putPrimitiveBitsMO(memoryOrder, BT_FLOAT, o, offset, floatToBits(x));
+    }
 
     /** @see #getInt(Object, long) */
-    @IntrinsicCandidate
-    public native double  getDouble(Object o, long offset);
+    @ForceInline
+    public double  getDouble(Object o, long offset) {
+        return bitsToDouble(getPrimitiveBitsMO(MO_PLAIN, BT_DOUBLE, o, offset));
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public double  getDoubleMO(byte memoryOrder, Object o, long offset) {
+        return bitsToDouble(getPrimitiveBitsMO(memoryOrder, BT_DOUBLE, o, offset));
+    }
 
     /** @see #putInt(Object, long, int) */
-    @IntrinsicCandidate
-    public native void    putDouble(Object o, long offset, double x);
+    @ForceInline
+    public void    putDouble(Object o, long offset, double x) {
+        putPrimitiveBitsMO(MO_PLAIN, BT_DOUBLE, o, offset, doubleToBits(x));
+    }
+
+    /** Special-access version. */
+    @ForceInline
+    public void    putDoubleMO(byte memoryOrder, Object o, long offset, double x) {
+        putPrimitiveBitsMO(memoryOrder, BT_DOUBLE, o, offset, doubleToBits(x));
+    }
 
     /**
      * Fetches a native pointer from a given memory address.  If the address is
@@ -306,18 +733,26 @@ public final class Unsafe {
         }
     }
 
-    // These read VM internal data.
+    // Methods that take no Object base address work on values in the
+    // C heap, or VM internal data.
+    //
+    // If another method (of the same name) accepts an Object base
+    // address, then omitting the Object base address is exactly
+    // equivalent to passing null for a base address.
+    //
+    // If you need a stronger memory order, you need to supply the
+    // null base explicitly as well as the memory order.  So
+    // getInt(addr) works but then getIntMO(MO_VOLATILE, null, addr).
 
     /**
      * Fetches an uncompressed reference value from a given native variable
      * ignoring the VM's compressed references mode.
+     * The address must be known to the VM as an oop handle (or an equivalent).
      *
      * @param address a memory address locating the variable
      * @return the value fetched from the indicated native variable
      */
     public native Object getUncompressedObject(long address);
-
-    // These work on values in the C heap.
 
     /**
      * Fetches a value from a given memory address.  If the address is zero, or
@@ -1440,65 +1875,245 @@ public final class Unsafe {
     /** Throws the exception without telling the verifier. */
     public native void throwException(Throwable ee);
 
+    // Here is the zoo of CAS operations in use (beyond the VH later):
+    // compareAndSet{Reference,Long,Int} (Volatile only)
+    // compareAndExchange{Reference,Long,Int}{Plain,Acquire,Release,''}
+    // weakCompareAndSet{Reference,Long,Int}{Plain,Acquire,Release,''}
+    // The default is MO_VOLATILE, so MO_PLAIN must be requested specifically.
+    // When a specific "flavor" is not available, MO_VOLATILE is a good fallback.
+
+    // The actual API points come in a more regular zoo:
+    // compareAndSet{Reference,Long,Int,{otherprims}}{'',MO}
+    // compareAndExchange{Reference,Long,Int,{otherprims}}{'',MO}
+    // weakCompareAndSet{Reference,Long,Int}  (only 2 primitives)
+    // The explicit MO argument is optional; MO_VOLATILE is the default.
+    // The weak CAS can be obtained from the regular one with MO_WEAK_CAS.
+
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
      *
-     * <p>This operation has memory semantics of a {@code volatile} read
+     * Volatile memory order is used, and spurious failures (weak CAS)
+     * are excluded, but see also {@link #compareAndSetReferenceMO}.
+     *
+     * @return {@code true} if successful
+     */
+    @ForceInline
+    public boolean compareAndSetReference(Object o, long offset,
+                                                Object expected,
+                                                Object x) {
+        return compareAndSetReferenceMO(MO_VOLATILE, o, offset, expected, x);
+    }
+
+    /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * <p>When {@code memoryOrder} is {@code MO_VOLATILE}, this
+     * operation has memory semantics of a {@code volatile} read
      * and write.  Corresponds to C11 atomic_compare_exchange_strong.
+     *
+     * <p>When the bit {@link MO_WEAK_CAS} is set within the bits of
+     * {@code memoryOrder}, weak compare and set is selected.
+     * Otherwise, it is a strong CAS, and {@code MO_VOLATILE}
+     * should be selected.
      *
      * @return {@code true} if successful
      */
     @IntrinsicCandidate
-    public final native boolean compareAndSetReference(Object o, long offset,
-                                                       Object expected,
-                                                       Object x);
-
-    @IntrinsicCandidate
-    public final native Object compareAndExchangeReference(Object o, long offset,
-                                                           Object expected,
-                                                           Object x);
-
-    @IntrinsicCandidate
-    public final Object compareAndExchangeReferenceAcquire(Object o, long offset,
-                                                           Object expected,
-                                                           Object x) {
-        return compareAndExchangeReference(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final Object compareAndExchangeReferenceRelease(Object o, long offset,
-                                                           Object expected,
-                                                           Object x) {
-        return compareAndExchangeReference(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetReferencePlain(Object o, long offset,
+    public native boolean compareAndSetReferenceMO(byte memoryOrder,
+                                                         Object o, long offset,
                                                          Object expected,
-                                                         Object x) {
-        return compareAndSetReference(o, offset, expected, x);
-    }
+                                                         Object x);
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetReferenceAcquire(Object o, long offset,
-                                                           Object expected,
-                                                           Object x) {
-        return compareAndSetReference(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetReferenceRelease(Object o, long offset,
-                                                           Object expected,
-                                                           Object x) {
-        return compareAndSetReference(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetReference(Object o, long offset,
+    /**
+     * Atomically updates Java variable to {@code x} if it is currently
+     * holding {@code expected}.
+     *
+     * Volatile memory order is used, but see also {@link #compareAndExchangeReferenceMO}.
+     *
+     * @return the previous value of the Java variable
+     */
+    @ForceInline
+    public Object compareAndExchangeReference(Object o, long offset,
                                                     Object expected,
                                                     Object x) {
-        return compareAndSetReference(o, offset, expected, x);
+        return compareAndExchangeReferenceMO(MO_VOLATILE, o, offset, expected, x);
+    }
+
+    /** Convenience for {@code compareAndSetReferenceMO(MO_WEAK_CAS_VOLATILE ...)}. */
+    @ForceInline
+    public boolean weakCompareAndSetReference(Object o, long offset,
+                                                    Object expected,
+                                                    Object x) {
+        return compareAndSetReferenceMO(MO_WEAK_CAS_PLAIN, o, offset, expected, x);
+    }
+
+    // The native method can treat every memory access as MO_VOLATILE.
+    @IntrinsicCandidate
+    public native Object compareAndExchangeReferenceMO(byte memoryOrder,
+                                                             Object o, long offset,
+                                                             Object expected,
+                                                             Object x);
+
+    /**
+     * Intrinsic for performing compare-and-set on a primitive variable
+     * of any primitive type.  See {@link #putPrimitiveBitsMO} for the
+     * relevant conventions.
+     *
+     * <p>As with {@link #compareAndSetReferenceMO}, the bit
+     * {@link MO_WEAK_CAS} may be set within {@code memoryOrder}.
+     */
+    @IntrinsicCandidate
+    private final boolean compareAndSetPrimitiveBitsMO(byte memoryOrder,
+                                                       byte basicType,
+                                                       Object o, long offset,
+                                                       long expected,
+                                                       long x) {
+        // This intrinsic has a body so that the JIT can refuse to
+        // expand the intrinsic, when it sees a request it does not
+        // understand.
+
+        // The purpose of the decision tree is to present the JIT with
+        // optimizable statements, even if memoryOrder or basicType
+        // fail to be constant.
+
+        // This also allows the JIT to compile the body to serve calls
+        // from the interpreter and lukewarm code.
+        checkBasicType(basicType);
+        memoryOrder &= ~MO_WEAK_CAS;  // intrinsic might use this bit but not here
+        checkMemoryOrder(memoryOrder);
+        switch (basicType & PRIMITIVE_SIZE_MASK) {  // encodes size of BT
+            case 3 -> {
+                // hardware must support 8-byte CAS
+                return compareAndSetPrimitiveBitsMONative(MO_VOLATILE, BT_LONG, o, offset,
+                                                          expected, x);
+            }
+            case 2 -> {
+                // hardware must support 4-byte CAS
+                return compareAndSetPrimitiveBitsMONative(MO_VOLATILE, BT_INT, o, offset,
+                                                          expected, x);
+            }
+            case 1 -> {
+                // The hardware might not have 2-byte CAS; simulate with volatile 2-byte cmpxchg.
+                return ((short) compareAndExchangePrimitiveBitsMO(MO_VOLATILE, BT_SHORT, o, offset,
+                                                                  (short)expected, (short)x)
+                        == (short)expected);
+            }
+            default -> {
+                // The hardware might not have 1-byte CAS; simulate with volatile 1-byte cmpxchg.
+                return ((byte) compareAndExchangePrimitiveBitsMO(MO_VOLATILE, BT_BYTE, o, offset,
+                                                                 (byte)expected, (byte)x)
+                        == (byte)expected);
+            }
+        }
+    }
+
+    // Second try for the JIT, if it dislikes a memory order or data type.
+    // Both this method and the previous are handled by the same native code
+    // and the same compiler intrinsic logic.
+    // The native method can treat every memory access as MO_VOLATILE.
+    // The native method can assert on data types which have no atomic support.
+    // The native method can assert on combinations which do not make sense.
+    @IntrinsicCandidate
+    private native boolean compareAndSetPrimitiveBitsMONative(byte memoryOrder,
+                                                              byte basicType,
+                                                              Object o, long offset,
+                                                              long expected,
+                                                              long x);
+
+    /**
+     * Follows the conventions of {@link #putPrimitiveBitsMO}.
+     * @return the value fetched from the indicated Java variable,
+     *         padded by garbage high-order bits (if smaller than 64 bits)
+     */
+    @IntrinsicCandidate
+    private final long compareAndExchangePrimitiveBitsMO(byte memoryOrder,
+                                                         byte basicType,
+                                                         Object o, long offset,
+                                                         long expected,
+                                                         long x) {
+        // This intrinsic has a body so that the JIT can refuse to
+        // expand the intrinsic, when it sees a request it does not
+        // understand.
+
+        // The purpose of the decision tree is to present the JIT with
+        // optimizable statements, even if memoryOrder or basicType
+        // fail to be constant.
+
+        // This also allows the JIT to compile the body to serve calls
+        // from the interpreter and lukewarm code.
+        checkBasicType(basicType);
+        checkMemoryOrder(memoryOrder);
+        switch (basicType & PRIMITIVE_SIZE_MASK) {  // encodes size of BT
+            case 3 -> {
+                // hardware must support 8-byte cmpxchg
+                return compareAndExchangePrimitiveBitsMONative(MO_VOLATILE, BT_LONG, o, offset,
+                                                               expected, x);
+            }
+            case 2 -> {
+                // hardware must support 4-byte cmpxchg
+                return compareAndExchangePrimitiveBitsMONative(MO_VOLATILE, BT_INT, o, offset,
+                                                               expected, x);
+            }
+            case 1 -> {
+                // The default implementation updates a byte or short inside an atomic
+                // int container, if the JIT refuses to expand this intrinsic.
+                return (short) compareAndExchangeUsingIntSlow(o, offset, (short)expected, (short)x, Short.SIZE / Byte.SIZE);
+            }
+
+            default -> {
+                return (byte) compareAndExchangeUsingIntSlow(o, offset, (byte)expected, (byte)x, 1);
+            }
+        }
+    }
+
+    // Second try for the JIT, if it dislikes a memory order or data type.
+    // Both this method and the previous are handled by the same native code
+    // and the same compiler intrinsic logic.
+    // The native method can treat every memory access as MO_VOLATILE.
+    // The native method can assert on data types which have no atomic support.
+    // The native method can assert on combinations which do not make sense.
+    // Prefer this method when you don't need the case analysis of the previous one.
+    @IntrinsicCandidate
+    private native long compareAndExchangePrimitiveBitsMONative(byte memoryOrder,
+                                                                byte basicType,
+                                                                Object o, long offset,
+                                                                long expected,
+                                                                long x);
+
+    // Fallback implementation of cmpxchg for subword types.
+    private int compareAndExchangeUsingIntSlow(Object o, long offset,
+                                               int expected,
+                                               int x, int byteSize) {
+        if (!(byteSize == 1 || byteSize == 2)) {
+            throw new IllegalArgumentException("bad subword size");
+        }
+        int bitSize = byteSize * Byte.SIZE;
+        int allbits = (1 << bitSize) - 1;  // 0xFFFF or 0xFF
+        expected &= allbits;
+        x &= allbits;
+        int byteOffset = (int)(offset & 3);
+        int bitOffset = byteOffset * Byte.SIZE;
+        if (bitOffset + bitSize > Integer.SIZE) {
+            throw new IllegalArgumentException("Update spans the word, not supported");
+        }
+        long wordOffset = offset - byteOffset;
+        int shift = bitOffset;
+        if (BIG_ENDIAN) {       // start counting from the top of the word
+            shift = Integer.SIZE - bitSize - shift;
+        }
+        int mask           = allbits  << shift;
+        int maskedExpected = expected << shift;
+        int maskedX        = x        << shift;
+        int fullWord;
+        do {
+            fullWord = getInt(o, wordOffset);
+            if ((fullWord & mask) != maskedExpected) {
+                return (fullWord >>> shift) & allbits;
+            }
+        } while (!weakCompareAndSetInt(o, wordOffset, fullWord, (fullWord & ~mask) | maskedX));
+        return expected;
     }
 
     /**
@@ -1510,203 +2125,111 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
-    @IntrinsicCandidate
-    public final native boolean compareAndSetInt(Object o, long offset,
-                                                 int expected,
-                                                 int x);
-
-    @IntrinsicCandidate
-    public final native int compareAndExchangeInt(Object o, long offset,
-                                                  int expected,
-                                                  int x);
-
-    @IntrinsicCandidate
-    public final int compareAndExchangeIntAcquire(Object o, long offset,
-                                                         int expected,
-                                                         int x) {
-        return compareAndExchangeInt(o, offset, expected, x);
+    @ForceInline
+    public boolean compareAndSetInt(Object o, long offset,
+                                          int expected,
+                                          int x) {
+        return compareAndSetPrimitiveBitsMONative(MO_VOLATILE, BT_INT, o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final int compareAndExchangeIntRelease(Object o, long offset,
-                                                         int expected,
-                                                         int x) {
-        return compareAndExchangeInt(o, offset, expected, x);
+    /** Special-access version of {@code compareAndSetInt}. */
+    @ForceInline
+    public boolean compareAndSetIntMO(byte memoryOrder,
+                                            Object o, long offset,
+                                            int expected,
+                                            int x) {
+        return compareAndSetPrimitiveBitsMONative(memoryOrder, BT_INT, o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetIntPlain(Object o, long offset,
-                                                   int expected,
-                                                   int x) {
-        return compareAndSetInt(o, offset, expected, x);
+    @ForceInline
+    public int compareAndExchangeInt(Object o, long offset,
+                                           int expected,
+                                           int x) {
+        return (int) compareAndExchangePrimitiveBitsMONative(MO_VOLATILE, BT_INT,
+                                                             o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetIntAcquire(Object o, long offset,
-                                                     int expected,
-                                                     int x) {
-        return compareAndSetInt(o, offset, expected, x);
+    /** Special-access version of {@code compareAndExchangeInt}. */
+    @ForceInline
+    public int compareAndExchangeIntMO(byte memoryOrder,
+                                             Object o, long offset,
+                                             int expected,
+                                             int x) {
+        return (int) compareAndExchangePrimitiveBitsMONative(memoryOrder, BT_INT,
+                                                             o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetIntRelease(Object o, long offset,
-                                                     int expected,
-                                                     int x) {
-        return compareAndSetInt(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetInt(Object o, long offset,
+    /** Convenience for {@code compareAndSetIntMO(MO_WEAK_CAS_VOLATILE ...)}. */
+    @ForceInline
+    public boolean weakCompareAndSetInt(Object o, long offset,
                                               int expected,
                                               int x) {
-        return compareAndSetInt(o, offset, expected, x);
+        return compareAndSetIntMO(MO_WEAK_CAS_VOLATILE, o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final byte compareAndExchangeByte(Object o, long offset,
+    @ForceInline
+    public byte compareAndExchangeByte(Object o, long offset,
                                              byte expected,
                                              byte x) {
-        long wordOffset = offset & ~3;
-        int shift = (int) (offset & 3) << 3;
-        if (BIG_ENDIAN) {
-            shift = 24 - shift;
-        }
-        int mask           = 0xFF << shift;
-        int maskedExpected = (expected & 0xFF) << shift;
-        int maskedX        = (x & 0xFF) << shift;
-        int fullWord;
-        do {
-            fullWord = getIntVolatile(o, wordOffset);
-            if ((fullWord & mask) != maskedExpected)
-                return (byte) ((fullWord & mask) >> shift);
-        } while (!weakCompareAndSetInt(o, wordOffset,
-                                                fullWord, (fullWord & ~mask) | maskedX));
-        return expected;
+        return (byte) compareAndExchangePrimitiveBitsMO(MO_VOLATILE, BT_BYTE,
+                                                        o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean compareAndSetByte(Object o, long offset,
-                                           byte expected,
-                                           byte x) {
-        return compareAndExchangeByte(o, offset, expected, x) == expected;
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetByte(Object o, long offset,
+    @ForceInline
+    public byte compareAndExchangeByteMO(byte memoryOrder,
+                                               Object o, long offset,
                                                byte expected,
                                                byte x) {
-        return compareAndSetByte(o, offset, expected, x);
+        return (byte) compareAndExchangePrimitiveBitsMO(memoryOrder, BT_BYTE,
+                                                        o, offset, expected,
+                                                        x);
     }
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetByteAcquire(Object o, long offset,
-                                                      byte expected,
-                                                      byte x) {
-        return weakCompareAndSetByte(o, offset, expected, x);
+    // The compiler may replace this intrinsic if the backend supports
+    // a boolean-returning CAS, for the particular requested memory order.
+    @ForceInline
+    public boolean compareAndSetByteMO(byte memoryOrder,
+                                             Object o, long offset,
+                                             byte expected,
+                                             byte x) {
+        return compareAndSetPrimitiveBitsMO(memoryOrder, BT_BYTE, o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetByteRelease(Object o, long offset,
-                                                      byte expected,
-                                                      byte x) {
-        return weakCompareAndSetByte(o, offset, expected, x);
+    @ForceInline
+    public boolean compareAndSetByte(Object o, long offset,
+                                           byte expected,
+                                           byte x) {
+        return compareAndSetPrimitiveBitsMO(MO_VOLATILE, BT_BYTE, o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetBytePlain(Object o, long offset,
-                                                    byte expected,
-                                                    byte x) {
-        return weakCompareAndSetByte(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final byte compareAndExchangeByteAcquire(Object o, long offset,
-                                                    byte expected,
-                                                    byte x) {
-        return compareAndExchangeByte(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final byte compareAndExchangeByteRelease(Object o, long offset,
-                                                    byte expected,
-                                                    byte x) {
-        return compareAndExchangeByte(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final short compareAndExchangeShort(Object o, long offset,
+    @ForceInline
+    public short compareAndExchangeShort(Object o, long offset,
                                                short expected,
                                                short x) {
-        if ((offset & 3) == 3) {
-            throw new IllegalArgumentException("Update spans the word, not supported");
-        }
-        long wordOffset = offset & ~3;
-        int shift = (int) (offset & 3) << 3;
-        if (BIG_ENDIAN) {
-            shift = 16 - shift;
-        }
-        int mask           = 0xFFFF << shift;
-        int maskedExpected = (expected & 0xFFFF) << shift;
-        int maskedX        = (x & 0xFFFF) << shift;
-        int fullWord;
-        do {
-            fullWord = getIntVolatile(o, wordOffset);
-            if ((fullWord & mask) != maskedExpected) {
-                return (short) ((fullWord & mask) >> shift);
-            }
-        } while (!weakCompareAndSetInt(o, wordOffset,
-                                                fullWord, (fullWord & ~mask) | maskedX));
-        return expected;
+        return compareAndExchangeShortMO(MO_VOLATILE, o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean compareAndSetShort(Object o, long offset,
+    @ForceInline
+    public short compareAndExchangeShortMO(byte memoryOrder,
+                                                 Object o, long offset,
+                                                 short expected,
+                                                 short x) {
+        return compareAndExchangeShortMO(memoryOrder, o, offset, expected, x);
+    }
+
+    @ForceInline
+    public boolean compareAndSetShortMO(byte memoryOrder,
+                                              Object o, long offset,
+                                              short expected,
+                                              short x) {
+        return compareAndSetPrimitiveBitsMO(memoryOrder, BT_SHORT, o, offset, expected, x);
+    }
+
+    @ForceInline
+    public boolean compareAndSetShort(Object o, long offset,
                                             short expected,
                                             short x) {
-        return compareAndExchangeShort(o, offset, expected, x) == expected;
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetShort(Object o, long offset,
-                                                short expected,
-                                                short x) {
-        return compareAndSetShort(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetShortAcquire(Object o, long offset,
-                                                       short expected,
-                                                       short x) {
-        return weakCompareAndSetShort(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetShortRelease(Object o, long offset,
-                                                       short expected,
-                                                       short x) {
-        return weakCompareAndSetShort(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetShortPlain(Object o, long offset,
-                                                     short expected,
-                                                     short x) {
-        return weakCompareAndSetShort(o, offset, expected, x);
-    }
-
-
-    @IntrinsicCandidate
-    public final short compareAndExchangeShortAcquire(Object o, long offset,
-                                                     short expected,
-                                                     short x) {
-        return compareAndExchangeShort(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final short compareAndExchangeShortRelease(Object o, long offset,
-                                                    short expected,
-                                                    short x) {
-        return compareAndExchangeShort(o, offset, expected, x);
+        return compareAndSetPrimitiveBitsMO(MO_VOLATILE, BT_SHORT, o, offset, expected, x);
     }
 
     @ForceInline
@@ -1720,59 +2243,33 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final boolean compareAndSetChar(Object o, long offset,
+    public boolean compareAndSetChar(Object o, long offset,
                                            char expected,
                                            char x) {
-        return compareAndSetShort(o, offset, c2s(expected), c2s(x));
+        return compareAndSetShortMO(MO_VOLATILE, o, offset, c2s(expected), c2s(x));
     }
 
     @ForceInline
-    public final char compareAndExchangeChar(Object o, long offset,
+    public boolean compareAndSetCharMO(byte memoryOrder,
+                                             Object o, long offset,
+                                             char expected,
+                                             char x) {
+        return compareAndSetShortMO(memoryOrder, o, offset, c2s(expected), c2s(x));
+    }
+
+    @ForceInline
+    public char compareAndExchangeChar(Object o, long offset,
                                              char expected,
                                              char x) {
         return s2c(compareAndExchangeShort(o, offset, c2s(expected), c2s(x)));
     }
 
     @ForceInline
-    public final char compareAndExchangeCharAcquire(Object o, long offset,
-                                            char expected,
-                                            char x) {
-        return s2c(compareAndExchangeShortAcquire(o, offset, c2s(expected), c2s(x)));
-    }
-
-    @ForceInline
-    public final char compareAndExchangeCharRelease(Object o, long offset,
-                                            char expected,
-                                            char x) {
-        return s2c(compareAndExchangeShortRelease(o, offset, c2s(expected), c2s(x)));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetChar(Object o, long offset,
+    public char compareAndExchangeCharMO(byte memoryOrder,
+                                               Object o, long offset,
                                                char expected,
                                                char x) {
-        return weakCompareAndSetShort(o, offset, c2s(expected), c2s(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetCharAcquire(Object o, long offset,
-                                                      char expected,
-                                                      char x) {
-        return weakCompareAndSetShortAcquire(o, offset, c2s(expected), c2s(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetCharRelease(Object o, long offset,
-                                                      char expected,
-                                                      char x) {
-        return weakCompareAndSetShortRelease(o, offset, c2s(expected), c2s(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetCharPlain(Object o, long offset,
-                                                    char expected,
-                                                    char x) {
-        return weakCompareAndSetShortPlain(o, offset, c2s(expected), c2s(x));
+        return s2c(compareAndExchangeShortMO(memoryOrder, o, offset, c2s(expected), c2s(x)));
     }
 
     /**
@@ -1825,59 +2322,33 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final boolean compareAndSetBoolean(Object o, long offset,
+    public boolean compareAndSetBoolean(Object o, long offset,
                                               boolean expected,
                                               boolean x) {
         return compareAndSetByte(o, offset, bool2byte(expected), bool2byte(x));
     }
 
     @ForceInline
-    public final boolean compareAndExchangeBoolean(Object o, long offset,
+    public boolean compareAndSetBooleanMO(byte memoryOrder,
+                                                Object o, long offset,
+                                                boolean expected,
+                                                boolean x) {
+        return compareAndSetByteMO(memoryOrder, o, offset, bool2byte(expected), bool2byte(x));
+    }
+
+    @ForceInline
+    public boolean compareAndExchangeBoolean(Object o, long offset,
                                                    boolean expected,
                                                    boolean x) {
         return byte2bool(compareAndExchangeByte(o, offset, bool2byte(expected), bool2byte(x)));
     }
 
     @ForceInline
-    public final boolean compareAndExchangeBooleanAcquire(Object o, long offset,
-                                                    boolean expected,
-                                                    boolean x) {
-        return byte2bool(compareAndExchangeByteAcquire(o, offset, bool2byte(expected), bool2byte(x)));
-    }
-
-    @ForceInline
-    public final boolean compareAndExchangeBooleanRelease(Object o, long offset,
-                                                       boolean expected,
-                                                       boolean x) {
-        return byte2bool(compareAndExchangeByteRelease(o, offset, bool2byte(expected), bool2byte(x)));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetBoolean(Object o, long offset,
-                                                  boolean expected,
-                                                  boolean x) {
-        return weakCompareAndSetByte(o, offset, bool2byte(expected), bool2byte(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetBooleanAcquire(Object o, long offset,
-                                                         boolean expected,
-                                                         boolean x) {
-        return weakCompareAndSetByteAcquire(o, offset, bool2byte(expected), bool2byte(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetBooleanRelease(Object o, long offset,
-                                                         boolean expected,
-                                                         boolean x) {
-        return weakCompareAndSetByteRelease(o, offset, bool2byte(expected), bool2byte(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetBooleanPlain(Object o, long offset,
-                                                       boolean expected,
-                                                       boolean x) {
-        return weakCompareAndSetBytePlain(o, offset, bool2byte(expected), bool2byte(x));
+    public boolean compareAndExchangeBooleanMO(byte memoryOrder,
+                                                     Object o, long offset,
+                                                     boolean expected,
+                                                     boolean x) {
+        return byte2bool(compareAndExchangeByteMO(memoryOrder, o, offset, bool2byte(expected), bool2byte(x)));
     }
 
     /**
@@ -1890,16 +2361,26 @@ public final class Unsafe {
      * @return {@code true} if successful
      */
     @ForceInline
-    public final boolean compareAndSetFloat(Object o, long offset,
+    public boolean compareAndSetFloat(Object o, long offset,
                                             float expected,
                                             float x) {
         return compareAndSetInt(o, offset,
-                                 Float.floatToRawIntBits(expected),
-                                 Float.floatToRawIntBits(x));
+                                Float.floatToRawIntBits(expected),
+                                Float.floatToRawIntBits(x));
     }
 
     @ForceInline
-    public final float compareAndExchangeFloat(Object o, long offset,
+    public boolean compareAndSetFloatMO(byte memoryOrder,
+                                              Object o, long offset,
+                                              float expected,
+                                              float x) {
+        return compareAndSetIntMO(memoryOrder, o, offset,
+                                  Float.floatToRawIntBits(expected),
+                                  Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public float compareAndExchangeFloat(Object o, long offset,
                                                float expected,
                                                float x) {
         int w = compareAndExchangeInt(o, offset,
@@ -1909,59 +2390,14 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final float compareAndExchangeFloatAcquire(Object o, long offset,
-                                                  float expected,
-                                                  float x) {
-        int w = compareAndExchangeIntAcquire(o, offset,
-                                             Float.floatToRawIntBits(expected),
-                                             Float.floatToRawIntBits(x));
+    public float compareAndExchangeFloatMO(byte memoryOrder,
+                                                 Object o, long offset,
+                                                 float expected,
+                                                 float x) {
+        int w = compareAndExchangeIntMO(memoryOrder, o, offset,
+                                        Float.floatToRawIntBits(expected),
+                                        Float.floatToRawIntBits(x));
         return Float.intBitsToFloat(w);
-    }
-
-    @ForceInline
-    public final float compareAndExchangeFloatRelease(Object o, long offset,
-                                                  float expected,
-                                                  float x) {
-        int w = compareAndExchangeIntRelease(o, offset,
-                                             Float.floatToRawIntBits(expected),
-                                             Float.floatToRawIntBits(x));
-        return Float.intBitsToFloat(w);
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetFloatPlain(Object o, long offset,
-                                                     float expected,
-                                                     float x) {
-        return weakCompareAndSetIntPlain(o, offset,
-                                     Float.floatToRawIntBits(expected),
-                                     Float.floatToRawIntBits(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetFloatAcquire(Object o, long offset,
-                                                       float expected,
-                                                       float x) {
-        return weakCompareAndSetIntAcquire(o, offset,
-                                            Float.floatToRawIntBits(expected),
-                                            Float.floatToRawIntBits(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetFloatRelease(Object o, long offset,
-                                                       float expected,
-                                                       float x) {
-        return weakCompareAndSetIntRelease(o, offset,
-                                            Float.floatToRawIntBits(expected),
-                                            Float.floatToRawIntBits(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetFloat(Object o, long offset,
-                                                float expected,
-                                                float x) {
-        return weakCompareAndSetInt(o, offset,
-                                             Float.floatToRawIntBits(expected),
-                                             Float.floatToRawIntBits(x));
     }
 
     /**
@@ -1974,7 +2410,7 @@ public final class Unsafe {
      * @return {@code true} if successful
      */
     @ForceInline
-    public final boolean compareAndSetDouble(Object o, long offset,
+    public boolean compareAndSetDouble(Object o, long offset,
                                              double expected,
                                              double x) {
         return compareAndSetLong(o, offset,
@@ -1983,7 +2419,17 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final double compareAndExchangeDouble(Object o, long offset,
+    public boolean compareAndSetDoubleMO(byte memoryOrder,
+                                               Object o, long offset,
+                                               double expected,
+                                               double x) {
+        return compareAndSetLongMO(memoryOrder, o, offset,
+                                   Double.doubleToRawLongBits(expected),
+                                   Double.doubleToRawLongBits(x));
+    }
+
+    @ForceInline
+    public double compareAndExchangeDouble(Object o, long offset,
                                                  double expected,
                                                  double x) {
         long w = compareAndExchangeLong(o, offset,
@@ -1993,59 +2439,14 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final double compareAndExchangeDoubleAcquire(Object o, long offset,
-                                                        double expected,
-                                                        double x) {
-        long w = compareAndExchangeLongAcquire(o, offset,
-                                               Double.doubleToRawLongBits(expected),
-                                               Double.doubleToRawLongBits(x));
+    public double compareAndExchangeDoubleMO(byte memoryOrder,
+                                                   Object o, long offset,
+                                                   double expected,
+                                                   double x) {
+        long w = compareAndExchangeLongMO(memoryOrder, o, offset,
+                                          Double.doubleToRawLongBits(expected),
+                                          Double.doubleToRawLongBits(x));
         return Double.longBitsToDouble(w);
-    }
-
-    @ForceInline
-    public final double compareAndExchangeDoubleRelease(Object o, long offset,
-                                                        double expected,
-                                                        double x) {
-        long w = compareAndExchangeLongRelease(o, offset,
-                                               Double.doubleToRawLongBits(expected),
-                                               Double.doubleToRawLongBits(x));
-        return Double.longBitsToDouble(w);
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetDoublePlain(Object o, long offset,
-                                                      double expected,
-                                                      double x) {
-        return weakCompareAndSetLongPlain(o, offset,
-                                     Double.doubleToRawLongBits(expected),
-                                     Double.doubleToRawLongBits(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetDoubleAcquire(Object o, long offset,
-                                                        double expected,
-                                                        double x) {
-        return weakCompareAndSetLongAcquire(o, offset,
-                                             Double.doubleToRawLongBits(expected),
-                                             Double.doubleToRawLongBits(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetDoubleRelease(Object o, long offset,
-                                                        double expected,
-                                                        double x) {
-        return weakCompareAndSetLongRelease(o, offset,
-                                             Double.doubleToRawLongBits(expected),
-                                             Double.doubleToRawLongBits(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSetDouble(Object o, long offset,
-                                                 double expected,
-                                                 double x) {
-        return weakCompareAndSetLong(o, offset,
-                                              Double.doubleToRawLongBits(expected),
-                                              Double.doubleToRawLongBits(x));
     }
 
     /**
@@ -2057,365 +2458,60 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
-    @IntrinsicCandidate
-    public final native boolean compareAndSetLong(Object o, long offset,
-                                                  long expected,
-                                                  long x);
-
-    @IntrinsicCandidate
-    public final native long compareAndExchangeLong(Object o, long offset,
-                                                    long expected,
-                                                    long x);
-
-    @IntrinsicCandidate
-    public final long compareAndExchangeLongAcquire(Object o, long offset,
-                                                           long expected,
-                                                           long x) {
-        return compareAndExchangeLong(o, offset, expected, x);
+    @ForceInline
+    public boolean compareAndSetLong(Object o, long offset,
+                                           long expected,
+                                           long x) {
+        return compareAndSetPrimitiveBitsMONative(MO_VOLATILE, BT_LONG, o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final long compareAndExchangeLongRelease(Object o, long offset,
-                                                           long expected,
-                                                           long x) {
-        return compareAndExchangeLong(o, offset, expected, x);
+    /** Special-access version. */
+    @ForceInline
+    public boolean compareAndSetLongMO(byte memoryAccess,
+                                             Object o, long offset,
+                                             long expected,
+                                             long x) {
+        return compareAndSetPrimitiveBitsMONative(memoryAccess, BT_LONG, o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetLongPlain(Object o, long offset,
-                                                    long expected,
-                                                    long x) {
-        return compareAndSetLong(o, offset, expected, x);
+    /** Regular volatile version. */
+    @ForceInline
+    public long compareAndExchangeLong(Object o, long offset,
+                                             long expected,
+                                             long x) {
+        return compareAndExchangePrimitiveBitsMONative(MO_VOLATILE, BT_LONG,
+                                                       o, offset, expected, x);
     }
 
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetLongAcquire(Object o, long offset,
-                                                      long expected,
-                                                      long x) {
-        return compareAndSetLong(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetLongRelease(Object o, long offset,
-                                                      long expected,
-                                                      long x) {
-        return compareAndSetLong(o, offset, expected, x);
-    }
-
-    @IntrinsicCandidate
-    public final boolean weakCompareAndSetLong(Object o, long offset,
+    /** Special-access version. */
+    @ForceInline
+    public long compareAndExchangeLongMO(byte memoryAccess,
+                                               Object o, long offset,
                                                long expected,
                                                long x) {
-        return compareAndSetLong(o, offset, expected, x);
+        return compareAndExchangePrimitiveBitsMONative(memoryAccess, BT_LONG,
+                                                       o, offset, expected, x);
     }
 
-    /**
-     * Fetches a reference value from a given Java variable, with volatile
-     * load semantics. Otherwise identical to {@link #getReference(Object, long)}
-     */
-    @IntrinsicCandidate
-    public native Object getReferenceVolatile(Object o, long offset);
-
-    /**
-     * Stores a reference value into a given Java variable, with
-     * volatile store semantics. Otherwise identical to {@link #putReference(Object, long, Object)}
-     */
-    @IntrinsicCandidate
-    public native void putReferenceVolatile(Object o, long offset, Object x);
-
-    /** Volatile version of {@link #getInt(Object, long)}  */
-    @IntrinsicCandidate
-    public native int     getIntVolatile(Object o, long offset);
-
-    /** Volatile version of {@link #putInt(Object, long, int)}  */
-    @IntrinsicCandidate
-    public native void    putIntVolatile(Object o, long offset, int x);
-
-    /** Volatile version of {@link #getBoolean(Object, long)}  */
-    @IntrinsicCandidate
-    public native boolean getBooleanVolatile(Object o, long offset);
-
-    /** Volatile version of {@link #putBoolean(Object, long, boolean)}  */
-    @IntrinsicCandidate
-    public native void    putBooleanVolatile(Object o, long offset, boolean x);
-
-    /** Volatile version of {@link #getByte(Object, long)}  */
-    @IntrinsicCandidate
-    public native byte    getByteVolatile(Object o, long offset);
-
-    /** Volatile version of {@link #putByte(Object, long, byte)}  */
-    @IntrinsicCandidate
-    public native void    putByteVolatile(Object o, long offset, byte x);
-
-    /** Volatile version of {@link #getShort(Object, long)}  */
-    @IntrinsicCandidate
-    public native short   getShortVolatile(Object o, long offset);
-
-    /** Volatile version of {@link #putShort(Object, long, short)}  */
-    @IntrinsicCandidate
-    public native void    putShortVolatile(Object o, long offset, short x);
-
-    /** Volatile version of {@link #getChar(Object, long)}  */
-    @IntrinsicCandidate
-    public native char    getCharVolatile(Object o, long offset);
-
-    /** Volatile version of {@link #putChar(Object, long, char)}  */
-    @IntrinsicCandidate
-    public native void    putCharVolatile(Object o, long offset, char x);
-
-    /** Volatile version of {@link #getLong(Object, long)}  */
-    @IntrinsicCandidate
-    public native long    getLongVolatile(Object o, long offset);
-
-    /** Volatile version of {@link #putLong(Object, long, long)}  */
-    @IntrinsicCandidate
-    public native void    putLongVolatile(Object o, long offset, long x);
-
-    /** Volatile version of {@link #getFloat(Object, long)}  */
-    @IntrinsicCandidate
-    public native float   getFloatVolatile(Object o, long offset);
-
-    /** Volatile version of {@link #putFloat(Object, long, float)}  */
-    @IntrinsicCandidate
-    public native void    putFloatVolatile(Object o, long offset, float x);
-
-    /** Volatile version of {@link #getDouble(Object, long)}  */
-    @IntrinsicCandidate
-    public native double  getDoubleVolatile(Object o, long offset);
-
-    /** Volatile version of {@link #putDouble(Object, long, double)}  */
-    @IntrinsicCandidate
-    public native void    putDoubleVolatile(Object o, long offset, double x);
-
-
-
-    /** Acquire version of {@link #getReferenceVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final Object getReferenceAcquire(Object o, long offset) {
-        return getReferenceVolatile(o, offset);
-    }
-
-    /** Acquire version of {@link #getBooleanVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final boolean getBooleanAcquire(Object o, long offset) {
-        return getBooleanVolatile(o, offset);
-    }
-
-    /** Acquire version of {@link #getByteVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final byte getByteAcquire(Object o, long offset) {
-        return getByteVolatile(o, offset);
-    }
-
-    /** Acquire version of {@link #getShortVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final short getShortAcquire(Object o, long offset) {
-        return getShortVolatile(o, offset);
-    }
-
-    /** Acquire version of {@link #getCharVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final char getCharAcquire(Object o, long offset) {
-        return getCharVolatile(o, offset);
-    }
-
-    /** Acquire version of {@link #getIntVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final int getIntAcquire(Object o, long offset) {
-        return getIntVolatile(o, offset);
-    }
-
-    /** Acquire version of {@link #getFloatVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final float getFloatAcquire(Object o, long offset) {
-        return getFloatVolatile(o, offset);
-    }
-
-    /** Acquire version of {@link #getLongVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final long getLongAcquire(Object o, long offset) {
-        return getLongVolatile(o, offset);
-    }
-
-    /** Acquire version of {@link #getDoubleVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final double getDoubleAcquire(Object o, long offset) {
-        return getDoubleVolatile(o, offset);
+    /** Convenience for {@code compareAndSetLongMO(MO_WEAK_CAS_VOLATILE ...)}. */
+    @ForceInline
+    public boolean weakCompareAndSetLong(Object o, long offset,
+                                               long expected,
+                                               long x) {
+        return compareAndSetPrimitiveBitsMONative(MO_WEAK_CAS_VOLATILE, BT_LONG,
+                                                  o, offset, expected, x);
     }
 
     /*
-     * Versions of {@link #putReferenceVolatile(Object, long, Object)}
-     * that do not guarantee immediate visibility of the store to
+     * Note on stores:
+     * Variations of {@link #putReferenceMO(MO_RELEASE, Object, long, Object)}
+     * do not guarantee immediate visibility of the store to
      * other threads. This method is generally only useful if the
      * underlying field is a Java volatile (or if an array cell, one
      * that is otherwise only accessed using volatile accesses).
      *
      * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
      */
-
-    /** Release version of {@link #putReferenceVolatile(Object, long, Object)} */
-    @IntrinsicCandidate
-    public final void putReferenceRelease(Object o, long offset, Object x) {
-        putReferenceVolatile(o, offset, x);
-    }
-
-    /** Release version of {@link #putBooleanVolatile(Object, long, boolean)} */
-    @IntrinsicCandidate
-    public final void putBooleanRelease(Object o, long offset, boolean x) {
-        putBooleanVolatile(o, offset, x);
-    }
-
-    /** Release version of {@link #putByteVolatile(Object, long, byte)} */
-    @IntrinsicCandidate
-    public final void putByteRelease(Object o, long offset, byte x) {
-        putByteVolatile(o, offset, x);
-    }
-
-    /** Release version of {@link #putShortVolatile(Object, long, short)} */
-    @IntrinsicCandidate
-    public final void putShortRelease(Object o, long offset, short x) {
-        putShortVolatile(o, offset, x);
-    }
-
-    /** Release version of {@link #putCharVolatile(Object, long, char)} */
-    @IntrinsicCandidate
-    public final void putCharRelease(Object o, long offset, char x) {
-        putCharVolatile(o, offset, x);
-    }
-
-    /** Release version of {@link #putIntVolatile(Object, long, int)} */
-    @IntrinsicCandidate
-    public final void putIntRelease(Object o, long offset, int x) {
-        putIntVolatile(o, offset, x);
-    }
-
-    /** Release version of {@link #putFloatVolatile(Object, long, float)} */
-    @IntrinsicCandidate
-    public final void putFloatRelease(Object o, long offset, float x) {
-        putFloatVolatile(o, offset, x);
-    }
-
-    /** Release version of {@link #putLongVolatile(Object, long, long)} */
-    @IntrinsicCandidate
-    public final void putLongRelease(Object o, long offset, long x) {
-        putLongVolatile(o, offset, x);
-    }
-
-    /** Release version of {@link #putDoubleVolatile(Object, long, double)} */
-    @IntrinsicCandidate
-    public final void putDoubleRelease(Object o, long offset, double x) {
-        putDoubleVolatile(o, offset, x);
-    }
-
-    // ------------------------------ Opaque --------------------------------------
-
-    /** Opaque version of {@link #getReferenceVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final Object getReferenceOpaque(Object o, long offset) {
-        return getReferenceVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #getBooleanVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final boolean getBooleanOpaque(Object o, long offset) {
-        return getBooleanVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #getByteVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final byte getByteOpaque(Object o, long offset) {
-        return getByteVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #getShortVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final short getShortOpaque(Object o, long offset) {
-        return getShortVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #getCharVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final char getCharOpaque(Object o, long offset) {
-        return getCharVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #getIntVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final int getIntOpaque(Object o, long offset) {
-        return getIntVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #getFloatVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final float getFloatOpaque(Object o, long offset) {
-        return getFloatVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #getLongVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final long getLongOpaque(Object o, long offset) {
-        return getLongVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #getDoubleVolatile(Object, long)} */
-    @IntrinsicCandidate
-    public final double getDoubleOpaque(Object o, long offset) {
-        return getDoubleVolatile(o, offset);
-    }
-
-    /** Opaque version of {@link #putReferenceVolatile(Object, long, Object)} */
-    @IntrinsicCandidate
-    public final void putReferenceOpaque(Object o, long offset, Object x) {
-        putReferenceVolatile(o, offset, x);
-    }
-
-    /** Opaque version of {@link #putBooleanVolatile(Object, long, boolean)} */
-    @IntrinsicCandidate
-    public final void putBooleanOpaque(Object o, long offset, boolean x) {
-        putBooleanVolatile(o, offset, x);
-    }
-
-    /** Opaque version of {@link #putByteVolatile(Object, long, byte)} */
-    @IntrinsicCandidate
-    public final void putByteOpaque(Object o, long offset, byte x) {
-        putByteVolatile(o, offset, x);
-    }
-
-    /** Opaque version of {@link #putShortVolatile(Object, long, short)} */
-    @IntrinsicCandidate
-    public final void putShortOpaque(Object o, long offset, short x) {
-        putShortVolatile(o, offset, x);
-    }
-
-    /** Opaque version of {@link #putCharVolatile(Object, long, char)} */
-    @IntrinsicCandidate
-    public final void putCharOpaque(Object o, long offset, char x) {
-        putCharVolatile(o, offset, x);
-    }
-
-    /** Opaque version of {@link #putIntVolatile(Object, long, int)} */
-    @IntrinsicCandidate
-    public final void putIntOpaque(Object o, long offset, int x) {
-        putIntVolatile(o, offset, x);
-    }
-
-    /** Opaque version of {@link #putFloatVolatile(Object, long, float)} */
-    @IntrinsicCandidate
-    public final void putFloatOpaque(Object o, long offset, float x) {
-        putFloatVolatile(o, offset, x);
-    }
-
-    /** Opaque version of {@link #putLongVolatile(Object, long, long)} */
-    @IntrinsicCandidate
-    public final void putLongOpaque(Object o, long offset, long x) {
-        putLongVolatile(o, offset, x);
-    }
-
-    /** Opaque version of {@link #putDoubleVolatile(Object, long, double)} */
-    @IntrinsicCandidate
-    public final void putDoubleOpaque(Object o, long offset, double x) {
-        putDoubleVolatile(o, offset, x);
-    }
 
     /**
      * Unblocks the given thread blocked on {@code park}, or, if it is
@@ -2469,8 +2565,66 @@ public final class Unsafe {
         return getLoadAverage0(loadavg, nelems);
     }
 
-    // The following contain CAS-based Java implementations used on
-    // platforms not supporting native instructions
+    /**
+     * Intrinsic for performing get-and-operate on a primitive variable
+     * of any primitive type.  See {@link #putPrimitiveBitsMO} for the
+     * relevant conventions.  Atomically update the variable using the
+     * given operation and operand, as if by {@code v = v op operand}.
+     * Return the previous value of the variable.
+     * <p>
+     * The operator must be a character in {@code "+&|^="}, selecting
+     * get and one of add, bitwise and, bitwise or, bitwise xor, or
+     * (simply) set.
+     * <p>
+     * This intrinsic has a default implementation, using a weak CAS
+     * loop, for platforms which do not support the relevant native
+     * instructions.  The VM is free to use the default
+     * implementation, even if the instructions exist.
+     * @return the value previously stored in the indicated Java variable,
+     *         padded by garbage high-order bits (if smaller than 64 bits)
+     */
+    @ForceInline
+    @IntrinsicCandidate
+    public long getAndOperatePrimitiveBitsMO(byte memoryOrder,
+                                             byte basicType,
+                                             byte op,
+                                             Object o, long offset,
+                                             long operand) {
+        checkMemoryOrder(memoryOrder);
+        checkOperatorForCAS(op, basicType);
+        byte memoryOrderForLoad = memoryOrder;
+        memoryOrderForLoad &= ~MO_RELEASE;  // do not release when loading
+        if (memoryOrderForLoad == 0)  memoryOrderForLoad = MO_PLAIN;
+        byte memoryOrderForCAS = memoryOrder;
+        memoryOrderForCAS |= MO_WEAK_CAS;  // use a weak-CAS loop, if it helps
+        long v;
+        long nextv;
+        // This loop used to be hand-copied 5x (once per OP) and also 4x (once per MO).
+        // This single-instance form is equally effective, because it folds up in the JIT.
+        do {
+            v = getPrimitiveBitsMO(memoryOrderForLoad, basicType, o, offset);
+            nextv = switch (op) {
+                // All of these are "T-functions", compatible with long evaluation.
+                // Float add, or signed min/max, would not be T-functions.
+                case OP_ADD    -> v + operand;
+                case OP_BITOR  -> v | operand;
+                case OP_BITAND -> v & operand;
+                case OP_BITXOR -> v ^ operand;
+                default        ->     operand;  // reached as case OP_SWAP
+            };
+        } while (!compareAndSetPrimitiveBitsMO(memoryOrderForCAS, basicType, o, offset, v, nextv));
+        return v;
+    }
+
+    @ForceInline
+    private static void checkOperatorForCAS(byte op, byte basicType) {
+        if ((op == OP_ADD | op == OP_BITOR | op == OP_BITAND | op == OP_BITXOR | op == OP_SWAP) &
+            (basicType >= BT_BYTE & basicType <= BT_LONG))
+            return;  // OK arguments
+        // No direct add or other bitwise ops for boolean, char, float, double.
+        // Those cases are handled carefully by other means.
+        throw new IllegalArgumentException("bad op or type");
+    }
 
     /**
      * Atomically adds the given value to the current value of a field
@@ -2483,31 +2637,14 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @IntrinsicCandidate
-    public final int getAndAddInt(Object o, long offset, int delta) {
-        int v;
-        do {
-            v = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset, v, v + delta));
-        return v;
+    @ForceInline
+    public int getAndAddInt(Object o, long offset, int delta) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_VOLATILE, BT_INT, OP_ADD, o, offset, delta);
     }
 
     @ForceInline
-    public final int getAndAddIntRelease(Object o, long offset, int delta) {
-        int v;
-        do {
-            v = getInt(o, offset);
-        } while (!weakCompareAndSetIntRelease(o, offset, v, v + delta));
-        return v;
-    }
-
-    @ForceInline
-    public final int getAndAddIntAcquire(Object o, long offset, int delta) {
-        int v;
-        do {
-            v = getIntAcquire(o, offset);
-        } while (!weakCompareAndSetIntAcquire(o, offset, v, v + delta));
-        return v;
+    public int getAndAddIntMO(byte memoryOrder, Object o, long offset, int delta) {
+        return (int) getAndOperatePrimitiveBitsMO(memoryOrder, BT_INT, OP_ADD, o, offset, delta);
     }
 
     /**
@@ -2521,189 +2658,97 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @IntrinsicCandidate
-    public final long getAndAddLong(Object o, long offset, long delta) {
-        long v;
-        do {
-            v = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset, v, v + delta));
-        return v;
+    @ForceInline
+    public long getAndAddLong(Object o, long offset, long delta) {
+        return getAndOperatePrimitiveBitsMO(MO_VOLATILE, BT_LONG, OP_ADD, o, offset, delta);
     }
 
     @ForceInline
-    public final long getAndAddLongRelease(Object o, long offset, long delta) {
-        long v;
-        do {
-            v = getLong(o, offset);
-        } while (!weakCompareAndSetLongRelease(o, offset, v, v + delta));
-        return v;
+    public long getAndAddLongMO(byte memoryOrder, Object o, long offset, long delta) {
+        return getAndOperatePrimitiveBitsMO(memoryOrder, BT_LONG, OP_ADD, o, offset, delta);
     }
 
     @ForceInline
-    public final long getAndAddLongAcquire(Object o, long offset, long delta) {
-        long v;
-        do {
-            v = getLongAcquire(o, offset);
-        } while (!weakCompareAndSetLongAcquire(o, offset, v, v + delta));
-        return v;
-    }
-
-    @IntrinsicCandidate
-    public final byte getAndAddByte(Object o, long offset, byte delta) {
-        byte v;
-        do {
-            v = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset, v, (byte) (v + delta)));
-        return v;
+    public byte getAndAddByte(Object o, long offset, byte delta) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_VOLATILE, BT_BYTE, OP_ADD, o, offset, delta);
     }
 
     @ForceInline
-    public final byte getAndAddByteRelease(Object o, long offset, byte delta) {
-        byte v;
-        do {
-            v = getByte(o, offset);
-        } while (!weakCompareAndSetByteRelease(o, offset, v, (byte) (v + delta)));
-        return v;
+    public byte getAndAddByteMO(byte memoryOrder, Object o, long offset, byte delta) {
+        return (byte) getAndOperatePrimitiveBitsMO(memoryOrder, BT_BYTE, OP_ADD, o, offset, delta);
     }
 
     @ForceInline
-    public final byte getAndAddByteAcquire(Object o, long offset, byte delta) {
-        byte v;
-        do {
-            v = getByteAcquire(o, offset);
-        } while (!weakCompareAndSetByteAcquire(o, offset, v, (byte) (v + delta)));
-        return v;
-    }
-
-    @IntrinsicCandidate
-    public final short getAndAddShort(Object o, long offset, short delta) {
-        short v;
-        do {
-            v = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset, v, (short) (v + delta)));
-        return v;
+    public short getAndAddShort(Object o, long offset, short delta) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_VOLATILE, BT_SHORT, OP_ADD, o, offset, delta);
     }
 
     @ForceInline
-    public final short getAndAddShortRelease(Object o, long offset, short delta) {
-        short v;
-        do {
-            v = getShort(o, offset);
-        } while (!weakCompareAndSetShortRelease(o, offset, v, (short) (v + delta)));
-        return v;
+    public short getAndAddShortMO(byte memoryOrder, Object o, long offset, short delta) {
+        return (short) getAndOperatePrimitiveBitsMO(memoryOrder, BT_SHORT, OP_ADD, o, offset, delta);
     }
 
     @ForceInline
-    public final short getAndAddShortAcquire(Object o, long offset, short delta) {
-        short v;
-        do {
-            v = getShortAcquire(o, offset);
-        } while (!weakCompareAndSetShortAcquire(o, offset, v, (short) (v + delta)));
-        return v;
-    }
-
-    @ForceInline
-    public final char getAndAddChar(Object o, long offset, char delta) {
+    public char getAndAddChar(Object o, long offset, char delta) {
         return (char) getAndAddShort(o, offset, (short) delta);
     }
 
     @ForceInline
-    public final char getAndAddCharRelease(Object o, long offset, char delta) {
-        return (char) getAndAddShortRelease(o, offset, (short) delta);
+    public char getAndAddCharMO(byte memoryOrder, Object o, long offset, char delta) {
+        return (char) getAndAddShortMO(memoryOrder, o, offset, (short) delta);
     }
 
     @ForceInline
-    public final char getAndAddCharAcquire(Object o, long offset, char delta) {
-        return (char) getAndAddShortAcquire(o, offset, (short) delta);
+    public float getAndAddFloat(Object o, long offset, float delta) {
+        return getAndAddFloatMO(MO_VOLATILE, o, offset, delta);
     }
 
+    /** For completeness.  It is pretty ugly. */
     @ForceInline
-    public final float getAndAddFloat(Object o, long offset, float delta) {
+    public float getAndAddFloatMO(byte memoryOrder, Object o, long offset, float delta) {
+        checkMemoryOrder(memoryOrder);
+        byte memoryOrderForLoad = memoryOrder;
+        memoryOrderForLoad &= ~MO_RELEASE;  // do not release when loading
+        if (memoryOrderForLoad == 0)  memoryOrderForLoad = MO_PLAIN;
+        byte memoryOrderForCAS = memoryOrder;
+        memoryOrderForCAS |= MO_WEAK_CAS;
         int expectedBits;
         float v;
         do {
             // Load and CAS with the raw bits to avoid issues with NaNs and
             // possible bit conversion from signaling NaNs to quiet NaNs that
             // may result in the loop not terminating.
-            expectedBits = getIntVolatile(o, offset);
+            expectedBits = getIntMO(memoryOrderForLoad, o, offset);
             v = Float.intBitsToFloat(expectedBits);
-        } while (!weakCompareAndSetInt(o, offset,
-                                                expectedBits, Float.floatToRawIntBits(v + delta)));
+        } while (!compareAndSetIntMO(memoryOrderForCAS, o, offset,
+                                     expectedBits, Float.floatToRawIntBits(v + delta)));
         return v;
     }
 
     @ForceInline
-    public final float getAndAddFloatRelease(Object o, long offset, float delta) {
-        int expectedBits;
-        float v;
-        do {
-            // Load and CAS with the raw bits to avoid issues with NaNs and
-            // possible bit conversion from signaling NaNs to quiet NaNs that
-            // may result in the loop not terminating.
-            expectedBits = getInt(o, offset);
-            v = Float.intBitsToFloat(expectedBits);
-        } while (!weakCompareAndSetIntRelease(o, offset,
-                                               expectedBits, Float.floatToRawIntBits(v + delta)));
-        return v;
+    public double getAndAddDouble(Object o, long offset, double delta) {
+        return getAndAddDoubleMO(MO_VOLATILE, o, offset, delta);
     }
 
+    /** For completeness.  It is pretty ugly. */
     @ForceInline
-    public final float getAndAddFloatAcquire(Object o, long offset, float delta) {
-        int expectedBits;
-        float v;
-        do {
-            // Load and CAS with the raw bits to avoid issues with NaNs and
-            // possible bit conversion from signaling NaNs to quiet NaNs that
-            // may result in the loop not terminating.
-            expectedBits = getIntAcquire(o, offset);
-            v = Float.intBitsToFloat(expectedBits);
-        } while (!weakCompareAndSetIntAcquire(o, offset,
-                                               expectedBits, Float.floatToRawIntBits(v + delta)));
-        return v;
-    }
-
-    @ForceInline
-    public final double getAndAddDouble(Object o, long offset, double delta) {
+    public double getAndAddDoubleMO(byte memoryOrder, Object o, long offset, double delta) {
+        checkMemoryOrder(memoryOrder);
+        byte memoryOrderForLoad = memoryOrder;
+        memoryOrderForLoad &= ~MO_RELEASE;  // do not release when loading
+        if (memoryOrderForLoad == 0)  memoryOrderForLoad = MO_PLAIN;
+        byte memoryOrderForCAS = memoryOrder;
+        memoryOrderForCAS |= MO_WEAK_CAS;
         long expectedBits;
         double v;
         do {
             // Load and CAS with the raw bits to avoid issues with NaNs and
             // possible bit conversion from signaling NaNs to quiet NaNs that
             // may result in the loop not terminating.
-            expectedBits = getLongVolatile(o, offset);
+            expectedBits = getLongMO(memoryOrderForLoad, o, offset);
             v = Double.longBitsToDouble(expectedBits);
-        } while (!weakCompareAndSetLong(o, offset,
-                                                 expectedBits, Double.doubleToRawLongBits(v + delta)));
-        return v;
-    }
-
-    @ForceInline
-    public final double getAndAddDoubleRelease(Object o, long offset, double delta) {
-        long expectedBits;
-        double v;
-        do {
-            // Load and CAS with the raw bits to avoid issues with NaNs and
-            // possible bit conversion from signaling NaNs to quiet NaNs that
-            // may result in the loop not terminating.
-            expectedBits = getLong(o, offset);
-            v = Double.longBitsToDouble(expectedBits);
-        } while (!weakCompareAndSetLongRelease(o, offset,
-                                                expectedBits, Double.doubleToRawLongBits(v + delta)));
-        return v;
-    }
-
-    @ForceInline
-    public final double getAndAddDoubleAcquire(Object o, long offset, double delta) {
-        long expectedBits;
-        double v;
-        do {
-            // Load and CAS with the raw bits to avoid issues with NaNs and
-            // possible bit conversion from signaling NaNs to quiet NaNs that
-            // may result in the loop not terminating.
-            expectedBits = getLongAcquire(o, offset);
-            v = Double.longBitsToDouble(expectedBits);
-        } while (!weakCompareAndSetLongAcquire(o, offset,
-                                                expectedBits, Double.doubleToRawLongBits(v + delta)));
+        } while (!compareAndSetLongMO(memoryOrderForCAS, o, offset,
+                                      expectedBits, Double.doubleToRawLongBits(v + delta)));
         return v;
     }
 
@@ -2718,31 +2763,14 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @IntrinsicCandidate
-    public final int getAndSetInt(Object o, long offset, int newValue) {
-        int v;
-        do {
-            v = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset, v, newValue));
-        return v;
+    @ForceInline
+    public int getAndSetInt(Object o, long offset, int newValue) {
+        return (int) getAndOperatePrimitiveBitsMO(MO_VOLATILE, BT_INT, OP_SWAP, o, offset, newValue);
     }
 
     @ForceInline
-    public final int getAndSetIntRelease(Object o, long offset, int newValue) {
-        int v;
-        do {
-            v = getInt(o, offset);
-        } while (!weakCompareAndSetIntRelease(o, offset, v, newValue));
-        return v;
-    }
-
-    @ForceInline
-    public final int getAndSetIntAcquire(Object o, long offset, int newValue) {
-        int v;
-        do {
-            v = getIntAcquire(o, offset);
-        } while (!weakCompareAndSetIntAcquire(o, offset, v, newValue));
-        return v;
+    public int getAndSetIntMO(byte memoryOrder, Object o, long offset, int newValue) {
+        return (int) getAndOperatePrimitiveBitsMO(memoryOrder, BT_INT, OP_SWAP, o, offset, newValue);
     }
 
     /**
@@ -2756,31 +2784,14 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @IntrinsicCandidate
-    public final long getAndSetLong(Object o, long offset, long newValue) {
-        long v;
-        do {
-            v = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset, v, newValue));
-        return v;
+    @ForceInline
+    public long getAndSetLong(Object o, long offset, long newValue) {
+        return getAndOperatePrimitiveBitsMO(MO_VOLATILE, BT_LONG, OP_SWAP, o, offset, newValue);
     }
 
     @ForceInline
-    public final long getAndSetLongRelease(Object o, long offset, long newValue) {
-        long v;
-        do {
-            v = getLong(o, offset);
-        } while (!weakCompareAndSetLongRelease(o, offset, v, newValue));
-        return v;
-    }
-
-    @ForceInline
-    public final long getAndSetLongAcquire(Object o, long offset, long newValue) {
-        long v;
-        do {
-            v = getLongAcquire(o, offset);
-        } while (!weakCompareAndSetLongAcquire(o, offset, v, newValue));
-        return v;
+    public long getAndSetLongMO(byte memoryOrder, Object o, long offset, long newValue) {
+        return getAndOperatePrimitiveBitsMO(memoryOrder, BT_LONG, OP_SWAP, o, offset, newValue);
     }
 
     /**
@@ -2794,466 +2805,222 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
+    @ForceInline
+    public Object getAndSetReference(Object o, long offset, Object newValue) {
+        return getAndSetReferenceMO(MO_VOLATILE, o, offset, newValue);
+    }
+
+    @ForceInline
     @IntrinsicCandidate
-    public final Object getAndSetReference(Object o, long offset, Object newValue) {
+    public Object getAndSetReferenceMO(byte memoryOrder, Object o, long offset, Object newValue) {
+        checkMemoryOrder(memoryOrder);
+        byte memoryOrderForLoad = memoryOrder;
+        memoryOrderForLoad &= ~MO_RELEASE;  // do not release when loading
+        if (memoryOrderForLoad == 0)  memoryOrderForLoad = MO_PLAIN;
+        byte memoryOrderForCAS = memoryOrder;
+        memoryOrderForCAS |= MO_WEAK_CAS;
         Object v;
         do {
-            v = getReferenceVolatile(o, offset);
-        } while (!weakCompareAndSetReference(o, offset, v, newValue));
+            v = getReferenceMO(memoryOrderForLoad, o, offset);
+        } while (!compareAndSetReferenceMO(memoryOrderForCAS, o, offset, v, newValue));
         return v;
     }
 
     @ForceInline
-    public final Object getAndSetReferenceRelease(Object o, long offset, Object newValue) {
-        Object v;
-        do {
-            v = getReference(o, offset);
-        } while (!weakCompareAndSetReferenceRelease(o, offset, v, newValue));
-        return v;
+    public byte getAndSetByte(Object o, long offset, byte newValue) {
+        return (byte) getAndOperatePrimitiveBitsMO(MO_VOLATILE, BT_BYTE, OP_SWAP, o, offset, newValue);
     }
 
     @ForceInline
-    public final Object getAndSetReferenceAcquire(Object o, long offset, Object newValue) {
-        Object v;
-        do {
-            v = getReferenceAcquire(o, offset);
-        } while (!weakCompareAndSetReferenceAcquire(o, offset, v, newValue));
-        return v;
-    }
-
-    @IntrinsicCandidate
-    public final byte getAndSetByte(Object o, long offset, byte newValue) {
-        byte v;
-        do {
-            v = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset, v, newValue));
-        return v;
+    public byte getAndSetByteMO(byte memoryOrder, Object o, long offset, byte newValue) {
+        return (byte) getAndOperatePrimitiveBitsMO(memoryOrder, BT_BYTE, OP_SWAP, o, offset, newValue);
     }
 
     @ForceInline
-    public final byte getAndSetByteRelease(Object o, long offset, byte newValue) {
-        byte v;
-        do {
-            v = getByte(o, offset);
-        } while (!weakCompareAndSetByteRelease(o, offset, v, newValue));
-        return v;
-    }
-
-    @ForceInline
-    public final byte getAndSetByteAcquire(Object o, long offset, byte newValue) {
-        byte v;
-        do {
-            v = getByteAcquire(o, offset);
-        } while (!weakCompareAndSetByteAcquire(o, offset, v, newValue));
-        return v;
-    }
-
-    @ForceInline
-    public final boolean getAndSetBoolean(Object o, long offset, boolean newValue) {
+    public boolean getAndSetBoolean(Object o, long offset, boolean newValue) {
         return byte2bool(getAndSetByte(o, offset, bool2byte(newValue)));
     }
 
     @ForceInline
-    public final boolean getAndSetBooleanRelease(Object o, long offset, boolean newValue) {
-        return byte2bool(getAndSetByteRelease(o, offset, bool2byte(newValue)));
+    public boolean getAndSetBooleanMO(byte memoryOrder, Object o, long offset, boolean newValue) {
+        return byte2bool(getAndSetByteMO(memoryOrder, o, offset, bool2byte(newValue)));
     }
 
     @ForceInline
-    public final boolean getAndSetBooleanAcquire(Object o, long offset, boolean newValue) {
-        return byte2bool(getAndSetByteAcquire(o, offset, bool2byte(newValue)));
-    }
-
-    @IntrinsicCandidate
-    public final short getAndSetShort(Object o, long offset, short newValue) {
-        short v;
-        do {
-            v = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset, v, newValue));
-        return v;
+    public short getAndSetShort(Object o, long offset, short newValue) {
+        return (short) getAndOperatePrimitiveBitsMO(MO_VOLATILE, BT_SHORT, OP_SWAP, o, offset, newValue);
     }
 
     @ForceInline
-    public final short getAndSetShortRelease(Object o, long offset, short newValue) {
-        short v;
-        do {
-            v = getShort(o, offset);
-        } while (!weakCompareAndSetShortRelease(o, offset, v, newValue));
-        return v;
+    public short getAndSetShortMO(byte memoryOrder, Object o, long offset, short newValue) {
+        return (short) getAndOperatePrimitiveBitsMO(memoryOrder, BT_SHORT, OP_SWAP, o, offset, newValue);
     }
 
     @ForceInline
-    public final short getAndSetShortAcquire(Object o, long offset, short newValue) {
-        short v;
-        do {
-            v = getShortAcquire(o, offset);
-        } while (!weakCompareAndSetShortAcquire(o, offset, v, newValue));
-        return v;
-    }
-
-    @ForceInline
-    public final char getAndSetChar(Object o, long offset, char newValue) {
+    public char getAndSetChar(Object o, long offset, char newValue) {
         return s2c(getAndSetShort(o, offset, c2s(newValue)));
     }
 
     @ForceInline
-    public final char getAndSetCharRelease(Object o, long offset, char newValue) {
-        return s2c(getAndSetShortRelease(o, offset, c2s(newValue)));
+    public char getAndSetCharMO(byte memoryOrder, Object o, long offset, char newValue) {
+        return s2c(getAndSetShortMO(memoryOrder, o, offset, c2s(newValue)));
     }
 
     @ForceInline
-    public final char getAndSetCharAcquire(Object o, long offset, char newValue) {
-        return s2c(getAndSetShortAcquire(o, offset, c2s(newValue)));
-    }
-
-    @ForceInline
-    public final float getAndSetFloat(Object o, long offset, float newValue) {
+    public float getAndSetFloat(Object o, long offset, float newValue) {
         int v = getAndSetInt(o, offset, Float.floatToRawIntBits(newValue));
         return Float.intBitsToFloat(v);
     }
 
     @ForceInline
-    public final float getAndSetFloatRelease(Object o, long offset, float newValue) {
-        int v = getAndSetIntRelease(o, offset, Float.floatToRawIntBits(newValue));
+    public float getAndSetFloatMO(byte memoryOrder, Object o, long offset, float newValue) {
+        int v = getAndSetIntMO(memoryOrder, o, offset, Float.floatToRawIntBits(newValue));
         return Float.intBitsToFloat(v);
     }
 
     @ForceInline
-    public final float getAndSetFloatAcquire(Object o, long offset, float newValue) {
-        int v = getAndSetIntAcquire(o, offset, Float.floatToRawIntBits(newValue));
-        return Float.intBitsToFloat(v);
-    }
-
-    @ForceInline
-    public final double getAndSetDouble(Object o, long offset, double newValue) {
+    public double getAndSetDouble(Object o, long offset, double newValue) {
         long v = getAndSetLong(o, offset, Double.doubleToRawLongBits(newValue));
         return Double.longBitsToDouble(v);
-    }
+   }
 
     @ForceInline
-    public final double getAndSetDoubleRelease(Object o, long offset, double newValue) {
-        long v = getAndSetLongRelease(o, offset, Double.doubleToRawLongBits(newValue));
+    public double getAndSetDoubleMO(byte memoryOrder, Object o, long offset, double newValue) {
+        long v = getAndSetLongMO(memoryOrder, o, offset, Double.doubleToRawLongBits(newValue));
         return Double.longBitsToDouble(v);
     }
-
-    @ForceInline
-    public final double getAndSetDoubleAcquire(Object o, long offset, double newValue) {
-        long v = getAndSetLongAcquire(o, offset, Double.doubleToRawLongBits(newValue));
-        return Double.longBitsToDouble(v);
-    }
-
 
     // The following contain CAS-based Java implementations used on
     // platforms not supporting native instructions
 
     @ForceInline
-    public final boolean getAndBitwiseOrBoolean(Object o, long offset, boolean mask) {
+    public boolean getAndBitwiseOrBoolean(Object o, long offset, boolean mask) {
         return byte2bool(getAndBitwiseOrByte(o, offset, bool2byte(mask)));
     }
 
     @ForceInline
-    public final boolean getAndBitwiseOrBooleanRelease(Object o, long offset, boolean mask) {
-        return byte2bool(getAndBitwiseOrByteRelease(o, offset, bool2byte(mask)));
+    public boolean getAndBitwiseOrBooleanMO(byte memoryOrder, Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseOrByteMO(memoryOrder, o, offset, bool2byte(mask)));
     }
 
     @ForceInline
-    public final boolean getAndBitwiseOrBooleanAcquire(Object o, long offset, boolean mask) {
-        return byte2bool(getAndBitwiseOrByteAcquire(o, offset, bool2byte(mask)));
-    }
-
-    @ForceInline
-    public final boolean getAndBitwiseAndBoolean(Object o, long offset, boolean mask) {
+    public boolean getAndBitwiseAndBoolean(Object o, long offset, boolean mask) {
         return byte2bool(getAndBitwiseAndByte(o, offset, bool2byte(mask)));
     }
 
     @ForceInline
-    public final boolean getAndBitwiseAndBooleanRelease(Object o, long offset, boolean mask) {
-        return byte2bool(getAndBitwiseAndByteRelease(o, offset, bool2byte(mask)));
+    public boolean getAndBitwiseAndBooleanMO(byte memoryOrder, Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseAndByteMO(memoryOrder, o, offset, bool2byte(mask)));
     }
 
     @ForceInline
-    public final boolean getAndBitwiseAndBooleanAcquire(Object o, long offset, boolean mask) {
-        return byte2bool(getAndBitwiseAndByteAcquire(o, offset, bool2byte(mask)));
-    }
-
-    @ForceInline
-    public final boolean getAndBitwiseXorBoolean(Object o, long offset, boolean mask) {
+    public boolean getAndBitwiseXorBoolean(Object o, long offset, boolean mask) {
         return byte2bool(getAndBitwiseXorByte(o, offset, bool2byte(mask)));
     }
 
     @ForceInline
-    public final boolean getAndBitwiseXorBooleanRelease(Object o, long offset, boolean mask) {
-        return byte2bool(getAndBitwiseXorByteRelease(o, offset, bool2byte(mask)));
+    public boolean getAndBitwiseXorBooleanMO(byte memoryOrder, Object o, long offset, boolean mask) {
+        return byte2bool(getAndBitwiseXorByteMO(memoryOrder, o, offset, bool2byte(mask)));
     }
 
     @ForceInline
-    public final boolean getAndBitwiseXorBooleanAcquire(Object o, long offset, boolean mask) {
-        return byte2bool(getAndBitwiseXorByteAcquire(o, offset, bool2byte(mask)));
-    }
-
-
-    @ForceInline
-    public final byte getAndBitwiseOrByte(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset,
-                                                  current, (byte) (current | mask)));
-        return current;
+    public byte getAndBitwiseOrByte(Object o, long offset, byte mask) {
+        return getAndBitwiseOrByteMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final byte getAndBitwiseOrByteRelease(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            current = getByte(o, offset);
-        } while (!weakCompareAndSetByteRelease(o, offset,
-                                                 current, (byte) (current | mask)));
-        return current;
+    public byte getAndBitwiseOrByteMO(byte memoryOrder, Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(memoryOrder, BT_BYTE, OP_BITOR, o, offset, mask);
     }
 
     @ForceInline
-    public final byte getAndBitwiseOrByteAcquire(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getByte(o, offset);
-        } while (!weakCompareAndSetByteAcquire(o, offset,
-                                                 current, (byte) (current | mask)));
-        return current;
+    public byte getAndBitwiseAndByte(Object o, long offset, byte mask) {
+        return getAndBitwiseAndByteMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final byte getAndBitwiseAndByte(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset,
-                                                  current, (byte) (current & mask)));
-        return current;
+    public byte getAndBitwiseAndByteMO(byte memoryOrder, Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(memoryOrder, BT_BYTE, OP_BITAND, o, offset, mask);
     }
 
     @ForceInline
-    public final byte getAndBitwiseAndByteRelease(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            current = getByte(o, offset);
-        } while (!weakCompareAndSetByteRelease(o, offset,
-                                                 current, (byte) (current & mask)));
-        return current;
+    public byte getAndBitwiseXorByte(Object o, long offset, byte mask) {
+        return getAndBitwiseXorByteMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final byte getAndBitwiseAndByteAcquire(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getByte(o, offset);
-        } while (!weakCompareAndSetByteAcquire(o, offset,
-                                                 current, (byte) (current & mask)));
-        return current;
+    public byte getAndBitwiseXorByteMO(byte memoryOrder, Object o, long offset, byte mask) {
+        return (byte) getAndOperatePrimitiveBitsMO(memoryOrder, BT_BYTE, OP_BITXOR, o, offset, mask);
     }
 
     @ForceInline
-    public final byte getAndBitwiseXorByte(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset,
-                                                  current, (byte) (current ^ mask)));
-        return current;
-    }
-
-    @ForceInline
-    public final byte getAndBitwiseXorByteRelease(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            current = getByte(o, offset);
-        } while (!weakCompareAndSetByteRelease(o, offset,
-                                                 current, (byte) (current ^ mask)));
-        return current;
-    }
-
-    @ForceInline
-    public final byte getAndBitwiseXorByteAcquire(Object o, long offset, byte mask) {
-        byte current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getByte(o, offset);
-        } while (!weakCompareAndSetByteAcquire(o, offset,
-                                                 current, (byte) (current ^ mask)));
-        return current;
-    }
-
-
-    @ForceInline
-    public final char getAndBitwiseOrChar(Object o, long offset, char mask) {
+    public char getAndBitwiseOrChar(Object o, long offset, char mask) {
         return s2c(getAndBitwiseOrShort(o, offset, c2s(mask)));
     }
 
     @ForceInline
-    public final char getAndBitwiseOrCharRelease(Object o, long offset, char mask) {
-        return s2c(getAndBitwiseOrShortRelease(o, offset, c2s(mask)));
+    public char getAndBitwiseOrCharMO(byte memoryOrder, Object o, long offset, char mask) {
+        return s2c(getAndBitwiseOrShortMO(memoryOrder, o, offset, c2s(mask)));
     }
 
     @ForceInline
-    public final char getAndBitwiseOrCharAcquire(Object o, long offset, char mask) {
-        return s2c(getAndBitwiseOrShortAcquire(o, offset, c2s(mask)));
-    }
-
-    @ForceInline
-    public final char getAndBitwiseAndChar(Object o, long offset, char mask) {
+    public char getAndBitwiseAndChar(Object o, long offset, char mask) {
         return s2c(getAndBitwiseAndShort(o, offset, c2s(mask)));
     }
 
     @ForceInline
-    public final char getAndBitwiseAndCharRelease(Object o, long offset, char mask) {
-        return s2c(getAndBitwiseAndShortRelease(o, offset, c2s(mask)));
+    public char getAndBitwiseAndCharMO(byte memoryOrder, Object o, long offset, char mask) {
+        return s2c(getAndBitwiseAndShortMO(memoryOrder, o, offset, c2s(mask)));
     }
 
     @ForceInline
-    public final char getAndBitwiseAndCharAcquire(Object o, long offset, char mask) {
-        return s2c(getAndBitwiseAndShortAcquire(o, offset, c2s(mask)));
-    }
-
-    @ForceInline
-    public final char getAndBitwiseXorChar(Object o, long offset, char mask) {
+    public char getAndBitwiseXorChar(Object o, long offset, char mask) {
         return s2c(getAndBitwiseXorShort(o, offset, c2s(mask)));
     }
 
     @ForceInline
-    public final char getAndBitwiseXorCharRelease(Object o, long offset, char mask) {
-        return s2c(getAndBitwiseXorShortRelease(o, offset, c2s(mask)));
+    public char getAndBitwiseXorCharMO(byte memoryOrder, Object o, long offset, char mask) {
+        return s2c(getAndBitwiseXorShortMO(memoryOrder, o, offset, c2s(mask)));
     }
 
     @ForceInline
-    public final char getAndBitwiseXorCharAcquire(Object o, long offset, char mask) {
-        return s2c(getAndBitwiseXorShortAcquire(o, offset, c2s(mask)));
-    }
-
-
-    @ForceInline
-    public final short getAndBitwiseOrShort(Object o, long offset, short mask) {
-        short current;
-        do {
-            current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset,
-                                                current, (short) (current | mask)));
-        return current;
+    public short getAndBitwiseOrShort(Object o, long offset, short mask) {
+        return getAndBitwiseOrShortMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final short getAndBitwiseOrShortRelease(Object o, long offset, short mask) {
-        short current;
-        do {
-            current = getShort(o, offset);
-        } while (!weakCompareAndSetShortRelease(o, offset,
-                                               current, (short) (current | mask)));
-        return current;
+    public short getAndBitwiseOrShortMO(byte memoryOrder, Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(memoryOrder, BT_SHORT, OP_BITOR, o, offset, mask);
     }
 
     @ForceInline
-    public final short getAndBitwiseOrShortAcquire(Object o, long offset, short mask) {
-        short current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getShort(o, offset);
-        } while (!weakCompareAndSetShortAcquire(o, offset,
-                                               current, (short) (current | mask)));
-        return current;
+    public short getAndBitwiseAndShort(Object o, long offset, short mask) {
+        return getAndBitwiseAndShortMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final short getAndBitwiseAndShort(Object o, long offset, short mask) {
-        short current;
-        do {
-            current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset,
-                                                current, (short) (current & mask)));
-        return current;
+    public short getAndBitwiseAndShortMO(byte memoryOrder, Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(memoryOrder, BT_SHORT, OP_BITAND, o, offset, mask);
     }
 
     @ForceInline
-    public final short getAndBitwiseAndShortRelease(Object o, long offset, short mask) {
-        short current;
-        do {
-            current = getShort(o, offset);
-        } while (!weakCompareAndSetShortRelease(o, offset,
-                                               current, (short) (current & mask)));
-        return current;
+    public short getAndBitwiseXorShort(Object o, long offset, short mask) {
+        return getAndBitwiseXorShortMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final short getAndBitwiseAndShortAcquire(Object o, long offset, short mask) {
-        short current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getShort(o, offset);
-        } while (!weakCompareAndSetShortAcquire(o, offset,
-                                               current, (short) (current & mask)));
-        return current;
+    public short getAndBitwiseXorShortMO(byte memoryOrder, Object o, long offset, short mask) {
+        return (short) getAndOperatePrimitiveBitsMO(memoryOrder, BT_SHORT, OP_BITXOR, o, offset, mask);
     }
 
     @ForceInline
-    public final short getAndBitwiseXorShort(Object o, long offset, short mask) {
-        short current;
-        do {
-            current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset,
-                                                current, (short) (current ^ mask)));
-        return current;
+    public int getAndBitwiseOrInt(Object o, long offset, int mask) {
+        return getAndBitwiseOrIntMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final short getAndBitwiseXorShortRelease(Object o, long offset, short mask) {
-        short current;
-        do {
-            current = getShort(o, offset);
-        } while (!weakCompareAndSetShortRelease(o, offset,
-                                               current, (short) (current ^ mask)));
-        return current;
-    }
-
-    @ForceInline
-    public final short getAndBitwiseXorShortAcquire(Object o, long offset, short mask) {
-        short current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getShort(o, offset);
-        } while (!weakCompareAndSetShortAcquire(o, offset,
-                                               current, (short) (current ^ mask)));
-        return current;
-    }
-
-
-    @ForceInline
-    public final int getAndBitwiseOrInt(Object o, long offset, int mask) {
-        int current;
-        do {
-            current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset,
-                                                current, current | mask));
-        return current;
-    }
-
-    @ForceInline
-    public final int getAndBitwiseOrIntRelease(Object o, long offset, int mask) {
-        int current;
-        do {
-            current = getInt(o, offset);
-        } while (!weakCompareAndSetIntRelease(o, offset,
-                                               current, current | mask));
-        return current;
-    }
-
-    @ForceInline
-    public final int getAndBitwiseOrIntAcquire(Object o, long offset, int mask) {
-        int current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getInt(o, offset);
-        } while (!weakCompareAndSetIntAcquire(o, offset,
-                                               current, current | mask));
-        return current;
+    public int getAndBitwiseOrIntMO(byte memoryOrder, Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(memoryOrder, BT_INT, OP_BITOR, o, offset, mask);
     }
 
     /**
@@ -3268,162 +3035,54 @@ public final class Unsafe {
      * @since 9
      */
     @ForceInline
-    public final int getAndBitwiseAndInt(Object o, long offset, int mask) {
-        int current;
-        do {
-            current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset,
-                                                current, current & mask));
-        return current;
+    public int getAndBitwiseAndInt(Object o, long offset, int mask) {
+        return getAndBitwiseAndIntMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final int getAndBitwiseAndIntRelease(Object o, long offset, int mask) {
-        int current;
-        do {
-            current = getInt(o, offset);
-        } while (!weakCompareAndSetIntRelease(o, offset,
-                                               current, current & mask));
-        return current;
+    public int getAndBitwiseAndIntMO(byte memoryOrder, Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(memoryOrder, BT_INT, OP_BITAND, o, offset, mask);
     }
 
     @ForceInline
-    public final int getAndBitwiseAndIntAcquire(Object o, long offset, int mask) {
-        int current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getInt(o, offset);
-        } while (!weakCompareAndSetIntAcquire(o, offset,
-                                               current, current & mask));
-        return current;
+    public int getAndBitwiseXorInt(Object o, long offset, int mask) {
+        return getAndBitwiseXorIntMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final int getAndBitwiseXorInt(Object o, long offset, int mask) {
-        int current;
-        do {
-            current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset,
-                                                current, current ^ mask));
-        return current;
+    public int getAndBitwiseXorIntMO(byte memoryOrder, Object o, long offset, int mask) {
+        return (int) getAndOperatePrimitiveBitsMO(memoryOrder, BT_INT, OP_BITXOR, o, offset, mask);
     }
 
     @ForceInline
-    public final int getAndBitwiseXorIntRelease(Object o, long offset, int mask) {
-        int current;
-        do {
-            current = getInt(o, offset);
-        } while (!weakCompareAndSetIntRelease(o, offset,
-                                               current, current ^ mask));
-        return current;
+    public long getAndBitwiseOrLong(Object o, long offset, long mask) {
+        return getAndBitwiseOrLongMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final int getAndBitwiseXorIntAcquire(Object o, long offset, int mask) {
-        int current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getInt(o, offset);
-        } while (!weakCompareAndSetIntAcquire(o, offset,
-                                               current, current ^ mask));
-        return current;
-    }
-
-
-    @ForceInline
-    public final long getAndBitwiseOrLong(Object o, long offset, long mask) {
-        long current;
-        do {
-            current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset,
-                                                current, current | mask));
-        return current;
+    public long getAndBitwiseOrLongMO(byte memoryOrder, Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(memoryOrder, BT_LONG, OP_BITOR, o, offset, mask);
     }
 
     @ForceInline
-    public final long getAndBitwiseOrLongRelease(Object o, long offset, long mask) {
-        long current;
-        do {
-            current = getLong(o, offset);
-        } while (!weakCompareAndSetLongRelease(o, offset,
-                                               current, current | mask));
-        return current;
+    public long getAndBitwiseAndLong(Object o, long offset, long mask) {
+        return getAndBitwiseAndLongMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final long getAndBitwiseOrLongAcquire(Object o, long offset, long mask) {
-        long current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getLong(o, offset);
-        } while (!weakCompareAndSetLongAcquire(o, offset,
-                                               current, current | mask));
-        return current;
+    public long getAndBitwiseAndLongMO(byte memoryOrder, Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(memoryOrder, BT_LONG, OP_BITAND, o, offset, mask);
     }
 
     @ForceInline
-    public final long getAndBitwiseAndLong(Object o, long offset, long mask) {
-        long current;
-        do {
-            current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset,
-                                                current, current & mask));
-        return current;
+    public long getAndBitwiseXorLong(Object o, long offset, long mask) {
+        return getAndBitwiseXorLongMO(MO_VOLATILE, o, offset, mask);
     }
 
     @ForceInline
-    public final long getAndBitwiseAndLongRelease(Object o, long offset, long mask) {
-        long current;
-        do {
-            current = getLong(o, offset);
-        } while (!weakCompareAndSetLongRelease(o, offset,
-                                               current, current & mask));
-        return current;
+    public long getAndBitwiseXorLongMO(byte memoryOrder, Object o, long offset, long mask) {
+        return getAndOperatePrimitiveBitsMO(memoryOrder, BT_LONG, OP_BITXOR, o, offset, mask);
     }
-
-    @ForceInline
-    public final long getAndBitwiseAndLongAcquire(Object o, long offset, long mask) {
-        long current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getLong(o, offset);
-        } while (!weakCompareAndSetLongAcquire(o, offset,
-                                               current, current & mask));
-        return current;
-    }
-
-    @ForceInline
-    public final long getAndBitwiseXorLong(Object o, long offset, long mask) {
-        long current;
-        do {
-            current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset,
-                                                current, current ^ mask));
-        return current;
-    }
-
-    @ForceInline
-    public final long getAndBitwiseXorLongRelease(Object o, long offset, long mask) {
-        long current;
-        do {
-            current = getLong(o, offset);
-        } while (!weakCompareAndSetLongRelease(o, offset,
-                                               current, current ^ mask));
-        return current;
-    }
-
-    @ForceInline
-    public final long getAndBitwiseXorLongAcquire(Object o, long offset, long mask) {
-        long current;
-        do {
-            // Plain read, the value is a hint, the acquire CAS does the work
-            current = getLong(o, offset);
-        } while (!weakCompareAndSetLongAcquire(o, offset,
-                                               current, current ^ mask));
-        return current;
-    }
-
-
 
     /**
      * Ensures that loads before the fence will not be reordered with loads and
@@ -3437,7 +3096,7 @@ public final class Unsafe {
      * @since 1.8
      */
     @IntrinsicCandidate
-    public final void loadFence() {
+    public void loadFence() {
         // If loadFence intrinsic is not available, fall back to full fence.
         fullFence();
     }
@@ -3454,7 +3113,7 @@ public final class Unsafe {
      * @since 1.8
      */
     @IntrinsicCandidate
-    public final void storeFence() {
+    public void storeFence() {
         // If storeFence intrinsic is not available, fall back to full fence.
         fullFence();
     }
@@ -3480,7 +3139,7 @@ public final class Unsafe {
      *
      * @since 9
      */
-    public final void loadLoadFence() {
+    public void loadLoadFence() {
         loadFence();
     }
 
@@ -3491,7 +3150,7 @@ public final class Unsafe {
      * @since 9
      */
     @IntrinsicCandidate
-    public final void storeStoreFence() {
+    public void storeStoreFence() {
         // If storeStoreFence intrinsic is not available, fall back to storeFence.
         storeFence();
     }
@@ -3517,14 +3176,14 @@ public final class Unsafe {
      * @return Returns true if the native byte ordering of this
      * platform is big-endian, false if it is little-endian.
      */
-    public final boolean isBigEndian() { return BIG_ENDIAN; }
+    public boolean isBigEndian() { return BIG_ENDIAN; }
 
     /**
      * @return Returns true if this platform is capable of performing
      * accesses at addresses which are not aligned for the type of the
      * primitive type being accessed, false otherwise.
      */
-    public final boolean unalignedAccess() { return UNALIGNED_ACCESS; }
+    public boolean unalignedAccess() { return UNALIGNED_ACCESS; }
 
     /**
      * Fetches a value at some byte offset into a given Java object.
@@ -3559,8 +3218,15 @@ public final class Unsafe {
      *         {@link NullPointerException}
      * @since 9
      */
-    @IntrinsicCandidate
-    public final long getLongUnaligned(Object o, long offset) {
+    @ForceInline
+    public long getLongUnaligned(Object o, long offset) {
+        if (UNALIGNED_ACCESS) {
+            return getPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_LONG, o, offset);
+        } else {
+            return getLongUnalignedSlow(o, offset);
+        }
+    }
+    private long getLongUnalignedSlow(Object o, long offset) {
         if ((offset & 7) == 0) {
             return getLong(o, offset);
         } else if ((offset & 3) == 0) {
@@ -3593,13 +3259,21 @@ public final class Unsafe {
      * @return the value fetched from the indicated object
      * @since 9
      */
-    public final long getLongUnaligned(Object o, long offset, boolean bigEndian) {
+    @ForceInline
+    public long getLongUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getLongUnaligned(o, offset));
     }
 
     /** @see #getLongUnaligned(Object, long) */
-    @IntrinsicCandidate
-    public final int getIntUnaligned(Object o, long offset) {
+    @ForceInline
+    public int getIntUnaligned(Object o, long offset) {
+        if (UNALIGNED_ACCESS) {
+            return (int) getPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_INT, o, offset);
+        } else {
+            return getIntUnalignedSlow(o, offset);
+        }
+    }
+    private int getIntUnalignedSlow(Object o, long offset) {
         if ((offset & 3) == 0) {
             return getInt(o, offset);
         } else if ((offset & 1) == 0) {
@@ -3613,13 +3287,21 @@ public final class Unsafe {
         }
     }
     /** @see #getLongUnaligned(Object, long, boolean) */
-    public final int getIntUnaligned(Object o, long offset, boolean bigEndian) {
+    @ForceInline
+    public int getIntUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getIntUnaligned(o, offset));
     }
 
     /** @see #getLongUnaligned(Object, long) */
-    @IntrinsicCandidate
-    public final short getShortUnaligned(Object o, long offset) {
+    @ForceInline
+    public short getShortUnaligned(Object o, long offset) {
+        if (UNALIGNED_ACCESS) {
+            return (short) getPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_SHORT, o, offset);
+        } else {
+            return getShortUnalignedSlow(o, offset);
+        }
+    }
+    private short getShortUnalignedSlow(Object o, long offset) {
         if ((offset & 1) == 0) {
             return getShort(o, offset);
         } else {
@@ -3628,23 +3310,20 @@ public final class Unsafe {
         }
     }
     /** @see #getLongUnaligned(Object, long, boolean) */
-    public final short getShortUnaligned(Object o, long offset, boolean bigEndian) {
+    @ForceInline
+    public short getShortUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getShortUnaligned(o, offset));
     }
 
     /** @see #getLongUnaligned(Object, long) */
-    @IntrinsicCandidate
-    public final char getCharUnaligned(Object o, long offset) {
-        if ((offset & 1) == 0) {
-            return getChar(o, offset);
-        } else {
-            return (char)makeShort(getByte(o, offset),
-                                   getByte(o, offset + 1));
-        }
+    @ForceInline
+    public char getCharUnaligned(Object o, long offset) {
+        return (char) getShortUnaligned(o, offset);
     }
 
     /** @see #getLongUnaligned(Object, long, boolean) */
-    public final char getCharUnaligned(Object o, long offset, boolean bigEndian) {
+    @ForceInline
+    public char getCharUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getCharUnaligned(o, offset));
     }
 
@@ -3676,8 +3355,15 @@ public final class Unsafe {
      *         {@link NullPointerException}
      * @since 9
      */
-    @IntrinsicCandidate
-    public final void putLongUnaligned(Object o, long offset, long x) {
+    @ForceInline
+    public void putLongUnaligned(Object o, long offset, long x) {
+        if (UNALIGNED_ACCESS) {
+            putPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_LONG, o, offset, x);
+        } else {
+            putLongUnalignedSlow(o, offset, x);
+        }
+    }
+    private void putLongUnalignedSlow(Object o, long offset, long x) {
         if ((offset & 7) == 0) {
             putLong(o, offset, x);
         } else if ((offset & 3) == 0) {
@@ -3714,13 +3400,21 @@ public final class Unsafe {
      *         {@link NullPointerException}
      * @since 9
      */
-    public final void putLongUnaligned(Object o, long offset, long x, boolean bigEndian) {
+    @ForceInline
+    public void putLongUnaligned(Object o, long offset, long x, boolean bigEndian) {
         putLongUnaligned(o, offset, convEndian(bigEndian, x));
     }
 
     /** @see #putLongUnaligned(Object, long, long) */
-    @IntrinsicCandidate
-    public final void putIntUnaligned(Object o, long offset, int x) {
+    @ForceInline
+    public void putIntUnaligned(Object o, long offset, int x) {
+        if (UNALIGNED_ACCESS) {
+            putPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_INT, o, offset, x);
+        } else {
+            putIntUnalignedSlow(o, offset, x);
+        }
+    }
+    private void putIntUnalignedSlow(Object o, long offset, int x) {
         if ((offset & 3) == 0) {
             putInt(o, offset, x);
         } else if ((offset & 1) == 0) {
@@ -3736,13 +3430,21 @@ public final class Unsafe {
         }
     }
     /** @see #putLongUnaligned(Object, long, long, boolean) */
-    public final void putIntUnaligned(Object o, long offset, int x, boolean bigEndian) {
+    @ForceInline
+    public void putIntUnaligned(Object o, long offset, int x, boolean bigEndian) {
         putIntUnaligned(o, offset, convEndian(bigEndian, x));
     }
 
     /** @see #putLongUnaligned(Object, long, long) */
-    @IntrinsicCandidate
-    public final void putShortUnaligned(Object o, long offset, short x) {
+    @ForceInline
+    public void putShortUnaligned(Object o, long offset, short x) {
+        if (UNALIGNED_ACCESS) {
+            putPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_SHORT, o, offset, x);
+        } else {
+            putShortUnalignedSlow(o, offset, x);
+        }
+    }
+    private void putShortUnalignedSlow(Object o, long offset, short x) {
         if ((offset & 1) == 0) {
             putShort(o, offset, x);
         } else {
@@ -3752,17 +3454,19 @@ public final class Unsafe {
         }
     }
     /** @see #putLongUnaligned(Object, long, long, boolean) */
-    public final void putShortUnaligned(Object o, long offset, short x, boolean bigEndian) {
+    @ForceInline
+    public void putShortUnaligned(Object o, long offset, short x, boolean bigEndian) {
         putShortUnaligned(o, offset, convEndian(bigEndian, x));
     }
 
     /** @see #putLongUnaligned(Object, long, long) */
-    @IntrinsicCandidate
-    public final void putCharUnaligned(Object o, long offset, char x) {
+    @ForceInline
+    public void putCharUnaligned(Object o, long offset, char x) {
         putShortUnaligned(o, offset, (short)x);
     }
     /** @see #putLongUnaligned(Object, long, long, boolean) */
-    public final void putCharUnaligned(Object o, long offset, char x, boolean bigEndian) {
+    @ForceInline
+    public void putCharUnaligned(Object o, long offset, char x, boolean bigEndian) {
         putCharUnaligned(o, offset, convEndian(bigEndian, x));
     }
 
@@ -3770,6 +3474,7 @@ public final class Unsafe {
 
     // These methods construct integers from bytes.  The byte ordering
     // is the native endianness of this platform.
+    @ForceInline
     private static long makeLong(byte i0, byte i1, byte i2, byte i3, byte i4, byte i5, byte i6, byte i7) {
         return ((toUnsignedLong(i0) << pickPos(56, 0))
               | (toUnsignedLong(i1) << pickPos(56, 8))
@@ -3780,26 +3485,31 @@ public final class Unsafe {
               | (toUnsignedLong(i6) << pickPos(56, 48))
               | (toUnsignedLong(i7) << pickPos(56, 56)));
     }
+    @ForceInline
     private static long makeLong(short i0, short i1, short i2, short i3) {
         return ((toUnsignedLong(i0) << pickPos(48, 0))
               | (toUnsignedLong(i1) << pickPos(48, 16))
               | (toUnsignedLong(i2) << pickPos(48, 32))
               | (toUnsignedLong(i3) << pickPos(48, 48)));
     }
+    @ForceInline
     private static long makeLong(int i0, int i1) {
         return (toUnsignedLong(i0) << pickPos(32, 0))
              | (toUnsignedLong(i1) << pickPos(32, 32));
     }
+    @ForceInline
     private static int makeInt(short i0, short i1) {
         return (toUnsignedInt(i0) << pickPos(16, 0))
              | (toUnsignedInt(i1) << pickPos(16, 16));
     }
+    @ForceInline
     private static int makeInt(byte i0, byte i1, byte i2, byte i3) {
         return ((toUnsignedInt(i0) << pickPos(24, 0))
               | (toUnsignedInt(i1) << pickPos(24, 8))
               | (toUnsignedInt(i2) << pickPos(24, 16))
               | (toUnsignedInt(i3) << pickPos(24, 24)));
     }
+    @ForceInline
     private static short makeShort(byte i0, byte i1) {
         return (short)((toUnsignedInt(i0) << pickPos(8, 0))
                      | (toUnsignedInt(i1) << pickPos(8, 8)));
@@ -3812,6 +3522,7 @@ public final class Unsafe {
     // These methods write integers to memory from smaller parts
     // provided by their caller.  The ordering in which these parts
     // are written is the native endianness of this platform.
+    @ForceInline
     private void putLongParts(Object o, long offset, byte i0, byte i1, byte i2, byte i3, byte i4, byte i5, byte i6, byte i7) {
         putByte(o, offset + 0, pick(i0, i7));
         putByte(o, offset + 1, pick(i1, i6));
@@ -3822,26 +3533,31 @@ public final class Unsafe {
         putByte(o, offset + 6, pick(i6, i1));
         putByte(o, offset + 7, pick(i7, i0));
     }
+    @ForceInline
     private void putLongParts(Object o, long offset, short i0, short i1, short i2, short i3) {
         putShort(o, offset + 0, pick(i0, i3));
         putShort(o, offset + 2, pick(i1, i2));
         putShort(o, offset + 4, pick(i2, i1));
         putShort(o, offset + 6, pick(i3, i0));
     }
+    @ForceInline
     private void putLongParts(Object o, long offset, int i0, int i1) {
         putInt(o, offset + 0, pick(i0, i1));
         putInt(o, offset + 4, pick(i1, i0));
     }
+    @ForceInline
     private void putIntParts(Object o, long offset, short i0, short i1) {
         putShort(o, offset + 0, pick(i0, i1));
         putShort(o, offset + 2, pick(i1, i0));
     }
+    @ForceInline
     private void putIntParts(Object o, long offset, byte i0, byte i1, byte i2, byte i3) {
         putByte(o, offset + 0, pick(i0, i3));
         putByte(o, offset + 1, pick(i1, i2));
         putByte(o, offset + 2, pick(i2, i1));
         putByte(o, offset + 3, pick(i3, i0));
     }
+    @ForceInline
     private void putShortParts(Object o, long offset, byte i0, byte i1) {
         putByte(o, offset + 0, pick(i0, i1));
         putByte(o, offset + 1, pick(i1, i0));

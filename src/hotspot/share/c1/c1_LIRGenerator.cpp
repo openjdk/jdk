@@ -2869,14 +2869,21 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_PreconditionsCheckIndex(x, T_LONG);
     break;
 
-  case vmIntrinsics::_compareAndSetReference:
-    do_CompareAndSwap(x, objectType);
-    break;
-  case vmIntrinsics::_compareAndSetInt:
-    do_CompareAndSwap(x, intType);
-    break;
-  case vmIntrinsics::_compareAndSetLong:
-    do_CompareAndSwap(x, longType);
+  case vmIntrinsics::_compareAndSetReferenceMO:
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+    switch (x->basic_type()) {
+    case T_OBJECT:
+      do_CompareAndSwap(x, objectType);
+      break;
+    case T_INT:
+      do_CompareAndSwap(x, intType);
+      break;
+    case T_LONG:
+      do_CompareAndSwap(x, longType);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
     break;
 
   case vmIntrinsics::_loadFence :
@@ -2917,7 +2924,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_blackhole(x);
     break;
 
-  default: ShouldNotReachHere(); break;
+  default:
+    guarantee(false, "unhandled do_Intrinsic %d: %s",
+              (int)x->id(), vmIntrinsics::name_at(x->id()));
+    break;
   }
 }
 

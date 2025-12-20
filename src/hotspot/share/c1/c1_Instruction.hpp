@@ -1501,13 +1501,17 @@ LEAF(MonitorExit, AccessMonitor)
   }
 };
 
-
 LEAF(Intrinsic, StateSplit)
  private:
   vmIntrinsics::ID _id;
   ArgsNonNullState _nonnull_state;
   Values*          _args;
   Value            _recv;
+
+  // polymorphic prefix arguments, if applicable, set neutrally if not:
+  vmIntrinsics::MemoryOrder   _memory_order;
+  BasicType                   _basic_type;
+  vmIntrinsics::BitsOperation _bits_op;
 
  public:
   // preserves_state can be set to true for Intrinsics
@@ -1528,6 +1532,9 @@ LEAF(Intrinsic, StateSplit)
   , _id(id)
   , _args(args)
   , _recv(nullptr)
+  , _memory_order(vmIntrinsics::MO_NONE)
+  , _basic_type(T_ILLEGAL)
+  , _bits_op(vmIntrinsics::OP_NONE)
   {
     assert(args != nullptr, "args must exist");
     ASSERT_VALUES
@@ -1567,6 +1574,25 @@ LEAF(Intrinsic, StateSplit)
     StateSplit::input_values_do(f);
     for (int i = 0; i < _args->length(); i++) f->visit(_args->adr_at(i));
   }
+
+  // prefix arguments
+  vmIntrinsics::MemoryOrder memory_order() const {
+    assert(_memory_order != vmIntrinsics::MO_NONE, "must be present");
+    return _memory_order;
+  }
+  BasicType basic_type() const {
+    assert(_basic_type != T_ILLEGAL, "must be present");
+    return _basic_type;
+  }
+  vmIntrinsics::BitsOperation bits_op() const {
+    assert(_bits_op != vmIntrinsics::OP_NONE, "must be present");
+    return _bits_op;
+  }
+  // one-time setup after creation, required for polymorphic intrinsics
+  Intrinsic* with_polymorphic_prefix(
+      vmIntrinsics::MemoryOrder memory_order,
+      BasicType basic_type = T_OBJECT,
+      vmIntrinsics::BitsOperation bits_op = vmIntrinsics::OP_NONE);
 };
 
 

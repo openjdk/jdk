@@ -26,6 +26,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -42,6 +43,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -65,7 +67,6 @@
  * Implementation of the jdk.internal.misc.Unsafe class
  */
 
-
 #define MAX_OBJECT_SIZE \
   ( arrayOopDesc::base_offset_in_bytes(T_DOUBLE) \
     + ((julong)max_jint * sizeof(double)) )
@@ -77,6 +78,7 @@
   JVM_LEAF(static result_type, header)
 
 // All memory access methods (e.g. getInt, copyMemory) must use this macro.
+// (Except, methods which read or write managed pointers use another path.)
 // We call these methods "scoped" methods, as access to these methods is
 // typically governed by a "scope" (a MemorySessionImpl object), and no
 // access is allowed when the scope is no longer alive.
@@ -191,16 +193,43 @@ public:
 };
 
 /**
+ * Helper macro to implement variable-size operations in polymorphic
+ * methods that manipulate primitive values for Unsafe.
+ * Copies the 
+ */
+#define TYPE_SIZE_SWITCH(bt, var_t, body) {                             \
+    switch ((bt) & UNSAFE_PRIMITIVE_SIZE_MASK) {                        \
+    case 0:  { using var_t = jubyte;   {body;}  break; }                \
+    case 1:  { using var_t = jushort;  {body;}  break; }                \
+    case 2:  { using var_t = juint;    {body;}  break; }                \
+    default: { using var_t = julong;   {body;}  break; }                \
+    }                                                                   \
+  } /*end*/
+
+template<typename val_t>
+static julong maybe_pad_with_garbage(val_t v) {
+  julong bits = v;
+#ifdef ASSERT
+  // inject some garbage as padding, to stress-test surrounding layers
+  // e.g., 0x42 pads up as 0xFFFFFFCE00000042
+  if (sizeof(val_t) <= sizeof(bits)/2) {
+    bits ^= ~bits << (sizeof(bits)/2 * BitsPerByte);
+  }
+#endif //ASSERT
+  return bits;
+}
+
+/**
  * Helper class for accessing memory.
  *
  * Normalizes values and wraps accesses in
  * JavaThread::doing_unsafe_access() if needed.
  */
-template <typename T>
 class MemoryAccess : StackObj {
   JavaThread* _thread;
   oop _obj;
   ptrdiff_t _offset;
+  BasicType _basic_type;
 
   // Resolves and returns the address of the memory access.
   // This raw memory access may fault, so we make sure it happens within the
@@ -208,142 +237,168 @@ class MemoryAccess : StackObj {
   // of Thread::set_doing_unsafe_access() is also volatile, these accesses
   // can not be reordered by the compiler. Therefore, if the access triggers
   // a fault, we will know that Thread::doing_unsafe_access() returns true.
+  template<typename T>
   volatile T* addr() {
     void* addr = index_oop_from_field_offset_long(_obj, _offset);
     return static_cast<volatile T*>(addr);
   }
 
-  template <typename U>
-  U normalize_for_write(U x) {
-    return x;
-  }
-
-  jboolean normalize_for_write(jboolean x) {
-    return x & 1;
-  }
-
-  template <typename U>
-  U normalize_for_read(U x) {
-    return x;
-  }
-
-  jboolean normalize_for_read(jboolean x) {
-    return x != 0;
-  }
+  // Note: We do not normalize booleans at this level.  That is done
+  // by strongly-typed VM access methods like oopDesc::bool_field, but
+  // not by this C++ code, because it is not strongly typed.  Instead,
+  // the next layer up, the Java class Unsafe, handles the sanitizing
+  // of booleans.  See bool2byte and byte2bool in that class.  With
+  // this division of labor, the unsafe native layer (with related JIT
+  // intrinsics) can concentrate on correctly sized and sequenced
+  // access, without adding in extra data type requirements.
 
 public:
-  MemoryAccess(JavaThread* thread, jobject obj, jlong offset)
-    : _thread(thread), _obj(JNIHandles::resolve(obj)), _offset((ptrdiff_t)offset) {
-    assert_field_offset_sane(_obj, offset);
+  MemoryAccess(JavaThread* thread, jobject obj, jlong offset, int basic_type)
+    : _thread(thread),
+      _obj(JNIHandles::resolve(obj)), _offset((ptrdiff_t)offset),
+      _basic_type((BasicType)basic_type)
+  {
+    //assert_field_offset_sane(_obj, offset); -- done later in addr()
+    assert(is_java_primitive(_basic_type), "caller resp");
+    assert((1 << ((int)_basic_type & UNSAFE_PRIMITIVE_SIZE_MASK))
+           == type2aelembytes(_basic_type), "must be");
   }
 
-  T get() {
+  julong get() {
     GuardUnsafeAccess guard(_thread);
-    return normalize_for_read(*addr());
+    TYPE_SIZE_SWITCH(_basic_type, val_t, {
+        val_t v = *addr<val_t>();
+        return maybe_pad_with_garbage(v);
+      });
   }
 
   // we use this method at some places for writing to 0 e.g. to cause a crash;
   // ubsan does not know that this is the desired behavior
   ATTRIBUTE_NO_UBSAN
-  void put(T x) {
+  void put(julong x) {
     GuardUnsafeAccess guard(_thread);
-    *addr() = normalize_for_write(x);
+    TYPE_SIZE_SWITCH(_basic_type, val_t, {
+        *addr<val_t>() = (val_t)x;
+      });
   }
 
 
-  T get_volatile() {
+  julong get_volatile() {
     GuardUnsafeAccess guard(_thread);
-    volatile T ret = RawAccess<MO_SEQ_CST>::load(addr());
-    return normalize_for_read(ret);
+    TYPE_SIZE_SWITCH(_basic_type, val_t, {
+        val_t v = RawAccess<MO_SEQ_CST>::load(addr<val_t>());
+        return maybe_pad_with_garbage(v);
+      });
   }
 
-  void put_volatile(T x) {
+  void put_volatile(julong x) {
     GuardUnsafeAccess guard(_thread);
-    RawAccess<MO_SEQ_CST>::store(addr(), normalize_for_write(x));
+    TYPE_SIZE_SWITCH(_basic_type, val_t, {
+        RawAccess<MO_SEQ_CST>::store(addr<val_t>(), (val_t)x);
+      });
   }
 };
 
 // These functions allow a null base pointer with an arbitrary address.
 // But if the base pointer is non-null, the offset should make some sense.
 // That is, it should be in the range [0, MAX_OBJECT_SIZE].
-UNSAFE_ENTRY(jobject, Unsafe_GetReference(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) {
+UNSAFE_ENTRY(jobject, Unsafe_GetReferenceMO(JNIEnv *env, jobject unsafe,
+                                            jbyte memory_order,
+                                            jobject obj, jlong offset)) {
   oop p = JNIHandles::resolve(obj);
   assert_field_offset_sane(p, offset);
-  oop v = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(p, offset);
+  assert(vmIntrinsics::is_valid_memory_order(memory_order,
+                                             vmIntrinsics::MO_RELEASE),
+         "bad MO bits from Java: 0x%02x", memory_order);
+  oop v;
+  switch (memory_order) {
+    case vmIntrinsics::MO_PLAIN:
+      v = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(p, offset);
+      break;
+
+    default:
+      // MO_VOLATILE is a conservative approximation for acquire & release
+      v = HeapAccess<MO_SEQ_CST | ON_UNKNOWN_OOP_REF>::oop_load_at(p, offset);
+      break;
+  }
   return JNIHandles::make_local(THREAD, v);
 } UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_PutReference(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h)) {
+UNSAFE_ENTRY(void, Unsafe_PutReferenceMO(JNIEnv *env, jobject unsafe,
+                                         jbyte memory_order,
+                                         jobject obj, jlong offset, jobject x_h)) {
   oop x = JNIHandles::resolve(x_h);
   oop p = JNIHandles::resolve(obj);
   assert_field_offset_sane(p, offset);
-  HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(p, offset, x);
+  assert(vmIntrinsics::is_valid_memory_order(memory_order,
+                                             vmIntrinsics::MO_ACQUIRE),
+         "bad MO bits from Java: 0x%02x", memory_order);
+  switch (memory_order & vmIntrinsics::MO_PLAIN) {
+    case vmIntrinsics::MO_PLAIN:
+      HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(p, offset, x);
+      break;
+
+    default:
+      // MO_VOLATILE is a conservative approximation for acquire & release
+      HeapAccess<MO_SEQ_CST | ON_UNKNOWN_OOP_REF>::oop_store_at(p, offset, x);
+      break;
+  }
 } UNSAFE_END
 
-UNSAFE_ENTRY(jobject, Unsafe_GetReferenceVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) {
-  oop p = JNIHandles::resolve(obj);
-  assert_field_offset_sane(p, offset);
-  oop v = HeapAccess<MO_SEQ_CST | ON_UNKNOWN_OOP_REF>::oop_load_at(p, offset);
-  return JNIHandles::make_local(THREAD, v);
-} UNSAFE_END
-
-UNSAFE_ENTRY(void, Unsafe_PutReferenceVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h)) {
-  oop x = JNIHandles::resolve(x_h);
-  oop p = JNIHandles::resolve(obj);
-  assert_field_offset_sane(p, offset);
-  HeapAccess<MO_SEQ_CST | ON_UNKNOWN_OOP_REF>::oop_store_at(p, offset, x);
-} UNSAFE_END
-
-UNSAFE_ENTRY(jobject, Unsafe_GetUncompressedObject(JNIEnv *env, jobject unsafe, jlong addr)) {
+UNSAFE_ENTRY(jobject, Unsafe_GetUncompressedObject(JNIEnv *env, jobject unsafe,
+                                                   jlong addr)) {
   oop v = *(oop*) (address) addr;
   return JNIHandles::make_local(THREAD, v);
 } UNSAFE_END
 
-#define DEFINE_GETSETOOP(java_type, Type) \
- \
-UNSAFE_ENTRY_SCOPED(java_type, Unsafe_Get##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
-  return MemoryAccess<java_type>(thread, obj, offset).get(); \
-} UNSAFE_END \
- \
-UNSAFE_ENTRY_SCOPED(void, Unsafe_Put##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
-  MemoryAccess<java_type>(thread, obj, offset).put(x); \
-} UNSAFE_END \
- \
-// END DEFINE_GETSETOOP.
+UNSAFE_ENTRY_SCOPED(jlong, Unsafe_GetPrimitiveBitsMO(JNIEnv *env, jobject unsafe,
+                                                     jbyte memory_order, jbyte basic_type,
+                                                     jobject obj, jlong offset)) {
+  if ((memory_order & vmIntrinsics::MO_UNALIGNED) != 0 && UseUnalignedAccesses) {
+    memory_order -= vmIntrinsics::MO_UNALIGNED;  // this part of the request is a nop
+  }
+  assert(vmIntrinsics::is_valid_memory_order(memory_order,
+                                             vmIntrinsics::MO_RELEASE),
+         "bad MO bits from Java: 0x%02x", memory_order);
+  assert(vmIntrinsics::is_valid_primitive_type(basic_type),
+         "bad BT bits from Java: 0x%02x", basic_type);
+  julong result;
+  auto ma = MemoryAccess(thread, obj, offset, basic_type);
+  switch (memory_order) {
+  case vmIntrinsics::MO_PLAIN:
+    // Note:  This says, "plain" but there is in fact a volatile load inside.
+    result = ma.get();
+    break;
 
-DEFINE_GETSETOOP(jboolean, Boolean)
-DEFINE_GETSETOOP(jbyte, Byte)
-DEFINE_GETSETOOP(jshort, Short);
-DEFINE_GETSETOOP(jchar, Char);
-DEFINE_GETSETOOP(jint, Int);
-DEFINE_GETSETOOP(jlong, Long);
-DEFINE_GETSETOOP(jfloat, Float);
-DEFINE_GETSETOOP(jdouble, Double);
+  default:
+    // MO_VOLATILE is a conservative approximation for acquire & release
+    result = ma.get_volatile();
+  }
+  return result;
+} UNSAFE_END
 
-#undef DEFINE_GETSETOOP
+UNSAFE_ENTRY_SCOPED(void, Unsafe_PutPrimitiveBitsMO(JNIEnv *env, jobject unsafe,
+                                                    jbyte memory_order, jbyte basic_type,
+                                                    jobject obj, jlong offset, jlong x)) {
+  if ((memory_order & vmIntrinsics::MO_UNALIGNED) != 0 && UseUnalignedAccesses) {
+    memory_order -= vmIntrinsics::MO_UNALIGNED;  // this part of the request is a nop
+  }
+  assert(vmIntrinsics::is_valid_memory_order(memory_order,
+                                             vmIntrinsics::MO_ACQUIRE),
+         "bad MO bits from Java: 0x%02x", memory_order);
+  auto ma = MemoryAccess(thread, obj, offset, basic_type);
+  switch (memory_order) {
+  case vmIntrinsics::MO_PLAIN:
+    // Note:  This says, "plain" but there is in fact a volatile store inside.
+    ma.put(x);
+    break;
 
-#define DEFINE_GETSETOOP_VOLATILE(java_type, Type) \
- \
-UNSAFE_ENTRY_SCOPED(java_type, Unsafe_Get##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
-  return MemoryAccess<java_type>(thread, obj, offset).get_volatile(); \
-} UNSAFE_END \
- \
-UNSAFE_ENTRY_SCOPED(void, Unsafe_Put##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
-  MemoryAccess<java_type>(thread, obj, offset).put_volatile(x); \
-} UNSAFE_END \
- \
-// END DEFINE_GETSETOOP_VOLATILE.
-
-DEFINE_GETSETOOP_VOLATILE(jboolean, Boolean)
-DEFINE_GETSETOOP_VOLATILE(jbyte, Byte)
-DEFINE_GETSETOOP_VOLATILE(jshort, Short);
-DEFINE_GETSETOOP_VOLATILE(jchar, Char);
-DEFINE_GETSETOOP_VOLATILE(jint, Int);
-DEFINE_GETSETOOP_VOLATILE(jlong, Long);
-DEFINE_GETSETOOP_VOLATILE(jfloat, Float);
-DEFINE_GETSETOOP_VOLATILE(jdouble, Double);
-
-#undef DEFINE_GETSETOOP_VOLATILE
+  default:
+    // MO_VOLATILE is a conservative approximation for acquire & release
+    ma.put_volatile(x);
+    break;
+  }
+} UNSAFE_END
 
 UNSAFE_LEAF(void, Unsafe_FullFence(JNIEnv *env, jobject unsafe)) {
   OrderAccess::fence();
@@ -725,46 +780,70 @@ UNSAFE_ENTRY(void, Unsafe_ThrowException(JNIEnv *env, jobject unsafe, jthrowable
 
 // JSR166 ------------------------------------------------------------------
 
-UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeReference(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject e_h, jobject x_h)) {
+UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeReferenceMO(JNIEnv *env, jobject unsafe,
+                                                           jbyte memory_order,
+                                                           jobject obj, jlong offset, jobject e_h, jobject x_h)) {
+  assert(vmIntrinsics::is_valid_memory_order(memory_order),
+         "bad MO bits from Java: 0x%02x", memory_order);
   oop x = JNIHandles::resolve(x_h);
   oop e = JNIHandles::resolve(e_h);
   oop p = JNIHandles::resolve(obj);
   assert_field_offset_sane(p, offset);
+  // just use MO_VOLATILE for all MO inputs
   oop res = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_atomic_cmpxchg_at(p, (ptrdiff_t)offset, e, x);
   return JNIHandles::make_local(THREAD, res);
 } UNSAFE_END
 
-UNSAFE_ENTRY_SCOPED(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
+UNSAFE_ENTRY_SCOPED(jlong, Unsafe_CompareAndExchangePrimitiveBitsMO(JNIEnv *env, jobject unsafe,
+                                                                    jbyte memory_order, jbyte basic_type,
+                                                                    jobject obj, jlong offset,
+                                                                    jlong e, jlong x)) {
+  assert(vmIntrinsics::is_valid_memory_order(memory_order),
+         "bad MO bits from Java: 0x%02x", memory_order);
+  assert(vmIntrinsics::is_valid_primitive_type(basic_type),
+         "bad BT bits from Java: 0x%02x", basic_type);
   oop p = JNIHandles::resolve(obj);
-  volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
-  return AtomicAccess::cmpxchg(addr, e, x);
+  auto addr = index_oop_from_field_offset_long(p, offset);
+  // just use MO_VOLATILE for all MO inputs
+  TYPE_SIZE_SWITCH(basic_type, val_t, {
+      auto expect = static_cast<val_t>(e);
+      auto update = static_cast<val_t>(x);
+      return AtomicAccess::cmpxchg(static_cast<volatile val_t*>(addr), expect, update);
+    });
 } UNSAFE_END
 
-UNSAFE_ENTRY_SCOPED(jlong, Unsafe_CompareAndExchangeLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
-  oop p = JNIHandles::resolve(obj);
-  volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
-  return AtomicAccess::cmpxchg(addr, e, x);
-} UNSAFE_END
-
-UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject e_h, jobject x_h)) {
+UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReferenceMO(JNIEnv *env, jobject unsafe,
+                                                       jbyte memory_order,
+                                                       jobject obj, jlong offset, jobject e_h, jobject x_h)) {
+  // ignore MO_WEAK_CAS here; the JIT might use it
+  assert(vmIntrinsics::is_valid_memory_order(memory_order & ~vmIntrinsics::MO_WEAK_CAS),
+         "bad MO bits from Java: 0x%02x", memory_order);
   oop x = JNIHandles::resolve(x_h);
   oop e = JNIHandles::resolve(e_h);
   oop p = JNIHandles::resolve(obj);
   assert_field_offset_sane(p, offset);
+  // just use MO_VOLATILE for all MO inputs
   oop ret = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_atomic_cmpxchg_at(p, (ptrdiff_t)offset, e, x);
-  return ret == e;
+ return ret == e;
 } UNSAFE_END
 
-UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
+UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetPrimitiveBitsMO(JNIEnv *env, jobject unsafe,
+                                                                  jbyte memory_order, jbyte basic_type,
+                                                                  jobject obj, jlong offset, jlong e, jlong x)) {
+  // ignore MO_WEAK_CAS here; the JIT might use it
+  assert(vmIntrinsics::is_valid_memory_order(memory_order & ~vmIntrinsics::MO_WEAK_CAS),
+         "bad MO bits from Java: 0x%02x", memory_order);
+  assert(vmIntrinsics::is_valid_primitive_type(basic_type),
+         "bad BT bits from Java: 0x%02x", basic_type);
   oop p = JNIHandles::resolve(obj);
-  volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
-  return AtomicAccess::cmpxchg(addr, e, x) == e;
-} UNSAFE_END
-
-UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
-  oop p = JNIHandles::resolve(obj);
-  volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
-  return AtomicAccess::cmpxchg(addr, e, x) == e;
+  auto addr = index_oop_from_field_offset_long(p, offset);
+  // just use MO_VOLATILE for all MO inputs
+  TYPE_SIZE_SWITCH(basic_type, val_t, {
+      auto expect = static_cast<val_t>(e);
+      auto update = static_cast<val_t>(x);
+      auto actual = AtomicAccess::cmpxchg(static_cast<volatile val_t*>(addr), expect, update);
+      return actual == expect;
+    });
 } UNSAFE_END
 
 static void post_thread_park_event(EventThreadPark* event, const oop obj, jlong timeout_nanos, jlong until_epoch_millis) {
@@ -859,29 +938,19 @@ UNSAFE_ENTRY(jint, Unsafe_GetLoadAverage0(JNIEnv *env, jobject unsafe, jdoubleAr
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
-#define DECLARE_GETPUTOOP(Type, Desc) \
-    {CC "get" #Type,      CC "(" OBJ "J)" #Desc,       FN_PTR(Unsafe_Get##Type)}, \
-    {CC "put" #Type,      CC "(" OBJ "J" #Desc ")V",   FN_PTR(Unsafe_Put##Type)}, \
-    {CC "get" #Type "Volatile",      CC "(" OBJ "J)" #Desc,       FN_PTR(Unsafe_Get##Type##Volatile)}, \
-    {CC "put" #Type "Volatile",      CC "(" OBJ "J" #Desc ")V",   FN_PTR(Unsafe_Put##Type##Volatile)}
-
-
 static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
-    {CC "getReference",         CC "(" OBJ "J)" OBJ "",   FN_PTR(Unsafe_GetReference)},
-    {CC "putReference",         CC "(" OBJ "J" OBJ ")V",  FN_PTR(Unsafe_PutReference)},
-    {CC "getReferenceVolatile", CC "(" OBJ "J)" OBJ,      FN_PTR(Unsafe_GetReferenceVolatile)},
-    {CC "putReferenceVolatile", CC "(" OBJ "J" OBJ ")V",  FN_PTR(Unsafe_PutReferenceVolatile)},
+    {CC "getReferenceMO",           CC  "(B" OBJ "J)" OBJ "",  FN_PTR(Unsafe_GetReferenceMO)},
+    {CC "getPrimitiveBitsMONative", CC "(BB" OBJ "J)" "J",     FN_PTR(Unsafe_GetPrimitiveBitsMO)},
+    {CC "putReferenceMO",           CC  "(B" OBJ "J" OBJ ")V", FN_PTR(Unsafe_PutReferenceMO)},
+    {CC "putPrimitiveBitsMONative", CC "(BB" OBJ "J" "J" ")V", FN_PTR(Unsafe_PutPrimitiveBitsMO)},
+
+    {CC "compareAndSetReferenceMO",                CC  "(B" OBJ "J" OBJ "" OBJ ")" "Z", FN_PTR(Unsafe_CompareAndSetReferenceMO)},
+    {CC "compareAndSetPrimitiveBitsMONative",      CC "(BB" OBJ "J" "J"   "J"  ")" "Z", FN_PTR(Unsafe_CompareAndSetPrimitiveBitsMO)},
+    {CC "compareAndExchangeReferenceMO",           CC  "(B" OBJ "J" OBJ "" OBJ ")" OBJ, FN_PTR(Unsafe_CompareAndExchangeReferenceMO)},
+    {CC "compareAndExchangePrimitiveBitsMONative", CC "(BB" OBJ "J" "J"   "J"  ")" "J", FN_PTR(Unsafe_CompareAndExchangePrimitiveBitsMO)},
+    //  "getAndOperatePrimitiveBitsMO" has a portable fallback coded in Java
 
     {CC "getUncompressedObject", CC "(" ADR ")" OBJ,  FN_PTR(Unsafe_GetUncompressedObject)},
-
-    DECLARE_GETPUTOOP(Boolean, Z),
-    DECLARE_GETPUTOOP(Byte, B),
-    DECLARE_GETPUTOOP(Short, S),
-    DECLARE_GETPUTOOP(Char, C),
-    DECLARE_GETPUTOOP(Int, I),
-    DECLARE_GETPUTOOP(Long, J),
-    DECLARE_GETPUTOOP(Float, F),
-    DECLARE_GETPUTOOP(Double, D),
 
     {CC "allocateMemory0",    CC "(J)" ADR,              FN_PTR(Unsafe_AllocateMemory0)},
     {CC "reallocateMemory0",  CC "(" ADR "J)" ADR,       FN_PTR(Unsafe_ReallocateMemory0)},
@@ -898,12 +967,6 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "defineClass0",       CC "(" DC_Args ")" CLS,    FN_PTR(Unsafe_DefineClass0)},
     {CC "allocateInstance",   CC "(" CLS ")" OBJ,        FN_PTR(Unsafe_AllocateInstance)},
     {CC "throwException",     CC "(" THR ")V",           FN_PTR(Unsafe_ThrowException)},
-    {CC "compareAndSetReference",CC "(" OBJ "J" OBJ "" OBJ ")Z", FN_PTR(Unsafe_CompareAndSetReference)},
-    {CC "compareAndSetInt",   CC "(" OBJ "J""I""I"")Z",  FN_PTR(Unsafe_CompareAndSetInt)},
-    {CC "compareAndSetLong",  CC "(" OBJ "J""J""J"")Z",  FN_PTR(Unsafe_CompareAndSetLong)},
-    {CC "compareAndExchangeReference", CC "(" OBJ "J" OBJ "" OBJ ")" OBJ, FN_PTR(Unsafe_CompareAndExchangeReference)},
-    {CC "compareAndExchangeInt",  CC "(" OBJ "J""I""I"")I", FN_PTR(Unsafe_CompareAndExchangeInt)},
-    {CC "compareAndExchangeLong", CC "(" OBJ "J""J""J"")J", FN_PTR(Unsafe_CompareAndExchangeLong)},
 
     {CC "park",               CC "(ZJ)V",                FN_PTR(Unsafe_Park)},
     {CC "unpark",             CC "(" OBJ ")V",           FN_PTR(Unsafe_Unpark)},
@@ -942,9 +1005,56 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
 // The optimizer looks at names and signatures to recognize
 // individual functions.
 
+static void check_static_constant(JavaThread* thread, InstanceKlass* uk,
+                                  const char* name, int value) {
+  int fieldcv = value == -1 ? 0 : -1;  // force mismatch if not changed
+  TempNewSymbol fname = SymbolTable::probe(name, strlen(name));
+  if (fname != nullptr) {
+    fieldDescriptor fd;
+    if (uk->find_local_field(fname, vmSymbols::byte_signature(), &fd)) {
+      if (fd.has_initial_value()) {
+        fieldcv = fd.int_initial_value();
+      }
+    }
+  }
+  guarantee(fieldcv == value,
+            "mismatch on Unsafe.%s, %d vs. %d", name, value, fieldcv);
+}
+
+static void check_unsafe_constants(JavaThread* thread, jclass unsafeclass) {
+  InstanceKlass* uk = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(unsafeclass));
+
+  #define UNSAFE_BASIC_TYPE_CHECK(bt) \
+    check_static_constant(thread, uk, "B" #bt, bt)
+  UNSAFE_BASIC_TYPE_CHECK(T_BYTE);
+  UNSAFE_BASIC_TYPE_CHECK(T_BOOLEAN);
+  UNSAFE_BASIC_TYPE_CHECK(T_CHAR);
+  UNSAFE_BASIC_TYPE_CHECK(T_FLOAT);
+  UNSAFE_BASIC_TYPE_CHECK(T_DOUBLE);
+  UNSAFE_BASIC_TYPE_CHECK(T_BYTE);
+  UNSAFE_BASIC_TYPE_CHECK(T_SHORT);
+  UNSAFE_BASIC_TYPE_CHECK(T_INT);
+  UNSAFE_BASIC_TYPE_CHECK(T_LONG);
+
+  #define VMI_MEMORY_ORDER_CHECK(mo, ignore) \
+    check_static_constant(thread, uk, #mo, vmIntrinsics::mo);
+  VMI_MEMORY_ORDERS_DO(VMI_MEMORY_ORDER_CHECK)
+
+  #define VMI_PRIMITIVE_BITS_OPERATION_CHECK(op, ignore) \
+    check_static_constant(thread, uk, #op, vmIntrinsics::op);
+  VMI_PRIMITIVE_BITS_OPERATIONS_DO(VMI_PRIMITIVE_BITS_OPERATION_CHECK)
+
+  check_static_constant(thread, uk, "PRIMITIVE_SIZE_MASK", UNSAFE_PRIMITIVE_SIZE_MASK);
+}
+
 JVM_ENTRY(void, JVM_RegisterJDKInternalMiscUnsafeMethods(JNIEnv *env, jclass unsafeclass)) {
   ThreadToNativeFromVM ttnfv(thread);
 
   int ok = env->RegisterNatives(unsafeclass, jdk_internal_misc_Unsafe_methods, sizeof(jdk_internal_misc_Unsafe_methods)/sizeof(JNINativeMethod));
   guarantee(ok == 0, "register jdk.internal.misc.Unsafe natives");
+
+  {
+    ThreadInVMfromNative tivfn(thread);
+    check_unsafe_constants(thread, unsafeclass);  // do this bit in VM mode
+  }
 } JVM_END

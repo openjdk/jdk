@@ -143,7 +143,7 @@ public final class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
 
     private static void setBlocker(Thread t, Object arg) {
-        U.putReferenceOpaque(t, PARKBLOCKER, arg);
+        U.putReferenceMO(Unsafe.MO_OPAQUE, t, PARKBLOCKER, arg);
     }
 
     /**
@@ -161,7 +161,7 @@ public final class LockSupport {
      * @since 14
      */
     public static void setCurrentBlocker(Object blocker) {
-        U.putReferenceOpaque(Thread.currentThread(), PARKBLOCKER, blocker);
+        U.putReferenceMO(Unsafe.MO_OPAQUE, Thread.currentThread(), PARKBLOCKER, blocker);
     }
 
     /**
@@ -334,7 +334,7 @@ public final class LockSupport {
     public static Object getBlocker(Thread t) {
         if (t == null)
             throw new NullPointerException();
-        return U.getReferenceOpaque(t, PARKBLOCKER);
+        return U.getReferenceMO(Unsafe.MO_OPAQUE, t, PARKBLOCKER);
     }
 
     /**

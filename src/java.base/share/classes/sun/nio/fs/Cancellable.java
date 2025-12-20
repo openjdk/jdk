@@ -48,7 +48,7 @@ abstract class Cancellable implements Runnable {
 
     protected Cancellable() {
         pollingAddress = unsafe.allocateMemory(4);
-        unsafe.putIntVolatile(null, pollingAddress, 0);
+        unsafe.putIntMO(Unsafe.MO_VOLATILE, null, pollingAddress, 0);
     }
 
     /**
@@ -75,7 +75,7 @@ abstract class Cancellable implements Runnable {
     final void cancel() {
         synchronized (lock) {
             if (!completed) {
-                unsafe.putIntVolatile(null, pollingAddress, cancelValue());
+                unsafe.putIntMO(Unsafe.MO_VOLATILE, null, pollingAddress, cancelValue());
             }
         }
     }
