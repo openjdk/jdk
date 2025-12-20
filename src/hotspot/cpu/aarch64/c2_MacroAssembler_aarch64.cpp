@@ -2544,28 +2544,25 @@ static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
 
 void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register rval, Register rtmp) {
   assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
-  jint lo = t->_lo;
-  jint hi = t->_hi;
-  if (lo == min_jint && hi == max_jint) {
+  if (t == TypeInt::INT) {
     return;
   }
 
   BLOCK_COMMENT("verify_int_in_range {");
   Label L_success, L_failure;
-  if (lo != min_jint && hi != max_jint) {
+
+  jint lo = t->_lo;
+  jint hi = t->_hi;
+
+  if (lo != min_jint) {
     subsw(rtmp, rval, lo);
     br(Assembler::LT, L_failure);
-    subsw(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else if (lo != min_jint) {
-    subsw(rtmp, rval, lo);
-    br(Assembler::GE, L_success);
-  } else if (hi != max_jint) {
-    subsw(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else {
-    ShouldNotReachHere();
   }
+  if (hi != max_jint) {
+    subsw(rtmp, rval, hi);
+    br(Assembler::GT, L_failure);
+  }
+  b(L_success);
 
   bind(L_failure);
   movw(c_rarg0, idx);
@@ -2586,28 +2583,25 @@ static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) 
 
 void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register rval, Register rtmp) {
   assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
-  jlong lo = t->_lo;
-  jlong hi = t->_hi;
-  if (lo == min_jlong && hi == max_jlong) {
+  if (t == TypeLong::LONG) {
     return;
   }
 
   BLOCK_COMMENT("verify_long_in_range {");
   Label L_success, L_failure;
-  if (lo != min_jlong && hi != max_jlong) {
+
+  jlong lo = t->_lo;
+  jlong hi = t->_hi;
+
+  if (lo != min_jlong) {
     subs(rtmp, rval, lo);
     br(Assembler::LT, L_failure);
-    subs(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else if (lo != min_jlong) {
-    subs(rtmp, rval, lo);
-    br(Assembler::GE, L_success);
-  } else if (hi != max_jlong) {
-    subs(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else {
-    ShouldNotReachHere();
   }
+  if (hi != max_jlong) {
+    subs(rtmp, rval, hi);
+    br(Assembler::GT, L_failure);
+  }
+  b(L_success);
 
   bind(L_failure);
   movw(c_rarg0, idx);

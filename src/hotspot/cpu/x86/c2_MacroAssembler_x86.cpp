@@ -610,24 +610,23 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   jint lo = t->_lo;
   jint hi = t->_hi;
   assert(lo < hi, "type should not be empty or constant, idx: %u, lo: %d, hi: %d", idx, lo, hi);
-  if (lo == min_jint && hi == max_jint) {
+  if (t == TypeInt::INT) {
     return;
   }
 
   BLOCK_COMMENT("CastII {");
   Label fail;
   Label succeed;
-  if (hi == max_jint) {
+
+  if (lo != min_jint) {
     cmpl(val, lo);
-    jccb(Assembler::greaterEqual, succeed);
-  } else {
-    if (lo != min_jint) {
-      cmpl(val, lo);
-      jccb(Assembler::less, fail);
-    }
-    cmpl(val, hi);
-    jccb(Assembler::lessEqual, succeed);
+    jccb(Assembler::less, fail);
   }
+  if (hi != max_jint) {
+    cmpl(val, hi);
+    jccb(Assembler::greater, fail);
+  }
+  jmpb(succeed);
 
   bind(fail);
   movl(c_rarg0, idx);
@@ -649,7 +648,7 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
   jlong lo = t->_lo;
   jlong hi = t->_hi;
   assert(lo < hi, "type should not be empty or constant, idx: %u, lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, lo, hi);
-  if (lo == min_jlong && hi == max_jlong) {
+  if (t == TypeLong::LONG) {
     return;
   }
 
@@ -666,17 +665,15 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
     }
   };
 
-  if (hi == max_jlong) {
+  if (lo != min_jlong) {
     cmp_val(lo);
-    jccb(Assembler::greaterEqual, succeed);
-  } else {
-    if (lo != min_jlong) {
-      cmp_val(lo);
-      jccb(Assembler::less, fail);
-    }
-    cmp_val(hi);
-    jccb(Assembler::lessEqual, succeed);
+    jccb(Assembler::less, fail);
   }
+  if (hi != max_jlong) {
+    cmp_val(hi);
+    jccb(Assembler::greater, fail);
+  }
+  jmpb(succeed);
 
   bind(fail);
   movl(c_rarg0, idx);
