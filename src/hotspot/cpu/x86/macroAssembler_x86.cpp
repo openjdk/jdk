@@ -1384,11 +1384,7 @@ void MacroAssembler::cmp32(Register src1, Address src2) {
 }
 
 void MacroAssembler::cmpsd2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less) {
-  if (VM_Version::supports_avx10_2()) {
-    ucomxsd(opr1, opr2);
-  } else {
-    ucomisd(opr1, opr2);
-  }
+  ucomisd(opr1, opr2);
 
   Label L;
   if (unordered_is_less) {
@@ -1410,11 +1406,7 @@ void MacroAssembler::cmpsd2int(XMMRegister opr1, XMMRegister opr2, Register dst,
 }
 
 void MacroAssembler::cmpss2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less) {
-  if (VM_Version::supports_avx10_2()) {
-    ucomxss(opr1, opr2);
-  } else {
-    ucomiss(opr1, opr2);
-  }
+  ucomiss(opr1, opr2);
 
   Label L;
   if (unordered_is_less) {

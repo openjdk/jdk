@@ -1700,9 +1700,10 @@ static void emit_cmpfp_fixup(MacroAssembler* masm) {
 
 static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
   Label done;
-  __ setcc(Assembler::above, dst);
-  __ jcc(Assembler::aboveEqual, done);
   __ movl(dst, -1);
+  __ jcc(Assembler::parity, done);
+  __ jcc(Assembler::below, done);
+  __ setcc(Assembler::notEqual, dst);
   __ bind(done);
 }
 
