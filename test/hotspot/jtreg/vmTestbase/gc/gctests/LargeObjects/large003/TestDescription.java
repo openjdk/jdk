@@ -48,7 +48,11 @@
  *     Each class has a huge number of fields, but this number is less than the JVM
  *     limitation.
  *     The test loads the classes with nsk.share.gc.GCClassUnloader class that
- *     extends nsk.share.ClassUnloader and has a bit different algorith of eating
+ *     extends nsk.share. *     The test loads the classes with nsk.share.gc.GCClassUnloader class.
+ *     As soon as a class is loaded, the test creates an instance of
+ *     it - allocates an object of that type. Then it drops references to the
+ *     class and to the instance and tries to unload the class. The test does not
+ *     expect any exceptions to be thrown. and has a bit different algorith of eating
  *     heap. As soon as a class is loaded, the test creates an instance of
  *     it - allocates an object of that type. Then it drops references to the
  *     class and to the instance and tries to unload the class. The test does not
