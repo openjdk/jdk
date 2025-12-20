@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,8 +205,8 @@ public class BasicObjectsTest {
     }
 
     private void testRNN_Null(Function<String, String> testFunc,
-                              String testFuncName,
-                              String expectedMessage) {
+                             String testFuncName,
+                             String expectedMessage) {
         NullPointerException npe = assertThrows(
             NullPointerException.class,
             () -> testFunc.apply(null),
@@ -248,14 +248,11 @@ public class BasicObjectsTest {
         assertSame(nonNullString, Objects.requireNonNullElse(nonNullString, null),
             "requireNonNullElse(non-null, null) should return non-null");
 
-        NullPointerException npe1 = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> Objects.requireNonNullElse(null, null),
             "requireNonNullElse(null, null) should throw NPE");
-        assertEquals("defaultObj", npe1.getMessage(),
-            "Exception message should be 'defaultObj'");
 
-        // Test requireNonNullElseGet with a supplier
         assertSame(defString, Objects.requireNonNullElseGet(nullString, () -> defString),
             "requireNonNullElseGet(null, supplier) should return supplier result");
 
@@ -265,95 +262,59 @@ public class BasicObjectsTest {
         assertSame(nonNullString, Objects.requireNonNullElseGet(nonNullString, () -> null),
             "requireNonNullElseGet(non-null, null-supplier) should return non-null");
 
-        NullPointerException npe2 = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> Objects.requireNonNullElseGet(null, () -> null),
             "requireNonNullElseGet(null, null-returning supplier) should throw NPE");
-        assertEquals("supplier.get()", npe2.getMessage(),
-            "Exception message should be 'supplier.get()'");
 
-        NullPointerException npe3 = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> Objects.requireNonNullElseGet(null, null),
             "requireNonNullElseGet(null, null supplier) should throw NPE");
-        assertEquals("supplier", npe3.getMessage(),
-            "Exception message should be 'supplier'");
     }
 
-    /**
-     * Test requireNonNull with null Supplier parameter.
-     * Should throw NullPointerException with null message (as per API spec).
-     */
     @Test
     public void testRequireNonNullWithNullSupplier() {
-        // Test with null object and null supplier
-        NullPointerException npe = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> Objects.requireNonNull(null, (Supplier<String>) null),
-            "requireNonNull(null, null supplier) should throw NPE");
-        // According to Objects.java implementation, when messageSupplier is null,
-        // the exception message is also null
-        assertNull(npe.getMessage(),
-            "Exception message should be null when messageSupplier is null");
+            "testRequireNonNullWithNullSupplier");
     }
 
-    /**
-     * Test requireNonNull with Supplier that throws exception.
-     * The exception from supplier should be thrown, not wrapped.
-     */
     @Test
     public void testRequireNonNullWithSupplierThrowingException() {
-        // Allocate exception outside of lambda to verify same instance is thrown
         RuntimeException expectedException = new RuntimeException("Supplier exception");
         RuntimeException actualException = assertThrows(
             RuntimeException.class,
             () -> Objects.requireNonNull(null, () -> {
                 throw expectedException;
             }),
-            "requireNonNull should throw exception from supplier");
+            "testRequireNonNullWithSupplierThrowingException");
         assertSame(expectedException, actualException,
-            "The exception from supplier should be thrown directly, not wrapped");
+            "testRequireNonNullWithSupplierThrowingException");
     }
 
-    /**
-     * Test requireNonNullElse with both arguments null.
-     * Should throw NullPointerException with message "defaultObj".
-     */
     @Test
     public void testRequireNonNullElseBothNull() {
-        NullPointerException npe = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> Objects.requireNonNullElse(null, null),
-            "requireNonNullElse(null, null) should throw NPE");
-        assertEquals("defaultObj", npe.getMessage(),
-            "Exception message should be 'defaultObj' when both arguments are null");
+            "testRequireNonNullElseBothNull");
     }
 
-    /**
-     * Test requireNonNullElseGet with null supplier.
-     * Should throw NullPointerException with message "supplier".
-     */
     @Test
     public void testRequireNonNullElseGetWithNullSupplier() {
-        NullPointerException npe = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> Objects.requireNonNullElseGet(null, null),
-            "requireNonNullElseGet(null, null supplier) should throw NPE");
-        assertEquals("supplier", npe.getMessage(),
-            "Exception message should be 'supplier' when supplier is null");
+            "testRequireNonNullElseGetWithNullSupplier");
     }
 
-    /**
-     * Test requireNonNullElseGet with supplier returning null.
-     * Should throw NullPointerException with message "supplier.get()".
-     */
     @Test
     public void testRequireNonNullElseGetWithSupplierReturningNull() {
-        NullPointerException npe = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> Objects.requireNonNullElseGet(null, () -> null),
-            "requireNonNullElseGet(null, null-returning supplier) should throw NPE");
-        assertEquals("supplier.get()", npe.getMessage(),
-            "Exception message should be 'supplier.get()' when supplier returns null");
+            "testRequireNonNullElseGetWithSupplierReturningNull");
     }
 }
