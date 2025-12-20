@@ -109,8 +109,8 @@ public class TestVectorTypes {
                     #type v3 = iota.rearrange(iota.toShuffle());
                     Verify.checkEQ(iota, v3);
                     #type v4 = iota.rearrange(shuffle);
-                    Verify.checkEQ(shuffle, v4.toShuffle());
-                    Verify.checkEQ(shuffle.toVector(), v4);
+                    Verify.checkEQ(shuffle.wrapIndexes(), v4.toShuffle());
+                    Verify.checkEQ(shuffle.wrapIndexes().toVector(), v4);
                 }
                 """
             );
