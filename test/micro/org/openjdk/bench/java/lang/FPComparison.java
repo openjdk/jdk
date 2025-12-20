@@ -37,34 +37,18 @@ import java.util.random.RandomGenerator;
 public class FPComparison {
     static final int INVOCATIONS = 1024;
 
-    float[] f1;
-    double[] d1;
-    float[] f2;
-    double[] d2;
-    int[] res;
-    long[] resLong;
-    Object[] resObject;
-    Object ro1;
-    Object ro2;
-    Class[] resClass;
-    Class rc1;
-    Class rc2;
+    static final float[] f1 = new float[INVOCATIONS];
+    static final double[] d1 = new double[INVOCATIONS];
+    static final float[] f2 = new float[INVOCATIONS];
+    static final double[] d2 = new double[INVOCATIONS];
+    static final int[] res = new int[INVOCATIONS];;
+    static final long[] resLong = new long[INVOCATIONS];
+    static final float[] resFloat = new float[INVOCATIONS];
+    static final double[] resDouble = new double[INVOCATIONS];
 
     @Setup
     public void setup() {
         var random = RandomGenerator.getDefault();
-        f1 = new float[INVOCATIONS];
-        d1 = new double[INVOCATIONS];
-        f2 = new float[INVOCATIONS];
-        d2 = new double[INVOCATIONS];
-        res = new int[INVOCATIONS];
-        resLong = new long[INVOCATIONS];
-        resObject = new Object[INVOCATIONS];
-        ro1 = new Object();
-        ro2 = new Object();
-        resClass = new Class[INVOCATIONS];
-        rc1 = Float.class;
-        rc2 = Double.class;
         for (int i = 0; i < INVOCATIONS; i++) {
             int type = random.nextInt(5);
             if (type == 1) {
@@ -464,6 +448,300 @@ public class FPComparison {
     public void branchGreaterEqualDoubleResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (d1[i] >= d2[i]) ? callL() : Long.MIN_VALUE;
+        }
+    }
+
+    // --------- result: float ---------
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    static float callF() {
+        return 0.1f;
+    }
+
+    @Benchmark
+    public void cMoveEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] == f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] == d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveLessFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] < f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveLessDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] < d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveLessEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] <= f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveLessEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] <= d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveGreaterFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] > f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveGreaterDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] > d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveGreaterEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] >= f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void cMoveGreaterEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] >= d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] == f2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] == d2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchLessFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] < f2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchLessDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] < d2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchLessEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] <= f2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchLessEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] <= d2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchGreaterFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] > f2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchGreaterDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] > d2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchGreaterEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] >= f2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void branchGreaterEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] >= d2[i]) ? callF() : 0.2f;
+        }
+    }
+
+    // --------- result: double ---------
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    static double callD() {
+        return 0.1;
+    }
+
+    @Benchmark
+    public void cMoveEqualFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] == f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveEqualDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] == d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveLessFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] < f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveLessDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] < d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveLessEqualFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] <= f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveLessEqualDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] <= d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveGreaterFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] > f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveGreaterDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] > d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveGreaterEqualFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] >= f2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void cMoveGreaterEqualDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] >= d2[i]) ? 0.1 : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchEqualFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] == f2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchEqualDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] == d2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchLessFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] < f2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchLessDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] < d2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchLessEqualFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] <= f2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchLessEqualDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] <= d2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchGreaterFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] > f2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchGreaterDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] > d2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchGreaterEqualFloatResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (f1[i] >= f2[i]) ? callD() : 0.2;
+        }
+    }
+
+    @Benchmark
+    public void branchGreaterEqualDoubleResDouble() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resDouble[i] = (d1[i] >= d2[i]) ? callD() : 0.2;
         }
     }
 }
