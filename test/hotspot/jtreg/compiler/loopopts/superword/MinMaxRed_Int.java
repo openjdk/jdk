@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8302673
+ * @key randomness
  * @summary [SuperWord] MaxReduction and MinReduction should vectorize for int
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.MinMaxRed_Int

@@ -78,15 +78,21 @@ import org.xml.sax.SAXException;
 public final class MacHelper {
 
     public static void withExplodedDmg(JPackageCommand cmd,
-            ThrowingConsumer<Path> consumer) {
+            ThrowingConsumer<Path, ? extends Exception> consumer) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
+
+        // Mount DMG under random temporary folder to avoid collisions when
+        // mounting DMG with same name asynchroniusly multiple times.
+        // See JDK-8373105. "hdiutil" does not handle such cases very good.
+        final var mountRoot = TKit.createTempDirectory("mountRoot");
 
         // Explode DMG assuming this can require interaction, thus use `yes`.
         String attachCMD[] = {
             "sh", "-c",
             String.join(" ", "yes", "|", "/usr/bin/hdiutil", "attach",
-                        JPackageCommand.escapeAndJoin(
-                                cmd.outputBundle().toString()), "-plist")};
+                    JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
+                    "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
+                    "-nobrowse", "-plist")};
         RetryExecutor attachExecutor = new RetryExecutor();
         try {
             // 10 times with 6 second delays.
@@ -793,8 +799,17 @@ public final class MacHelper {
                 PropertyFinder.cmdlineOptionWithValue("--mac-package-identifier").or(
                         PropertyFinder.cmdlineOptionWithValue("--main-class").map(getPackageIdFromClassName)
                 ),
-                PropertyFinder.appImageFile(AppImageFile::mainLauncherClassName).map(getPackageIdFromClassName)
+                PropertyFinder.appImageFileOptional(AppImageFile::mainLauncherClassName).map(getPackageIdFromClassName)
         ).orElseGet(cmd::name);
+    }
+
+    public static boolean isForAppStore(JPackageCommand cmd) {
+        return PropertyFinder.findAppProperty(cmd,
+                PropertyFinder.cmdlineBooleanOption("--mac-app-store"),
+                PropertyFinder.appImageFile(appImageFile -> {
+                    return Boolean.toString(appImageFile.macAppStore());
+                })
+        ).map(Boolean::parseBoolean).orElse(false);
     }
 
     public static boolean isXcodeDevToolsInstalled() {

@@ -140,7 +140,7 @@ class TestCodeCacheUnloadDuringConcCycleRunner {
                     System.out.println("Compiled " + i + " classes");
                 }
                 i++;
-            } while (i < 200);
+            } while (i < 1000);
             System.out.println("Compilation done, compiled " + i + " classes");
         } catch (Throwable t) {
         }

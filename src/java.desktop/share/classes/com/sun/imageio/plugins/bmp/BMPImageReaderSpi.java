@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class BMPImageReaderSpi extends ImageReaderSpi {
               null, null);
     }
 
+    @Override
     public void onRegistration(ServiceRegistry registry,
                                Class<?> category) {
         if (registered) {
@@ -69,10 +70,12 @@ public class BMPImageReaderSpi extends ImageReaderSpi {
         registered = true;
     }
 
+    @Override
     public String getDescription(Locale locale) {
         return "Standard BMP Image Reader";
     }
 
+    @Override
     public boolean canDecodeInput(Object source) throws IOException {
         if (!(source instanceof ImageInputStream)) {
             return false;
@@ -87,6 +90,7 @@ public class BMPImageReaderSpi extends ImageReaderSpi {
         return full && (b[0] == 0x42) && (b[1] == 0x4d);
     }
 
+    @Override
     public ImageReader createReaderInstance(Object extension)
         throws IIOException {
         return new BMPImageReader(this);

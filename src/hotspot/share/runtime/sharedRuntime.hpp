@@ -317,14 +317,6 @@ class SharedRuntime: AllStatic {
   static void throw_and_post_jvmti_exception(JavaThread* current, Handle h_exception);
   static void throw_and_post_jvmti_exception(JavaThread* current, Symbol* name, const char *message = nullptr);
 
-#if INCLUDE_JVMTI
-  // Functions for JVMTI notifications
-  static void notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current);
-  static void notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current);
-  static void notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current);
-  static void notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current);
-#endif
-
   // RedefineClasses() tracing support for obsolete method entry
   static int rc_trace_method_entry(JavaThread* thread, Method* m);
 
@@ -866,7 +858,6 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, const CodeBlob* b);
-  static bool contains(const CodeBlob* b);
   static const char* name(AdapterHandlerEntry* handler);
   static uint32_t id(AdapterHandlerEntry* handler);
 #ifndef PRODUCT

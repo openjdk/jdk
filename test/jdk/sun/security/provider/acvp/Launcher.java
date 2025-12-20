@@ -37,15 +37,17 @@ import java.util.zip.ZipFile;
 /*
  * @test
  * @bug 8342442 8345057
+ * @summary Test default implementation. Use othervm because
+ *      ML_DSA_Impls.version might be modified
  * @library /test/lib
  * @modules java.base/sun.security.provider
- * @run main/timeout=480 Launcher
+ * @run main/othervm/timeout=480 Launcher
  */
 
 /*
  * @test
- * @summary Test verifying the intrinsic implementation.
  * @bug 8342442 8345057
+ * @summary Test verifying the intrinsic implementation.
  * @library /test/lib
  * @modules java.base/sun.security.provider
  * @run main/othervm/timeout=480 -Xcomp Launcher

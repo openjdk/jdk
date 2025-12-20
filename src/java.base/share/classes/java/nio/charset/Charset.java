@@ -25,7 +25,6 @@
 
 package java.nio.charset;
 
-import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
@@ -41,7 +40,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedMap;
@@ -426,7 +424,7 @@ public abstract class Charset
     }
 
     /* The extended set of charsets */
-    private static final Supplier<List<CharsetProvider>> EXTENDED_PROVIDERS = StableValue.supplier(
+    private static final LazyConstant<List<CharsetProvider>> EXTENDED_PROVIDERS = LazyConstant.of(
             new Supplier<>() { public List<CharsetProvider> get() { return extendedProviders0(); }});
 
     private static List<CharsetProvider> extendedProviders0() {
@@ -617,7 +615,7 @@ public abstract class Charset
         return Collections.unmodifiableSortedMap(m);
     }
 
-    private static final Supplier<Charset> defaultCharset = StableValue.supplier(
+    private static final LazyConstant<Charset> defaultCharset = LazyConstant.of(
             new Supplier<>() { public Charset get() { return defaultCharset0(); }});
 
     private static Charset defaultCharset0() {
@@ -658,7 +656,7 @@ public abstract class Charset
     @Stable
     private final String[] aliases;
     @Stable
-    private final Supplier<Set<String>> aliasSet = StableValue.supplier(
+    private final LazyConstant<Set<String>> aliasSet = LazyConstant.of(
             new Supplier<>() { public Set<String> get() { return Set.of(aliases); }});
 
     /**

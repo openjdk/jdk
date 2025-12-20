@@ -50,7 +50,14 @@ ProcSmapsParser::~ProcSmapsParser() {
 
 bool ProcSmapsParser::read_line() {
   _line[0] = '\0';
-  return ::fgets(_line, _linelen, _f) != nullptr;
+
+  if (::fgets(_line, _linelen, _f) == nullptr) {
+    // On error or EOF, ensure deterministic empty buffer
+    _line[0] = '\0';
+    return false;
+  } else {
+    return true;
+  }
 }
 
 bool ProcSmapsParser::is_header_line() {
@@ -101,8 +108,6 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
   }
 }
 
-// Starts or continues parsing. Returns true on success,
-// false on EOF or on error.
 bool ProcSmapsParser::parse_next(ProcSmapsInfo& out) {
 
   // Information about a single mapping reaches across several lines.
@@ -117,15 +122,13 @@ bool ProcSmapsParser::parse_next(ProcSmapsInfo& out) {
   assert(is_header_line(), "Not a header line: \"%s\".", _line);
   scan_header_line(out);
 
-  // Now read until we encounter the next header line or EOF or an error.
-  bool ok = false, stop = false;
-  do {
-    ok = read_line();
-    stop = !ok || is_header_line();
-    if (!stop) {
-      scan_additional_line(out);
+  while (true) {
+    bool ok = read_line();
+    if (!ok || is_header_line()) {
+      break;  // EOF or next header
     }
-  } while (!stop);
+    scan_additional_line(out);
+  }
 
-  return ok;
+  return true;  // always return true if a mapping was parsed
 }

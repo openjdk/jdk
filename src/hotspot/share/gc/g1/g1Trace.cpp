@@ -98,13 +98,13 @@ void G1NewTracer::report_evacuation_statistics(const G1EvacSummary& young_summar
 
 void G1NewTracer::report_basic_ihop_statistics(size_t threshold,
                                                size_t target_ccupancy,
-                                               size_t current_occupancy,
+                                               size_t non_young_occupancy,
                                                size_t last_allocation_size,
                                                double last_allocation_duration,
                                                double last_marking_length) {
   send_basic_ihop_statistics(threshold,
                              target_ccupancy,
-                             current_occupancy,
+                             non_young_occupancy,
                              last_allocation_size,
                              last_allocation_duration,
                              last_marking_length);
@@ -206,7 +206,7 @@ void G1NewTracer::send_old_evacuation_statistics(const G1EvacSummary& summary) c
 
 void G1NewTracer::send_basic_ihop_statistics(size_t threshold,
                                              size_t target_occupancy,
-                                             size_t current_occupancy,
+                                             size_t non_young_occupancy,
                                              size_t last_allocation_size,
                                              double last_allocation_duration,
                                              double last_marking_length) {
@@ -216,7 +216,7 @@ void G1NewTracer::send_basic_ihop_statistics(size_t threshold,
     evt.set_threshold(threshold);
     evt.set_targetOccupancy(target_occupancy);
     evt.set_thresholdPercentage(target_occupancy > 0 ? ((double)threshold / target_occupancy) : 0.0);
-    evt.set_currentOccupancy(current_occupancy);
+    evt.set_currentOccupancy(non_young_occupancy);
     evt.set_recentMutatorAllocationSize(last_allocation_size);
     evt.set_recentMutatorDuration(last_allocation_duration * MILLIUNITS);
     evt.set_recentAllocationRate(last_allocation_duration != 0.0 ? last_allocation_size / last_allocation_duration : 0.0);
