@@ -32,6 +32,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -42,12 +43,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 
 public final class Executor extends CommandArguments<Executor> {
 
@@ -465,9 +469,37 @@ public final class Executor extends CommandArguments<Executor> {
         trace("Execute " + sb.toString() + "...");
         Process process = builder.start();
 
-        final var output = combine(
-                processProcessStream(outputStreamsControl.stdout(), process.getInputStream()),
-                processProcessStream(outputStreamsControl.stderr(), process.getErrorStream()));
+        var stdoutGobbler = CompletableFuture.<Optional<List<String>>>supplyAsync(() -> {
+            try {
+                return processProcessStream(outputStreamsControl.stdout(), process.getInputStream());
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        });
+
+        var stderrGobbler = CompletableFuture.<Optional<List<String>>>supplyAsync(() -> {
+            try {
+                return processProcessStream(outputStreamsControl.stderr(), process.getErrorStream());
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        });
+
+        final CommandOutput output;
+
+        try {
+            output = combine(stdoutGobbler.join(), stderrGobbler.join());
+        } catch (CompletionException ex) {
+            var cause = ex.getCause();
+            switch (cause) {
+                case UncheckedIOException uioex -> {
+                    throw uioex.getCause();
+                }
+                default -> {
+                    throw ExceptionBox.toUnchecked(ExceptionBox.unbox(cause));
+                }
+            }
+        }
 
         final int exitCode = process.waitFor();
         trace("Done. Exit code: " + exitCode);

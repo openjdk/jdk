@@ -37,7 +37,7 @@ class EdgeQueue;
 class DFSClosure : public BasicOopIterateClosure {
  private:
   // max dfs depth should not exceed size of stack
-  static const size_t max_dfs_depth = 4000;
+  static const size_t max_dfs_depth = 3200;
   static UnifiedOopRef _reference_stack[max_dfs_depth];
 
   EdgeStore* _edge_store;

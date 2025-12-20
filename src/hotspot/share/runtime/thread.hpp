@@ -313,6 +313,7 @@ class Thread: public ThreadShadow {
   virtual bool is_JfrRecorder_thread() const         { return false; }
   virtual bool is_AttachListener_thread() const      { return false; }
   virtual bool is_monitor_deflation_thread() const   { return false; }
+  virtual bool is_aot_thread() const                 { return false; }
 
   // Convenience cast functions
   CompilerThread* as_Compiler_thread() const {
@@ -600,11 +601,6 @@ protected:
   jint _hashStateX;                           // thread-specific hashCode generator state
   jint _hashStateY;
   jint _hashStateZ;
-
-  // Low-level leaf-lock primitives used to implement synchronization.
-  // Not for general synchronization use.
-  static void SpinAcquire(volatile int * Lock);
-  static void SpinRelease(volatile int * Lock);
 
 #if defined(__APPLE__) && defined(AARCH64)
  private:

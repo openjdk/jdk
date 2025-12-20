@@ -211,7 +211,7 @@ final class ConfigFilesStasher {
     }
 
     private static boolean isWithServices(JPackageCommand cmd) {
-        return cmd.launcherNames(true).stream().anyMatch(launcherName -> {
+        return !cmd.isImagePackageType() && cmd.launcherNames(true).stream().anyMatch(launcherName -> {
             return LauncherAsServiceVerifier.launcherAsService(cmd, launcherName);
         });
     }

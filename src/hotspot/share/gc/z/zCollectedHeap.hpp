@@ -115,6 +115,8 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
+  size_t bootstrap_max_memory() const override;
+
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override;
   bool print_location(outputStream* st, void* addr) const override;

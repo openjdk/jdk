@@ -26,6 +26,7 @@
 #define SHARE_OPTO_ESCAPE_HPP
 
 #include "opto/addnode.hpp"
+#include "opto/idealGraphPrinter.hpp"
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -235,6 +236,7 @@ public:
   NodeType node_type() const { return (NodeType)_type;}
   void dump(bool print_state=true, outputStream* out=tty, bool newline=true) const;
   void dump_header(bool print_state=true, outputStream* out=tty) const;
+  const char* esc_name() const;
 #endif
 
 };
@@ -321,6 +323,7 @@ public:
 class ConnectionGraph: public ArenaObj {
   friend class PointsToNode; // to access _compile
   friend class FieldNode;
+  friend class IdealGraphPrinter;
 private:
   GrowableArray<PointsToNode*>  _nodes; // Map from ideal nodes to
                                         // ConnectionGraph nodes.
@@ -467,7 +470,8 @@ private:
   // Propagate GlobalEscape and ArgEscape escape states to all nodes
   // and check that we still have non-escaping java objects.
   bool find_non_escaped_objects(GrowableArray<PointsToNode*>& ptnodes_worklist,
-                                GrowableArray<JavaObjectNode*>& non_escaped_worklist);
+                                GrowableArray<JavaObjectNode*>& non_escaped_worklist,
+                                bool print_method = true);
 
   // Adjust scalar_replaceable state after Connection Graph is built.
   void adjust_scalar_replaceable_state(JavaObjectNode* jobj, Unique_Node_List &reducible_merges);

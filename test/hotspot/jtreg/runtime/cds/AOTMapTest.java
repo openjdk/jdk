@@ -39,19 +39,27 @@ import java.util.ArrayList;
 
 public class AOTMapTest {
     public static void main(String[] args) throws Exception {
-        doTest(false);
+        doTest(false, false);
+        doTest(false, true);
 
         if (Platform.is64bit()) {
             // There's no oop/klass compression on 32-bit.
-            doTest(true);
+            doTest(true, false);
+            doTest(true, true);
         }
     }
 
-    public static void doTest(boolean compressed) throws Exception {
+    public static void doTest(boolean compressed, boolean streamHeap) throws Exception {
         ArrayList<String> vmArgs = new ArrayList<>();
 
         // Use the same heap size as make/Images.gmk
         vmArgs.add("-Xmx128M");
+        vmArgs.add("-XX:+UnlockDiagnosticVMOptions");
+        if (streamHeap) {
+            vmArgs.add("-XX:+AOTStreamableObjects");
+        } else {
+            vmArgs.add("-XX:-AOTStreamableObjects");
+        }
 
         if (Platform.is64bit()) {
             // These options are available only on 64-bit.

@@ -28,6 +28,8 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires !vm.emulatedClient
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
@@ -55,8 +57,8 @@ public class DeoptimizeRelocatedNMethod {
         // Verify not initially compiled
         CompilerWhiteBoxTest.checkNotCompiled(method, false);
 
-        // Call function enough to compile
-        callFunction();
+        // Enqueue method for compilation. This will block since background compilation is disabled
+        WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
 
         // Verify now compiled
         CompilerWhiteBoxTest.checkCompiled(method, false);
@@ -89,13 +91,6 @@ public class DeoptimizeRelocatedNMethod {
 
         // Call to verify everything still works
         function();
-    }
-
-    // Call function multiple times to trigger compilation
-    private static void callFunction() {
-        for (int i = 0; i < CompilerWhiteBoxTest.THRESHOLD; i++) {
-            function();
-        }
     }
 
     public static void function() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,6 @@
 #define CALENDAR_FIELD_AM_PM            9           // Calendar.AM_PM
 #define CALENDAR_STYLE_SHORT_MASK       0x00000001  // Calendar.SHORT
 #define CALENDAR_STYLE_STANDALONE_MASK  0x00008000  // Calendar.STANDALONE
-
-// global variables
-typedef int (WINAPI *PGLIE)(const jchar *, LCTYPE, LPWSTR, int);
-typedef int (WINAPI *PGCIE)(const jchar *, CALID, LPCWSTR, CALTYPE, LPWSTR, int, LPDWORD);
-typedef int (WINAPI *PECIEE)(CALINFO_ENUMPROCEXEX, const jchar *, CALID, LPCWSTR, CALTYPE, LPARAM);
-PGLIE pGetLocaleInfoEx;
-PGCIE pGetCalendarInfoEx;
-PECIEE pEnumCalendarInfoExEx;
-BOOL initialized = FALSE;
 
 // prototypes
 int getLocaleInfoWrapper(const jchar *langtag, LCTYPE type, LPWSTR data, int buflen);
@@ -177,31 +168,6 @@ WCHAR * fixes[2][2][3][16] =
         }
     }
 };
-
-/*
- * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
- * Method:    initialize
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_initialize
-  (JNIEnv *env, jclass cls) {
-    if (!initialized) {
-        pGetLocaleInfoEx = (PGLIE)GetProcAddress(
-            GetModuleHandle("kernel32.dll"),
-            "GetLocaleInfoEx");
-        pGetCalendarInfoEx = (PGCIE)GetProcAddress(
-            GetModuleHandle("kernel32.dll"),
-            "GetCalendarInfoEx");
-        pEnumCalendarInfoExEx = (PECIEE)GetProcAddress(
-            GetModuleHandle("kernel32.dll"),
-            "EnumCalendarInfoExEx");
-        initialized =TRUE;
-    }
-
-    return pGetLocaleInfoEx != NULL &&
-           pGetCalendarInfoEx != NULL &&
-           pEnumCalendarInfoExEx != NULL;
-}
 
 /*
  * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
@@ -768,34 +734,20 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
 }
 
 int getLocaleInfoWrapper(const jchar *langtag, LCTYPE type, LPWSTR data, int buflen) {
-    if (pGetLocaleInfoEx) {
-        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
-            // defaults to "en"
-            return pGetLocaleInfoEx(L"en", type, data, buflen);
-        } else {
-            return pGetLocaleInfoEx((LPWSTR)langtag, type, data, buflen);
-        }
+    if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+        // defaults to "en"
+        return GetLocaleInfoEx(L"en", type, data, buflen);
     } else {
-        // If we ever wanted to support WinXP, we will need extra module from
-        // MS...
-        // return GetLocaleInfo(DownlevelLocaleNameToLCID(langtag, 0), type, data, buflen);
-        return 0;
+        return GetLocaleInfoEx((LPWSTR)langtag, type, data, buflen);
     }
 }
 
 int getCalendarInfoWrapper(const jchar *langtag, CALID id, LPCWSTR reserved, CALTYPE type, LPWSTR data, int buflen, LPDWORD val) {
-    if (pGetCalendarInfoEx) {
-        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
-            // defaults to "en"
-            return pGetCalendarInfoEx(L"en", id, reserved, type, data, buflen, val);
-        } else {
-            return pGetCalendarInfoEx((LPWSTR)langtag, id, reserved, type, data, buflen, val);
-        }
+    if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+        // defaults to "en"
+        return GetCalendarInfoEx(L"en", id, reserved, type, data, buflen, val);
     } else {
-        // If we ever wanted to support WinXP, we will need extra module from
-        // MS...
-        // return GetCalendarInfo(DownlevelLocaleNameToLCID(langtag, 0), ...);
-        return 0;
+        return GetCalendarInfoEx((LPWSTR)langtag, id, reserved, type, data, buflen, val);
     }
 }
 
@@ -1000,17 +952,13 @@ void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BO
 }
 
 int enumCalendarInfoWrapper(const jchar *langtag, CALID calid, CALTYPE type, LPWSTR buf, int buflen) {
-    if (pEnumCalendarInfoExEx) {
-        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
-            // defaults to "en"
-            return pEnumCalendarInfoExEx(&EnumCalendarInfoProc, L"en",
-                calid, NULL, type, (LPARAM)buf);
-        } else {
-            return pEnumCalendarInfoExEx(&EnumCalendarInfoProc, langtag,
-                calid, NULL, type, (LPARAM)buf);
-        }
+    if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+        // defaults to "en"
+        return EnumCalendarInfoExEx(&EnumCalendarInfoProc, L"en",
+            calid, NULL, type, (LPARAM)buf);
     } else {
-        return 0;
+        return EnumCalendarInfoExEx(&EnumCalendarInfoProc, langtag,
+            calid, NULL, type, (LPARAM)buf);
     }
 }
 

@@ -564,7 +564,8 @@ public final class LinuxHelper {
         for (var e : List.of(
                 Map.entry("Type", "Application"),
                 Map.entry("Terminal", "false"),
-                Map.entry("Comment", launcherDescription)
+                Map.entry("Comment", launcherDescription),
+                Map.entry("Categories", Optional.ofNullable(cmd.getArgumentValue("--linux-menu-group")).orElse("Utility"))
         )) {
             String key = e.getKey();
             TKit.assertEquals(e.getValue(), data.find(key).orElseThrow(), String.format(
@@ -644,7 +645,7 @@ public final class LinuxHelper {
     }
 
     private static void withTestFileAssociationsFile(FileAssociations fa,
-            ThrowingConsumer<Path> consumer) {
+            ThrowingConsumer<Path, ? extends Exception> consumer) {
         boolean iterated[] = new boolean[] { false };
         PackageTest.withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
             if (!iterated[0]) {
