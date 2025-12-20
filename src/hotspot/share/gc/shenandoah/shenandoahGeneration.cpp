@@ -344,7 +344,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // to tenurable regions by preselecting regions for promotion by evacuation (obtaining the live data to seed promoted_reserve).
   // This also identifies regions that will be promoted in place. These use the tenuring threshold.
   const size_t consumed_by_advance_promotion = select_aged_regions(is_global()? 0: old_promo_reserve);
-  assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
   assert(consumed_by_advance_promotion <= old_promo_reserve, "Do not promote more than budgeted");
 
   // The young evacuation reserve can be no larger than young_unaffiliated.  Planning to evacuate into partially consumed
