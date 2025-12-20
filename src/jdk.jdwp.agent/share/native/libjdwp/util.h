@@ -59,6 +59,13 @@
 #include "error_messages.h"
 #include "debugInit.h"
 
+/* To handle "format string is not a string literal" warning. */
+#if !defined(_MSC_VER)
+  #define ATTRIBUTE_PRINTF(fmt, vargs)  __attribute__((format(printf, fmt, vargs)))
+#else
+  #define ATTRIBUTE_PRINTF(fmt, vargs)
+#endif
+
 /* Definition of a CommonRef tracked by the backend for the frontend */
 typedef struct RefNode {
     jlong        seqNum;        /* ID of reference, also key for hash table */

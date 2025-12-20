@@ -470,6 +470,7 @@ inStream_readValue(PacketInputStream *stream)
                 break;
             default:
                 stream->error = JDWP_ERROR(INVALID_TAG);
+                value.j = 0L; // to make compiler happy
                 break;
         }
     }

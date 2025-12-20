@@ -84,12 +84,10 @@ readAndSetFilters(JNIEnv *env, PacketInputStream *in, HandlerNode *node,
             }
 
             case JDWP_REQUEST_MODIFIER(LocationOnly): {
-                jbyte tag;
                 jclass clazz;
                 jmethodID method;
                 jlocation location;
-                tag = inStream_readByte(in); /* not currently used */
-                tag = tag; /* To shut up lint */
+                (void)inStream_readByte(in); /* not currently used */
                 if ( (serror = inStream_error(in)) != JDWP_ERROR(NONE) )
                     break;
                 clazz = inStream_readClassRef(env, in);

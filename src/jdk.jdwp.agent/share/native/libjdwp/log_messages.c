@@ -155,6 +155,7 @@ standard_logging_format(FILE *fp,
 }
 
 /* End a log entry */
+ATTRIBUTE_PRINTF(1, 2)
 void
 log_message_end(const char *format, ...)
 {

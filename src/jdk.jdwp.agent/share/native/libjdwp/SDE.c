@@ -718,19 +718,6 @@ private jboolean isValid(void);
                                    lineTable[lti].jplsLineInc));
     }
 
-    private int fileTableIndex(int sti, int fileId) {
-        int i;
-        int fileIndexStart = stratumTable[sti].fileIndex;
-        /* one past end */
-        int fileIndexEnd = stratumTable[sti+1].fileIndex;
-        for (i = fileIndexStart; i < fileIndexEnd; ++i) {
-            if (fileTable[i].fileId == fileId) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     private jboolean isValid(void) {
         return sourceMapIsValid;
     }

@@ -976,7 +976,8 @@ eventFilter_setSourceNameMatchFilter(HandlerNode *node,
 
 jvmtiError eventFilter_setPlatformThreadsOnlyFilter(HandlerNode *node, jint index)
 {
-    PlatformThreadsFilter *filter = &FILTER(node, index).u.PlatformThreadsOnly;
+    // PlatformThreadsFilter contains nothing useful
+    //PlatformThreadsFilter *filter = &FILTER(node, index).u.PlatformThreadsOnly;
     if (index >= FILTER_COUNT(node)) {
         return AGENT_ERROR_ILLEGAL_ARGUMENT;
     }

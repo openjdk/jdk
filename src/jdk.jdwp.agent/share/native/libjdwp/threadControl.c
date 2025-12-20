@@ -2673,6 +2673,9 @@ threadControl_currentThread(void)
 {
     jthread thread = NULL;
     jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetCurrentThread)(gdata->jvmti, &thread);
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "cannot get current thread");
+    }
     return thread;
 }
 
@@ -2700,11 +2703,9 @@ threadControl_getFrameGeneration(jthread thread)
 jthread *
 threadControl_allVThreads(jint *numVThreads)
 {
-    JNIEnv *env;
     ThreadNode *node;
     jthread* vthreads;
 
-    env = getEnv();
     debugMonitorEnter(threadLock);
     *numVThreads = numRunningVThreads;
 
