@@ -357,10 +357,11 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
   // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
-  // of old evacuation failure.
+  // of old evacuation failure.  Leave this memory in the promoted reserve as it may be targeted by opportunistic
+  // promotions (found during evacuation of young regions).
   young_generation->set_evacuation_reserve(young_evacuation_reserve);
   old_generation->set_evacuation_reserve(old_evacuation_reserve);
-  old_generation->set_promoted_reserve(consumed_by_advance_promotion);
+  old_generation->set_promoted_reserve(old_promo_reserve);
 
   // There is no need to expand OLD because all memory used here was set aside at end of previous GC, except in the
   // case of a GLOBAL gc.  During choose_collection_set() of GLOBAL, old will be expanded on demand.
