@@ -617,17 +617,16 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   BLOCK_COMMENT("CastII {");
   Label fail;
   Label succeed;
-  if (hi == max_jint) {
+
+  if (lo != min_jint) {
     cmpl(val, lo);
-    jccb(Assembler::greaterEqual, succeed);
-  } else {
-    if (lo != min_jint) {
-      cmpl(val, lo);
-      jccb(Assembler::less, fail);
-    }
-    cmpl(val, hi);
-    jccb(Assembler::lessEqual, succeed);
+    jccb(Assembler::less, fail);
   }
+  if (hi != max_jint) {
+    cmpl(val, hi);
+    jccb(Assembler::greater, fail);
+  }
+  jmpb(succeed);
 
   bind(fail);
   movl(c_rarg0, idx);
@@ -666,17 +665,15 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
     }
   };
 
-  if (hi == max_jlong) {
+  if (lo != min_jlong) {
     cmp_val(lo);
-    jccb(Assembler::greaterEqual, succeed);
-  } else {
-    if (lo != min_jlong) {
-      cmp_val(lo);
-      jccb(Assembler::less, fail);
-    }
-    cmp_val(hi);
-    jccb(Assembler::lessEqual, succeed);
+    jccb(Assembler::less, fail);
   }
+  if (hi != max_jlong) {
+    cmp_val(hi);
+    jccb(Assembler::greater, fail);
+  }
+  jmpb(succeed);
 
   bind(fail);
   movl(c_rarg0, idx);
