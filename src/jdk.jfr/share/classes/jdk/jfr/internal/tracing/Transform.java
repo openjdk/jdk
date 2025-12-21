@@ -96,7 +96,7 @@ final class Transform implements CodeTransform {
         //
         // class Bar {
         // }
-        // 
+        //
         // class Foo extends Bar {
         //   Foo() {
         //     new Bar();
