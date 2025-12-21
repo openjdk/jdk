@@ -697,7 +697,7 @@ public class LambdaToMethod extends TreeTranslator {
                 rs.resolveConstructor(null, attrEnv, ctype, TreeInfo.types(args), List.nil()));
     }
 
-    private void addDeserializationCase(MethodHandleSymbol refSym, Type targetType, MethodSymbol samSym,
+    private void addDeserializationCase(MethodHandleSymbol refSym, Type targetType, MethodSymbol samSym, Type samType,
                                         DiagnosticPosition pos, List<LoadableConstant> staticArgs, MethodType indyType) {
         String functionalInterfaceClass = classSig(targetType);
         String functionalInterfaceMethodName = samSym.getSimpleName().toString();
@@ -713,6 +713,7 @@ public class LambdaToMethod extends TreeTranslator {
         String implClass = classSig(types.erasure(refSym.owner.type));
         String implMethodName = refSym.getQualifiedName().toString();
         String implMethodSignature = typeSig(types.erasure(refSym.type));
+        String instantiatedMethodType = typeSig(samType);
 
         JCExpression kindTest = eqTest(syms.intType, deserGetter("getImplMethodKind", syms.intType),
                 make.Literal(refSym.referenceKind()));
@@ -725,13 +726,14 @@ public class LambdaToMethod extends TreeTranslator {
             ++i;
         }
         JCStatement stmt = make.If(
-                deserTest(deserTest(deserTest(deserTest(deserTest(
-                                                        kindTest,
-                                                        "getFunctionalInterfaceClass", functionalInterfaceClass),
-                                                "getFunctionalInterfaceMethodName", functionalInterfaceMethodName),
-                                        "getFunctionalInterfaceMethodSignature", functionalInterfaceMethodSignature),
-                                "getImplClass", implClass),
-                        "getImplMethodSignature", implMethodSignature),
+                deserTest(deserTest(deserTest(deserTest(deserTest(deserTest(
+                                                                kindTest,
+                                                                "getFunctionalInterfaceClass", functionalInterfaceClass),
+                                                        "getFunctionalInterfaceMethodName", functionalInterfaceMethodName),
+                                                "getFunctionalInterfaceMethodSignature", functionalInterfaceMethodSignature),
+                                        "getImplClass", implClass),
+                                "getImplMethodSignature", implMethodSignature),
+                        "getInstantiatedMethodType", instantiatedMethodType),
                 make.Return(makeIndyCall(
                         pos,
                         syms.lambdaMetafactory,
@@ -752,6 +754,7 @@ public class LambdaToMethod extends TreeTranslator {
         System.err.printf("*implClass: '%s'\n", implClass);
         System.err.printf("*implMethodName: '%s'\n", implMethodName);
         System.err.printf("*implMethodSignature: '%s'\n", implMethodSignature);
+        System.err.printf("*instantiatedMethodType: '%s'\n", instantiatedMethodType);
         ****/
         stmts.append(stmt);
     }
@@ -813,6 +816,7 @@ public class LambdaToMethod extends TreeTranslator {
                                                  List<JCExpression> indy_args) {
         //determine the static bsm args
         MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.target.tsym);
+        Type samType = types.findDescriptorType(tree.target);
         List<LoadableConstant> staticArgs = List.of(
                 typeToMethodType(samSym.type),
                 refSym.asHandle(),
@@ -880,7 +884,7 @@ public class LambdaToMethod extends TreeTranslator {
                 int prevPos = make.pos;
                 try {
                     make.at(kInfo.clazz);
-                    addDeserializationCase(refSym, tree.type, samSym,
+                    addDeserializationCase(refSym, tree.type, samSym, samType,
                             tree, staticArgs, indyType);
                 } finally {
                     make.at(prevPos);
