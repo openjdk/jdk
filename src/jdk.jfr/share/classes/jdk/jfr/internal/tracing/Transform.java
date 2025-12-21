@@ -90,7 +90,7 @@ final class Transform implements CodeTransform {
         //
         // If such a method is found, instrumentation falls back to instrumenting only
         // RET and ATHROW. This can cause exceptions to be missed or counted twice.
-        // 
+        //
         // An effect of this heuristic is that constructors like the one below
         // will also trigger simplified instrumentation.
         //
