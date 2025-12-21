@@ -502,7 +502,7 @@ public final class MacHelper {
 
         @Override
         public String toString() {
-            var sb = new StringBuffer();
+            var sb = new StringBuilder();
             applyTo((optionName, _) -> {
                 sb.append(String.format("{%s: %s}", optionName, certRequest));
             });
