@@ -48,7 +48,9 @@ import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -724,11 +726,11 @@ public final class CommandOutputControl {
      * method on this object, or {@link System#err} if the method has not been
      * called.
      *
-     * @return the stream where stdout streams from commands subsequently executed
+     * @return the stream where stderr streams from commands subsequently executed
      *         by this object will be dumped
      */
     public PrintStream dumpStderr() {
-        return Optional.ofNullable(dumpStdout).orElse(System.err);
+        return Optional.ofNullable(dumpStderr).orElse(System.err);
     }
 
     /**
@@ -845,7 +847,7 @@ public final class CommandOutputControl {
 
         public int getExitCode() {
             return exitCode.orElseThrow(() -> {
-                return new IllegalStateException("Exit code is unavailable for timed-out process");
+                return new IllegalStateException("Exit code is unavailable for timed-out command");
             });
         }
 
@@ -1083,7 +1085,13 @@ public final class CommandOutputControl {
         if (timeoutMillis < 0) {
             exitCode = Optional.of(process.waitFor());
         } else if (!process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)) {
+            // Destroy the process and cancel the process output stream gobblers.
             process.destroy();
+            for (var g : List.of(stdoutGobbler, stderrGobbler)) {
+                g.ifPresent(future -> {
+                    future.cancel(true);
+                });
+            }
             exitCode = Optional.empty();
         } else {
             exitCode = Optional.of(process.exitValue());
@@ -1119,8 +1127,8 @@ public final class CommandOutputControl {
                     stderrStorage.ifPresent(silentDeleter);
                 }
             } else {
-                stdoutGobbler.ifPresent(CommandOutputControl::joinProcessStreamGobbler);
-                stderrGobbler.ifPresent(CommandOutputControl::joinProcessStreamGobbler);
+                stdoutGobbler.ifPresent(CommandOutputControl::join);
+                stderrGobbler.ifPresent(CommandOutputControl::join);
             }
         } catch (UncheckedIOException ex) {
             throw ex.getCause();
@@ -1129,22 +1137,48 @@ public final class CommandOutputControl {
         return csc.createResult(exitCode, new ProcessSpec(getPID(process), pb.command()));
     }
 
-    private Result execute(ToolProvider tp, String... args)
-            throws IOException {
+    private Result execute(ToolProvider tp, long timeoutMillis, String... args)
+            throws IOException, InterruptedException {
 
         var csc = new CachingStreamsConfig();
 
-        final int exitCode;
+        Optional<Integer> exitCode;
         var out = csc.out();
         var err = csc.err();
         try {
-            exitCode = tp.run(out, err, args);
+            if (timeoutMillis < 0) {
+                exitCode = Optional.of(tp.run(out, err, args));
+            } else {
+                var future = new CompletableFuture<Optional<Integer>>();
+
+                var workerThread = Thread.ofVirtual().start(() -> {
+                    Optional<Integer> result = Optional.empty();
+                    try {
+                        result = Optional.of(tp.run(out, err, args));
+                    } catch (Exception ex) {
+                        future.completeExceptionally(ex);
+                        return;
+                    }
+                    future.complete(result);
+                });
+
+                try {
+                    exitCode = future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                } catch (ExecutionException ex) {
+                    // Rethrow the cause (ex.getCause()) as a RuntimeException.
+                    // If `ex.getCause()` returns an Error, ExceptionBox.unbox() will throw it.
+                    throw ExceptionBox.toUnchecked(ExceptionBox.unbox(ex.getCause()));
+                } catch (TimeoutException ex) {
+                    workerThread.interrupt();
+                    exitCode = Optional.empty();
+                }
+            }
         } finally {
             suppressIOException(out::flush);
             suppressIOException(err::flush);
         }
 
-        return csc.createResult(Optional.of(exitCode), new ToolProviderSpec(tp.name(), List.of(args)));
+        return csc.createResult(exitCode, new ToolProviderSpec(tp.name(), List.of(args)));
     }
 
     private CommandOutputControl setOutputControl(boolean set, OutputControlOption v) {
@@ -1219,11 +1253,12 @@ public final class CommandOutputControl {
         return redirectRetainedStderr() && outputStreamsControl.stdout().discard();
     }
 
-    private static void joinProcessStreamGobbler(CompletableFuture<Void> streamGobbler) {
+    private static <T> T join(CompletableFuture<T> future, T cancelledValue) {
+        Objects.requireNonNull(future);
         try {
-            streamGobbler.join();
+            return future.join();
         } catch (CancellationException ex) {
-            return;
+            return cancelledValue;
         } catch (CompletionException ex) {
             switch (ExceptionBox.unbox(ex.getCause())) {
                 case IOException cause -> {
@@ -1237,6 +1272,10 @@ public final class CommandOutputControl {
                 }
             }
         }
+    }
+
+    private static void join(CompletableFuture<Void> future) {
+        join(future, null);
     }
 
     private static boolean mustReadOutputStream(ProcessBuilder.Redirect redirect) {
@@ -1765,13 +1804,13 @@ public final class CommandOutputControl {
         }
 
         @Override
-        public Result execute() throws IOException {
-            return coc.execute(tp, args.toArray(String[]::new));
+        public Result execute() throws IOException, InterruptedException {
+            return coc.execute(tp, -1, args.toArray(String[]::new));
         }
 
         @Override
         public Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException {
-            throw new UnsupportedOperationException("Executing tool provider with timeout is unsupported");
+            return coc.execute(tp, unit.toMillis(timeout), args.toArray(String[]::new));
         }
 
         @Override

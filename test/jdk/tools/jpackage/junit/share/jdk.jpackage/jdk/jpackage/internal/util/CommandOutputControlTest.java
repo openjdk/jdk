@@ -92,7 +92,7 @@ public class CommandOutputControlTest {
 
     @ParameterizedTest
     @MethodSource
-    public void testDescription(CommandOutputControlSpec spec) {
+    public void test_description(CommandOutputControlSpec spec) {
         // This test is mostly for coverage.
         var desc = spec.create().description();
         assertFalse(desc.isBlank());
@@ -100,7 +100,7 @@ public class CommandOutputControlTest {
     }
 
     @Test
-    public void testCopy() {
+    public void test_copy() {
         var orig = new CommandOutputControl();
         var copy = orig.copy();
         assertNotSame(orig, copy);
@@ -108,7 +108,7 @@ public class CommandOutputControlTest {
 
     @ParameterizedTest
     @EnumSource(names = "SAVE_NOTHING", mode = Mode.EXCLUDE)
-    public void testFlag(OutputControl flag) {
+    public void test_flag(OutputControl flag) {
         var coc = new CommandOutputControl();
         assertFalse(flag.get(coc));
         flag.set(coc);
@@ -121,7 +121,7 @@ public class CommandOutputControlTest {
 
     @ParameterizedTest
     @MethodSource
-    public void testMutualExclusiveFlags(List<OutputControl> controls) {
+    public void test_mutual_exclusive_flags(List<OutputControl> controls) {
         if (controls.isEmpty()) {
             throw new IllegalArgumentException();
         }
@@ -139,7 +139,7 @@ public class CommandOutputControlTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    public void testExecutableSpec(boolean toolProvider) {
+    public void test_ExecutableSpec(boolean toolProvider) {
         var coc = new CommandOutputControl();
         CommandOutputControl.Executable exec;
         if (toolProvider) {
@@ -248,39 +248,108 @@ public class CommandOutputControlTest {
         assertSame(execSpec, copy.execSpec());
     }
 
-    @Test
-    public void testTimeout_expires() throws InterruptedException, IOException {
-        var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
+    @ParameterizedTest
+    @EnumSource(ExecutableType.class)
+    public void test_timeout_expires(ExecutableType mode) throws InterruptedException, IOException {
+
+        final var toolProvider = (mode == ExecutableType.TOOL_PROVIDER);
+        final var storeOutputInFiles = (mode == ExecutableType.PROCESS_BUILDER_WITH_STREAMS_IN_FILES);
+
+        var actions = List.<CommandAction>of(
                 CommandAction.echoStdout("The quick brown fox jumps"),
                 CommandAction.sleep(5),
                 CommandAction.echoStdout("over the lazy dog")
-        ));
+        );
 
-        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true);
-        var exec = coc.createExecutable(new ProcessBuilder(cmdline));
+        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).storeOutputInFiles(storeOutputInFiles);
+
+        CommandOutputControl.Executable exec;
+
+        InterruptibleToolProvider tp;
+
+        if (toolProvider) {
+            tp = new InterruptibleToolProvider(Command.createToolProvider(actions));
+            exec = coc.createExecutable(tp);
+        } else {
+            var cmdline = Command.createShellCommandLine(actions);
+            tp = null;
+            exec = coc.createExecutable(new ProcessBuilder(cmdline));
+        }
 
         var result = exec.execute(1, TimeUnit.SECONDS);
         assertFalse(result.exitCode().isPresent());
 
         var getExitCodeEx = assertThrowsExactly(IllegalStateException.class, result::getExitCode);
-        assertEquals(("Exit code is unavailable for timed-out process"), getExitCodeEx.getMessage());
+        assertEquals(("Exit code is unavailable for timed-out command"), getExitCodeEx.getMessage());
 
-        assertEquals(List.of("The quick brown fox jumps"), result.content());
+        // We want to check that the saved output contains only the text emitted before the "sleep" action.
+        // It works for a subprocess, but in the case of a ToolProvider, sometimes the timing is such
+        // that it gets interrupted before having written anything to the stdout, and the saved output is empty.
+        // This happens when the test case is executed together with other test cases
+        // and never when it is executed individually.
+        if (!toolProvider || !result.content().isEmpty()) {
+            assertEquals(List.of("The quick brown fox jumps"), result.content());
+        }
+
+        if (toolProvider) {
+            assertTrue(tp.interrupted());
+        }
     }
 
-    @Test
-    public void testTimeout() throws InterruptedException, IOException {
-        var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void test_timeout(boolean toolProvider) throws InterruptedException, IOException {
+
+        var actions = List.<CommandAction>of(
                 CommandAction.echoStdout("Sphinx of black quartz,"),
                 CommandAction.echoStdout("judge my vow")
-        ));
+        );
 
         var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true);
-        var exec = coc.createExecutable(new ProcessBuilder(cmdline));
+
+        CommandOutputControl.Executable exec;
+
+        if (toolProvider) {
+            var tp = Command.createToolProvider(actions);
+            exec = coc.createExecutable(tp);
+        } else {
+            var cmdline = Command.createShellCommandLine(actions);
+            exec = coc.createExecutable(new ProcessBuilder(cmdline));
+        }
 
         var result = exec.execute(10, TimeUnit.SECONDS);
         assertTrue(result.exitCode().isPresent());
         assertEquals(List.of("Sphinx of black quartz,", "judge my vow"), result.content());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void test_passthrough_exceptions(boolean withTimeout) throws IOException {
+
+        var expected = new RuntimeException("Kaput!");
+
+        var exec = new CommandOutputControl().createExecutable(new ToolProvider() {
+
+            @Override
+            public String name() {
+                return "foo";
+            }
+
+            @Override
+            public int run(PrintWriter out, PrintWriter err, String... args) {
+                throw expected;
+            }
+        });
+
+        var actual = assertThrowsExactly(expected.getClass(), () -> {
+            if (withTimeout) {
+                exec.execute(10, TimeUnit.SECONDS);
+            } else {
+                exec.execute();
+            }
+        });
+
+        assertSame(expected, actual);
     }
 
     @Test
@@ -294,11 +363,23 @@ public class CommandOutputControlTest {
         var processDestroyer = Slot.<CompletableFuture<Void>>createEmpty();
 
         var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).processNotifier(process -> {
-            // Once we are notified the process  has been started, schedule its destruction.
+            // Once we are notified the process has been started, schedule its destruction.
             // Give it a second to warm up and print some output and then destroy it.
             processDestroyer.set(CompletableFuture.runAsync(toRunnable(() -> {
                 Thread.sleep(Duration.ofSeconds(1));
-                process.destroyForcibly();
+                // On Windows, CommandAction#sleep is implemented with the "ping" command.
+                // By some reason, when the parent "cmd" process is destroyed,
+                // the child "ping" command stays alive, and the test waits when it completes,
+                // making it last for at least 10 seconds.
+                // To optimize the test work time, destroy the entire subprocess tree.
+                // Even though this is essential on Windows keep this logic on all platforms for simplicity.
+                var descendants = List.<ProcessHandle>of();
+                try (var descendantsStream = process.descendants()) {
+                    descendants = descendantsStream.toList();
+                } finally {
+                    process.destroyForcibly();
+                }
+                descendants.forEach(ProcessHandle::destroyForcibly);
             })));
         });
         var exec = coc.createExecutable(new ProcessBuilder(cmdline));
@@ -341,7 +422,7 @@ public class CommandOutputControlTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    public void testInterleaved(boolean customDumpStreams) throws IOException, InterruptedException {
+    public void test_interleaved(boolean customDumpStreams) throws IOException, InterruptedException {
         var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
                 CommandAction.echoStdout("Eat some more"),
                 CommandAction.echoStderr("of these"),
@@ -403,7 +484,7 @@ public class CommandOutputControlTest {
         STDOUT_AND_STDERR
     }
 
-    private static List<CommandOutputControlSpec> testDescription() {
+    private static List<CommandOutputControlSpec> test_description() {
         List<CommandOutputControlSpec> testCases = new ArrayList<>();
         testCases.add(new CommandOutputControlSpec(Set.of()));
         for (var outputControl : OutputControl.variants()) {
@@ -412,7 +493,7 @@ public class CommandOutputControlTest {
         return testCases;
     }
 
-    private static List<List<OutputControl>> testMutualExclusiveFlags() {
+    private static List<List<OutputControl>> test_mutual_exclusive_flags() {
         List<List<OutputControl>> data = new ArrayList<>();
 
         var flags = List.of(OutputControl.SAVE_ALL, OutputControl.SAVE_FIRST_LINE, OutputControl.SAVE_NOTHING);
@@ -614,27 +695,18 @@ public class CommandOutputControlTest {
         }
 
         List<String> asExecutable() {
-            return createShellCommandLine(Stream.concat(
-                    stdout.stream().map(CommandAction::echoStdout),
-                    stderr.stream().map(CommandAction::echoStderr)
-            ));
+            return createShellCommandLine(actions());
         }
 
         ToolProvider asToolProvider() {
-            return new ToolProvider() {
+            return createToolProvider(actions());
+        }
 
-                @Override
-                public int run(PrintWriter out, PrintWriter err, String... args) {
-                    stdout.forEach(out::println);
-                    stderr.forEach(err::println);
-                    return 0;
-                }
-
-                @Override
-                public String name() {
-                    return "test";
-                }
-            };
+        private Stream<CommandAction> actions() {
+            return Stream.concat(
+                    stdout.stream().map(CommandAction::echoStdout),
+                    stderr.stream().map(CommandAction::echoStderr)
+            );
         }
 
         static List<String> createShellCommandLine(Stream<CommandAction> actions) {
@@ -650,6 +722,45 @@ public class CommandOutputControlTest {
 
         static List<String> createShellCommandLine(List<CommandAction> actions) {
             return createShellCommandLine(actions.stream());
+        }
+
+        static ToolProvider createToolProvider(Stream<CommandAction> actions) {
+            var copiedActions = actions.toList();
+            return new ToolProvider() {
+
+                @Override
+                public int run(PrintWriter out, PrintWriter err, String... args) {
+                    for (var action : copiedActions) {
+                        switch (action) {
+                            case EchoCommandAction echo -> {
+                                if (echo.stderr()) {
+                                    err.println(echo.value());
+                                } else {
+                                    out.println(echo.value());
+                                }
+                            }
+                            case SleepCommandAction sleep -> {
+                                toRunnable(() -> {
+                                    synchronized (this) {
+                                        var millis = Duration.ofSeconds(sleep.seconds()).toMillis();
+                                        this.wait(millis);
+                                    }
+                                }).run();
+                            }
+                        }
+                    }
+                    return 0;
+                }
+
+                @Override
+                public String name() {
+                    return "test";
+                }
+            };
+        }
+
+        static ToolProvider createToolProvider(List<CommandAction> actions) {
+            return createToolProvider(actions.stream());
         }
 
         private static String toString(CommandAction action) {
@@ -1131,6 +1242,42 @@ public class CommandOutputControlTest {
                 return coc.createExecutable(new ProcessBuilder(command.asExecutable()));
             }
         }
+    }
+
+    private final static class InterruptibleToolProvider implements ToolProvider {
+
+        InterruptibleToolProvider(ToolProvider impl) {
+            this.impl = impl;
+        }
+
+        @Override
+        public String name() {
+            return impl.name();
+        }
+
+        @Override
+        public int run(PrintWriter out, PrintWriter err, String... args) {
+            boolean interruptedValue = false;
+            try {
+                return impl.run(out, err, args);
+            } catch (ExceptionBox ex) {
+                if (ex.getCause() instanceof InterruptedException) {
+                    interruptedValue = true;
+                    return 1;
+                } else {
+                    throw ex;
+                }
+            } finally {
+                interrupted.complete(interruptedValue);
+            }
+        }
+
+        boolean interrupted() {
+            return interrupted.join();
+        }
+
+        private final ToolProvider impl;
+        private final CompletableFuture<Boolean> interrupted = new CompletableFuture<>();
     }
 
     private static List<String> toStringList(byte[] data, Charset charset) {
