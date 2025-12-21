@@ -380,6 +380,8 @@ class GraphBuilder {
   void append_unsafe_get_and_set(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, vmIntrinsics::BitsOperation op, int prefix_size);
   Value adjust_unsafe_container(Value x, BasicType from, BasicType to);
   Value adjust_unsafe_offset(Value offset);
+  Bytecodes::Code  match_conversion(     Value x, Value* arg);
+  vmIntrinsics::ID match_unary_intrinsic(Value x, Value* arg);
 
   void append_char_access(ciMethod* callee, bool is_store);
   void append_alloc_array_copy(ciMethod* callee);

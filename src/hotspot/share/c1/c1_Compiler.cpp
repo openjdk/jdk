@@ -109,23 +109,18 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
-  case vmIntrinsics::_compareAndSetInt: //FIXME
-  case vmIntrinsics::_compareAndSetLong: //FIXME
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
   case vmIntrinsics::_compareAndSetReferenceMO:
-    // all platforms must support at least these three
+    // all platforms must support at least T_OBJECT, T_INT, T_LONG
     break;
-  //case vmIntrinsics::_getAndOperatePrimitiveBitsMO: //FIXME
-  case vmIntrinsics::_getAndAddInt:    //FIXME
-    if (!VM_Version::supports_atomic_getadd4()) return false;
-    break;
-  case vmIntrinsics::_getAndAddLong:    //FIXME
-    if (!VM_Version::supports_atomic_getadd8()) return false;
-    break;
-  case vmIntrinsics::_getAndSetInt:    //FIXME
-    if (!VM_Version::supports_atomic_getset4()) return false;
-    break;
-  case vmIntrinsics::_getAndSetLong:    //FIXME
-    if (!VM_Version::supports_atomic_getset8()) return false;
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    if (!(VM_Version::supports_atomic_getadd4() ||
+          VM_Version::supports_atomic_getadd8() ||
+          VM_Version::supports_atomic_getset4() ||
+          VM_Version::supports_atomic_getset8())) {
+      // if any of the hardware ops are present, try the expansion
+      return false;
+    }
     break;
   case vmIntrinsics::_getAndSetReferenceMO:
 #ifdef _LP64

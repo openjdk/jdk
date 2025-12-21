@@ -2040,7 +2040,8 @@ void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
 
   DecoratorSet decorators = IN_HEAP | C1_UNSAFE_ACCESS;
 
-  if (x->is_volatile()) {
+  if (x->memory_order() != vmIntrinsics::MO_PLAIN) {
+    // fall down to MO_VOLATILE; maybe handle MO_ACQUIRE later? 
     decorators |= MO_SEQ_CST;
   }
   if (type == T_BOOLEAN) {
@@ -2092,7 +2093,8 @@ void LIRGenerator::do_UnsafePut(UnsafePut* x) {
   if (is_reference_type(type)) {
     decorators |= ON_UNKNOWN_OOP_REF;
   }
-  if (x->is_volatile()) {
+  if (x->memory_order() != vmIntrinsics::MO_PLAIN) {
+    // fall down to MO_VOLATILE; maybe handle MO_RELEASE later? 
     decorators |= MO_SEQ_CST;
   }
   access_store_at(decorators, type, src, off.result(), data.result());
@@ -2104,6 +2106,7 @@ void LIRGenerator::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {
   LIRItem off(x->offset(), this);
   LIRItem value(x->value(), this);
 
+  // fall down to MO_VOLATILE; maybe handle MO_RELEASE, etc., later? 
   DecoratorSet decorators = IN_HEAP | C1_UNSAFE_ACCESS | MO_SEQ_CST;
 
   if (is_reference_type(type)) {
@@ -2111,10 +2114,15 @@ void LIRGenerator::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {
   }
 
   LIR_Opr result;
-  if (x->is_add()) {
+  switch (x->bits_op()) {
+  case vmIntrinsics::OP_ADD:
     result = access_atomic_add_at(decorators, type, src, off, value);
-  } else {
+    break;
+  default:
+    assert(false, "either add or swap, please");
+  case vmIntrinsics::OP_SWAP:
     result = access_atomic_xchg_at(decorators, type, src, off, value);
+    break;
   }
   set_result(x, result);
 }

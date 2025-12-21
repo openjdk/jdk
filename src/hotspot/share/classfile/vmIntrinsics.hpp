@@ -1546,7 +1546,7 @@ public:
   // if it is to be expanded.  For example, some code that performs
   // cmpxchg for a byte is different from code that does the same
   // operation on a long, but both are covered by the same intrinsic.
-  // The difference would be T_BYTE vs. T_LONG, as a prefix. 
+  // The difference would be T_BYTE vs. T_LONG, as a prefix.
   static PolymorphicPrefix polymorphic_prefix(vmIntrinsics::ID id);
 
   // Memory order codes used by polymorphic intrinsics.

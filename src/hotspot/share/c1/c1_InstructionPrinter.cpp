@@ -792,7 +792,11 @@ void InstructionPrinter::do_UnsafePut(UnsafePut* x) {
 }
 
 void InstructionPrinter::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {
-  print_unsafe_op(x, x->is_add()?"UnsafeGetAndSet (add)":"UnsafeGetAndSet");
+  switch (x->bits_op()) {
+  default:  assert(false, ""); //and fall through:
+  case vmIntrinsics::OP_SWAP:  print_unsafe_op(x, "UnsafeGetAndSet"); break;
+  case vmIntrinsics::OP_ADD:   print_unsafe_op(x, "UnsafeGetAndSet (add)"); break;
+  }
   output()->print(", value ");
   print_value(x->value());
   output()->put(')');
