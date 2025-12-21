@@ -41,9 +41,7 @@ G1HeapEvaluationTask::G1HeapEvaluationTask(G1CollectedHeap* g1h, G1HeapSizingPol
 }
 
 void G1HeapEvaluationTask::execute() {
-  log_debug(gc, sizing)("Starting uncommit evaluation");
-
-  ResourceMark rm; // Ensure temporary resources are released
+  log_debug(gc, sizing)("Starting uncommit evaluation.");
 
   size_t resize_amount;
 
@@ -57,16 +55,16 @@ void G1HeapEvaluationTask::execute() {
   static int evaluation_count = 0;
 
   if (resize_amount > 0) {
-    log_info(gc, sizing)("Uncommit evaluation: shrinking heap by %zuMB using time-based selection", resize_amount / M);
-    log_debug(gc, sizing)("Uncommit evaluation: policy recommends shrinking by %zuB", resize_amount);
-    // Request VM operation outside of suspendible thread set
+    log_info(gc, sizing)("Uncommit evaluation: shrinking heap by %zuMB using time-based selection.", resize_amount / M);
+    log_debug(gc, sizing)("Uncommit evaluation: policy recommends shrinking by %zuB.", resize_amount);
+    // Request VM operation outside of suspendible thread set.
     _g1h->request_heap_shrink(resize_amount);
   } else {
-    if (++evaluation_count % 10 == 0) { // Log every 10th evaluation when no action taken
+    if (++evaluation_count % 10 == 0) { // Log every 10th evaluation when no action taken.
       log_info(gc, sizing)("Uncommit evaluation: no heap uncommit needed (evaluation #%d)", evaluation_count);
     }
   }
 
-  // Schedule the next evaluation
+  // Schedule the next evaluation.
   schedule(G1TimeBasedEvaluationIntervalMillis);
 }

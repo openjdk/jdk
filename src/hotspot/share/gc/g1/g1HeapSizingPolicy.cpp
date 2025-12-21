@@ -450,7 +450,7 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t al
 uint G1HeapSizingPolicy::count_uncommit_candidates() {
   uint inactive_regions = 0;
 
-  // Count regions that would be eligible for uncommit
+  // Count regions that would be eligible for uncommit.
   class CountUncommitCandidatesClosure : public G1HeapRegionClosure {
     uint* _inactive_regions;
     const G1HeapSizingPolicy* _policy;
@@ -460,7 +460,8 @@ uint G1HeapSizingPolicy::count_uncommit_candidates() {
       _policy(policy) {}
 
     virtual bool do_heap_region(G1HeapRegion* r) {
-      if (r->is_empty() && _policy->should_uncommit_region(r)) {
+      // Note: All free regions are empty, so only check is_free()
+      if (r->is_free() && _policy->should_uncommit_region(r)) {
         (*_inactive_regions)++;
       }
       return false;
@@ -475,7 +476,7 @@ uint G1HeapSizingPolicy::count_uncommit_candidates() {
 void G1HeapSizingPolicy::find_uncommit_candidates_by_time(GrowableArray<G1HeapRegion*>* candidates, uint max_candidates) {
   uint inactive_regions = 0;
 
-  // Check each heap region for inactivity, limiting to max_candidates for efficiency
+  // Check each heap region for inactivity, limiting to max_candidates for efficiency.
   class UncommitCandidatesClosure : public G1HeapRegionClosure {
     GrowableArray<G1HeapRegion*>* _candidates;
     uint* _inactive_regions;
@@ -492,12 +493,13 @@ void G1HeapSizingPolicy::find_uncommit_candidates_by_time(GrowableArray<G1HeapRe
       _policy(policy) {}
 
     virtual bool do_heap_region(G1HeapRegion* r) {
-      if (r->is_empty() && _policy->should_uncommit_region(r)) {
+      // Note: All free regions are empty, so only check is_free().
+      if (r->is_free() && _policy->should_uncommit_region(r)) {
         _candidates->append(r);
         (*_inactive_regions)++;
-        // Stop early if we have enough candidates
+        // Stop early if we have enough candidates.
         if ((uint)_candidates->length() >= _max_candidates) {
-          return true; // Stop iteration
+          return true; // Stop iteration.
         }
       }
       return false;
@@ -517,7 +519,7 @@ size_t G1HeapSizingPolicy::calculate_time_based_shrink_amount(uint max_regions_t
 
   GrowableArray<G1HeapRegion*> candidates(max_regions_to_shrink);
 
-  // Find time-based candidates
+  // Find time-based candidates.
   find_uncommit_candidates_by_time(&candidates, max_regions_to_shrink);
 
   if (candidates.length() == 0) {
@@ -525,24 +527,16 @@ size_t G1HeapSizingPolicy::calculate_time_based_shrink_amount(uint max_regions_t
     return 0;
   }
 
-  uint valid_candidates = 0;
-  // Count valid candidates (must be available, empty, and free)
-  for (int i = 0; i < candidates.length(); i++) {
-    G1HeapRegion* hr = candidates.at(i);
-    uint region_index = hr->hrm_index();
-
-    // Only count if region is ready for shrinking
-    if (hr->is_empty() && hr->is_free()) {
-      log_debug(gc, sizing)("Time-based shrink: identified region %u as candidate (last_access=" UINT64_FORMAT "ms ago)",
-                           region_index, (Ticks::now() - hr->last_access_time()).milliseconds());
-      valid_candidates++;
-    } else {
-      log_debug(gc, sizing)("Time-based shrink: skipping region %u - not ready for shrinking "
-                           "(empty=%s, free=%s)",
-                           region_index, hr->is_empty() ? "true" : "false", hr->is_free() ? "true" : "false");
-    }
+  // Check if we should back off due to recent GC activity.
+  // If GC overhead is high, don't compete with GC-based sizing.
+  double gc_overhead = _analytics->short_term_gc_time_ratio();
+  if (gc_overhead > 0.10) {  // Back off if GC overhead > 10%.
+    log_debug(gc, sizing)("Time-based shrink: backing off due to GC pressure (overhead=%.2f%%)", gc_overhead * 100);
+    return 0;
   }
 
+  // All candidates are already validated by find_uncommit_candidates_by_time().
+  uint valid_candidates = (uint)candidates.length();
   size_t shrink_bytes = (size_t)valid_candidates * G1HeapRegion::GrainBytes;
 
   if (valid_candidates > 0) {
@@ -554,8 +548,8 @@ size_t G1HeapSizingPolicy::calculate_time_based_shrink_amount(uint max_regions_t
 }
 
 bool G1HeapSizingPolicy::should_uncommit_region(G1HeapRegion* hr) const {
-  // Note: Caller already guarantees hr->is_empty() is true
-  // Empty regions should always be free and not in collection set in normal operation
+  // Note: Caller already guarantees hr->is_empty() is true.
+  // Empty regions should always be free and not in collection set in normal operation.
 
   Ticks current_time = Ticks::now();
   Ticks last_access = hr->last_access_time();
@@ -580,35 +574,35 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize_for_uncommit() {
     return 0;
   }
 
-  // Back off during allocation pressure - only evaluate when truly idle
+  // Back off during allocation pressure - only evaluate when truly idle.
   if (_analytics != nullptr) {
     double gc_time_ratio = _analytics->short_term_gc_time_ratio();
-    if (gc_time_ratio > 0.05) { // 5% GC time still indicates pressure
+    if (gc_time_ratio > 0.05) { // 5% GC time still indicates pressure.
       log_trace(gc, sizing)("Uncommit evaluation: skipping due to high GC overhead (%1.1f%%)",
                            gc_time_ratio * 100.0);
       return 0;
     }
   }
 
-  // Must hold Heap_lock during heap resizing
+  // Must hold Heap_lock during heap resizing.
   MutexLocker ml(Heap_lock);
 
-  ResourceMark rm; // Ensure GrowableArray resources are properly released
+  ResourceMark rm; // Ensure GrowableArray resources are properly released..
 
-  // Count regions eligible for uncommit (don't store them - VM operation will re-evaluate)
+  // Count regions eligible for uncommit (don't store them - VM operation will re-evaluate).
   uint idle_count = count_uncommit_candidates();
   uint total_regions = _g1h->max_num_regions();
 
   log_debug(gc, sizing)("Uncommit evaluation: found %u idle candidates (min required: %zu)",
                        idle_count, (size_t)G1MinRegionsToUncommit);
 
-  // Need minimum number of idle regions to proceed
+  // Need minimum number of idle regions to proceed.
   if (idle_count >= G1MinRegionsToUncommit) {
     size_t region_size = G1HeapRegion::GrainBytes;
     size_t current_heap = _g1h->capacity();
-    size_t min_heap = MAX2((size_t)InitialHeapSize, MinHeapSize);  // Never go below initial size
+    size_t min_heap = MAX2((size_t)InitialHeapSize, MinHeapSize);  // Never go below initial size..
 
-    // Calculate maximum bytes we can uncommit while respecting min heap size
+    // Calculate maximum bytes we can uncommit while respecting min heap size.
     size_t max_shrink_bytes = current_heap > min_heap ? current_heap - min_heap : 0;
 
     log_trace(gc, sizing)("Uncommit evaluation: current_heap=%zuB min_heap=%zuB "

@@ -631,12 +631,12 @@ uint G1HeapRegionManager::shrink_by_time_based_selection(uint num_regions_to_rem
   // Collect all empty regions with their access times for sorting
   GrowableArray<G1HeapRegion*> empty_regions;
 
-  // Scan all committed regions to find empty ones
+  // Scan all committed regions to find free ones.
   for (uint i = 0; i < _next_highest_used_hrm_index; i++) {
     if (is_available(i)) {
       G1HeapRegion* hr = at(i);
-      if (hr != nullptr && hr->is_empty() && hr->is_free()) {
-        // Check if this region should be considered for time-based uncommit
+      if (hr != nullptr && hr->is_free()) {
+        // Check if this region should be considered for time-based uncommit.
         Ticks current_time = Ticks::now();
         Tickspan elapsed = current_time - hr->last_access_time();
         if (elapsed.milliseconds() > G1UncommitDelayMillis) {
@@ -651,21 +651,16 @@ uint G1HeapRegionManager::shrink_by_time_based_selection(uint num_regions_to_rem
     return 0;
   }
 
-  // Sort regions by access time (oldest first) using simple bubble sort
-  // This is fine since the number of empty regions is typically small
-  int n = empty_regions.length();
-  for (int i = 0; i < n - 1; i++) {
-    for (int j = 0; j < n - i - 1; j++) {
-      G1HeapRegion* hr_a = empty_regions.at(j);
-      G1HeapRegion* hr_b = empty_regions.at(j + 1);
-
-      // Swap if hr_a has newer access time than hr_b (older should come first)
-      if (hr_a->last_access_time() > hr_b->last_access_time()) {
-        empty_regions.at_put(j, hr_b);
-        empty_regions.at_put(j + 1, hr_a);
-      }
-    }
-  }
+  // Sort regions by access time (oldest first).
+  // Use qsort for standard library sorting.
+  static auto compare_region_age = [](G1HeapRegion** a, G1HeapRegion** b) -> int {
+    Ticks time_a = (*a)->last_access_time();
+    Ticks time_b = (*b)->last_access_time();
+    if (time_a < time_b) return -1;  // Older first.
+    if (time_a > time_b) return 1;
+    return 0;
+  };
+  empty_regions.sort(compare_region_age);
 
   // Shrink the oldest regions first
   uint removed = 0;

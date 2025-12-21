@@ -1117,11 +1117,13 @@ void G1CollectedHeap::shrink_with_time_based_selection(size_t shrink_bytes) {
 
   _verifier->verify_region_sets_optional();
 
-  // We should only reach here from the service thread during idle time
-  // but ensure any GC alloc regions are abandoned
-  _allocator->abandon_gc_alloc_regions();
+  // We should only reach here from the service thread during idle time.
+  // Note: Unlike full GC shrinking, time-based shrink may have an active mutator alloc region.
+  // This is safe because we only remove free regions, not allocated ones.
+  assert(GCCause::is_user_requested_gc(gc_cause()) || gc_cause() == GCCause::_no_gc,
+         "unexpected GC cause: %s", GCCause::to_string(gc_cause()));
 
-  // For time-based shrink, we use time-aware selection instead of removing from end
+  // For time-based shrink, we use time-aware selection instead of removing from end.
   _hrm.remove_all_free_regions();
   shrink_helper_with_time_based_selection(aligned_shrink_bytes);
   rebuild_region_sets(true /* free_list_only */);
@@ -1176,15 +1178,17 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   num_regions_removed = _hrm.shrink_by(num_regions_to_remove);
 
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
-  log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
-                            shrink_bytes, shrunk_bytes, num_regions_removed);
 
   if (num_regions_removed > 0) {
-    log_info(gc, heap)("Heap shrink details: uncommitted %u regions (%zuMB), heap size now %zuMB",
-                       num_regions_removed, shrunk_bytes / M, capacity() / M);
-    log_debug(gc, heap)("Heap shrink details: requested=%zuB actual=%zuB "
-                        "regions_removed=%u heap_capacity=%zuB",
-                        shrink_bytes, shrunk_bytes, num_regions_removed, capacity());
+    if (log_is_enabled(Debug, gc, heap)) {
+      log_debug(gc, heap)("Heap shrink: uncommitted %u regions (%zuMB), heap size now %zuMB. "
+                         "Details: requested=%zuB actual=%zuB heap_capacity=%zuB",
+                         num_regions_removed, shrunk_bytes / M, capacity() / M,
+                         shrink_bytes, shrunk_bytes, capacity());
+    } else {
+      log_info(gc, heap)("Heap shrink: uncommitted %u regions (%zuMB), heap size now %zuMB",
+                        num_regions_removed, shrunk_bytes / M, capacity() / M);
+    }
     policy()->record_new_heap_size(num_committed_regions());
   } else {
     log_debug(gc, ergo, heap)("Did not shrink the heap (heap shrinking operation failed)");
@@ -1234,8 +1238,8 @@ bool G1CollectedHeap::request_heap_shrink(size_t shrink_bytes) {
     return false;
   }
 
-  // Always schedule a VM operation for proper synchronization with GC
-  // The VM operation will re-evaluate which regions to uncommit at the time of execution
+  // Always schedule a VM operation for proper synchronization with GC.
+  // The VM operation will re-evaluate which regions to uncommit at the time of execution.
   VM_G1ShrinkHeap op(this, shrink_bytes);
   VMThread::execute(&op);
   return true;                       // Pages were requested to be released.
