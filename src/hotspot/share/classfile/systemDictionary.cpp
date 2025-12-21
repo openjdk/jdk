@@ -87,6 +87,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#ifdef ASSERT
+#include "oops/constantPool.inline.hpp"
+#endif
 
 class InvokeMethodKey : public StackObj {
   private:
