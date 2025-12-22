@@ -41,6 +41,7 @@
 #include "opto/macro.hpp"
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 
@@ -192,7 +193,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
     assert(pre_val->bottom_type()->basic_type() == T_OBJECT, "or we shouldn't be here");
   }
   assert(bt == T_OBJECT, "or we shouldn't be here");
-
+  PhaseGVN& gvn = kit->gvn();
   IdealKit ideal(kit, true);
 
   Node* tls = __ thread(); // ThreadLocalStorage
@@ -215,7 +216,8 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   // Now some of the values
   Node* marking;
   Node* gc_state = __ AddP(no_base, tls, __ ConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset())));
-  Node* ld = __ load(__ ctrl(), gc_state, TypeInt::BYTE, T_BYTE, Compile::AliasIdxRaw);
+  assert(kit->C->get_alias_index(gvn.type(gc_state)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+  Node *ld = __ load(__ ctrl(), gc_state, TypeInt::BYTE, T_BYTE);
   marking = __ AndI(ld, __ ConI(ShenandoahHeap::MARKING));
   assert(ShenandoahBarrierC2Support::is_gc_state_load(ld), "Should match the shape");
 
@@ -223,7 +225,8 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   __ if_then(marking, BoolTest::ne, zero, unlikely); {
     BasicType index_bt = TypeX_X->basic_type();
     assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading Shenandoah SATBMarkQueue::_index with wrong size.");
-    Node* index   = __ load(__ ctrl(), index_adr, TypeX_X, index_bt, Compile::AliasIdxRaw);
+    assert(kit->C->get_alias_index(gvn.type(index_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+    Node* index   = __ load(__ ctrl(), index_adr, TypeX_X, index_bt);
 
     if (do_load) {
       // load original value
@@ -233,7 +236,8 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
     // if (pre_val != nullptr)
     __ if_then(pre_val, BoolTest::ne, kit->null()); {
-      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
+      assert(kit->C->get_alias_index(gvn.type(buffer_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS);
 
       // is the queue for this thread full?
       __ if_then(index, BoolTest::ne, zeroX, likely); {
@@ -243,9 +247,11 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
         // Now get the buffer location we will log the previous value into and store it
         Node *log_addr = __ AddP(no_base, buffer, next_index);
-        __ store(__ ctrl(), log_addr, pre_val, T_OBJECT, Compile::AliasIdxRaw, MemNode::unordered);
+        assert(kit->C->get_alias_index(gvn.type(log_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+        __ store(__ ctrl(), log_addr, pre_val, T_OBJECT, MemNode::unordered);
         // update the index
-        __ store(__ ctrl(), index_adr, next_index, index_bt, Compile::AliasIdxRaw, MemNode::unordered);
+        assert(kit->C->get_alias_index(gvn.type(index_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+        __ store(__ ctrl(), index_adr, next_index, index_bt, MemNode::unordered);
 
       } __ else_(); {
 
@@ -472,7 +478,7 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
   }
   // (Else it's an array (or unknown), and we want more precise card marks.)
   assert(adr != nullptr, "");
-
+  PhaseGVN& gvn = kit->gvn();
   IdealKit ideal(kit, true);
 
   Node* tls = __ thread(); // ThreadLocalStorage
@@ -482,7 +488,9 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   Node* curr_ct_holder_offset = __ ConX(in_bytes(ShenandoahThreadLocalData::card_table_offset()));
   Node* curr_ct_holder_addr  = __ AddP(__ top(), tls, curr_ct_holder_offset);
-  Node* curr_ct_base_addr = __ load( __ ctrl(), curr_ct_holder_addr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
+
+  assert(kit->C->get_alias_index(gvn.type(curr_ct_holder_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+  Node* curr_ct_base_addr = __ load( __ ctrl(), curr_ct_holder_addr, TypeRawPtr::NOTNULL, T_ADDRESS);
 
   // Divide by card size
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift()) );
@@ -490,10 +498,9 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
   // Combine card table base and card offset
   Node* card_adr = __ AddP(__ top(), curr_ct_base_addr, card_offset);
 
-  // Get the alias_index for raw card-mark memory
-  int adr_type = Compile::AliasIdxRaw;
   Node*   zero = __ ConI(0); // Dirty card value
 
+  assert(kit->C->get_alias_index(gvn.type(card_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   if (UseCondCardMark) {
     // The classic GC reference write barrier is typically implemented
     // as a store into the global card mark table.  Unfortunately
@@ -502,12 +509,12 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
     // UseCondCardMark enables MP "polite" conditional card mark
     // stores.  In theory we could relax the load from ctrl() to
     // no_ctrl, but that doesn't buy much latitude.
-    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE, adr_type);
+    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE);
     __ if_then(card_val, BoolTest::ne, zero);
   }
 
   // Smash zero into card
-  __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
+  __ store(__ ctrl(), card_adr, zero, T_BYTE, MemNode::unordered);
 
   if (UseCondCardMark) {
     __ end_if();
@@ -561,8 +568,7 @@ const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
 Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
 
-  const TypePtr* adr_type = access.addr().type();
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
 
   bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
 
@@ -578,8 +584,8 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
-
-    uint adr_idx = kit->C->get_alias_index(adr_type);
+    PhaseGVN& gvn = kit->gvn();
+    uint adr_idx = kit->C->get_alias_index(gvn.type(adr)->isa_ptr());
     assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
     shenandoah_write_barrier_pre(kit, true /* do_load */, /*kit->control(),*/ access.base(), adr, adr_idx, val.node(),
                                  static_cast<const TypeOopPtr*>(val.type()), nullptr /* pre_val */, access.type());
@@ -624,7 +630,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
   // 3: apply keep-alive barrier for java.lang.ref.Reference if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     Node* top = Compile::current()->top();
-    Node* adr = access.addr().node();
+    Node* adr = access.addr();
     Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
     Node* obj = access.base();
 
@@ -678,8 +684,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
 
     MemNode::MemOrd mo = access.mem_node_mo();
     Node* mem = access.memory();
-    Node* adr = access.addr().node();
-    const TypePtr* adr_type = access.addr().type();
+    Node* adr = access.addr();
     Node* load_store = nullptr;
 
 #ifdef _LP64
@@ -687,17 +692,17 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
       Node *newval_enc = kit->gvn().transform(new EncodePNode(new_val, new_val->bottom_type()->make_narrowoop()));
       Node *oldval_enc = kit->gvn().transform(new EncodePNode(expected_val, expected_val->bottom_type()->make_narrowoop()));
       if (ShenandoahCASBarrier) {
-        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo));
+        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, value_type->make_narrowoop(), mo));
       } else {
-        load_store = kit->gvn().transform(new CompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo));
+        load_store = kit->gvn().transform(new CompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, value_type->make_narrowoop(), mo));
       }
     } else
 #endif
     {
       if (ShenandoahCASBarrier) {
-        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo));
+        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, value_type->is_oopptr(), mo));
       } else {
-        load_store = kit->gvn().transform(new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo));
+        load_store = kit->gvn().transform(new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, value_type->is_oopptr(), mo));
       }
     }
 
@@ -712,7 +717,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
     load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(nullptr, load_store, access.decorators()));
     if (ShenandoahCardBarrier) {
       post_barrier(kit, kit->control(), access.raw_access(), access.base(),
-                   access.addr().node(), access.alias_idx(), new_val, T_OBJECT, true);
+                   access.addr(), access.alias_idx(), new_val, T_OBJECT, true);
     }
     return load_store;
   }
@@ -731,7 +736,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAcces
     Node* mem = access.memory();
     bool is_weak_cas = (decorators & C2_WEAK_CMPXCHG) != 0;
     Node* load_store = nullptr;
-    Node* adr = access.addr().node();
+    Node* adr = access.addr();
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = kit->gvn().transform(new EncodePNode(new_val, new_val->bottom_type()->make_narrowoop()));
@@ -770,7 +775,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAcces
     pin_atomic_op(access);
     if (ShenandoahCardBarrier) {
       post_barrier(kit, kit->control(), access.raw_access(), access.base(),
-                   access.addr().node(), access.alias_idx(), new_val, T_OBJECT, true);
+                   access.addr(), access.alias_idx(), new_val, T_OBJECT, true);
     }
     return load_store;
   }
@@ -787,7 +792,7 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
                                  result /* pre_val */, T_OBJECT);
     if (ShenandoahCardBarrier) {
       post_barrier(kit, kit->control(), access.raw_access(), access.base(),
-                   access.addr().node(), access.alias_idx(), val, T_OBJECT, true);
+                   access.addr(), access.alias_idx(), val, T_OBJECT, true);
     }
   }
   return result;
