@@ -54,6 +54,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -86,9 +87,6 @@
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
-#endif
-#ifdef ASSERT
-#include "oops/constantPool.inline.hpp"
 #endif
 
 class InvokeMethodKey : public StackObj {
