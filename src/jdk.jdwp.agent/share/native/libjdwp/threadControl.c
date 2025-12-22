@@ -2667,6 +2667,7 @@ threadControl_setEventMode(jvmtiEventMode mode, EventIndex ei, jthread thread)
 
 /*
  * Returns the current thread.
+ * Returns NULL on error (JVMTI_ERROR_WRONG_PHASE, JVMTI_ERROR_UNATTACHED_THREAD).
  */
 jthread
 threadControl_currentThread(void)
@@ -2674,7 +2675,7 @@ threadControl_currentThread(void)
     jthread thread = NULL;
     jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetCurrentThread)(gdata->jvmti, &thread);
     if (error != JVMTI_ERROR_NONE) {
-        EXIT_ERROR(error, "cannot get current thread");
+        return NULL;
     }
     return thread;
 }
