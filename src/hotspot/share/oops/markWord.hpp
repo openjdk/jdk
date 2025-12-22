@@ -189,22 +189,14 @@ class markWord {
   bool has_monitor() const {
     return ((value() & lock_mask_in_place) == monitor_value);
   }
+  markWord set_has_monitor() const {
+    return markWord((value() & ~lock_mask_in_place) | monitor_value);
+  }
   ObjectMonitor* monitor() const {
     assert(has_monitor(), "check");
     assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
     // Use xor instead of &~ to provide one extra tag-bit check.
     return (ObjectMonitor*) (value() ^ monitor_value);
-  }
-  bool has_displaced_mark_helper() const {
-    intptr_t lockbits = value() & lock_mask_in_place;
-    return !UseObjectMonitorTable && lockbits == monitor_value;
-  }
-  markWord displaced_mark_helper() const;
-  void set_displaced_mark_helper(markWord m) const;
-  markWord copy_set_hash(intptr_t hash) const {
-    uintptr_t tmp = value() & (~hash_mask_in_place);
-    tmp |= ((hash & hash_mask) << hash_shift);
-    return markWord(tmp);
   }
 
   static markWord encode(ObjectMonitor* monitor) {
@@ -213,9 +205,12 @@ class markWord {
     return markWord(tmp | monitor_value);
   }
 
-  markWord set_has_monitor() const {
-    return markWord((value() & ~lock_mask_in_place) | monitor_value);
+  bool has_displaced_mark_helper() const {
+    intptr_t lockbits = value() & lock_mask_in_place;
+    return !UseObjectMonitorTable && lockbits == monitor_value;
   }
+  markWord displaced_mark_helper() const;
+  void set_displaced_mark_helper(markWord m) const;
 
   // used to encode pointers during GC
   markWord clear_lock_bits() const { return markWord(value() & ~lock_mask_in_place); }
@@ -238,6 +233,12 @@ class markWord {
 
   bool has_no_hash() const {
     return hash() == no_hash;
+  }
+
+  markWord copy_set_hash(intptr_t hash) const {
+    uintptr_t tmp = value() & (~hash_mask_in_place);
+    tmp |= ((hash & hash_mask) << hash_shift);
+    return markWord(tmp);
   }
 
   inline Klass* klass() const;
