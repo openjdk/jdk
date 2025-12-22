@@ -73,10 +73,19 @@ public class TestConstantMultiplier {
         var testHeader = Template.make(() -> scope(
             """
                 public static Random RANDOM = new Random(1023);
+                public static int [] memI;
+                public static long [] memL;
+
+                static {
+                    memL = new long[512];
+                    Generators.G.fill(Generators.G.longs(), memL);
+                    memI = new int[512];
+                    Generators.G.fill(Generators.G.ints(), memI);
+                }
 
             """
         ));
-        var testTemplate = Template.make(() -> scope(
+        var testTemplate1 = Template.make(() -> scope(
             IntStream.of(81, 73, 45, 41, 37, 27, 25, 21, 19, 13, 11).mapToObj(
                 multiplier -> scope(
                     let("multiplier", multiplier),
@@ -88,7 +97,7 @@ public class TestConstantMultiplier {
                         }
 
                         @Run(test = "testMultBy#{multiplier}I")
-                        private static void runMultBy#{multiplier}II() {
+                        private static void runMultBy#{multiplier}I() {
                             int multiplicand = RANDOM.nextInt();
                             Verify.checkEQ(#{multiplier} * multiplicand, testMultBy#{multiplier}I(multiplicand));
                         }
@@ -108,9 +117,42 @@ public class TestConstantMultiplier {
             )).toList()
         ));
 
+        var testTemplate2 = Template.make(() -> scope(
+            IntStream.of(81, 73, 45, 41, 37, 27, 25, 21, 19, 13, 11).mapToObj(
+                multiplier -> scope(
+                    let("multiplier", multiplier),
+                    """
+                        @Test
+                        @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_MEM_IMM_I, "1"})
+                        private static int testMultBy#{multiplier}I_mem(int index) {
+                            return memI[index] * #{multiplier};
+                        }
+
+                        @Run(test = "testMultBy#{multiplier}I_mem")
+                        private static void runMultBy#{multiplier}I_mem() {
+                            int index = RANDOM.nextInt(memI.length);
+                            Verify.checkEQ(#{multiplier} * memI[index], testMultBy#{multiplier}I_mem(index));
+                        }
+
+                        @Test
+                        @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_MULT_MEM_IMM_L, "1"})
+                        private static long testMultBy#{multiplier}L_mem(int index) {
+                            return memL[index] * #{multiplier};
+                        }
+
+                        @Run(test = "testMultBy#{multiplier}L_mem")
+                        private static void runMultBy#{multiplier}L_mem() {
+                            int index = RANDOM.nextInt(memL.length);
+                            Verify.checkEQ(#{multiplier} * memL[index], testMultBy#{multiplier}L_mem(index));
+                        }
+                    """
+            )).toList()
+        ));
+
         var testClass = Template.make(() -> scope(
             testHeader.asToken(),
-            testTemplate.asToken()
+            testTemplate1.asToken(),
+            testTemplate2.asToken()
         ));
 
         List<TemplateToken> testTemplateTokens = List.of(testClass.asToken());
@@ -119,7 +161,7 @@ public class TestConstantMultiplier {
             // package and class name.
             "c2.compiler", "ConstantMultiplierTest",
             // Set of imports.
-            Set.of("java.util.Random","compiler.lib.verify.*"),
+            Set.of("java.util.Random","compiler.lib.verify.*", "compiler.lib.generators.*"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.

@@ -36,6 +36,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.lang.invoke.*;
 import java.util.Random;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 
 @BenchmarkMode(Mode.Throughput)
@@ -43,6 +45,15 @@ import java.util.Random;
 @State(Scope.Thread)
 @Fork(value = 1, jvmArgs = {"-XX:LoopUnrollLimit=1"})
 public class ConstantMultiplierOptimization {
+
+    public static int  [] memI;
+    public static long [] memL;
+
+    @Setup
+    public void BMSetup() {
+        memI = IntStream.range(0, 1024).toArray();
+        memL = LongStream.range(0, 1024).toArray();
+    }
 
     @CompilerControl(CompilerControl.Mode.INLINE)
     public static int mul_by_25_I(int a) {
@@ -94,6 +105,56 @@ public class ConstantMultiplierOptimization {
        return a * 11;
     }
 
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static int mul_by_25_I_mem(int index) {
+       return memI[index] * 25;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static int mul_by_27_I_mem(int index) {
+       return memI[index] * 27;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static int mul_by_37_I_mem(int index) {
+       return memI[index] * 37;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static int mul_by_19_I_mem(int index) {
+       return memI[index] * 19;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static int mul_by_13_I_mem(int index) {
+       return memI[index] * 13;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static int mul_by_11_I_mem(int index) {
+       return memI[index] * 11;
+    }
+
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static long mul_by_25_L_mem(int index) {
+       return memL[index] * 25;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static long mul_by_27_L_mem(int index) {
+       return memL[index] * 27;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static long mul_by_37_L_mem(int index) {
+       return memL[index] * 37;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static long mul_by_19_L_mem(int index) {
+       return memL[index] * 19;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static long mul_by_13_L_mem(int index) {
+       return memL[index] * 13;
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static long mul_by_11_L_mem(int index) {
+       return memL[index] * 11;
+    }
+
     @Benchmark
     public long testConstMultiplierL() {
         long res = 0;
@@ -118,6 +179,34 @@ public class ConstantMultiplierOptimization {
             res += mul_by_19_I(i);
             res += mul_by_13_I(i);
             res += mul_by_11_I(i);
+        }
+        return res;
+    }
+
+    @Benchmark
+    public long testConstMultiplierL_mem() {
+        long res = 0;
+        for (int j = 0; j < memL.length; j += 2) {
+            res += mul_by_37_L_mem(j);
+            res += mul_by_25_L_mem(j);
+            res += mul_by_27_L_mem(j);
+            res += mul_by_19_L_mem(j);
+            res += mul_by_13_L_mem(j);
+            res += mul_by_11_L_mem(j);
+        }
+        return res;
+    }
+
+    @Benchmark
+    public int testConstMultiplierI_mem() {
+        int res = 0;
+        for (int j = 0 ; j < memI.length; j += 2) {
+            res += mul_by_37_I_mem(j);
+            res += mul_by_25_I_mem(j);
+            res += mul_by_27_I_mem(j);
+            res += mul_by_19_I_mem(j);
+            res += mul_by_13_I_mem(j);
+            res += mul_by_11_I_mem(j);
         }
         return res;
     }

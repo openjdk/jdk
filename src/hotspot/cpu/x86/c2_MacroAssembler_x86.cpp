@@ -7100,6 +7100,7 @@ void C2_MacroAssembler::imullq_imm(BasicType bt, Register dst, Register src, int
   // Lookup table
   for (const LeaPattern& p : patterns) {
     if (p.imm == imm) {
+      assert_different_registers(dst, src);
       // First LEA → dst = src + src * scale1
       lealq(bt, dst, Address(src, src, p.scale1));
 
