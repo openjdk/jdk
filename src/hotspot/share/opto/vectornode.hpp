@@ -320,6 +320,7 @@ private:
   // as auto-vectorization mandates strict ordering but the value is false when this node
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
+
 public:
   // _requires_strict_order is set to true by default as mandated by auto-vectorization
   AddReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
@@ -594,6 +595,7 @@ private:
   // as auto-vectorization mandates strict ordering but the value is false when this node
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
+
 public:
   // _requires_strict_order is set to true by default as mandated by auto-vectorization
   MulReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :

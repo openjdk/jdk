@@ -235,6 +235,10 @@ source %{
       case Op_MinVHF:
       case Op_MaxVHF:
       case Op_SqrtVHF:
+        if (UseSVE == 0 && !is_feat_fp16_supported()) {
+          return false;
+        }
+        break;
       // At the time of writing this, the Vector API has no half-float (FP16) species.
       // Consequently, AddReductionVHF and MulReductionVHF are only produced by the
       // auto-vectorizer, which requires strictly ordered semantics for FP reductions.
@@ -250,7 +254,7 @@ source %{
         // FEAT_FP16 is enabled if both "fphp" and "asimdhp" features are supported.
         // Only the Neon instructions need this check. SVE supports half-precision floats
         // by default.
-        if (UseSVE == 0 && !is_feat_fp16_supported()) {
+        if (length_in_bytes < 8 || (UseSVE == 0 && !is_feat_fp16_supported())) {
           return false;
         }
         break;
@@ -378,8 +382,8 @@ source %{
       case Op_VectorMaskCmp:
       case Op_LoadVectorGather:
       case Op_StoreVectorScatter:
-      case Op_AddReductionVF:
       case Op_AddReductionVHF:
+      case Op_AddReductionVF:
       case Op_AddReductionVD:
       case Op_AndReductionV:
       case Op_OrReductionV:
@@ -2092,7 +2096,7 @@ dnl
 // On Neon-only targets (UseSVE = 0), this operation is implemented as a sequence of scalar additions:
 // values equal to the vector width are loaded into a vector register, each lane is extracted,
 // and its value is accumulated into the running sum, producing a final scalar result.
-instruct reduce_addHF(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+instruct reduce_addHF_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
   predicate(UseSVE == 0);
   match(Set dst (AddReductionVHF fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp);
@@ -2124,9 +2128,9 @@ instruct reduce_add$1_sve(vReg`'ifelse($1, HF, F, $1) dst_src1, vReg src2) %{
   match(Set dst_src1 (AddReductionV$1 dst_src1 src2));
   format %{ "reduce_add$1_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
-    ifelse($1, F,
+    ifelse($1, HF, `',
        `assert(UseSVE > 0, "must be sve");
-    ',)dnl
+    ')dnl
 uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ sve_fadda($dst_src1$$FloatRegister, __ $2, ptrue, $src2$$FloatRegister);
@@ -2134,8 +2138,8 @@ uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-REDUCE_ADD_FP_SVE(F,  S)
 REDUCE_ADD_FP_SVE(HF, H)
+REDUCE_ADD_FP_SVE(F,  S)
 
 // reduction addD
 
