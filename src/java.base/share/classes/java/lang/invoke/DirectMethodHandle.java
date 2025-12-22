@@ -737,7 +737,7 @@ sealed class DirectMethodHandle extends MethodHandle {
                 .append(isGetter ? "get" : "put")
                 .append(name);
         if (isVolatile) {
-            sb.append("Volatile");
+            sb.append("MO");
         }
         return sb.toString();
     }
@@ -761,6 +761,10 @@ sealed class DirectMethodHandle extends MethodHandle {
             linkerType = MethodType.methodType(ft, Object.class, long.class);
         else
             linkerType = MethodType.methodType(void.class, Object.class, long.class, ft);
+        final int prefixLen = isVolatile ? 1 : 0;
+        if (prefixLen > 0) {
+            linkerType = linkerType.insertParameterTypes(0, byte.class);
+        }
         MemberName linker = new MemberName(Unsafe.class, unsafeMethodName, linkerType, REF_invokeVirtual);
         try {
             linker = IMPL_NAMES.resolveOrFail(REF_invokeVirtual, linker, null, LM_TRUSTED,
@@ -803,15 +807,19 @@ sealed class DirectMethodHandle extends MethodHandle {
         Object[] outArgs = new Object[1 + linkerType.parameterCount()];
         assert(outArgs.length == (isGetter ? 3 : 4));
         outArgs[0] = names[U_HOLDER] = new Name(getFunction(NF_UNSAFE));
+        if (prefixLen > 0) {
+            outArgs[1] = (int)(isVolatile ? Unsafe.MO_VOLATILE : Unsafe.MO_PLAIN);
+            // For some other uses, a second prefix argument might be BT_INT, BT_BYTE, etc.
+        }
         if (isStatic) {
-            outArgs[1] = names[F_HOLDER]  = new Name(getFunction(NF_staticBase), names[DMH_THIS]);
-            outArgs[2] = names[F_OFFSET]  = new Name(getFunction(NF_staticOffset), names[DMH_THIS]);
+            outArgs[prefixLen+1] = names[F_HOLDER]  = new Name(getFunction(NF_staticBase), names[DMH_THIS]);
+            outArgs[prefixLen+2] = names[F_OFFSET]  = new Name(getFunction(NF_staticOffset), names[DMH_THIS]);
         } else {
-            outArgs[1] = names[OBJ_CHECK] = new Name(getFunction(NF_checkBase), names[OBJ_BASE]);
-            outArgs[2] = names[F_OFFSET]  = new Name(getFunction(NF_fieldOffset), names[DMH_THIS]);
+            outArgs[prefixLen+1] = names[OBJ_CHECK] = new Name(getFunction(NF_checkBase), names[OBJ_BASE]);
+            outArgs[prefixLen+2] = names[F_OFFSET]  = new Name(getFunction(NF_fieldOffset), names[DMH_THIS]);
         }
         if (!isGetter) {
-            outArgs[3] = (needsCast ? names[PRE_CAST] : names[SET_VALUE]);
+            outArgs[prefixLen+3] = (needsCast ? names[PRE_CAST] : names[SET_VALUE]);
         }
         for (Object a : outArgs)  assert(a != null);
         names[LINKER_CALL] = new Name(linker, outArgs);

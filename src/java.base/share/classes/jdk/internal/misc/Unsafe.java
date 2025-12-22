@@ -1946,7 +1946,7 @@ public final class Unsafe {
     public boolean weakCompareAndSetReference(Object o, long offset,
                                                     Object expected,
                                                     Object x) {
-        return compareAndSetReferenceMO(MO_WEAK_CAS_PLAIN, o, offset, expected, x);
+        return compareAndSetReferenceMO(MO_WEAK_CAS_VOLATILE, o, offset, expected, x);
     }
 
     // The native method can treat every memory access as MO_VOLATILE.
@@ -2500,6 +2500,135 @@ public final class Unsafe {
                                                long x) {
         return compareAndSetPrimitiveBitsMONative(MO_WEAK_CAS_VOLATILE, BT_LONG,
                                                   o, offset, expected, x);
+    }
+
+    // Note: The best way to get fine control over memory order is to
+    // use an explicit memory order prefix argument like MO_RELEASE.
+    // There used to be a large number of API points like
+    // putBooleanRelease, getIntAcquire, getReferenceOpaque, etc.
+    // Such operations are more regularly available via the MO arguments.
+
+    // Because "volatile" is a Java modifier (unlike acquire or release),
+    // old code (notably, old tests) use the MO_VOLATILE versions often.
+    // So we keep those API points, as a compromise.  New code should use
+    // the prefix MO_VOLATILE.
+
+    /**
+     * Fetches a reference value from a given Java variable, with volatile
+     * load semantics.
+     * Identical to {@link #getReferenceMO(byte, Object, long)}
+     * with the prefix argument MO_VOLATILE.
+     */
+    @ForceInline
+    public Object getReferenceVolatile(Object o, long offset) {
+        return getReferenceMO(MO_VOLATILE, o, offset);
+    }
+
+    /**
+     * Stores a reference value into a given Java variable, with
+     * volatile store semantics.
+     * Identical to {@link #putReferenceMO(byte, Object, long, Object)}
+     * with the prefix argument MO_VOLATILE.
+     */
+    @ForceInline
+    public void putReferenceVolatile(Object o, long offset, Object x) {
+        putReferenceMO(MO_VOLATILE, o, offset, x);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #getIntMO(byte, Object, long)}  */
+    @ForceInline
+    public int     getIntVolatile(Object o, long offset) {
+        return getIntMO(MO_VOLATILE, o, offset);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #putIntMO(byte, Object, long, int)}  */
+    @ForceInline
+    public void    putIntVolatile(Object o, long offset, int x) {
+        putIntMO(MO_VOLATILE, o, offset, x);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #getBooleanMO(byte, Object, long)}  */
+    @ForceInline
+    public boolean getBooleanVolatile(Object o, long offset) {
+        return getBooleanMO(MO_VOLATILE, o, offset);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #putBooleanMO(byte, Object, long, boolean)}  */
+    @ForceInline
+    public void    putBooleanVolatile(Object o, long offset, boolean x) {
+        putBooleanMO(MO_VOLATILE, o, offset, x);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #getByteMO(byte, Object, long)}  */
+    @ForceInline
+    public byte    getByteVolatile(Object o, long offset) {
+        return getByteMO(MO_VOLATILE, o, offset);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #putByteMO(byte, Object, long, byte)}  */
+    @ForceInline
+    public void    putByteVolatile(Object o, long offset, byte x) {
+        putByteMO(MO_VOLATILE, o, offset, x);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #getShortMO(byte, Object, long)}  */
+    @ForceInline
+    public short   getShortVolatile(Object o, long offset) {
+        return getShortMO(MO_VOLATILE, o, offset);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #putShortMO(byte, Object, long, short)}  */
+    @ForceInline
+    public void    putShortVolatile(Object o, long offset, short x) {
+        putShortMO(MO_VOLATILE, o, offset, x);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #getCharMO(byte, Object, long)}  */
+    @ForceInline
+    public char    getCharVolatile(Object o, long offset) {
+        return getCharMO(MO_VOLATILE, o, offset);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #putCharMO(byte, Object, long, char)}  */
+    @ForceInline
+    public void    putCharVolatile(Object o, long offset, char x) {
+        putCharMO(MO_VOLATILE, o, offset, x);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #getLongMO(byte, Object, long)}  */
+    @ForceInline
+    public long    getLongVolatile(Object o, long offset) {
+        return getLongMO(MO_VOLATILE, o, offset);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #putLongMO(byte, Object, long, long)}  */
+    @ForceInline
+    public void    putLongVolatile(Object o, long offset, long x) {
+        putLongMO(MO_VOLATILE, o, offset, x);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #getFloatMO(byte, Object, long)}  */
+    @ForceInline
+    public float   getFloatVolatile(Object o, long offset) {
+        return getFloatMO(MO_VOLATILE, o, offset);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #putFloatMO(byte, Object, long, float)}  */
+    @ForceInline
+    public void    putFloatVolatile(Object o, long offset, float x) {
+        putFloatMO(MO_VOLATILE, o, offset, x);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #getDoubleMO(byte, Object, long)}  */
+    @ForceInline
+    public double  getDoubleVolatile(Object o, long offset) {
+        return getDoubleMO(MO_VOLATILE, o, offset);
+    }
+
+    /** Specialization to MO_VOLATILE of {@link #putDoubleMO(byte, Object, long, double)}  */
+    @ForceInline
+    public void    putDoubleVolatile(Object o, long offset, double x) {
+        putDoubleMO(MO_VOLATILE, o, offset, x);
     }
 
     /*
