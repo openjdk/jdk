@@ -27,7 +27,7 @@
  * @summary Test for the check of a valid type (long) for the input variable of overflow protection
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.loopopts.TestValidTypeInOverflowProtection::test
  *                   ${test.main.class}
- * @run driver ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.loopopts;
