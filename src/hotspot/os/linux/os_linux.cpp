@@ -4954,6 +4954,12 @@ int os::open(const char *path, int oflag, int mode) {
 // clock CPUCLOCK_SCHED (0b010) which reports the thread's consumed system+user
 // time (as mandated by the POSIX standard POSIX.1-2024/IEEE Std 1003.1-2024
 // §3.90).
+
+// Clockid for current thread's user CPU time only.
+// Bit encoding: [31:3]=~PID, [2]=PERTHREAD, [1:0]=TYPE (VIRT=1).
+// PID=0 tells the kernel to use the calling task
+constexpr clockid_t CLOCK_CURRENT_THREAD_USERTIME = static_cast<clockid_t>(~0u << 3 | 4 | 1);
+
 static bool get_thread_clockid(Thread* thread, clockid_t* clockid, bool total) {
   constexpr clockid_t CLOCK_TYPE_MASK = 3;
   constexpr clockid_t CPUCLOCK_VIRT = 1;
@@ -5003,7 +5009,7 @@ jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
   if (user_sys_cpu_time) {
     return os::Linux::thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
   } else {
-    return user_thread_cpu_time(Thread::current());
+    return os::Linux::thread_cpu_time(CLOCK_CURRENT_THREAD_USERTIME);
   }
 }
 
