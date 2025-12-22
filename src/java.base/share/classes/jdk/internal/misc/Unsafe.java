@@ -2214,7 +2214,8 @@ public final class Unsafe {
                                                  Object o, long offset,
                                                  short expected,
                                                  short x) {
-        return compareAndExchangeShortMO(memoryOrder, o, offset, expected, x);
+        return (short) compareAndExchangePrimitiveBitsMO(memoryOrder, BT_SHORT,
+                                                         o, offset, expected, x);
     }
 
     @ForceInline
@@ -2467,11 +2468,11 @@ public final class Unsafe {
 
     /** Special-access version. */
     @ForceInline
-    public boolean compareAndSetLongMO(byte memoryAccess,
+    public boolean compareAndSetLongMO(byte memoryOrder,
                                              Object o, long offset,
                                              long expected,
                                              long x) {
-        return compareAndSetPrimitiveBitsMONative(memoryAccess, BT_LONG, o, offset, expected, x);
+        return compareAndSetPrimitiveBitsMONative(memoryOrder, BT_LONG, o, offset, expected, x);
     }
 
     /** Regular volatile version. */
@@ -2485,11 +2486,11 @@ public final class Unsafe {
 
     /** Special-access version. */
     @ForceInline
-    public long compareAndExchangeLongMO(byte memoryAccess,
+    public long compareAndExchangeLongMO(byte memoryOrder,
                                                Object o, long offset,
                                                long expected,
                                                long x) {
-        return compareAndExchangePrimitiveBitsMONative(memoryAccess, BT_LONG,
+        return compareAndExchangePrimitiveBitsMONative(memoryOrder, BT_LONG,
                                                        o, offset, expected, x);
     }
 
