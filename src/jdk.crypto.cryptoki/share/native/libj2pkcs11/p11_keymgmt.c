@@ -956,6 +956,10 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
         // empty
         break;
     }
+    /* Do not continue if any copy-back operation raised an exception */
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
         jKeyHandle =0L;
     }
