@@ -31,6 +31,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.CompilerControl;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.lang.invoke.*;
@@ -43,40 +44,52 @@ import java.util.Random;
 @Fork(value = 1, jvmArgs = {"-XX:LoopUnrollLimit=1"})
 public class ConstantMultiplierOptimization {
 
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static int mul_by_25_I(int a) {
        return a * 25;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static int mul_by_27_I(int a) {
        return a * 27;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static int mul_by_37_I(int a) {
        return a * 37;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static int mul_by_19_I(int a) {
        return a * 19;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static int mul_by_13_I(int a) {
        return a * 13;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static int mul_by_11_I(int a) {
        return a * 11;
     }
 
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static long mul_by_25_L(long a) {
        return a * 25;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static long mul_by_27_L(long a) {
        return a * 27;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static long mul_by_37_L(long a) {
        return a * 37;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static long mul_by_19_L(long a) {
        return a * 19;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static long mul_by_13_L(long a) {
        return a * 13;
     }
+    @CompilerControl(CompilerControl.Mode.INLINE)
     public static long mul_by_11_L(long a) {
        return a * 11;
     }

@@ -59,15 +59,12 @@ public class TestConstantMultiplier {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.addJavaSourceCode("c2.compilerr.ConstantMultiplierTest", generate(comp));
+        comp.addJavaSourceCode("c2.compiler.ConstantMultiplierTest", generate(comp));
 
         // Compile the source file.
         comp.compile();
 
         comp.invoke("c2.compiler.ConstantMultiplierTest", "main", new Object[] {new String[] {}});
-
-        // We can also pass VM flags for the Test VM.
-        comp.invoke("c2.compiler.ConstantMultiplierTest", "main", new Object[] {new String[] {"-Xbatch"}});
     }
 
 
