@@ -53,6 +53,8 @@ public class TestLoadFolding {
     public static void main(String[] args) {
         var framework = new TestFramework();
         framework.setDefaultWarmup(1);
+        framework.addScenarios(new Scenario(0, "-XX:+UnlockDiagnosticVMOptions", "-XX:-DoLocalEscapeAnalysis"),
+                new Scenario(1, "-XX:+UnlockDiagnosticVMOptions", "-XX:+DoLocalEscapeAnalysis"));
         framework.start();
     }
 
@@ -60,7 +62,7 @@ public class TestLoadFolding {
     static void escape(Object o) {}
 
     @Test
-    @IR(failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
     public Point test11() {
         // p only escapes at return
         Point p = new Point();
@@ -70,7 +72,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
     public Point test12(boolean b) {
         // p escapes in another branch
         Point p = new Point();
@@ -84,7 +86,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
     public Point test13(boolean b) {
         // A Phi of p1 and Point.DEFAULT, but a store to Phi is after all the loads from p1
         Point p1 = new Point();
@@ -95,7 +97,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
     public int test14() {
         // Even if p escapes before the loads, if it is legal to execute the loads before the
         // store, then we can fold the loads
@@ -106,7 +108,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(counts = {IRNode.ALLOC, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.ALLOC, "1"})
     public Point test15(int begin, int end) {
         // Fold the load that is a part of a cycle
         Point p = new Point();
@@ -119,7 +121,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(counts = {IRNode.ALLOC, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.ALLOC, "1"})
     public Point test16(int begin, int end, boolean b) {
         // A cycle and a Phi, this time the store is at a different field
         Point p1 = new Point();
@@ -142,7 +144,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC_ARRAY, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.LOAD_I, "1", IRNode.ALLOC_ARRAY, "1"})
     public int test17(int idx) {
         // Array
         int[] a = new int[2];
@@ -156,7 +158,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC_ARRAY, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC_ARRAY, "1"})
     public int test18(int idx) {
         // Array, even if we will give up if we encounter a[idx & 1] = 3, we meet a[0] = 4 first,
         // so the load int res = a[0] can still be folded
@@ -179,7 +181,9 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(failOn = {IRNode.DYNAMIC_CALL_OF_METHOD, "get", IRNode.LOAD_OF_FIELD, "f", IRNode.CLASS_CHECK_TRAP}, counts = {IRNode.ALLOC, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"},
+        failOn = {IRNode.DYNAMIC_CALL_OF_METHOD, "get", IRNode.LOAD_OF_FIELD, "f", IRNode.CLASS_CHECK_TRAP},
+        counts = {IRNode.ALLOC, "1"})
     public String test19() {
         // Folding of the load o.f allows o.f.get to get devirtualized
         SupplierHolder o = new SupplierHolder();
