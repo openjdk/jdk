@@ -1700,10 +1700,16 @@ static void emit_cmpfp_fixup(MacroAssembler* masm) {
 
 static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
   Label done;
-  __ movl(dst, -1);
-  __ jcc(Assembler::parity, done);
-  __ jcc(Assembler::below, done);
-  __ setcc(Assembler::notEqual, dst);
+  if (VM_Version::supports_avx10_2()) {
+    __ setcc(Assembler::above, dst);
+    __ jcc(Assembler::aboveEqual, done);
+    __ movl(dst, -1);
+  } else {
+    __ movl(dst, -1);
+    __ jcc(Assembler::parity, done);
+    __ jcc(Assembler::below, done);
+    __ setcc(Assembler::notEqual, dst);
+  }
   __ bind(done);
 }
 
@@ -14402,7 +14408,6 @@ instruct and_cmpLTMask(rRegI p, rRegI q, rRegI y, rFlagsReg cr)
 // Really expensive, avoid
 instruct cmpF_cc_reg(rFlagsRegU cr, regF src1, regF src2)
 %{
-  predicate(!VM_Version::supports_avx10_2());
   match(Set cr (CmpF src1 src2));
 
   ins_cost(500);
@@ -14488,7 +14493,6 @@ instruct cmpF_cc_immCFE(rFlagsRegUCFE cr, regF src, immF con) %{
 // Really expensive, avoid
 instruct cmpD_cc_reg(rFlagsRegU cr, regD src1, regD src2)
 %{
-  predicate(!VM_Version::supports_avx10_2());
   match(Set cr (CmpD src1 src2));
 
   ins_cost(500);
@@ -14576,15 +14580,36 @@ instruct cmpF_reg(rRegI dst, regF src1, regF src2, rFlagsReg cr)
   match(Set dst (CmpF3 src1 src2));
   effect(KILL cr);
 
-  ins_cost(175);
+  ins_cost(275);
   format %{ "ucomiss $src1, $src2\n\t"
-            "seta    $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n"
+            "movl    $dst, #-1\n\t"
+            "jp,s    done\n\t"
+            "jb,s    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n"
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
+    emit_cmpfp3(masm, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Compare into -1,0,1
+instruct cmpF_regE(rRegI dst, regF src1, regF src2, rFlagsReg cr)
+%{
+  match(Set dst (CmpF3 src1 src2));
+  effect(KILL cr);
+
+  ins_cost(250);
+  format %{ "ucomxss $src1, $src2\n\t"
+            "seta    $dst\n\t"
+            "jae,s   done\n\t"
+            "movl    $dst, #-1\n\t"
+            "movzbl  $dst, $dst\n"
+    "done:" %}
+  ins_encode %{
+    __ ucomxss($src1$$XMMRegister, $src2$$XMMRegister);
     emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -14596,15 +14621,36 @@ instruct cmpF_mem(rRegI dst, regF src1, memory src2, rFlagsReg cr)
   match(Set dst (CmpF3 src1 (LoadF src2)));
   effect(KILL cr);
 
-  ins_cost(175);
+  ins_cost(275);
   format %{ "ucomiss $src1, $src2\n\t"
-            "seta    $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n"
+            "movl    $dst, #-1\n\t"
+            "jp,s    done\n\t"
+            "jb,s    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n"
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$Address);
+    emit_cmpfp3(masm, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Compare into -1,0,1
+instruct cmpF_memE(rRegI dst, regF src1, memory src2, rFlagsReg cr)
+%{
+  match(Set dst (CmpF3 src1 (LoadF src2)));
+  effect(KILL cr);
+
+  ins_cost(250);
+  format %{ "ucomxss $src1, $src2\n\t"
+            "seta    $dst\n\t"
+            "jae,s   done\n\t"
+            "movl    $dst, #-1\n\t"
+            "movzbl  $dst, $dst\n"
+    "done:" %}
+  ins_encode %{
+    __ ucomxss($src1$$XMMRegister, $src2$$Address);
     emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -14615,15 +14661,35 @@ instruct cmpF_imm(rRegI dst, regF src, immF con, rFlagsReg cr) %{
   match(Set dst (CmpF3 src con));
   effect(KILL cr);
 
-  ins_cost(175);
+  ins_cost(275);
   format %{ "ucomiss $src, [$constantaddress]\t# load from constant table: float=$con\n\t"
-            "seta    $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n"
+            "movl    $dst, #-1\n\t"
+            "jp,s    done\n\t"
+            "jb,s    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n"
     "done:" %}
   ins_encode %{
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
+    emit_cmpfp3(masm, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Compare into -1,0,1
+instruct cmpF_immE(rRegI dst, regF src, immF con, rFlagsReg cr) %{
+  match(Set dst (CmpF3 src con));
+  effect(KILL cr);
+
+  ins_cost(250);
+  format %{ "ucomxss $src, [$constantaddress]\t# load from constant table: float=$con\n\t"
+            "seta    $dst\n\t"
+            "jae,s   done\n\t"
+            "movl    $dst, #-1\n\t"
+            "movzbl  $dst, $dst\n"
+    "done:" %}
+  ins_encode %{
+    __ ucomxss($src$$XMMRegister, $constantaddress($con));
     emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -14635,15 +14701,36 @@ instruct cmpD_reg(rRegI dst, regD src1, regD src2, rFlagsReg cr)
   match(Set dst (CmpD3 src1 src2));
   effect(KILL cr);
 
-  ins_cost(175);
+  ins_cost(275);
   format %{ "ucomisd $src1, $src2\n\t"
-            "seta    $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n"
+            "movl    $dst, #-1\n\t"
+            "jp,s    done\n\t"
+            "jb,s    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n"
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
+    emit_cmpfp3(masm, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Compare into -1,0,1
+instruct cmpD_regE(rRegI dst, regD src1, regD src2, rFlagsReg cr)
+%{
+  match(Set dst (CmpD3 src1 src2));
+  effect(KILL cr);
+
+  ins_cost(250);
+  format %{ "ucomxsd $src1, $src2\n\t"
+            "seta    $dst\n\t"
+            "jae,s   done\n\t"
+            "movl    $dst, #-1\n\t"
+            "movzbl  $dst, $dst\n"
+    "done:" %}
+  ins_encode %{
+    __ ucomxsd($src1$$XMMRegister, $src2$$XMMRegister);
     emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -14655,15 +14742,36 @@ instruct cmpD_mem(rRegI dst, regD src1, memory src2, rFlagsReg cr)
   match(Set dst (CmpD3 src1 (LoadD src2)));
   effect(KILL cr);
 
-  ins_cost(175);
+  ins_cost(275);
   format %{ "ucomisd $src1, $src2\n\t"
-            "seta    $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n"
+            "movl    $dst, #-1\n\t"
+            "jp,s    done\n\t"
+            "jb,s    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n"
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$Address);
+    emit_cmpfp3(masm, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Compare into -1,0,1
+instruct cmpD_memE(rRegI dst, regD src1, memory src2, rFlagsReg cr)
+%{
+  match(Set dst (CmpD3 src1 (LoadD src2)));
+  effect(KILL cr);
+
+  ins_cost(250);
+  format %{ "ucomxsd $src1, $src2\n\t"
+            "seta    $dst\n\t"
+            "jae,s   done\n\t"
+            "movl    $dst, #-1\n\t"
+            "movzbl  $dst, $dst\n"
+    "done:" %}
+  ins_encode %{
+    __ ucomxsd($src1$$XMMRegister, $src2$$Address);
     emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -14674,15 +14782,35 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
   match(Set dst (CmpD3 src con));
   effect(KILL cr);
 
-  ins_cost(175);
+  ins_cost(275);
   format %{ "ucomisd $src, [$constantaddress]\t# load from constant table: double=$con\n\t"
-            "seta    $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n"
+            "movl    $dst, #-1\n\t"
+            "jp,s    done\n\t"
+            "jb,s    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n"
     "done:" %}
   ins_encode %{
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
+    emit_cmpfp3(masm, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Compare into -1,0,1
+instruct cmpD_immE(rRegI dst, regD src, immD con, rFlagsReg cr) %{
+  match(Set dst (CmpD3 src con));
+  effect(KILL cr);
+
+  ins_cost(250);
+  format %{ "ucomxsd $src, [$constantaddress]\t# load from constant table: float=$con\n\t"
+            "seta    $dst\n\t"
+            "jae,s   done\n\t"
+            "movl    $dst, #-1\n\t"
+            "movzbl  $dst, $dst\n"
+    "done:" %}
+  ins_encode %{
+    __ ucomxsd($src$$XMMRegister, $constantaddress($con));
     emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
