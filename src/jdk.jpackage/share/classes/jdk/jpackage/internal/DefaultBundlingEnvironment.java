@@ -207,7 +207,9 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
     }
 
     private Supplier<Result<Consumer<Options>>> getBundlerSupplier(BundlingOperationDescriptor op) {
-        return Optional.ofNullable(bundlers.get(op)).orElseThrow(NoSuchElementException::new);
+        return Optional.ofNullable(bundlers.get(op)).orElseThrow(() -> {
+            throw new NoSuchElementException(String.format("Unsupported bundling operation: %s", op));
+        });
     }
 
     private String bundleTypeDescription(PackageType type, OperatingSystem os) {
