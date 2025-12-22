@@ -92,6 +92,12 @@ public class CommandOutputControlTest {
 
     @ParameterizedTest
     @MethodSource
+    public void testDumpStreams(OutputTestSpec spec) {
+        spec.test();
+    }
+
+    @ParameterizedTest
+    @MethodSource
     public void test_description(CommandOutputControlSpec spec) {
         // This test is mostly for coverage.
         var desc = spec.create().description();
@@ -653,6 +659,69 @@ public class CommandOutputControlTest {
         return testCases;
     }
 
+    private static List<OutputTestSpec> testDumpStreams() {
+        List<OutputTestSpec> testCases = new ArrayList<>();
+        final var commandSpec = new CommandSpec(OutputData.MANY, OutputData.MANY);
+        final var outputControl = new ArrayList<OutputControl>();
+        outputControl.add(OutputControl.DUMP);
+        for (var discardStdout : BOOLEAN_VALUES) {
+            if (discardStdout) {
+                outputControl.add(OutputControl.DISCARD_STDOUT);
+            }
+            for (var discardStderr : BOOLEAN_VALUES) {
+                if (discardStderr) {
+                    outputControl.add(OutputControl.DISCARD_STDERR);
+                }
+                for (var redirectStderr : BOOLEAN_VALUES) {
+                    if (redirectStderr) {
+                        outputControl.add(OutputControl.REDIRECT_STDERR);
+                    }
+                    for (var binaryOutput : BOOLEAN_VALUES) {
+                        if (binaryOutput) {
+                            outputControl.add(OutputControl.BINARY_OUTPUT);
+                        }
+                        for (var dumpStdout : BOOLEAN_VALUES) {
+                            if (dumpStdout) {
+                                outputControl.add(OutputControl.DUMP_STDOUT_IN_SYSTEM_OUT);
+                            }
+                            for (var dumpStderr : BOOLEAN_VALUES) {
+                                if (!dumpStderr && !dumpStdout) {
+                                    continue;
+                                }
+                                if (dumpStderr) {
+                                    outputControl.add(OutputControl.DUMP_STDERR_IN_SYSTEM_ERR);
+                                }
+                                testCases.add(new OutputTestSpec(
+                                        false,
+                                        new CommandOutputControlSpec(Set.copyOf(outputControl)),
+                                        commandSpec));
+                                if (dumpStderr) {
+                                    outputControl.removeLast();
+                                }
+                            }
+                            if (dumpStdout) {
+                                outputControl.removeLast();
+                            }
+                        }
+                        if (binaryOutput) {
+                            outputControl.removeLast();
+                        }
+                    }
+                    if (redirectStderr) {
+                        outputControl.removeLast();
+                    }
+                }
+                if (discardStderr) {
+                    outputControl.removeLast();
+                }
+            }
+            if (discardStdout) {
+                outputControl.removeLast();
+            }
+        }
+        return testCases;
+    }
+
     private enum ExecutableType {
         TOOL_PROVIDER,
         PROCESS_BUILDER,
@@ -840,6 +909,16 @@ public class CommandOutputControlTest {
         REDIRECT_STDERR(CommandOutputControl::redirectStderr, CommandOutputControl::isRedirectStderr),
         STORE_STREAMS_IN_FILES(CommandOutputControl::storeOutputInFiles, CommandOutputControl::isStoreOutputInFiles),
         BINARY_OUTPUT(CommandOutputControl::binaryOutput, CommandOutputControl::isBinaryOutput),
+        DUMP_STDOUT_IN_SYSTEM_OUT(coc -> {
+            coc.dumpStdout(new PrintStreamWrapper(System.out));
+        },  coc -> {
+            return coc.dumpStdout() instanceof PrintStreamWrapper;
+        }),
+        DUMP_STDERR_IN_SYSTEM_ERR(coc -> {
+            coc.dumpStderr(new PrintStreamWrapper(System.err));
+        },  coc -> {
+            return coc.dumpStderr() instanceof PrintStreamWrapper;
+        }),
         ;
 
         OutputControl(Consumer<CommandOutputControl> setter, Function<CommandOutputControl, Boolean> getter) {
@@ -917,6 +996,12 @@ public class CommandOutputControlTest {
                 }
             }
             return variants.stream().distinct().toList();
+        }
+
+        private static final class PrintStreamWrapper extends PrintStream {
+            PrintStreamWrapper(PrintStream out) {
+                super(out, true);
+            }
         }
 
         private final Consumer<CommandOutputControl> setter;
@@ -1036,52 +1121,71 @@ public class CommandOutputControlTest {
             return redirectStderr() && discardStdout() && !discardStderr();
         }
 
-        private void verifyDump(DumpCapture dumpCapture, Command command) {
-            if (replaceStdoutWithStderr()) {
-                // STDERR replaces STDOUT
-                if (dumpOutput()) {
-                    assertEquals(command.stderr(), dumpCapture.outLines());
-                } else {
-                    assertEquals(List.of(), dumpCapture.outLines());
-                }
-                assertEquals(List.of(), dumpCapture.errLines());
-                return;
+        private boolean stdoutInherited() {
+            if (toolProvider || saveOutput() || replaceStdoutWithStderr()) {
+                return false;
             }
+            return dumpOutput() && !discardStdout() && !contains(OutputControl.DUMP_STDOUT_IN_SYSTEM_OUT);
+        }
 
-            if (!dumpOutput() || (!toolProvider && !saveOutput())) {
-                // Dump of output streams is disabled, or it is enabled
-                // for a subprocess without saving the content of the output streams.
-                // In the later case the test can't capture dumped content as
-                // it goes into the STDOUT/STERR streams associated with the Java process.
+        private boolean stderrInherited() {
+            if (toolProvider || saveOutput() || redirectStderr()) {
+                return false;
+            }
+            return dumpOutput() && !discardStderr() && !contains(OutputControl.DUMP_STDERR_IN_SYSTEM_ERR);
+        }
+
+        private void verifyDump(DumpCapture dumpCapture, Command command) {
+            if (!dumpOutput()) {
                 assertEquals(List.of(), dumpCapture.outLines());
                 assertEquals(List.of(), dumpCapture.errLines());
                 return;
             }
 
-            if (redirectStderr() && !discardStdout() && discardStderr()) {
-                assertEquals(command.stdout(), dumpCapture.outLines());
+            if (replaceStdoutWithStderr()) {
+                // STDERR replaces STDOUT
+                assertEquals(command.stderr(), dumpCapture.outLines());
+                assertEquals(List.of(), dumpCapture.errLines());
+                return;
+            }
+
+            verifyDumpedStdout(dumpCapture, command);
+            verifyDumpedStderr(dumpCapture, command);
+        }
+
+        private void verifyDumpedStdout(DumpCapture dumpCapture, Command command) {
+            if (stdoutInherited()) {
+                // A subprocess wrote its STDOUT into a file descriptor associated
+                // with the Java process's STDOUT, not into System.out. Can't capture it.
+                assertEquals(List.of(), dumpCapture.outLines());
+                return;
             }
 
             if (redirectStderr() && !discardStderr()) {
-                assertEquals(List.of(), dumpCapture.errLines());
-
                 // Interleaved STDOUT and STDERR
                 if (!isInterleave(dumpCapture.outLines(), command.stdout(), command.stderr())) {
                     fail(String.format("Unexpected combined output=%s; stdout=%s; stderr=%s",
                             dumpCapture.outLines(), command.stdout(), command.stderr()));
                 }
+            } else if (discardStdout()) {
+                assertEquals(List.of(), dumpCapture.outLines());
             } else {
-                if (discardStdout()) {
-                    assertEquals(List.of(), dumpCapture.outLines());
-                } else {
-                    assertEquals(command.stdout(), dumpCapture.outLines());
-                }
+                assertEquals(command.stdout(), dumpCapture.outLines());
+            }
+        }
 
-                if (discardStderr()) {
-                    assertEquals(List.of(), dumpCapture.errLines());
-                } else {
-                    assertEquals(command.stderr(), dumpCapture.errLines());
-                }
+        private void verifyDumpedStderr(DumpCapture dumpCapture, Command command) {
+            if (stderrInherited()) {
+                // A subprocess wrote its STDERR into a file descriptor associated
+                // with the Java process's STDERR, not into System.err. Can't capture it.
+                assertEquals(List.of(), dumpCapture.errLines());
+                return;
+            }
+
+            if (redirectStderr() || discardStderr()) {
+                assertEquals(List.of(), dumpCapture.errLines());
+            } else {
+                assertEquals(command.stderr(), dumpCapture.errLines());
             }
         }
 

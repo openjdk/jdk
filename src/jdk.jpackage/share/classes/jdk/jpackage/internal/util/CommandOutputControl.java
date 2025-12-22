@@ -686,6 +686,13 @@ public final class CommandOutputControl {
     /**
      * Specifies the stream where stdout streams from commands subsequently executed
      * by this object will be dumped.
+     * <p>
+     * If the {@code null} is specified and this object configuration is equivalent
+     * to {@code dumpOutput(true).saveOutput(false).discardStdout(false)} the stdout
+     * streams from commands subsequently executed by this object will be written
+     * into the file descriptor associated with the {@code Systsem.out} stream. If
+     * you want them to be written into the {@code Systsem.out} object, pass the
+     * {@code Systsem.out} reference into this function.
      *
      * @param v the stream where stdout streams from commands subsequently executed
      *          by this object will be dumped; {@code null} permitted
@@ -711,6 +718,14 @@ public final class CommandOutputControl {
     /**
      * Specifies the stream where stderr streams from commands subsequently executed
      * by this object will be dumped.
+     * <p>
+     * If the {@code null} is specified and this object configuration is equivalent
+     * to
+     * {@code dumpOutput(true).saveOutput(false).redirectStderr(false).discardStderr(false)}
+     * the stderr streams from commands subsequently executed by this object will be
+     * written into the file descriptor associated with the {@code Systsem.err}
+     * stream. If you want them to be written into the {@code Systsem.err} object,
+     * pass the {@code Systsem.err} reference into this function.
      *
      * @param v the stream where stderr streams from commands subsequently executed
      *          by this object will be dumped; {@code null} permitted
@@ -872,7 +887,7 @@ public final class CommandOutputControl {
             return new UnexpectedResultException(this);
         }
 
-        public UnexpectedResultException toUnexpectedResultException(String message) {
+        public UnexpectedResultException unexpected(String message) {
             return new UnexpectedResultException(this, message);
         }
 
@@ -1223,6 +1238,14 @@ public final class CommandOutputControl {
 
         stdoutRedirect = mapRedirect(stdoutRedirect);
         stderrRedirect = mapRedirect(stderrRedirect);
+
+        if (dumpStdout != null && stdoutRedirect.equals(ProcessBuilder.Redirect.INHERIT)) {
+            stdoutRedirect = ProcessBuilder.Redirect.PIPE;
+        }
+
+        if (dumpStderr != null && stderrRedirect.equals(ProcessBuilder.Redirect.INHERIT)) {
+            stderrRedirect = ProcessBuilder.Redirect.PIPE;
+        }
 
         pb.redirectOutput(stdoutRedirect);
         pb.redirectError(stderrRedirect);
