@@ -799,6 +799,9 @@ public:
   static const TypeInt* make(jint lo, jint hi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jint, juint>& t, int widen);
   static const TypeInt* make(const TypeIntPrototype<jint, juint>& t, int widen) { return make_or_top(t, widen)->is_int(); }
+  static const TypeInt* make(const TypeIntMirror<jint, juint>& t, int widen) {
+    return (new TypeInt(TypeIntPrototype<jint, juint>{{t._lo, t._hi}, {t._ulo, t._uhi}, t._bits}, widen, false))->hashcons()->is_int();
+  }
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
@@ -881,6 +884,9 @@ public:
   static const TypeLong* make(jlong lo, jlong hi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen);
   static const TypeLong* make(const TypeIntPrototype<jlong, julong>& t, int widen) { return make_or_top(t, widen)->is_long(); }
+  static const TypeLong* make(const TypeIntMirror<jlong, julong>& t, int widen) {
+    return (new TypeLong(TypeIntPrototype<jlong, julong>{{t._lo, t._hi}, {t._ulo, t._uhi}, t._bits}, widen, false))->hashcons()->is_long();
+  }
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
