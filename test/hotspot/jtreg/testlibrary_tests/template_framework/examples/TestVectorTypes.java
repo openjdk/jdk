@@ -97,7 +97,7 @@ public class TestVectorTypes {
                     #type zeros2 = #{type}.broadcast(#SPECIES, 0);
                     #type vector = #{type}.broadcast(#SPECIES, scalar);
                     Verify.checkEQ(zeros, zeros2);
-                    Verify.checkEQ(vector, vector.add(zeros));
+                    Verify.checkEQ(zeros.add(vector), vector.add(zeros));
                     Verify.checkEQ(vector.length(), #length);
                     Verify.checkEQ(vector.lane(#length-1), scalar);
 
