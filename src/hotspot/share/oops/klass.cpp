@@ -1093,14 +1093,9 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 // Note: this function is called with an address that may or may not be a Klass.
 // The point is not to assert it is but to check if it could be.
 bool Klass::is_valid(Klass* k) {
-  if (!is_aligned(k, sizeof(MetaWord))) return false;
-  if ((size_t)k < os::min_page_size()) return false;
-
-  if (!os::is_readable_range(k, k + 1)) return false;
-  if (!Metaspace::contains(k)) return false;
-
-  if (!Symbol::is_valid(k->name())) return false;
-  return ClassLoaderDataGraph::is_valid(k->class_loader_data());
+  return Metaspace::klass_is_live(k, false) &&
+         Symbol::is_valid(k->name()) &&
+         ClassLoaderDataGraph::is_valid(k->class_loader_data());
 }
 
 Method* Klass::method_at_vtable(int index)  {

@@ -523,6 +523,7 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
 
 InstanceKlass::InstanceKlass() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
+  NOT_PRODUCT(set_metadata_token(instance_klass_token);)
 }
 
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
@@ -548,6 +549,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   assert(nullptr == _methods, "underlying memory not zeroed?");
   assert(is_instance_klass(), "is layout incorrect?");
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
+  NOT_PRODUCT(set_metadata_token(instance_klass_token);)
 }
 
 void InstanceKlass::set_is_cloneable() {

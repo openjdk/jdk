@@ -462,9 +462,11 @@ static bool is_oop_safe(oop obj) {
     return false;
   }
 
-  if (!Metaspace::contains(klass)) {
+  Metaspace::FailureHint hint = Metaspace::FailureHint::unknown;
+  if (!Metaspace::klass_is_live(klass, true, &hint)) {
     log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
-                          "is not in metaspace", p2i(klass), p2i(obj));
+                          "is an invalid klass pointer, not in metaspace, or refers to a dead klass (Hint: %u)",
+                          p2i(klass), p2i(obj), (unsigned)hint);
     return false;
   }
 
