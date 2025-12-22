@@ -1598,7 +1598,7 @@ static Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
         Node* x    = add2->in(1);
         Node* con2 = add2->in(2);
         if (is_sub_con(con2)) {
-          // The graph could be in a dirty state. So, we need to check for the type of x
+          // The graph could be dying (i.e. x is top) in which case type(x) is not a long.
           const TypeLong* x_long = phase->type(x)->isa_long();
           // Collapsed graph not equivalent if potential over/underflow -> bailing out (*)
           if (x_long == nullptr || can_overflow(x_long, con1->get_long() + con2->get_long())) {
