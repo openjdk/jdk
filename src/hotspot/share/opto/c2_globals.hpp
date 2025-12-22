@@ -583,6 +583,9 @@
   develop(bool, VerifyConnectionGraph , true,                               \
           "Verify Connection Graph construction in Escape Analysis")        \
                                                                             \
+  product(bool, DoLocalEscapeAnalysis, true, DIAGNOSTIC                     \
+          "Perform local escape analysis during IGVN")                      \
+                                                                            \
   product(bool, OptimizeStringConcat, true,                                 \
           "Optimize the construction of Strings by StringBuilder")          \
                                                                             \

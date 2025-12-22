@@ -33,6 +33,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
@@ -1361,7 +1362,7 @@ MemNode::LocalEA::EscapeStatus MemNode::LocalEA::check_escape_status(PhaseValues
   if (phase->type(ctl) == Type::TOP) {
     return DEAD_PATH;
   }
-  if (!phase->is_IterGVN() || alloc == nullptr) {
+  if (!DoLocalEscapeAnalysis || !phase->is_IterGVN() || alloc == nullptr) {
     return ESCAPED;
   }
 
