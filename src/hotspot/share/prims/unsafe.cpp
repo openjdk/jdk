@@ -195,7 +195,15 @@ public:
 /**
  * Helper macro to implement variable-size operations in polymorphic
  * methods that manipulate primitive values for Unsafe.
- * Copies the 
+ * Executes the body (whatever that may be) with var_t defined as
+ * an unsigned integral type of size 1, 2, 4, or 8, and the same
+ * bit-size as the basic type bt.
+ *
+ * The processing for T_BYTE and T_BOOLEAN are the same, as are
+ * T_LONG and T_DOUBLE, T_INT and T_FLOAT, and TSHORT and T_CHAR.
+ * It is up to the caller to ensure that no other T-values appear
+ * here, and that special handling of types (e.g., boolean fixups)
+ * is performed elsewhere.
  */
 #define TYPE_SIZE_SWITCH(bt, var_t, body) {                             \
     switch ((bt) & UNSAFE_PRIMITIVE_SIZE_MASK) {                        \

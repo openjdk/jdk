@@ -152,7 +152,7 @@ public final class Unsafe {
     //  - MO_SEQ_CST (from C++) could be treated for Java as an alias for MO_VOLATILE
     //  - MO_OPAQUE is an alias for MO_RELAXED, but guarantees atomicity (**)
     //  - MO_UNORDERED is a looser order than MO_RELAXED, not provided here
-    //  - C++ acq_rel, as the union of acquire and release, is rare in HotSpot
+    //  - C++ acq_rel, as the union of acquire and release, is pretty much MO_VOLATILE
     //  - C++ consume is not used in HotSpot or the JDK
 
     // (*) When a Java constructor writes to a final field, there is a memory
@@ -185,9 +185,9 @@ public final class Unsafe {
     public static final byte MO_WEAK_CAS_RELEASE  = MO_WEAK_CAS|MO_RELEASE;
 
     // Note that acquire and release modes are for loads and stores, respectively.
-    // If a load is requested with MO_RELEASE, it may decay to MO_PLAIN.
-    // If a store is requested with MO_ACQUIRE, it may decay to MO_PLAIN.
-    // However, debug versions of the VM may complain.
+    // If a load is requested with MO_RELEASE, it may error, or rise to MO_VOLATILE
+    // If a store is requested with MO_ACQUIRE, it may error, or rise to MO_VOLATILE
+    // Debug versions of the VM may throw assertion errors more vigorously.
 
     /**
      * Loads from a variable of any primitive type, using any of a
