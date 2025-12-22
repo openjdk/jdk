@@ -175,7 +175,7 @@ public class TestReferenceCAS {
             String newval = foo;
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetReference(base, offset, "bar", newval);
+                success = UNSAFE.compareAndSetReferenceMO(Unsafe.MO_WEAK_CAS_VOLATILE, base, offset, "bar", newval);
                 assertEquals(newval, "foo", "must not destroy newval");
             }
             assertEquals(success, true, "weakCompareAndSet Object");

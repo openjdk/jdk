@@ -64,6 +64,10 @@ public class JdkInternalMiscUnsafeAccessTestInt {
 
     static int ARRAY_SHIFT;
 
+    // copies of Unsafe.MO_RELEASE and other MO constants
+    static byte UNSAFE_MO_RELEASE, UNSAFE_MO_ACQUIRE, UNSAFE_MO_OPAQUE, UNSAFE_MO_VOLATILE;
+    static byte UNSAFE_MO_WEAK_CAS_ACQUIRE, UNSAFE_MO_WEAK_CAS_PLAIN, UNSAFE_MO_WEAK_CAS_RELEASE, UNSAFE_MO_WEAK_CAS_VOLATILE;
+
     static {
         try {
             Field f = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
@@ -91,6 +95,18 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(int[].class);
         int ascale = UNSAFE.arrayIndexScale(int[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+
+        try {
+            for (Field umoField : JdkInternalMiscUnsafeAccessTestInt.class.getDeclaredFields()) {
+                String name = umoField.getName();
+                if (!name.startsWith("UNSAFE_MO_"))  continue;
+                Field moField = UNSAFE.getClass().getDeclaredField(name.substring("UNSAFE_".length()));
+                byte value = (Byte) moField.get(null);
+                umoField.set(null, value);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static void weakDelay() {
@@ -180,15 +196,15 @@ public class JdkInternalMiscUnsafeAccessTestInt {
 
         // Lazy
         {
-            UNSAFE.putIntRelease(base, offset, 0x01234567);
-            int x = UNSAFE.getIntAcquire(base, offset);
+            UNSAFE.putIntMO(UNSAFE_MO_RELEASE, base, offset, 0x01234567);
+            int x = UNSAFE.getIntMO(UNSAFE_MO_ACQUIRE, base, offset);
             assertEquals(x, 0x01234567, "putRelease int value");
         }
 
         // Opaque
         {
-            UNSAFE.putIntOpaque(base, offset, 0x89ABCDEF);
-            int x = UNSAFE.getIntOpaque(base, offset);
+            UNSAFE.putIntMO(UNSAFE_MO_OPAQUE, base, offset, 0x89ABCDEF);
+            int x = UNSAFE.getIntMO(UNSAFE_MO_OPAQUE, base, offset);
             assertEquals(x, 0x89ABCDEF, "putOpaque int value");
         }
 
@@ -244,28 +260,28 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
 
         {
-            int r = UNSAFE.compareAndExchangeIntAcquire(base, offset, 0x01234567, 0x89ABCDEF);
+            int r = UNSAFE.compareAndExchangeIntMO(UNSAFE_MO_ACQUIRE, base, offset, 0x01234567, 0x89ABCDEF);
             assertEquals(r, 0x01234567, "success compareAndExchangeAcquire int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 0x89ABCDEF, "success compareAndExchangeAcquire int value");
         }
 
         {
-            int r = UNSAFE.compareAndExchangeIntAcquire(base, offset, 0x01234567, 0xCAFEBABE);
+            int r = UNSAFE.compareAndExchangeIntMO(UNSAFE_MO_ACQUIRE, base, offset, 0x01234567, 0xCAFEBABE);
             assertEquals(r, 0x89ABCDEF, "failing compareAndExchangeAcquire int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 0x89ABCDEF, "failing compareAndExchangeAcquire int value");
         }
 
         {
-            int r = UNSAFE.compareAndExchangeIntRelease(base, offset, 0x89ABCDEF, 0x01234567);
+            int r = UNSAFE.compareAndExchangeIntMO(UNSAFE_MO_RELEASE, base, offset, 0x89ABCDEF, 0x01234567);
             assertEquals(r, 0x89ABCDEF, "success compareAndExchangeRelease int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 0x01234567, "success compareAndExchangeRelease int value");
         }
 
         {
-            int r = UNSAFE.compareAndExchangeIntRelease(base, offset, 0x89ABCDEF, 0xCAFEBABE);
+            int r = UNSAFE.compareAndExchangeIntMO(UNSAFE_MO_RELEASE, base, offset, 0x89ABCDEF, 0xCAFEBABE);
             assertEquals(r, 0x01234567, "failing compareAndExchangeRelease int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 0x01234567, "failing compareAndExchangeRelease int value");
@@ -274,7 +290,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetIntPlain(base, offset, 0x01234567, 0x89ABCDEF);
+                success = UNSAFE.compareAndSetIntMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, 0x01234567, 0x89ABCDEF);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain int");
@@ -283,7 +299,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetIntPlain(base, offset, 0x01234567, 0xCAFEBABE);
+            boolean success = UNSAFE.compareAndSetIntMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, 0x01234567, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSetPlain int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 0x89ABCDEF, "failing weakCompareAndSetPlain int value");
@@ -292,7 +308,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetIntAcquire(base, offset, 0x89ABCDEF, 0x01234567);
+                success = UNSAFE.compareAndSetIntMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, 0x89ABCDEF, 0x01234567);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire int");
@@ -301,7 +317,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetIntAcquire(base, offset, 0x89ABCDEF, 0xCAFEBABE);
+            boolean success = UNSAFE.compareAndSetIntMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, 0x89ABCDEF, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSetAcquire int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 0x01234567, "failing weakCompareAndSetAcquire int value");
@@ -310,7 +326,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetIntRelease(base, offset, 0x01234567, 0x89ABCDEF);
+                success = UNSAFE.compareAndSetIntMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, 0x01234567, 0x89ABCDEF);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease int");
@@ -319,7 +335,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetIntRelease(base, offset, 0x01234567, 0xCAFEBABE);
+            boolean success = UNSAFE.compareAndSetIntMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, 0x01234567, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSetRelease int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 0x89ABCDEF, "failing weakCompareAndSetRelease int value");
@@ -328,7 +344,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetInt(base, offset, 0x89ABCDEF, 0x01234567);
+                success = UNSAFE.compareAndSetIntMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, 0x89ABCDEF, 0x01234567);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet int");
@@ -337,7 +353,7 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetInt(base, offset, 0x89ABCDEF, 0xCAFEBABE);
+            boolean success = UNSAFE.compareAndSetIntMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, 0x89ABCDEF, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSet int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 0x01234567, "failing weakCompareAndSet int value");
