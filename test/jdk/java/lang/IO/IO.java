@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8305457 8342936 8351435 8344706 8361613
+ * @bug 8305457 8342936 8351435 8344706 8361613 8374217
  * @summary java.lang.IO tests
  * @library /test/lib
  * @run junit IO
@@ -149,7 +149,7 @@ public class IO {
                     }
                     """);
         }
-        var pb = ProcessTools.createTestJavaProcessBuilder(file.toString());
+        var pb = ProcessTools.createTestJavaProcessBuilder("-Xlog:aot=off", "-Xlog:cds=off", file.toString());
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         assertEquals(0, output.getExitValue());
         assertTrue(output.getStderr().isEmpty());
