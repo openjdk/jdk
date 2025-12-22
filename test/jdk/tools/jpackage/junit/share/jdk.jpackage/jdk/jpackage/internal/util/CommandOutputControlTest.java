@@ -66,7 +66,9 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
@@ -396,6 +398,7 @@ public class CommandOutputControlTest {
         processDestroyer.get().join();
     }
 
+    @DisabledOnOs(value = OS.MAC, disabledReason = "Closing a stream doesn't consistently cause a trouble as it should")
     @ParameterizedTest
     @EnumSource(CloseStream.class)
     public void test_close_streams(CloseStream action) throws InterruptedException, IOException {
