@@ -120,11 +120,19 @@ public class UnixLoginModule implements LoginModule {
      */
     public boolean login() throws LoginException {
 
-        long[] unixGroups = null;
-
         try {
+            // TODO: Shall we fail early for unsupported systems?
+            // 1. If it's Windows, we should fail immediately to avoid
+            //    cygwin-like functions being loaded, which are not supported
+            //    and could have a different `long`.
+            // 2. The FFM code has only been tested on macOS and Linux and
+            //    might fail on other *nix systems. Especially, the `passwd`
+            //    struct could be defined differently, although I've checked
+            //    several and an extra 100 chars at the end seems enough.
             ss = new UnixSystem();
-        } catch (UnsatisfiedLinkError ule) {
+        } catch (ExceptionInInitializerError | UnsatisfiedLinkError ule) {
+            // Errors could happen in either static blocks or the constructor,
+            // both have a cause.
             succeeded = false;
             var error = new FailedLoginException
                                 ("Failed in attempt to import " +
@@ -138,6 +146,7 @@ public class UnixLoginModule implements LoginModule {
         userPrincipal = new UnixPrincipal(ss.getUsername());
         UIDPrincipal = new UnixNumericUserPrincipal(ss.getUid());
         GIDPrincipal = new UnixNumericGroupPrincipal(ss.getGid(), true);
+        long[] unixGroups = null;
         if (ss.getGroups() != null && ss.getGroups().length > 0) {
             unixGroups = ss.getGroups();
             for (int i = 0; i < unixGroups.length; i++) {

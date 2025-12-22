@@ -25,13 +25,18 @@
 
 package com.sun.security.auth.module;
 
-import jdk.internal.ffi.generated.jaas_unix.passwd;
-
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
 
-import static jdk.internal.ffi.generated.jaas_unix.jaas_unix_h.*;
+import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 
 /**
  * This class implementation retrieves and makes available Unix
@@ -39,19 +44,82 @@ import static jdk.internal.ffi.generated.jaas_unix.jaas_unix_h.*;
  *
  * @since 1.4
  */
+@SuppressWarnings("restricted")
 public class UnixSystem {
 
-    /** The current username. */
+    /**
+     * The current username.
+     */
     protected String username;
 
-    /** The current user ID. */
+    /**
+     * The current user ID.
+     */
     protected long uid;
 
-    /** The current group ID. */
+    /**
+     * The current group ID.
+     */
     protected long gid;
 
-    /** The current list of groups. */
+    /**
+     * The current list of groups.
+     */
     protected long[] groups;
+
+    private static final Linker LINKER = Linker.nativeLinker();
+    private static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup()
+            .or(LINKER.defaultLookup());
+
+    private static final ValueLayout.OfByte C_CHAR
+            = (ValueLayout.OfByte) LINKER.canonicalLayouts().get("char");
+    private static final ValueLayout.OfInt C_INT
+            = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("int");
+    private static final AddressLayout C_POINTER
+            = ((AddressLayout) LINKER.canonicalLayouts().get("void*"))
+            .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, C_CHAR));
+    private static final ValueLayout.OfLong C_LONG
+            = (ValueLayout.OfLong) LINKER.canonicalLayouts().get("long");
+
+    private static final MethodHandle getgroups = LINKER
+            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getgroups"),
+                    FunctionDescriptor.of(C_INT, C_INT, C_POINTER));
+    private static final MethodHandle getuid = LINKER
+            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getuid"),
+                    FunctionDescriptor.of(C_INT));
+    private static final MethodHandle getgid = LINKER
+            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getgid"),
+                    FunctionDescriptor.of(C_INT));
+    private static final MethodHandle getpwuid_r = LINKER
+            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getpwuid_r"),
+                    FunctionDescriptor.of(C_INT, C_INT, C_POINTER, C_POINTER,
+                            C_LONG, C_POINTER));
+
+    private static final GroupLayout passwd_layout = MemoryLayout.structLayout(
+            C_POINTER.withName("pw_name"),
+            C_POINTER.withName("pw_passwd"),
+            C_INT.withName("pw_uid"),
+            C_INT.withName("pw_gid"),
+            // Different platforms have different fields in `struct passwd`.
+            // While we don't need those fields here, the struct needs to be
+            // big enough to avoid buffer overflow when `getpwuid_r` is called.
+            MemoryLayout.sequenceLayout(100, C_CHAR).withName("dummy"));
+
+    private static final ValueLayout.OfInt pw_uid_layout
+            = (ValueLayout.OfInt) passwd_layout.select(groupElement("pw_uid"));
+    private static final long pw_uid_offset
+            = passwd_layout.byteOffset(groupElement("pw_uid"));
+    private static final ValueLayout.OfInt pw_gid_layout
+            = (ValueLayout.OfInt) passwd_layout.select(groupElement("pw_gid"));
+    private static final long pw_gid_offset
+            = passwd_layout.byteOffset(groupElement("pw_gid"));
+    private static final AddressLayout pw_name_layout
+            = (AddressLayout) passwd_layout.select(groupElement("pw_name"));
+    private static final long pw_name_offset
+            = passwd_layout.byteOffset(groupElement("pw_name"));
+
+    // sysconf(_SC_GETPW_R_SIZE_MAX) on macOS is 4096 and 1024 on Linux
+    private static final long GETPW_R_SIZE_MAX = 4096L;
 
     /**
      * Instantiate a {@code UnixSystem} and load
@@ -59,35 +127,37 @@ public class UnixSystem {
      */
     public UnixSystem() {
         try (Arena scope = Arena.ofConfined()) {
-            int groupnum = getgroups(0, MemorySegment.NULL);
+            int groupnum = (int) getgroups.invokeExact(0, MemorySegment.NULL);
             if (groupnum == -1) {
                 throw new RuntimeException("getgroups returns " + groupnum);
             }
 
-            var gs = scope.allocate(gid_t, groupnum);
-            groupnum = getgroups(groupnum, gs);
+            var gs = scope.allocate(C_INT, groupnum);
+            groupnum = (int) getgroups.invokeExact(groupnum, gs);
             if (groupnum == -1) {
                 throw new RuntimeException("getgroups returns " + groupnum);
             }
 
             groups = new long[groupnum];
             for (int i = 0; i < groupnum; i++) {
-                groups[i] = gs.getAtIndex(gid_t, i);
+                groups[i] = gs.getAtIndex(C_INT, i);
             }
 
-            var resbuf = passwd.allocate(scope);
+            var resbuf = scope.allocate(passwd_layout);
             var pwd = scope.allocate(C_POINTER);
-            var pwd_buf = scope.allocate(1024);
-            int out = getpwuid_r(getuid(), resbuf, pwd_buf, pwd_buf.byteSize(), pwd);
-            if (out != 0) {
-                throw new RuntimeException("getpwuid_r returns " + out);
+            var pwd_buf = scope.allocate(GETPW_R_SIZE_MAX);
+            var tmpUid = (int)getuid.invokeExact();
+            int out = (int) getpwuid_r.invokeExact(
+                    tmpUid, resbuf, pwd_buf, GETPW_R_SIZE_MAX, pwd);
+            if (out != 0 || pwd.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
+                uid = tmpUid;
+                gid = (int)getgid.invokeExact();
+                username = null;
+            } else {
+                uid = resbuf.get(pw_uid_layout, pw_uid_offset);
+                gid = resbuf.get(pw_gid_layout, pw_gid_offset);
+                username = resbuf.get(pw_name_layout, pw_name_offset).getString(0);
             }
-            if (pwd.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
-                throw new RuntimeException("getpwuid_r returns NULL result");
-            }
-            uid = passwd.pw_uid(resbuf);
-            gid = passwd.pw_gid(resbuf);
-            username = passwd.pw_name(resbuf).getString(0);
         } catch (Throwable t) {
             var error = new UnsatisfiedLinkError("FFM calls failed");
             error.initCause(t);
