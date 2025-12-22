@@ -228,7 +228,7 @@ int modify(bool enable) {
             } else {
                 char str[100] = "assistive_technologies=com.sun.java.accessibility.AccessBridge\n";
                 strcat_s(str, "screen_magnifier_present=true\n");
-                fprintf(origFile, str);
+                fprintf(origFile, "%s", str);
                 fclose(origFile);
             }
         } else {
@@ -318,7 +318,7 @@ void printVersion() {
     strcpy_s(outputString, "jabswitch ");
     strcat_s(outputString, versionString);
     strcat_s(outputString, "\njabswitch enables or disables the Java Access Bridge.\n");
-    printf(outputString);
+    printf("%s", outputString);
 }
 
 int regEnable() {
