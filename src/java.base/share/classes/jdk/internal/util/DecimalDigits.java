@@ -289,7 +289,6 @@ public final class DecimalDigits {
         return charPos;
     }
 
-
     /**
      * This is a variant of {@link DecimalDigits#uncheckedGetCharsLatin1(long, int, byte[])}, but for
      * UTF-16 coder.
@@ -338,56 +337,6 @@ public final class DecimalDigits {
 
         if (negative) {
             uncheckedPutCharUTF16(buf, --charPos, '-');
-        }
-        return charPos;
-    }
-
-    /**
-     * This is a variant of {@link DecimalDigits#uncheckedGetCharsUTF16(long, int, byte[])}, but for
-     * UTF-16 coder.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, UTF16-coded.
-     * @return index of the most significant digit or minus sign, if present
-     */
-    public static int getChars(long i, int index, char[] buf) {
-        long q;
-        int charPos = index;
-
-        boolean negative = (i < 0);
-        if (!negative) {
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i < Integer.MIN_VALUE) {
-            q = i / 100;
-            charPos -= 2;
-            putPair(buf, charPos, (int)((q * 100) - i));
-            i = q;
-        }
-
-        // Get 2 digits/iteration using ints
-        int q2;
-        int i2 = (int)i;
-        while (i2 <= -100) {
-            q2 = i2 / 100;
-            charPos -= 2;
-            putPair(buf, charPos, (q2 * 100) - i2);
-            i2 = q2;
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i2 <= -10) {
-            charPos -= 2;
-            putPair(buf, charPos, -i2);
-        } else {
-            buf[--charPos] = (char) ('0' - i2);
-        }
-
-        if (negative) {
-            buf[--charPos] = '-';
         }
         return charPos;
     }
