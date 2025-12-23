@@ -55,7 +55,10 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
     CREATE_MAC_DMG(StandardPackageType.MAC_DMG, "^(?!(linux-|win-|mac-pkg-))", OperatingSystem.MACOS),
     SIGN_MAC_APP_IMAGE(APP_IMAGE, OperatingSystem.MACOS, Verb.SIGN);
 
-    public enum Verb {
+    /**
+     * Supported values of the {@link BundlingOperationDescriptor#verb()} property.
+     */
+    private enum Verb {
         CREATE(BundlingOperationDescriptor.VERB_CREATE_BUNDLE),
         SIGN("sign"),
         ;
@@ -64,11 +67,11 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
             this.value = Objects.requireNonNull(value);
         }
 
-        public String value() {
+        String value() {
             return value;
         }
 
-        public boolean createBundle() {
+        boolean createBundle() {
             return this == CREATE;
         }
 
