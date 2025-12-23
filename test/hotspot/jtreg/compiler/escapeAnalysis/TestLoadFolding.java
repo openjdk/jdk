@@ -24,9 +24,9 @@
 package compiler.escapeAnalysis;
 
 import compiler.lib.ir_framework.*;
-
 import java.lang.invoke.VarHandle;
 import java.util.function.Supplier;
+import jdk.test.lib.Asserts;
 
 /**
  * @test
@@ -41,14 +41,28 @@ public class TestLoadFolding {
         int y;
 
         Point() {
-            x = 1;
-            y = 2;
+            this(1, 2);
         }
 
-        static final Point DEFAULT = new Point();
+        Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Point p && x == p.x && y == p.y;
+        }
+
+        @Override
+        public String toString() {
+            return "Point[" + x + ", " + y + "]";
+        }
     }
 
-    static Point staticField;
+    public static class PointHolder {
+        Point p;
+    }
 
     public static void main(String[] args) {
         var framework = new TestFramework();
@@ -63,7 +77,7 @@ public class TestLoadFolding {
 
     @Test
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
-    public Point test11() {
+    public Point test101() {
         // p only escapes at return
         Point p = new Point();
         escape(null);
@@ -73,7 +87,7 @@ public class TestLoadFolding {
 
     @Test
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
-    public Point test12(boolean b) {
+    public Point test102(boolean b) {
         // p escapes in another branch
         Point p = new Point();
         if (b) {
@@ -87,10 +101,12 @@ public class TestLoadFolding {
 
     @Test
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
-    public Point test13(boolean b) {
-        // A Phi of p1 and Point.DEFAULT, but a store to Phi is after all the loads from p1
+    public Point test103(Point p, boolean b) {
+        // A Phi of p1 and p, but a store to Phi is after all the loads from p1
         Point p1 = new Point();
-        Point p = b ? p1 : Point.DEFAULT;
+        if (b) {
+            p = new Point();
+        }
         escape(null);
         p.x = p1.x + p1.y;
         return p;
@@ -98,18 +114,18 @@ public class TestLoadFolding {
 
     @Test
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
-    public int test14() {
+    public int test104(PointHolder h) {
         // Even if p escapes before the loads, if it is legal to execute the loads before the
         // store, then we can fold the loads
         Point p = new Point();
         escape(null);
-        staticField = p;
+        h.p = p;
         return p.x + p.y;
     }
 
     @Test
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.ALLOC, "1"})
-    public Point test15(int begin, int end) {
+    public Point test105(int begin, int end) {
         // Fold the load that is a part of a cycle
         Point p = new Point();
         for (int i = begin; i < end; i *= 2) {
@@ -122,17 +138,17 @@ public class TestLoadFolding {
 
     @Test
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.ALLOC, "1"})
-    public Point test16(int begin, int end, boolean b) {
+    public Point test106(Point p2, int begin, int end, boolean b) {
         // A cycle and a Phi, this time the store is at a different field
         Point p1 = new Point();
         // This store is not on a Phi involving p1, so it does not interfere
-        Point.DEFAULT.y = 3;
+        p2.y = 2;
         Point p = p1;
-        for (int i = begin; i < end; i += 2) {
+        for (int i = begin; i < end; i *= 2) {
             if (b) {
                 p = p1;
             } else {
-                p = Point.DEFAULT;
+                p = p2;
             }
             b = !b;
 
@@ -145,7 +161,7 @@ public class TestLoadFolding {
 
     @Test
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.LOAD_I, "1", IRNode.ALLOC_ARRAY, "1"})
-    public int test17(int idx) {
+    public int test107(int idx) {
         // Array
         int[] a = new int[2];
         a[0] = 1;
@@ -159,7 +175,7 @@ public class TestLoadFolding {
 
     @Test
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC_ARRAY, "1"})
-    public int test18(int idx) {
+    public int test108(int idx) {
         // Array, even if we will give up if we encounter a[idx & 1] = 3, we meet a[0] = 4 first,
         // so the load int res = a[0] can still be folded
         int[] a = new int[2];
@@ -184,7 +200,7 @@ public class TestLoadFolding {
     @IR(applyIf = {"DoLocalEscapeAnalysis", "true"},
         failOn = {IRNode.DYNAMIC_CALL_OF_METHOD, "get", IRNode.LOAD_OF_FIELD, "f", IRNode.CLASS_CHECK_TRAP},
         counts = {IRNode.ALLOC, "1"})
-    public String test19() {
+    public String test109() {
         // Folding of the load o.f allows o.f.get to get devirtualized
         SupplierHolder o = new SupplierHolder();
         o.f = SupplierHolder.DEFAULT_VALUE;
@@ -193,28 +209,124 @@ public class TestLoadFolding {
         escape(o);
         return res;
     }
+    
+    @Test
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "2"})
+    public int test110(PointHolder h, boolean b) {
+        // Inspect the escape status of a Phi
+        Point p1 = new Point();
+        Point p2 = new Point();
+        Point p = b ? p1 : p2;
+        p.x = 4;
+        escape(null);
+        h.p = p1;
+        return p.x;
+    }
 
-    @Run(test = {"test11", "test12", "test13", "test14", "test15", "test16", "test17", "test18", "test19"})
+    @Test
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "2"})
+    public int test111(int begin, int end, boolean b) {
+        // Inspect the escape status of a loop Phi
+        Point p = new Point();
+        for (int i = begin; i < end; i *= 2) {
+            if (b) {
+                p = new Point();
+            }
+        }
+        p.x = 4;
+        escape(null);
+        int res = p.x;
+        escape(p);
+        return res;
+    }
+
+    @Test
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
+    public int test112() {
+        // The object has been stored into memory but the destination does not escape
+        PointHolder h = new PointHolder();
+        Point p = new Point();
+        h.p = p;
+        VarHandle.fullFence();
+        int res = p.x;
+        escape(p);
+        return res;
+    }
+
+    @Test
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "2"})
+    public int test113() {
+        // The object has been stored into memory but the destination has not escaped
+        PointHolder h = new PointHolder();
+        Point p = new Point();
+        h.p = p;
+        VarHandle.fullFence();
+        int res = p.x;
+        escape(h);
+        return res;
+    }
+
+    @Test
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "3"})
+    public int test114(boolean b) {
+        // A Phi has been stored into memory but the destination has not escaped
+        PointHolder h = new PointHolder();
+        Point p1 = new Point();
+        Point p2 = new Point();
+        h.p = b ? p1 : p2;
+        VarHandle.fullFence();
+        int res = p1.x;
+        escape(h);
+        return res;
+    }
+
+    @Test
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "3"})
+    public int test115(boolean b) {
+        // The object has been stored into a Phi but the destination has not escaped
+        PointHolder h1 = new PointHolder();
+        PointHolder h2 = new PointHolder();
+        Point p = new Point();
+        PointHolder h = b ? h1 : h2;
+        h.p = p;
+        VarHandle.fullFence();
+        int res = p.x;
+        escape(h1);
+        return res;
+    }
+
+    @Run(test = {"test101", "test102", "test103", "test104", "test105", "test106", "test107", "test108", "test109",
+                 "test110", "test111", "test112", "test113", "test114", "test115"})
     public void runPositiveTests() {
-        test11();
-        test12(false);
-        test12(true);
-        test13(false);
-        test13(true);
-        test14();
-        test15(1, 16);
-        test16(1, 16, false);
-        test16(1, 16, true);
-        test17(0);
-        test18(0);
-        test19();
+        Asserts.assertEQ(new Point(3, 2), test101());
+        Asserts.assertEQ(new Point(3, 2), test102(false));
+        Asserts.assertEQ(new Point(1, 2), test102(true));
+        Asserts.assertEQ(new Point(3, 2), test103(new Point(), false));
+        Asserts.assertEQ(new Point(3, 2), test103(new Point(), true));
+        Asserts.assertEQ(3, test104(new PointHolder()));
+        Asserts.assertEQ(new Point(7, 2), test105(1, 16));
+        Asserts.assertEQ(new Point(2, 2), test106(new Point(), 1, 16, false));
+        Asserts.assertEQ(new Point(5, 2), test106(new Point(), 1, 16, true));
+        Asserts.assertEQ(4, test107(0));
+        Asserts.assertEQ(4, test108(0));
+        Asserts.assertEQ("test", test109());
+        Asserts.assertEQ(4, test110(new PointHolder(), false));
+        Asserts.assertEQ(4, test110(new PointHolder(), true));
+        Asserts.assertEQ(4, test111(1, 16, false));
+        Asserts.assertEQ(4, test111(1, 16, true));
+        Asserts.assertEQ(1, test112());
+        Asserts.assertEQ(1, test113());
+        Asserts.assertEQ(1, test114(false));
+        Asserts.assertEQ(1, test114(true));
+        Asserts.assertEQ(1, test115(false));
+        Asserts.assertEQ(1, test115(true));
     }
 
     @Test
     @IR(counts = {IRNode.LOAD_I, "2", IRNode.ALLOC, "1"})
-    public int test01() {
+    public int test001(PointHolder h) {
         Point p = new Point();
-        staticField = p;
+        h.p = p;
         // Actually, the only fence that requires the following loads to be executed after the
         // store is a fullFence
         VarHandle.fullFence();
@@ -223,7 +335,7 @@ public class TestLoadFolding {
 
     @Test
     @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC, "1"})
-    public int test02(boolean b) {
+    public int test002(boolean b) {
         Point p = new Point();
         if (b) {
             escape(p);
@@ -237,7 +349,7 @@ public class TestLoadFolding {
 
     @Test
     @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC, "1"})
-    public int test03(boolean b) {
+    public int test003(boolean b) {
         Point p = new Point();
         if (b) {
             escape(p);
@@ -248,7 +360,7 @@ public class TestLoadFolding {
 
     @Test
     @IR(counts = {IRNode.LOAD_I, "> 0", IRNode.ALLOC, "1"})
-    public Point test04(int begin, int end) {
+    public Point test004(int begin, int end) {
         Point p = new Point();
         for (int i = begin; i < end; i *= 2) {
             // p escaped here because this is a loop
@@ -260,7 +372,7 @@ public class TestLoadFolding {
 
     @Test
     @IR(counts = {IRNode.LOAD_I, "2", IRNode.ALLOC_ARRAY, "1"})
-    public int test05(int idx) {
+    public int test005(int idx) {
         int[] a = new int[2];
         a[0] = 1;
         a[1] = 2;
@@ -271,14 +383,105 @@ public class TestLoadFolding {
         return a[0] + a[1];
     }
 
-    @Run(test = {"test01", "test02", "test03", "test04", "test05"})
+    @Test
+    @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC, "1"})
+    public int test006(Point p, boolean b) {
+        // A Phi with an input ineligible for escape analysis
+        if (b) {
+            p = new Point();
+        }
+        escape(null);
+        int res = p.x;
+        escape(p);
+        return res;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC, "2"})
+    public int test007(boolean b) {
+        // A Phi that escapes because an input escapes
+        Point p1 = new Point();
+        Point p2 = new Point();
+        Point p = b ? p1 : p2;
+        escape(p1);
+        return p.x;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC, "2"})
+    public int test008() {
+        // An object is stored into another object that escapes
+        PointHolder h = new PointHolder();
+        Point p = new Point();
+        h.p = p;
+        escape(h);
+        return p.x;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC, "2"})
+    public int test009(PointHolder h, boolean b) {
+        // An object is stored into a Phi that is ineligible for escape analysis
+        if (b) {
+            h = new PointHolder();
+        }
+        Point p = new Point();
+        h.p = p;
+        escape(null);
+        return p.x;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC, "3"})
+    public int test010(boolean b) {
+        // An object is stored into a Phi that escapes because one of its inputs escapes
+        PointHolder h1 = new PointHolder();
+        PointHolder h2 = new PointHolder();
+        PointHolder h = b ? h1 : h2;
+        Point p = new Point();
+        h.p = p;
+        escape(h1);
+        return p.x;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I, "1", IRNode.ALLOC, "4"})
+    public int test011(boolean b1, boolean b2) {
+        // A Phi escapes because one of its inputs is stored into a Phi, that in turn escapes
+        // because one of its inputs escapes
+        PointHolder h1 = new PointHolder();
+        PointHolder h2 = new PointHolder();
+        PointHolder h = b1 ? h1 : h2;
+        Point p1 = new Point();
+        Point p2 = new Point();
+        Point p = b2 ? p1 : p2;
+        h.p = p1;
+        escape(h2);
+        return p.x;
+    }
+
+    @Run(test = {"test001", "test002", "test003", "test004", "test005", "test006", "test007", "test008", "test009",
+                 "test010", "test011"})
     public void runNegativeTests() {
-        test01();
-        test02(false);
-        test02(true);
-        test03(false);
-        test03(true);
-        test04(1, 16);
-        test05(0);
+        Asserts.assertEQ(3, test001(new PointHolder()));
+        Asserts.assertEQ(0, test002(false));
+        Asserts.assertEQ(1, test002(true));
+        Asserts.assertEQ(1, test003(false));
+        Asserts.assertEQ(1, test003(true));
+        Asserts.assertEQ(new Point(5, 2), test004(1, 16));
+        Asserts.assertEQ(5, test005(0));
+        Asserts.assertEQ(1, test006(new Point(), false));
+        Asserts.assertEQ(1, test006(new Point(), true));
+        Asserts.assertEQ(1, test007(false));
+        Asserts.assertEQ(1, test007(true));
+        Asserts.assertEQ(1, test008());
+        Asserts.assertEQ(1, test009(new PointHolder(), false));
+        Asserts.assertEQ(1, test009(new PointHolder(), true));
+        Asserts.assertEQ(1, test010(false));
+        Asserts.assertEQ(1, test010(true));
+        Asserts.assertEQ(1, test011(false, false));
+        Asserts.assertEQ(1, test011(false, true));
+        Asserts.assertEQ(1, test011(true, false));
+        Asserts.assertEQ(1, test011(true, true));
     }
 }

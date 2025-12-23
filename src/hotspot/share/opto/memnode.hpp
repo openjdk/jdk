@@ -122,20 +122,39 @@ protected:
   // inlined. On the other hand, if the folding happens during the escape analysis phase, inlining
   // is already over.
   class LocalEA {
-  public:
-    // If a node p has not escaped from the compilation unit, this is the set of all nodes that can
-    // alias p (i.e. may have the same value as p at runtime). This is the set of all nodes such
-    // that for each of them, there is a path of def-use edges from p to it consisting of
-    // ConstraintCasts, EncodePs, DecodeNs, Phis, CMoves, and AddPs.
-    Unique_Node_List aliases;
+  private:
+    PhaseIterGVN* _phase;
 
-    // If it is known that a node p has not escaped at a control node c1, then it must be the case
-    // that p has not escaped at all of the transitive control inputs of c1. Otherwise, there will
-    // be a control flow following the path from a transitive input c2 of c1 to c1 in which p has
-    // escaped at c2 but has also not escaped at a later point c1, which is impossible. As a
-    // result, when p is determined that it has not escaped at a control node, we record that node
-    // as well as all of its transitive control inputs here.
-    Unique_Node_List not_escaped_controls;
+    // If the node being inspected p is eligible for escape analysis. For example, if p is the
+    // result cast of an allocation, or if it is a Phi and its inputs are the result casts of some
+    // allocations, then it is eligible for escape analysis. On the other hand, if p is a load from
+    // memory, or the return value of a Java call, then we cannot do escape analysis on it.
+    bool _is_candidate;
+
+    // If the node being inspected p has not escaped from the compilation unit, this is the set of
+    // all nodes that can alias p (i.e. may have the same value as p at runtime). This is the set
+    // of all allocations that may alias p (if p is the result cast of an allocation, then that is
+    // the only allocation that may alias p, otherwise, if p is a Phi and its inputs are the result
+    // casts of some allocations, then those inputs may alias p) and all nodes q such that, there
+    // is an allocation alloc such that alloc may alias p and there is a path of def-use edges from
+    // the result cast of alloc to q consisting of ConstraintCasts, EncodePs, DecodeNs, Phis, and
+    // CMoves.
+    Unique_Node_List _aliases;
+
+    // If it is known that the node being inspected p has not escaped at a control node c1, then it
+    // must be the case that p has not escaped at all of the transitive control inputs of c1.
+    // Otherwise, there will be a control flow following the path from a transitive input c2 of c1
+    // to c1 in which p has escaped at c2 but has also not escaped at a later point c1, which is
+    // impossible. As a result, when p is determined that it has not escaped at a control node, we
+    // record that node as well as all of its transitive control inputs here.
+    Unique_Node_List _not_escaped_controls;
+
+  public:
+    LocalEA(PhaseIterGVN* phase, Node* base);
+
+    bool is_candidate() const { return _is_candidate; }
+    const Unique_Node_List& aliases() const { return _aliases; }
+    const Unique_Node_List& not_escaped_controls() const { return _not_escaped_controls; }
 
     // The result of the analysis whether an object has escaped at a control node
     enum EscapeStatus {
@@ -144,11 +163,9 @@ protected:
       DEAD_PATH
     };
 
-    LocalEA() : aliases(), not_escaped_controls() {}
-
-    // Check the escape status of an allocation alloc at a control node ctl. As this is called
-    // during igvn, be prepared for non-canonical graph (dead paths, etc).
-    EscapeStatus check_escape_status(PhaseValues* phase, AllocateNode* alloc, Node* ctl);
+    // Check the escape status of the node being inspected p at a control node ctl. As this is
+    // called during igvn, be prepared for non-canonical graph (dead paths, etc).
+    EscapeStatus check_escape_status(Node* ctl);
   };
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
