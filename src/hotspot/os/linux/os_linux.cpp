@@ -5466,6 +5466,7 @@ void os::print_open_file_descriptors(outputStream* st) {
     return;
   }
 
+  // limit proc file read to 50ms
   while ((dentp = readdir(dirp)) != nullptr) {
     if (isdigit(dentp->d_name[0])) fds++;
     if (fds % 100 == 0) {
