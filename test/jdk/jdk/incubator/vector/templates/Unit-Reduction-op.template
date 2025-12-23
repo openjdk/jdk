@@ -18,11 +18,16 @@
         Assert.assertEquals(($type$) (id [[TEST_OP]] id), id,
                             "[[TEST]]([[TEST_INIT]], [[TEST_INIT]]) != [[TEST_INIT]]");
 
-        for (int i = 0; i < a.length; i++) {
-            $type$ x = a[i];
+        $type$ x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(($type$) (id [[TEST_OP]] x), x);
+                Assert.assertEquals(($type$) (x [[TEST_OP]] id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals(($type$) (id [[TEST_OP]] x), x,
                                 "[[TEST]]([[TEST_INIT]], " + x + ") != " + x);
-
             Assert.assertEquals(($type$) (x [[TEST_OP]] id), x,
                                 "[[TEST]](" + x + ", [[TEST_INIT]]) != " + x);
         }

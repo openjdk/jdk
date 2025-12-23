@@ -2446,11 +2446,16 @@ relativeError));
         Assert.assertEquals((float) (id + id), id,
                             "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            float x = a[i];
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((float) (id + x), x);
+                Assert.assertEquals((float) (x + id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((float) (id + x), x,
                                 "ADD(ADD_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((float) (x + id), x,
                                 "ADD(" + x + ", ADD_IDENTITY) != " + x);
         }
@@ -2543,11 +2548,16 @@ relativeError));
         Assert.assertEquals((float) (id * id), id,
                             "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            float x = a[i];
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((float) (id * x), x);
+                Assert.assertEquals((float) (x * id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((float) (id * x), x,
                                 "MUL(MUL_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((float) (x * id), x,
                                 "MUL(" + x + ", MUL_IDENTITY) != " + x);
         }
@@ -2640,11 +2650,16 @@ relativeError));
         Assert.assertEquals((float) Math.min(id, id), id,
                             "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            float x = a[i];
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((float) Math.min(id, x), x);
+                Assert.assertEquals((float) Math.min(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((float) Math.min(id, x), x,
                                 "MIN(MIN_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((float) Math.min(x, id), x,
                                 "MIN(" + x + ", MIN_IDENTITY) != " + x);
         }
@@ -2737,11 +2752,16 @@ relativeError));
         Assert.assertEquals((float) Math.max(id, id), id,
                             "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            float x = a[i];
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((float) Math.max(id, x), x);
+                Assert.assertEquals((float) Math.max(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((float) Math.max(id, x), x,
                                 "MAX(MAX_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((float) Math.max(x, id), x,
                                 "MAX(" + x + ", MAX_IDENTITY) != " + x);
         }
@@ -2834,11 +2854,16 @@ relativeError));
         Assert.assertEquals(firstNonZero(id, id), id,
                             "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            float x = a[i];
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(firstNonZero(id, x), x);
+                Assert.assertEquals(firstNonZero(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals(firstNonZero(id, x), x,
                                 "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals(firstNonZero(x, id), x,
                                 "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
         }

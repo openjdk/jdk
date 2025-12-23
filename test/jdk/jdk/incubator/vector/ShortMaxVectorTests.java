@@ -3665,11 +3665,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) (id & id), id,
                             "AND(AND_IDENTITY, AND_IDENTITY) != AND_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) (id & x), x);
+                Assert.assertEquals((short) (x & id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) (id & x), x,
                                 "AND(AND_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) (x & id), x,
                                 "AND(" + x + ", AND_IDENTITY) != " + x);
         }
@@ -3762,11 +3767,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) (id | id), id,
                             "OR(OR_IDENTITY, OR_IDENTITY) != OR_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) (id | x), x);
+                Assert.assertEquals((short) (x | id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) (id | x), x,
                                 "OR(OR_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) (x | id), x,
                                 "OR(" + x + ", OR_IDENTITY) != " + x);
         }
@@ -3859,11 +3869,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) (id ^ id), id,
                             "XOR(XOR_IDENTITY, XOR_IDENTITY) != XOR_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) (id ^ x), x);
+                Assert.assertEquals((short) (x ^ id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) (id ^ x), x,
                                 "XOR(XOR_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) (x ^ id), x,
                                 "XOR(" + x + ", XOR_IDENTITY) != " + x);
         }
@@ -3956,11 +3971,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) (id + id), id,
                             "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) (id + x), x);
+                Assert.assertEquals((short) (x + id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) (id + x), x,
                                 "ADD(ADD_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) (x + id), x,
                                 "ADD(" + x + ", ADD_IDENTITY) != " + x);
         }
@@ -4053,11 +4073,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) (id * id), id,
                             "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) (id * x), x);
+                Assert.assertEquals((short) (x * id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) (id * x), x,
                                 "MUL(MUL_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) (x * id), x,
                                 "MUL(" + x + ", MUL_IDENTITY) != " + x);
         }
@@ -4150,11 +4175,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) Math.min(id, id), id,
                             "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) Math.min(id, x), x);
+                Assert.assertEquals((short) Math.min(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) Math.min(id, x), x,
                                 "MIN(MIN_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) Math.min(x, id), x,
                                 "MIN(" + x + ", MIN_IDENTITY) != " + x);
         }
@@ -4247,11 +4277,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) Math.max(id, id), id,
                             "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) Math.max(id, x), x);
+                Assert.assertEquals((short) Math.max(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) Math.max(id, x), x,
                                 "MAX(MAX_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) Math.max(x, id), x,
                                 "MAX(" + x + ", MAX_IDENTITY) != " + x);
         }
@@ -4344,11 +4379,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) VectorMath.minUnsigned(id, id), id,
                             "UMIN(UMIN_IDENTITY, UMIN_IDENTITY) != UMIN_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) VectorMath.minUnsigned(id, x), x);
+                Assert.assertEquals((short) VectorMath.minUnsigned(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) VectorMath.minUnsigned(id, x), x,
                                 "UMIN(UMIN_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) VectorMath.minUnsigned(x, id), x,
                                 "UMIN(" + x + ", UMIN_IDENTITY) != " + x);
         }
@@ -4441,11 +4481,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) VectorMath.maxUnsigned(id, id), id,
                             "UMAX(UMAX_IDENTITY, UMAX_IDENTITY) != UMAX_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) VectorMath.maxUnsigned(id, x), x);
+                Assert.assertEquals((short) VectorMath.maxUnsigned(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) VectorMath.maxUnsigned(id, x), x,
                                 "UMAX(UMAX_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) VectorMath.maxUnsigned(x, id), x,
                                 "UMAX(" + x + ", UMAX_IDENTITY) != " + x);
         }
@@ -4538,11 +4583,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals(firstNonZero(id, id), id,
                             "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(firstNonZero(id, x), x);
+                Assert.assertEquals(firstNonZero(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals(firstNonZero(id, x), x,
                                 "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals(firstNonZero(x, id), x,
                                 "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
         }
@@ -4683,11 +4733,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         Assert.assertEquals((short) VectorMath.addSaturatingUnsigned(id, id), id,
                             "SUADD(SUADD_IDENTITY, SUADD_IDENTITY) != SUADD_IDENTITY");
 
-        for (int i = 0; i < a.length; i++) {
-            short x = a[i];
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) VectorMath.addSaturatingUnsigned(id, x), x);
+                Assert.assertEquals((short) VectorMath.addSaturatingUnsigned(x, id), x);
+            }
+        } catch (AssertionError e) {
             Assert.assertEquals((short) VectorMath.addSaturatingUnsigned(id, x), x,
                                 "SUADD(SUADD_IDENTITY, " + x + ") != " + x);
-
             Assert.assertEquals((short) VectorMath.addSaturatingUnsigned(x, id), x,
                                 "SUADD(" + x + ", SUADD_IDENTITY) != " + x);
         }
