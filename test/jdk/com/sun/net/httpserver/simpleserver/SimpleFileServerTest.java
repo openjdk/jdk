@@ -498,9 +498,9 @@ public class SimpleFileServerTest {
         try {
             Files.createSymbolicLink(symlink, target);
         } catch (UnsupportedOperationException uoe) {
-            Assumptions.assumeFalse(true, "sym link creation not supported");
+            Assumptions.abort("sym link creation not supported");
         } catch (IOException ioe) {
-            Assumptions.assumeFalse(true, "probably insufficient privileges to create sym links (Windows)");
+            Assumptions.abort("probably insufficient privileges to create sym links (Windows)");
         }
     }
 
