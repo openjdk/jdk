@@ -49,6 +49,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -1056,18 +1057,22 @@ public final class CommandOutputControl {
         var process = pb.start();
 
         BiConsumer<InputStream, PrintStream> gobbler = (in, ps) -> {
-            if (isBinaryOutput()) {
-                try (in) {
-                    in.transferTo(ps);
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
+            try {
+                if (isBinaryOutput()) {
+                    try (in) {
+                        in.transferTo(ps);
+                    } catch (IOException ex) {
+                        throw new UncheckedIOException(ex);
+                    }
+                } else {
+                    try (var bufReader = new BufferedReader(new InputStreamReader(in, charset))) {
+                        bufReader.lines().forEach(ps::println);
+                    } catch (IOException ex) {
+                        throw new UncheckedIOException(ex);
+                    }
                 }
-            } else {
-                try (var bufReader = new BufferedReader(new InputStreamReader(in, charset))) {
-                    bufReader.lines().forEach(ps::println);
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
-                }
+            } finally {
+                suppressIOException(ps::flush);
             }
         };
 
@@ -1078,7 +1083,7 @@ public final class CommandOutputControl {
         if (mustReadOutputStream(pb.redirectOutput())) {
             stdoutGobbler = Optional.of(CompletableFuture.runAsync(() -> {
                 gobbler.accept(process.getInputStream(), csc.out());
-            }));
+            }, gobblerExecutor));
         } else {
             stdoutGobbler = Optional.empty();
         }
@@ -1087,7 +1092,7 @@ public final class CommandOutputControl {
         if (!pb.redirectErrorStream() && mustReadOutputStream(pb.redirectError())) {
             stderrGobbler = Optional.of(CompletableFuture.runAsync(() -> {
                 gobbler.accept(process.getErrorStream(), csc.err());
-            }));
+            }, gobblerExecutor));
         } else {
             stderrGobbler = Optional.empty();
         }
@@ -1891,6 +1896,17 @@ public final class CommandOutputControl {
     private PrintStream dumpStderr;
     private Charset processOutputCharset;
     private Consumer<Process> processNotifier;
+
+    // Executor to run subprocess output stream gobblers.
+    // Output stream gobblers should start fetching output streams ASAP after the process starts.
+    // No pooling, no waiting.
+    // CompletableFuture#runAsync() method starts an output stream gobbler.
+    // If used with the default executor, it is known to make WiX3 light.exe create
+    // a locked msi file when multiple jpackage tool providers are executed asynchronously.
+    // The AsyncTest fails with cryptic java.nio.file.FileSystemException error:
+    // jtreg_open_test_jdk_tools_jpackage_share_AsyncTest_java\\tmp\\jdk.jpackage8108811639097525318\\msi\\Foo-1.0.msi: The process cannot access the file because it is being used by another process.
+    // The remedy for the problem is to use non-pooling executor to run subprocess output stream gobblers.
+    private final java.util.concurrent.Executor gobblerExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     private enum OutputControlOption {
         SAVE_ALL, SAVE_FIRST_LINE, DUMP
