@@ -4955,9 +4955,12 @@ int os::open(const char *path, int oflag, int mode) {
 // time (as mandated by the POSIX standard POSIX.1-2024/IEEE Std 1003.1-2024
 // §3.90).
 
-// Clockid for current thread's user CPU time only.
-// Bit encoding: [31:3]=~PID, [2]=PERTHREAD, [1:0]=TYPE (VIRT=1).
-// PID=0 tells the kernel to use the calling task
+
+// Linux Kernel internal bit encoding for dynamic CPU clocks:
+// [31:3] : Bitwise NOT of the PID or TID (~0 for current thread)
+// [2]    : 1 = Per-thread clock, 0 = Per-process clock
+// [1:0]  : Clock type (0 = PROF, 1 = VIRT/User-only, 2 = SCHED)
+static_assert(sizeof(clockid_t) == 4, "Linux clockid_t must be 32-bit");
 constexpr clockid_t CLOCK_CURRENT_THREAD_USERTIME = static_cast<clockid_t>(~0u << 3 | 4 | 1);
 
 static bool get_thread_clockid(Thread* thread, clockid_t* clockid, bool total) {
