@@ -109,7 +109,11 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
         return packageType;
     }
 
-    public boolean createBundle() {
+    /**
+     * Returns {@code true} if this bundling operation will create a new bundle and
+     * {@code false} otherwise.
+     */
+    public boolean isCreateBundle() {
         return descriptorVerb.createBundle();
     }
 
