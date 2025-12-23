@@ -632,7 +632,7 @@ final class PackagingPipeline {
             final var accepted = withAction && context.test(id);
 
             if (TRACE_TASK_ACTION) {
-                var sb = new StringBuffer();
+                var sb = new StringBuilder();
                 sb.append("Execute task=[").append(id).append("]: ");
                 if (!withAction) {
                     sb.append("no action");

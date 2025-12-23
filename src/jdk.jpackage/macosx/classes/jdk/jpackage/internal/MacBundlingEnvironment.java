@@ -51,7 +51,7 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
 
     private static void createDmdPackage(Options options, MacDmgSystemEnvironment sysEnv) {
         createNativePackage(options,
-                MacFromOptions::createMacDmgPackage,
+                MacFromOptions.createMacDmgPackage(options),
                 buildEnv()::create,
                 MacBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {
@@ -62,7 +62,7 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
 
     private static void createPkgPackage(Options options) {
         createNativePackage(options,
-                MacFromOptions::createMacPkgPackage,
+                MacFromOptions.createMacPkgPackage(options),
                 buildEnv()::create,
                 MacBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {

@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  *
  * @see Package
  */
-public interface Application extends BundleSpec {
+public non-sealed interface Application extends BundleSpec {
 
     /**
      * Gets the name of this application.

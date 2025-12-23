@@ -24,7 +24,7 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.WinFromOpions.createWinApplication;
+import static jdk.jpackage.internal.WinFromOptions.createWinApplication;
 import static jdk.jpackage.internal.WinPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_WIN_EXE;
@@ -46,7 +46,7 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createMsiPackage(Options options, WinSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                WinFromOpions::createWinMsiPackage,
+                WinFromOptions.createWinMsiPackage(options),
                 buildEnv()::create,
                 WinPackagingPipeline.build(),
                 (env, pkg, outputDir) -> {
@@ -60,7 +60,7 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createExePackage(Options options, WinSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                WinFromOpions::createWinExePackage,
+                WinFromOptions.createWinExePackage(options),
                 buildEnv()::create,
                 WinPackagingPipeline.build(),
                 (env, pkg, outputDir) -> {

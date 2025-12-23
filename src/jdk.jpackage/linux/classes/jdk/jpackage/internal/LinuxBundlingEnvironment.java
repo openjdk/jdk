@@ -56,7 +56,7 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createDebPackage(Options options, LinuxDebSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                LinuxFromOptions::createLinuxDebPackage,
+                LinuxFromOptions.createLinuxDebPackage(options),
                 buildEnv()::create,
                 LinuxBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {
@@ -67,7 +67,7 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createRpmPackage(Options options, LinuxRpmSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                LinuxFromOptions::createLinuxRpmPackage,
+                LinuxFromOptions.createLinuxRpmPackage(options),
                 buildEnv()::create,
                 LinuxBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {
