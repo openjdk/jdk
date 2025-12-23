@@ -265,7 +265,6 @@ public class HeadersTest {
     @ParameterizedTest
     @MethodSource("headerPairs")
     public void testEqualsAndHashCode(Headers h1, Headers h2) {
-        // avoid testng's asserts(Map, Map) as they don't call Headers::equals
         assertTrue(h1.equals(h2), "Headers differ");
         assertEquals(h2.hashCode(), h1.hashCode(), "hashCode differ for "
                 + List.of(h1, h2));
