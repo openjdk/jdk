@@ -97,7 +97,7 @@ void logString(FILE *logfile, const char *msg, ...) {
     va_start(argprt, msg);
     vsnprintf(tmpbuf, sizeof(tmpbuf), msg, argprt);
 
-    fputs(tmpbuf, logfile);
+    fprintf(logfile, "%s\n", tmpbuf);
     fflush(logfile);
 }
 
