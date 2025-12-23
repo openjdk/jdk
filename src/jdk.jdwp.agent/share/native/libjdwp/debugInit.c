@@ -152,9 +152,9 @@ DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     jvmtiError error;
     jvmtiCapabilities needed_capabilities;
     jvmtiCapabilities potential_capabilities;
-    int               jvmtiCompileTimeMajorVersion;
-    int               jvmtiCompileTimeMinorVersion;
-    int               jvmtiCompileTimeMicroVersion;
+    jint              jvmtiCompileTimeMajorVersion;
+    jint              jvmtiCompileTimeMinorVersion;
+    jint              jvmtiCompileTimeMicroVersion;
 
     /* See if it's already loaded */
     if ( gdata!=NULL && gdata->isLoaded==JNI_TRUE ) {
@@ -181,12 +181,12 @@ DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     vmInitialized = JNI_FALSE;
     gdata->vmDead = JNI_FALSE;
 
-    jvmtiCompileTimeMajorVersion  = ((int)JVMTI_VERSION & (int)JVMTI_VERSION_MASK_MAJOR)
-                                        >> (int)JVMTI_VERSION_SHIFT_MAJOR;
-    jvmtiCompileTimeMinorVersion  = ((int)JVMTI_VERSION & (int)JVMTI_VERSION_MASK_MINOR)
-                                        >> (int)JVMTI_VERSION_SHIFT_MINOR;
-    jvmtiCompileTimeMicroVersion  = ((int)JVMTI_VERSION & (int)JVMTI_VERSION_MASK_MICRO)
-                                        >> (int)JVMTI_VERSION_SHIFT_MICRO;
+    jvmtiCompileTimeMajorVersion  = ((jint)JVMTI_VERSION & JVMTI_VERSION_MASK_MAJOR)
+                                        >> JVMTI_VERSION_SHIFT_MAJOR;
+    jvmtiCompileTimeMinorVersion  = ((jint)JVMTI_VERSION & JVMTI_VERSION_MASK_MINOR)
+                                        >> JVMTI_VERSION_SHIFT_MINOR;
+    jvmtiCompileTimeMicroVersion  = ((jint)JVMTI_VERSION & JVMTI_VERSION_MASK_MICRO)
+                                        >> JVMTI_VERSION_SHIFT_MICRO;
 
     /* Get the JVMTI Env, IMPORTANT: Do this first! For jvmtiAllocate(). */
     error = JVM_FUNC_PTR(vm,GetEnv)
