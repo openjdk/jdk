@@ -2725,16 +2725,34 @@ void os::print_open_file_descriptors(outputStream* st) {
   snprintf(fd_dir, sizeof(fd_dir), "/proc/%d/fd", getpid());
   DIR* dirp = opendir(fd_dir);
   int fds = 0;
-  if (dirp != nullptr) {
-    struct dirent* dentp;
-    while ((dentp = readdir(dirp)) != nullptr) {
-      if (isdigit(dentp->d_name[0])) {
-        fds++;
+  const int TIMEOUT_MS = 50;
+  struct timespec start, now;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  struct dirent* dentp;
+  bool timed_out = false;
+
+  if (dirp == nullptr) {
+    st->print_cr("OpenFileDescriptorCount = unknown");
+    return;
+  }
+
+  while ((dentp = readdir(dirp)) != nullptr) {
+    if (isdigit(dentp->d_name[0])) fds++;
+    if (fds % 100 == 0) {
+      clock_gettime(CLOCK_MONOTONIC, &now);
+      long elapsed_ms = (now.tv_sec - start.tv_sec) * 1000L +
+                        (now.tv_nsec - start.tv_nsec) / 1000000L;
+      if (elapsed_ms > TIMEOUT_MS) {
+        timed_out = true;
+        break;
       }
     }
-    closedir(dirp);
-    st->print_cr("OpenFileDescriptorCount = %d", fds - 1); // minus the opendir fd itself
+  }
+
+  closedir(dirp);
+  if (timed_out) {
+    st->print_cr("OpenFileDescriptorCount > %d", fds - 1); // minus the opendir fd itself
   } else {
-    st->print_cr("OpenFileDescriptorCount = unknown");
+    st->print_cr("OpenFileDescriptorCount = %d", fds - 1);
   }
 }

@@ -82,6 +82,7 @@
 #endif
 
 # include <ctype.h>
+# include <dirent.h>
 # include <dlfcn.h>
 # include <endian.h>
 # include <errno.h>
@@ -113,6 +114,7 @@
 # include <sys/types.h>
 # include <sys/utsname.h>
 # include <syscall.h>
+# include <time.h>
 # include <unistd.h>
 #ifdef __GLIBC__
 # include <malloc.h>
@@ -5453,16 +5455,36 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 void os::print_open_file_descriptors(outputStream* st) {
   DIR* dirp = opendir("/proc/self/fd");
   int fds = 0;
-  if (dirp != nullptr) {
-    struct dirent* dentp;
-    while ((dentp = readdir(dirp)) != nullptr) {
-      if (isdigit(dentp->d_name[0])) {
-        fds++;
+  struct dirent* dentp;
+  const int TIMEOUT_MS = 50;
+  struct timespec start, now;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  bool timed_out = false;
+
+  if (dirp == nullptr) {
+    st->print_cr("OpenFileDescriptorCount = unknown");
+    return;
+  }
+
+  while ((dentp = readdir(dirp)) != nullptr) {
+    if (isdigit(dentp->d_name[0])) fds++;
+    if (fds % 100 == 0) {
+      clock_gettime(CLOCK_MONOTONIC, &now);
+      long elapsed_ms = (now.tv_sec - start.tv_sec) * 1000L +
+                        (now.tv_nsec - start.tv_nsec) / 1000000L;
+      if (elapsed_ms > TIMEOUT_MS) {
+        timed_out = true;
+        break;
       }
     }
-    closedir(dirp);
-    st->print_cr("OpenFileDescriptorCount = %d", fds - 1); // minus the opendir fd itself
+  }
+
+  closedir(dirp);
+  if (timed_out) {
+    st->print_cr("OpenFileDescriptorCount > %d", fds - 1); // minus the opendir fd itself
   } else {
-    st->print_cr("OpenFileDescriptorCount = unknown");
+    st->print_cr("OpenFileDescriptorCount = %d", fds - 1);
   }
 }
+
+
