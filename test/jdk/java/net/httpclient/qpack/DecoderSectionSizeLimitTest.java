@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
- * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL
  *                    DecoderSectionSizeLimitTest
  */
 
@@ -48,18 +48,21 @@ import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.Encoder;
 import jdk.test.lib.RandomFactory;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DecoderSectionSizeLimitTest {
-    @Test(dataProvider = "headerSequences")
+    @ParameterizedTest
+    @MethodSource("headerSequences")
     public void fieldSectionSizeLimitExceeded(List<TestHeader> headersSequence,
                                               long maxFieldSectionSize) {
 
@@ -144,21 +147,20 @@ public class DecoderSectionSizeLimitTest {
                 System.err.printf("Decoding error observed during buffer #%d processing: %s throwable: %s%n",
                         bufferIdx, decodingError, decodingCallback.lastThrowable.get());
                 if (decoderErrorExpected) {
-                    Assert.assertEquals(decodingError, Http3Error.QPACK_DECOMPRESSION_FAILED);
+                    Assertions.assertEquals(Http3Error.QPACK_DECOMPRESSION_FAILED, decodingError);
                     return;
                 } else {
-                    Assert.fail("No HTTP/3 error was expected");
+                    Assertions.fail("No HTTP/3 error was expected");
                 }
             } else {
                 System.err.println("Buffer #" + bufferIdx + " readout completed without errors");
             }
         }
         if (decoderErrorExpected) {
-            Assert.fail("HTTP/3 error was expected but was not observed");
+            Assertions.fail("HTTP/3 error was expected but was not observed");
         }
     }
 
-    @DataProvider
     public Object[][] headerSequences() {
         List<Object[]> testCases = new ArrayList<>();
         for (var sequence : generateHeaderSequences()) {
