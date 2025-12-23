@@ -438,7 +438,7 @@ public final class MacHelper {
 
         final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
 
-        final var unpackadeRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
+        final var unpackedRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
 
         // Preferably create a DMG bundle, fallback to PKG if DMG packaging is disabled.
         new PackageTest().forTypes(Stream.of(
@@ -457,10 +457,10 @@ public final class MacHelper {
             mutator.ifPresent(cmd::mutate);
         }).addInstallVerifier(cmd -> {
             final Path bundleRoot = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
-            FileUtils.copyRecursive(bundleRoot, unpackadeRuntimeBundleDir, LinkOption.NOFOLLOW_LINKS);
+            FileUtils.copyRecursive(bundleRoot, unpackedRuntimeBundleDir, LinkOption.NOFOLLOW_LINKS);
         }).run(Action.CREATE, Action.UNPACK, Action.VERIFY_INSTALL, Action.PURGE);
 
-        return unpackadeRuntimeBundleDir;
+        return unpackedRuntimeBundleDir;
     }
 
     public static Consumer<JPackageCommand> useKeychain(MacSign.ResolvedKeychain keychain) {
