@@ -86,6 +86,10 @@ class ExchangeImpl {
     int rcode = -1;
     HttpPrincipal principal;
     ServerImpl server;
+    
+    /* upgrade state */
+    boolean upgraded = false;
+    HttpUpgradeHandler upgradeHandler = null;
 
     ExchangeImpl(
         String m, URI u, Request req, long len, HttpConnection connection
@@ -409,6 +413,39 @@ class ExchangeImpl {
 
     void setPrincipal(HttpPrincipal principal) {
         this.principal = principal;
+    }
+
+    void upgrade(HttpUpgradeHandler handler) throws IOException {
+        if (handler == null) {
+            throw new NullPointerException("handler cannot be null");
+        }
+        if (sentHeaders) {
+            throw new IllegalStateException("headers already sent");
+        }
+        this.upgraded = true;
+        this.upgradeHandler = handler;
+        this.rcode = 101;
+        
+        // Send upgrade response with 101 Switching Protocols
+        String statusLine = "HTTP/1.1 101" + Code.msg(101) + "\r\n";
+        ByteArrayOutputStream tmpout = new ByteArrayOutputStream();
+        tmpout.write(bytes(statusLine, 0), 0, statusLine.length());
+        rspHdrs.set("Date", FORMATTER.format(Instant.now()));
+        
+        write(rspHdrs, tmpout);
+        tmpout.writeTo(ros);
+        ros.flush();
+        sentHeaders = true;
+        
+        server.logReply(101, req.requestLine(), null);
+    }
+
+    boolean isUpgraded() {
+        return upgraded;
+    }
+
+    HttpUpgradeHandler getUpgradeHandler() {
+        return upgradeHandler;
     }
 
     static ExchangeImpl get(HttpExchange t) {
