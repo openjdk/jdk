@@ -1617,6 +1617,8 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
     return false;
   }
   return seems_never_taken(prob) &&
+         // Skip optimization if recompile limit is exceeded to avoid deopts without recompilation.
+         !C->too_many_recompiles(method(), bci(), Deoptimization::Reason_unstable_if) &&
          !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 }
 
