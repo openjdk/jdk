@@ -36,6 +36,7 @@ import java.net.URI;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
@@ -51,7 +52,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class UnmodifiableHeadersTest {
 
     @Test
@@ -69,16 +69,14 @@ public class UnmodifiableHeadersTest {
         assertEquals(headers.get("Foo"), unmodifiableHeaders2.get("Foo"));
     }
 
-    public Object[][] headers() {
+    public static Stream<Headers> headers() {
         var headers = new Headers();
         headers.add("Foo", "Bar");
         var exchange = new TestHttpExchange(headers);
 
-        return new Object[][] {
-                { exchange.getRequestHeaders() },
-                { Headers.of("Foo", "Bar") },
-                { Headers.of(Map.of("Foo", List.of("Bar"))) },
-        };
+        return Stream.of(exchange.getRequestHeaders(),
+                Headers.of("Foo", "Bar"),
+                Headers.of(Map.of("Foo", List.of("Bar"))));
     }
 
     @ParameterizedTest
@@ -89,16 +87,16 @@ public class UnmodifiableHeadersTest {
         assertUnmodifiableList(headers);
     }
 
-    public Object[][] toStringHeaders() {
+    public static Stream<Headers> toStringHeaders() {
         final Headers headers = new Headers();
         headers.add("hello", "World");
-        return new Object[][] {
-                { headers },
-                { Headers.of("abc", "XYZ") },
-                { Headers.of(Map.of("foo", List.of("Bar"))) },
-                { Headers.of(Map.of("Hello", List.of())) },
-                { Headers.of(Map.of("one", List.of("two", "THREE"))) },
-        };
+        return Stream.of(
+                headers,
+                Headers.of("abc", "XYZ"),
+                Headers.of(Map.of("foo", List.of("Bar"))),
+                Headers.of(Map.of("Hello", List.of())),
+                Headers.of(Map.of("one", List.of("two", "THREE")))
+        );
     }
 
     /*
