@@ -122,11 +122,18 @@ public final class Unsafe {
     private static final byte PRIMITIVE_SIZE_MASK = 3;
 
     // Operators for getAndOperatePrimitiveBitsMO
-    public static final byte OP_ADD     = '+';
-    public static final byte OP_BITAND  = '&';
-    public static final byte OP_BITOR   = '|';
-    public static final byte OP_BITXOR  = '^';
-    public static final byte OP_SWAP    = '=';
+    private static final byte OP_ADD     = '+';
+    private static final byte OP_BITAND  = '&';
+    private static final byte OP_BITOR   = '|';
+    private static final byte OP_BITXOR  = '^';
+    private static final byte OP_SWAP    = '=';
+    // Can add these if they become popular:
+    //private static final byte OP_MAX     = '>';  // Cf. C++26, RISCV amomaxu
+    //private static final byte OP_MIN     = '<';
+    //private static final byte OP_MAXU    = ']';
+    //private static final byte OP_MINU    = '[';
+    // Yes, ASCII symbols are hokey, but we don't have a handy enum for this.
+    // (Also, Unsafe is involved in the bootstrapping of the first enum.)
 
     // These memory order codes are private to this API and its native methods.
     /** Normal relaxed memory order, which is the default for Java. */
@@ -2715,11 +2722,11 @@ public final class Unsafe {
      */
     @ForceInline
     @IntrinsicCandidate
-    public long getAndOperatePrimitiveBitsMO(byte memoryOrder,
-                                             byte basicType,
-                                             byte op,
-                                             Object o, long offset,
-                                             long operand) {
+    private long getAndOperatePrimitiveBitsMO(byte memoryOrder,
+                                              byte basicType,
+                                              byte op,
+                                              Object o, long offset,
+                                              long operand) {
         checkMemoryOrder(memoryOrder);
         checkOperatorForCAS(op, basicType);
         byte memoryOrderForLoad = memoryOrder;

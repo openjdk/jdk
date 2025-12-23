@@ -154,7 +154,6 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_MonitorExit    (MonitorExit*     x) { kill_memory(); }
   void do_Invoke         (Invoke*          x) { kill_memory(); }
   void do_UnsafePut      (UnsafePut*       x) { kill_memory(); }
-  void do_UnsafeGetAndSet(UnsafeGetAndSet* x) { kill_memory(); }
   void do_UnsafeGet      (UnsafeGet*       x) {
     if (x->memory_order() != vmIntrinsics::MO_PLAIN) { // the JMM requires this
       kill_memory();

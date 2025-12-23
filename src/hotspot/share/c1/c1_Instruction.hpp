@@ -94,7 +94,6 @@ class       Base;
 class   UnsafeOp;
 class     UnsafeGet;
 class     UnsafePut;
-class     UnsafeGetAndSet;
 class   ProfileCall;
 class   ProfileReturnType;
 class   ProfileInvoke;
@@ -188,7 +187,6 @@ class InstructionVisitor: public StackObj {
   virtual void do_ExceptionObject(ExceptionObject* x) = 0;
   virtual void do_UnsafeGet      (UnsafeGet*       x) = 0;
   virtual void do_UnsafePut      (UnsafePut*       x) = 0;
-  virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
   virtual void do_ProfileReturnType (ProfileReturnType*  x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
@@ -2226,29 +2224,6 @@ LEAF(UnsafePut, UnsafeOp)
   }
 
   // accessors
-  Value value()                                  { return _value; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeOp::input_values_do(f);
-                                                   f->visit(&_value); }
-};
-
-LEAF(UnsafeGetAndSet, UnsafeOp)
- private:
-  Value _value;                                  // Value to be stored
-  vmIntrinsics::BitsOperation _bits_op;          // operation: swap, add
- public:
-  UnsafeGetAndSet(BasicType basic_type, Value object, Value offset, Value value,
-                  vmIntrinsics::MemoryOrder memory_order, vmIntrinsics::BitsOperation bits_op)
-  : UnsafeOp(basic_type, object, offset, false, memory_order)
-    , _value(value)
-    , _bits_op(bits_op)
-  {
-    ASSERT_VALUES
-  }
-
-  // accessors
-  vmIntrinsics::BitsOperation bits_op() const    { return _bits_op; }
   Value value()                                  { return _value; }
 
   // generic

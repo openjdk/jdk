@@ -376,8 +376,8 @@ class GraphBuilder {
 
   void append_unsafe_get(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, int prefix_size);
   void append_unsafe_put(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, int prefix_size);
-  void append_unsafe_CAS(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, int prefix_size);
-  void append_unsafe_get_and_set(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t, vmIntrinsics::BitsOperation op, int prefix_size);
+  void append_unsafe_CAS(ciMethod* callee, vmIntrinsics::MemoryOrder mo, BasicType t,
+                         vmIntrinsics::BitsOperation op, int prefix_size);
   Value adjust_unsafe_container(Value x, BasicType from, BasicType to);
   Value adjust_unsafe_offset(Value offset);
   Bytecodes::Code  match_conversion(     Value x, Value* arg);

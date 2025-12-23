@@ -842,7 +842,6 @@ void Canonicalizer::do_OsrEntry       (OsrEntry*        x) {}
 void Canonicalizer::do_ExceptionObject(ExceptionObject* x) {}
 void Canonicalizer::do_UnsafeGet      (UnsafeGet*       x) {}
 void Canonicalizer::do_UnsafePut      (UnsafePut*       x) {}
-void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
 void Canonicalizer::do_ProfileCall    (ProfileCall*     x) {}
 void Canonicalizer::do_ProfileReturnType(ProfileReturnType* x) {}
 void Canonicalizer::do_ProfileInvoke  (ProfileInvoke*   x) {}

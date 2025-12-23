@@ -156,7 +156,6 @@ public:
     void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ };
     void do_UnsafePut      (UnsafePut*       x) { /* nothing to do */ };
     void do_UnsafeGet      (UnsafeGet*       x) { /* nothing to do */ };
-    void do_UnsafeGetAndSet(UnsafeGetAndSet* x) { /* nothing to do */ };
     void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ };
     void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ };
     void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };

@@ -1492,18 +1492,55 @@ LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
 
 //------------------------field access--------------------------------------
 
-void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
+void LIRGenerator::do_CompareAndSwap(Intrinsic* x) {
+  BasicType type = x->basic_type();
+  // ignore memory order -- just do MO_VOLATILE
   assert(x->number_of_arguments() == 4, "wrong type");
   LIRItem obj   (x->argument_at(0), this);  // object
   LIRItem offset(x->argument_at(1), this);  // offset of field
   LIRItem cmp   (x->argument_at(2), this);  // value to compare with field
   LIRItem val   (x->argument_at(3), this);  // replace field with val if matches cmp
   assert(obj.type()->tag() == objectTag, "invalid type");
-  assert(cmp.type()->tag() == type->tag(), "invalid type");
-  assert(val.type()->tag() == type->tag(), "invalid type");
+  ValueType* vt = as_ValueType(type);
+  assert(cmp.type()->tag() == vt->tag(), "invalid type");
+  assert(val.type()->tag() == vt->tag(), "invalid type");
 
-  LIR_Opr result = access_atomic_cmpxchg_at(IN_HEAP, as_BasicType(type),
+  LIR_Opr result = access_atomic_cmpxchg_at(IN_HEAP, type,
                                             obj, offset, cmp, val);
+  set_result(x, result);
+}
+
+void LIRGenerator::do_GetAndOperate(Intrinsic* x) {
+  BasicType type = x->basic_type();
+  // ignore memory order -- just do MO_VOLATILE
+  vmIntrinsics::BitsOperation op = x->bits_op();
+  assert(x->number_of_arguments() == 3, "wrong type");
+  LIRItem obj  (x->argument_at(0), this);  // object
+  LIRItem off  (x->argument_at(1), this);  // offset of field
+  LIRItem value(x->argument_at(2), this);  // operand or swap value
+
+  // fall down to MO_VOLATILE; maybe handle MO_RELEASE, etc., later? 
+  DecoratorSet decorators = IN_HEAP | C1_UNSAFE_ACCESS | MO_SEQ_CST;
+
+  if (is_reference_type(type)) {
+    decorators |= ON_UNKNOWN_OOP_REF;
+  }
+
+  assert(obj.type()->tag() == objectTag, "invalid type");
+  ValueType* vt = as_ValueType(type);
+  assert(value.type()->tag() == vt->tag(), "invalid type");
+
+  LIR_Opr result;
+  switch (x->bits_op()) {
+  case vmIntrinsics::OP_ADD:
+    result = access_atomic_add_at(decorators, type, obj, off, value);
+    break;
+  default:
+    assert(false, "either add or swap, please");
+  case vmIntrinsics::OP_SWAP:
+    result = access_atomic_xchg_at(decorators, type, obj, off, value);
+    break;
+  }
   set_result(x, result);
 }
 
@@ -2098,33 +2135,6 @@ void LIRGenerator::do_UnsafePut(UnsafePut* x) {
     decorators |= MO_SEQ_CST;
   }
   access_store_at(decorators, type, src, off.result(), data.result());
-}
-
-void LIRGenerator::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {
-  BasicType type = x->basic_type();
-  LIRItem src(x->object(), this);
-  LIRItem off(x->offset(), this);
-  LIRItem value(x->value(), this);
-
-  // fall down to MO_VOLATILE; maybe handle MO_RELEASE, etc., later? 
-  DecoratorSet decorators = IN_HEAP | C1_UNSAFE_ACCESS | MO_SEQ_CST;
-
-  if (is_reference_type(type)) {
-    decorators |= ON_UNKNOWN_OOP_REF;
-  }
-
-  LIR_Opr result;
-  switch (x->bits_op()) {
-  case vmIntrinsics::OP_ADD:
-    result = access_atomic_add_at(decorators, type, src, off, value);
-    break;
-  default:
-    assert(false, "either add or swap, please");
-  case vmIntrinsics::OP_SWAP:
-    result = access_atomic_xchg_at(decorators, type, src, off, value);
-    break;
-  }
-  set_result(x, result);
 }
 
 void LIRGenerator::do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux) {
@@ -2879,19 +2889,12 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_compareAndSetReferenceMO:
   case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
-    switch (x->basic_type()) {
-    case T_OBJECT:
-      do_CompareAndSwap(x, objectType);
-      break;
-    case T_INT:
-      do_CompareAndSwap(x, intType);
-      break;
-    case T_LONG:
-      do_CompareAndSwap(x, longType);
-      break;
-    default:
-      ShouldNotReachHere();
-    }
+    do_CompareAndSwap(x);
+    break;
+
+  case vmIntrinsics::_getAndSetReferenceMO:
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    do_GetAndOperate(x);
     break;
 
   case vmIntrinsics::_loadFence :

@@ -263,7 +263,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_MathIntrinsic(Intrinsic* x);
   void do_LibmIntrinsic(Intrinsic* x);
   void do_ArrayCopy(Intrinsic* x);
-  void do_CompareAndSwap(Intrinsic* x, ValueType* type);
+  void do_CompareAndSwap(Intrinsic* x);
+  void do_GetAndOperate(Intrinsic* x);
   void do_PreconditionsCheckIndex(Intrinsic* x, BasicType type);
   void do_FPIntrinsics(Intrinsic* x);
   void do_Reference_get0(Intrinsic* x);
@@ -580,7 +581,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_ExceptionObject(ExceptionObject* x);
   virtual void do_UnsafeGet      (UnsafeGet*       x);
   virtual void do_UnsafePut      (UnsafePut*       x);
-  virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileReturnType (ProfileReturnType* x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);

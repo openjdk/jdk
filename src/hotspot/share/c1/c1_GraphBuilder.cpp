@@ -1258,11 +1258,13 @@ void GraphBuilder::compare_op(ValueType* type, Bytecodes::Code code) {
 }
 
 
+#define CanonicalizeConversions (!UseNewCode3)  // New code marker; FIXME.
 void GraphBuilder::convert(Bytecodes::Code op, BasicType from, BasicType to) {
   ValueType* xt = as_ValueType(from);
   ValueType* rt = as_ValueType(to);
   Value x = pop(xt);
-  if (x->as_Convert() != nullptr && rt->is_int()) {
+  if (CanonicalizeConversions &&
+      x->as_Convert() != nullptr && rt->is_int()) {
     Value v = nullptr;
     Bytecodes::Code op2 = match_conversion(x, &v);
     if (op2 == Bytecodes::_i2l || op2 == Bytecodes::_i2d) {
@@ -3596,25 +3598,33 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   switch(id) {
   // canonicalize back-to-back float-vs-int, long-vs-double conversions
   case vmIntrinsics::_floatToRawIntBits:
-    if (vmIntrinsics::_intBitsToFloat == match_unary_intrinsic(arg = fpop(), &subst)) {
+    arg = fpop();
+    if (CanonicalizeConversions &&
+        vmIntrinsics::_intBitsToFloat == match_unary_intrinsic(arg, &subst)) {
       ipush(subst); return;     // eliminated a back-to-back pair
     } else {
       fpush(arg); break;        // no such luck; generate the intrinsic
     }
   case vmIntrinsics::_intBitsToFloat:
-    if (vmIntrinsics::_floatToRawIntBits == match_unary_intrinsic(arg = ipop(), &subst)) {
+    arg = ipop();
+    if (CanonicalizeConversions &&
+        vmIntrinsics::_floatToRawIntBits == match_unary_intrinsic(arg, &subst)) {
       fpush(subst); return;     // eliminated a back-to-back pair
     } else {
       ipush(arg); break;        // no such luck; generate the intrinsic
     }
   case vmIntrinsics::_doubleToRawLongBits:
-    if (vmIntrinsics::_longBitsToDouble == match_unary_intrinsic(arg = dpop(), &subst)) {
+    arg = dpop();
+    if (CanonicalizeConversions &&
+        vmIntrinsics::_longBitsToDouble == match_unary_intrinsic(arg, &subst)) {
       lpush(subst); return;     // eliminated a back-to-back pair
     } else {
       dpush(arg); break;        // no such luck; generate the intrinsic
     }
   case vmIntrinsics::_longBitsToDouble:
-    if (vmIntrinsics::_doubleToRawLongBits == match_unary_intrinsic(arg = lpop(), &subst)) {
+    arg = lpop();
+    if (CanonicalizeConversions &&
+        vmIntrinsics::_doubleToRawLongBits == match_unary_intrinsic(arg, &subst)) {
       dpush(subst); return;     // eliminated a back-to-back pair
     } else {
       lpush(arg); break;        // no such luck; generate the intrinsic
@@ -3732,7 +3742,8 @@ bool GraphBuilder::try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignor
     assert(t == T_OBJECT, "");    // and fall through
   case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
     if (t == T_INT || t == T_LONG || t == T_OBJECT) {
-      append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size);
+      append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
+                        vmIntrinsics::OP_NONE, prefix_size);
       return true;
     }
     // FIXME: detect other combinations supported by platform
@@ -3759,8 +3770,8 @@ bool GraphBuilder::try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignor
     // FIXME: Most platforms (including arm64 and x64) support byte
     // and short as well, and with all the bitwise combination ops.
     if (t == T_INT || t == T_LONG || t == T_OBJECT) {
-      append_unsafe_get_and_set(callee, (vmIntrinsics::MemoryOrder)mo, t,
-                                (vmIntrinsics::BitsOperation)op, prefix_size);
+      append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
+                        (vmIntrinsics::BitsOperation)op, prefix_size);
       return true;
     }
     return false;  // no other combinations supported
@@ -4446,6 +4457,8 @@ void GraphBuilder::append_unsafe_get(ciMethod* callee,
   Value offset = args->at(prefix_size + 2);
   offset = adjust_unsafe_offset(offset);
   Instruction* op = append(new UnsafeGet(t, base, offset, mo));
+  // The underlying get operation is strongly typed, but the result
+  // must be widened to 64 bits.
   op = adjust_unsafe_container(op, t, T_LONG);
   push(op->type(), op);
   compilation()->set_has_unsafe_access(true);
@@ -4471,17 +4484,26 @@ void GraphBuilder::append_unsafe_put(ciMethod* callee,
   kill_all();
 }
 
+// Append compareAndSet (OP_NONE), getAndSet (OP_SWAP), or setAndFoo (OP_Foo).
+// The backend will inspect the intrinsic and prefix to DTRT.
 void GraphBuilder::append_unsafe_CAS(ciMethod* callee,
                                      vmIntrinsics::MemoryOrder mo, BasicType t,
+                                     vmIntrinsics::BitsOperation op,
                                      int prefix_size) {
   ValueStack* state_before = copy_state_for_exception();
-  ValueType* result_type = as_ValueType(callee->return_type());
-  assert(result_type->is_int(), "int result");
+  vmIntrinsics::ID id = callee->intrinsic_id();
+  // The uit (unsafe type) is long for primitive GAX, else T_OBJECT or T_BOOLEAN
+  BasicType uit = callee->return_type()->basic_type();
+  const bool is_plain_CAS = (op == vmIntrinsics::OP_NONE);  // CAS vs. GAS/GAX
+  ValueType* result_type = as_ValueType(is_plain_CAS ? T_BOOLEAN : t);
+  assert(is_plain_CAS
+         ? uit == T_BOOLEAN
+         : uit == T_OBJECT || uit == T_LONG, "correct polymorphic method return");
   Values* args = state()->pop_arguments(callee->arg_size());
 
   // Pop off some args to specially handle, then push back
-  Value newval = args->pop();
-  Value cmpval = args->pop();
+  Value newval = is_plain_CAS ? args->pop() : nullptr;
+  Value cmpval = args->pop();   // also, operand for GAS/GAX
   Value offset = args->pop();
   Value base = args->pop();
   assert(args->length() == 1+prefix_size, ""); // do not pop the prefix
@@ -4493,22 +4515,40 @@ void GraphBuilder::append_unsafe_CAS(ciMethod* callee,
   null_check(unsafe_obj);
 
   offset = adjust_unsafe_offset(offset);
-  newval = adjust_unsafe_container(newval, T_LONG, t);
   cmpval = adjust_unsafe_container(cmpval, T_LONG, t);
+  if (is_plain_CAS)
+    newval = adjust_unsafe_container(newval, T_LONG, t);
 
   args->push(base);
   args->push(offset);
-  args->push(cmpval);
-  args->push(newval);
+  args->push(cmpval);    // or operand for GAX, or newval for GAS
+  if (is_plain_CAS)
+    args->push(newval);  // GAS/GAX will compute the newval
 
   // An unsafe CAS can alias with other field accesses, but we don't
   // know which ones so mark the state as no preserved.  This will
   // cause CSE to invalidate memory across it.
-  bool preserves_state = false;
-  Intrinsic* result = new Intrinsic(result_type, callee->intrinsic_id(), args, false, state_before, preserves_state);
-  result = result->with_polymorphic_prefix((vmIntrinsics::MemoryOrder)mo, t);
-  append_split(result);
-  push(result_type, result);
+  const bool not_ps = false;  // preserve_state = false
+  Intrinsic* result = new Intrinsic(result_type, id, args, false, state_before, not_ps);
+  append_split(result->with_polymorphic_prefix(mo, t, op));
+  switch (uit) {
+  case T_BOOLEAN:
+    assert(is_plain_CAS, "plain CAS returns boolean");
+    assert(id == vmIntrinsics::_compareAndSetReferenceMO ||
+           id == vmIntrinsics::_compareAndSetPrimitiveBitsMO, "");
+    ipush(result); break;
+  case T_OBJECT:
+    assert(!is_plain_CAS && op == vmIntrinsics::OP_NONE, "swap returns reference");
+    assert(id == vmIntrinsics::_getAndSetReferenceMO ||
+           id == vmIntrinsics::_getAndOperatePrimitiveBitsMO, "");
+    apush(result); break;
+  default:
+    assert(!is_plain_CAS && uit == T_LONG, "returns primitive bits");
+    assert(id == vmIntrinsics::_getAndOperatePrimitiveBitsMO, "");
+    // The underlying intrinsic is strongly typed, but the result must
+    // be widened to 64 bits.
+    lpush(adjust_unsafe_container(result, t, T_LONG)); break;
+  }
   compilation()->set_has_unsafe_access(true);
 }
 
@@ -4551,7 +4591,8 @@ Value GraphBuilder::adjust_unsafe_container(Value x, BasicType from, BasicType t
     } else if (to == T_INT) {
       assert(from == T_LONG, "T_DOUBLE is not a container");
       Value v = nullptr;
-      if (match_conversion(x, &v) == Bytecodes::_i2l) {
+      if (CanonicalizeConversions &&
+          match_conversion(x, &v) == Bytecodes::_i2l) {
         return v;  // back-to-back i2l->l2i means no change
       }
       return append(new Convert(Bytecodes::_l2i, x, as_ValueType(T_INT)));
@@ -4567,7 +4608,8 @@ Value GraphBuilder::adjust_unsafe_container(Value x, BasicType from, BasicType t
     assert(id != vmIntrinsics::_none, "must be");
     // bitwise same-size raw conversion: int-vs-float or long-vs-double
     Value subst = nullptr;
-    if (match_unary_intrinsic(x, &subst) == vmIntrinsics::raw_floating_conversion(to, from)) {
+    if (CanonicalizeConversions &&
+        match_unary_intrinsic(x, &subst) == vmIntrinsics::raw_floating_conversion(to, from)) {
       return subst;  // back-to-back inverse means no change
     }
     const bool ps = true, ct = false;
@@ -4575,7 +4617,7 @@ Value GraphBuilder::adjust_unsafe_container(Value x, BasicType from, BasicType t
            vmIntrinsics::can_trap(id) == ct, "must be");
     Values* args = new Values(1);
     args->push(x);
-    return append(new Intrinsic(as_ValueType(to), id, args, false, state(), ps, ct));
+    return append_split(new Intrinsic(as_ValueType(to), id, args, false, state(), ps, ct));
   }
   // nothing left to do, since we do not care about subword padding
   assert(!is_double_word_type(from) && !is_double_word_type(to), "");
@@ -4586,6 +4628,7 @@ Value GraphBuilder::adjust_unsafe_container(Value x, BasicType from, BasicType t
 
 
 Bytecodes::Code GraphBuilder::match_conversion(Value x, Value* arg) {
+  assert(CanonicalizeNodes, "else do not call");
   Convert* conv = x->as_Convert();
   if (conv != nullptr) {
     *arg = conv->value();
@@ -4597,6 +4640,7 @@ Bytecodes::Code GraphBuilder::match_conversion(Value x, Value* arg) {
 
 
 vmIntrinsics::ID GraphBuilder::match_unary_intrinsic(Value x, Value* arg) {
+  assert(CanonicalizeNodes, "else do not call");
   Intrinsic* intr = x->as_Intrinsic();
   if (intr != nullptr && intr->number_of_arguments() == 1) {
     *arg = intr->argument_at(0);
@@ -4701,32 +4745,6 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   if (success && CIPrintMethodCodes) {
     callee->print_codes();
   }
-}
-
-// FIXME: Fold this special IR node back into the Intrinsic format.
-// There is no need to have a special IR format for this op.
-// This will make it easier to extend support from CAS to cmpxchg.
-// (The BitsOperation parameter is ready to use in Intrinsic.)
-void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee,
-                                             vmIntrinsics::MemoryOrder mo,
-                                             BasicType t,
-                                             vmIntrinsics::BitsOperation op,
-                                             int prefix_size) {
-  //mo, op will be passed through to LIRGenerator::do_UnsafeGetAndSet
-  Values* args = state()->pop_arguments(callee->arg_size());
-  BasicType ut = callee->return_type()->basic_type();
-  assert(ut == T_OBJECT || ut == T_LONG, "polymorphic method returns ref or 64 bits");
-  null_check(args->at(0));
-  Value base   = args->at(prefix_size + 1);
-  Value offset = args->at(prefix_size + 2);
-  Value newval = args->at(prefix_size + 3);
-  offset = adjust_unsafe_offset(offset);
-  newval = adjust_unsafe_container(newval, T_LONG, t);
-  Instruction* ins = append(new UnsafeGetAndSet(t, base, offset, newval, mo, op));
-  ins = adjust_unsafe_container(ins, t, T_LONG);
-  push(ins->type(), ins);
-  compilation()->set_has_unsafe_access(true);
-  kill_all();
 }
 
 #ifndef PRODUCT

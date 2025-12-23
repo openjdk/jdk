@@ -355,11 +355,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   //FIXME case vmIntrinsics::_weakCompareAndSetReference:          return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Volatile);
 
-  case vmIntrinsics::_compareAndExchangeReferenceMO:       return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
-  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:   return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Volatile);//FIXME
+  //FIXME case vmIntrinsics::_compareAndExchangeReferenceMO:       return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
+  //FIXME case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:   return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Volatile);//FIXME
 
   //FIXME case vmIntrinsics::_getAndAddByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_add,       Volatile);
-  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:     return inline_unsafe_load_store(T_SHORT,  LS_get_add,       Volatile);//FIXME
+  //FIXME case vmIntrinsics::_getAndOperatePrimitiveBitsMO:     return inline_unsafe_load_store(T_SHORT,  LS_get_add,       Volatile);//FIXME
 
   //FIXME case vmIntrinsics::_getAndSetByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_set,       Volatile);
 
