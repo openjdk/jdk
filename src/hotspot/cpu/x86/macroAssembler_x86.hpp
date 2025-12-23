@@ -472,9 +472,6 @@ class MacroAssembler: public Assembler {
   void push_cont_fastpath();
   void pop_cont_fastpath();
 
-  void inc_held_monitor_count();
-  void dec_held_monitor_count();
-
   DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 
   // Round up to a power of two
@@ -989,6 +986,9 @@ public:
   void push_d(XMMRegister r);
   void pop_d(XMMRegister r);
 
+  void push_ppx(Register src);
+  void pop_ppx(Register dst);
+
   void andpd(XMMRegister dst, XMMRegister    src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, Address        src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
@@ -1368,6 +1368,7 @@ public:
 
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  using Assembler::evpcmpeqd;
   void evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   // Vector compares
@@ -2054,8 +2055,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register reg_rax, Register tmp, Label& slow);
+  void fast_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow);
+  void fast_unlock(Register obj, Register reg_rax, Register tmp, Label& slow);
 
   void save_legacy_gprs();
   void restore_legacy_gprs();

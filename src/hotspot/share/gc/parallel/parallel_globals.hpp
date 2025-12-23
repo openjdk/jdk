@@ -31,17 +31,9 @@
                           product_pd,                                       \
                           range,                                            \
                           constraint)                                       \
-  product(uintx, HeapMaximumCompactionInterval, 20,                         \
-          "How often should we maximally compact the heap (not allowing "   \
-          "any dead space)")                                                \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(bool, UseMaximumCompactionOnSystemGC, true,                       \
           "Use maximum compaction in the Parallel Old garbage collector "   \
-          "for a system GC")                                                \
-                                                                            \
-  product(bool, PSChunkLargeArrays, true,                                   \
-          "(Deprecated) Process large arrays in chunks")
+          "for a system GC")
 
 // end of GC_PARALLEL_FLAGS
 

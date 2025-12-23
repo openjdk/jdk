@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -148,65 +148,6 @@ void ImageLocation::clear_data() {
     memset(_attributes, 0, sizeof(_attributes));
 }
 
-// ImageModuleData constructor maps out sub-tables for faster access.
-ImageModuleData::ImageModuleData(const ImageFileReader* image_file) :
-        _image_file(image_file),
-        _endian(image_file->endian()) {
-}
-
-// Release module data resource.
-ImageModuleData::~ImageModuleData() {
-}
-
-
-// Return the module in which a package resides.    Returns NULL if not found.
-const char* ImageModuleData::package_to_module(const char* package_name) {
-    // replace all '/' by '.'
-    char* replaced = new char[(int) strlen(package_name) + 1];
-    assert(replaced != NULL && "allocation failed");
-    int i;
-    for (i = 0; package_name[i] != '\0'; i++) {
-      replaced[i] = package_name[i] == '/' ? '.' : package_name[i];
-    }
-    replaced[i] = '\0';
-
-    // build path /packages/<package_name>
-    const char* radical = "/packages/";
-    char* path = new char[(int) strlen(radical) + (int) strlen(package_name) + 1];
-    assert(path != NULL && "allocation failed");
-    strcpy(path, radical);
-    strcat(path, replaced);
-    delete[] replaced;
-
-    // retrieve package location
-    ImageLocation location;
-    bool found = _image_file->find_location(path, location);
-    delete[] path;
-    if (!found) {
-        return NULL;
-    }
-
-    // retrieve offsets to module name
-    int size = (int)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
-    u1* content = new u1[size];
-    assert(content != NULL && "allocation failed");
-    _image_file->get_resource(location, content);
-    u1* ptr = content;
-    // sequence of sizeof(8) isEmpty|offset. Use the first module that is not empty.
-    u4 offset = 0;
-    for (i = 0; i < size; i+=8) {
-        u4 isEmpty = _endian->get(*((u4*)ptr));
-        ptr += 4;
-        if (!isEmpty) {
-            offset = _endian->get(*((u4*)ptr));
-            break;
-        }
-        ptr += 4;
-    }
-    delete[] content;
-    return _image_file->get_strings().get(offset);
-}
-
 // Manage a table of open image files.  This table allows multiple access points
 // to share an open image.
 ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
@@ -340,8 +281,7 @@ ImageFileReader* ImageFileReader::id_to_reader(u8 id) {
 }
 
 // Constructor initializes to a closed state.
-ImageFileReader::ImageFileReader(const char* name, bool big_endian) :
-    _module_data(NULL) {
+ImageFileReader::ImageFileReader(const char* name, bool big_endian) {
     // Copy the image file name.
      int len = (int) strlen(name) + 1;
     _name = new char[len];
@@ -361,10 +301,6 @@ ImageFileReader::~ImageFileReader() {
     if (_name) {
         delete[] _name;
         _name = NULL;
-    }
-
-    if (_module_data != NULL) {
-        delete _module_data;
     }
 }
 
@@ -414,11 +350,7 @@ bool ImageFileReader::open() {
     _location_bytes = _index_data + location_bytes_offset;
     // Compute address of index string table.
     _string_bytes = _index_data + string_bytes_offset;
-
-    // Initialize the module data
-    _module_data = new ImageModuleData(this);
-    // Successful open (if memory allocation succeeded).
-    return _module_data != NULL;
+    return true;
 }
 
 // Close image file.
@@ -432,11 +364,6 @@ void ImageFileReader::close() {
     if (_fd != -1) {
         osSupport::close(_fd);
         _fd = -1;
-    }
-
-    if (_module_data != NULL) {
-        delete _module_data;
-        _module_data = NULL;
     }
 }
 
@@ -566,9 +493,4 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
         bool is_read = read_at(uncompressed_data, uncompressed_size, _index_size + offset);
         assert(is_read && "error reading from image or short read");
     }
-}
-
-// Return the ImageModuleData for this image
-ImageModuleData * ImageFileReader::get_image_module_data() {
-    return _module_data;
 }

@@ -162,7 +162,7 @@ final class AquaUtils {
         abstract T getInstance();
     }
 
-    static class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
+    static final class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
         private final Class<T> clazz;
 
         RecyclableSingletonFromDefaultConstructor(final Class<T> clazz) {
@@ -308,7 +308,7 @@ final class AquaUtils {
         }
     }
 
-    static class SlicedShadowBorder extends ShadowBorder {
+    static final class SlicedShadowBorder extends ShadowBorder {
         private final SlicedImageControl slices;
 
         SlicedShadowBorder(final Painter prePainter, final Painter postPainter, final int offsetX, final int offsetY, final float distance, final float intensity, final int blur, final int templateWidth, final int templateHeight, final int leftCut, final int topCut, final int rightCut, final int bottomCut) {

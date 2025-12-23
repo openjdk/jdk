@@ -183,7 +183,7 @@ public sealed class RecordedObject
             return defaultValue;
         }
         T object = getValue(name);
-        if (object == null || object.getClass().isAssignableFrom(clazz)) {
+        if (object == null || object.getClass() == clazz) {
             return object;
         } else {
             return defaultValue;

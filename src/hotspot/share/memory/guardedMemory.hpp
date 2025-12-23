@@ -26,7 +26,7 @@
 #define SHARE_MEMORY_GUARDEDMEMORY_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/safefetch.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 /**
@@ -42,9 +42,10 @@
  * |Offset             | Content              | Description    |
  * |------------------------------------------------------------
  * |base_addr          | 0xABABABABABABABAB   | Head guard     |
- * |+16                | <size_t:user_size>   | User data size |
- * |+sizeof(uintptr_t) | <tag>                | Tag word       |
- * |+sizeof(uintptr_t) | <tag2>               | Tag word       |
+ * |+GUARD_SIZE        | <size_t:user_size>   | User data size |
+ * |+sizeof(size_t)    | <tag>                | Tag word       |
+ * |+sizeof(void*)     | <tag2>               | Tag word       |
+ * |+sizeof(void*)     | <pad bytes>          | Padding        |
  * |+sizeof(void*)     | 0xF1 <user_data> (   | User data      |
  * |+user_size         | 0xABABABABABABABAB   | Tail guard     |
  * -------------------------------------------------------------
@@ -52,6 +53,8 @@
  * Where:
  *  - guard padding uses "badResourceValue" (0xAB)
  *  - tag word and tag2 word are general purpose
+ *  - padding is inserted as-needed by the compiler to ensure
+ *    the user data is aligned on a 16-byte boundary
  *  - user data
  *    -- initially padded with "uninitBlockPad" (0xF1),
  *    -- to "freeBlockPad" (0xBA), when freed
@@ -113,14 +116,14 @@ protected:
     }
 
     bool verify() const {
+      // We may not be able to dereference directly.
+      if (!os::is_readable_range((const void*) _guard, (const void*) (_guard + GUARD_SIZE))) {
+        return false;
+      }
       u_char* c = (u_char*) _guard;
       u_char* end = c + GUARD_SIZE;
       while (c < end) {
-        // We may not be able to dereference directly so use
-        // SafeFetch. It doesn't matter if the value read happens
-        // to be 0xFF as that is not what we expect anyway.
-        u_char val = (u_char) SafeFetch32((int*)c, 0xFF);
-        if (val != badResourceValue) {
+        if (*c != badResourceValue) {
           return false;
         }
         c++;
@@ -132,12 +135,15 @@ protected:
 
   /**
    * Header guard and size
+   *
+   * NB: the size and placement of the GuardHeader must be such that the
+   * user-ptr is maximally aligned i.e. 16-byte alignment for x86 ABI for
+   * stack alignment and use of vector (xmm) instructions. We use alignas
+   * to achieve this.
    */
-  class GuardHeader : Guard {
+  class alignas(16) GuardHeader : Guard {
     friend class GuardedMemory;
    protected:
-    // Take care in modifying fields here, will effect alignment
-    // e.g. x86 ABI 16 byte stack alignment
     union {
       uintptr_t __unused_full_word1;
       size_t _user_size;
@@ -153,8 +159,6 @@ protected:
 
     void set_tag2(const void* tag2) { _tag2 = (void*) tag2; }
     void* get_tag2() const { return _tag2; }
-
-
   }; // GuardedMemory::GuardHeader
 
   // Guarded Memory...

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,9 +101,12 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
     *hf.addr_at(frame::interpreter_frame_locals_offset) = locals_offset;
     return hf;
   } else {
-    // We need to re-read fp out of the frame because it may be an oop and we might have
-    // had a safepoint in finalize_freeze, after constructing f.
-    fp = *(intptr_t**)(f.sp() - frame::sender_sp_offset);
+    // For a compiled frame we need to re-read fp out of the frame because it may be an
+    // oop and we might have had a safepoint in finalize_freeze, after constructing f.
+    // For stub/native frames the value is not used while frozen, and will be constructed again
+    // when thawing the frame (see ThawBase::new_stack_frame). We use a special bad address to
+    // help with debugging, particularly when inspecting frames and identifying invalid accesses.
+    fp = FKind::compiled ? *(intptr_t**)(f.sp() - frame::sender_sp_offset) : (intptr_t*)badAddressVal;
 
     int fsize = FKind::size(f);
     sp = caller.unextended_sp() - fsize;
@@ -189,6 +192,46 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
     // and its oop-containing fp fixed. We've now just overwritten it, so we must patch it back to its value
     // as read from the chunk.
     patch_callee_link(caller, caller.fp());
+  }
+}
+
+inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
+  intptr_t* fp_addr = sp - frame::sender_sp_offset;
+  *fp_addr = badAddressVal;
+}
+
+inline intptr_t* AnchorMark::anchor_mark_set_pd() {
+  intptr_t* sp = _top_frame.sp();
+  if (_top_frame.is_interpreted_frame()) {
+    // In case the top frame is interpreted we need to set up the anchor using
+    // the last_sp saved in the frame (remove possible alignment added while
+    // thawing, see ThawBase::finish_thaw()). We also clear last_sp to match
+    // the behavior when calling the VM from the interpreter (we check for this
+    // in FreezeBase::prepare_freeze_interpreted_top_frame, which can be reached
+    // if preempting again at redo_vmcall()).
+    _last_sp_from_frame = _top_frame.interpreter_frame_last_sp();
+    assert(_last_sp_from_frame != nullptr, "");
+    _top_frame.interpreter_frame_set_last_sp(nullptr);
+    if (sp != _last_sp_from_frame) {
+      // We need to move up return pc and fp. They will be read next in
+      // set_anchor() and set as _last_Java_pc and _last_Java_fp respectively.
+      _last_sp_from_frame[-1] = (intptr_t)_top_frame.pc();
+      _last_sp_from_frame[-2] = (intptr_t)_top_frame.fp();
+    }
+    _is_interpreted = true;
+    sp = _last_sp_from_frame;
+  }
+  return sp;
+}
+
+inline void AnchorMark::anchor_mark_clear_pd() {
+  if (_is_interpreted) {
+    // Restore last_sp_from_frame and possibly overwritten pc.
+    _top_frame.interpreter_frame_set_last_sp(_last_sp_from_frame);
+    intptr_t* sp = _top_frame.sp();
+    if (sp != _last_sp_from_frame) {
+      sp[-1] = (intptr_t)_top_frame.pc();
+    }
   }
 }
 
@@ -296,10 +339,17 @@ inline intptr_t* ThawBase::push_cleanup_continuation() {
   frame enterSpecial = new_entry_frame();
   intptr_t* sp = enterSpecial.sp();
 
+  // We only need to set the return pc. rfp will be restored back in gen_continuation_enter().
   sp[-1] = (intptr_t)ContinuationEntry::cleanup_pc();
-  sp[-2] = (intptr_t)enterSpecial.fp();
+  return sp;
+}
 
-  log_develop_trace(continuations, preempt)("push_cleanup_continuation initial sp: " INTPTR_FORMAT " final sp: " INTPTR_FORMAT, p2i(sp + 2 * frame::metadata_words), p2i(sp));
+inline intptr_t* ThawBase::push_preempt_adapter() {
+  frame enterSpecial = new_entry_frame();
+  intptr_t* sp = enterSpecial.sp();
+
+  // We only need to set the return pc. rfp will be restored back in generate_cont_preempt_stub().
+  sp[-1] = (intptr_t)StubRoutines::cont_preempt_stub();
   return sp;
 }
 

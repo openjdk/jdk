@@ -112,7 +112,7 @@ public class CodeInstallerTest {
                                     hasUnsafeAccess);
         SpeculationLog log = null;
         InstalledCode installedCode = null;
-        return codeCache.addCode(dummyMethod, code, log, installedCode);
+        return codeCache.addCode(dummyMethod, code, log, installedCode, true);
     }
 
     protected Register getRegister(PlatformKind kind, int index) {

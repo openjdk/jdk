@@ -34,7 +34,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtPreInit.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmOperations.hpp"
@@ -116,7 +116,7 @@ void MemTracker::final_report(outputStream* output) {
   // printing the final report during normal VM exit, it should not print
   // the final report again. In addition, it should be guarded from
   // recursive calls in case NMT reporting itself crashes.
-  if (enabled() && Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
+  if (enabled() && AtomicAccess::cmpxchg(&g_final_report_did_run, false, true) == false) {
     report(tracking_level() == NMT_summary, output, 1);
   }
 }

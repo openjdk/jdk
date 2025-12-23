@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,6 @@
  *       ForbiddenHeadTest
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
@@ -53,7 +50,6 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
@@ -76,12 +72,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -93,12 +91,14 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
     DigestEchoServer.TunnelingProxy proxy;
     DigestEchoServer.TunnelingProxy authproxy;
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String https3URI;
     HttpClient authClient;
     HttpClient noAuthClient;
 
@@ -218,6 +218,8 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
                         for (var uri : List.of(httpURI, httpsURI, http2URI, https2URI)) {
                             result.add(new Object[]{uri + srv + auth, pcode, async, useAuth});
                         }
+                        if (code == PROXY_UNAUTHORIZED) continue; // no HTTP/3 with proxy
+                        result.add(new Object[] {https3URI + srv + auth, pcode, async, useAuth});
                     }
                 }
             }
@@ -274,6 +276,10 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         HttpRequest.Builder requestBuilder = HttpRequest
                 .newBuilder(uri)
                 .method("HEAD", HttpRequest.BodyPublishers.noBody());
+
+        if (uriString.contains("/http3/")) {
+            requestBuilder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
 
         HttpRequest request = requestBuilder.build();
         out.println("Initial request: " + request.uri());
@@ -349,10 +355,14 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         https2TestServer.addHandler(new UnauthorizedHandler(), "/https2/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new UnauthorizedHandler(), "/http3/");
+        https3URI = "https://" + http3TestServer.serverAuthority() + "/http3";
+
         proxy = DigestEchoServer.createHttpsProxyTunnel(DigestEchoServer.HttpAuthSchemeType.NONE);
         authproxy = DigestEchoServer.createHttpsProxyTunnel(DigestEchoServer.HttpAuthSchemeType.BASIC);
 
-        authClient = TRACKER.track(HttpClient.newBuilder()
+        authClient = TRACKER.track(newClientBuilderForH3()
                 .proxy(TestProxySelector.of(proxy, authproxy, httpTestServer))
                 .sslContext(sslContext)
                 .executor(executor)
@@ -360,7 +370,7 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
                 .build());
         clientCount.incrementAndGet();
 
-        noAuthClient = TRACKER.track(HttpClient.newBuilder()
+        noAuthClient = TRACKER.track(newClientBuilderForH3()
                 .proxy(TestProxySelector.of(proxy, authproxy, httpTestServer))
                 .sslContext(sslContext)
                 .executor(executor)
@@ -374,6 +384,8 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         http2TestServer.start();
         serverCount.incrementAndGet();
         https2TestServer.start();
+        serverCount.incrementAndGet();
+        http3TestServer.start();
         serverCount.incrementAndGet();
     }
 
@@ -389,6 +401,7 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            http3TestServer.stop();
         } finally {
             if (fail != null) throw fail;
         }

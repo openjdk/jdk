@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,12 +24,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.sun.org.apache.bcel.internal.classfile.ArrayElementValue;
 import com.sun.org.apache.bcel.internal.classfile.ElementValue;
+import jdk.xml.internal.Utils;
 
 /**
  * @since 6.0
+ * @LastModified: Sept 2025
  */
 public class ArrayElementValueGen extends ElementValueGen {
     // J5TODO: Should we make this an array or a list? A list would be easier to
@@ -46,7 +48,7 @@ public class ArrayElementValueGen extends ElementValueGen {
         evalues = new ArrayList<>();
         final ElementValue[] in = value.getElementValuesArray();
         for (final ElementValue element : in) {
-            evalues.add(ElementValueGen.copy(element, cpool, copyPoolEntries));
+            evalues.add(copy(element, cpool, copyPoolEntries));
         }
     }
 
@@ -55,15 +57,12 @@ public class ArrayElementValueGen extends ElementValueGen {
         evalues = new ArrayList<>();
     }
 
-    public ArrayElementValueGen(final int type, final ElementValue[] datums, final ConstantPoolGen cpool) {
+    public ArrayElementValueGen(final int type, final ElementValue[] elementValues, final ConstantPoolGen cpool) {
         super(type, cpool);
         if (type != ARRAY) {
             throw new IllegalArgumentException("Only element values of type array can be built with this ctor - type specified: " + type);
         }
-        this.evalues = new ArrayList<>();
-        for (final ElementValue datum : datums) {
-            evalues.add(ElementValueGen.copy(datum, cpool, true));
-        }
+        this.evalues = Utils.streamOfIfNonNull(elementValues).map(e -> copy(e, cpool, true)).collect(Collectors.toList());
     }
 
     public void addElement(final ElementValueGen gen) {

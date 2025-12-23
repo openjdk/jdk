@@ -32,7 +32,7 @@ import sun.awt.AWTAccessor;
 import sun.lwawt.macosx.*;
 import sun.lwawt.macosx.CImage.Creator;
 
-class _AppDockIconHandler {
+final class _AppDockIconHandler {
     private static native void nativeSetDockMenu(final long cmenu);
     private static native void nativeSetDockIconImage(final long image);
     private static native void nativeSetDockIconProgress(final int value);

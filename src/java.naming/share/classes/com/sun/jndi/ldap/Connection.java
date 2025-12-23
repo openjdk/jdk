@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.net.Socket;
 import javax.net.ssl.SSLSocket;
 
 import javax.naming.CommunicationException;
-import javax.naming.ServiceUnavailableException;
 import javax.naming.NamingException;
 import javax.naming.InterruptedNamingException;
 
@@ -439,53 +438,22 @@ public final class Connection implements Runnable {
      * Reads a reply; waits until one is ready.
      */
     BerDecoder readReply(LdapRequest ldr) throws NamingException {
-        BerDecoder rber;
-
-        // If socket closed, don't even try
-        lock.lock();
-        try {
-            if (sock == null) {
-                throw new ServiceUnavailableException(host + ":" + port +
-                    "; socket closed");
-            }
-        } finally {
-            lock.unlock();
-        }
-
-        IOException ioException = null;
         try {
             // if no timeout is set so we wait infinitely until
             // a response is received OR until the connection is closed or cancelled
             // http://docs.oracle.com/javase/8/docs/technotes/guides/jndi/jndi-ldap.html#PROP
-            rber = ldr.getReplyBer(readTimeout);
+            return ldr.getReplyBer(readTimeout);
         } catch (InterruptedException ex) {
             throw new InterruptedNamingException(
                 "Interrupted during LDAP operation");
         } catch (IOException ioe) {
-            // Connection is timed out OR closed/cancelled
-            // getReplyBer throws IOException when the requests needs to be abandoned
-            ioException = ioe;
-            rber = null;
-        }
-
-        if (rber == null) {
+            // getReplyBer() throws IOException when request needs to be abandoned
             abandonRequest(ldr, null);
-        }
-        // ioException can be not null in the following cases:
-        //  a) The response is timed-out
-        //  b) LDAP request connection has been closed
-        // If the request has been cancelled - CommunicationException is
-        // thrown directly from LdapRequest.getReplyBer, since there is no
-        // need to abandon request.
-        // The exception message is initialized in LdapRequest::getReplyBer
-        if (ioException != null) {
-            // Throw CommunicationException after all cleanups are done
-            String message = ioException.getMessage();
-            var ce = new CommunicationException(message);
-            ce.initCause(ioException);
+            // rethrow as CommunicationException (which is a NamingException)
+            var ce = new CommunicationException(ioe.getMessage());
+            ce.initCause(ioe);
             throw ce;
         }
-        return rber;
     }
 
     ////////////////////////////////////////////////////////////////////////////

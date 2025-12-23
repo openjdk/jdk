@@ -31,9 +31,9 @@
 #include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
@@ -186,10 +186,10 @@ public:
   static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
 
   // Note caller requires ResourceMark
-  const char* name_as_C_string() {
+  const char* name_as_C_string() const {
     return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
   }
-  void print(outputStream* st = tty);
+  void print(outputStream* st = tty) const;
   void verify();
 
   CDS_ONLY(int shared_path_index() { return _shared_path_index;})
@@ -197,6 +197,7 @@ public:
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
 #if INCLUDE_CDS_JAVA_HEAP
+  bool should_be_archived() const;
   void iterate_symbols(MetaspaceClosure* closure);
   ModuleEntry* allocate_archived_entry() const;
   void init_as_archived_entry();
@@ -205,6 +206,7 @@ public:
   static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
   static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
+  void preload_archived_oops();
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
   static void verify_archived_module_entries() PRODUCT_RETURN;
@@ -232,7 +234,7 @@ class ModuleClosure: public StackObj {
 class ModuleEntryTable : public CHeapObj<mtModule> {
 private:
   static ModuleEntry* _javabase_module;
-  ResourceHashtable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
+  HashTable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
                     SymbolHandle::compute_hash> _table;
 
 public:

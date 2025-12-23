@@ -50,12 +50,15 @@ class JfrCPUTimeTraceQueue {
   static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
 
   JfrCPUTimeSampleRequest* _data;
-  u4 _capacity;
+  volatile u4 _capacity;
   // next unfilled index
   volatile u4 _head;
 
   volatile u4 _lost_samples;
+  volatile u4 _lost_samples_due_to_queue_full;
 
+  static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
+  static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
 public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
@@ -81,12 +84,17 @@ public:
 
   void increment_lost_samples();
 
+  void increment_lost_samples_due_to_queue_full();
+
   // returns the previous lost samples count
   u4 get_and_reset_lost_samples();
 
-  void resize(u4 capacity);
+  u4 get_and_reset_lost_samples_due_to_queue_full();
 
-  void resize_for_period(u4 period_millis);
+  void resize_if_needed();
+
+  // init the queue capacity
+  void init();
 
   void clear();
 
@@ -95,14 +103,16 @@ public:
 
 class JfrCPUSamplerThread;
 
+class JfrCPUSamplerThrottle;
+
 class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   friend class JfrRecorder;
  private:
 
   JfrCPUSamplerThread* _sampler;
 
-  void create_sampler(double rate, bool auto_adapt);
-  void set_rate_value(double rate, bool auto_adapt);
+  void create_sampler(JfrCPUSamplerThrottle& throttle);
+  void set_throttle_value(JfrCPUSamplerThrottle& throttle);
 
   JfrCPUTimeThreadSampling();
   ~JfrCPUTimeThreadSampling();
@@ -111,10 +121,13 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static JfrCPUTimeThreadSampling* create();
   static void destroy();
 
-  void update_run_state(double rate, bool auto_adapt);
+  void update_run_state(JfrCPUSamplerThrottle& throttle);
+
+  static void set_rate(JfrCPUSamplerThrottle& throttle);
 
  public:
-  static void set_rate(double rate, bool auto_adapt);
+  static void set_rate(double rate);
+  static void set_period(u8 nanos);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
@@ -125,6 +138,8 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   static void trigger_async_processing_of_cpu_time_jfr_requests();
+
+  DEBUG_ONLY(static bool set_out_of_stack_walking_enabled(bool runnable);)
 };
 
 #else
@@ -140,10 +155,12 @@ private:
   static void destroy();
 
  public:
-  static void set_rate(double rate, bool auto_adapt);
+  static void set_rate(double rate);
+  static void set_period(u8 nanos);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
+  DEBUG_ONLY(static bool set_out_of_stack_walking_enabled(bool runnable));
 };
 
 #endif // defined(LINUX)

@@ -105,6 +105,7 @@ public final class DataBufferNIOInt extends DataBuffer {
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
+    @Override
     public int getElem(int i) {
         return data.get(i+offset);
     }
@@ -118,6 +119,7 @@ public final class DataBufferNIOInt extends DataBuffer {
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
+    @Override
     public int getElem(int bank, int i) {
         return bankdata[bank].get(i+offsets[bank]);
     }
@@ -131,6 +133,7 @@ public final class DataBufferNIOInt extends DataBuffer {
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
+    @Override
     public void setElem(int i, int val) {
         data.put(i+offset, val);
     }
@@ -144,6 +147,7 @@ public final class DataBufferNIOInt extends DataBuffer {
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
+    @Override
     public void setElem(int bank, int i, int val) {
         bankdata[bank].put(i+offsets[bank], val);
     }

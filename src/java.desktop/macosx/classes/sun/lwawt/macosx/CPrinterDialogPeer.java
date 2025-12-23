@@ -30,7 +30,7 @@ import java.awt.dnd.*;
 
 import sun.lwawt.*;
 
-public class CPrinterDialogPeer extends LWWindowPeer {
+public final class CPrinterDialogPeer extends LWWindowPeer {
     static {
         // AWT has to be initialized for the native code to function correctly.
         Toolkit.getDefaultToolkit();
@@ -47,10 +47,12 @@ public class CPrinterDialogPeer extends LWWindowPeer {
         super.initialize();
     }
 
+    @Override
     protected void disposeImpl() {
         LWCToolkit.targetDisposedPeer(fTarget, this);
     }
 
+    @Override
     public void setVisible(boolean visible) {
         if (visible) {
             Runnable task = () -> {
@@ -63,22 +65,31 @@ public class CPrinterDialogPeer extends LWWindowPeer {
     }
 
     // unused methods.
+    @Override
     public void toFront() {}
+    @Override
     public void toBack() {}
+    @Override
     public void setResizable(boolean resizable) {}
+    @Override
     public void setEnabled(boolean enable) {}
     public void setBounds(int x, int y, int width, int height) {}
     @SuppressWarnings("deprecation")
     public boolean handleEvent(Event e) { return false; }
+    @Override
     public void setForeground(Color c) {}
+    @Override
     public void setBackground(Color c) {}
+    @Override
     public void setFont(Font f) {}
     public boolean requestFocus(boolean temporary, boolean focusedWindowChangeAllowed) {
         return false;
     }
     void start() {}
     void invalidate(int x, int y, int width, int height) {}
+    @Override
     public void addDropTarget(DropTarget dt) {}
+    @Override
     public void removeDropTarget(DropTarget dt) {}
 
     // 1.5 peer method
@@ -87,18 +98,22 @@ public class CPrinterDialogPeer extends LWWindowPeer {
     }
 
     // 1.6 peer method
+    @Override
     public void updateAlwaysOnTopState() {
         // no-op, since we just show the native print dialog
     }
 
     // 1.6 peer method
+    @Override
     public void updateMinimumSize() {}
 
     // 1.6 peer method
+    @Override
     public void setModalBlocked(Dialog blocker, boolean blocked) {
         // I don't think we care since this is a native dialog
     }
 
     // 1.6 peer method
+    @Override
     public void updateFocusableWindowState() {}
 }

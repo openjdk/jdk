@@ -118,4 +118,44 @@ public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
         return false;
     }
 
+    /**
+     * Returns the method to which this compiled nmethod belongs.
+     */
+    public HotSpotResolvedJavaMethod getMethod() {
+        return method;
+    }
+
+    /**
+     * Returns the bytecode index (BCI) in the {@link #getMethod() method} that is the beginning of this compiled
+     * nmethod. -1 denotes the beginning of the method.
+     *
+     * @return the entry BCI of this nmethod or -1 if the entry is the method's beginning
+     */
+    public int getEntryBCI() {
+        return entryBCI;
+    }
+
+    /**
+     * Returns the identifier of the compilation request.
+     */
+    public int getId() {
+        return id;
+    }
+
+    /**
+     * Returns the address of a native {@code JVMCICompileState} object associated with this compiled nmethod.
+     * If no such object exists, it returns 0L.
+     *
+     * @return the address of the native {@code JVMCICompileState} object or 0L if it does not exist
+     */
+    public long getCompileState() {
+        return compileState;
+    }
+
+    /**
+     * Checks if this compiled nmethod has a memory access via the {@code Unsafe} class.
+     */
+    public boolean hasUnsafeAccess() {
+        return hasUnsafeAccess;
+    }
 }

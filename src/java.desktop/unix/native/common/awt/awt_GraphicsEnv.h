@@ -62,4 +62,11 @@ struct X11GraphicsConfigIDs {
     jfieldID bitsPerPixel;
 };
 
+#define MAX_DISPLAY_MODES 256
+typedef struct {
+    unsigned int width;
+    unsigned int height;
+    jint refresh;
+} DisplayMode;
+
 #endif /* _AWT_GRAPHICSENV_H_ */

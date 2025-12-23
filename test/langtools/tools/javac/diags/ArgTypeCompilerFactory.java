@@ -29,7 +29,7 @@ import javax.tools.*;
 import com.sun.tools.javac.api.*;
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.DiagnosticPart;
 import com.sun.tools.javac.api.Formattable.LocalizedString;
-import com.sun.tools.javac.code.Flags.Flag;
+import com.sun.tools.javac.code.FlagsEnum;
 import com.sun.tools.javac.code.Kinds.KindName;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.file.*;
@@ -303,7 +303,7 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             return "number";
         if (o instanceof String)
             return "string";
-        if (o instanceof Flag)
+        if (o instanceof FlagsEnum)
             return "modifier";
         if (o instanceof KindName)
             return "symbol kind";

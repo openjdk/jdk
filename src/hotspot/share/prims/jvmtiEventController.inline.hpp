@@ -108,4 +108,22 @@ inline bool JvmtiEventController::is_enabled(jvmtiEvent event_type) {
   return _universal_global_event_enabled.is_enabled(event_type);
 }
 
+inline bool JvmtiEventController::is_execution_finished() {
+  return AtomicAccess::load(&_execution_finished);
+}
+
+inline void JvmtiEventController::inc_in_callback_count() {
+  AtomicAccess::inc(&_in_callback_count);
+}
+
+inline void JvmtiEventController::dec_in_callback_count() {
+  AtomicAccess::dec(&_in_callback_count);
+}
+
+inline int JvmtiEventController::in_callback_count() {
+  int result = AtomicAccess::load(&_in_callback_count);
+  assert(result >= 0, "Should be positive");
+  return result;
+}
+
 #endif // SHARE_PRIMS_JVMTIEVENTCONTROLLER_INLINE_HPP

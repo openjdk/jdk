@@ -36,7 +36,7 @@ public abstract class HotSpotJavaType implements JavaType {
     }
 
     @Override
-    public final String getName() {
+    public String getName() {
         return name;
     }
 }

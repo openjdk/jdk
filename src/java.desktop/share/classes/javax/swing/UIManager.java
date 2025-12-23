@@ -180,10 +180,8 @@ public class UIManager implements Serializable
      * Swing applications the fields in this class could just as well
      * be static members of <code>UIManager</code> however we give them
      * "AppContext"
-     * scope instead so that applets (and potentially multiple lightweight
-     * applications running in a single VM) have their own state. For example,
-     * an applet can alter its look and feel, see <code>setLookAndFeel</code>.
-     * Doing so has no affect on other applets (or the browser).
+     * scope instead so that potentially multiple lightweight
+     * applications running in a single VM have their own state.
      */
     private static class LAFState
     {
@@ -1455,8 +1453,8 @@ public class UIManager implements Serializable
 
     /*
      * This method is called before any code that depends on the
-     * <code>AppContext</code> specific LAFState object runs.  When the AppContext
-     * corresponds to a set of applets it's possible for this method
+     * <code>AppContext</code> specific LAFState object runs.
+     * In some AppContext cases, it's possible for this method
      * to be re-entered, which is why we grab a lock before calling
      * initialize().
      */

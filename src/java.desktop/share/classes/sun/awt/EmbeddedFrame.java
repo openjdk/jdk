@@ -25,7 +25,6 @@
 
 package sun.awt;
 
-import java.applet.Applet;
 import java.awt.AWTKeyStroke;
 import java.awt.Component;
 import java.awt.Container;
@@ -49,11 +48,11 @@ import java.io.Serial;
 import java.util.Set;
 
 /**
- * A generic container used for embedding Java components, usually applets.
+ * A generic container used for embedding Java components.
  * An EmbeddedFrame has two related uses:
  *
  * . Within a Java-based application, an EmbeddedFrame serves as a sort of
- *   firewall, preventing the contained components or applets from using
+ *   firewall, preventing the contained components from using
  *   getParent() to find parent components, such as menubars.
  *
  * . Within a C-based application, an EmbeddedFrame contains a window handle
@@ -71,7 +70,7 @@ public abstract class EmbeddedFrame extends Frame
     private boolean isCursorAllowed = true;
     private boolean supportsXEmbed = false;
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private KeyboardFocusManager appletKFM;
+    private KeyboardFocusManager appKFM;
 
     /**
      * Use serialVersionUID from JDK 1.1 for interoperability.
@@ -139,12 +138,12 @@ public abstract class EmbeddedFrame extends Frame
             return;
         }
 
-        // should be the same as appletKFM
+        // should be the same as appKFM
         removeTraversingOutListeners((KeyboardFocusManager)evt.getSource());
 
-        appletKFM = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        appKFM = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         if (isVisible()) {
-            addTraversingOutListeners(appletKFM);
+            addTraversingOutListeners(appKFM);
         }
     }
 
@@ -169,44 +168,44 @@ public abstract class EmbeddedFrame extends Frame
      * EmbeddedFrame is first created or shown, we can't automatically determine
      * the correct KeyboardFocusManager to attach to as KeyEventDispatcher.
      * Those who want to use the functionality of traversing out of the EmbeddedFrame
-     * must call this method on the Applet's AppContext. After that, all the changes
+     * must call this method on the AppContext. After that, all the changes
      * can be handled automatically, including possible replacement of
      * KeyboardFocusManager.
      */
     public void registerListeners() {
-        if (appletKFM != null) {
-            removeTraversingOutListeners(appletKFM);
+        if (appKFM != null) {
+            removeTraversingOutListeners(appKFM);
         }
-        appletKFM = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        appKFM = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         if (isVisible()) {
-            addTraversingOutListeners(appletKFM);
+            addTraversingOutListeners(appKFM);
         }
     }
 
     /**
      * Needed to avoid memory leak: we register this EmbeddedFrame as a listener with
-     * KeyboardFocusManager of applet's AppContext. We don't want the KFM to keep
+     * KeyboardFocusManager of an AppContext. We don't want the KFM to keep
      * reference to our EmbeddedFrame forever if the Frame is no longer in use, so we
      * add listeners in show() and remove them in hide().
      */
     @SuppressWarnings("deprecation")
     public void show() {
-        if (appletKFM != null) {
-            addTraversingOutListeners(appletKFM);
+        if (appKFM != null) {
+            addTraversingOutListeners(appKFM);
         }
         super.show();
     }
 
     /**
      * Needed to avoid memory leak: we register this EmbeddedFrame as a listener with
-     * KeyboardFocusManager of applet's AppContext. We don't want the KFM to keep
+     * KeyboardFocusManager of an AppContext. We don't want the KFM to keep
      * reference to our EmbeddedFrame forever if the Frame is no longer in use, so we
      * add listeners in show() and remove them in hide().
      */
     @SuppressWarnings("deprecation")
     public void hide() {
-        if (appletKFM != null) {
-            removeTraversingOutListeners(appletKFM);
+        if (appKFM != null) {
+            removeTraversingOutListeners(appKFM);
         }
         super.hide();
     }
@@ -510,31 +509,6 @@ public abstract class EmbeddedFrame extends Frame
 
     public abstract void registerAccelerator(AWTKeyStroke stroke);
     public abstract void unregisterAccelerator(AWTKeyStroke stroke);
-
-    /**
-     * Checks if the component is in an EmbeddedFrame. If so,
-     * returns the applet found in the hierarchy or null if
-     * not found.
-     * @return the parent applet or {@code null}
-     * @since 1.6
-     *
-     * @deprecated The Applet API is deprecated. See the
-     * <a href="../../java/applet/package-summary.html"> java.applet package
-     * documentation</a> for further information.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    public static Applet getAppletIfAncestorOf(Component comp) {
-        Container parent = comp.getParent();
-        Applet applet = null;
-        while (parent != null && !(parent instanceof EmbeddedFrame)) {
-            if (parent instanceof Applet) {
-                applet = (Applet)parent;
-            }
-            parent = parent.getParent();
-        }
-        return parent == null ? null : applet;
-    }
 
     /**
      * This method should be overridden in subclasses. It is

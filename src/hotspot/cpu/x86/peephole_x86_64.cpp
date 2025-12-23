@@ -346,7 +346,7 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
   for (DUIterator_Fast imax, i = decode->fast_outs(imax); i < imax; i++) {
     Node* dependant_lea = decode->fast_out(i);
     if (dependant_lea->is_Mach() && dependant_lea->as_Mach()->ideal_Opcode() == Op_AddP) {
-      dependant_lea->set_req(AddPNode::Base, decode_address);
+      dependant_lea->set_req(AddPNode::Base, lea_derived_oop->in(AddPNode::Address));
       // This deleted something in the out array, hence adjust i, imax.
       --i;
       --imax;

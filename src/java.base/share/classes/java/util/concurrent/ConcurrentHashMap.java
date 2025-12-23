@@ -70,6 +70,8 @@ import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -263,6 +265,7 @@ import jdk.internal.vm.annotation.Stable;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
+@AOTSafeClassInitializer
 public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     implements ConcurrentMap<K,V>, Serializable {
     private static final long serialVersionUID = 7249069246763182397L;
@@ -602,7 +605,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         runtimeSetup();
     }
 
-    // Called from JVM when loading an AOT cache.
+    @AOTRuntimeSetup
     private static void runtimeSetup() {
         NCPU = Runtime.getRuntime().availableProcessors();
     }
@@ -1369,12 +1372,20 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V>[] t;
             int f = (t = table) == null ? 0 : t.length;
             Traverser<K,V> it = new Traverser<K,V>(t, f, 0, f);
-            for (Node<K,V> p; (p = it.advance()) != null; ) {
-                V val = p.val;
-                Object v = m.get(p.key);
-                if (v == null || (v != val && !v.equals(val)))
-                    return false;
+
+            try {
+                for (Node<K,V> p; (p = it.advance()) != null; ) {
+                    V val = p.val;
+                    Object v = m.get(p.key);
+                    if (v == null || (v != val && !v.equals(val)))
+                        return false;
+                }
+            } catch (ClassCastException | NullPointerException _) {
+                // m.get(p.key) is contractually allowed to throw CCE or NPE
+                // but CHM doesn't allow null keys, so NPE shouldn't occur in practice
+                return false;
             }
+
             for (Map.Entry<?,?> e : m.entrySet()) {
                 Object mk, mv, v;
                 if ((mk = e.getKey()) == null ||

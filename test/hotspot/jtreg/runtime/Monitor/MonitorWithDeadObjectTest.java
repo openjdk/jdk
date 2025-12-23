@@ -32,20 +32,21 @@
  */
 
 /*
- * @requires os.family != "windows" & os.family != "aix"
  * @test id=DetachThread
+ * @requires os.family != "windows" & os.family != "aix"
  * @run main/othervm/native MonitorWithDeadObjectTest 0
  */
 
 /*
- * @requires os.family != "windows" & os.family != "aix"
  * @test id=DumpThreadsBeforeDetach
+ * @comment Temporarily exclude on Musl-C debug until JDK-8366133 is fixed.
+ * @requires os.family != "windows" & os.family != "aix" & (!vm.musl | !vm.debug)
  * @run main/othervm/native MonitorWithDeadObjectTest 1
  */
 
 /*
- * @requires os.family != "windows" & os.family != "aix"
  * @test id=DumpThreadsAfterDetach
+ * @requires os.family != "windows" & os.family != "aix"
  * @run main/othervm/native MonitorWithDeadObjectTest 2
  */
 

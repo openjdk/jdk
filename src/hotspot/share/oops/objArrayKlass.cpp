@@ -53,12 +53,32 @@ ObjArrayKlass* ObjArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n
   return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
 }
 
+Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klass* element_klass) {
+  ResourceMark rm(current);
+  char* name_str = element_klass->name()->as_C_string();
+  int len = element_klass->name()->utf8_length();
+  char* new_str = NEW_RESOURCE_ARRAY_IN_THREAD(current, char, len + 4);
+  int idx = 0;
+  new_str[idx++] = JVM_SIGNATURE_ARRAY;
+  if (element_klass->is_instance_klass()) { // it could be an array or simple type
+    new_str[idx++] = JVM_SIGNATURE_CLASS;
+  }
+  memcpy(&new_str[idx], name_str, len * sizeof(char));
+  idx += len;
+  if (element_klass->is_instance_klass()) {
+    new_str[idx++] = JVM_SIGNATURE_ENDCLASS;
+  }
+  new_str[idx] = '\0';
+  return SymbolTable::new_symbol(new_str);
+}
+
+
 ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
                                                       int n, Klass* element_klass, TRAPS) {
 
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = nullptr;
-  if (!Universe::is_bootstrapping() || vmClasses::Object_klass_loaded()) {
+  if (!Universe::is_bootstrapping() || vmClasses::Object_klass_is_loaded()) {
     assert(MultiArray_lock->holds_lock(THREAD), "must hold lock after bootstrapping");
     Klass* element_super = element_klass->super();
     if (element_super != nullptr) {
@@ -79,25 +99,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
   }
 
   // Create type name for klass.
-  Symbol* name = nullptr;
-  {
-    ResourceMark rm(THREAD);
-    char *name_str = element_klass->name()->as_C_string();
-    int len = element_klass->name()->utf8_length();
-    char *new_str = NEW_RESOURCE_ARRAY(char, len + 4);
-    int idx = 0;
-    new_str[idx++] = JVM_SIGNATURE_ARRAY;
-    if (element_klass->is_instance_klass()) { // it could be an array or simple type
-      new_str[idx++] = JVM_SIGNATURE_CLASS;
-    }
-    memcpy(&new_str[idx], name_str, len * sizeof(char));
-    idx += len;
-    if (element_klass->is_instance_klass()) {
-      new_str[idx++] = JVM_SIGNATURE_ENDCLASS;
-    }
-    new_str[idx++] = '\0';
-    name = SymbolTable::new_symbol(new_str);
-  }
+  Symbol* name = create_element_klass_array_name(THREAD, element_klass);
 
   // Initialize instance variables
   ObjArrayKlass* oak = ObjArrayKlass::allocate_klass(loader_data, n, element_klass, name, CHECK_NULL);
@@ -183,38 +185,59 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   return h_array();
 }
 
+static void throw_array_store_exception(arrayOop src, arrayOop dst, TRAPS) {
+  ResourceMark rm(THREAD);
+  Klass* bound = ObjArrayKlass::cast(dst->klass())->element_klass();
+  Klass* stype = ObjArrayKlass::cast(src->klass())->element_klass();
+  stringStream ss;
+  if (!bound->is_subtype_of(stype)) {
+    ss.print("arraycopy: type mismatch: can not copy %s[] into %s[]",
+             stype->external_name(), bound->external_name());
+  } else {
+    // oop_arraycopy should return the index in the source array that
+    // contains the problematic oop.
+    ss.print("arraycopy: element type mismatch: can not cast one of the elements"
+             " of %s[] to the type of the destination array, %s",
+             stype->external_name(), bound->external_name());
+  }
+  THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
+}
+
 // Either oop or narrowOop depending on UseCompressedOops.
 void ObjArrayKlass::do_copy(arrayOop s, size_t src_offset,
                             arrayOop d, size_t dst_offset, int length, TRAPS) {
   if (s == d) {
     // since source and destination are equal we do not need conversion checks.
     assert(length > 0, "sanity check");
-    ArrayAccess<>::oop_arraycopy(s, src_offset, d, dst_offset, length);
+    OopCopyResult result = ArrayAccess<>::oop_arraycopy(s, src_offset, d, dst_offset, length);
+    assert(result == OopCopyResult::ok, "Should never fail");
   } else {
     // We have to make sure all elements conform to the destination array
     Klass* bound = ObjArrayKlass::cast(d->klass())->element_klass();
     Klass* stype = ObjArrayKlass::cast(s->klass())->element_klass();
-    if (stype == bound || stype->is_subtype_of(bound)) {
-      // elements are guaranteed to be subtypes, so no check necessary
-      ArrayAccess<ARRAYCOPY_DISJOINT>::oop_arraycopy(s, src_offset, d, dst_offset, length);
-    } else {
-      // slow case: need individual subtype checks
-      // note: don't use obj_at_put below because it includes a redundant store check
-      if (!ArrayAccess<ARRAYCOPY_DISJOINT | ARRAYCOPY_CHECKCAST>::oop_arraycopy(s, src_offset, d, dst_offset, length)) {
-        ResourceMark rm(THREAD);
-        stringStream ss;
-        if (!bound->is_subtype_of(stype)) {
-          ss.print("arraycopy: type mismatch: can not copy %s[] into %s[]",
-                   stype->external_name(), bound->external_name());
-        } else {
-          // oop_arraycopy should return the index in the source array that
-          // contains the problematic oop.
-          ss.print("arraycopy: element type mismatch: can not cast one of the elements"
-                   " of %s[] to the type of the destination array, %s",
-                   stype->external_name(), bound->external_name());
-        }
-        THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
+    bool type_check = stype != bound && !stype->is_subtype_of(bound);
+
+    auto arraycopy = [&] {
+      if (type_check) {
+        return ArrayAccess<ARRAYCOPY_DISJOINT | ARRAYCOPY_CHECKCAST>::
+            oop_arraycopy(s, src_offset, d, dst_offset, length);
+      } else {
+        return ArrayAccess<ARRAYCOPY_DISJOINT>::
+            oop_arraycopy(s, src_offset, d, dst_offset, length);
       }
+    };
+
+    OopCopyResult result = arraycopy();
+
+    switch (result) {
+    case OopCopyResult::ok:
+      // Done
+      break;
+    case OopCopyResult::failed_check_class_cast:
+      throw_array_store_exception(s, d, JavaThread::current());
+      break;
+    default:
+      ShouldNotReachHere();
     }
   }
 }

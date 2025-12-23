@@ -34,7 +34,7 @@ import java.awt.Transparency;
 import java.awt.image.ColorModel;
 import sun.java2d.pipe.hw.AccelSurface;
 
-public class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
+public final class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
 
     private final boolean accelerationEnabled;
 
@@ -49,6 +49,7 @@ public class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
         accelerationEnabled = transparency != Transparency.BITMASK;
     }
 
+    @Override
     protected boolean isAccelerationEnabled() {
         return accelerationEnabled;
     }
@@ -57,6 +58,7 @@ public class MTLVolatileSurfaceManager extends VolatileSurfaceManager {
      * Create a SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig)
      */
+    @Override
     protected SurfaceData initAcceleratedSurface() {
         try {
             MTLGraphicsConfig gc =

@@ -33,17 +33,19 @@ import javax.swing.plaf.basic.BasicSeparatorUI;
 
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaPopupMenuSeparatorUI extends BasicSeparatorUI {
+public final class AquaPopupMenuSeparatorUI extends BasicSeparatorUI {
     private static final RecyclableSingletonFromDefaultConstructor<AquaPopupMenuSeparatorUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPopupMenuSeparatorUI>(AquaPopupMenuSeparatorUI.class);
 
     public static ComponentUI createUI(final JComponent c) {
         return instance.get();
     }
 
+    @Override
     public void update(final Graphics g, final JComponent c) {
         paint(g, c);
     }
 
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         final Dimension s = c.getSize();
 
@@ -62,6 +64,7 @@ public class AquaPopupMenuSeparatorUI extends BasicSeparatorUI {
         }
     }
 
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         if (((JSeparator)c).getOrientation() == SwingConstants.VERTICAL) {
             return new Dimension(12, 0);

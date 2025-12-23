@@ -49,9 +49,10 @@ public class ServiceLoaderTest {
         CDSTestUtils.createArchiveAndCheck(opts);
 
         // Some mach5 tiers run with -vmoptions:-Xlog:cds=debug. This would cause the outputs to mismatch.
-        // Force the log level to warning for all tags to supressed the CDS logs. Also disable the timestamp.
+        // Force the log level to warning for all tags to suppress the CDS logs. Also disable the timestamp.
+        // Disable CDS error by turing off CDS logging.
         opts.setUseVersion(false);
-        opts.addSuffix("-showversion", "-Xlog:all=warning::level,tags", "ServiceLoaderApp");
+        opts.addSuffix("-showversion", "-Xlog:all=warning::level,tags", "-Xlog:cds=off", "ServiceLoaderApp");
         OutputAnalyzer out1 = CDSTestUtils.runWithArchive(opts);
 
         opts.setXShareMode("off");

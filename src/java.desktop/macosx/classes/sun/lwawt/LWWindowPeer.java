@@ -825,7 +825,7 @@ public class LWWindowPeer
                     topmostPlatformWindow != null ? topmostPlatformWindow.getPeer() : null;
 
             // topmostWindowPeer == null condition is added for the backward
-            // compatibility with applets. It can be removed when the
+            // compatibility. It can be removed when the
             // getTopmostPlatformWindowUnderMouse() method will be properly
             // implemented in CPlatformEmbeddedFrame class
             if (topmostWindowPeer == this || topmostWindowPeer == null) {

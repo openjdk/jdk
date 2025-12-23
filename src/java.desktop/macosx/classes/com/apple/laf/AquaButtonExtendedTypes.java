@@ -43,7 +43,7 @@ import static apple.laf.JRSUIConstants.FOCUS_SIZE;
  * <rdar://problem/4613866> "default font" and sizes for controls in Java Aqua Look and Feel
  * has been addressed, and we can cull widget metrics from the native system.
  */
-public class AquaButtonExtendedTypes {
+public final class AquaButtonExtendedTypes {
     protected static Border getBorderForPosition(final AbstractButton c, final Object type, final Object logicalPosition) {
         final String name = (logicalPosition == null ? (String)type : type + "-" + getRealPositionForLogicalPosition((String)logicalPosition, c.getComponentOrientation().isLeftToRight()));
         final TypeSpecifier specifier = getSpecifierByName(name);
@@ -96,6 +96,7 @@ public class AquaButtonExtendedTypes {
             patchUp(border.sizeDescriptor);
         }
 
+        @Override
         Border getBorder() { return border; }
         void patchUp(final SizeDescriptor descriptor) {}
 
@@ -104,7 +105,7 @@ public class AquaButtonExtendedTypes {
         }
     }
 
-    static class SegmentedBorderDefinedTypeSpecifier extends BorderDefinedTypeSpecifier {
+    static final class SegmentedBorderDefinedTypeSpecifier extends BorderDefinedTypeSpecifier {
         public SegmentedBorderDefinedTypeSpecifier(final String name, final Widget widget, final SegmentPosition position, final SizeVariant variant) {
             this(name, widget, position, variant, 0, 0, 0, 0);
         }
@@ -115,12 +116,13 @@ public class AquaButtonExtendedTypes {
             border.painter.state.set(position);
         }
 
+        @Override
         AquaBorder initBorder(final Widget widget, final SizeDescriptor desc) {
             return new SegmentedNamedBorder(widget, desc);
         }
     }
 
-    public static class SegmentedNamedBorder extends AquaButtonBorder.Named {
+    public static final class SegmentedNamedBorder extends AquaButtonBorder.Named {
         public SegmentedNamedBorder(final SegmentedNamedBorder sizeDescriptor) {
             super(sizeDescriptor);
         }
@@ -129,6 +131,7 @@ public class AquaButtonExtendedTypes {
             super(widget, sizeDescriptor);
         }
 
+        @Override
         protected boolean isSelectionPressing() {
             return false;
         }

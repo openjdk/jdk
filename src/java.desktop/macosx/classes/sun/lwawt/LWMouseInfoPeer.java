@@ -32,7 +32,7 @@ import java.awt.peer.MouseInfoPeer;
 
 import sun.awt.AWTAccessor;
 
-public class LWMouseInfoPeer implements MouseInfoPeer {
+public final class LWMouseInfoPeer implements MouseInfoPeer {
 
     @Override
     public int fillPointWithCoords(Point point) {

@@ -38,23 +38,21 @@ import jdk.test.lib.jfr.RecurseThread;
  */
 public class TestCPUTimeAndExecutionSample {
 
-    static String sampleEvent = EventNames.CPUTimeSample;
-
     // The period is set to 1100 ms to provoke the 1000 ms
     // threshold in the JVM for os::naked_short_sleep().
     public static void main(String[] args) throws Exception {
-        run(EventNames.ExecutionSample);
-        run(EventNames.CPUTimeSample);
-        run(EventNames.ExecutionSample);
-        run(EventNames.CPUTimeSample);
+        run(EventNames.CPUTimeSample, "throttle", "1000/s");
+        run(EventNames.ExecutionSample, "period", "1100ms");
+        run(EventNames.CPUTimeSample, "throttle", "1100ms");
+        run(EventNames.ExecutionSample, "period", "1000ms");
     }
 
-    private static void run(String eventType) {
+    private static void run(String eventType, String attribute, String value) {
         RecurseThread t = new RecurseThread(50);
         t.setDaemon(true);
         try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(sampleEvent).with("throttle", "1000/s");
-            rs.onEvent(sampleEvent, e -> {
+            rs.enable(eventType).with(attribute, value);
+            rs.onEvent(eventType, e -> {
                 t.quit();
                 rs.close();
             });

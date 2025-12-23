@@ -291,6 +291,7 @@ public abstract class MTLSurfaceData extends SurfaceData
      * Returns the MTLContext for the GraphicsConfig associated with this
      * surface.
      */
+    @Override
     public final MTLContext getContext() {
         return graphicsConfig.getContext();
     }
@@ -305,6 +306,7 @@ public abstract class MTLSurfaceData extends SurfaceData
     /**
      * Returns one of the surface type constants defined above.
      */
+    @Override
     public final int getType() {
         return type;
     }
@@ -320,6 +322,7 @@ public abstract class MTLSurfaceData extends SurfaceData
      * and remove the above restrictions, but that would require significantly
      * more code just to support a few uncommon cases.
      */
+    @Override
     public boolean canRenderLCDText(SunGraphics2D sg2d) {
         return
               sg2d.surfaceData.getTransparency() == Transparency.OPAQUE &&
@@ -337,6 +340,7 @@ public abstract class MTLSurfaceData extends SurfaceData
         return false;
     }
 
+    @Override
     public void validatePipe(SunGraphics2D sg2d) {
         TextPipe textpipe;
         boolean validated = false;
@@ -466,6 +470,7 @@ public abstract class MTLSurfaceData extends SurfaceData
         return super.getMaskFill(sg2d);
     }
 
+    @Override
     public void flush() {
         invalidate();
         MTLRenderQueue rq = MTLRenderQueue.getInstance();
@@ -510,6 +515,7 @@ public abstract class MTLSurfaceData extends SurfaceData
      * such resource doesn't exist or can not be retrieved.
      * @see AccelSurface#getNativeResource
      */
+    @Override
     public long getNativeResource(int resType) {
         if (resType == TEXTURE) {
             return getMTLTexturePointer(getNativeOps());
@@ -517,6 +523,7 @@ public abstract class MTLSurfaceData extends SurfaceData
         return 0L;
     }
 
+    @Override
     public Raster getRaster(int x, int y, int w, int h) {
         throw new InternalError("not implemented yet");
     }
@@ -531,6 +538,7 @@ public abstract class MTLSurfaceData extends SurfaceData
         return true;
     }
 
+    @Override
     public Rectangle getNativeBounds() {
         MTLRenderQueue rq = MTLRenderQueue.getInstance();
         rq.lock();
@@ -548,7 +556,7 @@ public abstract class MTLSurfaceData extends SurfaceData
      * This surface serves as a buffer attached to a MTLLayer and
      * the layer redirects all painting to the buffer's graphics.
      */
-    public static class MTLLayerSurfaceData extends MTLSurfaceData {
+    public static final class MTLLayerSurfaceData extends MTLSurfaceData {
 
         private final MTLLayer layer;
 
@@ -589,7 +597,7 @@ public abstract class MTLSurfaceData extends SurfaceData
     /**
      * SurfaceData object representing an off-screen buffer
      */
-    public static class MTLOffScreenSurfaceData extends MTLSurfaceData {
+    public static final class MTLOffScreenSurfaceData extends MTLSurfaceData {
         private final Image offscreenImage;
 
         public MTLOffScreenSurfaceData(MTLGraphicsConfig gc, int width,

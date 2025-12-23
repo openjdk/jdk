@@ -31,7 +31,6 @@
 // Support for building on older Linux systems
 //
 
-
 #ifndef SYS_memfd_create
 #define SYS_memfd_create     360
 #endif

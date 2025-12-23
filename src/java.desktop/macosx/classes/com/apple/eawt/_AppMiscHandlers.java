@@ -25,7 +25,7 @@
 
 package com.apple.eawt;
 
-class _AppMiscHandlers {
+final class _AppMiscHandlers {
     private static boolean isSuddenTerminationEnabled;
 
     private static native void nativeOpenHelpViewer();

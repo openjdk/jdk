@@ -26,8 +26,8 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logPrefix.hpp"
-#include "logging/logTagSet.hpp"
 #include "logging/logTag.hpp"
+#include "logging/logTagSet.hpp"
 #include "utilities/debug.hpp"
 
 class LogMessageBuffer;

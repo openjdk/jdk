@@ -28,7 +28,7 @@ package apple.laf;
 import apple.laf.JRSUIConstants.*;
 import apple.laf.JRSUIState.*;
 
-public class JRSUIStateFactory {
+public final class JRSUIStateFactory {
     public static JRSUIState getSliderTrack() {
         return new JRSUIState(Widget.SLIDER.apply(NoIndicator.YES.apply(0)));
     }

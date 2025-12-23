@@ -208,11 +208,12 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         return true;
     }
 
-    private static class MTLGCDisposerRecord implements DisposerRecord {
+    private static final class MTLGCDisposerRecord implements DisposerRecord {
         private long pCfgInfo;
         public MTLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
         }
+        @Override
         public void dispose() {
             if (pCfgInfo != 0) {
                 MTLRenderQueue.disposeGraphicsConfig(pCfgInfo);
@@ -302,7 +303,7 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         }
     }
 
-    private static class MTLBufferCaps extends BufferCapabilities {
+    private static final class MTLBufferCaps extends BufferCapabilities {
         public MTLBufferCaps(boolean dblBuf) {
             super(imageCaps, imageCaps,
                     dblBuf ? FlipContents.UNDEFINED : null);
@@ -317,10 +318,11 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         return bufferCaps;
     }
 
-    private static class MTLImageCaps extends ImageCapabilities {
+    private static final class MTLImageCaps extends ImageCapabilities {
         private MTLImageCaps() {
             super(true);
         }
+        @Override
         public boolean isTrueVolatile() {
             return true;
         }

@@ -113,4 +113,25 @@ public class EncodedSpeculationReason implements SpeculationReason {
     public String toString() {
         return String.format("%s@%d%s", groupName, groupId, Arrays.toString(context));
     }
+
+    /**
+     * Returns the group ID of this speculation reason.
+     */
+    public int getGroupId() {
+        return groupId;
+    }
+
+    /**
+     * Returns the group name of this speculation reason.
+     */
+    public String getGroupName() {
+        return groupName;
+    }
+
+    /**
+     * Returns a copy of the array of context objects.
+     */
+    public Object[] getContext() {
+        return (context == null) ? null : context.clone();
+    }
 }

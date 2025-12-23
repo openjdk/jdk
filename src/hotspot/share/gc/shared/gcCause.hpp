@@ -92,30 +92,22 @@ class GCCause : public AllStatic {
             cause == GCCause::_dcmd_gc_run);
   }
 
-  inline static bool is_explicit_full_gc(GCCause::Cause cause) {
-    return (is_user_requested_gc(cause) ||
-            is_serviceability_requested_gc(cause) ||
-            cause == GCCause::_wb_full_gc);
-  }
-
   inline static bool is_serviceability_requested_gc(GCCause::Cause cause) {
     return (cause == GCCause::_jvmti_force_gc ||
             cause == GCCause::_heap_inspection ||
             cause == GCCause::_heap_dump);
   }
 
-  // Causes for collection of the tenured generation
-  inline static bool is_tenured_allocation_failure_gc(GCCause::Cause cause) {
-    // _allocation_failure is the generic cause a collection which could result
-    // in the collection of the tenured generation if there is not enough space
-    // in the tenured generation to support a young GC.
-    return cause == GCCause::_allocation_failure;
+  inline static bool is_codecache_requested_gc(GCCause::Cause cause) {
+      return (cause == _codecache_GC_threshold  ||
+              cause == _codecache_GC_aggressive);
   }
 
-  // Causes for collection of the young generation
-  inline static bool is_allocation_failure_gc(GCCause::Cause cause) {
-    // _allocation_failure is the generic cause a collection for allocation failure
-    return cause == GCCause::_allocation_failure;
+  // Does the "cause" of GC indicate that
+  // we absolutely __must__ clear soft refs?
+  inline static bool should_clear_all_soft_refs(GCCause::Cause cause) {
+    return cause == GCCause::_metadata_GC_clear_soft_refs ||
+           cause == GCCause::_wb_full_gc;
   }
 
   // Return a string describing the GCCause.

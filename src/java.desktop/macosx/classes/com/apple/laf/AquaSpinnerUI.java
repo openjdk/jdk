@@ -90,7 +90,7 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
  * This is originally derived from BasicSpinnerUI, but they made everything
  * private so we can't subclass!
  */
-public class AquaSpinnerUI extends SpinnerUI {
+public final class AquaSpinnerUI extends SpinnerUI {
 
     private static final RecyclableSingleton<? extends PropertyChangeListener> propertyChangeListener
             = new RecyclableSingletonFromDefaultConstructor<>(PropertyChangeHandler.class);
@@ -270,7 +270,7 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class TransparentButton extends JButton implements SwingConstants {
+    final class TransparentButton extends JButton implements SwingConstants {
 
         boolean interceptRepaints = false;
 
@@ -386,7 +386,7 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class ArrowButtonHandler extends AbstractAction implements FocusListener, MouseListener {
+    private static final class ArrowButtonHandler extends AbstractAction implements FocusListener, MouseListener {
 
         final javax.swing.Timer autoRepeatTimer;
         final boolean isNext;
@@ -607,9 +607,11 @@ public class AquaSpinnerUI extends SpinnerUI {
             }
         }
 
+        @Override
         public void focusGained(FocusEvent e) {
         }
 
+        @Override
         public void focusLost(FocusEvent e) {
             if (spinner == eventToSpinner(e)) {
                 if (autoRepeatTimer.isRunning()) {
@@ -626,7 +628,7 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class SpinPainter extends JComponent {
+    final class SpinPainter extends JComponent {
 
         final AquaPainter<JRSUIState> painter = AquaPainter.create(JRSUIStateFactory.getSpinnerArrows());
 
@@ -693,7 +695,7 @@ public class AquaSpinnerUI extends SpinnerUI {
      * the AquaSpinnerUI javadoc for more information about exactly how the
      * components are arranged.
      */
-    static class SpinnerLayout implements LayoutManager {
+    static final class SpinnerLayout implements LayoutManager {
 
         private Component nextButton = null;
         private Component previousButton = null;
@@ -800,7 +802,7 @@ public class AquaSpinnerUI extends SpinnerUI {
      * (although they can by overriding createPropertyChangeListener) since all
      * of the interesting property changes are delegated to protected methods.
      */
-    static class PropertyChangeHandler implements PropertyChangeListener {
+    static final class PropertyChangeHandler implements PropertyChangeListener {
 
         @Override
         public void propertyChange(final PropertyChangeEvent e) {

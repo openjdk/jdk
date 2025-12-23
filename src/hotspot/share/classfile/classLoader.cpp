@@ -80,8 +80,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
 
-#include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 // Entry point in java.dll for path canonicalization
 
@@ -412,31 +412,30 @@ ClassFileStream* ClassPathImageEntry::open_stream(JavaThread* current, const cha
 //
 ClassFileStream* ClassPathImageEntry::open_stream_for_loader(JavaThread* current, const char* name, ClassLoaderData* loader_data) {
   jlong size;
-  JImageLocationRef location = (*JImageFindResource)(jimage_non_null(), "", get_jimage_version_string(), name, &size);
+  JImageLocationRef location = 0;
 
-  if (location == 0) {
-    TempNewSymbol class_name = SymbolTable::new_symbol(name);
-    TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+  TempNewSymbol class_name = SymbolTable::new_symbol(name);
+  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
 
-    if (pkg_name != nullptr) {
-      if (!Universe::is_module_initialized()) {
-        location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
-      } else {
-        PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
-        if (package_entry != nullptr) {
-          ResourceMark rm(current);
-          // Get the module name
-          ModuleEntry* module = package_entry->module();
-          assert(module != nullptr, "Boot classLoader package missing module");
-          assert(module->is_named(), "Boot classLoader package is in unnamed module");
-          const char* module_name = module->name()->as_C_string();
-          if (module_name != nullptr) {
-            location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
-          }
+  if (pkg_name != nullptr) {
+    if (!Universe::is_module_initialized()) {
+      location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
+    } else {
+      PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
+      if (package_entry != nullptr) {
+        ResourceMark rm(current);
+        // Get the module name
+        ModuleEntry* module = package_entry->module();
+        assert(module != nullptr, "Boot classLoader package missing module");
+        assert(module->is_named(), "Boot classLoader package is in unnamed module");
+        const char* module_name = module->name()->as_C_string();
+        if (module_name != nullptr) {
+          location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
         }
       }
     }
   }
+
   if (location != 0) {
     if (UsePerfData) {
       ClassLoader::perf_sys_classfile_bytes_read()->inc(size);
@@ -750,7 +749,7 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
     if (_last_append_entry == nullptr) {
       _last_append_entry = new_entry;
       assert(first_append_entry() == nullptr, "boot loader's append class path entry list not empty");
-      Atomic::release_store(&_first_append_entry_list, new_entry);
+      AtomicAccess::release_store(&_first_append_entry_list, new_entry);
     } else {
       _last_append_entry->set_next(new_entry);
       _last_append_entry = new_entry;
@@ -1192,10 +1191,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   oop loader = ik->class_loader();
   char* src = (char*)stream->source();
   if (src == nullptr) {
-    if (loader == nullptr) {
-      // JFR classes
-      ik->set_shared_classpath_index(0);
-    }
+    ik->set_shared_classpath_index(-1); // unsupported location
     return;
   }
 
@@ -1306,24 +1302,6 @@ void ClassLoader::record_result_for_builtin_loader(s2 classpath_index, InstanceK
 
   AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
   result->set_shared_classpath_index(classpath_index);
-
-#if INCLUDE_CDS_JAVA_HEAP
-  if (CDSConfig::is_dumping_heap() && AllowArchivingWithJavaAgent && result->defined_by_boot_loader() &&
-      classpath_index < 0 && redefined) {
-    // When dumping the heap (which happens only during static dump), classes for the built-in
-    // loaders are always loaded from known locations (jimage, classpath or modulepath),
-    // so classpath_index should always be >= 0.
-    // The only exception is when a java agent is used during dump time (for testing
-    // purposes only). If a class is transformed by the agent, the AOTClassLocation of
-    // this class may point to an unknown location. This may break heap object archiving,
-    // which requires all the boot classes to be from known locations. This is an
-    // uncommon scenario (even in test cases). Let's simply disable heap object archiving.
-    ResourceMark rm;
-    log_warning(aot)("heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
-                     result->external_name());
-    CDSConfig::disable_heap_dumping();
-  }
-#endif // INCLUDE_CDS_JAVA_HEAP
 }
 
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {

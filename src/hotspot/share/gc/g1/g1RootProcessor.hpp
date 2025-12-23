@@ -25,10 +25,11 @@
 #ifndef SHARE_GC_G1_G1ROOTPROCESSOR_HPP
 #define SHARE_GC_G1_G1ROOTPROCESSOR_HPP
 
+#include "code/nmethod.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/threads.hpp"
 
 class CLDClosure;
 class G1CollectedHeap;
@@ -48,7 +49,9 @@ class SubTasksDone;
 class G1RootProcessor : public StackObj {
   G1CollectedHeap* _g1h;
   SubTasksDone _process_strong_tasks;
-  StrongRootsScope _srs;
+  NMethodMarkingScope _nmethod_marking_scope;
+  ThreadsClaimTokenScope _threads_claim_token_scope;
+  bool _is_parallel;
   OopStorageSetStrongParState<false, false> _oop_storage_set_strong_par_state;
 
   enum G1H_process_roots_tasks {
@@ -72,7 +75,7 @@ class G1RootProcessor : public StackObj {
                                 uint worker_id);
 
 public:
-  G1RootProcessor(G1CollectedHeap* g1h, uint n_workers);
+  G1RootProcessor(G1CollectedHeap* g1h, bool is_parallel);
 
   // Apply correct closures from pss to the strongly and weakly reachable roots in the system
   // in a single pass.
@@ -88,9 +91,6 @@ public:
   void process_all_roots(OopClosure* oops,
                          CLDClosure* clds,
                          NMethodClosure* nmethods);
-
-  // Number of worker threads used by the root processor.
-  uint n_workers() const;
 };
 
 #endif // SHARE_GC_G1_G1ROOTPROCESSOR_HPP

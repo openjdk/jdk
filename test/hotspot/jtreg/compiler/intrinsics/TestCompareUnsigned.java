@@ -30,7 +30,8 @@ import jdk.test.lib.Utils;
  * @test
  * @key randomness
  * @bug 8283726 8287925
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64" | os.arch=="ppc64" | os.arch=="ppc64le"
+
  * @summary Test the intrinsics implementation of Integer/Long::compareUnsigned
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestCompareUnsigned

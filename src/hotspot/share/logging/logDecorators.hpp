@@ -24,8 +24,8 @@
 #ifndef SHARE_LOGGING_LOGDECORATORS_HPP
 #define SHARE_LOGGING_LOGDECORATORS_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "logging/logSelection.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class outputStream;
 

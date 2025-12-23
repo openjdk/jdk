@@ -48,7 +48,7 @@ import java.util.HashMap;
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      -XX:NewRatio=1 -XX:+UnlockExperimentalVMOptions
  *      -XX:ShenandoahGuaranteedGCInterval=3000
- *      -XX:-UseDynamicNumberOfGCThreads -XX:-ShenandoahPacing
+ *      -XX:-UseDynamicNumberOfGCThreads
  *      gc.shenandoah.generational.TestConcurrentEvac
  */
 

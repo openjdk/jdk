@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicTextPaneUI;
 import javax.swing.text.*;
 
 //[3663467] moved it to sublcass from BasicEditorPaneUI to BasicTextPaneUI. (vm)
-public class AquaTextPaneUI extends BasicTextPaneUI {
+public final class AquaTextPaneUI extends BasicTextPaneUI {
     public static ComponentUI createUI(final JComponent c) {
         return new AquaTextPaneUI();
     }

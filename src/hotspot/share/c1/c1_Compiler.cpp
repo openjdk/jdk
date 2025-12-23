@@ -166,6 +166,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
   #if defined(AMD64)
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
   #endif
@@ -237,7 +238,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_getObjectSize:
-#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV) || defined(PPC64)
+#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV64) || defined(PPC64)
   case vmIntrinsics::_clone:
 #endif
     break;

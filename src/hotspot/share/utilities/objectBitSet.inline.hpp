@@ -52,8 +52,8 @@ ObjectBitSet<MT>::~ObjectBitSet() {
     delete current;
     current = next;
   }
-  // destructors for ResourceHashtable base deletes nodes, and
-  // ResizeableResourceHashtableStorage deletes the table.
+  // destructors for HashTable base deletes nodes, and
+  // ResizeableHashTableStorage deletes the table.
 }
 
 template<MemTag MT>

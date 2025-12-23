@@ -85,7 +85,7 @@ CreateHkTargets = \
 ################################################################################
 # Include module specific build settings
 
-THIS_SNIPPET := modules/$(MODULE)/Java.gmk
+THIS_SNIPPET := $(call GetModuleSnippetName, Java)
 
 ifneq ($(wildcard $(THIS_SNIPPET)), )
   include MakeSnippetStart.gmk
@@ -115,6 +115,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     EXCLUDE_FILES := $(EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := -files, \
     KEEP_ALL_TRANSLATIONS := $(KEEP_ALL_TRANSLATIONS), \
+    TARGET_RELEASE := $(TARGET_RELEASE), \
     JAVAC_FLAGS := \
         $(DOCLINT) \
         $(JAVAC_FLAGS) \

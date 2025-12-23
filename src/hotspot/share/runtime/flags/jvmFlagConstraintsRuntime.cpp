@@ -23,8 +23,8 @@
  */
 
 #include "runtime/flags/jvmFlag.hpp"
-#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -34,6 +34,14 @@
 JVMFlag::Error AOTCacheConstraintFunc(ccstr value, bool verbose) {
   if (value == nullptr) {
     JVMFlag::printError(verbose, "AOTCache cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error AOTCacheOutputConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTCacheOutput cannot be empty\n");
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
@@ -125,5 +133,37 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error LargePageSizeInBytesConstraintFunc(size_t value, bool verbose) {
+  if (!is_power_of_2(value)) {
+    JVMFlag::printError(verbose, "LargePageSizeInBytes ( %zu ) must be "
+                        "a power of 2\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
+#ifdef AARCH64
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "OnSpinWaitInst cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  if (strcmp(value, "nop")   != 0 &&
+      strcmp(value, "isb")   != 0 &&
+      strcmp(value, "yield") != 0 &&
+      strcmp(value, "sb")    != 0 &&
+      strcmp(value, "none")  != 0) {
+    JVMFlag::printError(verbose,
+                        "Unrecognized value %s for OnSpinWaitInst. Must be one of the following: "
+                        "nop, isb, yield, sb, none\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+#endif
   return JVMFlag::SUCCESS;
 }

@@ -23,6 +23,8 @@
 
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
+#include "opto/c2_globals.hpp"
+#include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/mulnode.hpp"
@@ -465,6 +467,16 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
+}
+
+bool VectorNode::is_maskall_type(const TypeLong* type, int vlen) {
+  assert(type != nullptr, "type must not be null");
+  if (!type->is_con()) {
+    return false;
+  }
+  jlong mask = (-1ULL >> (64 - vlen));
+  jlong bit = type->get_con() & mask;
+  return bit == 0 || bit == mask;
 }
 
 bool VectorNode::is_muladds2i(const Node* n) {
@@ -1015,6 +1027,10 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
 
 bool VectorNode::is_reinterpret_opcode(int opc) {
   switch (opc) {
+    case Op_MoveF2I:
+    case Op_MoveD2L:
+    case Op_MoveL2D:
+    case Op_MoveI2F:
     case Op_ReinterpretHF2S:
     case Op_ReinterpretS2HF:
       return true;
@@ -1068,28 +1084,26 @@ bool VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(int op
   }
 }
 
+// Idealize vector operations whose vector size is less than the hardware supported
+// max vector size. Generate a vector mask for the operation. Lanes with indices
+// inside of the vector size are set to true, while the remaining lanes are set to
+// false. Returns the corresponding masked vector node.
+static Node* ideal_partial_operations(PhaseGVN* phase, Node* node, const TypeVect* vt) {
+  if (!Matcher::vector_needs_partial_operations(node, vt)) {
+    return nullptr;
+  }
 
-Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt) {
   int vopc = node->Opcode();
   uint vlen = vt->length();
   BasicType bt = vt->element_basic_type();
+  assert(Matcher::match_rule_supported_vector_masked(vopc, vlen, bt),
+         "The masked feature is required for the vector operation");
+  assert(Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, bt),
+         "'VectorMaskGen' is required to generate a vector mask");
 
-  // Predicated vectors do not need to add another mask input
-  if (node->is_predicated_vector() || !Matcher::has_predicated_vectors() ||
-      !Matcher::match_rule_supported_vector_masked(vopc, vlen, bt) ||
-      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, bt)) {
-    return nullptr;
-  }
-
-  Node* mask = nullptr;
-  // Generate a vector mask for vector operation whose vector length is lower than the
-  // hardware supported max vector length.
-  if (vt->length_in_bytes() < (uint)MaxVectorSize) {
-    Node* length = gvn->transform(new ConvI2LNode(gvn->makecon(TypeInt::make(vlen))));
-    mask = gvn->transform(VectorMaskGenNode::make(length, bt, vlen));
-  } else {
-    return nullptr;
-  }
+  // Generate a vector mask, with lanes inside of the vector length set to true.
+  Node* length = phase->transform(new ConvI2LNode(phase->makecon(TypeInt::make(vlen))));
+  Node* mask = phase->transform(VectorMaskGenNode::make(length, bt, vlen));
 
   // Generate the related masked op for vector load/store/load_gather/store_scatter.
   // Or append the mask to the vector op's input list by default.
@@ -1118,17 +1132,8 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   }
 }
 
-bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
-  // Predicated vector operations are sensitive to ordering of inputs.
-  // When the mask corresponding to a vector lane is false then
-  // the result of the operation is corresponding lane of its first operand.
-  //   i.e. RES = VEC1.lanewise(OPER, VEC2, MASK) is semantically equivalent to
-  //        RES = BLEND(VEC1, VEC1.lanewise(OPER, VEC2), MASK)
-  if (is_predicated_vector()) {
-    return false;
-  }
-
-  switch(Opcode()) {
+static bool is_commutative_vector_operation(int opcode) {
+  switch(opcode) {
     case Op_AddVB:
     case Op_AddVS:
     case Op_AddVI:
@@ -1156,16 +1161,32 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
     case Op_XorVMask:
 
     case Op_SaturatingAddV:
-      assert(req() == 3, "Must be a binary operation");
-      // For non-predicated commutative operations, sort the inputs in
-      // increasing order of node indices.
-      if (in(1)->_idx > in(2)->_idx) {
-        return true;
-      }
-      // fallthrough
+      return true;
     default:
       return false;
   }
+}
+
+bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
+  // Predicated vector operations are sensitive to ordering of inputs.
+  // When the mask corresponding to a vector lane is false then
+  // the result of the operation is corresponding lane of its first operand.
+  //   i.e. RES = VEC1.lanewise(OPER, VEC2, MASK) is semantically equivalent to
+  //        RES = BLEND(VEC1, VEC1.lanewise(OPER, VEC2), MASK)
+  if (is_predicated_vector()) {
+    return false;
+  }
+
+  if (is_commutative_vector_operation(Opcode())) {
+    assert(req() == 3, "Must be a binary operation");
+    // For non-predicated commutative operations, sort the inputs in
+    // increasing order of node indices.
+    if (in(1)->_idx > in(2)->_idx) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool VectorNode::can_push_broadcasts_across_vector_operation(BasicType bt) {
@@ -1242,9 +1263,47 @@ Node* VectorNode::scalar_node_factory(Compile* c, int sopc, Node* control, Node*
   }
 }
 
+Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinput1, Node* cinput2,
+                                           Node* pinput2, PhaseGVN* phase) {
+  Node* cloned_child = child->clone();
+  cloned_child->set_req(1, cinput1);
+  cloned_child->set_req(2, cinput2);
+  cloned_child = phase->transform(cloned_child);
+  Node* cloned_parent = parent->clone();
+  cloned_parent->set_req(1, cloned_child);
+  cloned_parent->set_req(2, pinput2);
+  return cloned_parent;
+}
+
+Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
+  if (is_commutative_vector_operation(Opcode())) {
+    if (in(1)->Opcode() == Op_Replicate && in(2)->Opcode() == Opcode()) {
+      Node* in2_1 = in(2)->in(1);
+      Node* in2_2 = in(2)->in(2);
+      if (in2_1->Opcode() == Op_Replicate) {
+        return create_reassociated_node(this, in(2), in(1), in2_1, in2_2, phase);
+      } else if (in2_2->Opcode() == Op_Replicate) {
+        return create_reassociated_node(this, in(2), in(1), in2_2, in2_1, phase);
+      }
+    }
+    if (in(2)->Opcode() == Op_Replicate && in(1)->Opcode() == Opcode()) {
+      Node* in1_1 = in(1)->in(1);
+      Node* in1_2 = in(1)->in(2);
+      if (in1_1->Opcode() == Op_Replicate) {
+        return create_reassociated_node(this, in(1), in(2), in1_1, in1_2, phase);
+      } else if (in1_2->Opcode() == Op_Replicate) {
+        return create_reassociated_node(this, in(1), in(2), in1_2, in1_1, phase);
+      }
+    }
+  }
+  return nullptr;
+}
+
+
 Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (Matcher::vector_needs_partial_operations(this, vect_type())) {
-    return try_to_gen_masked_vector(phase, this, vect_type());
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
   }
 
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
@@ -1281,7 +1340,10 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  return nullptr;
+  // Reassociate commutative vector operations
+  // VectorOperation (VectorBroadcast INP1) (VectorOperation (VectorBroadcast INP2) INP3) =>
+  //    VectorOperation (VectorOperation (VectorBroadcast INP1) (VectorBroadcast INP2)) INP3
+  return reassociate_vector_operation(phase);
 }
 
 // Return initial Pack node. Additional operands added with add_opd() calls.
@@ -1355,9 +1417,9 @@ LoadVectorNode* LoadVectorNode::make(int opc, Node* ctl, Node* mem,
 }
 
 Node* LoadVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = vect_type();
-  if (Matcher::vector_needs_partial_operations(this, vt)) {
-    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
   }
   return LoadNode::Ideal(phase, can_reshape);
 }
@@ -1369,9 +1431,9 @@ StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem, Node* adr,
 }
 
 Node* StoreVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = vect_type();
-  if (Matcher::vector_needs_partial_operations(this, vt)) {
-    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
   }
   return StoreNode::Ideal(phase, can_reshape);
 }
@@ -1383,7 +1445,14 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (ty && ty->is_con()) {
       BasicType mask_bt = Matcher::vector_element_basic_type(in(3));
       int load_sz = type2aelembytes(mask_bt) * ty->get_con();
-      assert(load_sz <= MaxVectorSize, "Unexpected load size");
+      if (load_sz > MaxVectorSize) {
+        // After loop opts, cast nodes are aggressively removed, if the input is then transformed
+        // into a constant that is outside the range of the removed cast, we may encounter it here.
+        // This should be a dead node then.
+        assert(Compile::current()->post_loop_opts_phase(), "Unexpected load size");
+        return phase->C->top();
+      }
+
       if (load_sz == MaxVectorSize) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
@@ -1402,7 +1471,14 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (ty && ty->is_con()) {
       BasicType mask_bt = Matcher::vector_element_basic_type(in(4));
       int load_sz = type2aelembytes(mask_bt) * ty->get_con();
-      assert(load_sz <= MaxVectorSize, "Unexpected store size");
+      if (load_sz > MaxVectorSize) {
+        // After loop opts, cast nodes are aggressively removed, if the input is then transformed
+        // into a constant that is outside the range of the removed cast, we may encounter it here.
+        // This should be a dead node then.
+        assert(Compile::current()->post_loop_opts_phase(), "Unexpected store size");
+        return phase->C->top();
+      }
+
       if (load_sz == MaxVectorSize) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
@@ -1633,11 +1709,50 @@ ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, Basi
 }
 
 Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = vect_type();
-  if (Matcher::vector_needs_partial_operations(this, vt)) {
-    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
+  }
+  return Node::Ideal(phase, can_reshape);
+}
+
+// Convert fromLong to maskAll if the input sets or unsets all lanes.
+static Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type, const TypeVect* vt) {
+  uint vlen = vt->length();
+  BasicType bt = vt->element_basic_type();
+  // The "maskAll" API uses the corresponding integer types for floating-point data.
+  BasicType maskall_bt = (bt == T_FLOAT) ? T_INT : (bt == T_DOUBLE) ? T_LONG : bt;
+
+  if (VectorNode::is_maskall_type(bits_type, vlen) &&
+      Matcher::match_rule_supported_vector(Op_Replicate, vlen, maskall_bt)) {
+    Node* con = nullptr;
+    jlong con_value = bits_type->get_con() == 0L ? 0L : -1L;
+    if (maskall_bt == T_LONG) {
+      con = phase->longcon(con_value);
+    } else {
+      con = phase->intcon(con_value);
+    }
+    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, vt->isa_vectmask() != nullptr);
+    // Convert back to the original floating-point data type.
+    if (is_floating_point_type(bt)) {
+      res = new VectorMaskCastNode(phase->transform(res), vt);
+    }
+    return res;
   }
   return nullptr;
+}
+
+Node* VectorLoadMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // VectorLoadMask(VectorLongToMask(-1/0)) => Replicate(-1/0)
+  if (in(1)->Opcode() == Op_VectorLongToMask) {
+    const TypeVect* vt = bottom_type()->is_vect();
+    Node* res = convertFromLongToMaskAll(phase, in(1)->in(1)->bottom_type()->isa_long(), vt);
+    if (res != nullptr) {
+      return res;
+    }
+  }
+
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 Node* VectorLoadMaskNode::Identity(PhaseGVN* phase) {
@@ -1809,6 +1924,34 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
     return vopc != opc && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
+}
+
+bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
+  switch (vopc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
+    case Op_MulReductionVI:
+    case Op_MulReductionVL:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+      // These are cases that all have associative operations, which can
+      // thus be reordered, allowing non-strict order reductions.
+      return false;
+    case Op_AddReductionVF:
+    case Op_MulReductionVF:
+    case Op_AddReductionVD:
+    case Op_MulReductionVD:
+      // Floating-point addition and multiplication are non-associative,
+      // so AddReductionVF/D and MulReductionVF/D require strict ordering
+      // in auto-vectorization.
+      return true;
+    default:
+      assert(false, "not handled: %s", NodeClassNames[vopc]);
+      return true;
+  }
 }
 
 MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node* in3,
@@ -2048,11 +2191,52 @@ Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
 }
 
 Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = vect_type();
-  if (Matcher::vector_needs_partial_operations(this, vt)) {
-    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  Node* n = ideal_partial_operations(phase, this, vect_type());
+  if (n != nullptr) {
+    return n;
+  }
+  return TypeNode::Ideal(phase, can_reshape);
+}
+
+Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
+  Node* in1 = in(1);
+  // VectorMaskCast (VectorMaskCast x) => x
+  if (in1->Opcode() == Op_VectorMaskCast &&
+      vect_type()->eq(in1->in(1)->bottom_type())) {
+      return in1->in(1);
+  }
+  return this;
+}
+
+// This function does the following optimization:
+//   VectorMaskToLong(MaskAll(l)) => (l & (-1ULL >> (64 - vlen)))
+//   VectorMaskToLong(VectorStoreMask(Replicate(l))) => (l & (-1ULL >> (64 - vlen)))
+// l is -1 or 0.
+Node* VectorMaskToLongNode::Ideal_MaskAll(PhaseGVN* phase) {
+  Node* in1 = in(1);
+  // VectorMaskToLong follows a VectorStoreMask if it doesn't require the mask
+  // saved with a predicate type.
+  if (in1->Opcode() == Op_VectorStoreMask) {
+    Node* mask = in1->in(1);
+    assert(!Matcher::mask_op_prefers_predicate(Opcode(), mask->bottom_type()->is_vect()), "sanity");
+    in1 = mask;
+  }
+  if (VectorNode::is_all_ones_vector(in1)) {
+    int vlen = in1->bottom_type()->is_vect()->length();
+    return new ConLNode(TypeLong::make(-1ULL >> (64 - vlen)));
+  }
+  if (VectorNode::is_all_zeros_vector(in1)) {
+    return new ConLNode(TypeLong::ZERO);
   }
   return nullptr;
+}
+
+Node* VectorMaskToLongNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* res = Ideal_MaskAll(phase);
+  if (res != nullptr) {
+    return res;
+  }
+  return VectorMaskOpNode::Ideal(phase, can_reshape);
 }
 
 Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
@@ -2064,28 +2248,41 @@ Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
 
 Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeVect* dst_type = bottom_type()->is_vect();
+  uint vlen = dst_type->length();
+  const TypeVectMask* is_mask = dst_type->isa_vectmask();
+
   if (in(1)->Opcode() == Op_AndL &&
       in(1)->in(1)->Opcode() == Op_VectorMaskToLong &&
       in(1)->in(2)->bottom_type()->isa_long() &&
       in(1)->in(2)->bottom_type()->is_long()->is_con() &&
-      in(1)->in(2)->bottom_type()->is_long()->get_con() == ((1L << dst_type->length()) - 1)) {
+      in(1)->in(2)->bottom_type()->is_long()->get_con() == ((1L << vlen) - 1)) {
       // Different src/dst mask length represents a re-interpretation operation,
       // we can however generate a mask casting operation if length matches.
      Node* src = in(1)->in(1)->in(1);
-     if (dst_type->isa_vectmask() == nullptr) {
+     if (is_mask == nullptr) {
        if (src->Opcode() != Op_VectorStoreMask) {
          return nullptr;
        }
        src = src->in(1);
      }
      const TypeVect* src_type = src->bottom_type()->is_vect();
-     if (src_type->length() == dst_type->length() &&
-         ((src_type->isa_vectmask() == nullptr && dst_type->isa_vectmask() == nullptr) ||
-          (src_type->isa_vectmask() && dst_type->isa_vectmask()))) {
+     if (src_type->length() == vlen &&
+         ((src_type->isa_vectmask() == nullptr && is_mask == nullptr) ||
+          (src_type->isa_vectmask() && is_mask))) {
        return new VectorMaskCastNode(src, dst_type);
      }
   }
-  return nullptr;
+
+  // VectorLongToMask(-1/0) => MaskAll(-1/0)
+  const TypeLong* bits_type = in(1)->bottom_type()->isa_long();
+  if (bits_type && is_mask) {
+    Node* res = convertFromLongToMaskAll(phase, bits_type, dst_type);
+    if (res != nullptr) {
+      return res;
+    }
+  }
+
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 Node* FmaVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -2300,6 +2497,99 @@ Node* OrVNode::Identity(PhaseGVN* phase) {
   return redundant_logical_identity(this);
 }
 
+// Returns whether (XorV (VectorMaskCmp) -1) can be optimized by negating the
+// comparison operation.
+bool VectorMaskCmpNode::predicate_can_be_negated() {
+  switch (_predicate) {
+    case BoolTest::eq:
+    case BoolTest::ne:
+      // eq and ne also apply to floating-point special values like NaN and infinities.
+      return true;
+    case BoolTest::le:
+    case BoolTest::ge:
+    case BoolTest::lt:
+    case BoolTest::gt:
+    case BoolTest::ule:
+    case BoolTest::uge:
+    case BoolTest::ult:
+    case BoolTest::ugt: {
+      BasicType bt = vect_type()->element_basic_type();
+      // For float and double, we don't know if either comparison operand is a
+      // NaN, NaN {le|ge|lt|gt} anything is false, resulting in inconsistent
+      // results before and after negation.
+      return is_integral_type(bt);
+    }
+    default:
+      return false;
+  }
+}
+
+// This function transforms the following patterns:
+//
+// For integer types:
+// (XorV (VectorMaskCmp src1 src2 cond) (Replicate -1))
+//    => (VectorMaskCmp src1 src2 ncond)
+// (XorVMask (VectorMaskCmp src1 src2 cond) (MaskAll m1))
+//    => (VectorMaskCmp src1 src2 ncond)
+// (XorV (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (Replicate -1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// (XorVMask (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (MaskAll m1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// cond can be eq, ne, le, ge, lt, gt, ule, uge, ult and ugt.
+// ncond is the negative comparison of cond.
+//
+// For float and double types:
+// (XorV (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (Replicate -1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// (XorVMask (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (MaskAll m1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// cond can be eq or ne.
+Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  // Transformations for predicated vectors are not supported for now.
+  if (is_predicated_vector() ||
+      in1->is_predicated_vector() ||
+      in2->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  // XorV/XorVMask is commutative, swap VectorMaskCmp/VectorMaskCast to in1.
+  if (VectorNode::is_all_ones_vector(in1)) {
+    swap(in1, in2);
+  }
+
+  bool with_vector_mask_cast = false;
+  // Required conditions:
+  //   1. VectorMaskCast and VectorMaskCmp should only have a single use,
+  //      otherwise the optimization may be unprofitable.
+  //   2. The predicate of VectorMaskCmp should be negatable.
+  //   3. The second input should be an all true vector mask.
+  if (in1->Opcode() == Op_VectorMaskCast) {
+    if (in1->outcnt() != 1) {
+      return nullptr;
+    }
+    with_vector_mask_cast = true;
+    in1 = in1->in(1);
+  }
+  if (in1->Opcode() != Op_VectorMaskCmp ||
+      in1->outcnt() != 1 ||
+      !in1->as_VectorMaskCmp()->predicate_can_be_negated() ||
+      !VectorNode::is_all_ones_vector(in2)) {
+    return nullptr;
+  }
+
+  BoolTest::mask neg_cond = BoolTest::negate_mask((in1->as_VectorMaskCmp())->get_predicate());
+  ConINode* predicate_node = phase->intcon(neg_cond);
+  const TypeVect* vt = in1->as_Vector()->vect_type();
+  Node* res = new VectorMaskCmpNode(neg_cond, in1->in(1), in1->in(2), predicate_node, vt);
+  if (with_vector_mask_cast) {
+    // We optimized out a VectorMaskCast, regenerate one to ensure type correctness.
+    res = new VectorMaskCastNode(phase->transform(res), vect_type());
+  }
+  return res;
+}
+
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
@@ -2312,6 +2602,11 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     BasicType bt = vect_type()->element_basic_type();
     Node* zero = phase->transform(phase->zerocon(bt));
     return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_vectmask() != nullptr);
+  }
+
+  Node* res = Ideal_XorV_VectorMaskCmp(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
   }
   return VectorNode::Ideal(phase, can_reshape);
 }

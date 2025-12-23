@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.util;
+
+import jdk.internal.vm.annotation.Stable;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -68,6 +71,7 @@ public final class Optional<T> {
     /**
      * If non-null, the value; if null, indicates no value is present
      */
+    @Stable
     private final T value;
 
     /**

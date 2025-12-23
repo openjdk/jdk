@@ -162,7 +162,7 @@ JNI_COCOA_EXIT(env);
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_CGraphicsEnvironment_deregisterDisplayReconfiguration
-(JNIEnv *env, jobject this, jlong p)
+(JNIEnv *env, jclass clazz, jlong p)
 {
 JNI_COCOA_ENTER(env);
 

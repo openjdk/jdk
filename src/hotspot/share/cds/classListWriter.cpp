@@ -66,7 +66,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
   write_to_stream(k, w.stream(), cfs);
 }
 
-class ClassListWriter::IDTable : public ResourceHashtable<
+class ClassListWriter::IDTable : public HashTable<
   const InstanceKlass*, int,
   15889, // prime number
   AnyObj::C_HEAP> {};
@@ -110,7 +110,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   bool is_builtin_loader = SystemDictionaryShared::is_builtin_loader(loader_data);
   if (!is_builtin_loader) {
     // class may be loaded from shared archive
-    if (!k->is_shared()) {
+    if (!k->in_aot_cache()) {
       if (cfs == nullptr || cfs->source() == nullptr) {
         // CDS static dump only handles unregistered class with known source.
         return;
@@ -139,7 +139,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   }
 
   {
-    InstanceKlass* super = k->java_super();
+    InstanceKlass* super = k->super();
     if (super != nullptr && !has_id(super)) {
       return;
     }
@@ -165,7 +165,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   ResourceMark rm;
   stream->print("%s id: %d", k->name()->as_C_string(), get_id(k));
   if (!is_builtin_loader) {
-    InstanceKlass* super = k->java_super();
+    InstanceKlass* super = k->super();
     assert(super != nullptr, "must be");
     stream->print(" super: %d", get_id(super));
 
@@ -277,7 +277,9 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
     if (field_entries != nullptr) {
       for (int i = 0; i < field_entries->length(); i++) {
         ResolvedFieldEntry* rfe = field_entries->adr_at(i);
-        if (rfe->is_resolved(Bytecodes::_getfield) ||
+        if (rfe->is_resolved(Bytecodes::_getstatic) ||
+            rfe->is_resolved(Bytecodes::_putstatic) ||
+            rfe->is_resolved(Bytecodes::_getfield) ||
             rfe->is_resolved(Bytecodes::_putfield)) {
           list.at_put(rfe->constant_pool_index(), true);
           print = true;
@@ -292,6 +294,7 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
         if (rme->is_resolved(Bytecodes::_invokevirtual) ||
             rme->is_resolved(Bytecodes::_invokespecial) ||
             rme->is_resolved(Bytecodes::_invokeinterface) ||
+            rme->is_resolved(Bytecodes::_invokestatic) ||
             rme->is_resolved(Bytecodes::_invokehandle)) {
           list.at_put(rme->constant_pool_index(), true);
           print = true;

@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 import sun.java2d.SunGraphicsEnvironment;
 
 /**
@@ -82,7 +84,7 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
     /**
      * Remove the instance's registration with CGDisplayRemoveReconfigurationCallback()
      */
-    private native void deregisterDisplayReconfiguration(long context);
+    private static native void deregisterDisplayReconfiguration(long context);
 
     /** Available CoreGraphics displays. */
     private final Map<Integer, CGraphicsDevice> devices = new HashMap<>(5);
@@ -93,6 +95,7 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
 
     /** Reference to the display reconfiguration callback context. */
     private final long displayReconfigContext;
+    private final Object disposerReferent = new Object();
 
     // list of invalidated graphics devices (those which were removed)
     private List<WeakReference<CGraphicsDevice>> oldDevices = new ArrayList<>();
@@ -114,6 +117,7 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
         if (displayReconfigContext == 0L) {
             throw new RuntimeException("Could not register CoreGraphics display reconfiguration callback");
         }
+        Disposer.addRecord(disposerReferent, new CGEDisposerRecord(displayReconfigContext));
     }
 
     /**
@@ -139,12 +143,14 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
         rebuildDevices();
     }
 
-    @Override
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        try {
-            super.finalize();
-        } finally {
+    private static class CGEDisposerRecord implements DisposerRecord {
+        private final long displayReconfigContext;
+
+        CGEDisposerRecord(long ptr) {
+            displayReconfigContext = ptr;
+        }
+
+        public void dispose() {
             deregisterDisplayReconfiguration(displayReconfigContext);
         }
     }

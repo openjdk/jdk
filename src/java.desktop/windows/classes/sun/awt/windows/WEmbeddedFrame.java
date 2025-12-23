@@ -253,8 +253,8 @@ public final class WEmbeddedFrame extends EmbeddedFrame {
      *     super.notifyModalBlocked(blocker, blocked) must be present
      *     when overriding.
      * It may occur that embedded frame is not put into its
-     *     container at the moment when it is blocked, for example,
-     *     when running an applet in IE. Then the call to this method
+     *     container at the moment when it is blocked.
+     *     Then the call to this method
      *     should be delayed until embedded frame is reparented.
      *
      * NOTE: This method may be called by privileged threads.

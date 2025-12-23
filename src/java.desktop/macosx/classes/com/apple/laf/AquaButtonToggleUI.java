@@ -37,6 +37,7 @@ public class AquaButtonToggleUI extends AquaButtonUI {
         return aquaToggleButtonUI.get();
     }
 
+    @Override
     protected String getPropertyPrefix() {
         return "ToggleButton" + ".";
     }

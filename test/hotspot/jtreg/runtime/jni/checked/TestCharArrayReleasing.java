@@ -25,6 +25,8 @@
  * @test
  * @bug 8357601
  * @requires vm.flagless
+ * @comment The check of the array allocated with raw malloc triggers ASAN as we peek into the malloc header space.
+ * @requires !vm.asan
  * @library /test/lib
  * @run main/othervm/native TestCharArrayReleasing 0 0
  * @run main/othervm/native TestCharArrayReleasing 1 0
@@ -84,7 +86,7 @@ public class TestCharArrayReleasing {
     }
 
     public static void main(String[] args) throws Throwable {
-        int ABRT = Platform.isWindows() ? 1 : 134;
+        int ABRT = 1;
         int[][] errorCodes = new int[][] {
             { ABRT, 0, ABRT, ABRT, ABRT },
             { ABRT, ABRT, 0, ABRT, ABRT },
@@ -118,6 +120,7 @@ public class TestCharArrayReleasing {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
              "-Djava.library.path=" + System.getProperty("test.nativepath"),
              "--enable-native-access=ALL-UNNAMED",
+             "-XX:-CreateCoredumpOnCrash",
              "-Xcheck:jni",
              "TestCharArrayReleasing$Driver",
              args[0], args[1]);
@@ -126,4 +129,3 @@ public class TestCharArrayReleasing {
         output.shouldContain(errorMsgs[relMode][srcMode]);
     }
 }
-

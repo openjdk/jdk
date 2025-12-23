@@ -44,7 +44,31 @@
  * <p>
  * The {@code IIOByteBuffer} class provides an alternative way to perform reads
  * of sequences of bytes that reduces the amount of internal data copying.
- *
+ * <p>
+ * An {@code ImageInputStream} or {@code ImageOutputStream} may internally allocate
+ * system resources, such as a temporary cache file.
+ * Clients are encouraged to use a try-with-resources statement to ensure the
+ * {@link ImageInputStream#close()} or {@link ImageOutputStream#close()}
+ * method is called which can promptly free those native resources.
+ * Otherwise there is the possibility they will leak and eventually cause the
+ * application to fail as well the possibility that not all data is flushed
+ * to the underlying output stream. A logical consequence of that is that
+ * this should be done before closing the destination {@link java.io.OutputStream}.
+ * A simple pattern would be
+ * {@snippet lang='java':
+ * try (FileOutputStream fos = new FileOutputStream("out.jpg");
+ *      ImageOutputStream ios = new FileCacheImageOutputStream(fos, null)) {
+ *     ImageIO.write(img, "jpg", ios);
+ * } catch (IOException e) {
+ * } // implicit finally block closes the streams in the reverse order to opening
+ * }
+ * <p>
+ * Sub-classers of these Image I/O API stream types can, to a limited extent, protect
+ * the application from the consequences of failures to close by adopting mechanisms
+ * such as {@link java.lang.ref.Cleaner} to free internal resources when it
+ * is no longer reachable. This is only necessary if there are any resources to release.
+ * However applications cannot rely on this, either for resource management, or
+ * for program correctness.
  * @since 1.4
  */
 package javax.imageio.stream;

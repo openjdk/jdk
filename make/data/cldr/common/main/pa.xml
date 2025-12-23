@@ -47,6 +47,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="az">ਅਜ਼ਰਬਾਈਜਾਨੀ</language>
 			<language type="az" alt="short">ਅਜ਼ੇਰੀ</language>
 			<language type="ba">ਬਸ਼ਕੀਰ</language>
+			<language type="bal">ਬਲੋਚੀ</language>
 			<language type="ban">ਬਾਲੀਨੀਜ਼</language>
 			<language type="bas">ਬਾਸਾ</language>
 			<language type="be">ਬੇਲਾਰੂਸੀ</language>
@@ -59,7 +60,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">ਬਿਸਲਾਮਾ</language>
 			<language type="bin">ਬਿਨੀ</language>
 			<language type="bla">ਸਿਕਸਿਕਾ</language>
-			<language type="blo" draft="contributed">ਅਨੀ</language>
+			<language type="blo">ਅਨੀ</language>
 			<language type="bm">ਬੰਬਾਰਾ</language>
 			<language type="bn">ਬੰਗਾਲੀ</language>
 			<language type="bo">ਤਿੱਬਤੀ</language>
@@ -236,6 +237,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">ਬਫ਼ੀਆ</language>
 			<language type="ksh">ਕਲੋਨੀਅਨ</language>
 			<language type="ku">ਕੁਰਦਿਸ਼</language>
+			<language type="ku" menu="core" draft="contributed">ਕੁਰਦਿਸ਼</language>
+			<language type="ku" menu="extension" draft="contributed">ਕੁਰਮਾਂਜੀ</language>
 			<language type="kum">ਕੁਮੀਕ</language>
 			<language type="kv">ਕੋਮੀ</language>
 			<language type="kw">ਕੋਰਨਿਸ਼</language>
@@ -637,6 +640,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">ਚੀਨ</territory>
 			<territory type="CO">ਕੋਲੰਬੀਆ</territory>
 			<territory type="CP">ਕਲਿੱਪਰਟਨ ਟਾਪੂ</territory>
+			<territory type="CQ">ਸਾਰਕ</territory>
 			<territory type="CR">ਕੋਸਟਾ ਰੀਕਾ</territory>
 			<territory type="CU">ਕਿਊਬਾ</territory>
 			<territory type="CV">ਕੇਪ ਵਰਡੇ</territory>
@@ -703,14 +707,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IM">ਆਇਲ ਆਫ ਮੈਨ</territory>
 			<territory type="IN">ਭਾਰਤ</territory>
 			<territory type="IO">ਬਰਤਾਨਵੀ ਹਿੰਦ ਮਹਾਂਸਾਗਰ ਖਿੱਤਾ</territory>
-			<territory type="IO" alt="chagos" draft="contributed">ਚਗੋਸ ਟਾਪੂ</territory>
+			<territory type="IO" alt="chagos">ਚਗੋਸ ਟਾਪੂ</territory>
 			<territory type="IQ">ਇਰਾਕ</territory>
 			<territory type="IR">ਈਰਾਨ</territory>
 			<territory type="IS">ਆਈਸਲੈਂਡ</territory>
 			<territory type="IT">ਇਟਲੀ</territory>
 			<territory type="JE">ਜਰਸੀ</territory>
 			<territory type="JM">ਜਮਾਇਕਾ</territory>
-			<territory type="JO">ਜਾਰਡਨ</territory>
+			<territory type="JO">ਜੌਰਡਨ</territory>
 			<territory type="JP">ਜਪਾਨ</territory>
 			<territory type="KE">ਕੀਨੀਆ</territory>
 			<territory type="KG">ਕਿਰਗਿਜ਼ਸਤਾਨ</territory>
@@ -718,13 +722,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="KI">ਕਿਰਬਾਤੀ</territory>
 			<territory type="KM">ਕੋਮੋਰੋਸ</territory>
 			<territory type="KN">ਸੇਂਟ ਕਿਟਸ ਐਂਡ ਨੇਵਿਸ</territory>
-			<territory type="KP">ਉੱਤਰ ਕੋਰੀਆ</territory>
-			<territory type="KR">ਦੱਖਣ ਕੋਰੀਆ</territory>
+			<territory type="KP">ਉੱਤਰੀ ਕੋਰੀਆ</territory>
+			<territory type="KR">ਦੱਖਣੀ ਕੋਰੀਆ</territory>
 			<territory type="KW">ਕੁਵੈਤ</territory>
 			<territory type="KY">ਕੇਮੈਨ ਟਾਪੂ</territory>
 			<territory type="KZ">ਕਜ਼ਾਖਸਤਾਨ</territory>
 			<territory type="LA">ਲਾਓਸ</territory>
-			<territory type="LB">ਲੈਬਨਾਨ</territory>
+			<territory type="LB">ਲਿਬਨਾਨ</territory>
 			<territory type="LC">ਸੇਂਟ ਲੂਸੀਆ</territory>
 			<territory type="LI">ਲਿਚੇਂਸਟਾਇਨ</territory>
 			<territory type="LK">ਸ੍ਰੀ ਲੰਕਾ</territory>
@@ -782,7 +786,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="PM">ਸੇਂਟ ਪੀਅਰੇ ਐਂਡ ਮਿਕੇਲਨ</territory>
 			<territory type="PN">ਪਿਟਕੇਰਨ ਟਾਪੂ</territory>
 			<territory type="PR">ਪਿਊਰਟੋ ਰਿਕੋ</territory>
-			<territory type="PS">ਫਿਲੀਸਤੀਨੀ ਇਲਾਕਾ</territory>
+			<territory type="PS">ਫਿਲਸਤੀਨੀ ਖਿੱਤੇ</territory>
 			<territory type="PS" alt="short">ਫਿਲੀਸਤੀਨ</territory>
 			<territory type="PT">ਪੁਰਤਗਾਲ</territory>
 			<territory type="PW">ਪਲਾਉ</territory>
@@ -839,7 +843,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UM">ਯੂ.ਐੱਸ. ਦੂਰ-ਦੁਰਾਡੇ ਟਾਪੂ</territory>
 			<territory type="UN">ਸੰਯੁਕਤ ਰਾਸ਼ਟਰ</territory>
 			<territory type="UN" alt="short">ਯੂ.ਐੱਨ.</territory>
-			<territory type="US">ਸੰਯੁਕਤ ਰਾਜ</territory>
+			<territory type="US">ਸੰਯੁਕਤ ਰਾਜ (ਅਮਰੀਕਾ)</territory>
 			<territory type="US" alt="short">ਯੂ.ਐੱਸ.</territory>
 			<territory type="UY">ਉਰੂਗਵੇ</territory>
 			<territory type="UZ">ਉਜ਼ਬੇਕਿਸਤਾਨ</territory>
@@ -872,48 +876,89 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="cf">ਮੁਦਰਾ ਬਣਤਰ</key>
 			<key type="collation">ਲੜੀਬੱਧ ਕ੍ਰਮ</key>
 			<key type="currency">ਮੁਦਰਾ</key>
+			<key type="em">ਇਮੋਜੀ ਪੇਸ਼ਕਾਰੀ</key>
 			<key type="hc">ਘੰਟੇ ਦਾ ਚੱਕਰ (12 ਬਨਾਮ 24)</key>
 			<key type="lb">ਰੇਖਾ ਵਿੱਥ ਸ਼ੈਲੀ</key>
+			<key type="lw">ਸ਼ਬਦਾਂ ਵਿਚਕਾਰ ਲਾਈਨ ਵਿੱਥ</key>
 			<key type="ms">ਮਾਪ ਪ੍ਰਣਾਲੀ</key>
 			<key type="numbers">ਸੰਖਿਆਵਾਂ</key>
+			<key type="ss">ਸੰਖੇਪ ਸ਼ਬਦ ਤੋਂ ਬਾਅਦ ਵਾਕ ਵਿੱਥ</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ਬੋਧੀ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="buddhist" scope="core">ਬੋਧੀ</type>
 			<type key="calendar" type="chinese">ਚੀਨੀ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="chinese" scope="core">ਚੀਨੀ</type>
 			<type key="calendar" type="coptic">ਕੋਪਟਿਕ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="coptic" scope="core">ਕੋਪਟਿਕ</type>
 			<type key="calendar" type="dangi">ਡਾਂਗੀ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="dangi" scope="core">ਡਾਂਗੀ</type>
 			<type key="calendar" type="ethiopic">ਇਥੀਓਪਿਕ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="ethiopic" scope="core">ਇਥੀਓਪਿਕ</type>
 			<type key="calendar" type="ethiopic-amete-alem">ਇਥੀਓਪਿਕ-ਅਮੀਟ-ਆਲਮ</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">ਇਥੀਓਪਿਕ ਅਮੀਟ ਆਲਮ</type>
 			<type key="calendar" type="gregorian">ਗਰੇਗੋਰੀਅਨ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="gregorian" scope="core">ਗਰੇਗੋਰੀਅਨ</type>
 			<type key="calendar" type="hebrew">ਹਿਬਰੂ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="hebrew" scope="core">ਹਿਬਰੂ</type>
 			<type key="calendar" type="indian">ਭਾਰਤੀ ਕੌਮੀ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="indian" scope="core">ਭਾਰਤੀ ਕੌਮੀ</type>
 			<type key="calendar" type="islamic">ਇਸਲਾਮੀ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="islamic" scope="core">ਇਸਲਾਮੀ</type>
 			<type key="calendar" type="islamic-civil">ਇਸਲਾਮੀ ਕੈਲੰਡਰ (ਸਾਰਨੀਬੱਧ, ਸਮਾਜਿਕ ਯੁੱਗ)</type>
+			<type key="calendar" type="islamic-civil" scope="core">ਇਸਲਾਮੀ (ਸਾਰਨੀਬੱਧ, ਸਮਾਜਿਕ ਯੁੱਗ)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">ਇਸਲਾਮੀ ਕੈਲੰਡਰ (ਸਾਊਦੀ ਅਰਬ, ਚੰਨ ਦਿਖਣਾ)</type>
-			<type key="calendar" type="islamic-tbla">ਇਸਲਾਮੀ ਕੈਲੰਡਰ (ਟੇਬਲਰ, ਖਗੋਲੀ ਯੁੱਗ)</type>
+			<type key="calendar" type="islamic-tbla">ਇਸਲਾਮੀ ਕੈਲੰਡਰ (ਸਾਰਨੀਬੱਧ, ਖਗੋਲੀ ਯੁੱਗ)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">ਇਸਲਾਮੀ (ਸਾਰਨੀਬੱਧ, ਖਗੋਲੀ ਯੁੱਗ)</type>
 			<type key="calendar" type="islamic-umalqura">ਇਸਲਾਮੀ ਕੈਲੰਡਰ (ਅਮ ਅਲ-ਕੁਰਾ)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">ਇਸਲਾਮੀ (ਉਮ ਅਲ-ਕੁਰਾ)</type>
 			<type key="calendar" type="iso8601">(ISO-8601) ਕੈਲੰਡਰ</type>
 			<type key="calendar" type="japanese">ਜਪਾਨੀ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="japanese" scope="core">ਜਪਾਨੀ</type>
 			<type key="calendar" type="persian">ਫ਼ਾਰਸੀ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="persian" scope="core">ਫ਼ਾਰਸੀ</type>
 			<type key="calendar" type="roc">ਮਿੰਗੂਓ ਕੈਲੰਡਰ</type>
+			<type key="calendar" type="roc" scope="core">ਮਿੰਗੂਓ</type>
 			<type key="cf" type="account">ਲੇਖਾ ਮੁਦਰਾ ਬਣਤਰ</type>
+			<type key="cf" type="account" scope="core">ਲੇਖਾ</type>
 			<type key="cf" type="standard">ਮਿਆਰੀ ਮੁਦਰਾ ਬਣਤਰ</type>
+			<type key="cf" type="standard" scope="core">ਮਿਆਰੀ</type>
 			<type key="collation" type="compat" draft="contributed">ਪਿਛਲਾ ਤਰਤੀਬ ਵਾਰ ਕ੍ਰਮ, ਅਨੁਰੂਪਤਾ ਲਈ</type>
 			<type key="collation" type="dictionary">ਸ਼ਬਦ-ਕੋਸ਼ ਲੜੀਬੱਧ ਕ੍ਰਮ</type>
 			<type key="collation" type="ducet">ਮੂਲ ਯੂਨੀਕੋਡ ਲੜੀਬੱਧ ਕ੍ਰਮ</type>
+			<type key="collation" type="ducet" scope="core">ਡਿਫ਼ੌਲਟ ਯੂਨੀਕੋਡ</type>
 			<type key="collation" type="search">ਆਮ-ਮੰਤਵ ਖੋਜ</type>
+			<type key="collation" type="search" scope="core">ਖੋਜੋ</type>
 			<type key="collation" type="standard">ਸਧਾਰਨ ਲੜੀਬੱਧ ਕ੍ਰਮ</type>
+			<type key="collation" type="standard" scope="core">ਮਿਆਰੀ</type>
 			<type key="collation" type="traditional">ਰਵਾਇਤੀ ਲੜੀਬੱਧ ਕ੍ਰਮ</type>
+			<type key="em" type="default" scope="core">ਡਿਫ਼ੌਲਟ</type>
+			<type key="em" type="emoji" scope="core">ਇਮੋਜੀ</type>
+			<type key="em" type="text" scope="core">ਟੈਕਸਟ</type>
 			<type key="hc" type="h11">12 ਘੰਟੇ ਦੀ ਪ੍ਰਣਾਲੀ (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 ਘੰਟੇ ਦੀ ਪ੍ਰਣਾਲੀ (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24 ਘੰਟੇ ਦੀ ਪ੍ਰਣਾਲੀ (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 ਘੰਟੇ ਦੀ ਪ੍ਰਣਾਲੀ (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="lb" type="loose">ਖੁੱਲ੍ਹੀ ਰੇਖਾ ਵਿੱਥ ਸ਼ੈਲੀ</type>
+			<type key="lb" type="loose" scope="core">ਖੁੱਲ੍ਹੀ</type>
 			<type key="lb" type="normal">ਸਧਾਰਨ ਰੇਖਾ ਵਿੱਥ ਸ਼ੈਲੀ</type>
+			<type key="lb" type="normal" scope="core">ਸਧਾਰਨ</type>
 			<type key="lb" type="strict">ਪੱਕੀ ਰੇਖਾ ਵਿੱਥ ਸ਼ੈਲੀ</type>
+			<type key="lb" type="strict" scope="core">ਪੱਕੀ</type>
+			<type key="lw" type="breakall" scope="core">ਸਭ ‘ਚ ਵਿੱਥ ਰੱਖੋ</type>
+			<type key="lw" type="keepall" scope="core">ਸਭ ਰੱਖੋ</type>
+			<type key="lw" type="normal" scope="core">ਸਧਾਰਨ</type>
+			<type key="lw" type="phrase" scope="core">ਵਾਕੰਸ਼ਾਂ ‘ਚ ਰੱਖੋ</type>
 			<type key="ms" type="metric">ਮੀਟਰਿਕ ਪ੍ਰਣਾਲੀ</type>
+			<type key="ms" type="metric" scope="core">ਮੀਟਰਿਕ</type>
 			<type key="ms" type="uksystem">ਇੰਪੀਰੀਅਲ ਮਾਪ ਪ੍ਰਣਾਲੀ</type>
+			<type key="ms" type="uksystem" scope="core">UK</type>
 			<type key="ms" type="ussystem">ਅਮਰੀਕੀ ਮਾਪ ਪ੍ਰਣਾਲੀ</type>
+			<type key="ms" type="ussystem" scope="core">US</type>
 			<type key="numbers" type="arab">ਅਰਬੀ-ਭਾਰਤੀ ਅੰਕ</type>
 			<type key="numbers" type="arabext">ਵਿਸਤਾਰਿਤ ਅਰਬੀ-ਭਾਰਤੀ ਅੰਕ</type>
 			<type key="numbers" type="armn">ਆਰਮੀਨੀਅਨ ਸੰਖਿਆਵਾਂ</type>
@@ -956,6 +1001,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="thai">ਥਾਈ ਅੰਕ</type>
 			<type key="numbers" type="tibt">ਤਿੱਬਤੀ ਅੰਕ</type>
 			<type key="numbers" type="vaii">ਵਾਈ ਅੰਕ</type>
+			<type key="ss" type="none" scope="core">ਬੰਦ</type>
+			<type key="ss" type="standard" scope="core">ਚਾਲੂ</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ਮੀਟਰਿਕ</measurementSystemName>
@@ -969,16 +1016,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[ੱ ੰ ਼ ੦ ੧ ੨ ੩ ੪ ੫ ੬ ੭ ੮ ੯ ੴ ੳ ਉ ਊ ਓ ਅ ਆ ਐ ਔ ੲ ਇ ਈ ਏ ਸ{ਸ਼} ਹ ਕ ਖ{ਖ਼} ਗ{ਗ਼} ਘ ਙ ਚ ਛ ਜ{ਜ਼} ਝ ਞ ਟ ਠ ਡ ਢ ਣ ਤ ਥ ਦ ਧ ਨ ਪ ਫ{ਫ਼} ਬ ਭ ਮ ਯ ਰ ਲ ਵ ੜ ੍ ਾ ਿ ੀ ੁ ੂ ੇ ੈ ੋ ੌ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200Dਃ ਂ {ਲ਼}]</exemplarCharacters>
-		<exemplarCharacters type="index">[ੳ ਅ ੲ ਸ ਹ ਕ ਖ ਗ ਘ ਙ ਚ ਛ ਜ ਝ ਞ ਟ ਠ ਡ ਢ ਣ ਤ ਥ ਦ ਧ ਨ ਪ ਫ ਬ ਭ ਮ ਯ ਰ ਲ ਵ ੜ]</exemplarCharacters>
+		<exemplarCharacters>[ੱ {ੰਂ} ਼ ੦ ੧ ੨ ੩ ੪ ੫ ੬ ੭ ੮ ੯ ੴ ੳ ਉ ਊ ਓ ਅ ਆ ਐ ਔ ੲ ਇ ਈ ਏ ਸ{ਸ਼} ਹ ਕ ਖ{ਖ਼} ਗ{ਗ਼} ਘ ਙ ਚ ਛ ਜ{ਜ਼} ਝ ਞ ਟ ਠ ਡ ਢ ਣ ਤ ਥ ਦ ਧ ਨ ਪ ਫ{ਫ਼} ਬ ਭ ਮ ਯ ਰ ਲ{ਲ਼} ਵ ੜ ੍ ਾ ਿ ੀ ੁ ੂ ੇ ੈ ੋ ੌ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200Dਃ]</exemplarCharacters>
+		<exemplarCharacters type="index">[ੳ ਅ ੲ ਸ{ਸ਼} ਹ ਕ ਖ ਗ ਘ ਙ ਚ ਛ ਜ ਝ ਞ ਟ ਠ ਡ ਢ ਣ ਤ ਥ ਦ ਧ ਨ ਪ ਫ ਬ ਭ ਮ ਯ ਰ ਲ ਵ ੜ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0੦ 1੧ 2੨ 3੩ 4੪ 5੫ 6੬ 7੭ 8੮ 9੯]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . '‘’ &quot;“” ( ) \[ \] / \&amp; ′ ″]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":">[\: ∶]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1048,12 +1092,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraAbbr>
-						<era type="0" draft="contributed">ਕਾਲ0</era>
-						<era type="1" draft="contributed">ਕਾਲ1</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1075,12 +1113,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraAbbr>
-						<era type="0" draft="contributed">ਕਾਲ0</era>
-						<era type="1" draft="contributed">ਕਾਲ1</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
@@ -1111,10 +1143,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1128,6 +1166,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/GGGGG y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
@@ -1272,7 +1316,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="wed">ਬੁੱਧ</day>
 							<day type="thu">ਵੀਰ</day>
 							<day type="fri">ਸ਼ੁੱਕਰ</day>
-							<day type="sat">ਸ਼ਨਿੱਚਰ</day>
+							<day type="sat">ਸ਼ਨੀ</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">ਐਤ</day>
@@ -1281,7 +1325,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="wed">ਬੁੱਧ</day>
 							<day type="thu">ਵੀਰ</day>
 							<day type="fri">ਸ਼ੁੱਕ</day>
-							<day type="sat">ਸ਼ਨਿੱ</day>
+							<day type="sat">ਸ਼ਨੀ</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">ਐਤਵਾਰ</day>
@@ -1290,10 +1334,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="wed">ਬੁੱਧਵਾਰ</day>
 							<day type="thu">ਵੀਰਵਾਰ</day>
 							<day type="fri">ਸ਼ੁੱਕਰਵਾਰ</day>
-							<day type="sat">ਸ਼ਨਿੱਚਰਵਾਰ</day>
+							<day type="sat">ਸ਼ਨੀਵਾਰ</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">ਐਤ</day>
+							<day type="mon">ਸੋਮ</day>
+							<day type="tue">ਮੰਗਲ</day>
+							<day type="wed">ਬੁੱਧ</day>
+							<day type="thu">ਵੀਰ</day>
+							<day type="fri">ਸ਼ੁੱਕਰ</day>
+							<day type="sat">ਸ਼ਨੀ</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">ਐ</day>
 							<day type="mon">ਸੋ</day>
@@ -1302,6 +1355,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">ਵੀ</day>
 							<day type="fri">ਸ਼ੁੱ</day>
 							<day type="sat">ਸ਼</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">ਐਤ</day>
+							<day type="mon">ਸੋਮ</day>
+							<day type="tue">ਮੰਗ</day>
+							<day type="wed">ਬੁੱਧ</day>
+							<day type="thu">ਵੀਰ</day>
+							<day type="fri">ਸ਼ੁੱਕ</day>
+							<day type="sat">ਸ਼ਨੀ</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ਐਤਵਾਰ</day>
+							<day type="mon">ਸੋਮਵਾਰ</day>
+							<day type="tue">ਮੰਗਲਵਾਰ</day>
+							<day type="wed">ਬੁੱਧਵਾਰ</day>
+							<day type="thu">ਵੀਰਵਾਰ</day>
+							<day type="fri">ਸ਼ੁੱਕਰਵਾਰ</day>
+							<day type="sat">ਸ਼ਨੀਵਾਰ</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1325,20 +1396,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">ਅੱਧੀ ਰਾਤ</dayPeriod>
-							<dayPeriod type="am">ਪੂ.ਦੁ.</dayPeriod>
-							<dayPeriod type="pm">ਬਾ.ਦੁ.</dayPeriod>
 							<dayPeriod type="morning1">ਸਵੇਰੇ</dayPeriod>
 							<dayPeriod type="afternoon1">ਦੁਪਹਿਰੇ</dayPeriod>
 							<dayPeriod type="evening1">ਸ਼ਾਮੀਂ</dayPeriod>
 							<dayPeriod type="night1">ਰਾਤੀਂ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">ਸ.</dayPeriod>
-							<dayPeriod type="pm">ਸ਼.</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ਸਵੇਰੇ</dayPeriod>
 							<dayPeriod type="afternoon1">ਦੁਪਹਿਰੇ</dayPeriod>
 							<dayPeriod type="evening1">ਸ਼ਾਮ</dayPeriod>
@@ -1417,10 +1500,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1434,7 +1523,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyM">G M/y</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/GGGGG y</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM, G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM, G y</dateFormatItem>
@@ -1630,6 +1727,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</months>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
@@ -1890,34 +1989,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="1">ਅਗਲਾ ਸ਼ੁੱ</relative>
 			</field>
 			<field type="sat">
-				<relative type="-1">ਪਿਛਲਾ ਸ਼ਨਿੱਚਰਵਾਰ</relative>
-				<relative type="0">ਇਹ ਸ਼ਨਿੱਚਰਵਾਰ</relative>
-				<relative type="1">ਅਗਲਾ ਸ਼ਨਿੱਚਰਵਾਰ</relative>
+				<relative type="-1">ਪਿਛਲੇ ਸ਼ਨੀਵਾਰ</relative>
+				<relative type="0">ਇਹ ਸ਼ਨੀਵਾਰ</relative>
+				<relative type="1">ਅਗਲੇ ਸ਼ਨੀਵਾਰ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ਸ਼ਨਿੱਚਰਵਾਰ ਵਿੱਚ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ਸ਼ਨਿੱਚਰਵਾਰਾਂ ਵਿੱਚ</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ਸ਼ਨੀਵਾਰ ਬਾਅਦ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ਸ਼ਨੀਵਾਰਾਂ ਬਾਅਦ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ਸ਼ਨਿੱਚਰਵਾਰ ਪਹਿਲਾਂ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ਸ਼ਨਿੱਚਰਵਾਰ ਪਹਿਲਾਂ</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ਸ਼ਨੀਵਾਰ ਪਹਿਲਾਂ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ਸ਼ਨੀਵਾਰ ਪਹਿਲਾਂ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-short">
-				<relative type="-1">ਪਿਛਲਾ ਸ਼ਨਿੱਚਰ</relative>
-				<relative type="0">ਇਹ ਸ਼ਨਿੱਚਰ</relative>
-				<relative type="1">ਅਗਲਾ ਸ਼ਨਿੱਚਰ</relative>
+				<relative type="-1">ਪਿਛਲੇ ਸ਼ਨੀ</relative>
+				<relative type="0">ਇਹ ਸ਼ਨੀ</relative>
+				<relative type="1">ਅਗਲੇ ਸ਼ਨੀ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ਸ਼ਨਿੱਚਰਵਾਰਾਂ ਵਿੱਚ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ਸ਼ਨਿੱਚਰਵਾਰਾਂ ਵਿੱਚ</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ਸ਼ਨੀਵਾਰ ਬਾਅਦ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ਸ਼ਨੀਵਾਰਾਂ ਬਾਅਦ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ਸ਼ਨੀਵਾਰ ਪਹਿਲਾਂ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ਸ਼ਨੀਵਾਰ ਪਹਿਲਾਂ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-narrow">
-				<relative type="-1">ਪਿਛਲਾ ਸ਼ਨਿੱ</relative>
-				<relative type="0">ਇਹ ਸ਼ਨਿੱ</relative>
-				<relative type="1">ਅਗਲਾ ਸ਼ਨਿੱ</relative>
+				<relative type="-1">ਪਿਛਲੇ ਸ਼ਨੀ</relative>
+				<relative type="0">ਇਹ ਸ਼ਨੀ</relative>
+				<relative type="1">ਅਗਲੇ ਸ਼ਨੀ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ਸ਼ਨੀ ਬਾਅਦ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ਸ਼ਨੀ ਬਾਅਦ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ਸ਼ਨੀ ਪਹਿਲਾਂ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ਸ਼ਨੀ ਪਹਿਲਾਂ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>ਪੂ.ਦੁ./ਬਾ.ਦੁ.</displayName>
+				<displayName>AM/PM</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ਘੰਟਾ</displayName>
@@ -2319,6 +2436,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Easter">
 				<exemplarCity>ਈਸਟਰ</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity draft="contributed">ਕੋਹੇਕੇ</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>ਪੰਟਾ ਅਰੇਨਸ</exemplarCity>
 			</zone>
@@ -2584,9 +2704,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ਫਨੋਮ ਪੇਨਹ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ਏਂਡਰਬਰੀ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ਕੈਂਟੋਨ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3241,12 +3358,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Central">
 				<long>
-					<standard>ਕੇਂਦਰੀ ਅਫਰੀਕਾ ਵੇਲਾ</standard>
+					<standard>ਕੇਂਦਰੀ ਅਫ਼ਰੀਕਾ ਵੇਲਾ</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Eastern">
 				<long>
-					<standard>ਪੂਰਬੀ ਅਫਰੀਕਾ ਵੇਲਾ</standard>
+					<standard>ਪੂਰਬੀ ਅਫ਼ਰੀਕਾ ਵੇਲਾ</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Southern">
@@ -3256,9 +3373,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>ਪੱਛਮੀ ਅਫਰੀਕਾ ਵੇਲਾ</generic>
-					<standard>ਪੱਛਮੀ ਅਫਰੀਕਾ ਮਿਆਰੀ ਵੇਲਾ</standard>
-					<daylight>ਪੱਛਮੀ ਅਫਰੀਕਾ ਗਰਮੀਆਂ ਦਾ ਵੇਲਾ</daylight>
+					<standard>ਪੱਛਮੀ ਅਫਰੀਕਾ ਵੇਲਾ</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3637,6 +3752,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard>ਗੁਯਾਨਾ ਵੇਲਾ</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>ਹਵਾਈ-ਅਲੇਯੂਸ਼ਿਅਨ ਮਿਆਰੀ ਵੇਲਾ</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4247,6 +4367,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<rationalFormats numberSystem="arab">
+			<rationalUsage>never</rationalUsage>
+		</rationalFormats>
+		<rationalFormats numberSystem="arabext">
+			<rationalUsage>never</rationalUsage>
+		</rationalFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -4264,8 +4390,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<currencyFormats numberSystem="arab">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern draft="contributed">¤#,##,##0.00</pattern>
+					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
 					<pattern alt="noCurrency" draft="contributed">#,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4274,45 +4404,84 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<currencyFormat type="standard">
 					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
 				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="guru">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
+				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
 					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">¤ 0 ਹਜ਼ਾਰ</pattern>
-					<pattern type="1000" count="other">¤ 0 ਹਜ਼ਾਰ</pattern>
-					<pattern type="10000" count="one">¤ 00 ਹਜ਼ਾਰ</pattern>
-					<pattern type="10000" count="other">¤ 00 ਹਜ਼ਾਰ</pattern>
-					<pattern type="100000" count="one">¤ 0 ਲੱਖ</pattern>
-					<pattern type="100000" count="other">¤ 0 ਲੱਖ</pattern>
-					<pattern type="1000000" count="one">¤ 00 ਲੱਖ</pattern>
-					<pattern type="1000000" count="other">¤ 00 ਲੱਖ</pattern>
-					<pattern type="10000000" count="one">¤ 0 ਕਰੋੜ</pattern>
-					<pattern type="10000000" count="other">¤ 0 ਕਰੋੜ</pattern>
-					<pattern type="100000000" count="one">¤ 00 ਕਰੋੜ</pattern>
-					<pattern type="100000000" count="other">¤ 00 ਕਰੋੜ</pattern>
-					<pattern type="1000000000" count="one">¤ 0 ਅਰਬ</pattern>
-					<pattern type="1000000000" count="other">¤ 0 ਅਰਬ</pattern>
-					<pattern type="10000000000" count="one">¤ 00 ਅਰਬ</pattern>
-					<pattern type="10000000000" count="other">¤ 00 ਅਰਬ</pattern>
-					<pattern type="100000000000" count="one">¤ 0 ਖਰਬ</pattern>
-					<pattern type="100000000000" count="other">¤ 0 ਖਰਬ</pattern>
-					<pattern type="1000000000000" count="one">¤ 00 ਖਰਬ</pattern>
-					<pattern type="1000000000000" count="other">¤ 00 ਖਰਬ</pattern>
-					<pattern type="10000000000000" count="one">¤ 0 ਨੀਲ</pattern>
-					<pattern type="10000000000000" count="other">¤ 0 ਨੀਲ</pattern>
-					<pattern type="100000000000000" count="one">¤ 00 ਨੀਲ</pattern>
-					<pattern type="100000000000000" count="other">¤ 00 ਨੀਲ</pattern>
+					<pattern type="1000" count="one">¤0 ਹਜ਼ਾਰ</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ 0 ਹਜ਼ਾਰ</pattern>
+					<pattern type="1000" count="other">¤0 ਹਜ਼ਾਰ</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 ਹਜ਼ਾਰ</pattern>
+					<pattern type="10000" count="one">¤00 ਹਜ਼ਾਰ</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ 00 ਹਜ਼ਾਰ</pattern>
+					<pattern type="10000" count="other">¤00 ਹਜ਼ਾਰ</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 ਹਜ਼ਾਰ</pattern>
+					<pattern type="100000" count="one">¤0 ਲੱਖ</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ 0 ਲੱਖ</pattern>
+					<pattern type="100000" count="other">¤0 ਲੱਖ</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 0 ਲੱਖ</pattern>
+					<pattern type="1000000" count="one">¤00 ਲੱਖ</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ 00 ਲੱਖ</pattern>
+					<pattern type="1000000" count="other">¤00 ਲੱਖ</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 00 ਲੱਖ</pattern>
+					<pattern type="10000000" count="one">¤0 ਕਰੋੜ</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber">¤ 0 ਕਰੋੜ</pattern>
+					<pattern type="10000000" count="other">¤0 ਕਰੋੜ</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 0 ਕਰੋੜ</pattern>
+					<pattern type="100000000" count="one">¤00 ਕਰੋੜ</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ 00 ਕਰੋੜ</pattern>
+					<pattern type="100000000" count="other">¤00 ਕਰੋੜ</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 00 ਕਰੋੜ</pattern>
+					<pattern type="1000000000" count="one">¤0 ਅਰਬ</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0 ਅਰਬ</pattern>
+					<pattern type="1000000000" count="other">¤0 ਅਰਬ</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0 ਅਰਬ</pattern>
+					<pattern type="10000000000" count="one">¤00 ਅਰਬ</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00 ਅਰਬ</pattern>
+					<pattern type="10000000000" count="other">¤00 ਅਰਬ</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00 ਅਰਬ</pattern>
+					<pattern type="100000000000" count="one">¤0 ਖਰਬ</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ 0 ਖਰਬ</pattern>
+					<pattern type="100000000000" count="other">¤0 ਖਰਬ</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 0 ਖਰਬ</pattern>
+					<pattern type="1000000000000" count="one">¤00 ਖਰਬ</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 00 ਖਰਬ</pattern>
+					<pattern type="1000000000000" count="other">¤00 ਖਰਬ</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 00 ਖਰਬ</pattern>
+					<pattern type="10000000000000" count="one">¤0 ਨੀਲ</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ 0 ਨੀਲ</pattern>
+					<pattern type="10000000000000" count="other">¤0 ਨੀਲ</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 0 ਨੀਲ</pattern>
+					<pattern type="100000000000000" count="one">¤00 ਨੀਲ</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ 00 ਨੀਲ</pattern>
+					<pattern type="100000000000000" count="other">¤00 ਨੀਲ</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 00 ਨੀਲ</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
@@ -4881,6 +5050,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XCD">
 				<displayName>ਪੂਰਬੀ ਕੈਰੇਬੀਅਨ ਡਾਲਰ</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName draft="contributed">ਕੈਰੇਬੀਅਨ ਗਿਲਡਰ</displayName>
+				<displayName count="one">ਕੈਰੇਬੀਅਨ ਗਿਲਡਰ</displayName>
+				<displayName count="other">ਕੈਰੇਬੀਅਨ ਗਿਲਡਰ</displayName>
+			</currency>
 			<currency type="XEU">
 				<displayName>ਯੂਰਪੀ ਮੁਦਰਾ ਇਕਾਈ</displayName>
 				<displayName count="one">ਯੂਰਪੀਅਨ ਮੁਦਰਾ ਇਕਾਈ</displayName>
@@ -4907,6 +5081,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ZMW">
 				<displayName>ਜ਼ਾਮਬੀਆਈ ਕਵਾਚਾ</displayName>
 			</currency>
+			<currency type="ZWG">
+				<displayName draft="contributed">ਜ਼ਿੰਬਾਬਵੀ ਗੋਲਡ</displayName>
+				<displayName count="one" draft="contributed">ਜ਼ਿੰਬਾਬਵੀ ਗੋਲਡ</displayName>
+				<displayName count="other" draft="contributed">ਜ਼ਿੰਬਾਬਵੀ ਗੋਲਡ</displayName>
+			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">{0}+</pattern>
@@ -4914,7 +5093,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} ਘੰਟਾ</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} ਘੰਟੇ</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">ਸਜੇ ਪਾਸੇ {0} ਮੋੜ ਲਵੋ</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">ਸੱਜੇ ਪਾਸੇ {0}ਵਾਂ ਮੋੜ ਲਓ</ordinalMinimalPairs>
 			<caseMinimalPairs case="nominative">ਅਧਿਆਪਕ ਨੇ {0} ਪੜ੍ਹਾਇਆ</caseMinimalPairs>
 			<caseMinimalPairs case="oblique">ਅਧਿਆਪਕ ਨੇ {0} ਤੱਕ ਪੜ੍ਹਾਇਆ</caseMinimalPairs>
 			<genderMinimalPairs gender="feminine">ਇਹ ਕਿੰਨੀ {0} ਦਾ ਹੈ</genderMinimalPairs>
@@ -5038,14 +5217,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<gender>masculine</gender>
-				<displayName>ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</displayName>
-				<unitPattern count="one">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="other">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
+				<displayName>ਮੀਟਰ ਪ੍ਰਤਿ ਵਰਗ ਸਕਿੰਟ</displayName>
+				<unitPattern count="one">{0} ਮੀਟਰ ਪ੍ਰਤਿ ਵਰਗ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤਿ ਵਰਗ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other">{0} ਮੀਟਰ ਪ੍ਰਤਿ ਵਰਗ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤਿ ਵਰਗ ਸਕਿੰਟ</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<gender>feminine</gender>
+				<displayName>ਚੱਕਰ</displayName>
+				<unitPattern count="one">{0} ਚੱਕਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਚੱਕਰ</unitPattern>
+				<unitPattern count="other">{0} ਚੱਕਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਚੱਕਰ</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<gender>masculine</gender>
@@ -5074,7 +5258,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਵਰਗ ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਵਰਗ ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਵਰਗ ਕਿਲੋਮੀਟਰ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਵਰਗ ਕਿਲੋਮੀਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਵਰਗ ਕਿਲੋਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<gender>masculine</gender>
@@ -5090,7 +5274,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਵਰਗ ਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਵਰਗ ਮੀਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਵਰਗ ਮੀਟਰ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਵਰਗ ਮੀਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਵਰਗ ਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<gender>masculine</gender>
@@ -5099,12 +5283,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਵਰਗ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਵਰਗ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਵਰਗ ਸੈਂਟੀਮੀਟਰ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਵਰਗ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਵਰਗ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<unitPattern count="one">{0} ਵਰਗ ਮੀਲ</unitPattern>
 				<unitPattern count="other">{0} ਵਰਗ ਮੀਲ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਵਰਗ ਮੀਲ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਵਰਗ ਮੀਲ</perUnitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>ਵਰਗ ਗਜ਼</displayName>
@@ -5120,45 +5304,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ਵਰਗ ਇੰਚ</displayName>
 				<unitPattern count="one">{0} ਵਰਗ ਇੰਚ</unitPattern>
 				<unitPattern count="other">{0} ਵਰਗ ਇੰਚ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਵਰਗ ਇੰਚ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਵਰਗ ਇੰਚ</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<gender>masculine</gender>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<gender>masculine</gender>
-				<displayName>ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤੀ ਡੈਸੀਲਿਟਰ</displayName>
-				<unitPattern count="one">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤੀ ਡੈਸੀਲਿਟਰ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤੀ ਡੈਸੀਲਿਟਰ</unitPattern>
-				<unitPattern count="other">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤੀ ਡੈਸੀਲਿਟਰ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤੀ ਡੈਸੀਲਿਟਰ</unitPattern>
+				<displayName>ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤਿ ਡੈਸੀਲਿਟਰ</displayName>
+				<unitPattern count="one">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤਿ ਡੈਸੀਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤਿ ਡੈਸੀਲਿਟਰ</unitPattern>
+				<unitPattern count="other">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤਿ ਡੈਸੀਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤਿ ਡੈਸੀਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>masculine</gender>
-				<displayName>ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</displayName>
-				<unitPattern count="one">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
-				<unitPattern count="other">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
+				<displayName>ਮਿਲੀਮੋਲ ਪ੍ਰਤਿ ਲਿਟਰ</displayName>
+				<unitPattern count="one">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤਿ ਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤਿ ਲਿਟਰ</unitPattern>
+				<unitPattern count="other">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤਿ ਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤਿ ਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<gender>feminine</gender>
 				<displayName>ਆਈਟਮਾਂ</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>ਹਿੱਸਾ</displayName>
+				<unitPattern count="one">{0} ਹਿੱਸਾ</unitPattern>
+				<unitPattern count="other">{0} ਹਿੱਸੇ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
-				<displayName>ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</displayName>
-				<unitPattern count="one">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
-				<unitPattern count="other">{0} ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
+				<displayName>ਹਿੱਸੇ ਪ੍ਰਤਿ ਮਿਲੀਅਨ</displayName>
+				<unitPattern count="one">{0} ਹਿੱਸਾ ਪ੍ਰਤਿ ਮਿਲੀਅਨ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਹਿੱਸਾ ਪ੍ਰਤਿ ਮਿਲੀਅਨ</unitPattern>
+				<unitPattern count="other">{0} ਹਿੱਸੇ ਪ੍ਰਤਿ ਮਿਲੀਅਨ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਹਿੱਸੇ ਪ੍ਰਤਿ ਮਿਲੀਅਨ</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<gender>masculine</gender>
-				<unitPattern count="one">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
-				<unitPattern count="other">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
+				<displayName>ਪ੍ਰਤਿਸ਼ਤ</displayName>
+				<unitPattern count="one">{0} ਪ੍ਰਤਿਸ਼ਤ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪ੍ਰਤਿਸ਼ਤ</unitPattern>
+				<unitPattern count="other">{0} ਪ੍ਰਤਿਸ਼ਤ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪ੍ਰਤਿਸ਼ਤ</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<gender>masculine</gender>
@@ -5170,28 +5360,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-permyriad">
 				<gender>masculine</gender>
 				<unitPattern count="one">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
-				<unitPattern count="other">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪ੍ਰਤਿ ਦਸ ਹਜ਼ਾਰ</unitPattern>
+				<unitPattern count="other">{0} ਪ੍ਰਤਿ ਦਸ ਹਜ਼ਾਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪ੍ਰਤਿ ਦਸ ਹਜ਼ਾਰ</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<gender>masculine</gender>
 			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>ਗੁਲੂਕੋਜ਼</displayName>
+				<unitPattern count="one">{0} ਗੁਲੂਕੋਜ਼</unitPattern>
+				<unitPattern count="other">{0} ਗੁਲੂਕੋਜ਼</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<gender>masculine</gender>
-				<displayName>ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</displayName>
-				<unitPattern count="one">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="other">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<displayName>ਲਿਟਰ ਪ੍ਰਤਿ ਕਿਲੋਮੀਟਰ</displayName>
+				<unitPattern count="one">{0} ਲਿਟਰ ਪ੍ਰਤਿ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤਿ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other">{0} ਲਿਟਰ ਪ੍ਰਤਿ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤਿ ਕਿਲੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<gender>masculine</gender>
-				<displayName>ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</displayName>
-				<unitPattern count="one">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="other">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<displayName>ਲਿਟਰ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</displayName>
+				<unitPattern count="one">{0} ਲਿਟਰ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other">{0} ਲਿਟਰ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ਮੀਲ ਪ੍ਰਤੀ ਗੈਲਨ</displayName>
@@ -5295,7 +5490,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਸਾਲ</unitPattern>
 				<unitPattern count="other">{0} ਸਾਲ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਸਾਲਾਂ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਸਾਲ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਸਾਲ</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<gender>feminine</gender>
@@ -5307,7 +5502,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਮਹੀਨੇ</unitPattern>
 				<unitPattern count="other">{0} ਮਹੀਨੇ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਮਹੀਨਿਆਂ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਮਹੀਨਾ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਮਹੀਨਾ</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<gender>masculine</gender>
@@ -5315,11 +5510,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਹਫ਼ਤੇ</unitPattern>
 				<unitPattern count="other">{0} ਹਫ਼ਤੇ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਹਫ਼ਤਿਆਂ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਹਫ਼ਤਾ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਹਫ਼ਤਾ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<gender>masculine</gender>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਦਿਨ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਦਿਨ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender>masculine</gender>
@@ -5327,7 +5522,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਘੰਟੇ</unitPattern>
 				<unitPattern count="other">{0} ਘੰਟੇ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਘੰਟਿਆਂ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਘੰਟਾ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਘੰਟਾ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<gender>masculine</gender>
@@ -5335,7 +5530,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਮਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਮਿੰਟ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਮਿੰਟਾਂ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਮਿੰਟ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਮਿੰਟ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<gender>masculine</gender>
@@ -5343,7 +5538,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਸਕਿੰਟਾਂ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਸਕਿੰਟ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਸਕਿੰਟ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<gender>masculine</gender>
@@ -5423,7 +5618,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>ਕਿਲੋਵਾਟ-ਘੰਟੇ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਵਾਟ ਘੰਟਾ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਵਾਟ ਘੰਟਾ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਵਾਟ ਘੰਟੇ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਵਾਟ ਘੰਟੇ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਵਾਟ ਘੰਟੇ</unitPattern>
 			</unit>
@@ -5453,11 +5648,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<gender>masculine</gender>
-				<displayName>ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</displayName>
-				<unitPattern count="one">{0} ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="other">{0} ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</unitPattern>
+				<displayName>ਕਿਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</displayName>
+				<unitPattern count="one">{0} ਕਿਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other">{0} ਕਿਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤਿ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<gender>masculine</gender>
@@ -5517,16 +5712,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<gender>masculine</gender>
-				<displayName>ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</displayName>
-				<unitPattern count="one">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</unitPattern>
-				<unitPattern count="other">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<displayName>ਪਿਕਸਲ ਪ੍ਰਤਿ ਸੈਂਟੀਮੀਟਰ</displayName>
+				<unitPattern count="one">{0} ਪਿਕਸਲ ਪ੍ਰਤਿ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪਿਕਸਲ ਪ੍ਰਤਿ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="other">{0} ਪਿਕਸਲ ਪ੍ਰਤਿ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪਿਕਸਲ ਪ੍ਰਤਿ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
-				<displayName>ਪਿਕਸਲ ਪ੍ਰਤੀ ਇੰਚ</displayName>
-				<unitPattern count="one">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਇੰਚ</unitPattern>
-				<unitPattern count="other">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਇੰਚ</unitPattern>
+				<displayName>ਪਿਕਸਲ ਪ੍ਰਤਿ ਇੰਚ</displayName>
+				<unitPattern count="one">{0} ਪਿਕਸਲ ਪ੍ਰਤਿ ਇੰਚ</unitPattern>
+				<unitPattern count="other">{0} ਪਿਕਸਲ ਪ੍ਰਤਿ ਇੰਚ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>ਡਾਟਸ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</displayName>
@@ -5550,7 +5745,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਮੀਟਰ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਕਿਲੋਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<gender>masculine</gender>
@@ -5558,7 +5753,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਮੀਟਰਾਂ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਮੀਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<gender>masculine</gender>
@@ -5575,7 +5770,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਸੈਂਟੀਮੀਟਰ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<gender>masculine</gender>
@@ -5605,10 +5800,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ਪਿਕੋਮੀਟਰ</displayName>
 			</unit>
 			<unit type="length-foot">
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਫੁੱਟ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਫੁੱਟ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਇੰਚ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਇੰਚ</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>ਪਾਰਸੈਕ</displayName>
+				<unitPattern count="one">{0} ਪਾਰਸੈਕ</unitPattern>
+				<unitPattern count="other">{0} ਪਾਰਸੈਕ</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">{0} ਪ੍ਰਕਾਸ਼ ਸਾਲ</unitPattern>
@@ -5774,6 +5974,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ਮਿਲੀਮੀਟਰ ਪਾਰਾ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਮੀਟਰ ਪਾਰਾ</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>ਪਾਰਾ</displayName>
+				<unitPattern count="one">{0} ਪਾਰਾ</unitPattern>
+				<unitPattern count="other">{0} ਪਾਰਾ</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ਪੌਂਡ ਪ੍ਰਤੀ ਵਰਗ ਇੰਚ</displayName>
 				<unitPattern count="one">{0} ਪੌਂਡ ਪ੍ਰਤੀ ਵਰਗ ਇੰਚ</unitPattern>
@@ -5795,11 +6000,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-pascal">
 				<gender>masculine</gender>
-				<displayName>ਪੈਸਕਲ</displayName>
-				<unitPattern count="one">{0} ਪੈਸਕਲ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਪੈਸਕਲ</unitPattern>
-				<unitPattern count="other">{0} ਪੈਸਕਲ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਪੈਸਕਲ</unitPattern>
+				<displayName>ਪਾਸਕਲ</displayName>
+				<unitPattern count="one">{0} ਪਾਸਕਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪਾਸਕਲ</unitPattern>
+				<unitPattern count="other">{0} ਪਾਸਕਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪਾਸਕਲ</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<gender>masculine</gender>
@@ -5811,11 +6016,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-kilopascal">
 				<gender>masculine</gender>
-				<displayName>ਕਿੱਲੋਪਾਸਕਲ</displayName>
-				<unitPattern count="one">{0} ਕਿੱਲੋਪਾਸਕਲ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਕਿੱਲੋਪਾਸਕਲ</unitPattern>
-				<unitPattern count="other">{0} ਕਿੱਲੋਪਾਸਕਲ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਕਿੱਲੋਪਾਸਕਲ</unitPattern>
+				<displayName>ਕਿਲੋਪਾਸਕਲ</displayName>
+				<unitPattern count="one">{0} ਕਿਲੋਪਾਸਕਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਪਾਸਕਲ</unitPattern>
+				<unitPattern count="other">{0} ਕਿਲੋਪਾਸਕਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਪਾਸਕਲ</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<gender>masculine</gender>
@@ -5827,19 +6032,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<gender>masculine</gender>
-				<displayName>ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</displayName>
-				<unitPattern count="one">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</unitPattern>
-				<unitPattern count="other">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</unitPattern>
+				<displayName>ਕਿਲੋਮੀਟਰ ਪ੍ਰਤਿ ਘੰਟਾ</displayName>
+				<unitPattern count="one">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤਿ ਘੰਟਾ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤਿ ਘੰਟੇ</unitPattern>
+				<unitPattern count="other">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤਿ ਘੰਟਾ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤਿ ਘੰਟੇ</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<gender>masculine</gender>
-				<displayName>ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</displayName>
-				<unitPattern count="one">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="other">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</unitPattern>
+				<displayName>ਮੀਟਰ ਪ੍ਰਤਿ ਸਕਿੰਟ</displayName>
+				<unitPattern count="one">{0} ਮੀਟਰ ਪ੍ਰਤਿ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤਿ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other">{0} ਮੀਟਰ ਪ੍ਰਤਿ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤਿ ਸਕਿੰਟ</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>ਮੀਲ ਪ੍ਰਤੀ ਘੰਟਾ</displayName>
@@ -5912,7 +6117,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਘਣ ਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਘਣ ਮੀਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਘਣ ਮੀਟਰ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਘਣ ਮੀਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਘਣ ਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<gender>masculine</gender>
@@ -5921,7 +6126,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਘਣ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਘਣ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਘਣ ਸੈਂਟੀਮੀਟਰ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਘਣ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਘਣ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>ਘਣ ਮੀਲ</displayName>
@@ -5965,7 +6170,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} ਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਲਿਟਰ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਲਿਟਰ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਲਿਟਰ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਲਿਟਰ</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<gender>masculine</gender>
@@ -6007,6 +6212,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ਮੀਟਰਿਕ ਕੱਪ</unitPattern>
 				<unitPattern count="other" case="oblique">{0} ਮੀਟਰਿਕ ਕੱਪ</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>ਮੀਟਰਿਕ ਤਰਲ ਔਂਸ</displayName>
+				<unitPattern count="one">{0} ਮੀਟਰਿਕ ਤਰਲ ਔਂਸ</unitPattern>
+				<unitPattern count="other">{0} ਮੀਟਰਿਕ ਤਰਲ ਔਂਸ</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਗੈਲਨ</perUnitPattern>
 			</unit>
@@ -6038,30 +6248,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਇੰਪੀਰੀਅਲ ਚੁਥਾਈ ਗੈਲਨ</unitPattern>
 				<unitPattern count="other">{0} ਇੰਪੀਰੀਅਲ ਚੁਥਾਈ ਗੈਲਨ</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>ਸਟਰੇਡੀਅਨ</displayName>
+				<unitPattern count="one">{0} ਸਟਰੇਡੀਅਨ</unitPattern>
+				<unitPattern count="other">{0} ਸਟਰੇਡੀਅਨ</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>ਕੇਟਲ</displayName>
+				<unitPattern count="one">{0} ਕੇਟਲ</unitPattern>
+				<unitPattern count="other">{0} ਕੇਟਲ</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName draft="contributed">ਕੂਲਮ</displayName>
+				<unitPattern count="one" draft="contributed">{0} ਕੂਲਮ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ਕੂਲਮ</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName draft="contributed">ਫ਼ੈਰਡ</displayName>
+				<unitPattern count="one" draft="contributed">{0} ਫ਼ੈਰਡ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ਫ਼ੈਰਡ</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName draft="contributed">ਹੈਨਰੀ</displayName>
+				<unitPattern count="one" draft="contributed">{0} ਹੈਨਰੀ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ਹੈਨਰੀ</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName draft="contributed">ਸੀਮਨਜ਼</displayName>
+				<unitPattern count="one" draft="contributed">{0} ਸੀਮਨਜ਼</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ਸੀਮਨਜ਼</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>ਕੈਲੋਰੀਆਂ [IT]</displayName>
+				<unitPattern count="one">{0} ਕੈਲੋਰੀ [IT]</unitPattern>
+				<unitPattern count="other">{0} ਕੈਲੋਰੀਆਂ [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>ਬੈਕਰਲ</displayName>
+				<unitPattern count="one">{0} ਬੈਕਰਲ</unitPattern>
+				<unitPattern count="other">{0} ਬੈਕਰਲ</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>ਸੀਵਰਟ</displayName>
+				<unitPattern count="one">{0} ਸੀਵਰਟ</unitPattern>
+				<unitPattern count="other">{0} ਸੀਵਰਟ</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>ਗ੍ਰੇਅ</displayName>
+				<unitPattern count="one">{0} ਗ੍ਰੇਅ</unitPattern>
+				<unitPattern count="other">{0} ਗ੍ਰੇਅ</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>ਕਿਲੋਗ੍ਰਾਮ-ਫ਼ੋਰਸ</displayName>
+				<unitPattern count="one">{0} ਕਿਲੋਗ੍ਰਾਮ-ਫ਼ੋਰਸ</unitPattern>
+				<unitPattern count="other">{0} ਕਿਲੋਗ੍ਰਾਮ-ਫ਼ੋਰਸ</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>ਟੈਸਲਾ</displayName>
+				<unitPattern count="one">{0} ਟੈਸਲਾ</unitPattern>
+				<unitPattern count="other">{0} ਟੈਸਲਾ</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>ਵੈਬਰਸ</displayName>
+				<unitPattern count="one">{0} ਵੈਬਰ</unitPattern>
+				<unitPattern count="other">{0} ਵੈਬਰਸ</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<gender>masculine</gender>
-				<displayName>ਪ੍ਰਕਾਸ਼</displayName>
-				<unitPattern count="one">{0} ਪ੍ਰਕਾਸ਼</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਪ੍ਰਕਾਸ਼</unitPattern>
-				<unitPattern count="other">{0} ਪ੍ਰਕਾਸ਼</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਪ੍ਰਕਾਸ਼</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
-				<displayName>ਹਿੱਸਾ ਪ੍ਰਤੀ ਅਰਬ</displayName>
-				<unitPattern count="one">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਅਰਬ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਅਰਬ</unitPattern>
-				<unitPattern count="other">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਅਰਬ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਅਰਬ</unitPattern>
+				<displayName>ਹਿੱਸਾ ਪ੍ਰਤਿ ਅਰਬ</displayName>
+				<unitPattern count="one">{0} ਹਿੱਸਾ ਪ੍ਰਤਿ ਅਰਬ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਹਿੱਸਾ ਪ੍ਰਤਿ ਅਰਬ</unitPattern>
+				<unitPattern count="other">{0} ਹਿੱਸਾ ਪ੍ਰਤਿ ਅਰਬ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਹਿੱਸਾ ਪ੍ਰਤਿ ਅਰਬ</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<gender>feminine</gender>
-				<displayName>ਰਾਤਾਂ</displayName>
-				<unitPattern count="one">{0} ਰਾਤ</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ਰਾਤ</unitPattern>
-				<unitPattern count="other">{0} ਰਾਤਾਂ</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ਰਾਤਾਂ</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਰਾਤ</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਰਾਤ</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ਮੁੱਖ ਦਿਸ਼ਾ</displayName>
@@ -6177,9 +6442,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ਮੀ/ਸ²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName>ਪਰਿਕਰਮਾ</displayName>
-				<unitPattern count="one">{0} ਪਰਿਕਰਮਾ</unitPattern>
-				<unitPattern count="other">{0} ਪਰਿਕਰਮਾ</unitPattern>
+				<displayName>ਚੱਕਰ</displayName>
+				<unitPattern count="one">{0} ਚੱਕਰ</unitPattern>
+				<unitPattern count="other">{0} ਚੱਕਰ</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>ਰੇਡੀਅਨ</displayName>
@@ -6216,7 +6481,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ਮੀਟਰ²</displayName>
 				<unitPattern count="one">{0} ਮੀ²</unitPattern>
 				<unitPattern count="other">{0} ਮੀ²</unitPattern>
-				<perUnitPattern>{0} ਪ੍ਰਤੀ ਮੀ²</perUnitPattern>
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਮੀ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>ਸੈਮੀ²</displayName>
@@ -6276,11 +6541,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਆਈਟਮ</unitPattern>
 				<unitPattern count="other">{0} ਆਈਟਮਾਂ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>ਹਿੱਸਾ</displayName>
+				<unitPattern count="one">{0} ਹਿੱਸਾ</unitPattern>
+				<unitPattern count="other">{0} ਹਿੱਸੇ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ਹਿੱਸੇ/ਮਿਲੀਅਨ</displayName>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName>ਪ੍ਰਤੀਸ਼ਤ</displayName>
+				<displayName>ਪ੍ਰਤਿਸ਼ਤ</displayName>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>ਪਰਮਾਈਲ</displayName>
@@ -6292,6 +6562,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ਮੋਲ</displayName>
 				<unitPattern count="one">{0} ਮੋਲ</unitPattern>
 				<unitPattern count="other">{0} ਮੋਲ</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+				<unitPattern count="one">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ਲਿਟਰ/ਕਿ.ਮੀ.</displayName>
@@ -6561,9 +6836,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/ਇੰਚ</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName>ਪਾਸੈੱਕ</displayName>
-				<unitPattern count="one">{0} ਪਾਸੈੱਕ</unitPattern>
-				<unitPattern count="other">{0} ਪਾਸੈੱਕ</unitPattern>
+				<displayName>ਪਾਰਸੈਕ</displayName>
+				<unitPattern count="one">{0} ਪਾਰਸੈਕ</unitPattern>
+				<unitPattern count="other">{0} ਪਾਰਸੈਕ</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>ਪ੍ਰਕਾਸ਼ ਸਾਲ</displayName>
@@ -6707,6 +6982,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ਮਿ.ਮੀ. ਪਾਰਾ</displayName>
 				<unitPattern count="one">{0} ਮਿ.ਮੀ. ਪਾਰਾ</unitPattern>
 				<unitPattern count="other">{0} ਮਿ.ਮੀ. ਪਾਰਾ</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>ਪਾਰਾ</displayName>
+				<unitPattern count="one">{0} ਪਾਰਾ</unitPattern>
+				<unitPattern count="other">{0} ਪਾਰਾ</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ਪੌਂ.ਵ.ਇੰਚ</displayName>
@@ -6852,6 +7132,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਮੀ ਕੱਪ</unitPattern>
 				<unitPattern count="other">{0} ਮੀ ਕੱਪ</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<unitPattern count="one">{0} fl oz m.</unitPattern>
+				<unitPattern count="other">{0} fl oz m.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ਏਕੜ ਫੁੱਟ</displayName>
 				<unitPattern count="one">{0} ਏਕੜ ਫੁੱਟ</unitPattern>
@@ -6949,12 +7233,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਇੰਪ. ਚੁ. ਗੈ.</unitPattern>
 				<unitPattern count="other">{0} ਇੰਪ. ਚੁ. ਗੈ.</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<unitPattern count="one" draft="contributed">{0} H</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} H</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<unitPattern count="one" draft="contributed">{0} S</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} S</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+				<unitPattern count="one">{0} cal-IT</unitPattern>
+				<unitPattern count="other">{0} cal-IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<unitPattern count="one">{0} Bq</unitPattern>
+				<unitPattern count="other">{0} Bq</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<unitPattern count="one">{0} Sv</unitPattern>
+				<unitPattern count="other">{0} Sv</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<unitPattern count="one">{0} Gy</unitPattern>
+				<unitPattern count="other">{0} Gy</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>ਪ੍ਰਕਾਸ਼</displayName>
 				<unitPattern count="one">{0} ਪ੍ਰਕਾਸ਼</unitPattern>
 				<unitPattern count="other">{0} ਪ੍ਰਕਾਸ਼</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ਹਿੱਸਾ/ਅਰਬ</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6980,6 +7305,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ਮੀ/ਸ²</unitPattern>
 				<unitPattern count="other">{0}ਮੀ/ਸ²</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>ਚੱਕਰ</displayName>
+				<unitPattern count="one">{0} ਚੱਕਰ</unitPattern>
+				<unitPattern count="other">{0} ਚੱਕਰ</unitPattern>
+			</unit>
 			<unit type="angle-degree">
 				<displayName>ਡਿ.</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
@@ -6992,6 +7322,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="angle-arc-second">
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<perUnitPattern>{0} ਪ੍ਰਤਿ ਮੀ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<unitPattern count="one">{0}ਸੈਮੀ²</unitPattern>
@@ -7021,8 +7354,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ਆਈਟਮ</unitPattern>
 				<unitPattern count="other">{0}ਆਈਟਮ</unitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>ਹਿੱਸਾ</displayName>
+				<unitPattern count="one">{0} ਹਿੱਸਾ</unitPattern>
+				<unitPattern count="other">{0} ਹਿੱਸੇ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
+				<displayName>ppm</displayName>
+			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<unitPattern count="one">{0}ਲਿ./ਕਿ.ਮੀ.</unitPattern>
@@ -7157,6 +7501,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}&quot;</unitPattern>
 				<unitPattern count="other">{0}&quot;</unitPattern>
 			</unit>
+			<unit type="length-parsec">
+				<displayName>ਪਾਰਸੈਕ</displayName>
+				<unitPattern count="one">{0} ਪਾਰਸੈਕ</unitPattern>
+				<unitPattern count="other">{0} ਪਾਰਸੈਕ</unitPattern>
+			</unit>
 			<unit type="length-solar-radius">
 				<displayName>R☉</displayName>
 			</unit>
@@ -7179,6 +7528,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>ਪਾਰਾ</displayName>
+				<unitPattern count="one">{0} ਪਾਰਾ</unitPattern>
+				<unitPattern count="other">{0} ਪਾਰਾ</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0}&quot; ਪਾਰਾ</unitPattern>
 				<unitPattern count="other">{0}&quot; ਪਾਰਾ</unitPattern>
@@ -7188,17 +7542,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਮਿ.ਬਾ.</unitPattern>
 				<unitPattern count="other">{0} ਮਿ.ਬਾ.</unitPattern>
 			</unit>
-			<unit type="speed-kilometer-per-hour">
-				<unitPattern count="one">{0} ਕਿ.ਮੀ./ਘੰ.</unitPattern>
-				<unitPattern count="other">{0} ਕਿ.ਮੀ./ਘੰ.</unitPattern>
-			</unit>
 			<unit type="speed-meter-per-second">
 				<unitPattern count="one">{0}ਮੀ/ਸ</unitPattern>
 				<unitPattern count="other">{0}ਮੀ/ਸ</unitPattern>
-			</unit>
-			<unit type="speed-mile-per-hour">
-				<unitPattern count="one">{0} ਮੀਲ/ਘੰ.</unitPattern>
-				<unitPattern count="other">{0} ਮੀਲ/ਘੰ.</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
@@ -7281,16 +7627,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ਇ.ਚੁ.ਗੈ.</unitPattern>
 				<unitPattern count="other">{0} ਇ.ਚੁ.ਗੈ.</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>ਪ੍ਰਕਾਸ਼</displayName>
-				<unitPattern count="one">{0} ਪ੍ਰਕਾਸ਼</unitPattern>
-				<unitPattern count="other">{0} ਪ੍ਰਕਾਸ਼</unitPattern>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
 			</unit>
-			<unit type="duration-night">
-				<displayName>ਰਾਤਾਂ</displayName>
-				<unitPattern count="one">{0} ਰਾਤ</unitPattern>
-				<unitPattern count="other">{0} ਰਾਤਾਂ</unitPattern>
-				<perUnitPattern>{0}/ਰਾਤ</perUnitPattern>
+			<unit type="concentr-part-per-1e9">
+				<displayName>ppb</displayName>
 			</unit>
 		</unitLength>
 	</units>

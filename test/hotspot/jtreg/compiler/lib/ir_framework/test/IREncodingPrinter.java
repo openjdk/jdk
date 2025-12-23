@@ -105,11 +105,16 @@ public class IREncodingPrinter {
         "avx512f",
         "avx512_fp16",
         "avx512_vnni",
+        "avx512_vbmi",
+        "avx512_vbmi2",
+        "avx10_2",
+        "bmi2",
         // AArch64
         "sha3",
         "asimd",
         "sve",
         "sve2",
+        "svebitperm",
         "fphp",
         "asimdhp",
         // RISCV64

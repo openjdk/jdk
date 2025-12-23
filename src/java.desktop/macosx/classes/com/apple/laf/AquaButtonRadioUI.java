@@ -55,7 +55,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Enumeration;
 
-public class AquaButtonRadioUI extends AquaButtonLabeledUI {
+public final class AquaButtonRadioUI extends AquaButtonLabeledUI {
 
     private static final RecyclableSingleton<AquaButtonRadioUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaButtonRadioUI>(AquaButtonRadioUI.class);
     private static final RecyclableSingleton<ImageIcon> sizingIcon = new RecyclableSingleton<ImageIcon>() {
@@ -72,15 +72,17 @@ public class AquaButtonRadioUI extends AquaButtonLabeledUI {
         return sizingIcon.get();
     }
 
+    @Override
     protected String getPropertyPrefix() {
         return "RadioButton" + ".";
     }
 
+    @Override
     protected AquaButtonBorder getPainter() {
         return new RadioButtonBorder();
     }
 
-    public static class RadioButtonBorder extends LabeledButtonBorder {
+    public static final class RadioButtonBorder extends LabeledButtonBorder {
         public RadioButtonBorder() {
             super(new SizeDescriptor(new SizeVariant().replaceMargins("RadioButton.margin")));
             painter.state.set(Widget.BUTTON_RADIO);

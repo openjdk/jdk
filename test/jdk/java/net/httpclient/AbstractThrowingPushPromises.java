@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,21 +35,14 @@
  *        ReferenceTracker AbstractThrowingPushPromises
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        <concrete-class-name>
- * @run testng/othervm -Djdk.internal.httpclient.debug=true <concrete-class-name>
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true <concrete-class-name>
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.ITestContext;
-import org.testng.ITestResult;
-import org.testng.SkipException;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
 
 import javax.net.ssl.SSLContext;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -58,8 +51,10 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -88,25 +83,41 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.lang.System.err;
 import static java.lang.String.format;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractThrowingPushPromises implements HttpServerAdapters {
 
-    SSLContext sslContext;
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    String http2URI_fixed;
-    String http2URI_chunk;
-    String https2URI_fixed;
-    String https2URI_chunk;
+    static SSLContext sslContext;
+    static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    static HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
+    static String http2URI_fixed;
+    static String http2URI_chunk;
+    static String https2URI_fixed;
+    static String https2URI_chunk;
+    static String http3URI_fixed;
+    static String http3URI_chunk;
 
     static final int ITERATION_COUNT = 1;
     // a shared executor helps reduce the amount of threads created by the test
@@ -124,8 +135,34 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
-    private volatile HttpClient sharedClient;
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+            }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
+        }
+    }
+
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static volatile HttpClient sharedClient;
 
     static class TestExecutor implements Executor {
         final AtomicLong tasks = new AtomicLong();
@@ -151,34 +188,13 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    protected static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
-    void checkSkip() {
-        var skip = skiptests.get();
-        if (skip != null) throw skip;
-    }
-    static String name(ITestResult result) {
-        var params = result.getParameters();
-        return result.getName()
-                + (params == null ? "()" : Arrays.toString(result.getParameters()));
-    }
 
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            if (skiptests.get() == null) {
-                SkipException skip = new SkipException("some tests failed");
-                skip.setStackTrace(new StackTraceElement[0]);
-                skiptests.compareAndSet(null, skip);
-            }
-        }
-    }
-
-    @AfterClass
-    static final void printFailedTests(ITestContext context) {
+    @AfterAll
+    static final void printFailedTests() {
         out.println("\n=========================");
         try {
             // Exceptions should already have been added to FAILURES
@@ -203,8 +219,10 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         }
     }
 
-    private String[] uris() {
+    private static String[] uris() {
         return new String[] {
+                http3URI_fixed,
+                http3URI_chunk,
                 http2URI_fixed,
                 http2URI_chunk,
                 https2URI_fixed,
@@ -212,8 +230,7 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         };
     }
 
-    @DataProvider(name = "sanity")
-    public Object[][] sanity() {
+    public static Object[][] sanity() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
 
@@ -242,7 +259,7 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         }
     }
 
-    private Object[][] variants(List<Thrower> throwers) {
+    private static Object[][] variants(List<Thrower> throwers) {
         String[] uris = uris();
         // reduce traces by always using the same client if
         // stopAfterFirstFailure is requested.
@@ -262,44 +279,53 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         return result;
     }
 
-    @DataProvider(name = "ioVariants")
-    public Object[][] ioVariants(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
+    public static Object[][] ioVariants() {
         return variants(List.of(
                 new UncheckedIOExceptionThrower()));
     }
 
-    @DataProvider(name = "customVariants")
-    public Object[][] customVariants(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
+    public static Object[][] customVariants() {
         return variants(List.of(
                 new UncheckedCustomExceptionThrower()));
     }
 
-    private HttpClient makeNewClient() {
+    private static HttpClient makeNewClient() {
         clientCount.incrementAndGet();
-        return TRACKER.track(HttpClient.newBuilder()
+        return TRACKER.track(HttpServerAdapters.createClientBuilderForH3()
+                .version(HTTP_3)
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
                 .build());
     }
 
-    HttpClient newHttpClient(boolean share) {
+    static HttpClient newHttpClient(boolean share) {
         if (!share) return makeNewClient();
         HttpClient shared = sharedClient;
         if (shared != null) return shared;
-        synchronized (this) {
+        synchronized (AbstractThrowingPushPromises.class) {
             shared = sharedClient;
             if (shared == null) {
                 shared = sharedClient = makeNewClient();
             }
             return shared;
         }
+    }
+
+    static Http3DiscoveryMode config(String uri) {
+        return uri.contains("/http3/") ? HTTP_3_URI_ONLY : null;
+    }
+
+    static Version version(String uri) {
+        return uri.contains("/http3/") ? HTTP_3 : HTTP_2;
+    }
+
+    static HttpRequest request(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri))
+                .version(version(uri));
+        var config = config(uri);
+        if (config != null) builder.setOption(H3_DISCOVERY, config);
+        return builder.build();
     }
 
     // @Test(dataProvider = "sanity")
@@ -311,8 +337,8 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                    .build();
+            HttpRequest req = request(uri);
+
             BodyHandler<Stream<String>> handler =
                     new ThrowingBodyHandler((w) -> {},
                                             BodyHandlers.ofLines());
@@ -331,13 +357,13 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             HttpResponse<Stream<String>> response =
                     client.sendAsync(req, BodyHandlers.ofLines(), pushHandler).get();
             String body = response.body().collect(Collectors.joining("|"));
-            assertEquals(URI.create(body).getPath(), URI.create(uri).getPath());
+            assertEquals(URI.create(uri).getPath(), URI.create(body).getPath());
             for (HttpRequest promised : pushPromises.keySet()) {
                 out.printf("%s Received promise: %s%n\tresponse: %s%n",
                         now(), promised, pushPromises.get(promised).get());
                 String promisedBody = pushPromises.get(promised).get().body()
                         .collect(Collectors.joining("|"));
-                assertEquals(promisedBody, promised.uri().toASCIIString());
+                assertEquals(promised.uri().toASCIIString(), promisedBody);
             }
             assertEquals(3, pushPromises.size());
             if (!sameClient) {
@@ -402,7 +428,6 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
                                     Finisher finisher, Thrower thrower)
             throws Exception
     {
-        checkSkip();
         out.printf("%n%s%s%n", now(), name);
         try {
             testThrowing(uri, sameClient, handlers, finisher, thrower);
@@ -423,9 +448,8 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
 
-            HttpRequest req = HttpRequest.
-                    newBuilder(URI.create(uri))
-                    .build();
+            HttpRequest req = request(uri);
+
             ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<T>>> promiseMap =
                     new ConcurrentHashMap<>();
             Supplier<BodyHandler<T>> throwing = () ->
@@ -577,9 +601,9 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             default:
                 expectedCount = 3;
         }
-        assertEquals(promises.size(), expectedCount,
+        assertEquals(expectedCount, promises.size(),
                 "bad promise count for " + reqURI + " with " + w);
-        assertEquals(result, List.of(reqURI.toASCIIString()));
+        assertEquals(List.of(reqURI.toASCIIString()), result);
         return result;
     }
 
@@ -732,35 +756,42 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
     }
 
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
         // HTTP/2
-        HttpTestHandler h2_fixedLengthHandler = new HTTP_FixedLengthHandler();
-        HttpTestHandler h2_chunkedHandler = new HTTP_ChunkedHandler();
+        HttpTestHandler fixedLengthHandler = new HTTP_FixedLengthHandler();
+        HttpTestHandler chunkedHandler = new HTTP_ChunkedHandler();
 
         http2TestServer = HttpTestServer.create(HTTP_2);
-        http2TestServer.addHandler(h2_fixedLengthHandler, "/http2/fixed");
-        http2TestServer.addHandler(h2_chunkedHandler, "/http2/chunk");
+        http2TestServer.addHandler(fixedLengthHandler, "/http2/fixed");
+        http2TestServer.addHandler(chunkedHandler, "/http2/chunk");
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/fixed/x";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/chunk/x";
 
         https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
-        https2TestServer.addHandler(h2_fixedLengthHandler, "/https2/fixed");
-        https2TestServer.addHandler(h2_chunkedHandler, "/https2/chunk");
+        https2TestServer.addHandler(fixedLengthHandler, "/https2/fixed");
+        https2TestServer.addHandler(chunkedHandler, "/https2/chunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed/x";
         https2URI_chunk = "https://" + https2TestServer.serverAuthority() + "/https2/chunk/x";
 
-        serverCount.addAndGet(2);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(fixedLengthHandler, "/http3/fixed");
+        http3TestServer.addHandler(chunkedHandler, "/http3/chunk");
+        http3URI_fixed = "https://" + http3TestServer.serverAuthority() + "/http3/fixed/x";
+        http3URI_chunk = "https://" + http3TestServer.serverAuthority() + "/http3/chunk/x";
+
+        serverCount.addAndGet(3);
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         String sharedClientName =
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;
@@ -769,6 +800,7 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         try {
             http2TestServer.stop();
             https2TestServer.stop();
+            http3TestServer.stop();
         } finally {
             if (fail != null) {
                 if (sharedClientName != null) {
@@ -794,15 +826,69 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
             out.printf("TestServer: %s Pushing promise: %s%n", now(), promise);
             err.printf("TestServer: %s Pushing promise: %s%n", now(), promise);
-            HttpHeaders headers;
+            HttpHeaders reqHaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+            HttpHeaders rspHeaders;
             if (fixed) {
                 String length = String.valueOf(promiseBytes.length);
-                headers = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
+                rspHeaders = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
                                          ACCEPT_ALL);
             } else {
-                headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+                rspHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
             }
-            t.serverPush(promise, headers, promiseBytes);
+            t.serverPush(promise, reqHaders, rspHeaders, promiseBytes);
+        } catch (URISyntaxException x) {
+            throw new IOException(x.getMessage(), x);
+        }
+    }
+
+    private static long sendHttp3PushPromiseFrame(HttpTestExchange t,
+                                       URI requestURI,
+                                       String pushPath,
+                                       boolean fixed)
+            throws IOException
+    {
+        try {
+            URI promise = new URI(requestURI.getScheme(),
+                    requestURI.getAuthority(),
+                    pushPath, null, null);
+            byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
+            out.printf("TestServer: %s sending PushPromiseFrame: %s%n", now(), promise);
+            err.printf("TestServer: %s Pushing PushPromiseFrame: %s%n", now(), promise);
+            // headers are added to the request headers sent in the push promise
+            HttpHeaders headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+            long pushId = t.sendHttp3PushPromiseFrame(-1, promise, headers);
+            out.printf("TestServer: %s PushPromiseFrame pushId=%s sent%n", now(), pushId);
+            err.printf("TestServer: %s PushPromiseFrame pushId=%s sent%n", now(), pushId);
+            return pushId;
+        } catch (URISyntaxException x) {
+            throw new IOException(x.getMessage(), x);
+        }
+    }
+
+    private static void sendHttp3PushResponse(HttpTestExchange t,
+                                              long pushId,
+                                              URI requestURI,
+                                              String pushPath,
+                                              boolean fixed)
+            throws IOException
+    {
+        try {
+            URI promise = new URI(requestURI.getScheme(),
+                    requestURI.getAuthority(),
+                    pushPath, null, null);
+            byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
+            out.printf("TestServer: %s sending push response pushId=%s: %s%n", now(), pushId, promise);
+            err.printf("TestServer: %s Pushing push response pushId=%s: %s%n", now(), pushId, promise);
+            HttpHeaders reqHaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+            HttpHeaders rspHeaders;
+            if (fixed) {
+                String length = String.valueOf(promiseBytes.length);
+                rspHeaders = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
+                        ACCEPT_ALL);
+            } else {
+                rspHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+            }
+            t.sendHttp3PushResponse(pushId, promise, reqHaders, rspHeaders, new ByteArrayInputStream(promiseBytes));
         } catch (URISyntaxException x) {
             throw new IOException(x.getMessage(), x);
         }
@@ -822,13 +908,31 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             }
             byte[] resp = t.getRequestURI().toString().getBytes(StandardCharsets.UTF_8);
             t.sendResponseHeaders(200, resp.length);  //fixed content length
+
+            // With HTTP/3 fixed length we send a single DataFrame,
+            // therefore we can't interleave a PushPromiseFrame in
+            // the middle of the DataFrame, so we're going to send
+            // the PushPromiseFrame before the DataFrame, and then
+            // fulfill the promise later while sending the response
+            // body.
+            long[] pushIds = new long[2];
+            if (t.getExchangeVersion() == HTTP_3) {
+                for (int i = 0; i < 2; i++) {
+                    String path = requestURI.getPath() + "/after/promise-" + (i + 2);
+                    pushIds[i] = sendHttp3PushPromiseFrame(t, requestURI, path, true);
+                }
+            }
             try (OutputStream os = t.getResponseBody()) {
                 int bytes = resp.length/3;
                 for (int i = 0; i<2; i++) {
-                    String path = requestURI.getPath() + "/after/promise-" + (i + 2);
                     os.write(resp, i * bytes, bytes);
                     os.flush();
-                    pushPromiseFor(t, requestURI, path, true);
+                    String path = requestURI.getPath() + "/after/promise-" + (i + 2);
+                    if (t.getExchangeVersion() == HTTP_2) {
+                        pushPromiseFor(t, requestURI, path, true);
+                    } else if (t.getExchangeVersion() == HTTP_3) {
+                        sendHttp3PushResponse(t, pushIds[i], requestURI, path, true);
+                    }
                 }
                 os.write(resp, 2*bytes, resp.length - 2*bytes);
             }

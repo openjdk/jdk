@@ -25,7 +25,7 @@
  * @test
  * @summary Tests just a benchmark of introspector performance
  * @author Mark Davidson
- * @run main/manual TestIntrospector
+ * @run main TestIntrospector
  */
 
 import java.beans.BeanInfo;
@@ -43,7 +43,6 @@ public class TestIntrospector {
             javax.swing.DefaultComboBoxModel.class,
             javax.swing.DefaultListModel.class,
             javax.swing.ImageIcon.class,
-            javax.swing.JApplet.class,
             javax.swing.JButton.class,
             javax.swing.JCheckBox.class,
             javax.swing.JColorChooser.class,

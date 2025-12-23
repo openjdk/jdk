@@ -66,12 +66,55 @@ public class ReadAll {
         int size = rnd.nextInt(2, 16386);
 
         int plen = PHRASE.length();
-        List<String> strings = new ArrayList<String>(size);
+        StringBuilder sb = new StringBuilder(plen);
+        List<String> strings = new ArrayList<>(size);
         while (strings.size() < size) {
             int fromIndex = rnd.nextInt(0, plen / 2);
             int toIndex = rnd.nextInt(fromIndex, plen);
-            strings.add(PHRASE.substring(fromIndex, toIndex));
+            String s = PHRASE.substring(fromIndex, toIndex);
+            sb.append(s);
+            int bound = toIndex - fromIndex;
+            if (bound > 0) {
+                int offset = bound/2;
+                int n = rnd.nextInt(0, bound);
+                for (int i = 0; i < n; i++) {
+                    String f = null;
+                    switch (rnd.nextInt(7)) {
+                    case 0 -> f = "";
+                    case 1 -> f = "\r";
+                    case 2 -> f = "\n";
+                    case 3 -> f = "\r\n";
+                    case 4 -> f = "\r\r";
+                    case 5 -> f = "\n\n";
+                    case 6 -> f = " ";
+                    }
+                    sb.insert(offset, f);
+                }
+            }
+            strings.add(sb.toString());
+            sb.setLength(0);
         }
+
+        String p4096  = PHRASE.repeat((4096 + plen - 1)/plen);
+        String p8192  = PHRASE.repeat((8192 + plen - 1)/plen);
+        String p16384 = PHRASE.repeat((16384 + plen - 1)/plen);
+
+        for (int i = 0; i < 64; i++) {
+            for (int j = 0; j < 32; j++) {
+                switch (rnd.nextInt(8)) {
+                case 0 -> sb.append("");
+                case 1 -> sb.append(" ");
+                case 2 -> sb.append("\n");
+                case 3 -> sb.append(PHRASE);
+                case 5 -> sb.append(p4096);
+                case 6 -> sb.append(p8192);
+                case 7 -> sb.append(p16384);
+                }
+            }
+            strings.add(sb.toString());
+            sb.setLength(0);
+        }
+
         Files.write(path, strings);
         System.out.println(strings.size() + " lines written");
     }
@@ -85,6 +128,7 @@ public class ReadAll {
     @Test
     public void readAllLines() throws IOException {
         // Reader implementation
+        System.out.println("Reader implementation");
         List<String> lines;
         try (FileReader fr = new FileReader(file)) {
             lines = fr.readAllLines();
@@ -92,9 +136,21 @@ public class ReadAll {
         System.out.println(lines.size() + " lines read");
 
         List<String> linesExpected = Files.readAllLines(path);
-        assertEquals(linesExpected, lines);
+        int count = linesExpected.size();
+        if (lines.size() != count)
+            throw new RuntimeException("Size mismatch: " + lines.size() + " != " + count);
+        for (int i = 0; i < count; i++) {
+            String expected = linesExpected.get(i);
+            String actual = lines.get(i);
+            if (!actual.equals(expected)) {
+                String msg = String.format("%d: \"%s\" != \"%s\"",
+                                           i, actual, expected);
+                throw new RuntimeException(msg);
+            }
+        }
 
         // Reader.of implementation
+        System.out.println("Reader.of implementation");
         String stringExpected = Files.readString(path);
         int n = rnd.nextInt(stringExpected.length()/2);
         String substringExpected = stringExpected.substring(n);
@@ -103,7 +159,18 @@ public class ReadAll {
             r.skip(n);
             lines = r.readAllLines();
         }
-        assertEquals(linesExpected, lines);
+        count = linesExpected.size();
+        if (lines.size() != count)
+            throw new RuntimeException("Size mismatch: " + lines.size() + " != " + count);
+        for (int i = 0; i < count; i++) {
+            String expected = linesExpected.get(i);
+            String actual = lines.get(i);
+            if (!actual.equals(expected)) {
+                String msg = String.format("%d: \"%s\" != \"%s\"",
+                                           i, actual, expected);
+                throw new RuntimeException(msg);
+            }
+        }
     }
 
     @Test

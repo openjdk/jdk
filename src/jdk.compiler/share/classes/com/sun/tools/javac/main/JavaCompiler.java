@@ -31,6 +31,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.ReadOnlyFileSystemException;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -55,6 +56,7 @@ import javax.tools.StandardLocation;
 import com.sun.source.util.TaskEvent;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -258,6 +260,10 @@ public class JavaCompiler {
      */
     protected JNIWriter jniWriter;
 
+    /** The Lint mapper.
+     */
+    protected LintMapper lintMapper;
+
     /** The module for the symbol table entry phases.
      */
     protected Enter enter;
@@ -384,6 +390,7 @@ public class JavaCompiler {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        lintMapper = LintMapper.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
         finder = ClassFinder.instance(context);
         reader = ClassReader.instance(context);
@@ -435,7 +442,8 @@ public class JavaCompiler {
                         context.get(DiagnosticListener.class) != null;
         devVerbose    = options.isSet("dev");
         processPcks   = options.isSet("process.packages");
-        werror        = options.isSet(WERROR);
+        werrorAny     = options.isSet(WERROR) || options.isSet(WERROR_CUSTOM, Option.LINT_CUSTOM_ALL);
+        werrorLint    = options.getLintCategoriesOf(WERROR, LintCategory::newEmptySet);
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
@@ -508,9 +516,13 @@ public class JavaCompiler {
      */
     protected boolean processPcks;
 
-    /** Switch: treat warnings as errors
+    /** Switch: treat any kind of warning (lint or non-lint) as an error.
      */
-    protected boolean werror;
+    protected boolean werrorAny;
+
+    /** Switch: treat lint warnings in the specified {@link LintCategory}s as errors.
+     */
+    protected EnumSet<LintCategory> werrorLint;
 
     /** Switch: is annotation processing requested explicitly via
      * CompilationTask.setProcessors?
@@ -575,10 +587,19 @@ public class JavaCompiler {
     /** The number of errors reported so far.
      */
     public int errorCount() {
-        if (werror && log.nerrors == 0 && log.nwarnings > 0) {
+        log.reportOutstandingWarnings();
+        if (log.nerrors == 0 && log.nwarnings > 0 &&
+                (werrorAny || werrorLint.clone().removeAll(log.lintWarnings))) {
             log.error(Errors.WarningsAndWerror);
         }
         return log.nerrors;
+    }
+
+    /**
+     * Should warnings in the given lint category be treated as errors due to a {@code -Werror} flag?
+     */
+    public boolean isWerror(LintCategory lc) {
+        return werrorAny || werrorLint.contains(lc);
     }
 
     protected final <T> Queue<T> stopIfError(CompileState cs, Queue<T> queue) {
@@ -625,6 +646,7 @@ public class JavaCompiler {
     private JCCompilationUnit parse(JavaFileObject filename, CharSequence content, boolean silent) {
         long msec = now();
         JCCompilationUnit tree = make.TopLevel(List.nil());
+        lintMapper.startParsingFile(filename);
         if (content != null) {
             if (verbose) {
                 log.printVerbose("parsing.started", filename);
@@ -644,6 +666,7 @@ public class JavaCompiler {
         }
 
         tree.sourcefile = filename;
+        lintMapper.finishParsingFile(tree);
 
         if (content != null && !taskListener.isEmpty() && !silent) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, tree);
@@ -1843,9 +1866,10 @@ public class JavaCompiler {
             else
                 log.warning(Warnings.ProcUseProcOrImplicit);
         }
+        log.reportOutstandingWarnings();
         log.reportOutstandingNotes();
         if (log.compressedOutput) {
-            log.mandatoryNote(null, Notes.CompressedDiags);
+            log.note(Notes.CompressedDiags);
         }
     }
 
@@ -1916,6 +1940,7 @@ public class JavaCompiler {
         attr = null;
         chk = null;
         gen = null;
+        lintMapper = null;
         flow = null;
         transTypes = null;
         lower = null;

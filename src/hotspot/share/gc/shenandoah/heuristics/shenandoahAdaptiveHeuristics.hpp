@@ -32,23 +32,62 @@
 #include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
+/**
+ * ShenanoahAllocationRate maintains a truncated history of recently sampled allocation rates for the purpose of providing
+ * informed estimates of current and future allocation rates based on weighted averages and standard deviations of the
+ * truncated history.  More recently sampled allocations are weighted more heavily than older samples when computing
+ * averages and standard deviations.
+ */
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
  public:
   explicit ShenandoahAllocationRate();
+
+  // Reset the _last_sample_value to zero, _last_sample_time to current time.
   void allocation_counter_reset();
 
+  // Force an allocation rate sample to be taken, even if the time since last sample is not greater than
+  // 1s/ShenandoahAdaptiveSampleFrequencyHz, except when current_time - _last_sample_time < MinSampleTime (2 ms).
+  // The sampled allocation rate is computed from (allocated - _last_sample_value) / (current_time - _last_sample_time).
+  // Return the newly computed rate if the sample is taken, zero if it is not an appropriate time to add a sample.
+  // In the case that a new sample is not taken, overwrite unaccounted_bytes_allocated with bytes allocated since
+  // the previous sample was taken (allocated - _last_sample_value).  Otherwise, overwrite unaccounted_bytes_allocated
+  // with 0.
+  double force_sample(size_t allocated, size_t &unaccounted_bytes_allocated);
+
+  // Add an allocation rate sample if the time since last sample is greater than 1s/ShenandoahAdaptiveSampleFrequencyHz.
+  // The sampled allocation rate is computed from (allocated - _last_sample_value) / (current_time - _last_sample_time).
+  // Return the newly computed rate if the sample is taken, zero if it is not an appropriate time to add a sample.
   double sample(size_t allocated);
 
+  // Return an estimate of the upper bound on allocation rate, with the upper bound computed as the weighted average
+  // of recently sampled instantaneous allocation rates added to sds times the standard deviation computed for the
+  // sequence of recently sampled average allocation rates.
   double upper_bound(double sds) const;
+
+  // Test whether rate significantly diverges from the computed average allocation rate.  If so, return true.
+  // Otherwise, return false.  Significant divergence is recognized if (rate - _rate.avg()) / _rate.sd() > threshold.
   bool is_spiking(double rate, double threshold) const;
+
  private:
 
+  // Return the instantaneous rate calculated from (allocated - _last_sample_value) / (time - _last_sample_time).
+  // Return Sentinel value 0.0 if (time - _last_sample_time) == 0 or if (allocated <= _last_sample_value).
   double instantaneous_rate(double time, size_t allocated) const;
 
+  // Time at which previous allocation rate sample was collected.
   double _last_sample_time;
+
+  // Bytes allocated as of the time at which previous allocation rate sample was collected.
   size_t _last_sample_value;
+
+  // The desired interval of time between consecutive samples of the allocation rate.
   double _interval_sec;
+
+  // Holds a sequence of the most recently sampled instantaneous allocation rates
   TruncatedSeq _rate;
+
+  // Holds a sequence of the most recently computed weighted average of allocation rates, with each weighted average
+  // computed immediately after an instantaneous rate was sampled
   TruncatedSeq _rate_avg;
 };
 
@@ -71,18 +110,18 @@ public:
 
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                      RegionData* data, size_t size,
-                                                     size_t actual_free);
+                                                     size_t actual_free) override;
 
-  void record_cycle_start();
-  void record_success_concurrent();
-  void record_success_degenerated();
-  void record_success_full();
+  virtual void record_cycle_start() override;
+  virtual void record_success_concurrent() override;
+  virtual void record_success_degenerated() override;
+  virtual void record_success_full() override;
 
-  virtual bool should_start_gc();
+  virtual bool should_start_gc() override;
 
-  virtual const char* name()     { return "Adaptive"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return false; }
+  virtual const char* name() override     { return "Adaptive"; }
+  virtual bool is_diagnostic() override   { return false; }
+  virtual bool is_experimental() override { return false; }
 
  private:
   // These are used to adjust the margin of error and the spike threshold
@@ -149,6 +188,15 @@ protected:
   inline void accept_trigger_with_type(Trigger trigger_type) {
     _last_trigger = trigger_type;
     ShenandoahHeuristics::accept_trigger();
+  }
+
+public:
+  // Sample the allocation rate at GC trigger time if possible.  Return the number of allocated bytes that were
+  // not accounted for in the sample.  This must be called before resetting bytes allocated since gc start.
+  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) override {
+    size_t unaccounted_bytes;
+    _allocation_rate.force_sample(bytes_allocated, unaccounted_bytes);
+    return unaccounted_bytes;
   }
 };
 

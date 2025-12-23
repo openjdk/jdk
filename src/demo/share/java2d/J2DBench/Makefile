@@ -31,10 +31,10 @@
 
 
 ifndef SOURCE
-export SOURCE := 7
+export SOURCE := 8
 endif
 ifndef TARGET
-export TARGET := 7
+export TARGET := 8
 endif
 ifndef JAVAC
 export JAVAC := javac

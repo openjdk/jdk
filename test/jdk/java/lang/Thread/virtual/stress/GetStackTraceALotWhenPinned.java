@@ -56,8 +56,8 @@ public class GetStackTraceALotWhenPinned {
 
         int iterations;
         int value = Integer.parseInt(args[0]);
-        if (Platform.isOSX() && Platform.isX64()) {
-            // reduced iterations on macosx-x64
+        if (Platform.isOSX()) {
+            // reduced iterations on macosx
             iterations = Math.max(value / 4, 1);
         } else {
             iterations = value;

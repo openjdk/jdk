@@ -45,7 +45,7 @@ import apple.laf.JRSUIState.AnimationFrameState;
  * AquaTreeUI supports the client property "value-add" system of customization See MetalTreeUI
  * This is heavily based on the 1.3.1 AquaTreeUI implementation.
  */
-public class AquaTreeUI extends BasicTreeUI {
+public final class AquaTreeUI extends BasicTreeUI {
 
     // Create PLAF
     public static ComponentUI createUI(final JComponent c) {
@@ -80,6 +80,7 @@ public class AquaTreeUI extends BasicTreeUI {
 
     }
 
+    @Override
     public void installUI(final JComponent c) {
         super.installUI(c);
 
@@ -88,6 +89,7 @@ public class AquaTreeUI extends BasicTreeUI {
         c.addPropertyChangeListener(lineStyleListener);
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         c.removePropertyChangeListener(lineStyleListener);
         super.uninstallUI(c);
@@ -96,6 +98,7 @@ public class AquaTreeUI extends BasicTreeUI {
     /**
      * Creates the focus listener to repaint the focus ring
      */
+    @Override
     protected FocusListener createFocusListener() {
         return new AquaTreeUI.FocusHandler();
     }
@@ -117,6 +120,7 @@ public class AquaTreeUI extends BasicTreeUI {
         }
     }
 
+    @Override
     public TreePath getClosestPathForLocation(final JTree treeLocal, final int x, final int y) {
         if (treeLocal == null || treeState == null) return null;
 
@@ -125,6 +129,7 @@ public class AquaTreeUI extends BasicTreeUI {
         return treeState.getPathClosestTo(x - i.left, y - i.top);
     }
 
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         super.paint(g, c);
 
@@ -156,12 +161,14 @@ public class AquaTreeUI extends BasicTreeUI {
         }
     }
 
+    @Override
     protected void paintVerticalPartOfLeg(final Graphics g, final Rectangle clipBounds, final Insets insets, final TreePath path) {
         if (lineStyle == LEG_LINE_STYLE) {
             super.paintVerticalPartOfLeg(g, clipBounds, insets, path);
         }
     }
 
+    @Override
     protected void paintHorizontalPartOfLeg(final Graphics g, final Rectangle clipBounds, final Insets insets, final Rectangle bounds, final TreePath path, final int row, final boolean isExpanded, final boolean hasBeenExpanded, final boolean isLeaf) {
         if (lineStyle == LEG_LINE_STYLE) {
             super.paintHorizontalPartOfLeg(g, clipBounds, insets, bounds, path, row, isExpanded, hasBeenExpanded, isLeaf);
@@ -169,7 +176,8 @@ public class AquaTreeUI extends BasicTreeUI {
     }
 
     /** This class listens for changes in line style */
-    class LineListener implements PropertyChangeListener {
+    final class LineListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String name = e.getPropertyName();
             if (name.equals(LINE_STYLE)) {
@@ -182,6 +190,7 @@ public class AquaTreeUI extends BasicTreeUI {
      * Paints the expand (toggle) part of a row. The receiver should NOT modify {@code clipBounds}, or
      * {@code insets}.
      */
+    @Override
     protected void paintExpandControl(final Graphics g, final Rectangle clipBounds, final Insets insets, final Rectangle bounds, final TreePath path, final int row, final boolean isExpanded, final boolean hasBeenExpanded, final boolean isLeaf) {
         final Object value = path.getLastPathComponent();
 
@@ -272,6 +281,7 @@ public class AquaTreeUI extends BasicTreeUI {
      * We install a motion handler that gets removed after.
      * See super.MouseInputHandler & super.startEditing for why
      */
+    @Override
     protected void handleExpandControlClick(final TreePath path, final int mouseX, final int mouseY) {
         fMouseHandler = new TreeArrowMouseInputHandler(path);
     }
@@ -279,27 +289,32 @@ public class AquaTreeUI extends BasicTreeUI {
     /**
      * Returning true signifies a mouse event on the node should toggle the selection of only the row under mouse.
      */
+    @Override
     protected boolean isToggleSelectionEvent(final MouseEvent event) {
         return SwingUtilities.isLeftMouseButton(event) && event.isMetaDown();
     }
 
-    class FocusHandler extends BasicTreeUI.FocusHandler {
+    final class FocusHandler extends BasicTreeUI.FocusHandler {
+        @Override
         public void focusGained(final FocusEvent e) {
             super.focusGained(e);
             AquaBorder.repaintBorder(tree);
         }
 
+        @Override
         public void focusLost(final FocusEvent e) {
             super.focusLost(e);
             AquaBorder.repaintBorder(tree);
         }
     }
 
+    @Override
     protected PropertyChangeListener createPropertyChangeListener() {
         return new MacPropertyChangeHandler();
     }
 
-    public class MacPropertyChangeHandler extends PropertyChangeHandler {
+    public final class MacPropertyChangeHandler extends PropertyChangeHandler {
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String prop = e.getPropertyName();
             if (prop.equals(AquaFocusHandler.FRAME_ACTIVE_PROPERTY)) {
@@ -318,7 +333,7 @@ public class AquaTreeUI extends BasicTreeUI {
      * Just like super.MouseInputHandler, this is removed once it's not needed, so they won't clash with each other
      */
     // The Adapters take care of defining all the empties
-    class TreeArrowMouseInputHandler extends MouseInputAdapter {
+    final class TreeArrowMouseInputHandler extends MouseInputAdapter {
         protected Rectangle fPathBounds = new Rectangle();
 
         // Values needed for paintOneControl
@@ -362,6 +377,7 @@ public class AquaTreeUI extends BasicTreeUI {
             paintOneControl();
         }
 
+        @Override
         public void mouseDragged(final MouseEvent e) {
             fIsInBounds = fPathBounds.contains(e.getX(), e.getY());
                 paintOneControl();
@@ -373,6 +389,7 @@ public class AquaTreeUI extends BasicTreeUI {
             paintOneControl();
         }
 
+        @Override
         public void mouseReleased(final MouseEvent e) {
             if (tree == null) return;
 
@@ -485,6 +502,7 @@ public class AquaTreeUI extends BasicTreeUI {
         return bounds;
     }
 
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         tree.getActionMap().put("aquaExpandNode", new KeyboardExpandCollapseAction(true, false));
@@ -494,7 +512,7 @@ public class AquaTreeUI extends BasicTreeUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class KeyboardExpandCollapseAction extends AbstractAction {
+    final class KeyboardExpandCollapseAction extends AbstractAction {
         /**
          * Determines direction to traverse, 1 means expand, -1 means collapse.
          */
@@ -509,6 +527,7 @@ public class AquaTreeUI extends BasicTreeUI {
             this.recursive = recursive;
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             if (tree == null || 0 > getRowCount(tree)) return;
 
@@ -542,6 +561,7 @@ public class AquaTreeUI extends BasicTreeUI {
             }
         }
 
+        @Override
         public boolean isEnabled() {
             return (tree != null && tree.isEnabled());
         }

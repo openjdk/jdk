@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Try to archive lots and lots of classes.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @run driver/timeout=500 LotsOfSyntheticClasses
+ * @run driver/timeout=8000 LotsOfSyntheticClasses
  */
 
 public class LotsOfSyntheticClasses {
@@ -120,9 +120,9 @@ public class LotsOfSyntheticClasses {
             OutputAnalyzer output = TestCommon.createArchive(
                 APP_JAR.toString(),
                 listAppClasses(),
-                MAIN_CLASS_NAME,
                 // Verification for lots of classes slows down the test.
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-VerifyDependencies",
                 "-XX:-VerifyBeforeExit"
             );
@@ -134,6 +134,7 @@ public class LotsOfSyntheticClasses {
             TestCommon.run(
                 // Verification for lots of classes slows down the test.
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-VerifyDependencies",
                 "-XX:-VerifyBeforeExit",
                 "-cp", APP_JAR.toString(),

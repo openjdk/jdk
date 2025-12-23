@@ -25,9 +25,9 @@
 #ifndef SHARE_JFR_RECORDER_JFREVENTSETTING_HPP
 #define SHARE_JFR_RECORDER_JFREVENTSETTING_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfrfiles/jfrEventControl.hpp"
+#include "jni.h"
 
 //
 // Native event settings as an associative array using the event id as key.

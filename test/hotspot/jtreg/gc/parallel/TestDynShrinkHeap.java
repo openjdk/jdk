@@ -27,11 +27,12 @@ package gc.parallel;
  * @test TestDynShrinkHeap
  * @bug 8016479
  * @requires vm.gc.Parallel & os.maxMemory > 1G
+ * @requires vm.opt.final.UseAdaptiveSizePolicy
  * @summary Verify that the heap shrinks after full GC according to the current values of the Min/MaxHeapFreeRatio flags
  * @modules java.base/jdk.internal.misc
  * @modules jdk.management
  * @library /test/lib /
- * @run main/othervm -XX:+UseAdaptiveSizePolicyWithSystemGC -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc gc.parallel.TestDynShrinkHeap
+ * @run main/othervm -XX:+UseParallelGC -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Xmx1g -verbose:gc gc.parallel.TestDynShrinkHeap
  */
 import jdk.test.lib.management.DynamicVMOption;
 import java.lang.management.ManagementFactory;

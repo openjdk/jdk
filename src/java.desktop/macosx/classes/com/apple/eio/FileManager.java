@@ -53,7 +53,7 @@ import java.io.*;
  *
  * @since 1.4
  */
-public class FileManager {
+public final class FileManager {
     static {
         loadOSXLibrary();
     }

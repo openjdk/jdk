@@ -1562,9 +1562,6 @@ public final class Main {
 
     private void doGenCRL(PrintStream out)
             throws Exception {
-        if (ids == null) {
-            throw new Exception("Must provide -id when -gencrl");
-        }
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
         X509CertImpl signerCertImpl = new X509CertImpl(encoded);

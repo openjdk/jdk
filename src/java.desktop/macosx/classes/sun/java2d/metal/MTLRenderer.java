@@ -98,12 +98,13 @@ class MTLRenderer extends BufferedRenderPipe {
         return new Tracer(this);
     }
 
-    private static class Tracer extends MTLRenderer {
+    private static final class Tracer extends MTLRenderer {
         private MTLRenderer mtlr;
         Tracer(MTLRenderer mtlr) {
             super(mtlr.rq);
             this.mtlr = mtlr;
         }
+        @Override
         public ParallelogramPipe getAAParallelogramPipe() {
             final ParallelogramPipe realpipe = mtlr.getAAParallelogramPipe();
             return new ParallelogramPipe() {
@@ -135,19 +136,23 @@ class MTLRenderer extends BufferedRenderPipe {
                 }
             };
         }
+        @Override
         protected void validateContext(SunGraphics2D sg2d) {
             mtlr.validateContext(sg2d);
         }
+        @Override
         public void drawLine(SunGraphics2D sg2d,
                              int x1, int y1, int x2, int y2)
         {
             GraphicsPrimitive.tracePrimitive("MTLDrawLine");
             mtlr.drawLine(sg2d, x1, y1, x2, y2);
         }
+        @Override
         public void drawRect(SunGraphics2D sg2d, int x, int y, int w, int h) {
             GraphicsPrimitive.tracePrimitive("MTLDrawRect");
             mtlr.drawRect(sg2d, x, y, w, h);
         }
+        @Override
         protected void drawPoly(SunGraphics2D sg2d,
                                 int[] xPoints, int[] yPoints,
                                 int nPoints, boolean isClosed)
@@ -155,28 +160,33 @@ class MTLRenderer extends BufferedRenderPipe {
             GraphicsPrimitive.tracePrimitive("MTLDrawPoly");
             mtlr.drawPoly(sg2d, xPoints, yPoints, nPoints, isClosed);
         }
+        @Override
         public void fillRect(SunGraphics2D sg2d, int x, int y, int w, int h) {
             GraphicsPrimitive.tracePrimitive("MTLFillRect");
             mtlr.fillRect(sg2d, x, y, w, h);
         }
+        @Override
         protected void drawPath(SunGraphics2D sg2d,
                                 Path2D.Float p2df, int transx, int transy)
         {
             GraphicsPrimitive.tracePrimitive("MTLDrawPath");
             mtlr.drawPath(sg2d, p2df, transx, transy);
         }
+        @Override
         protected void fillPath(SunGraphics2D sg2d,
                                 Path2D.Float p2df, int transx, int transy)
         {
             GraphicsPrimitive.tracePrimitive("MTLFillPath");
             mtlr.fillPath(sg2d, p2df, transx, transy);
         }
+        @Override
         protected void fillSpans(SunGraphics2D sg2d, SpanIterator si,
                                  int transx, int transy)
         {
             GraphicsPrimitive.tracePrimitive("MTLFillSpans");
             mtlr.fillSpans(sg2d, si, transx, transy);
         }
+        @Override
         public void fillParallelogram(SunGraphics2D sg2d,
                                       double ux1, double uy1,
                                       double ux2, double uy2,
@@ -189,6 +199,7 @@ class MTLRenderer extends BufferedRenderPipe {
                     ux1, uy1, ux2, uy2,
                     x, y, dx1, dy1, dx2, dy2);
         }
+        @Override
         public void drawParallelogram(SunGraphics2D sg2d,
                                       double ux1, double uy1,
                                       double ux2, double uy2,
@@ -202,6 +213,7 @@ class MTLRenderer extends BufferedRenderPipe {
                     ux1, uy1, ux2, uy2,
                     x, y, dx1, dy1, dx2, dy2, lw1, lw2);
         }
+        @Override
         public void copyArea(SunGraphics2D sg2d,
                              int x, int y, int w, int h, int dx, int dy)
         {

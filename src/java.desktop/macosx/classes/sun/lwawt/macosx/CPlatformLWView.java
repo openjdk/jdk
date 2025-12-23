@@ -28,7 +28,7 @@ package sun.lwawt.macosx;
 import sun.java2d.SurfaceData;
 import sun.lwawt.LWWindowPeer;
 
-public class CPlatformLWView extends CPlatformView {
+public final class CPlatformLWView extends CPlatformView {
 
     public CPlatformLWView() {
         super();

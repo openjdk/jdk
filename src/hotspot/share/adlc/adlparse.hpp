@@ -25,6 +25,11 @@
 #ifndef SHARE_ADLC_ADLPARSE_HPP
 #define SHARE_ADLC_ADLPARSE_HPP
 
+#include "filebuff.hpp"
+#include "forms.hpp"
+#include "formsopt.hpp"
+#include "formssel.hpp"
+
 // ADLPARSE.HPP - Definitions for Architecture Description Language Parser
 // Authors: Chris Vick and Mike Paleczny
 

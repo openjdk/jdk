@@ -52,7 +52,6 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   bool _xrun;
 
   JvmtiAgent* next() const;
-  void set_next(JvmtiAgent* agent);
   void convert_xrun_agent();
   void set_xrun();
 

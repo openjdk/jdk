@@ -28,8 +28,8 @@
 // There is no continuationWrapper.hpp file
 
 #include "classfile/javaClasses.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationEntry.inline.hpp"
