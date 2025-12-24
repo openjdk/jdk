@@ -168,9 +168,7 @@ public class large001 extends ThreadedGCTest {
 
                     log.debug(id + ": Unloading class: "
                             + name);
-                    boolean result = unloader.unloadClass();
-                    log.debug(id + ": Result of uloading "
-                            + "class " + name + ": " + result);
+                    WhiteBox.getWhiteBox().fullGC();
                 }
             } catch (Throwable t) {
                 throw new TestFailure("Unexpected exception: ", t);
