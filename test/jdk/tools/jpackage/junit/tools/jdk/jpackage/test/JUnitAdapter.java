@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.TeeOutputStream;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
@@ -70,9 +71,13 @@ public class JUnitAdapter {
 
     static List<String> captureJPackageTestLog(ThrowingRunnable<? extends Exception> runnable) {
         final var buf = new ByteArrayOutputStream();
-        try (PrintStream ps = new PrintStream(buf, true, StandardCharsets.UTF_8)) {
-            TKit.withExtraLogStream(runnable, ps);
-        }
+        var ps = new PrintStream(buf, false, TKit.state().out().charset());
+
+        final var out = new PrintStream(new TeeOutputStream(List.of(TKit.state().out(), ps)), true, ps.charset());
+
+        TKit.withOutput(runnable, out, TKit.state().err());
+
+        ps.flush();
 
         try (final var in = new ByteArrayInputStream(buf.toByteArray());
                 final var reader = new InputStreamReader(in, StandardCharsets.UTF_8);

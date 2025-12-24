@@ -62,6 +62,7 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     public Executor() {
+        commandOutputControl.dumpStdout(TKit.state().out()).dumpStderr(TKit.state().err());
     }
 
     public Executor setExecutable(String v) {

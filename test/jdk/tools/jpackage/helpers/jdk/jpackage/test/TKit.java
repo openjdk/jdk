@@ -38,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -109,32 +108,21 @@ public final class TKit {
         throw throwUnknownPlatformError();
     }).get();
 
-    static void withExtraLogStream(ThrowingRunnable<? extends Exception> action) {
-        if (state().extraLogStream != null) {
-            ThrowingRunnable.toRunnable(action).run();
-        } else {
-            try (PrintStream logStream = openLogStream()) {
-                withExtraLogStream(action, logStream);
+    public static void withOutput(ThrowingRunnable<? extends Exception> action, PrintStream out, PrintStream err) {
+        Objects.requireNonNull(action);
+        Objects.requireNonNull(out);
+        Objects.requireNonNull(err);
+        try {
+            withNewState(action, stateBuilder -> {
+                stateBuilder.out(out).err(err);
+            });
+        } finally {
+            try {
+                out.flush();
+            } finally {
+                err.flush();
             }
         }
-    }
-
-    static void withExtraLogStream(ThrowingRunnable<? extends Exception> action, PrintStream logStream) {
-        withNewState(action, stateBuilder -> {
-            stateBuilder.extraLogStream(logStream);
-        });
-    }
-
-    public static void withMainLogStream(ThrowingRunnable<? extends Exception> action, PrintStream logStream) {
-        withNewState(action, stateBuilder -> {
-            stateBuilder.mainLogStream(logStream);
-        });
-    }
-
-    public static void withStackTraceStream(ThrowingRunnable<? extends Exception> action, PrintStream logStream) {
-        withNewState(action, stateBuilder -> {
-            stateBuilder.stackTraceStream(logStream);
-        });
     }
 
     public static State state() {
@@ -145,7 +133,7 @@ public final class TKit {
         STATE.set(Objects.requireNonNull(v));
     }
 
-    private static void withNewState(ThrowingRunnable<? extends Exception> action, Consumer<State.Builder> stateBuilderMutator) {
+    static void withNewState(ThrowingRunnable<? extends Exception> action, Consumer<State.Builder> stateBuilderMutator) {
         Objects.requireNonNull(action);
         Objects.requireNonNull(stateBuilderMutator);
 
@@ -178,31 +166,17 @@ public final class TKit {
             throw new IllegalStateException("Unexpected nested Test.run() call");
         }
 
-        withExtraLogStream(() -> {
-            tests.stream().forEach(test -> {
-                withNewState(() -> {
-                    try {
-                        if (modes.contains(RunTestMode.FAIL_FAST)) {
-                            test.run();
-                        } else {
-                            ignoreExceptions(test).run();
-                        }
-                    } finally {
-                        Optional.ofNullable(state().extraLogStream).ifPresent(PrintStream::flush);
-                    }
-                }, stateBuilder -> {
-                    stateBuilder.currentTest(test);
-                });
+        tests.stream().forEach(test -> {
+            withNewState(() -> {
+                if (modes.contains(RunTestMode.FAIL_FAST)) {
+                    test.run();
+                } else {
+                    ignoreExceptions(test).run();
+                }
+            }, stateBuilder -> {
+                stateBuilder.currentTest(test);
             });
         });
-    }
-
-    static <T> T runAdhocTest(ThrowingSupplier<T, ? extends Exception> action) {
-        final List<T> box = new ArrayList<>();
-        runAdhocTest(() -> {
-            box.add(action.get());
-        });
-        return box.getFirst();
     }
 
     static void runAdhocTest(ThrowingRunnable<? extends Exception> action) {
@@ -281,10 +255,7 @@ public final class TKit {
     static void log(String v) {
         v = addTimestamp(v);
         var state = state();
-        state.mainLogStream.println(v);
-        if (state.extraLogStream != null) {
-            state.extraLogStream.println(v);
-        }
+        state.out.println(v);
     }
 
     static Path removeRootFromAbsolutePath(Path v) {
@@ -692,8 +663,7 @@ public final class TKit {
 
     static void printStackTrace(Throwable throwable) {
         var state = state();
-        Optional.ofNullable(state.extraLogStream).ifPresent(throwable::printStackTrace);
-        throwable.printStackTrace(state.stackTraceStream);
+        throwable.printStackTrace(state.err);
     }
 
     private static String concatMessages(String msg, String msg2) {
@@ -1255,16 +1225,6 @@ public final class TKit {
         return new TextStreamVerifier(what);
     }
 
-    private static PrintStream openLogStream() {
-        return state().logFile.map(logfile -> {
-            try {
-                return Files.newOutputStream(logfile, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-        }).map(PrintStream::new).orElse(null);
-    }
-
     public record PathSnapshot(List<String> contentHashes) {
         public PathSnapshot {
             contentHashes.forEach(Objects::requireNonNull);
@@ -1376,25 +1336,20 @@ public final class TKit {
     public static final class State {
 
         private State(
-                Optional<Path> logFile,
                 TestInstance currentTest,
-                PrintStream mainLogStream,
-                PrintStream stackTraceStream,
-                PrintStream extraLogStream,
+                PrintStream out,
+                PrintStream err,
                 boolean trace,
                 boolean traceAsserts,
                 boolean verboseJPackage,
                 boolean verboseTestSetup) {
 
-            Objects.requireNonNull(logFile);
-            Objects.requireNonNull(mainLogStream);
-            Objects.requireNonNull(stackTraceStream);
+            Objects.requireNonNull(out);
+            Objects.requireNonNull(err);
 
-            this.logFile = logFile;
             this.currentTest = currentTest;
-            this.mainLogStream = mainLogStream;
-            this.stackTraceStream = stackTraceStream;
-            this.extraLogStream = extraLogStream;
+            this.out = out;
+            this.err = err;
 
             this.trace = trace;
             this.traceAsserts = traceAsserts;
@@ -1403,9 +1358,16 @@ public final class TKit {
             this.verboseTestSetup = verboseTestSetup;
         }
 
-
         Builder buildCopy() {
             return build().initFrom(this);
+        }
+
+        PrintStream out() {
+            return out;
+        }
+
+        PrintStream err() {
+            return err;
         }
 
         static Builder build() {
@@ -1416,11 +1378,9 @@ public final class TKit {
         static final class Builder {
 
             Builder initDefaults() {
-                logFile = Optional.ofNullable(getConfigProperty("logfile")).map(Path::of);
                 currentTest = null;
-                mainLogStream = System.out;
-                stackTraceStream = System.err;
-                extraLogStream = null;
+                out = System.out;
+                err = System.err;
 
                 var logOptions = tokenizeConfigProperty("suppress-logging");
                 if (logOptions == null) {
@@ -1448,11 +1408,9 @@ public final class TKit {
             }
 
             Builder initFrom(State state) {
-                logFile = state.logFile;
                 currentTest = state.currentTest;
-                mainLogStream = state.mainLogStream;
-                stackTraceStream = state.stackTraceStream;
-                extraLogStream = state.extraLogStream;
+                out = state.out;
+                err = state.err;
 
                 trace = state.trace;
                 traceAsserts = state.traceAsserts;
@@ -1463,40 +1421,28 @@ public final class TKit {
                 return this;
             }
 
-            Builder logFile(Optional<Path> v) {
-                logFile = v;
-                return this;
-            }
-
             Builder currentTest(TestInstance v) {
                 currentTest = v;
                 return this;
             }
 
-            Builder mainLogStream(PrintStream v) {
-                mainLogStream = v;
+            Builder out(PrintStream v) {
+                out = v;
                 return this;
             }
 
-            Builder stackTraceStream(PrintStream v) {
-                stackTraceStream = v;
-                return this;
-            }
-
-            Builder extraLogStream(PrintStream v) {
-                extraLogStream = v;
+            Builder err(PrintStream v) {
+                err = v;
                 return this;
             }
 
             State create() {
-                return new State(logFile, currentTest, mainLogStream, stackTraceStream, extraLogStream, trace, traceAsserts, verboseJPackage, verboseTestSetup);
+                return new State(currentTest, out, err, trace, traceAsserts, verboseJPackage, verboseTestSetup);
             }
 
-            private Optional<Path> logFile;
             private TestInstance currentTest;
-            private PrintStream mainLogStream;
-            private PrintStream stackTraceStream;
-            private PrintStream extraLogStream;
+            private PrintStream out;
+            private PrintStream err;
 
             private boolean trace;
             private boolean traceAsserts;
@@ -1506,11 +1452,9 @@ public final class TKit {
         }
 
 
-        private final Optional<Path> logFile;
         private final TestInstance currentTest;
-        private final PrintStream mainLogStream;
-        private final PrintStream stackTraceStream;
-        private final PrintStream extraLogStream;
+        private final PrintStream out;
+        private final PrintStream err;
 
         private final boolean trace;
         private final boolean traceAsserts;

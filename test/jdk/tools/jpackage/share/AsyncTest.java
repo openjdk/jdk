@@ -23,7 +23,6 @@
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -34,15 +33,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.spi.ToolProvider;
 import java.util.stream.IntStream;
-import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.Main;
 import jdk.jpackage.test.PackageTest;
@@ -69,7 +65,7 @@ public class AsyncTest {
         APP_JAR.set(HelloApp.createBundle(JavaAppDesc.parse("Hello!"), TKit.workDir()));
 
         //
-        // Run test cases from InternalAsyncTest class asynchronously.
+        // Run test cases from AsyncInnerTest class asynchronously.
         // Spawn a thread for every test case.
         // Input data for test cases will be cooked asynchronously but in a safe way because every test case has an isolated work directory.
         // Multiple jpackage tool provider instances will be invoked asynchronously.
@@ -79,14 +75,10 @@ public class AsyncTest {
 
             var testFuncNames = List.of("testAppImage", "testNativeBundle");
 
-            var runArg = String.format("--jpt-run=%s", AsyncInnerTest.class.getName());
-
             var futures = executor.invokeAll(IntStream.range(0, JOB_COUNT).mapToObj(Integer::toString).<Workload>mapMulti((idx, consumer) -> {
                 for (var testFuncName : testFuncNames) {
                     var id = String.format("%s(%s)", testFuncName, idx);
-                    consumer.accept(new Workload(() -> {
-                        Main.main(runArg, String.format("--jpt-include=%s", id));
-                    }, id));
+                    consumer.accept(new Workload(id));
                 }
             }).toList());
 
@@ -99,10 +91,8 @@ public class AsyncTest {
 
             for (var future : futures) {
                 var result = future.get();
-                TKit.trace(String.format("[%s] STDOUT BEGIN\n%s", result.id(), result.stdoutBuffer()));
-                TKit.trace(String.format("[%s] STDOUT END", result.id()));
-                TKit.trace(String.format("[%s] STDERR BEGIN\n%s", result.id(), result.stderrBuffer()));
-                TKit.trace(String.format("[%s] STDERR END", result.id()));
+                TKit.trace(String.format("[%s] OUTPUT BEGIN\n%s", result.testCaseId(), result.testOutput()));
+                TKit.trace(String.format("[%s] OUTPUT END", result.testCaseId()));
                 result.exception().filter(Predicate.not(TKit::isSkippedException)).ifPresent(fatalError::set);
             }
 
@@ -142,75 +132,52 @@ public class AsyncTest {
     }
 
 
-    private record Result(String stdoutBuffer, String stderrBuffer, String id, Optional<Exception> exception) {
+    private record Result(String testOutput, String testCaseId, Optional<Exception> exception) {
 
         Result {
-            Objects.requireNonNull(stdoutBuffer);
-            Objects.requireNonNull(stderrBuffer);
-            Objects.requireNonNull(id);
+            Objects.requireNonNull(testOutput);
+            Objects.requireNonNull(testCaseId);
             Objects.requireNonNull(exception);
         }
     }
 
 
-    private record Workload(
-            ByteArrayOutputStream stdoutBuffer,
-            ByteArrayOutputStream stderrBuffer,
-            ThrowingRunnable<? extends Exception> runnable,
-            String id) implements Callable<Result>  {
+    private record Workload(ByteArrayOutputStream outputSink, String testCaseId) implements Callable<Result>  {
 
         Workload {
-            Objects.requireNonNull(stdoutBuffer);
-            Objects.requireNonNull(stderrBuffer);
-            Objects.requireNonNull(runnable);
-            Objects.requireNonNull(id);
+            Objects.requireNonNull(outputSink);
+            Objects.requireNonNull(testCaseId);
         }
 
-        Workload(ThrowingRunnable<? extends Exception> runnable, String id) {
-            this(new ByteArrayOutputStream(), new ByteArrayOutputStream(), runnable, id);
+        Workload(String testCaseId) {
+            this(new ByteArrayOutputStream(), testCaseId);
         }
 
-        private String stdoutBufferAsString() {
-            return new String(stdoutBuffer.toByteArray(), StandardCharsets.UTF_8);
-        }
-
-        private String stderrBufferAsString() {
-            return new String(stderrBuffer.toByteArray(), StandardCharsets.UTF_8);
+        private String testOutput() {
+            return new String(outputSink.toByteArray(), StandardCharsets.UTF_8);
         }
 
         @Override
         public Result call() {
+
             // Reset the current test inherited in the state from the parent thread.
             TKit.state(DEFAULT_STATE);
 
-            var defaultToolProvider = JavaTool.JPACKAGE.asToolProvider();
+            JPackageCommand.useToolProviderByDefault();
 
-            JPackageCommand.useToolProviderByDefault(new ToolProvider() {
-
-                @Override
-                public int run(PrintWriter out, PrintWriter err, String... args) {
-                    try (var bufOut = new PrintWriter(stdoutBuffer, true, StandardCharsets.UTF_8);
-                            var bufErr = new PrintWriter(stderrBuffer, true, StandardCharsets.UTF_8)) {
-                        return defaultToolProvider.run(bufOut, bufErr, args);
-                    }
-                }
-
-                @Override
-                public String name() {
-                    return defaultToolProvider.name();
-                }
-            });
+            var runArg = String.format("--jpt-run=%s", AsyncInnerTest.class.getName());
 
             Optional<Exception> err = Optional.empty();
-            try (var bufOut = new PrintStream(stdoutBuffer, true, StandardCharsets.UTF_8);
-                    var bufErr = new PrintStream(stderrBuffer, true, StandardCharsets.UTF_8)) {
-                TKit.withStackTraceStream(() -> {
-                    TKit.withMainLogStream(runnable, bufOut);
-                }, bufErr);
+            try {
+                try (var out = new PrintStream(outputSink, false, System.out.charset())) {
+                    TKit.withOutput(() -> {
+                        Main.main("--jpt-ignore-logfile", runArg, String.format("--jpt-include=%s", testCaseId));
+                    }, out, out);
+                }
             } catch (Exception ex) {
                 err = Optional.of(ex);
             }
-            return new Result(stdoutBufferAsString(), stderrBufferAsString(), id, err);
+            return new Result(testOutput(), testCaseId, err);
         }
     }
 
