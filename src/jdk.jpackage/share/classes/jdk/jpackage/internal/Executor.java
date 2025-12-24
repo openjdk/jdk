@@ -77,8 +77,8 @@ final class Executor {
         return this;
     }
 
-    Executor processOutputCharset(Charset v) {
-        commandOutputControl.processOutputCharset(v);
+    Executor charset(Charset v) {
+        commandOutputControl.charset(v);
         return this;
     }
 
@@ -162,7 +162,7 @@ final class Executor {
         if (dumpOutput()) {
             sink = new ByteArrayOutputStream();
             // Dump into the sink.
-            var ps = new PrintStream(sink);
+            var ps = new PrintStream(sink, false, coc.charset());
             // Redirect stderr in stdout.
             coc.dumpOutput(true).dumpStdout(ps).dumpStderr(ps);
         } else {
@@ -185,7 +185,7 @@ final class Executor {
         }
 
         if (dumpOutput()) {
-            log(result, sink, coc.processOutputCharset());
+            log(result, sink, coc.charset());
         }
 
         return result;
