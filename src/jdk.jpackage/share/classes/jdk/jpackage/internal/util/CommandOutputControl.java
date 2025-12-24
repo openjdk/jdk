@@ -1701,63 +1701,6 @@ public final class CommandOutputControl {
         private Optional<OutputControlOption> save = Optional.empty();
     }
 
-    private static final class TeeOutputStream extends OutputStream {
-
-        public TeeOutputStream(Iterable<OutputStream> streams) {
-            streams.forEach(Objects::requireNonNull);
-            this.streams = streams;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            for (final var out : streams) {
-                out.write(b);
-            }
-        }
-
-        @Override
-        public void write(byte[] b) throws IOException {
-            for (final var out : streams) {
-                out.write(b);
-            }
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            for (final var out : streams) {
-                out.write(b, off, len);
-            }
-        }
-
-        @Override
-        public void flush() throws IOException {
-            forEach(OutputStream::flush);
-        }
-
-        @Override
-        public void close() throws IOException {
-            forEach(OutputStream::close);
-        }
-
-        private void forEach(ThrowingConsumer<OutputStream, IOException> c) throws IOException {
-            IOException firstEx = null;
-            for (final var out : streams) {
-                try {
-                    c.accept(out);
-                } catch (IOException e) {
-                    if (firstEx == null) {
-                        firstEx = e;
-                    }
-                }
-            }
-            if (firstEx != null) {
-                throw firstEx;
-            }
-        }
-
-        private final Iterable<OutputStream> streams;
-    }
-
     private record CommandOutput<T>(Optional<? extends Content<T>> content, int stdoutContentSize, boolean interleaved) {
 
         CommandOutput {
