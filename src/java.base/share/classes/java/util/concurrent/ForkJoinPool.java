@@ -1193,12 +1193,22 @@ public class ForkJoinPool extends AbstractExecutorService
         @jdk.internal.vm.annotation.Contended("w")
         int nsteals;               // number of steals from other queues
 
-        // Support for atomic operations (also used by ForkJoinPool)
+        // Support for atomic operations
         private static final Unsafe U;
-        static final long PHASE;
-        static final long BASE;
-        static final long TOP;
-        static final long ARRAY;
+        private static final long PHASE;
+        private static final long BASE;
+        private static final long TOP;
+        private static final long ARRAY;
+
+        final void getAndSetBase(int v) {
+            U.getAndSetInt(this, BASE, v);
+        }
+        final void setPhasePlain(int v) {
+            U.putInt(this, PHASE, v);
+        }
+        final int getPhasePlain() {
+            return U.getInt(this, PHASE);
+        }
 
         /**
          * SeqLock acquire for external queues.
@@ -1296,41 +1306,34 @@ public class ForkJoinPool extends AbstractExecutorService
         }
 
         /**
-         * Takes next task, if one exists, in lifo order.
+         * Takes next task, if one exists, in order specified by mode,
+         * so acts as either local-pop or local-poll. Called only by owner.
+         * @param fifo nonzero if FIFO mode
          */
-        private ForkJoinTask<?> localPop() {
+        private ForkJoinTask<?> nextLocalTask(int fifo) {
             ForkJoinTask<?> t = null;
-            int s = top - 1, cap; long k; ForkJoinTask<?>[] a;
-            if ((a = array) != null && (cap = a.length) > 0 &&
-                U.getReference(a, k = slotOffset((cap - 1) & s)) != null &&
-                (t = (ForkJoinTask<?>)U.getAndSetReference(a, k, null)) != null)
-                U.putIntOpaque(this, TOP, s);
-            return t;
-        }
-
-        /**
-         * Takes next task, if one exists, in fifo order.
-         */
-        private ForkJoinTask<?> localPoll() {
-            ForkJoinTask<?> t = null;
-            int p = top, cap; ForkJoinTask<?>[] a;
-            if ((a = array) != null && (cap = a.length) > 0) {
-                for (int b = base; p - b > 0; ) {
-                    int nb = b + 1;
-                    long k = slotOffset((cap - 1) & b);
-                    if (U.getReference(a, k) == null) {
+            ForkJoinTask<?>[] a = array;
+            int b = base, p = top, cap;
+            if (a != null && (cap = a.length) > 0) {
+                if (fifo == 0) {
+                    int s = p - 1; long k;
+                    if (U.getReference(a, k = slotOffset((cap - 1) & s)) != null &&
+                        (t = (ForkJoinTask<?>)U.getAndSetReference(
+                            a, k, null)) != null)
+                        top = s;
+                } else {
+                    while (p - b > 0) {
+                        int nb = b + 1;
+                        if ((t = (ForkJoinTask<?>)U.getAndSetReference(
+                                 a, slotOffset((cap - 1) & b), null)) != null) {
+                            base = nb;
+                            break;
+                        }
                         if (nb == p)
-                            break;          // else base is lagging
+                            break;
                         while (b == (b = U.getIntAcquire(this, BASE)))
-                            Thread.onSpinWait(); // spin to reduce memory traffic
+                            Thread.onSpinWait();
                     }
-                    else if ((t = (ForkJoinTask<?>)
-                              U.getAndSetReference(a, k, null)) != null) {
-                        U.putIntOpaque(this, BASE, nb);
-                        break;
-                    }
-                    else
-                        b = base;
                 }
             }
             return t;
@@ -1340,7 +1343,9 @@ public class ForkJoinPool extends AbstractExecutorService
          * Takes next task, if one exists, using configured mode.
          */
         final ForkJoinTask<?> nextLocalTask() {
-            return (config & FIFO) == 0 ? localPop() : localPoll();
+            ForkJoinTask<?> t= nextLocalTask(config & FIFO);
+            U.storeStoreFence(); // ensure ordering for external callers
+            return t;
         }
 
         /**
@@ -1421,31 +1426,7 @@ public class ForkJoinPool extends AbstractExecutorService
         final void topLevelExec(ForkJoinTask<?> task, int fifo) {
             while (task != null) {
                 task.doExec();
-                task = null;
-                int p = top, cap; ForkJoinTask<?>[] a;
-                if ((a = array) == null || (cap = a.length) <= 0)
-                    break;        // currently impossible
-                if (fifo == 0) {  // specialized localPop
-                    int s = p - 1; long k;
-                    if (U.getReference(
-                            a, k = slotOffset((cap - 1) & s)) != null &&
-                        (task = (ForkJoinTask<?>)
-                         U.getAndSetReference(a, k, null)) != null)
-                        top = s;
-                } else {          // specialized localPoll
-                    for (int b = base; p - b > 0; ) {
-                        int nb = b + 1;
-                        if ((task = (ForkJoinTask<?>)U.getAndSetReference(
-                                 a, slotOffset((cap - 1) & b), null)) != null) {
-                            base = nb;
-                            break;
-                        }
-                        if (nb == p)
-                            break;
-                        while (b == (b = U.getIntAcquire(this, BASE)))
-                            Thread.onSpinWait();
-                    }
-                }
+                task = nextLocalTask(fifo);
             }
         }
 
@@ -1577,7 +1558,7 @@ public class ForkJoinPool extends AbstractExecutorService
          * Cancels all local tasks. Called only by owner.
          */
         final void cancelTasks() {
-            for (ForkJoinTask<?> t; (t = localPop()) != null; ) {
+            for (ForkJoinTask<?> t; (t = nextLocalTask(0)) != null; ) {
                 try {
                     t.cancel(false);
                 } catch (Throwable ignore) {
@@ -1990,7 +1971,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 }
                                 else if (U.compareAndSetReference(a, bp, t, null)) {
                                     Object nt = U.getReference(a, np);
-                                    U.getAndSetInt(q, WorkQueue.BASE, nb);
+                                    q.getAndSetBase(nb);
                                     if (nt != null)
                                         signalWork(q, nb); // propagate
                                     ++taken;
@@ -2005,12 +1986,10 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
                 if (rescans >= 0)
                     --rescans;
-                else if (inactive == 0) {
-                    if ((inactive = deactivate(w, taken)) != 0)
-                        taken = 0;
-                }
-                else if (awaitWork(w) == 0) {
-                    inactive = rescans = 0;
+                else if (inactive == 0)
+                    inactive = deactivate(w, taken);
+                else if (awaitWork(w, taken) == 0) {
+                    taken = inactive = rescans = 0;
                     src = -1;
                 }
                 else
@@ -2023,29 +2002,31 @@ public class ForkJoinPool extends AbstractExecutorService
      * Tries to deactivate worker, keeping active on contention
      *
      * @param w the work queue
-     * @param taken number of stolen tasks since last deactivation
+     * @param taken number of stolen tasks since last reactivation
      * @return nonzero if inactive
      */
     private int deactivate(WorkQueue w, int taken) {
-        int inactive = 0, phase;
-        if (w != null && (inactive =          // plain accesses until CAS
-                          (phase = U.getInt(w, WorkQueue.PHASE)) & IDLE) == 0) {
-            long sp = (phase + (IDLE << 1)) & LMASK, pc, c;
-            U.putInt(w, WorkQueue.PHASE, phase | IDLE);
-            w.stackPred = (int)(pc = ctl);    // try to enqueue
-            if (!U.compareAndSetLong(this, CTL, pc,
-                                     c = ((pc - RC_UNIT) & UMASK) | sp))
-                w.phase = phase;              // back out on contention
-            else {
-                if (taken != 0) {
-                    w.nsteals += taken;
-                    if ((w.config & CLEAR_TLS) != 0 &&
-                        (Thread.currentThread() instanceof ForkJoinWorkerThread f))
-                        f.resetThreadLocals(); // (instanceof check always true)
+        int inactive = IDLE;
+        if (w != null) {                         // always true; hoist checks
+            long pc = ctl, c;
+            int phase = w.getPhasePlain();
+            long sp = (phase + NEXTIDLE) & LMASK;
+            w.setPhasePlain(phase | IDLE);
+            for (;;) {
+                w.stackPred = (int)pc;
+                c = ((pc - RC_UNIT) & UMASK) | sp;
+                if (pc == (pc = U.compareAndExchangeLong(this, CTL, pc, c)))
+                    break;
+                if ((pc & RC_MASK) >= (c & RC_MASK)) {
+                    w.phase = phase;       // back out if lost to signal
+                    inactive = 0;
+                    break;
                 }
+            }
+            if (inactive != 0) {
                 if (((c & RC_MASK) == 0L && quiescent() > 0) || taken == 0)
                     inactive = w.phase & IDLE; // check quiescent termination
-                else {                         // spin for approx 1 scan cost
+                else {                     // spin for approx 1 scan cost
                     int tc = (short)(c >>> TC_SHIFT);
                     int spins = Math.max((tc << 1) + tc, SPIN_WAITS);
                     while ((inactive = w.phase & IDLE) != 0 && --spins != 0)
@@ -2081,12 +2062,20 @@ public class ForkJoinPool extends AbstractExecutorService
      * Awaits signal or termination.
      *
      * @param w the work queue
+     * @param taken number of stolen tasks since last reactivation
      * @return 0 if now active
      */
-    private int awaitWork(WorkQueue w) {
-        int inactive = 0, phase;
+    private int awaitWork(WorkQueue w, int taken) {
+        int inactive = 0;
         if (w != null) {                          // always true; hoist checks
+            int phase;
             long waitTime = (w.source == INVALID_ID) ? 0L : keepAlive;
+            if (taken != 0) {
+                w.nsteals += taken;
+                if ((w.config & CLEAR_TLS) != 0 &&
+                    (Thread.currentThread() instanceof ForkJoinWorkerThread f))
+                    f.resetThreadLocals(); // (instanceof check always true)
+            }
             if ((inactive = (phase = w.phase) & IDLE) != 0) {
                 LockSupport.setCurrentBlocker(this);
                 int activePhase = phase + IDLE;
@@ -2423,7 +2412,8 @@ public class ForkJoinPool extends AbstractExecutorService
             }
             if (locals) {                   // run local tasks before (re)polling
                 locals = false;
-                for (ForkJoinTask<?> u; (u = w.nextLocalTask()) != null;)
+                int fifo = ((int)config) & FIFO;
+                for (ForkJoinTask<?> u; (u = w.nextLocalTask(fifo)) != null;)
                     u.doExec();
             }
             WorkQueue[] qs = queues;
