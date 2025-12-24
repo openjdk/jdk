@@ -499,6 +499,7 @@ public:
     UNCOMMON_TRAP,
     WHITEBOX_DEOPTIMIZATION,
     ZOMBIE,
+    RELOCATED,
     INVALIDATION_REASONS_COUNT
   };
 
@@ -543,6 +544,8 @@ public:
         return "whitebox deoptimization";
       case InvalidationReason::ZOMBIE:
         return "zombie";
+      case InvalidationReason::RELOCATED:
+        return "relocated";
       default: {
         assert(false, "Unhandled reason");
         return "Unknown";
