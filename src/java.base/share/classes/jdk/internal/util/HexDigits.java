@@ -25,7 +25,7 @@
 
 package jdk.internal.util;
 
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -34,6 +34,7 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 21
  */
+@AOTSafeClassInitializer
 public final class HexDigits {
     /**
      * Each element of the array represents the ascii encoded
