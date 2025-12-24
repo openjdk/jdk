@@ -36,6 +36,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/xmlstream.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)
@@ -277,6 +278,7 @@ class MemTracker : AllStatic {
   }
 
   static void tuning_statistics(outputStream* out);
+  static void tuning_statistics_xml(outputStream* out);
 
   // MallocLimt: Given an allocation size s, check if mallocing this much
   // for MemTag would hit either the global limit or the limit for MemTag.
