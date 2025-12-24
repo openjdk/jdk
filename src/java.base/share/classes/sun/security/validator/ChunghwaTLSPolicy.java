@@ -84,6 +84,9 @@ final class ChunghwaTLSPolicy {
         return X509CertImpl.getFingerprint("SHA-256", cert, debug);
     }
 
+    // Check whether the certificate's notBeforeDate is after the
+    // distrust date for the anchor (root CA). Throw ValidatorException
+    // if it is after the distrust date.
     private static void checkNotBefore(LocalDate notBeforeDate,
             LocalDate distrustDate, X509Certificate anchor)
             throws ValidatorException {
