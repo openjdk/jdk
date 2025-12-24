@@ -215,7 +215,8 @@ final class SessionTicketExtension {
 
             try {
                 StatelessKey key = KeyState.getCurrentKey(hc);
-                byte[] iv = new byte[16];
+                // IV should be 12 bytes for GCM.
+                byte[] iv = new byte[12];
 
                 SecureRandom random = hc.sslContext.getSecureRandom();
                 random.nextBytes(iv);
@@ -269,7 +270,7 @@ final class SessionTicketExtension {
                     return null;
                 }
 
-                iv = new byte[16];
+                iv = new byte[12];
                 data.get(iv);
                 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
                 c.init(Cipher.DECRYPT_MODE, key.key,
