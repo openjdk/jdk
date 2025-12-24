@@ -315,14 +315,14 @@ public final class Long extends Number
             byte[] chars = new byte[len];
             if (len > 8) {
                 len -= 8;
-                Unsafe.getUnsafe().putLongUnaligned(chars, ARRAY_BYTE_BASE_OFFSET + len, x, true);
+                Unsafe.getUnsafe().putLongUnaligned(chars, Unsafe.ARRAY_BYTE_BASE_OFFSET + len, x, true);
                 x = HexDigits.hex8(i >>> 32);
             }
             do {
                 chars[--len] = (byte) x;
                 x >>>= 8;
             } while (len > 0);
-            return new String(chars, LATIN1);
+            return new String(chars, String.LATIN1);
         } else {
             byte[] chars = new byte[len << 1];
             byte b;
@@ -338,7 +338,7 @@ public final class Long extends Number
                 StringUTF16.putChar(chars, --len, (byte) x);
                 x >>>= 8;
             } while (len > 0);
-            return new String(chars, UTF16);
+            return new String(chars, String.UTF16);
         }
     }
 

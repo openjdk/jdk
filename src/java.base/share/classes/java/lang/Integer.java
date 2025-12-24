@@ -293,14 +293,14 @@ public final class Integer extends Number
                 chars[--len] = (byte) x;
                 x >>>= 8;
             } while (len > 0);
-            return new String(chars, LATIN1);
+            return new String(chars, String.LATIN1);
         } else {
             byte[] chars = new byte[len << 1];
             do {
                 StringUTF16.putChar(chars, --len, (byte) x);
                 x >>>= 8;
             } while (len > 0);
-            return new String(chars, UTF16);
+            return new String(chars, String.UTF16);
         }
     }
 
