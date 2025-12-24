@@ -96,6 +96,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
+#include "services/management.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1140,7 +1141,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     AOTReferenceObjSupport::initialize(CHECK);
     AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
 
-    if (CDSConfig::is_initing_classes_at_dump_time()) {
+    if (CDSConfig::is_dumping_aot_linked_classes()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
       // to null, and it will be initialized again at runtime.
       log_debug(aot)("Resetting Class::reflectionFactory");
@@ -2204,7 +2205,7 @@ void AOTMetaspace::initialize_shared_spaces() {
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
     tty->print_cr("Number of shared symbols: %zu", cl.total());
-    if (HeapShared::is_loading_mapping_mode()) {
+    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
       tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     }
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
