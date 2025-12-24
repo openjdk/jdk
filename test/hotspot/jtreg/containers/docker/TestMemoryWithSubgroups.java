@@ -26,6 +26,7 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 import jdk.test.lib.containers.docker.DockerRunOptions;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.internal.platform.Metrics;
 
 import java.util.ArrayList;
@@ -101,8 +102,11 @@ public class TestMemoryWithSubgroups {
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
             "/jdk/bin/java -Xlog:os+container=trace -version");
 
-        Common.run(opts)
-            .shouldMatch("Lowest limit was:.*" + expectedValue);
+        OutputAnalyzer oa = Common.run(opts);
+        if (oa.stdoutContains("cgroup.procs: Permission denied")) {
+            throw new SkippedException("Skip test since do not have privilege permission inside docker");
+        }
+        oa.shouldMatch("Lowest limit was:.*" + expectedValue);
     }
 
     private static void testMemoryLimitSubgroupV2(String containerMemorySize, String valueToSet, String expectedValue, boolean privateNamespace)
@@ -123,7 +127,10 @@ public class TestMemoryWithSubgroups {
             "echo " + valueToSet + " > /sys/fs/cgroup/memory/test/memory.max ; " +
             "/jdk/bin/java -Xlog:os+container=trace -version");
 
-        Common.run(opts)
-            .shouldMatch("Lowest limit was:.*" + expectedValue);
+        OutputAnalyzer oa = Common.run(opts);
+        if (oa.stdoutContains("cgroup.procs: Permission denied")) {
+            throw new SkippedException("Skip test since do not have privilege permission inside docker");
+        }
+        oa.shouldMatch("Lowest limit was:.*" + expectedValue);
     }
 }
