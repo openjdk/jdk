@@ -547,6 +547,8 @@ extern "C" {
       assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
       asm volatile(".inst 0xd50330ff" : : : "memory");
       break;
+    case SpinWait::WFET:
+      ShouldNotReachHere();
 #ifdef ASSERT
     default:
       ShouldNotReachHere();
