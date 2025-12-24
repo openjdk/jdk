@@ -415,7 +415,7 @@ public final class CommandOutputControl {
         outputStreamsControl = other.outputStreamsControl.copy();
         dumpStdout = other.dumpStdout;
         dumpStderr = other.dumpStderr;
-        processOutputCharset = other.processOutputCharset;
+        charset = other.charset;
         processNotifier = other.processNotifier;
     }
 
@@ -534,36 +534,34 @@ public final class CommandOutputControl {
 
     /**
      * Sets character encoding that will be applied to the stdout and the stderr
-     * streams of subprocesses subsequently executed by this object. The default
-     * encoding is {@code UTF-8}.
-     * <p>
-     * Doesn't apply to executing {@code ToolProvider}-s.
+     * streams of commands (subprocesses and {@code ToolProvider}-s) subsequently
+     * executed by this object. The default encoding is {@code UTF-8}.
      * <p>
      * The value will be ignored if this object is configured for byte output
      * streams.
      *
      * @param v character encoding for output streams of subsequently executed
-     *          subprocesses
+     *          commands
      *
      * @see #binaryOutput(boolean)
      *
      * @return this
      */
-    public CommandOutputControl processOutputCharset(Charset v) {
-        processOutputCharset = v;
+    public CommandOutputControl charset(Charset v) {
+        charset = v;
         return this;
     }
 
     /**
      * Returns the value passed in the last call of
-     * {@link #processOutputCharset(Charset)} method on this object, or
+     * {@link #charset(Charset)} method on this object, or
      * {@link StandardCharsets#UTF_8} if the method has not been called.
      *
      * @return the character encoding that will be applied to the stdout and stderr
-     *         streams of subprocesses subsequently executed by this object
+     *         streams of commands subsequently executed by this object
      */
-    public Charset processOutputCharset() {
-        return Optional.ofNullable(processOutputCharset).orElse(StandardCharsets.UTF_8);
+    public Charset charset() {
+        return Optional.ofNullable(charset).orElse(StandardCharsets.UTF_8);
     }
 
     /**
@@ -1048,7 +1046,7 @@ public final class CommandOutputControl {
 
         Objects.requireNonNull(pb);
 
-        var charset = processOutputCharset();
+        var theCharset = charset();
 
         configureProcessBuilder(pb);
 
@@ -1065,7 +1063,7 @@ public final class CommandOutputControl {
                         throw new UncheckedIOException(ex);
                     }
                 } else {
-                    try (var bufReader = new BufferedReader(new InputStreamReader(in, charset))) {
+                    try (var bufReader = new BufferedReader(new InputStreamReader(in, theCharset))) {
                         bufReader.lines().forEach(ps::println);
                     } catch (IOException ex) {
                         throw new UncheckedIOException(ex);
@@ -1503,6 +1501,11 @@ public final class CommandOutputControl {
                 return this;
             }
 
+            Builder charset(Charset v) {
+                charset = v;
+                return this;
+            }
+
             Builder buffer(ByteArrayOutputStream v) {
                 externalBuffer = v;
                 return this;
@@ -1522,7 +1525,9 @@ public final class CommandOutputControl {
                 if (buf.isPresent() && dumpStream != null) {
                     ps = new PrintStream(new TeeOutputStream(List.of(buf.get(), dumpStream)), true, dumpStream.charset());
                 } else if (!discard) {
-                    ps = buf.map(PrintStream::new).or(() -> {
+                    ps = buf.map(in -> {
+                        return new PrintStream(in, false, charset());
+                    }).or(() -> {
                         return Optional.ofNullable(dumpStream);
                     }).orElseGet(CommandOutputControl::nullPrintStream);
                 } else {
@@ -1532,23 +1537,30 @@ public final class CommandOutputControl {
                 return new CachingPrintStream(ps, buf);
             }
 
+            private Charset charset() {
+                return Optional.ofNullable(charset).or(() -> {
+                    return Optional.ofNullable(dumpStream).map(PrintStream::charset);
+                }).orElseThrow();
+            }
+
             private boolean save;
             private boolean discard;
             private PrintStream dumpStream;
             private ByteArrayOutputStream externalBuffer;
+            private Charset charset;
         }
     }
 
     private final class CachingStreamsConfig {
 
         CachingStreamsConfig() {
-            out = outputStreamsControl.stdout().buildCachingPrintStream(dumpStdout()).create();
+            out = outputStreamsControl.stdout().buildCachingPrintStream(dumpStdout(), charset()).create();
             if (isRedirectStderr()) {
-                var builder = outputStreamsControl.stderr().buildCachingPrintStream(dumpStdout());
+                var builder = outputStreamsControl.stderr().buildCachingPrintStream(dumpStdout(), charset());
                 out.buf().ifPresent(builder::buffer);
                 err = builder.create();
             } else {
-                err = outputStreamsControl.stderr().buildCachingPrintStream(dumpStderr()).create();
+                err = outputStreamsControl.stderr().buildCachingPrintStream(dumpStderr(), charset()).create();
             }
         }
 
@@ -1687,9 +1699,10 @@ public final class CommandOutputControl {
             }
         }
 
-        CachingPrintStream.Builder buildCachingPrintStream(PrintStream dumpStream) {
+        CachingPrintStream.Builder buildCachingPrintStream(PrintStream dumpStream, Charset charset) {
             Objects.requireNonNull(dumpStream);
-            final var builder = CachingPrintStream.build().save(save()).discard(discard());
+            Objects.requireNonNull(charset);
+            final var builder = CachingPrintStream.build().save(save()).discard(discard()).charset(charset);
             if (dump()) {
                 builder.dumpStream(dumpStream);
             }
@@ -1837,7 +1850,7 @@ public final class CommandOutputControl {
     private final OutputStreamsControl outputStreamsControl;
     private PrintStream dumpStdout;
     private PrintStream dumpStderr;
-    private Charset processOutputCharset;
+    private Charset charset;
     private Consumer<Process> processNotifier;
 
     // Executor to run subprocess output stream gobblers.

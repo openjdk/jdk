@@ -551,7 +551,7 @@ public class CommandOutputControlTest {
 
             var byteResult = coc.binaryOutput(true).createExecutable(command).execute();
 
-            var actual = byteResult.toCharacterResult(coc.processOutputCharset(), keepByteContent);
+            var actual = byteResult.toCharacterResult(coc.charset(), keepByteContent);
 
             CommandOutputControl.Result expectedByteContent;
             if (keepByteContent) {
