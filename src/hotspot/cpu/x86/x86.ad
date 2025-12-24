@@ -9741,7 +9741,7 @@ instruct cmovL_regUCFE_ndd(rRegL dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegL src
 %}
 
 instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
-  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -9757,7 +9757,7 @@ instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 // Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
 // inputs of the CMove
 instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
-  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
 
   ins_cost(200); // XXX
