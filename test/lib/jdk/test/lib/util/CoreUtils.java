@@ -165,7 +165,7 @@ public class CoreUtils {
                     line = line.trim();
                     System.out.println(line);
                     if (line.startsWith("|")) {
-                        if (line.split("\s", 2)[0].endsWith("systemd-coredump")) {
+                        if (line.split("\\s+", 2)[0].endsWith("systemd-coredump")) {
                             // A systemd linux system. Try to retrieve core
                             // file. It can take a few seconds for the system to
                             // process the just produced core file so we may need to
