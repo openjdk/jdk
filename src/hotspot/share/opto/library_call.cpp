@@ -235,7 +235,52 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   }
   assert(merged_memory(), "");
 
-  switch (intrinsic_id()) {
+  vmIntrinsics::ID id = intrinsic_id();
+
+  vmIntrinsics::PolymorphicPrefix pfx = vmIntrinsics::polymorphic_prefix(id);
+  // possible decoded prefix values:
+  int prefix_size = 0;
+  vmIntrinsics::MemoryOrder     mo = vmIntrinsics::MO_NONE;
+  BasicType                     bt = T_ILLEGAL;
+  vmIntrinsics::BitsOperation   op = vmIntrinsics::OP_NONE;
+  if (pfx != vmIntrinsics::PP_NONE) {
+    // Decode some leading constant arguments...
+    const int prefix_base = callee()->is_static() ? 0 : 1;
+    int next_arg = prefix_base;
+    jint moc = -1;  // mo should be MO_PLAIN or the like; use MO_VOLATILE if not constant
+    jint btc = -1;  // bt should be T_BYTE or the like; bail if not constant
+    jint opc = -1;  // op should be OP_SWAP or the like; bail if not constant
+    switch (pfx) {
+    case vmIntrinsics::PP_MO:
+      moc = argument(next_arg++)->find_int_con(-1);
+      bt = T_OBJECT;  // getReferenceMO etc.
+      break;
+    case vmIntrinsics::PP_MO_BT:
+      moc = argument(next_arg++)->find_int_con(-1);
+      btc = argument(next_arg++)->find_int_con(-1);
+      if (!vmIntrinsics::is_valid_primitive_type(btc))  return false;
+      bt = (BasicType)btc;
+      break;
+    case vmIntrinsics::PP_MO_BT_OP:
+      moc = argument(next_arg++)->find_int_con(-1);
+      btc = argument(next_arg++)->find_int_con(-1);
+      opc = argument(next_arg++)->find_int_con(-1);
+      if (!vmIntrinsics::is_valid_primitive_type(btc))  return false;
+      if (!vmIntrinsics::is_valid_primitive_bits_op(opc))  return false;
+      bt = (BasicType)btc;
+      op = (vmIntrinsics::BitsOperation)opc;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+    if (!vmIntrinsics::is_valid_memory_order(moc & ~vmIntrinsics::MO_EXTRA_BITS_MASK))
+      moc = vmIntrinsics::MO_VOLATILE;
+    mo = (vmIntrinsics::MemoryOrder)moc;
+    prefix_size = next_arg - prefix_base;
+  }
+  // done examining prefix; components are present for intrinsics that need them
+
+  switch (id) {
   case vmIntrinsics::_hashCode:                 return inline_native_hashcode(intrinsic()->is_virtual(), !is_static);
   case vmIntrinsics::_identityHashCode:         return inline_native_hashcode(/*!virtual*/ false,         is_static);
   case vmIntrinsics::_getClass:                 return inline_native_getClass();
@@ -319,49 +364,19 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_inflateStringC:
   case vmIntrinsics::_inflateStringB:           return inline_string_copy(!is_compress);
 
-  //FIXME
-  case vmIntrinsics::_getReference:             return inline_unsafe_access(!is_store, T_OBJECT,   Relaxed, false);
-  case vmIntrinsics::_getBoolean:               return inline_unsafe_access(!is_store, T_BOOLEAN,  Relaxed, false);
-  case vmIntrinsics::_getByte:                  return inline_unsafe_access(!is_store, T_BYTE,     Relaxed, false);
-  case vmIntrinsics::_getShort:                 return inline_unsafe_access(!is_store, T_SHORT,    Relaxed, false);
-  case vmIntrinsics::_getChar:                  return inline_unsafe_access(!is_store, T_CHAR,     Relaxed, false);
-  case vmIntrinsics::_getInt:                   return inline_unsafe_access(!is_store, T_INT,      Relaxed, false);
-  case vmIntrinsics::_getLong:                  return inline_unsafe_access(!is_store, T_LONG,     Relaxed, false);
-  case vmIntrinsics::_getFloat:                 return inline_unsafe_access(!is_store, T_FLOAT,    Relaxed, false);
-  case vmIntrinsics::_getDouble:                return inline_unsafe_access(!is_store, T_DOUBLE,   Relaxed, false);
+  case vmIntrinsics::_getReferenceMO:           return inline_unsafe_access(!is_store, mo, bt, prefix_size);
+  case vmIntrinsics::_getPrimitiveBitsMO:       return inline_unsafe_access(!is_store, mo, bt, prefix_size);
+  case vmIntrinsics::_putReferenceMO:           return inline_unsafe_access( is_store, mo, bt, prefix_size);
+  case vmIntrinsics::_putPrimitiveBitsMO:       return inline_unsafe_access( is_store, mo, bt, prefix_size);
 
-  case vmIntrinsics::_putReference:             return inline_unsafe_access( is_store, T_OBJECT,   Relaxed, false);
-  case vmIntrinsics::_putBoolean:               return inline_unsafe_access( is_store, T_BOOLEAN,  Relaxed, false);
-  case vmIntrinsics::_putByte:                  return inline_unsafe_access( is_store, T_BYTE,     Relaxed, false);
-  case vmIntrinsics::_putShort:                 return inline_unsafe_access( is_store, T_SHORT,    Relaxed, false);
-  case vmIntrinsics::_putChar:                  return inline_unsafe_access( is_store, T_CHAR,     Relaxed, false);
-  case vmIntrinsics::_putInt:                   return inline_unsafe_access( is_store, T_INT,      Relaxed, false);
-  case vmIntrinsics::_putLong:                  return inline_unsafe_access( is_store, T_LONG,     Relaxed, false);
-  case vmIntrinsics::_putFloat:                 return inline_unsafe_access( is_store, T_FLOAT,    Relaxed, false);
-  case vmIntrinsics::_putDouble:                return inline_unsafe_access( is_store, T_DOUBLE,   Relaxed, false);
+  case vmIntrinsics::_compareAndSetReferenceMO:         return inline_unsafe_load_store(LS_cmp_swap,      mo, bt, op, prefix_size);
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:     return inline_unsafe_load_store(LS_cmp_swap,      mo, bt, op, prefix_size);
 
-  //FIXME case vmIntrinsics::_getReferenceVolatile:     return inline_unsafe_access(!is_store, T_OBJECT,   Volatile, false);
-  //FIXME case vmIntrinsics::_getShortUnaligned:        return inline_unsafe_access(!is_store, T_SHORT,    Relaxed, true);
-  //FIXME case vmIntrinsics::_getReferenceAcquire:      return inline_unsafe_access(!is_store, T_OBJECT,   Acquire, false);
-  //FIXME case vmIntrinsics::_putReferenceRelease:      return inline_unsafe_access( is_store, T_OBJECT,   Release, false);
-  //FIXME case vmIntrinsics::_getReferenceOpaque:       return inline_unsafe_access(!is_store, T_OBJECT,   Opaque, false);
-  //FIXME case vmIntrinsics::_putReferenceOpaque:       return inline_unsafe_access( is_store, T_OBJECT,   Opaque, false);
+  case vmIntrinsics::_compareAndExchangeReferenceMO:    return inline_unsafe_load_store(LS_cmp_exchange,  mo, bt, op, prefix_size);
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:return inline_unsafe_load_store(LS_cmp_exchange,  mo, bt, op, prefix_size);
 
-  case vmIntrinsics::_compareAndSetReference:   return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap,      Volatile);
-  case vmIntrinsics::_compareAndSetByte:        return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap,      Volatile);
-  case vmIntrinsics::_compareAndSetShort:       return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap,      Volatile);
-  case vmIntrinsics::_compareAndSetInt:         return inline_unsafe_load_store(T_INT,    LS_cmp_swap,      Volatile);
-  case vmIntrinsics::_compareAndSetLong:        return inline_unsafe_load_store(T_LONG,   LS_cmp_swap,      Volatile);
-
-  //FIXME case vmIntrinsics::_weakCompareAndSetReference:          return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Volatile);
-
-  //FIXME case vmIntrinsics::_compareAndExchangeReferenceMO:       return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
-  //FIXME case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:   return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Volatile);//FIXME
-
-  //FIXME case vmIntrinsics::_getAndAddByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_add,       Volatile);
-  //FIXME case vmIntrinsics::_getAndOperatePrimitiveBitsMO:     return inline_unsafe_load_store(T_SHORT,  LS_get_add,       Volatile);//FIXME
-
-  //FIXME case vmIntrinsics::_getAndSetByte:                    return inline_unsafe_load_store(T_BYTE,   LS_get_set,       Volatile);
+  case vmIntrinsics::_getAndSetReferenceMO:             return inline_unsafe_load_store(LS_get_set,       mo, bt, op, prefix_size);
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:     return inline_unsafe_load_store(LS_get_set,       mo, bt, op, prefix_size);
 
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
@@ -2270,17 +2285,17 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
   return result;
 }
 
-DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(AccessKind kind) {
-  switch (kind) {
-      case Relaxed:
-        return MO_UNORDERED;
-      case Opaque:
-        return MO_RELAXED;
-      case Acquire:
+DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(vmIntrinsics::MemoryOrder mo) {
+  switch (mo) {
+      case vmIntrinsics::MO_PLAIN:
+        return MO_UNORDERED;  //meaning: ops may be reordered by both HW and JIT
+      case vmIntrinsics::MO_OPAQUE:
+        return MO_RELAXED;    //meaning: ops may be reordered by HW but not JIT
+      case vmIntrinsics::MO_ACQUIRE:
         return MO_ACQUIRE;
-      case Release:
+      case vmIntrinsics::MO_RELEASE:
         return MO_RELEASE;
-      case Volatile:
+      case vmIntrinsics::MO_VOLATILE:
         return MO_SEQ_CST;
       default:
         ShouldNotReachHere();
@@ -2329,12 +2344,20 @@ void LibraryCallKit::SavedState::discard() {
   _discarded = true;
 }
 
-bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
+bool LibraryCallKit::inline_unsafe_access(bool is_store,
+                                          vmIntrinsics::MemoryOrder mo,
+                                          BasicType type,
+                                          int prefix_size) {
   if (callee()->is_static())  return false;  // caller must have the capability!
+  const bool unaligned = (mo & vmIntrinsics::MO_UNALIGNED) != 0;
+  mo = (vmIntrinsics::MemoryOrder)(mo & vmIntrinsics::MO_MODE_MASK);
   DecoratorSet decorators = C2_UNSAFE_ACCESS;
-  guarantee(!is_store || kind != Acquire, "Acquire accesses can be produced only for loads");
-  guarantee( is_store || kind != Release, "Release accesses can be produced only for stores");
+  guarantee(!is_store || mo != vmIntrinsics::MO_ACQUIRE, "Acquire accesses can be produced only for loads");
+  guarantee( is_store || mo != vmIntrinsics::MO_RELEASE, "Release accesses can be produced only for stores");
   assert(type != T_OBJECT || !unaligned, "unaligned access not supported with object type");
+
+  BasicType utype = type == T_OBJECT ? T_OBJECT : T_LONG;
+  const bool type_is_narrow_int = type != T_OBJECT && !is_double_word_type(type);
 
   if (is_reference_type(type)) {
     decorators |= ON_UNKNOWN_OOP_REF;
@@ -2350,21 +2373,25 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     // Check the signatures.
     ciSignature* sig = callee()->signature();
 #ifdef ASSERT
+    for (int i = 0; i < prefix_size; i++)
+      assert(sig->type_at(i)->basic_type() == T_BYTE, "prefix args are bytes");
     if (!is_store) {
-      // Object getReference(Object base, int/long offset), etc.
+      // Object getReferenceMO(byte mo, Object base, int/long offset)
+      // long getPrimitiveBitsMO(byte mo, byte bt, Object base, long offset)
       BasicType rtype = sig->return_type()->basic_type();
-      assert(rtype == type, "getter must return the expected value");
-      assert(sig->count() == 2, "oop getter has 2 arguments");
-      assert(sig->type_at(0)->basic_type() == T_OBJECT, "getter base is object");
-      assert(sig->type_at(1)->basic_type() == T_LONG, "getter offset is correct");
+      assert(rtype == utype, "getter must return the expected value");
+      assert(sig->count() == prefix_size+2, "oop getter has 2 arguments");
+      assert(sig->type_at(prefix_size+0)->basic_type() == T_OBJECT, "getter base is object");
+      assert(sig->type_at(prefix_size+1)->basic_type() == T_LONG, "getter offset is correct");
     } else {
-      // void putReference(Object base, int/long offset, Object x), etc.
+      // void putReference(Object base, int/long offset, Object x)
+      // void putPrimitiveBitsMO(byte mo, byte bt, Object base, long offset, long x)
       assert(sig->return_type()->basic_type() == T_VOID, "putter must not return a value");
-      assert(sig->count() == 3, "oop putter has 3 arguments");
-      assert(sig->type_at(0)->basic_type() == T_OBJECT, "putter base is object");
-      assert(sig->type_at(1)->basic_type() == T_LONG, "putter offset is correct");
+      assert(sig->count() == prefix_size+3, "oop putter has 3 arguments");
+      assert(sig->type_at(prefix_size+0)->basic_type() == T_OBJECT, "putter base is object");
+      assert(sig->type_at(prefix_size+1)->basic_type() == T_LONG, "putter offset is correct");
       BasicType vtype = sig->type_at(sig->count()-1)->basic_type();
-      assert(vtype == type, "putter must accept the expected value");
+      assert(vtype == utype, "putter must accept the expected value");
     }
 #endif // ASSERT
  }
@@ -2378,9 +2405,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Node* heap_base_oop = top();
 
   // The base is either a Java object or a value produced by Unsafe.staticFieldBase
-  Node* base = argument(1);  // type: oop
+  Node* base = argument(prefix_size+1);  // type: oop
   // The offset is a value produced by Unsafe.staticFieldOffset or Unsafe.objectFieldOffset
-  Node* offset = argument(2);  // type: long
+  Node* offset = argument(prefix_size+2);  // type: long
   // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
   // to be plain byte offsets, which are also the same as those accepted
   // by oopDesc::field_addr.
@@ -2392,7 +2419,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Save state and restore on bailout
   SavedState old_state(this);
 
-  Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
+  Node* adr = make_unsafe_address(base, offset, type, mo == vmIntrinsics::MO_PLAIN);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
 
   if (_gvn.type(base->uncast())->isa_ptr() == TypePtr::NULL_PTR) {
@@ -2412,7 +2439,18 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     decorators |= IN_HEAP;
   }
 
-  Node* val = is_store ? argument(4) : nullptr;
+  Node* val = nullptr;
+  if (is_store) {
+    val = argument(prefix_size+4);   // passed as a 64-bit long
+    if (type_is_narrow_int) {
+      val = ConvL2I(val);
+    }
+    switch (type) {
+    case T_FLOAT:   val = _gvn.transform(new MoveI2FNode(val));  break;
+    case T_DOUBLE:  val = _gvn.transform(new MoveL2DNode(val));  break;
+    default: break;
+    }
+  }
 
   const TypePtr* adr_type = _gvn.type(adr)->isa_ptr();
   if (adr_type == TypePtr::NULL_PTR) {
@@ -2461,7 +2499,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   const Type *value_type = Type::get_const_basic_type(type);
 
   // Figure out the memory ordering.
-  decorators |= mo_decorator_for_access_kind(kind);
+  decorators |= mo_decorator_for_access_kind(mo);
 
   if (!is_store && type == T_OBJECT) {
     const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
@@ -2490,31 +2528,16 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
     if (p == nullptr) { // Could not constant fold the load
       p = access_load_at(heap_base_oop, adr, adr_type, value_type, type, decorators);
-      // Normalize the value returned by getBoolean in the following cases
-      if (type == T_BOOLEAN &&
-          (mismatched ||
-           heap_base_oop == top() ||                  // - heap_base_oop is null or
-           (can_access_non_heap && field == nullptr)) // - heap_base_oop is potentially null
-                                                      //   and the unsafe access is made to large offset
-                                                      //   (i.e., larger than the maximum offset necessary for any
-                                                      //   field access)
-            ) {
-          IdealKit ideal = IdealKit(this);
-#define __ ideal.
-          IdealVariable normalized_result(ideal);
-          __ declarations_done();
-          __ set(normalized_result, p);
-          __ if_then(p, BoolTest::ne, ideal.ConI(0));
-          __ set(normalized_result, ideal.ConI(1));
-          ideal.end_if();
-          final_sync(ideal);
-          p = __ value(normalized_result);
-#undef __
-      }
+      // Note: T_BOOLEAN normalization is handled by the Unsafe wrappers.
+      // At this point, just load a byte, word, or whatever from memory.
     }
-    if (type == T_ADDRESS) {
-      p = gvn().transform(new CastP2XNode(nullptr, p));
-      p = ConvX2UL(p);
+    switch (type) {
+    case T_FLOAT:   p = _gvn.transform(new MoveF2INode(p));  break;
+    case T_DOUBLE:  p = _gvn.transform(new MoveD2LNode(p));  break;
+    default: break;
+    }
+    if (type_is_narrow_int) {
+      p = ConvI2L(p);  // convert to utype = T_LONG
     }
     // The load node has the control of the preceding MemBarCPUOrder.  All
     // following nodes will have the control of the MemBarCPUOrder inserted at
@@ -2522,11 +2545,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     // point is fine.
     set_result(p);
   } else {
-    if (bt == T_ADDRESS) {
-      // Repackage the long as a pointer.
-      val = ConvL2X(val);
-      val = gvn().transform(new CastX2PNode(val));
-    }
     access_store_at(heap_base_oop, adr, adr_type, val, value_type, type, decorators);
   }
 
@@ -2537,54 +2555,25 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 // This method serves a couple of different customers (depending on LoadStoreKind):
 //
 // LS_cmp_swap:
-//
-//   boolean compareAndSetReference(Object o, long offset, Object expected, Object x);
-//   boolean compareAndSetInt(   Object o, long offset, int    expected, int    x);
-//   boolean compareAndSetLong(  Object o, long offset, long   expected, long   x);
-//
 // LS_cmp_swap_weak:
-//
-//   boolean weakCompareAndSetReference(       Object o, long offset, Object expected, Object x);
-//   boolean weakCompareAndSetReferencePlain(  Object o, long offset, Object expected, Object x);
-//   boolean weakCompareAndSetReferenceAcquire(Object o, long offset, Object expected, Object x);
-//   boolean weakCompareAndSetReferenceRelease(Object o, long offset, Object expected, Object x);
-//
-//   boolean weakCompareAndSetInt(          Object o, long offset, int    expected, int    x);
-//   boolean weakCompareAndSetIntPlain(     Object o, long offset, int    expected, int    x);
-//   boolean weakCompareAndSetIntAcquire(   Object o, long offset, int    expected, int    x);
-//   boolean weakCompareAndSetIntRelease(   Object o, long offset, int    expected, int    x);
-//
-//   boolean weakCompareAndSetLong(         Object o, long offset, long   expected, long   x);
-//   boolean weakCompareAndSetLongPlain(    Object o, long offset, long   expected, long   x);
-//   boolean weakCompareAndSetLongAcquire(  Object o, long offset, long   expected, long   x);
-//   boolean weakCompareAndSetLongRelease(  Object o, long offset, long   expected, long   x);
+//   boolean compareAndSetReferenceMO(    MO,    Object,long, Object e, Object x);
+//   boolean compareAndSetPrimitiveBitsMO(MO,BT, Object,long, long   e, long x);
 //
 // LS_cmp_exchange:
-//
-//   Object compareAndExchangeReferenceVolatile(Object o, long offset, Object expected, Object x);
-//   Object compareAndExchangeReferenceAcquire( Object o, long offset, Object expected, Object x);
-//   Object compareAndExchangeReferenceRelease( Object o, long offset, Object expected, Object x);
-//
-//   Object compareAndExchangeIntVolatile(   Object o, long offset, Object expected, Object x);
-//   Object compareAndExchangeIntAcquire(    Object o, long offset, Object expected, Object x);
-//   Object compareAndExchangeIntRelease(    Object o, long offset, Object expected, Object x);
-//
-//   Object compareAndExchangeLongVolatile(  Object o, long offset, Object expected, Object x);
-//   Object compareAndExchangeLongAcquire(   Object o, long offset, Object expected, Object x);
-//   Object compareAndExchangeLongRelease(   Object o, long offset, Object expected, Object x);
-//
-// LS_get_add:
-//
-//   int  getAndAddInt( Object o, long offset, int  delta)
-//   long getAndAddLong(Object o, long offset, long delta)
+//   Object compareAndExchangeReferenceMO(    MO,    Object,long, Object e, Object x);
+//   Object compareAndExchangePrimitiveBitsMO(MO,BT, Object,long, Object e, Object x);
 //
 // LS_get_set:
+//   int    getAndSetReferenceMO(      MO,    Object,long, Object newValue)
+// LS_get_set:
+// LS_get_add:
+//   int  getAndOperatePrimitiveBitsMO(MO,BT, Object,long, long newValueOrDelta)
 //
-//   int    getAndSet(Object o, long offset, int    newValue)
-//   long   getAndSet(Object o, long offset, long   newValue)
-//   Object getAndSet(Object o, long offset, Object newValue)
-//
-bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadStoreKind kind, const AccessKind access_kind) {
+bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
+                                              vmIntrinsics::MemoryOrder mo,
+                                              BasicType type,
+                                              vmIntrinsics::BitsOperation op,
+                                              int prefix_size) {
   // This basic scheme here is the same as inline_unsafe_access, but
   // differs in enough details that combining them would make the code
   // overly confusing.  (This is a true fact! I originally combined
@@ -2593,9 +2582,47 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   // the correspondences clearer. - dl
 
   if (callee()->is_static())  return false;  // caller must have the capability!
+  const bool weak_cas = (mo & vmIntrinsics::MO_WEAK_CAS) != 0;
+  mo = (vmIntrinsics::MemoryOrder)(mo & vmIntrinsics::MO_MODE_MASK);
+
+  assert(type == T_OBJECT || is_integral_type(type), "Unsafe.java wrapper responsibility");
+  BasicType utype = type == T_OBJECT ? T_OBJECT : T_LONG;
+
+  // FIXME: we need to ask the backend if 16-bit and 8-bit types are supported.
+  // Now that the intrinsics are simplified, we need to directly ask about
+  // match rules, or (better yet) build matcher queries that can express
+  // not only an intrinsic (or match rule) but some poly-prefix parameters.
+  if (is_subword_type(type))  return false;  //FIXME
+
+  bool returns_boolean = false;
+  switch (kind) {
+  case LS_cmp_swap:
+    returns_boolean = true;
+    if (weak_cas)
+      kind = LS_cmp_swap_weak;  // user supplied optional MO_WEAK_CAS bit
+    break;
+  case LS_get_set:
+    switch (op) {
+    case vmIntrinsics::OP_SWAP:
+    case vmIntrinsics::OP_NONE:
+      break;                // user requested op'=' or (for ref) no op
+    case vmIntrinsics::OP_ADD:
+      kind = LS_get_add;  // user requested op'+'
+      break;
+    default:
+      // FIXME: intrinsic expansion NYI for bitswise and/or/xor
+      // The matcher should support queries like "can I do a GAX
+      // where X is bitwise-or and T is T_BYTE?".  The old system
+      // of intrinsic codes was never expressive enough to ask
+      // such questions.
+      return false;
+    }
+  default:
+    break;
+  }
 
   DecoratorSet decorators = C2_UNSAFE_ACCESS;
-  decorators |= mo_decorator_for_access_kind(access_kind);
+  decorators |= mo_decorator_for_access_kind(mo);
 
 #ifndef PRODUCT
   BasicType rtype;
@@ -2603,18 +2630,19 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     ResourceMark rm;
     // Check the signatures.
     ciSignature* sig = callee()->signature();
+    for (int i = 0; i < prefix_size; i++)
+      assert(sig->type_at(i)->basic_type() == T_BYTE, "prefix args are bytes");
     rtype = sig->return_type()->basic_type();
     switch(kind) {
       case LS_get_add:
       case LS_get_set: {
       // Check the signatures.
 #ifdef ASSERT
-      assert(rtype == type, "get and set must return the expected type");
-      assert(sig->count() == 3, "get and set has 3 arguments");
-      assert(sig->type_at(0)->basic_type() == T_OBJECT, "get and set base is object");
-      assert(sig->type_at(1)->basic_type() == T_LONG, "get and set offset is long");
-      assert(sig->type_at(2)->basic_type() == type, "get and set must take expected type as new value/delta");
-      assert(access_kind == Volatile, "mo is not passed to intrinsic nodes in current implementation");
+      assert(rtype == utype, "get and set must return the expected type");
+      assert(sig->count() == prefix_size+3, "get and set has 3 arguments");
+      assert(sig->type_at(prefix_size+0)->basic_type() == T_OBJECT, "get and set base is object");
+      assert(sig->type_at(prefix_size+1)->basic_type() == T_LONG, "get and set offset is long");
+      assert(sig->type_at(prefix_size+2)->basic_type() == utype, "get and set must take expected type as new value/delta");
 #endif // ASSERT
         break;
       }
@@ -2623,19 +2651,23 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
       // Check the signatures.
 #ifdef ASSERT
       assert(rtype == T_BOOLEAN, "CAS must return boolean");
-      assert(sig->count() == 4, "CAS has 4 arguments");
-      assert(sig->type_at(0)->basic_type() == T_OBJECT, "CAS base is object");
-      assert(sig->type_at(1)->basic_type() == T_LONG, "CAS offset is long");
+      assert(sig->count() == prefix_size+4, "CAS has 4 arguments");
+      assert(sig->type_at(prefix_size+0)->basic_type() == T_OBJECT, "CAS base is object");
+      assert(sig->type_at(prefix_size+1)->basic_type() == T_LONG, "CAS offset is long");
+      assert(sig->type_at(prefix_size+2)->basic_type() == utype, "CAS e value is utype");
+      assert(sig->type_at(prefix_size+3)->basic_type() == utype, "CAS x value is utype");
 #endif // ASSERT
         break;
       }
       case LS_cmp_exchange: {
       // Check the signatures.
 #ifdef ASSERT
-      assert(rtype == type, "CAS must return the expected type");
-      assert(sig->count() == 4, "CAS has 4 arguments");
-      assert(sig->type_at(0)->basic_type() == T_OBJECT, "CAS base is object");
-      assert(sig->type_at(1)->basic_type() == T_LONG, "CAS offset is long");
+      assert(rtype == utype, "CAS must return the expected type");
+      assert(sig->count() == prefix_size+4, "CAS has 4 arguments");
+      assert(sig->type_at(prefix_size+0)->basic_type() == T_OBJECT, "CAS base is object");
+      assert(sig->type_at(prefix_size+1)->basic_type() == T_LONG, "CAS offset is long");
+      assert(sig->type_at(prefix_size+2)->basic_type() == utype, "CAS e value is utype");
+      assert(sig->type_at(prefix_size+3)->basic_type() == utype, "CAS x value is utype");
 #endif // ASSERT
         break;
       }
@@ -2648,7 +2680,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   C->set_has_unsafe_access(true);  // Mark eventual nmethod as "unsafe".
 
   // Get arguments:
-  Node* receiver = nullptr;
+  Node* receiver = argument(0);  // type: oop
   Node* base     = nullptr;
   Node* offset   = nullptr;
   Node* oldval   = nullptr;
@@ -2657,21 +2689,19 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     case LS_cmp_swap:
     case LS_cmp_swap_weak:
     case LS_cmp_exchange: {
-      const bool two_slot_type = type2size[type] == 2;
-      receiver = argument(0);  // type: oop
-      base     = argument(1);  // type: oop
-      offset   = argument(2);  // type: long
-      oldval   = argument(4);  // type: oop, int, or long
-      newval   = argument(two_slot_type ? 6 : 5);  // type: oop, int, or long
+      const bool two_slot_utype = type2size[utype] == 2;
+      base     = argument(prefix_size+1);  // type: oop
+      offset   = argument(prefix_size+2);  // type: long
+      oldval   = argument(prefix_size+4);  // type: oop or long
+      newval   = argument(prefix_size+(two_slot_utype ? 6 : 5));  // type: oop or long
       break;
     }
     case LS_get_add:
     case LS_get_set: {
-      receiver = argument(0);  // type: oop
-      base     = argument(1);  // type: oop
-      offset   = argument(2);  // type: long
+      base     = argument(prefix_size+1);  // type: oop
+      offset   = argument(prefix_size+2);  // type: long
       oldval   = nullptr;
-      newval   = argument(4);  // type: oop, int, or long
+      newval   = argument(prefix_size+4);  // type: ooop or long
       break;
     }
     default:
@@ -2687,7 +2717,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   offset = ConvL2X(offset);
   // Save state and restore on bailout
   SavedState old_state(this);
-  Node* adr = make_unsafe_address(base, offset,type, false);
+  Node* adr = make_unsafe_address(base, offset, type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);
@@ -2732,6 +2762,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
 
   int alias_idx = C->get_alias_index(adr_type);
 
+  bool type_is_narrow_int = false;
   if (is_reference_type(type)) {
     decorators |= IN_HEAP | ON_UNKNOWN_OOP_REF;
 
@@ -2745,6 +2776,11 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
       // Refine the value to a null constant, when it is known to be null
       oldval = _gvn.makecon(TypePtr::NULL_PTR);
     }
+  } else if (!is_double_word_type(type)) {
+    type_is_narrow_int = true;   // utype is T_LONG, type is T_INT, etc.
+    newval = ConvL2I(newval);
+    if (oldval != nullptr)
+      oldval = ConvL2I(oldval);
   }
 
   Node* result = nullptr;
@@ -2773,6 +2809,13 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     }
     default:
       ShouldNotReachHere();
+  }
+
+  if (!returns_boolean && type_is_narrow_int) {
+    // Intrinsic is one of _compareAndExchangePrimitiveBitsMO (etc.)
+    // and type is one of T_INT, T_SHORT, T_BYTE.
+    assert(type2size[result->bottom_type()->basic_type()] == 1, "result type should match");
+    result = ConvI2L(result);  // convert to utype = T_LONG
   }
 
   assert(type2size[result->bottom_type()->basic_type()] == type2size[rtype], "result type should match");

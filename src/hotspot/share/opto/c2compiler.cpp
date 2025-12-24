@@ -374,50 +374,11 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     if (!Matcher::match_rule_supported(Op_CompareAndSwapP)) return false;
 #endif
     break;
-  case vmIntrinsics::_weakCompareAndSetReference:  //FIXME
-#ifdef _LP64
-    if ( UseCompressedOops && !Matcher::match_rule_supported(Op_WeakCompareAndSwapN)) return false;
-    if (!UseCompressedOops && !Matcher::match_rule_supported(Op_WeakCompareAndSwapP)) return false;
-#else
-    if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapP)) return false;
-#endif
+  /* CompareAndSet, Int/Long: */
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+    if (!(Matcher::match_rule_supported(Op_CompareAndSwapL) ||
+          Matcher::match_rule_supported(Op_CompareAndSwapI))) return false;
     break;
-  //case vmIntrinsics::_compareAndSetPrimitiveBitsMO: //FIXME
-  /* CompareAndSet, Long: */
-  case vmIntrinsics::_compareAndSetLong:  //FIXME
-    if (!Matcher::match_rule_supported(Op_CompareAndSwapL)) return false;
-    break;
-  case vmIntrinsics::_weakCompareAndSetLong:  //FIXME
-    if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapL)) return false;
-    break;
-
-  /* CompareAndSet, Int: */
-  case vmIntrinsics::_compareAndSetInt:  //FIXME
-    if (!Matcher::match_rule_supported(Op_CompareAndSwapI)) return false;
-    break;
-  case vmIntrinsics::_weakCompareAndSetInt:  //FIXME
-    if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapI)) return false;
-    break;
-
-  /* CompareAndSet, Byte: */
-  case vmIntrinsics::_compareAndSetByte:  //FIXME
-    if (!Matcher::match_rule_supported(Op_CompareAndSwapB)) return false;
-    break;
-    /*FIXME
-  case vmIntrinsics::_weakCompareAndSetByte:  //FIXME
-    if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapB)) return false;
-    break;
-    */
-
-  /* CompareAndSet, Short: */
-  case vmIntrinsics::_compareAndSetShort:  //FIXME
-    if (!Matcher::match_rule_supported(Op_CompareAndSwapS)) return false;
-    break;
-    /*FIXME
-  case vmIntrinsics::_weakCompareAndSetShort:  //FIXME
-    if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapS)) return false;
-    break;
-    */
 
   /* CompareAndExchange, Object: */
   case vmIntrinsics::_compareAndExchangeReferenceMO:
@@ -429,52 +390,18 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #endif
     break;
 
-  //case vmIntrinsics::_compareAndExchangePrimitiveBitsMO: //FIXME
-  /* CompareAndExchange, Long: */
-  case vmIntrinsics::_compareAndExchangeLong:  //FIXME
-    if (!Matcher::match_rule_supported(Op_CompareAndExchangeL)) return false;
+  /* CompareAndExchange, Int/Long: */
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+    if (!(Matcher::match_rule_supported(Op_CompareAndExchangeL) ||
+          Matcher::match_rule_supported(Op_CompareAndExchangeI))) return false;
     break;
 
-  /* CompareAndExchange, Int: */
-  case vmIntrinsics::_compareAndExchangeInt:  //FIXME
-    if (!Matcher::match_rule_supported(Op_CompareAndExchangeI)) return false;
-    break;
-
-  /* CompareAndExchange, Byte: */
-  case vmIntrinsics::_compareAndExchangeByte:  //FIXME
-    if (!Matcher::match_rule_supported(Op_CompareAndExchangeB)) return false;
-    break;
-
-  /* CompareAndExchange, Short: */
-  case vmIntrinsics::_compareAndExchangeShort:  //FIXME
-    if (!Matcher::match_rule_supported(Op_CompareAndExchangeS)) return false;
-    break;
-
-  //case vmIntrinsics::_getAndOperatePrimitiveBitsMO: //FIXME
-  case vmIntrinsics::_getAndAddByte:   //FIXME
-    if (!Matcher::match_rule_supported(Op_GetAndAddB)) return false;
-    break;
-  case vmIntrinsics::_getAndAddShort:   //FIXME
-    if (!Matcher::match_rule_supported(Op_GetAndAddS)) return false;
-    break;
-  case vmIntrinsics::_getAndAddInt:   //FIXME
-    if (!Matcher::match_rule_supported(Op_GetAndAddI)) return false;
-    break;
-  case vmIntrinsics::_getAndAddLong:   //FIXME
-    if (!Matcher::match_rule_supported(Op_GetAndAddL)) return false;
-    break;
-
-  case vmIntrinsics::_getAndSetByte:   //FIXME
-    if (!Matcher::match_rule_supported(Op_GetAndSetB)) return false;
-    break;
-  case vmIntrinsics::_getAndSetShort:   //FIXME
-    if (!Matcher::match_rule_supported(Op_GetAndSetS)) return false;
-    break;
-  case vmIntrinsics::_getAndSetInt:   //FIXME
-    if (!Matcher::match_rule_supported(Op_GetAndSetI)) return false;
-    break;
-  case vmIntrinsics::_getAndSetLong:   //FIXME
-    if (!Matcher::match_rule_supported(Op_GetAndSetL)) return false;
+  /* GetAndSet/GetAndAdd, Int/Long: */
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    if (!(Matcher::match_rule_supported(Op_GetAndAddI) ||
+          Matcher::match_rule_supported(Op_GetAndAddL) ||
+          Matcher::match_rule_supported(Op_GetAndSetI) ||
+          Matcher::match_rule_supported(Op_GetAndSetL))) return false;
     break;
   case vmIntrinsics::_getAndSetReferenceMO:
 #ifdef _LP64

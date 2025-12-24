@@ -442,7 +442,7 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_PutPrimitiveBitsMO(JNIEnv *env, jobject unsafe,
       ma.put_unaligned(x);
       break;
     }
-    //result else fall through
+    // else fall through
 
   case vmIntrinsics::MO_PLAIN:
     // Note:  This says, "plain" but there is in fact a volatile store inside.

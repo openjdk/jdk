@@ -1562,13 +1562,18 @@ public:
     fn(MO_UNALIGNED, 32)                          \
     /*end*/
 
-  enum MemoryOrder {
+  enum MemoryOrder : int {
     MO_NONE = 0,
     #define VMI_MEMORY_ORDER_DEFINE(mo, code)     mo = code,
     VMI_MEMORY_ORDERS_DO(VMI_MEMORY_ORDER_DEFINE)
     #undef VMI_MEMORY_ORDER_DEFINE
+    // There are important derived combinations,
+    // such as UNALIGNED+PLAIN, or WEAK_CASE+VOLATILE.
+    // These are not separately listed, but can appar
+    // as MO arguments to unsafe access primitives.
   };
   static constexpr int MO_MODE_MASK = (MO_PLAIN|MO_VOLATILE|MO_ACQUIRE|MO_RELEASE);
+  static constexpr int MO_EXTRA_BITS_MASK = (MO_WEAK_CAS|MO_UNALIGNED);
 
   // These are defined as byte constants in the Unsafe class.
   // They are used only by Unsafe.getAndOperatePrimitiveBitsMO.

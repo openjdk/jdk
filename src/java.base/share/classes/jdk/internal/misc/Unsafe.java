@@ -3535,7 +3535,7 @@ public final class Unsafe {
      */
     @ForceInline
     public long getLongUnaligned(Object o, long offset) {
-        if (UNALIGNED_ACCESS) {
+        if (UNALIGNED_ACCESS || (offset & 7) == 0) {
             return getPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_LONG, o, offset);
         } else {
             return getLongUnalignedSlow(o, offset);
@@ -3582,7 +3582,7 @@ public final class Unsafe {
     /** @see #getLongUnaligned(Object, long) */
     @ForceInline
     public int getIntUnaligned(Object o, long offset) {
-        if (UNALIGNED_ACCESS) {
+        if (UNALIGNED_ACCESS || (offset & 3) == 0) {
             return (int) getPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_INT, o, offset);
         } else {
             return getIntUnalignedSlow(o, offset);
@@ -3633,7 +3633,11 @@ public final class Unsafe {
     /** @see #getLongUnaligned(Object, long) */
     @ForceInline
     public char getCharUnaligned(Object o, long offset) {
-        return (char) getShortUnaligned(o, offset);
+        if (UNALIGNED_ACCESS || (offset & 1) == 0) {
+            return (char) getPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_CHAR, o, offset);
+        } else {
+            return (char) getShortUnalignedSlow(o, offset);
+        }
     }
 
     /** @see #getLongUnaligned(Object, long, boolean) */
@@ -3672,7 +3676,7 @@ public final class Unsafe {
      */
     @ForceInline
     public void putLongUnaligned(Object o, long offset, long x) {
-        if (UNALIGNED_ACCESS) {
+        if (UNALIGNED_ACCESS || (offset & 7) == 0) {
             putPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_LONG, o, offset, x);
         } else {
             putLongUnalignedSlow(o, offset, x);
@@ -3723,7 +3727,7 @@ public final class Unsafe {
     /** @see #putLongUnaligned(Object, long, long) */
     @ForceInline
     public void putIntUnaligned(Object o, long offset, int x) {
-        if (UNALIGNED_ACCESS) {
+        if (UNALIGNED_ACCESS || (offset & 3) == 0) {
             putPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_INT, o, offset, x);
         } else {
             putIntUnalignedSlow(o, offset, x);
@@ -3753,7 +3757,7 @@ public final class Unsafe {
     /** @see #putLongUnaligned(Object, long, long) */
     @ForceInline
     public void putShortUnaligned(Object o, long offset, short x) {
-        if (UNALIGNED_ACCESS) {
+        if (UNALIGNED_ACCESS || (offset & 1) == 0) {
             putPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_SHORT, o, offset, x);
         } else {
             putShortUnalignedSlow(o, offset, x);
@@ -3777,7 +3781,11 @@ public final class Unsafe {
     /** @see #putLongUnaligned(Object, long, long) */
     @ForceInline
     public void putCharUnaligned(Object o, long offset, char x) {
-        putShortUnaligned(o, offset, (short)x);
+        if (UNALIGNED_ACCESS || (offset & 1) == 0) {
+            putPrimitiveBitsMONative(MO_UNALIGNED_PLAIN, BT_CHAR, o, offset, x);
+        } else {
+            putShortUnalignedSlow(o, offset, (short)x);
+        }
     }
     /** @see #putLongUnaligned(Object, long, long, boolean) */
     @ForceInline
