@@ -214,6 +214,10 @@ public:
     }                                                                   \
   } /*end*/
 
+static size_t bt_size(BasicType bt) {
+  return 1 << (bt & UNSAFE_PRIMITIVE_SIZE_MASK);
+}
+
 template<typename val_t>
 static julong maybe_pad_with_garbage(val_t v) {
   julong bits = v;
@@ -249,6 +253,24 @@ class MemoryAccess : StackObj {
   volatile T* addr() {
     void* addr = index_oop_from_field_offset_long(_obj, _offset);
     return static_cast<volatile T*>(addr);
+  }
+
+  static julong get_via_bytes(size_t size, address addr) {
+    switch (size) {
+    case 1:  return *(jubyte*) addr;
+    case 2:  return Bytes::get_native_u2(addr);
+    case 4:  return Bytes::get_native_u4(addr);
+    default: return Bytes::get_native_u8(addr);
+    }
+  }
+
+  static void put_via_bytes(size_t size, address addr, julong x) {
+    switch (size) {
+    case 1:  *(jubyte*) addr =          (jubyte) x;
+    case 2:  Bytes::put_native_u2(addr, (jushort)x);
+    case 4:  Bytes::put_native_u4(addr, (juint)  x);
+    default: Bytes::put_native_u8(addr, x);
+    }
   }
 
   // Note: We do not normalize booleans at this level.  That is done
@@ -290,6 +312,22 @@ public:
       });
   }
 
+  julong get_unaligned() {
+    GuardUnsafeAccess guard(_thread);
+    TYPE_SIZE_SWITCH(_basic_type, val_t, {
+        address va = (address)addr<val_t>();
+        val_t v = get_via_bytes(sizeof(val_t), va);
+        return maybe_pad_with_garbage(v);
+      });
+  }
+
+  void put_unaligned(julong x) {
+    GuardUnsafeAccess guard(_thread);
+    TYPE_SIZE_SWITCH(_basic_type, val_t, {
+        address va = (address)addr<val_t>();
+        put_via_bytes(sizeof(val_t), va, x);
+      });
+  }
 
   julong get_volatile() {
     GuardUnsafeAccess guard(_thread);
@@ -317,7 +355,7 @@ UNSAFE_ENTRY(jobject, Unsafe_GetReferenceMO(JNIEnv *env, jobject unsafe,
   assert_field_offset_sane(p, offset);
   assert(vmIntrinsics::is_valid_memory_order(memory_order,
                                              vmIntrinsics::MO_RELEASE),
-         "bad MO bits from Java: 0x%02x", memory_order);
+         "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   oop v;
   switch (memory_order) {
     case vmIntrinsics::MO_PLAIN:
@@ -340,8 +378,8 @@ UNSAFE_ENTRY(void, Unsafe_PutReferenceMO(JNIEnv *env, jobject unsafe,
   assert_field_offset_sane(p, offset);
   assert(vmIntrinsics::is_valid_memory_order(memory_order,
                                              vmIntrinsics::MO_ACQUIRE),
-         "bad MO bits from Java: 0x%02x", memory_order);
-  switch (memory_order & vmIntrinsics::MO_PLAIN) {
+         "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
+  switch (memory_order) {
     case vmIntrinsics::MO_PLAIN:
       HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(p, offset, x);
       break;
@@ -362,17 +400,21 @@ UNSAFE_ENTRY(jobject, Unsafe_GetUncompressedObject(JNIEnv *env, jobject unsafe,
 UNSAFE_ENTRY_SCOPED(jlong, Unsafe_GetPrimitiveBitsMO(JNIEnv *env, jobject unsafe,
                                                      jbyte memory_order, jbyte basic_type,
                                                      jobject obj, jlong offset)) {
-  if ((memory_order & vmIntrinsics::MO_UNALIGNED) != 0 && UseUnalignedAccesses) {
-    memory_order -= vmIntrinsics::MO_UNALIGNED;  // this part of the request is a nop
-  }
-  assert(vmIntrinsics::is_valid_memory_order(memory_order,
+  assert(vmIntrinsics::is_valid_memory_order(memory_order & ~vmIntrinsics::MO_UNALIGNED,
                                              vmIntrinsics::MO_RELEASE),
-         "bad MO bits from Java: 0x%02x", memory_order);
+         "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   assert(vmIntrinsics::is_valid_primitive_type(basic_type),
-         "bad BT bits from Java: 0x%02x", basic_type);
+         "bad BT bits from Java: 0x%02x", basic_type & 0xFF);
   julong result;
   auto ma = MemoryAccess(thread, obj, offset, basic_type);
   switch (memory_order) {
+  case vmIntrinsics::MO_PLAIN | vmIntrinsics::MO_UNALIGNED:
+    if (!UseUnalignedAccesses && (offset & (bt_size((BasicType)basic_type) - 1)) != 0) {
+      result = ma.get_unaligned();
+      break;
+    }
+    // else fall through
+
   case vmIntrinsics::MO_PLAIN:
     // Note:  This says, "plain" but there is in fact a volatile load inside.
     result = ma.get();
@@ -388,14 +430,20 @@ UNSAFE_ENTRY_SCOPED(jlong, Unsafe_GetPrimitiveBitsMO(JNIEnv *env, jobject unsafe
 UNSAFE_ENTRY_SCOPED(void, Unsafe_PutPrimitiveBitsMO(JNIEnv *env, jobject unsafe,
                                                     jbyte memory_order, jbyte basic_type,
                                                     jobject obj, jlong offset, jlong x)) {
-  if ((memory_order & vmIntrinsics::MO_UNALIGNED) != 0 && UseUnalignedAccesses) {
-    memory_order -= vmIntrinsics::MO_UNALIGNED;  // this part of the request is a nop
-  }
-  assert(vmIntrinsics::is_valid_memory_order(memory_order,
+  assert(vmIntrinsics::is_valid_memory_order(memory_order & ~vmIntrinsics::MO_UNALIGNED,
                                              vmIntrinsics::MO_ACQUIRE),
-         "bad MO bits from Java: 0x%02x", memory_order);
+         "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
+  assert(vmIntrinsics::is_valid_primitive_type(basic_type),
+         "bad BT bits from Java: 0x%02x", basic_type & 0xFF);
   auto ma = MemoryAccess(thread, obj, offset, basic_type);
   switch (memory_order) {
+  case vmIntrinsics::MO_PLAIN | vmIntrinsics::MO_UNALIGNED:
+    if (!UseUnalignedAccesses && (offset & (bt_size((BasicType)basic_type) - 1)) != 0) {
+      ma.put_unaligned(x);
+      break;
+    }
+    //result else fall through
+
   case vmIntrinsics::MO_PLAIN:
     // Note:  This says, "plain" but there is in fact a volatile store inside.
     ma.put(x);
@@ -792,7 +840,7 @@ UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeReferenceMO(JNIEnv *env, jobject 
                                                            jbyte memory_order,
                                                            jobject obj, jlong offset, jobject e_h, jobject x_h)) {
   assert(vmIntrinsics::is_valid_memory_order(memory_order),
-         "bad MO bits from Java: 0x%02x", memory_order);
+         "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   oop x = JNIHandles::resolve(x_h);
   oop e = JNIHandles::resolve(e_h);
   oop p = JNIHandles::resolve(obj);
@@ -807,9 +855,9 @@ UNSAFE_ENTRY_SCOPED(jlong, Unsafe_CompareAndExchangePrimitiveBitsMO(JNIEnv *env,
                                                                     jobject obj, jlong offset,
                                                                     jlong e, jlong x)) {
   assert(vmIntrinsics::is_valid_memory_order(memory_order),
-         "bad MO bits from Java: 0x%02x", memory_order);
+         "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   assert(vmIntrinsics::is_valid_primitive_type(basic_type),
-         "bad BT bits from Java: 0x%02x", basic_type);
+         "bad BT bits from Java: 0x%02x", basic_type & 0xFF);
   oop p = JNIHandles::resolve(obj);
   auto addr = index_oop_from_field_offset_long(p, offset);
   // just use MO_VOLATILE for all MO inputs
@@ -825,7 +873,7 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReferenceMO(JNIEnv *env, jobject unsa
                                                        jobject obj, jlong offset, jobject e_h, jobject x_h)) {
   // ignore MO_WEAK_CAS here; the JIT might use it
   assert(vmIntrinsics::is_valid_memory_order(memory_order & ~vmIntrinsics::MO_WEAK_CAS),
-         "bad MO bits from Java: 0x%02x", memory_order);
+         "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   oop x = JNIHandles::resolve(x_h);
   oop e = JNIHandles::resolve(e_h);
   oop p = JNIHandles::resolve(obj);
@@ -840,9 +888,9 @@ UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetPrimitiveBitsMO(JNIEnv *env, j
                                                                   jobject obj, jlong offset, jlong e, jlong x)) {
   // ignore MO_WEAK_CAS here; the JIT might use it
   assert(vmIntrinsics::is_valid_memory_order(memory_order & ~vmIntrinsics::MO_WEAK_CAS),
-         "bad MO bits from Java: 0x%02x", memory_order);
+         "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   assert(vmIntrinsics::is_valid_primitive_type(basic_type),
-         "bad BT bits from Java: 0x%02x", basic_type);
+         "bad BT bits from Java: 0x%02x", basic_type & 0xFF);
   oop p = JNIHandles::resolve(obj);
   auto addr = index_oop_from_field_offset_long(p, offset);
   // just use MO_VOLATILE for all MO inputs

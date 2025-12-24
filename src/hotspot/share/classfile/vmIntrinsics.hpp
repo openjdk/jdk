@@ -1555,6 +1555,7 @@ public:
   #define VMI_MEMORY_ORDERS_DO(fn)                \
     fn(MO_PLAIN,      1)                          \
     fn(MO_VOLATILE,   2)                          \
+    fn(MO_OPAQUE,     3)                          \
     fn(MO_ACQUIRE,    4)                          \
     fn(MO_RELEASE,    8)                          \
     fn(MO_WEAK_CAS,  16)                          \
@@ -1591,7 +1592,8 @@ public:
   // valid mo constant is one of plain, volatile, acquire, or release
   static bool is_valid_memory_order(int mo, int optionally_exclude = -1) {
     switch (mo) {
-    case MO_PLAIN: case MO_VOLATILE: case MO_ACQUIRE: case MO_RELEASE:
+    case MO_PLAIN:   case MO_VOLATILE:
+    case MO_ACQUIRE: case MO_RELEASE:  case MO_OPAQUE:
       return (mo != optionally_exclude);
     default:
       return false;

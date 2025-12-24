@@ -135,60 +135,238 @@ public final class Unsafe {
     // Yes, ASCII symbols are hokey, but we don't have a handy enum for this.
     // (Also, Unsafe is involved in the bootstrapping of the first enum.)
 
-    // These memory order codes are private to this API and its native methods.
-    /** Normal relaxed memory order, which is the default for Java. */
-    public static final byte MO_PLAIN    = 1;
-    /** Selects volatile memory order, as found in Java.  The default for CAS. */
+    // These memory order codes are specific to this API and its native methods.
+    // They are mapped as needed to other order codes used elsewhere in the VM.
+    /**
+     * Selects normal memory order, which is the default for Java.
+     * Both compiler and hardware can reorder these accesses in the
+     * usual ways, per the JMM and C++ {@code memory_order_relaxed}.
+     * This is the default MO parameter for getters and setters.
+     * <p>
+     * In brief, when accesses are marked {@code MO_PLAIN}, they
+     * can be freely reordered, forwards and backwards relative to
+     * each other, as long as they do not violate the program order
+     * within the current thread.  The reordering of these accesses can 
+     * by limited, in well-defined ways, by fences and non-plain accesses.
+     * <p>
+     * It is important to remember that both the compiler and hardware
+     * can perform reordering, as they work to improve performance.
+     * The compiler might emit object code with an improved schedule of
+     * loads and stores, and hardware might also appear to reorder loads
+     * or stores, relative to main memory, due to the dynamics of caches
+     * and store queues.
+     * <p>
+     * The VM calls this default memory order {@code MO_UNORDERED},
+     * while the the Unsafe API has historically used the name
+     * {@code Plain}, because access to a plain Java variable
+     * access works in this unordered manner.
+     * <p>
+     * In theory {@code MO_PLAIN} allows 64-bit accesses to be split
+     * into 32-bit access pairs, but this is not a normal practice
+     * on current platforms.  Such splitting would violate the C++
+     * specification for {@code memory_order_relaxed}.  In other
+     * respects, the behavior of {@code MO_PLAIN} corresponds to
+     * C++ {@code memory_order_relaxed}.
+     * <p>
+     * Nonatomic memory accesses (that is, accesses that get split up)
+     * are completely disallowed by every other memory order mode
+     * defined here, except, of course, {@code MO_UNALIGNED}.
+     * <p>
+     * The other access types are more limited in their reordering.
+     * A load marked {@code MO_ACQUIRE} must come first before other
+     * accesses, plain or not, that might otherwise slide before it.
+     * When an acquiring load acquires a data value from memory,
+     * the current thread is prevented from accidentally observing
+     * any stale memory states (from other threads) that might have
+     * been present before the data value was stored to memory.
+     * Likewise, a store marked {@code MO_RELEASE} must come last after
+     * other accesses, plain or not, that might otherwise slide after it.
+     * When a releasing store releases a data value to memory,
+     * the current thread is must finish up with all of its previous
+     * stores, before the releasing store releases its data to
+     * memory (and thus to other threads).
+     * Finally, {@code MO_VOLATILE} is sequentially consistent access,
+     * which is the logical combination of both {@code MO_ACQUIRE}
+     * and {@code MO_RELEASE}, in one operation.
+     */
+    public static final byte MO_PLAIN = 1;
+
+    /**
+     * Selects volatile memory order, as found in Java.  Neither
+     * compiler nor hardware will reorder these accesses.
+     * This is the default MO parameter for any operation which
+     * performs getting and setting in some atomic sequence.
+     * <p>
+     * In brief, volatile memory order gives the strongest possible
+     * guarantee that the program order of memory accesses (in the
+     * current thread) corresponds (as much as possible) to some
+     * global memory order.  It does this by providing the logical
+     * union of assurances provided by {@code MO_RELEASE} and
+     * {@code MO_ACQUIRE}.  In addition, the compiler is required
+     * to schedule the operation strictly in program order.
+     * It follows that {@code MO_VOLATILE} can be used as a safe
+     * default for memory accesses.
+     * <p>
+     * Note that if threads use a mix of memory order markings, one
+     * thread using weaker markings (such as {@code MO_PLAIN}) can
+     * potentially invalidate the correctness of logic in a second
+     * thread using stronger markings, even if the logic of the second
+     * thread appears locally correct.  This is why volatility in the
+     * Java language is a property of variables and not of individual
+     * memory accesses.
+     * <p>
+     * Volatile access corresponds to C++ {@code memory_order_seq_cst}.
+     * Hardware specifically guarantees that, if a variable that is
+     * accessed only in {@code MO_VOLATILE} order across all threads,
+     * a global sequential ordering will be observed by all threads.
+     * <p>
+     * The VM calls this behavior {@code MO_SEQ_CST}, while the
+     * the Unsafe API has historically used the name {@code Volatile},
+     * since that is the name Java has always given to this behavior.
+     */
     public static final byte MO_VOLATILE = 2;
-    /** Selects an acquiring load. */
-    public static final byte MO_ACQUIRE  = 4;
-    /** Selects a releasing store. */
-    public static final byte MO_RELEASE  = 8;
-    private static final byte MO_MODE_MASK = MO_PLAIN|MO_VOLATILE|MO_ACQUIRE|MO_RELEASE;
+
+    /**
+     * Selects acquiring memory order, which means a load always
+     * observes its data first, before any following memory accesses.
+     * (That is, following in the current thread, in program order.)
+     * Neither compiler nor hardware will allow a following memory
+     * access to slide before an acquiring load.
+     * <p>
+     * In brief, if a thread reads from a shared variable using an
+     * acquiring load, and subsequently the thread reads or writes a
+     * second shared variable (in any mode), the thread will observe
+     * a global memory state that at least as "fresh" as the state
+     * observed by the acquiring load.  (The precise meaning of
+     * "fresh" derives from the sequential order provided by global
+     * memory on the current platform.  The point is that localized
+     * optimizations like compiler load hoisting or hardware
+     * caches or store buffers, applied to the second variable access,
+     * will not let it touch global memory before the acquiring
+     * load.)
+     * <p>
+     * This behavior corresponds to C++ {@code memory_order_acquire},
+     * and, on certain platforms, to memory access instructions marked
+     * as acquiring.
+     * <p>
+     * The VM also calls this behavior {@code MO_ACQUIRE}, although
+     * with an unrelated numerical value, while the the Unsafe API has
+     * historically used the name {@code Acquire}.
+     */
+    public static final byte MO_ACQUIRE = 4;
+
+    /**
+     * Selects releasing memory order, which means a store always
+     * commits its data last, after any preceding memory accesses.
+     * (That is, preceding in the current thread, in program order.)
+     * Neither compiler nor hardware will allow a preceding memory
+     * access to slide after a releasing store.
+     * <p>
+     * In brief, if a thread stores to a shared variable using a
+     * releasing store, after the thread has previously read or
+     * written another shared variable (in any mode), the thread will
+     * update a global memory state that at least as "fresh" as the
+     * state operated on by the previous memory access.  (The precise
+     * meaning of "fresh" derives from the sequential order provided
+     * by global memory on the current platform.  The point is that
+     * localized optimizations like compiler store sinking or hardware
+     * store buffer bypasses, will not allow the previous operation
+     * to touch global memory after the releasing store.)
+     * <p>
+     * This behavior corresponds to C++ {@code memory_order_release},
+     * and, on certain platforms, to memory access instructions marked
+     * as releasing.
+     * <p>
+     * The VM also calls this behavior {@code MO_RELEASE}, although
+     * with an unrelated numerical value, while the the Unsafe API has
+     * historically used the name {@code Release}.
+     */
+    public static final byte MO_RELEASE = 8;
+
+    /**
+     * Selects an "opaque" memory order.  The compiler will preserve
+     * exact program order (in the current thread) for this memory
+     * operation.  Also, atomicity is guaranteed, even on unusual
+     * platforms where 64-bit values are not naturally atomic.
+     * In other respects, this is the same as {@code MO_PLAIN}.
+     * <p>
+     * As with {@code MO_PLAIN}, the hardware will not be prevented
+     * from reordering the operation.  A opaque load might observe
+     * stale values from local cache.  On platforms with unusual store
+     * semantics, an opaque store might be observed to execute in
+     * non-program order, relative to nearby stores to other
+     * variables.
+     * <p>
+     * This behavior corresponds to C++ {@code memory_order_relaxed},
+     * except that the load or store is additionally constrained
+     * to execute, in object, in program order.
+     * <p>
+     * The VM calls this behavior {@code MO_RELAXED} as opposed to
+     * {@code MO_UNORDERED}.  The C2 compiler emits so-called
+     * CPU-order barriers ({@code MemBarCPUOrder}) before and after
+     * the operation, which do not interact with the memory system,
+     * but merely constrain the compiler as it schedules code.
+     */
+    public static final byte MO_OPAQUE = MO_PLAIN | MO_VOLATILE;
 
     // Except for unaligned loads and stores, primitive and single-reference
     // accesses provided here are always atomic and always naturally aligned,
-    // as machine word loads and stores.  There is no direct way to select a
-    // truly unordered or nonatomic load or store, at the hardware level.
-    // (Such a thing would be quite ... unsafe.)
+    // as machine word loads and stores.
+    //
+    // The JMM gives permission to treat 64-bit memory words as pairs
+    // of 32-bit words, but this permission is not used on modern machines.
+    // Ports of HotSpot to machines lacking performant 64-bit atomic loads
+    // and stores would, in theory, break up MO_PLAIN accesses into
+    // 32-bit access pairs.  Reducing such a theory to practice would be
+    // an adventure.  On such a platform, only MO_PLAIN would allow the
+    // 32-bit access pairs, and other modes (including MO_OPAQUE), would
+    // suppress the access pairs.
     //
     // There is a related (but distinct) set of MO codes in accessDecorators.hpp
-    // Other APIs may make further distinctions:
+    // Perhaps confusingly, MO_ACQUIRE and MO_RELEASE are names used both
+    // here and there, even though they have distinct numerical values.
+    // The confusion is small -- they have the same meanings in both places.
+    // In the VM, constants defined here have the extra prefix "UNSAFE_".
+    // So, UNSAFE_MO_PLAIN, UNSAFE_MO_ACQUIRE, etc.
     //
-    //  - MO_RELAXED (from C++) is effectively (*) the same as MO_PLAIN in Java
-    //  - MO_SEQ_CST (from C++) could be treated for Java as an alias for MO_VOLATILE
-    //  - MO_OPAQUE is an alias for MO_RELAXED, but guarantees atomicity (**)
-    //  - MO_UNORDERED is a looser order than MO_RELAXED, not provided here
-    //  - C++ acq_rel, as the union of acquire and release, is pretty much MO_VOLATILE
-    //  - C++ consume is not used in HotSpot or the JDK
-
-    // (*) When a Java constructor writes to a final field, there is a memory
+    // When a Java constructor writes to a final field, there is a memory
     // effect beyond C++ relaxed semantics; the write is akin to a releasing
     // store.  This effect is not implemented in this API, so MO_PLAIN here
-    // always implies MO_RELAXED (and also MO_OPAQUE).
-    //
-    // (**) A 64-bit access split into two 32-bit accesses might be called MO_RELAXED
-    // from a C++ perspective, but would not be MO_OPAQUE.  HotSpot never splits
-    // such accesses, except perhaps when an unaligned address is used explicitly.
-
-    // For these reasons, MO_RELAXED and MO_OPAQUE and MO_PLAIN are almost
-    // always aligned.  In theory, C++ "plain" struct access (MO_RELAXED)
-    // could fail to be non-atomic, so it could not be called MO_OPAQUE.
-
-    /** Alias for {@code MO_PLAIN}; see comments in code. */
-    public static final byte MO_OPAQUE = MO_PLAIN;
+    // might be incorrect if an unsafe store were somehow used to replace a
+    // putfield operation, to a final field, in a constructor.
 
     /** MO_WEAK_CAS is only for CAS ops, combining bitwise with lower MO values */
-    public static final byte MO_WEAK_CAS = 16;
+    private static final byte MO_WEAK_CAS = 16;
 
-    /** MO_UNALIGNED is only for primitive load/store; atomicity can be broken */
+    /**
+     * Mode bit which can be added to {@code MO_PLAIN}, permitting
+     * split (non-atomic) access if the effective address is not
+     * naturally aligned, relative to the data type being accesses.
+     * It cannot be applied to managed references.
+     * <p>
+     * If a variable address happens to be naturally aligned, the
+     * access must be atomic.  Otherwise, the requested access can be
+     * implemented by splitting it up into several accesses.  The
+     * splitting must not break up the largest available atomic unit.
+     * For example, a 64-bit variable aligned to a 16-bit boundary
+     * must be loaded or stored using at most four 16-bit operations.
+     * <p>
+     * On platforms which support misaligned access (at reasonable
+     * speeds) the compiler uses single instructions to implement
+     * unaligned loads and stores.  These may or may not be atomic,
+     * depending on platform-specific conditions, such as the crossing
+     * of cache line boundaries.
+     */
     private static final byte MO_UNALIGNED       = 32;
     private static final byte MO_UNALIGNED_PLAIN = MO_UNALIGNED|MO_PLAIN;
 
-    // More useful bit combinations
-    public static final byte MO_WEAK_CAS_PLAIN    = MO_WEAK_CAS|MO_PLAIN;
+    /** For CAS atomics only, adds weakness to {@code MO_PLAIN} or {@code MO_OPAQUE}. */
+    public static final byte MO_WEAK_CAS_PLAIN    = MO_WEAK_CAS|MO_OPAQUE;
+    /** For CAS atomics only, adds weakness to {@code MO_VOLATILE}. */
     public static final byte MO_WEAK_CAS_VOLATILE = MO_WEAK_CAS|MO_VOLATILE;
+    /** For CAS atomics only, adds weakness to {@code MO_ACQUIRE}. */
     public static final byte MO_WEAK_CAS_ACQUIRE  = MO_WEAK_CAS|MO_ACQUIRE;
+    /** For CAS atomics only, adds weakness to {@code MO_RELEASE}. */
     public static final byte MO_WEAK_CAS_RELEASE  = MO_WEAK_CAS|MO_RELEASE;
 
     // Note that acquire and release modes are for loads and stores, respectively.
@@ -351,12 +529,12 @@ public final class Unsafe {
 
     @ForceInline
     private static void checkMemoryOrder(int memoryOrder) {
-        if ((memoryOrder & (~MO_MODE_MASK | (memoryOrder-1))) == 0) {
-            // This tricky expression computes the answer to two questions:
-            //  1. is memoryOrder contained in MO_MODE_MASK?  (mo & ~MMM) == 0
-            //  2. is memoryOrder a power of two?             (mo & mo-1) == 0
-            // First we can rewrite the tests,  A==0 & B==0  ==> (A|B) == 0
-            // Then,  (mo & ~MMM) | (mo & mo-1)  ==>  (mo & (~MMM | mo-1)
+        // It's worth a bit of pain to make this fast in the interpreter.
+        final int MASK1 = ~(MO_PLAIN      | MO_VOLATILE    |
+                            MO_ACQUIRE    | MO_RELEASE     | MO_OPAQUE);
+        final int MASK2 = ~(1<<MO_PLAIN   | 1<<MO_VOLATILE |
+                            1<<MO_ACQUIRE | 1<<MO_RELEASE  | 1<<MO_OPAQUE);
+        if (((memoryOrder & MASK1) | ((1<<memoryOrder) & MASK2)) == 0) {
             return;
         }
         throw new IllegalArgumentException("bad memory order requested");
