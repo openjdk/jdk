@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,7 +79,7 @@ public class JUnitAdapter {
         ps.flush();
 
         try (final var in = new ByteArrayInputStream(buf.toByteArray());
-                final var reader = new InputStreamReader(in, StandardCharsets.UTF_8);
+                final var reader = new InputStreamReader(in, ps.charset());
                 final var bufReader = new BufferedReader(reader)) {
             return bufReader.lines().map(line -> {
                 // Skip timestamp
