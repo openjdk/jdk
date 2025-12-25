@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.joining;
 import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.JUnitUtils.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -45,22 +46,36 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -69,6 +84,7 @@ import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
@@ -95,6 +111,12 @@ public class CommandOutputControlTest {
     @ParameterizedTest
     @MethodSource
     public void testDumpStreams(OutputTestSpec spec) {
+        spec.test();
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testCharset(CharsetTestSpec spec) throws IOException, InterruptedException {
         spec.test();
     }
 
@@ -400,8 +422,8 @@ public class CommandOutputControlTest {
 
     @DisabledOnOs(value = OS.MAC, disabledReason = "Closing a stream doesn't consistently cause a trouble as it should")
     @ParameterizedTest
-    @EnumSource(CloseStream.class)
-    public void test_close_streams(CloseStream action) throws InterruptedException, IOException {
+    @EnumSource(OutputStreams.class)
+    public void test_close_streams(OutputStreams action) throws InterruptedException, IOException {
         var cmdline = Command.createShellCommandLine(List.<CommandAction>of(
                 CommandAction.echoStdout("Hello stdout"),
                 CommandAction.echoStderr("Bye stderr")
@@ -487,7 +509,75 @@ public class CommandOutputControlTest {
         }
     }
 
-    public enum CloseStream {
+    @ParameterizedTest
+    @ValueSource(booleans = {true})
+    public void stressTest(boolean binaryOutput, @TempDir Path workDir) throws Exception {
+
+        // Execute multiple subprocesses asynchronously.
+        // Each subprocess writes a few chunks of data each larger than the default buffer size (8192 bytes)
+
+        final var chunkCount = 5;
+        final var subprocessCount = 100;
+        final var subprocessExecutor = Executors.newVirtualThreadPerTaskExecutor();
+
+        final var md = MessageDigest.getInstance("MD5");
+
+        var cmdline = Command.createShellCommandLine(IntStream.range(0, chunkCount).mapToObj(chunk -> {
+            byte[] bytes = new byte[10 * 1024]; // 10K to exceed the default BufferedOutputStream's buffer size of 8192.
+            new Random().nextBytes(bytes);
+            md.update(bytes);
+            var path = workDir.resolve(Integer.toString(chunk));
+            try {
+                Files.write(path, bytes);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+            return path;
+        }).map(CommandAction::cat).toList());
+
+        final var digest = HexFormat.of().formatHex(md.digest());
+
+        // Schedule to start every subprocess in a separate virtual thread.
+        // Start and suspend threads, waiting until all scheduled threads have started.
+        // After all scheduled threads start, resume them.
+        // This should result in starting all scheduled subprocesses simultaneously.
+
+        var readyLatch = new CountDownLatch(subprocessCount);
+        var startLatch = new CountDownLatch(1);
+
+        var futures = IntStream.range(0, subprocessCount).mapToObj(_ -> {
+            return CompletableFuture.supplyAsync(toSupplier(() -> {
+
+                var exec = new CommandOutputControl()
+                        .saveOutput(true)
+                        .binaryOutput(binaryOutput)
+                        .createExecutable(new ProcessBuilder(cmdline));
+
+                readyLatch.countDown();
+                startLatch.await();
+
+                var result = exec.execute();
+
+                var localMd = MessageDigest.getInstance("MD5");
+                localMd.update(result.byteContent());
+
+                return HexFormat.of().formatHex(localMd.digest());
+
+            }), subprocessExecutor);
+        }).toList();
+
+        readyLatch.await();
+        startLatch.countDown();
+
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+
+        futures.forEach(future -> {
+            var actualDigest = future.join();
+            assertEquals(digest, actualDigest);
+        });
+    }
+
+    public enum OutputStreams {
         STDOUT,
         STDERR,
         STDOUT_AND_STDERR
@@ -665,63 +755,73 @@ public class CommandOutputControlTest {
     private static List<OutputTestSpec> testDumpStreams() {
         List<OutputTestSpec> testCases = new ArrayList<>();
         final var commandSpec = new CommandSpec(OutputData.MANY, OutputData.MANY);
-        final var outputControl = new ArrayList<OutputControl>();
-        outputControl.add(OutputControl.DUMP);
-        for (var discardStdout : BOOLEAN_VALUES) {
-            if (discardStdout) {
-                outputControl.add(OutputControl.DISCARD_STDOUT);
-            }
-            for (var discardStderr : BOOLEAN_VALUES) {
-                if (discardStderr) {
-                    outputControl.add(OutputControl.DISCARD_STDERR);
-                }
-                for (var redirectStderr : BOOLEAN_VALUES) {
-                    if (redirectStderr) {
-                        outputControl.add(OutputControl.REDIRECT_STDERR);
-                    }
-                    for (var binaryOutput : BOOLEAN_VALUES) {
-                        if (binaryOutput) {
-                            outputControl.add(OutputControl.BINARY_OUTPUT);
-                        }
-                        for (var dumpStdout : BOOLEAN_VALUES) {
-                            if (dumpStdout) {
-                                outputControl.add(OutputControl.DUMP_STDOUT_IN_SYSTEM_OUT);
-                            }
-                            for (var dumpStderr : BOOLEAN_VALUES) {
-                                if (!dumpStderr && !dumpStdout) {
+        for (var discardStdout : withAndWithout(OutputControl.DISCARD_STDOUT)) {
+            for (var discardStderr : withAndWithout(OutputControl.DISCARD_STDERR)) {
+                for (var redirectStderr : withAndWithout(OutputControl.REDIRECT_STDERR)) {
+                    for (var binaryOutput : withAndWithout(OutputControl.BINARY_OUTPUT)) {
+                        for (var dumpStdout : withAndWithout(OutputControl.DUMP_STDOUT_IN_SYSTEM_OUT)) {
+                            for (var dumpStderr : withAndWithout(OutputControl.DUMP_STDERR_IN_SYSTEM_ERR)) {
+
+                                if (dumpStderr.isEmpty() && dumpStdout.isEmpty()) {
+                                    // Output dumping disabled
                                     continue;
                                 }
-                                if (dumpStderr) {
-                                    outputControl.add(OutputControl.DUMP_STDERR_IN_SYSTEM_ERR);
+
+                                if (discardStderr.isPresent() && discardStdout.isPresent()) {
+                                    // Output dumping enabled, but all stream discarded
+                                    continue;
                                 }
+
+                                if (dumpStderr.isPresent() == discardStderr.isPresent() && dumpStdout.isEmpty()) {
+                                    // Stderr dumping enabled but discarded, stdout dumping disabled
+                                    continue;
+                                }
+
+                                if (dumpStdout.isPresent() == discardStdout.isPresent() && dumpStderr.isEmpty()) {
+                                    // Stdout dumping enabled but discarded, stderr dumping disabled
+                                    continue;
+                                }
+
+                                final var outputControl = new HashSet<OutputControl>();
+                                outputControl.add(OutputControl.DUMP);
+                                discardStdout.ifPresent(outputControl::add);
+                                discardStderr.ifPresent(outputControl::add);
+                                redirectStderr.ifPresent(outputControl::add);
+                                binaryOutput.ifPresent(outputControl::add);
+                                dumpStdout.ifPresent(outputControl::add);
+                                dumpStderr.ifPresent(outputControl::add);
+
                                 testCases.add(new OutputTestSpec(
                                         false,
-                                        new CommandOutputControlSpec(Set.copyOf(outputControl)),
+                                        new CommandOutputControlSpec(outputControl),
                                         commandSpec));
-                                if (dumpStderr) {
-                                    outputControl.removeLast();
-                                }
-                            }
-                            if (dumpStdout) {
-                                outputControl.removeLast();
                             }
                         }
-                        if (binaryOutput) {
-                            outputControl.removeLast();
-                        }
-                    }
-                    if (redirectStderr) {
-                        outputControl.removeLast();
                     }
                 }
-                if (discardStderr) {
-                    outputControl.removeLast();
-                }
-            }
-            if (discardStdout) {
-                outputControl.removeLast();
             }
         }
+        return testCases;
+    }
+
+    private static List<CharsetTestSpec> testCharset() {
+        List<CharsetTestSpec> testCases = new ArrayList<>();
+
+        for (boolean toolProvider : BOOLEAN_VALUES) {
+            for (var redirectStderr : withAndWithout(OutputControl.REDIRECT_STDERR)) {
+                for (var charset : withAndWithout(OutputControl.CHARSET_UTF16LE)) {
+                    var stdoutSink = new CharsetTestSpec.DumpOutputSink(StandardCharsets.US_ASCII, OutputStreams.STDOUT);
+                    var stderrSink = new CharsetTestSpec.DumpOutputSink(StandardCharsets.UTF_32LE, OutputStreams.STDERR);
+                    var outputControl = new HashSet<CommandOutputControlMutator>();
+                    redirectStderr.ifPresent(outputControl::add);
+                    charset.ifPresent(outputControl::add);
+                    outputControl.add(stdoutSink);
+                    outputControl.add(stderrSink);
+                    testCases.add(new CharsetTestSpec(toolProvider, new CommandOutputControlSpec(outputControl)));
+                }
+            }
+        }
+
         return testCases;
     }
 
@@ -744,11 +844,35 @@ public class CommandOutputControlTest {
         static EchoCommandAction echoStderr(String str) {
             return new EchoCommandAction(str, true);
         }
+
+        static WriteCommandAction writeStdout(byte[] binary) {
+            return new WriteCommandAction(binary, false);
+        }
+
+        static WriteCommandAction writeStderr(byte[] binary) {
+            return new WriteCommandAction(binary, true);
+        }
+
+        static CatCommandAction cat(Path file) {
+            return new CatCommandAction(file);
+        }
     }
 
     private record EchoCommandAction(String value, boolean stderr) implements CommandAction {
         EchoCommandAction {
             Objects.requireNonNull(value);
+        }
+    }
+
+    private record WriteCommandAction(byte[] value, boolean stderr) implements CommandAction {
+        WriteCommandAction {
+            Objects.requireNonNull(value);
+        }
+    }
+
+    private record CatCommandAction(Path file) implements CommandAction {
+        CatCommandAction {
+            Objects.requireNonNull(file);
         }
     }
 
@@ -774,34 +898,79 @@ public class CommandOutputControlTest {
             return createToolProvider(actions());
         }
 
-        private Stream<CommandAction> actions() {
-            return Stream.concat(
-                    stdout.stream().map(CommandAction::echoStdout),
-                    stderr.stream().map(CommandAction::echoStderr)
-            );
+        //
+        // Type of shell for which to create a command line.
+        // On Unix it is always the "sh".
+        // On Windows, it is "cmd" by default and "powershell" when a command needs to write binary data to output stream(s).
+        // Extra complexity on Windows is because "powershell" is times slower than "cmd",
+        // and the latter doesn't support binary output.
+        //
+        private enum ShellType {
+            SH(OperatingSystem.LINUX, OperatingSystem.MACOS),
+            CMD(OperatingSystem.WINDOWS),
+            POWERSHELL(OperatingSystem.WINDOWS),
+            ;
+
+            ShellType(OperatingSystem... os) {
+                if (os.length == 0) {
+                    throw new IllegalArgumentException();
+                }
+                this.os = Set.of(os);
+            }
+
+            boolean isSupportedOnCurrentOS() {
+                return os.contains(OperatingSystem.current());
+            }
+
+            private final Set<OperatingSystem> os;
         }
 
-        static List<String> createShellCommandLine(Stream<CommandAction> actions) {
+        private List<CommandAction> actions() {
+            return Stream.<CommandAction>concat(
+                    stdout.stream().map(CommandAction::echoStdout),
+                    stderr.stream().map(CommandAction::echoStderr)
+            ).toList();
+        }
+
+        static List<String> createShellCommandLine(List<? extends CommandAction> actions) {
+            final var shellType = detectShellType(actions);
             final List<String> commandline = new ArrayList<>();
-            if (OperatingSystem.isWindows()) {
-                commandline.addAll(List.of("cmd", "/C"));
-            } else {
-                commandline.addAll(List.of("sh", "-c"));
+            final String commandSeparator;
+            switch (shellType) {
+                case SH -> {
+                    commandline.addAll(List.of("sh", "-c"));
+                    commandSeparator = " && ";
+                }
+                case CMD -> {
+                    commandline.addAll(List.of("cmd", "/C"));
+                    commandSeparator = " && ";
+                }
+                case POWERSHELL -> {
+                    commandline.addAll(List.of("powershell", "-NoProfile", "-Command"));
+                    commandSeparator = "; ";
+                }
+                default -> {
+                    // Unreachable
+                    throw ExceptionBox.reachedUnreachable();
+                }
             }
-            commandline.add(actions.map(Command::toString).collect(joining(" && ")));
+            commandline.add(actions.stream().map(action -> {
+                return Command.toString(action, shellType);
+            }).collect(joining(commandSeparator)));
             return commandline;
         }
 
-        static List<String> createShellCommandLine(List<CommandAction> actions) {
-            return createShellCommandLine(actions.stream());
-        }
-
-        static ToolProvider createToolProvider(Stream<CommandAction> actions) {
-            var copiedActions = actions.toList();
+        static ToolProvider createToolProvider(List<? extends CommandAction> actions) {
+            var copiedActions = List.copyOf(actions);
             return new ToolProvider() {
 
                 @Override
                 public int run(PrintWriter out, PrintWriter err, String... args) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public int run(PrintStream out, PrintStream err, String... args) {
                     for (var action : copiedActions) {
                         switch (action) {
                             case EchoCommandAction echo -> {
@@ -811,6 +980,17 @@ public class CommandOutputControlTest {
                                     out.println(echo.value());
                                 }
                             }
+                            case WriteCommandAction write -> {
+                                try {
+                                    if (write.stderr()) {
+                                        err.write(write.value());
+                                    } else {
+                                        out.write(write.value());
+                                    }
+                                } catch (IOException ex) {
+                                    throw new UncheckedIOException(ex);
+                                }
+                            }
                             case SleepCommandAction sleep -> {
                                 toRunnable(() -> {
                                     synchronized (this) {
@@ -818,6 +998,10 @@ public class CommandOutputControlTest {
                                         this.wait(millis);
                                     }
                                 }).run();
+                            }
+                            case CatCommandAction _ -> {
+                                // Not used, no pint to implement.
+                                throw new UnsupportedOperationException();
                             }
                         }
                     }
@@ -831,34 +1015,136 @@ public class CommandOutputControlTest {
             };
         }
 
-        static ToolProvider createToolProvider(List<CommandAction> actions) {
-            return createToolProvider(actions.stream());
+        private static ShellType detectShellType(List<? extends CommandAction> actions) {
+            var supportedShellTypes = Stream.of(ShellType.values())
+                    .filter(ShellType::isSupportedOnCurrentOS)
+                    .collect(Collectors.toCollection(HashSet::new));
+            for (var action : actions) {
+                if (action instanceof WriteCommandAction) {
+                    supportedShellTypes.remove(ShellType.CMD);
+                }
+            }
+            return supportedShellTypes.stream()
+                    .sorted(Comparator.comparingInt(Enum::ordinal))
+                    .findFirst().orElseThrow();
         }
 
-        private static String toString(CommandAction action) {
+        private static String toString(CommandAction action, ShellType shellType) {
             switch (action) {
-                case EchoCommandAction echo -> {
-                    String str;
-                    if (OperatingSystem.isWindows()) {
-                        str = "(echo " + echo.value() + ")";
-                    } else {
-                        str = "echo " + echo.value();
-                    }
+                case EchoCommandAction a -> {
+                    return toString(a, shellType);
+                }
+                case WriteCommandAction a -> {
+                    return toString(a, shellType);
+                }
+                case SleepCommandAction a -> {
+                    return toString(a, shellType);
+                }
+                case CatCommandAction a -> {
+                    return toString(a, shellType);
+                }
+            }
+        }
+
+        private static String toString(EchoCommandAction echo, ShellType shellType) {
+            String str;
+            switch (shellType) {
+                case SH -> {
+                    str = "echo " + echo.value();
                     if (echo.stderr()) {
                         str += ">&2";
                     }
-                    return str;
                 }
-                case SleepCommandAction sleep -> {
-                    if (OperatingSystem.isWindows()) {
-                        // The standard way to sleep on Windows is to use the "ping" command.
-                        // It sends packets every second.
-                        // To wait N seconds, it should send N+1 packets.
-                        // The "timeout" command works only in a console.
-                        return String.format("(ping -n %d localhost > nul)", sleep.seconds() + 1);
-                    } else {
-                        return "sleep " + sleep.seconds();
+                case CMD -> {
+                    str = "(echo " + echo.value() + ")";
+                    if (echo.stderr()) {
+                        str += ">&2";
                     }
+                }
+                case POWERSHELL -> {
+                    str = String.format("[Console]::%s.WriteLine(\\\"%s\\\")",
+                            echo.stderr() ? "Error" : "Out", echo.value());
+                }
+                default -> {
+                    // Unreachable
+                    throw ExceptionBox.reachedUnreachable();
+                }
+            }
+            return str;
+        }
+
+        private static String toString(WriteCommandAction write, ShellType shellType) {
+            String str;
+            switch (shellType) {
+                case SH -> {
+                    // Convert byte[] to octal string to make it work with POSIX printf.
+                    // POSIX printf doesn't recognize hex strings, so can't use handy HexFormat.
+                    var sb = new StringBuilder();
+                    sb.append("printf ");
+                    for (var b : write.value()) {
+                        sb.append("\\\\").append(Integer.toOctalString(b & 0xFF));
+                    }
+                    if (write.stderr()) {
+                        sb.append(">&2");
+                    }
+                    str = sb.toString();
+                }
+                case CMD -> {
+                    throw new UnsupportedOperationException("Can't output binary data with 'cmd'");
+                }
+                case POWERSHELL -> {
+                    var base64 = Base64.getEncoder().encodeToString(write.value());
+                    str = String.format(
+                            "$base64 = '%s'; " +
+                            "$bytes = [Convert]::FromBase64String($base64); " +
+                            "[Console]::%s().Write($bytes, 0, $bytes.Length)",
+                            base64, write.stderr() ? "OpenStandardError" : "OpenStandardOutput");
+                }
+                default -> {
+                    // Unreachable
+                    throw ExceptionBox.reachedUnreachable();
+                }
+            }
+            return str;
+        }
+
+        private static String toString(SleepCommandAction sleep, ShellType shellType) {
+            switch (shellType) {
+                case SH -> {
+                    return "sleep " + sleep.seconds();
+                }
+                case CMD -> {
+                    // The standard way to sleep in "cmd" is to use the "ping" command.
+                    // It sends packets every second.
+                    // To wait N seconds, it should send N+1 packets.
+                    // The "timeout" command works only in a console.
+                    return String.format("(ping -n %d localhost > nul)", sleep.seconds() + 1);
+                }
+                case POWERSHELL -> {
+                    return "Start-Sleep -Seconds " + sleep.seconds();
+                }
+                default -> {
+                    // Unreachable
+                    throw ExceptionBox.reachedUnreachable();
+                }
+            }
+        }
+
+        private static String toString(CatCommandAction cat, ShellType shellType) {
+            switch (shellType) {
+                case SH -> {
+                    return "cat " + cat.file();
+                }
+                case CMD -> {
+                    return "type " + cat.file();
+                }
+                case POWERSHELL -> {
+                    // Not used, no point to implement.
+                    throw new UnsupportedOperationException();
+                }
+                default -> {
+                    // Unreachable
+                    throw ExceptionBox.reachedUnreachable();
                 }
             }
         }
@@ -898,7 +1184,18 @@ public class CommandOutputControlTest {
         }
     }
 
-    public enum OutputControl {
+    public interface CommandOutputControlMutator {
+        String name();
+        void mutate(CommandOutputControl coc);
+
+        static <T extends CommandOutputControlMutator> Function<T, Set<T>> addToSet(Set<T> set) {
+            return m -> {
+                return new SetBuilder<T>().add(set).add(m).create();
+            };
+        }
+    }
+
+    public enum OutputControl implements CommandOutputControlMutator {
         DUMP(CommandOutputControl::dumpOutput, CommandOutputControl::isDumpOutput),
         SAVE_ALL(CommandOutputControl::saveOutput, CommandOutputControl::isSaveOutput),
         SAVE_FIRST_LINE(CommandOutputControl::saveFirstLineOfOutput, CommandOutputControl::isSaveFirstLineOfOutput),
@@ -914,13 +1211,18 @@ public class CommandOutputControlTest {
         BINARY_OUTPUT(CommandOutputControl::binaryOutput, CommandOutputControl::isBinaryOutput),
         DUMP_STDOUT_IN_SYSTEM_OUT(coc -> {
             coc.dumpStdout(new PrintStreamWrapper(System.out));
-        },  coc -> {
+        }, coc -> {
             return coc.dumpStdout() instanceof PrintStreamWrapper;
         }),
         DUMP_STDERR_IN_SYSTEM_ERR(coc -> {
             coc.dumpStderr(new PrintStreamWrapper(System.err));
-        },  coc -> {
+        }, coc -> {
             return coc.dumpStderr() instanceof PrintStreamWrapper;
+        }),
+        CHARSET_UTF16LE(coc -> {
+            coc.charset(StandardCharsets.UTF_16LE);
+        }, coc -> {
+            return coc.charset() == StandardCharsets.UTF_16LE;
         }),
         ;
 
@@ -939,6 +1241,11 @@ public class CommandOutputControlTest {
                 setter.accept(coc, false);
             };
             this.getter = Objects.requireNonNull(getter);
+        }
+
+        @Override
+        public void mutate(CommandOutputControl coc) {
+            set(coc);
         }
 
         CommandOutputControl set(CommandOutputControl coc) {
@@ -961,9 +1268,9 @@ public class CommandOutputControlTest {
 
         static List<Set<OutputControl>> variants() {
             final List<Set<OutputControl>> variants = new ArrayList<>();
-            for (final var binaryOutput : BOOLEAN_VALUES) {
-                for (final var redirectStderr : BOOLEAN_VALUES) {
-                    for (final var withDump : BOOLEAN_VALUES) {
+            for (final var binaryOutput : withAndWithout(BINARY_OUTPUT)) {
+                for (final var redirectStderr : withAndWithout(REDIRECT_STDERR)) {
+                    for (final var withDump : withAndWithout(DUMP)) {
                         variants.addAll(Stream.of(
                                 Set.<OutputControl>of(),
                                 Set.of(SAVE_ALL),
@@ -977,23 +1284,13 @@ public class CommandOutputControlTest {
                                 Set.of(SAVE_ALL, DISCARD_STDOUT, DISCARD_STDERR),
                                 Set.of(SAVE_FIRST_LINE, DISCARD_STDOUT, DISCARD_STDERR)
                         ).map(v -> {
-                            if (withDump) {
-                                return new SetBuilder<OutputControl>().add(v).add(DUMP).create();
-                            } else {
-                                return v;
-                            }
+                            return withDump.map(CommandOutputControlMutator.addToSet(v)).orElse(v);
                         }).map(v -> {
-                            if (redirectStderr && !v.containsAll(List.of(DISCARD_STDOUT, DISCARD_STDERR))) {
-                                return new SetBuilder<OutputControl>().add(v).add(REDIRECT_STDERR).create();
-                            } else {
-                                return v;
-                            }
+                            return redirectStderr.filter(_ -> {
+                                return !v.containsAll(List.of(DISCARD_STDOUT, DISCARD_STDERR));
+                            }).map(CommandOutputControlMutator.addToSet(v)).orElse(v);
                         }).map(v -> {
-                            if (binaryOutput) {
-                                return new SetBuilder<OutputControl>().add(v).add(BINARY_OUTPUT).create();
-                            } else {
-                                return v;
-                            }
+                            return binaryOutput.map(CommandOutputControlMutator.addToSet(v)).orElse(v);
                         }).toList());
                     }
                 }
@@ -1014,7 +1311,7 @@ public class CommandOutputControlTest {
         static final Set<OutputControl> SAVE = Set.of(SAVE_ALL, SAVE_FIRST_LINE);
     }
 
-    public record CommandOutputControlSpec(Set<OutputControl> outputControl) {
+    public record CommandOutputControlSpec(Set<? extends CommandOutputControlMutator> outputControl) {
         public CommandOutputControlSpec {
             outputControl.forEach(Objects::requireNonNull);
             if (outputControl.containsAll(OutputControl.SAVE)) {
@@ -1024,7 +1321,7 @@ public class CommandOutputControlTest {
 
         @Override
         public String toString() {
-            return outputControl.stream().map(OutputControl::name).sorted().collect(joining("+"));
+            return outputControl.stream().map(CommandOutputControlMutator::name).sorted().collect(joining("+"));
         }
 
         boolean contains(OutputControl v) {
@@ -1053,7 +1350,7 @@ public class CommandOutputControlTest {
 
         CommandOutputControl create() {
             final CommandOutputControl coc = new CommandOutputControl();
-            outputControl.forEach(control -> control.set(coc));
+            outputControl.forEach(control -> control.mutate(coc));
             return coc;
         }
     }
@@ -1351,6 +1648,102 @@ public class CommandOutputControlTest {
         }
     }
 
+    record CharsetTestSpec(boolean toolProvider, CommandOutputControlSpec cocSpec) {
+
+        void test() throws IOException, InterruptedException {
+            if (cocSpec.outputControl().stream().noneMatch(DumpOutputSink.class::isInstance)) {
+                throw new IllegalArgumentException();
+            }
+
+            final var expectedString = "veni-vidi-vici";
+
+            var coc = cocSpec.create().dumpOutput(true);
+
+            CommandOutputControl.Executable exec;
+            if (toolProvider) {
+                var tp = Command.createToolProvider(Stream.of(expectedString).<CommandAction>mapMulti((str, sink) -> {
+                    sink.accept(CommandAction.echoStdout(str));
+                    sink.accept(CommandAction.echoStderr(str));
+                }).toList());
+                exec = coc.createExecutable(tp);
+            } else {
+                var cmdline = Command.createShellCommandLine(Stream.of(expectedString).map(str -> {
+                    return (str + System.lineSeparator()).getBytes(coc.charset());
+                }).<CommandAction>mapMulti((bytes, sink) -> {
+                    sink.accept(CommandAction.writeStdout(bytes));
+                    sink.accept(CommandAction.writeStderr(bytes));
+                }).toList());
+                exec = coc.createExecutable(new ProcessBuilder(cmdline));
+            }
+
+            exec.execute();
+
+            for (var outputContolMutator : cocSpec.outputControl()) {
+                if (outputContolMutator instanceof DumpOutputSink sink) {
+                    var actual = sink.lines();
+                    List<String> expected;
+                    if (cocSpec.redirectStderr()) {
+                        switch (sink.streams()) {
+                            case STDERR -> {
+                                expected = List.of();
+                            }
+                            default -> {
+                                expected = List.of(expectedString, expectedString);
+                            }
+                        }
+                    } else {
+                        expected = List.of(expectedString);
+                    }
+                    assertEquals(expected, actual);
+                }
+            }
+
+        }
+
+        record DumpOutputSink(Charset charset, ByteArrayOutputStream buffer, OutputStreams streams) implements CommandOutputControlMutator {
+            DumpOutputSink {
+                Objects.requireNonNull(charset);
+                Objects.requireNonNull(buffer);
+                Objects.requireNonNull(streams);
+            }
+
+            DumpOutputSink(Charset charset, OutputStreams streams) {
+                this(charset, new ByteArrayOutputStream(), streams);
+            }
+
+            List<String> lines() {
+                var str = buffer.toString(charset);
+                return new BufferedReader(new StringReader(str)).lines().toList();
+            }
+
+            @Override
+            public String name() {
+                return String.format("DUMP-%s-%s", streams, charset.name());
+            }
+
+            @Override
+            public void mutate(CommandOutputControl coc) {
+                var ps = new PrintStream(buffer, false, charset);
+                switch (streams) {
+                    case STDOUT -> {
+                        coc.dumpStdout(ps);
+                    }
+                    case STDERR -> {
+                        coc.dumpStderr(ps);
+                    }
+                    case STDOUT_AND_STDERR -> {
+                        // Easy to implement, but not used.
+                        throw new IllegalArgumentException();
+                    }
+                    default -> {
+                        // Unreachable
+                        throw ExceptionBox.reachedUnreachable();
+                    }
+                }
+            }
+        }
+    }
+
     private final static class InterruptibleToolProvider implements ToolProvider {
 
         InterruptibleToolProvider(ToolProvider impl) {
@@ -1363,10 +1756,27 @@ public class CommandOutputControlTest {
         }
 
         @Override
+        public int run(PrintStream out, PrintStream err, String... args) {
+            return run(_ -> {
+                return impl.run(out, err, args);
+            }, args);
+        }
+
+        @Override
         public int run(PrintWriter out, PrintWriter err, String... args) {
+            return run(_ -> {
+                return impl.run(out, err, args);
+            }, args);
+        }
+
+        boolean interrupted() {
+            return interrupted.join();
+        }
+
+        private int run(Function<String[], Integer> workload, String... args) {
             boolean interruptedValue = false;
             try {
-                return impl.run(out, err, args);
+                return workload.apply(args);
             } catch (ExceptionBox ex) {
                 if (ex.getCause() instanceof InterruptedException) {
                     interruptedValue = true;
@@ -1377,10 +1787,6 @@ public class CommandOutputControlTest {
             } finally {
                 interrupted.complete(interruptedValue);
             }
-        }
-
-        boolean interrupted() {
-            return interrupted.join();
         }
 
         private final ToolProvider impl;
@@ -1395,5 +1801,9 @@ public class CommandOutputControlTest {
         }
     }
 
-    private static final List<Boolean> BOOLEAN_VALUES = List.of(Boolean.TRUE, Boolean.FALSE);
+    private static <T> List<Optional<T>> withAndWithout (T value) {
+        return List.of(Optional.empty(), Optional.of(value));
+    }
+
+    private static final List<Boolean> BOOLEAN_VALUES = List.of(true, false);
 }
