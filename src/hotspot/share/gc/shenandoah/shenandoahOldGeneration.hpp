@@ -66,8 +66,8 @@ private:
   // remaining in a PLAB when it is retired.
   size_t _promoted_expended;
 
-  // Represents the quantity of live bytes we expect to promote during the next evacuation
-  // cycle. This value is used by the young heuristic to trigger mixed collections.
+  // Represents the quantity of live bytes we expect to promote during the next GC cycle, either by
+  // evacuation or by promote-in-place.  This value is used by the young heuristic to trigger mixed collections.
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
 
