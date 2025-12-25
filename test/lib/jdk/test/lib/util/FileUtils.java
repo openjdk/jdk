@@ -101,8 +101,6 @@ public final class FileUtils {
      *
      * @param path  the file to delete
      *
-     * @throws NoSuchFileException
-     *         if the file does not exist (optional specific exception)
      * @throws DirectoryNotEmptyException
      *         if the file is a directory and could not otherwise be deleted
      *         because the directory is not empty (optional specific exception)
