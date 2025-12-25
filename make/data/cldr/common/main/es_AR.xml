@@ -19,9 +19,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu" draft="contributed">euskera</language>
 			<language type="grc" draft="contributed">griego antiguo</language>
 			<language type="nso" draft="contributed">sotho septentrional</language>
-			<language type="pa" draft="contributed">punyabí</language>
 			<language type="ss" draft="contributed">siswati</language>
-			<language type="sw" draft="contributed">suajili</language>
 			<language type="sw_CD" draft="contributed">suajili del Congo</language>
 			<language type="tn" draft="contributed">setswana</language>
 			<language type="wo" draft="contributed">wolof</language>
@@ -181,9 +179,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm v</greatestDifference>
@@ -309,6 +304,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="contributed">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>

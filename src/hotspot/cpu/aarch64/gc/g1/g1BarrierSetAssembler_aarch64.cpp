@@ -90,8 +90,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
                                                              DecoratorSet decorators,
                                                              Register start,
                                                              Register count,
-                                                             Register scratch,
-                                                             RegSet saved_regs) {
+                                                             Register scratch) {
 
   Label done;
   Label loop;

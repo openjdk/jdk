@@ -262,6 +262,7 @@ private:
   HeapWord* volatile _update_watermark;
 
   uint _age;
+  bool _promoted_in_place;
   CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
@@ -354,6 +355,15 @@ public:
 
   inline void save_top_before_promote();
   inline HeapWord* get_top_before_promote() const { return _top_before_promoted; }
+
+  inline void set_promoted_in_place() {
+    _promoted_in_place = true;
+  }
+
+  // Returns true iff this region was promoted in place subsequent to the most recent start of concurrent old marking.
+  inline bool was_promoted_in_place() {
+    return _promoted_in_place;
+  }
   inline void restore_top_before_promote();
   inline size_t garbage_before_padded_for_promote() const;
 
@@ -376,7 +386,19 @@ public:
   inline void increase_live_data_gc_words(size_t s);
   inline bool has_marked() const;
 
+ <<<<<<< HEAD
   inline bool has_live(ShenandoahMarkingContext* context, size_t index) const;
+=======
+  inline bool has_live() const;
+
+  // Represents the number of live bytes identified by most recent marking effort.  Does not include the bytes
+  // above TAMS.
+  inline size_t get_live_data_bytes() const;
+
+  // Represents the number of live words identified by most recent marking effort.  Does not include the words
+  // above TAMS.
+  inline size_t get_live_data_words() const;
+>>>>>>> jdk/master
 
   // Returns bytes identified as live by most recently completed marking effort.  Can only be called during safepoints.
   inline size_t get_marked_data_bytes() const;
@@ -456,7 +478,7 @@ public:
     return (bottom() <= p) && (p < top());
   }
 
-  inline void adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t);
+  inline void adjust_alloc_metadata(const ShenandoahAllocRequest &req, size_t);
   void reset_alloc_metadata();
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;

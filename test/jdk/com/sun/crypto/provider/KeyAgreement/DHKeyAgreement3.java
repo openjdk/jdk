@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,9 @@ import jdk.test.lib.security.SecurityUtils;
 
 public class DHKeyAgreement3 {
 
+    private static final String PROVIDER_NAME =
+            System.getProperty("test.provider.name", "SunJCE");
+
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX_FORMATTER = HexFormat.ofDelimiter(":").withUpperCase();
 
@@ -70,36 +73,36 @@ public class DHKeyAgreement3 {
 
         // Alice creates her own DH key pair
         System.err.println("ALICE: Generate DH keypair ...");
-        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH", "SunJCE");
+        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH", PROVIDER_NAME);
         aliceKpairGen.initialize(dhParamSpec);
         KeyPair aliceKpair = aliceKpairGen.generateKeyPair();
 
         // Bob creates his own DH key pair
         System.err.println("BOB: Generate DH keypair ...");
-        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH", "SunJCE");
+        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH", PROVIDER_NAME);
         bobKpairGen.initialize(dhParamSpec);
         KeyPair bobKpair = bobKpairGen.generateKeyPair();
 
         // Carol creates her own DH key pair
         System.err.println("CAROL: Generate DH keypair ...");
-        KeyPairGenerator carolKpairGen = KeyPairGenerator.getInstance("DH", "SunJCE");
+        KeyPairGenerator carolKpairGen = KeyPairGenerator.getInstance("DH", PROVIDER_NAME);
         carolKpairGen.initialize(dhParamSpec);
         KeyPair carolKpair = carolKpairGen.generateKeyPair();
 
 
         // Alice initialize
         System.err.println("ALICE: Initialize ...");
-        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH", "SunJCE");
+        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH", PROVIDER_NAME);
         aliceKeyAgree.init(aliceKpair.getPrivate());
 
         // Bob initialize
         System.err.println("BOB: Initialize ...");
-        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH", "SunJCE");
+        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH", PROVIDER_NAME);
         bobKeyAgree.init(bobKpair.getPrivate());
 
         // Carol initialize
         System.err.println("CAROL: Initialize ...");
-        KeyAgreement carolKeyAgree = KeyAgreement.getInstance("DH", "SunJCE");
+        KeyAgreement carolKeyAgree = KeyAgreement.getInstance("DH", PROVIDER_NAME);
         carolKeyAgree.init(carolKpair.getPrivate());
 
 

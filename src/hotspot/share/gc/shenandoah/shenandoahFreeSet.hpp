@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "logging/logStream.hpp"
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -105,9 +106,6 @@ private:
 
   size_t _used[UIntNumPartitions];
   size_t _available[UIntNumPartitions];
-
-  // Measured in bytes.
-  size_t _allocated_since_gc_start[UIntNumPartitions];
 
   // Some notes:
   //  total_region_counts[p] is _capacity[p] / region_size_bytes
@@ -446,11 +444,6 @@ private:
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
-  // Return the address of memory allocated, setting in_new_region to true iff the allocation is taken
-  // from a region that was previously empty.  Return nullptr if memory could not be allocated.
-  inline HeapWord* allocate_from_partition_with_affiliation(ShenandoahAffiliation affiliation,
-                                                            ShenandoahAllocRequest& req, bool& in_new_region);
-
   // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
   // we allocate an object, we decrement the count of this value.  Each time we re-evaluate whether to allocate
   // from right-to-left or left-to-right, we reset the value of this counter to _InitialAllocBiasWeight.
@@ -601,13 +594,13 @@ private:
   // Handle allocation for collector (for evacuation).
   HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Search for allocation in region with same affiliation as request, using given iterator.
+  // Search for allocation in region with same affiliation as request, using given iterator,
+  // or affiliate the first usable FREE region with given affiliation and allocate in.
   template<typename Iter>
-  HeapWord* allocate_with_affiliation(Iter& iterator, ShenandoahAffiliation affiliation,
-                                      ShenandoahAllocRequest& req, bool& in_new_region);
-
-  // Return true if the respective generation for this request has free regions.
-  bool can_allocate_in_new_region(const ShenandoahAllocRequest& req);
+  HeapWord* allocate_with_affiliation(Iter& iterator,
+                                      ShenandoahAffiliation affiliation,
+                                      ShenandoahAllocRequest& req,
+                                      bool& in_new_region);
 
   // Attempt to allocate memory for an evacuation from the mutator's partition.
   HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
@@ -637,6 +630,7 @@ private:
   void establish_old_collector_alloc_bias();
   size_t get_usable_free_words(size_t free_bytes) const;
 
+  void log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls);
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 

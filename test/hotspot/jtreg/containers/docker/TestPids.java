@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
  * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  * @build jdk.test.whitebox.WhiteBox PrintContainerInfo
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
@@ -47,26 +48,22 @@ import jdk.test.lib.Utils;
 
 public class TestPids {
     private static final String imageName = Common.imageName("pids");
-    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
+    private static final boolean IS_PODMAN = DockerTestUtils.isPodman();
     private static final int UNLIMITED_PIDS_PODMAN = 0;
     private static final int UNLIMITED_PIDS_DOCKER = -1;
 
     static final String warning_kernel_no_pids_support = "WARNING: Your kernel does not support pids limit capabilities";
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             testPids();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
@@ -115,8 +112,8 @@ public class TestPids {
                 Asserts.assertEquals(parts.length, 2);
                 String actual = parts[1].replaceAll("\\s","");
                 if (expectedValue.equals("max")) {
-                    // Unlimited pids accept max or -1
-                    if (actual.equals("max") || actual.equals("-1")) {
+                    // Unlimited pids accept max/-1/unlimited
+                    if (actual.equals("max") || actual.equals("-1") || actual.equals("unlimited")) {
                         System.out.println("Found expected " + actual + " for unlimited pids value.");
                     } else {
                         try {

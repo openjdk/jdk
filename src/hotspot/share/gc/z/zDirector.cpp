@@ -32,6 +32,7 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
+#include "runtime/init.hpp"
 
 ZDirector* ZDirector::_director;
 
@@ -916,6 +917,12 @@ void ZDirector::run_thread() {
   // Main loop
   while (wait_for_tick()) {
     ZDirectorStats stats = sample_stats();
+
+    if (!is_init_completed()) {
+      // Not allowed to start GCs yet
+      continue;
+    }
+
     if (!start_gc(stats)) {
       adjust_gc(stats);
     }

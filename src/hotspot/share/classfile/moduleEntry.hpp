@@ -206,6 +206,7 @@ public:
   static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
   static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
+  void preload_archived_oops();
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
   static void verify_archived_module_entries() PRODUCT_RETURN;

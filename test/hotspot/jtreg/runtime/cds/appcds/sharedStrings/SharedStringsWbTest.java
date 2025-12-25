@@ -25,13 +25,16 @@
 /*
  * @test
  * @summary White box test for shared strings
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.gc == null
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox SharedStringsWb
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver SharedStringsWbTest
  */
+
+// This test requires the vm.cds.write.mapped.java.heap specifically as it has expectations
+// about using the mechanism for dumping the entire string table, which the streaming solution
+// does not do.
 
 import java.io.*;
 import jdk.test.whitebox.WhiteBox;
