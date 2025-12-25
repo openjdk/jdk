@@ -76,8 +76,12 @@ public class TestVectorOperationsWithPartialSize {
 
         random.fill(random.ints(), ia);
         random.fill(random.longs(), la);
-        random.fill(random.uniformFloats(1.0f, 5.0f), fa);
-        random.fill(random.uniformDoubles(1.0, 5.0), da);
+        // Use a range of 1~3000 for floating point values to keep the tests
+        // effectiveness while avoiding the large precision differences introduced
+        // by the add reduction APIs, especially since the Vector API does not
+        // guarantee a specific calculation order for such operations.
+        random.fill(random.uniformFloats(1.0f, 3000.0f), fa);
+        random.fill(random.uniformDoubles(1.0, 3000.0), da);
         random.fill(random.uniformInts(0, ISPEC_128.length()), indices);
         for (int i = 0; i < SIZE; i++) {
             m[i] = i % 2 == 0;
