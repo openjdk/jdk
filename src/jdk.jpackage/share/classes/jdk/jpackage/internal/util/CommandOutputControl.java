@@ -1480,11 +1480,15 @@ public final class CommandOutputControl {
             return buf.map(ByteArrayOutputStream::toString);
         }
 
-        static Builder build() {
-            return new Builder();
+        static Builder build(Charset charset) {
+            return new Builder(charset);
         }
 
         static final class Builder {
+
+            private Builder(Charset charset) {
+                this.charset = Objects.requireNonNull(charset);
+            }
 
             Builder save(boolean v) {
                 save = v;
@@ -1498,11 +1502,6 @@ public final class CommandOutputControl {
 
             Builder dumpStream(PrintStream v) {
                 dumpStream = v;
-                return this;
-            }
-
-            Builder charset(Charset v) {
-                charset = v;
                 return this;
             }
 
@@ -1526,7 +1525,7 @@ public final class CommandOutputControl {
                     ps = new PrintStream(new TeeOutputStream(List.of(buf.get(), dumpStream)), true, dumpStream.charset());
                 } else if (!discard) {
                     ps = buf.map(in -> {
-                        return new PrintStream(in, false, charset());
+                        return new PrintStream(in, false, charset);
                     }).or(() -> {
                         return Optional.ofNullable(dumpStream);
                     }).orElseGet(CommandOutputControl::nullPrintStream);
@@ -1537,17 +1536,11 @@ public final class CommandOutputControl {
                 return new CachingPrintStream(ps, buf);
             }
 
-            private Charset charset() {
-                return Optional.ofNullable(charset).or(() -> {
-                    return Optional.ofNullable(dumpStream).map(PrintStream::charset);
-                }).orElseThrow();
-            }
-
             private boolean save;
             private boolean discard;
             private PrintStream dumpStream;
             private ByteArrayOutputStream externalBuffer;
-            private Charset charset;
+            private final Charset charset;
         }
     }
 
@@ -1701,8 +1694,7 @@ public final class CommandOutputControl {
 
         CachingPrintStream.Builder buildCachingPrintStream(PrintStream dumpStream, Charset charset) {
             Objects.requireNonNull(dumpStream);
-            Objects.requireNonNull(charset);
-            final var builder = CachingPrintStream.build().save(save()).discard(discard()).charset(charset);
+            final var builder = CachingPrintStream.build(charset).save(save()).discard(discard());
             if (dump()) {
                 builder.dumpStream(dumpStream);
             }
