@@ -38,6 +38,7 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/reachability.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
@@ -503,6 +504,9 @@ Node *Node::clone() const {
   if (is_expensive()) {
     C->add_expensive_node(n);
   }
+  if (is_ReachabilityFence()) {
+    C->add_reachability_fence(n->as_ReachabilityFence());
+  }
   if (for_post_loop_opts_igvn()) {
     // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
@@ -621,6 +625,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (is_expensive()) {
     compile->remove_expensive_node(this);
+  }
+  if (is_ReachabilityFence()) {
+    compile->remove_reachability_fence(as_ReachabilityFence());
   }
   if (is_OpaqueTemplateAssertionPredicate()) {
     compile->remove_template_assertion_predicate_opaque(as_OpaqueTemplateAssertionPredicate());
@@ -2988,6 +2995,25 @@ bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || 
 // the local in the caller.
 bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
   return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_CallLeafPure();
+}
+
+//--------------------------has_non_debug_uses------------------------------
+// Checks whether the node has any non-debug uses or not.
+bool Node::has_non_debug_uses() const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* u = fast_out(i);
+    if (u->is_SafePoint()) {
+      if (u->is_Call() && u->as_Call()->has_non_debug_use(this)) {
+        return true;
+      }
+      // Non-call safepoints have only debug uses.
+    } else if (u->is_ReachabilityFence()) {
+      // Reachability fence is treated as debug use.
+    } else {
+      return true; // everything else is conservatively treated as non-debug use
+    }
+  }
+  return false; // no non-debug uses found
 }
 
 //=============================================================================
