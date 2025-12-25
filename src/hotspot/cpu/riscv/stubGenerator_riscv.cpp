@@ -3064,9 +3064,9 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void gcm_counterMode_AESCrypt_block(int round, Register in, Register out, Register key,
-                                      Register counter, Register input_len, VectorRegister *working_vregs,
-                                      Register tmp1, Register tmp2) {
+  void gcm_counterMode_AESCrypt_block(int round, Register in, Register out, Register key, Register counter,
+                                      Register input_len, VectorRegister *working_vregs, Register tmp1, Register tmp2,
+                                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
     const Register block_size = tmp1;
     const Register len        = tmp2;
 
@@ -3084,24 +3084,24 @@ class StubGenerator: public StubCodeGenerator {
     // load keys to working_vregs according to round
     aes_load_keys(key, working_vregs, round);
 
-    __ vle32_v(v19, counter);
+    __ vle32_v(vtmp1, counter);
     Label L_aes_ctr_loop;
     __ bind(L_aes_ctr_loop);
-      __ vmv_v_v(v20, v19);
+      __ vmv_v_v(vtmp2, vtmp1);
       // encrypt counter according to round
-      aes_encrypt(v20, working_vregs, round);
-      __ vle32_v(v21, in);
-      __ vxor_vv(v20, v20, v21);
-      __ vse32_v(v20, out);
+      aes_encrypt(vtmp2, working_vregs, round);
+      __ vle32_v(vtmp3, in);
+      __ vxor_vv(vtmp2, vtmp2, vtmp3);
+      __ vse32_v(vtmp2, out);
       __ add(out, out, block_size);
       __ add(in, in, block_size);
       __ sub(len, len, 1);
-      __ vrev8_v(v19, v19, Assembler::VectorMask::v0_t);
-      __ vadd_vi(v19, v19, 0x1, Assembler::VectorMask::v0_t);
-      __ vrev8_v(v19, v19, Assembler::VectorMask::v0_t);
+      __ vrev8_v(vtmp1, vtmp1, Assembler::VectorMask::v0_t);
+      __ vadd_vi(vtmp1, vtmp1, 0x1, Assembler::VectorMask::v0_t);
+      __ vrev8_v(vtmp1, vtmp1, Assembler::VectorMask::v0_t);
       __ bnez(len, L_aes_ctr_loop);
 
-    __ vse32_v(v19, counter);
+    __ vse32_v(vtmp1, counter);
     __ bind(L_exit);
   }
 
@@ -3173,17 +3173,17 @@ class StubGenerator: public StubCodeGenerator {
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs crypt with key += 15*16
-    gcm_counterMode_AESCrypt_block(15, in, out, key, counter, input_len, working_vregs, tmp1, tmp2);
+    gcm_counterMode_AESCrypt_block(15, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
     gcm_ghash(input_len, subkeyHtbl, state, ct, tmp1, vtmp1, vtmp2, vtmp3);
 
     // Note: the following function performs crypt with key += 13*16
     __ bind(L_aes192);
-    gcm_counterMode_AESCrypt_block(13, in, out, key, counter, input_len, working_vregs, tmp1, tmp2);
+    gcm_counterMode_AESCrypt_block(13, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
     gcm_ghash(input_len, subkeyHtbl, state, ct, tmp1, vtmp1, vtmp2, vtmp3);
 
     // Note: the following function performs crypt with key += 11*16
     __ bind(L_aes128);
-    gcm_counterMode_AESCrypt_block(11, in, out, key, counter, input_len, working_vregs, tmp1, tmp2);
+    gcm_counterMode_AESCrypt_block(11, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
     gcm_ghash(input_len, subkeyHtbl, state, ct, tmp1, vtmp1, vtmp2, vtmp3);
 
     return start;
