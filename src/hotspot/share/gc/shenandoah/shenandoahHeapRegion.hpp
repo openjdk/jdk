@@ -386,19 +386,7 @@ public:
   inline void increase_live_data_gc_words(size_t s);
   inline bool has_marked() const;
 
- <<<<<<< HEAD
   inline bool has_live(ShenandoahMarkingContext* context, size_t index) const;
-=======
-  inline bool has_live() const;
-
-  // Represents the number of live bytes identified by most recent marking effort.  Does not include the bytes
-  // above TAMS.
-  inline size_t get_live_data_bytes() const;
-
-  // Represents the number of live words identified by most recent marking effort.  Does not include the words
-  // above TAMS.
-  inline size_t get_live_data_words() const;
->>>>>>> jdk/master
 
   // Returns bytes identified as live by most recently completed marking effort.  Can only be called during safepoints.
   inline size_t get_marked_data_bytes() const;
