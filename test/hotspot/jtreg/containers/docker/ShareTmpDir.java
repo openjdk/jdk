@@ -66,17 +66,23 @@ public class ShareTmpDir {
     private static void test() throws Exception {
         File sharedtmpdir = new File("sharedtmpdir");
         File flag = new File(sharedtmpdir, "flag");
-        File started = new File(sharedtmpdir, "started");
+        File started1 = new File(sharedtmpdir, "started-1");
+        File started2 = new File(sharedtmpdir, "started-2");
         sharedtmpdir.mkdir();
         flag.delete();
-        started.delete();
+        started1.delete();
+        started2.delete();
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "WaitForFlagFile");
+        Object lock = new Object();
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
         opts.addDockerOpts("--volume", sharedtmpdir.getAbsolutePath() + ":/tmp/");
         opts.addJavaOpts("-Xlog:os+container=trace", "-Xlog:perf+memops=debug", "-cp", "/test-classes/");
 
         Thread t1 = new Thread() {
                 public void run() {
+                    synchronized(lock) {
+                        opts.addClassOptions("1");
+                    }
                     try { out1 = Common.run(opts); } catch (Exception e) { e.printStackTrace(); }
                 }
             };
@@ -84,13 +90,16 @@ public class ShareTmpDir {
 
         Thread t2 = new Thread() {
                 public void run() {
+                    synchronized(lock) {
+                        opts.addClassOptions("2");
+                    }
                     try { out2 = Common.run(opts); } catch (Exception e) { e.printStackTrace(); }
                 }
             };
         t2.start();
 
-        while (!started.exists()) {
-            System.out.println("Wait for at least one JVM to start");
+        while (!started1.exists() || !started2.exists()) {
+            System.out.println("Waiting for all two JVMs to start");
             Thread.sleep(1000);
         }
 
