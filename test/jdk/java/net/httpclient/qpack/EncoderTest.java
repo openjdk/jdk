@@ -46,8 +46,6 @@ import jdk.internal.net.http.quic.streams.QuicSenderStream.SendingStreamState;
 import jdk.internal.net.http.quic.streams.QuicStream;
 import jdk.internal.net.http.quic.streams.QuicStreamWriter;
 import jdk.internal.net.quic.QuicTLSEngine;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -69,7 +67,10 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -84,15 +85,15 @@ import static org.testng.Assert.*;
  *          java.net.http/jdk.internal.net.http.http3.streams
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
- * @run testng/othervm EncoderTest
+ * @run junit/othervm EncoderTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EncoderTest {
     private final Random random = new Random();
     private final IntegerWriter intWriter = new IntegerWriter();
     private final StringWriter stringWriter = new StringWriter();
     private static final int TEST_STR_MAX_LENGTH = 10;
 
-    @DataProvider(name = "indexProvider")
     public Object[][] indexProvider() {
         AtomicInteger tableIndex = new AtomicInteger();
         return StaticTable.HTTP3_HEADER_FIELDS.stream()
@@ -101,7 +102,6 @@ public class EncoderTest {
                 .toArray(Object[][]::new);
     }
 
-    @DataProvider
     public Object[][] staticNameReferenceProvider() {
         AtomicInteger tableIndex = new AtomicInteger();
         Map<String, List<Integer>> map = new HashMap<>();
@@ -117,7 +117,6 @@ public class EncoderTest {
                 .map(List::toArray).toArray(Object[][]::new);
     }
 
-    @DataProvider
     public Object[][] literalsProvider() {
         var output = new String[100][];
         for (int i = 0; i < 100; i++) {
@@ -161,7 +160,8 @@ public class EncoderTest {
         fail(http3Error + "QPACK error:" + http3Error, error);
     }
 
-    @Test(dataProvider = "indexProvider")
+    @ParameterizedTest
+    @MethodSource("indexProvider")
     public void testFieldLineWriterWithStaticIndex(int index, HeaderField h) {
         var actual = allocateIndexBuffer(index);
         var expected = writeIndex(index);
@@ -177,14 +177,15 @@ public class EncoderTest {
 
         encoder.header(context, h.name(), h.value(), false);
         headerFrameWriter.write(actual);
-        assertNotEquals(actual.position(), 0);
+        assertNotEquals(0, actual.position());
         actual.flip();
 
-        assertEquals(actual, expected, debug(h.name(), h.value(), actual, expected));
+        assertEquals(expected, actual, debug(h.name(), h.value(), actual, expected));
         assertNotFailed(error);
     }
 
-    @Test(dataProvider = "staticNameReferenceProvider")
+    @ParameterizedTest
+    @MethodSource("staticNameReferenceProvider")
     public void testInsertWithStaticTableNameReference(String name, String value, List<Integer> validIndices) {
         int index = Collections.max(validIndices);
 
@@ -203,7 +204,7 @@ public class EncoderTest {
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
         encoder.header(context, name, value, false);
         headerFrameWriter.write(actual);
-        assertNotEquals(actual.position(), 0);
+        assertNotEquals(0, actual.position());
         actual.flip();
 
         TestQuicStreamWriter quicStreamWriter = quicConnection.sender.writer;
@@ -212,7 +213,8 @@ public class EncoderTest {
         assertNotFailed(error);
     }
 
-    @Test(dataProvider = "staticNameReferenceProvider")
+    @ParameterizedTest
+    @MethodSource("staticNameReferenceProvider")
     public void testFieldLineWithStaticTableNameReference(String name, String value, List<Integer> validIndices) {
         int index = Collections.max(validIndices);
         boolean sensitive = random.nextBoolean();
@@ -231,14 +233,15 @@ public class EncoderTest {
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
         encoder.header(context, name, value, sensitive);
         headerFrameWriter.write(actual);
-        assertNotEquals(actual.position(), 0);
+        assertNotEquals(0, actual.position());
         actual.flip();
 
         assertTrue(expected.contains(actual), debug(name, value, actual, expected));
         assertNotFailed(error);
     }
 
-    @Test(dataProvider = "literalsProvider")
+    @ParameterizedTest
+    @MethodSource("literalsProvider")
     public void testInsertWithLiterals(String name, String value) {
         var expected = writeInsertLiteral(name, value);
         var actual = allocateInsertLiteralBuffer(name, value);
@@ -255,14 +258,15 @@ public class EncoderTest {
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
         encoder.header(context, name, value, false);
         headerFrameWriter.write(actual);
-        assertNotEquals(actual.position(), 0);
+        assertNotEquals(0, actual.position());
         actual.flip();
         TestQuicStreamWriter quicStreamWriter = quicConnection.sender.writer;
-        assertEquals(quicStreamWriter.get(), expected, debug(name, value, quicStreamWriter.get(), expected));
+        assertEquals(expected, quicStreamWriter.get(), debug(name, value, quicStreamWriter.get(), expected));
         assertNotFailed(error);
     }
 
-    @Test(dataProvider = "literalsProvider")
+    @ParameterizedTest
+    @MethodSource("literalsProvider")
     public void testFieldLineEncodingWithLiterals(String name, String value) {
         boolean sensitive = random.nextBoolean();
 
@@ -280,10 +284,10 @@ public class EncoderTest {
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
         encoder.header(context, name, value, sensitive);
         headerFrameWriter.write(actual);
-        assertNotEquals(actual.position(), 0);
+        assertNotEquals(0, actual.position());
         actual.flip();
 
-        assertEquals(actual, expected, debug(name, value, actual, expected));
+        assertEquals(expected, actual, debug(name, value, actual, expected));
         assertNotFailed(error);
     }
 
