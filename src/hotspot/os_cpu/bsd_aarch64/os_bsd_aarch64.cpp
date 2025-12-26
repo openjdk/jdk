@@ -125,15 +125,8 @@
 
 #define REG_BCP context_x[22]
 
-address os::current_stack_pointer() {
-#if defined(__clang__) || defined(__llvm__)
-  void *sp;
-  __asm__("mov %0, " SPELL_REG_SP : "=r"(sp));
-  return (address) sp;
-#else
-  register void *sp __asm__ (SPELL_REG_SP);
-  return (address) sp;
-#endif
+NOINLINE address os::current_stack_pointer() {
+  return static_cast<address>(__builtin_dwarf_cfa());
 }
 
 char* os::non_memory_address_word() {

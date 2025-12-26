@@ -202,15 +202,8 @@
 # define context_err uc_mcontext.__gregs[_REG_ERR]
 #endif
 
-address os::current_stack_pointer() {
-#if defined(__clang__) || defined(__llvm__)
-  void *esp;
-  __asm__("mov %%" SPELL_REG_SP ", %0":"=r"(esp));
-  return (address) esp;
-#else
-  register void *esp __asm__ (SPELL_REG_SP);
-  return (address) esp;
-#endif
+NOINLINE address os::current_stack_pointer() {
+  return static_cast<address>(__builtin_dwarf_cfa());
 }
 
 char* os::non_memory_address_word() {

@@ -77,9 +77,16 @@
 # include <ucontext.h>
 
 
-address os::current_stack_pointer() {
-  return (address)__builtin_frame_address(0);
-}
+asm (R"(
+    .globl  _ZN2os21current_stack_pointerEv
+    .hidden _ZN2os21current_stack_pointerEv
+    .type   _ZN2os21current_stack_pointerEv, @function
+_ZN2os21current_stack_pointerEv:
+    mr 3, 1
+    blr
+#   .long 0
+#   .byte 0, 9, 0, 0, 0, 0, 0, 0
+)");
 
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,

@@ -91,8 +91,9 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 // MSVC has '__declspec(noinline)' but according to the official documentation
 // it only applies to member functions. There are reports though which pretend
 // that it also works for freestanding functions.
-#define NOINLINE     __declspec(noinline)
-#define ALWAYSINLINE __forceinline
+#define NOINLINE     [[msvc::noinline]]
+#define ALWAYSINLINE [[msvc::forceinline]] inline
+#define ATTRIBUTE_FLATTEN [[msvc::flatten]]
 
 #ifdef _M_ARM64
 #define USE_VECTORED_EXCEPTION_HANDLING
