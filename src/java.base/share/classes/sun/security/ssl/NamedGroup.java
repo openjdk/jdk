@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,8 @@ enum NamedGroup {
                     | NoSuchAlgorithmException exp) {
                 if (namedGroupSpec != NamedGroupSpec.NAMED_GROUP_XDH) {
                     mediator = false;
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
                             "No AlgorithmParameters for " + name, exp);
                     }
@@ -294,7 +295,8 @@ enum NamedGroup {
                         // AlgorithmParameters.getInstance(name);
                     } catch (NoSuchAlgorithmException nsae) {
                         mediator = false;
-                        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                             SSLLogger.warning(
                                 "No AlgorithmParameters for " + name, nsae);
                         }
@@ -383,7 +385,7 @@ enum NamedGroup {
             NamedGroup ng = NamedGroup.nameOf(ss);
             if (ng == null || !ng.isAvailable) {
                 if (SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest(
                             "Ignore the named group (" + ss
                                     + "), unsupported or unavailable");
@@ -811,7 +813,8 @@ enum NamedGroup {
                 }
 
                 if (groupList.isEmpty() &&
-                        SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                        SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("No default named groups");
                 }
             }
