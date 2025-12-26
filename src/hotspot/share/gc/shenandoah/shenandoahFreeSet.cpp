@@ -295,6 +295,11 @@ void ShenandoahFreeSet::reset_bytes_allocated_since_gc_start(size_t initial_byte
   // Since _mutator_bytes_allocated_since_gc_start does not start at zero, we subtract initial_bytes_allocated so as
   // to not double count these allocated bytes.
   _total_bytes_previously_allocated += _mutator_bytes_allocated_since_gc_start - initial_bytes_allocated;
+#define KELVIN_DEBUG_BYTES_ALLOCATED
+#ifdef KELVIN_DEBUG_BYTES_ALLOCATED
+  log_info(gc)("reset_bytes_allocated_since_gc_start() adds %zu - %zu to _total_bytes_previously_allocated to yield: %zu",
+               _mutator_bytes_allocated_since_gc_start, initial_bytes_allocated, _total_bytes_previously_allocated);
+#endif
   _mutator_bytes_allocated_since_gc_start = initial_bytes_allocated;
 }
 

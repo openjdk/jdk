@@ -664,12 +664,19 @@ public:
   }
 
   inline size_t get_total_bytes_allocated() {
+#define KELVIN_DEBUG_BYTES_ALLOCATED
+#ifdef KELVIN_DEBUG_BYTES_ALLOCATED
+    log_info(gc)("total_bytes_allocated: %zu = %zu + %zu",
+                 _mutator_bytes_allocated_since_gc_start + _total_bytes_previously_allocated,
+                 _mutator_bytes_allocated_since_gc_start, _total_bytes_previously_allocated);
+#endif
     return  _mutator_bytes_allocated_since_gc_start + _total_bytes_previously_allocated;
   }
 
   inline size_t get_bytes_allocated_since_previous_sample() {
     size_t total_bytes = get_total_bytes_allocated();
-    assert(total_bytes >= _mutator_bytes_at_last_sample, "monotonically increasing");
+    assert(total_bytes >= _mutator_bytes_at_last_sample, "monotonically increasing, total_bytes: %zu, at_last_sample: %zu",
+           total_bytes, _mutator_bytes_at_last_sample);
     // Note: there's always the possibility that the tally of total allocations exceeds the 64-bit capacity of our size_t
     // counter.  We assume that the difference between relevant samples does not exceed this count.  Example:
     //   Suppose _mutator_words_at_last_sample is 0xffff_ffff_ffff_fff0 (18,446,744,073,709,551,600 Decimal)
