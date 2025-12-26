@@ -47,7 +47,6 @@ public class NativeStrike extends PhysicalStrike {
         throw new RuntimeException("NativeFont not used on Windows");
     }
 
-
     @Override
     void getGlyphImagePtrs(int[] glyphCodes, long[] images,int  len) {
     }
@@ -81,14 +80,9 @@ public class NativeStrike extends PhysicalStrike {
     Rectangle2D.Float getGlyphOutlineBounds(int glyphCode) {
         return null;
     }
+
     @Override
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
         return null;
     }
-
-    @Override
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        return null;
-    }
-
 }
