@@ -127,7 +127,7 @@ public final class Main {
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
 
-        Log.setPrintWriter(out, err);
+        Globals.instance().loggerOutputStreams(out, err);
 
         final var runner = new Runner(t -> {
             new ErrorReporter(_ -> {
@@ -179,7 +179,7 @@ public final class Main {
                 }
 
                 if (VERBOSE.containsIn(options)) {
-                    Log.setVerbose();
+                    Globals.instance().loggerVerbose();
                 }
 
                 final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, bundlingEnv);
