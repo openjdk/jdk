@@ -2997,7 +2997,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void ghash_loop(Register subkeyH, Register state, Register data, Register blocks,
+  void ghash_loop(Register state, Register subkeyH, Register data, Register blocks,
                   VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
     VectorRegister partial_hash = vtmp1;
     VectorRegister hash_subkey  = vtmp2;
@@ -3056,7 +3056,7 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vtmp2 = v2;
     VectorRegister vtmp3 = v3;
 
-    ghash_loop(subkeyH, state, data, blocks, vtmp1, vtmp2, vtmp3);
+    ghash_loop(state, subkeyH, data, blocks, vtmp1, vtmp2, vtmp3);
 
     __ leave();
     __ ret();
