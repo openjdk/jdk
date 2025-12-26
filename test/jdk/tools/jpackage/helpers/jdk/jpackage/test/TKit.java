@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -112,8 +113,9 @@ public final class TKit {
         Objects.requireNonNull(action);
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
+
         try {
-            withNewState(action, stateBuilder -> {
+            withState(action, stateBuilder -> {
                 stateBuilder.out(out).err(err);
             });
         } finally {
@@ -125,28 +127,27 @@ public final class TKit {
         }
     }
 
-    public static State state() {
-        return STATE.get();
-    }
-
-    public static void state(State v) {
-        STATE.set(Objects.requireNonNull(v));
-    }
-
-    static void withNewState(ThrowingRunnable<? extends Exception> action, Consumer<State.Builder> stateBuilderMutator) {
+    public static void withState(ThrowingRunnable<? extends Exception> action, Consumer<State.Builder> stateBuilderMutator) {
         Objects.requireNonNull(action);
         Objects.requireNonNull(stateBuilderMutator);
 
-        var oldState = state();
-        var builder = oldState.buildCopy();
-        stateBuilderMutator.accept(builder);
-        var newState = builder.create();
-        try {
-            state(newState);
-            ThrowingRunnable.toRunnable(action).run();
-        } finally {
-            state(oldState);
-        }
+        var stateBuilder = state().buildCopy();
+        stateBuilderMutator.accept(stateBuilder);
+        withState(action, stateBuilder.create());
+    }
+
+    public static void withNewState(ThrowingRunnable<? extends Exception> action) {
+        withState(action, _ -> {});
+    }
+
+    public static void withState(ThrowingRunnable<? extends Exception> action, State state) {
+        Objects.requireNonNull(action);
+        Objects.requireNonNull(state);
+        ScopedValue.where(STATE, state).run(ThrowingRunnable.toRunnable(action));
+    }
+
+    public static State state() {
+        return STATE.orElse(DEFAULT_STATE);
     }
 
     enum RunTestMode {
@@ -167,7 +168,7 @@ public final class TKit {
         }
 
         tests.stream().forEach(test -> {
-            withNewState(() -> {
+            withState(() -> {
                 if (modes.contains(RunTestMode.FAIL_FAST)) {
                     test.run();
                 } else {
@@ -1339,6 +1340,7 @@ public final class TKit {
                 TestInstance currentTest,
                 PrintStream out,
                 PrintStream err,
+                Map<Object, Object> properties,
                 boolean trace,
                 boolean traceAsserts,
                 boolean verboseJPackage,
@@ -1346,10 +1348,12 @@ public final class TKit {
 
             Objects.requireNonNull(out);
             Objects.requireNonNull(err);
+            Objects.requireNonNull(properties);
 
             this.currentTest = currentTest;
             this.out = out;
             this.err = err;
+            this.properties = Collections.synchronizedMap(properties);
 
             this.trace = trace;
             this.traceAsserts = traceAsserts;
@@ -1368,6 +1372,18 @@ public final class TKit {
 
         PrintStream err() {
             return err;
+        }
+
+        Optional<Object> findProperty(Object key) {
+            return Optional.ofNullable(properties.get(Objects.requireNonNull(key)));
+        }
+
+        void setProperty(Object key, Object value) {
+            if (value == null) {
+                properties.remove(Objects.requireNonNull(key));
+            } else {
+                properties.put(Objects.requireNonNull(key), value);
+            }
         }
 
         static Builder build() {
@@ -1404,6 +1420,8 @@ public final class TKit {
                     verboseTestSetup = isNonOf.test(Set.of("init", "i"));
                 }
 
+                mutable = true;
+
                 return this;
             }
 
@@ -1411,6 +1429,8 @@ public final class TKit {
                 currentTest = state.currentTest;
                 out = state.out;
                 err = state.err;
+                properties.clear();
+                properties.putAll(state.properties);
 
                 trace = state.trace;
                 traceAsserts = state.traceAsserts;
@@ -1436,25 +1456,52 @@ public final class TKit {
                 return this;
             }
 
+            Builder property(Object key, Object value) {
+                if (value == null) {
+                    properties.remove(Objects.requireNonNull(key));
+                } else {
+                    properties.put(Objects.requireNonNull(key), value);
+                }
+                return this;
+            }
+
+            Builder mutable(boolean v) {
+                mutable = v;
+                return this;
+            }
+
             State create() {
-                return new State(currentTest, out, err, trace, traceAsserts, verboseJPackage, verboseTestSetup);
+                return new State(
+                        currentTest,
+                        out,
+                        err,
+                        mutable ? new HashMap<>(properties) : Map.copyOf(properties),
+                        trace,
+                        traceAsserts,
+                        verboseJPackage,
+                        verboseTestSetup);
             }
 
             private TestInstance currentTest;
             private PrintStream out;
             private PrintStream err;
+            private Map<Object, Object> properties = new HashMap<>();
 
             private boolean trace;
             private boolean traceAsserts;
 
             private boolean verboseJPackage;
             private boolean verboseTestSetup;
+
+            private boolean mutable = true;
         }
 
 
         private final TestInstance currentTest;
         private final PrintStream out;
         private final PrintStream err;
+
+        private final Map<Object, Object> properties;
 
         private final boolean trace;
         private final boolean traceAsserts;
@@ -1464,10 +1511,6 @@ public final class TKit {
     }
 
 
-    private static final InheritableThreadLocal<State> STATE = new InheritableThreadLocal<>() {
-        @Override
-        protected State initialValue() {
-            return State.build().initDefaults().create();
-        }
-    };
+    private static final ScopedValue<State> STATE = ScopedValue.newInstance();
+    private static final State DEFAULT_STATE = State.build().initDefaults().mutable(false).create();
 }

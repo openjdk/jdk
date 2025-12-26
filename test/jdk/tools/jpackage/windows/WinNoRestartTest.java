@@ -30,6 +30,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.TKit;
 
 /* @test
  * @bug 8340311
@@ -92,9 +93,13 @@ public class WinNoRestartTest {
             // Save updated main launcher .cfg file
             cfgFile.save(cmd.appLauncherCfgPath(null));
 
+            var state = TKit.state();
+
             // Launch the app in a separate thread
             new Thread(() -> {
-                HelloApp.executeLauncher(cmd);
+                TKit.withState(() -> {
+                    HelloApp.executeLauncher(cmd);
+                }, state);
             }).start();
 
             // Wait a bit to let the app start

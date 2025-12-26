@@ -27,6 +27,7 @@ import java.time.Duration;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test that terminating of the parent app launcher process automatically
@@ -54,9 +55,13 @@ public class Win8301247Test {
         cmd.addArguments("--java-options", "-Djpackage.test.noexit=true");
         cmd.executeAndAssertImageCreated();
 
+        var state = TKit.state();
+
         // Launch the app in a separate thread
         new Thread(() -> {
-            HelloApp.executeLauncher(cmd);
+            TKit.withState(() -> {
+                HelloApp.executeLauncher(cmd);
+            }, state);
         }).start();
 
         // Wait a bit to let the app start

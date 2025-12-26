@@ -81,9 +81,7 @@ public final class Main {
                         true,
                         System.out.charset())) {
 
-                    TKit.withNewState(workload, stateBuilder -> {
-                        stateBuilder.out(out).err(out);
-                    });
+                    TKit.withOutput(workload, out, out);
 
                 } catch (IOException ex) {
                     throw new UncheckedIOException(ex);

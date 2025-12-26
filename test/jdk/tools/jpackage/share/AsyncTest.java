@@ -62,7 +62,7 @@ public class AsyncTest {
 
         // Create test jar only once.
         // Besides of saving time, this avoids asynchronous invocations of java tool provider that randomly fail.
-        APP_JAR.set(HelloApp.createBundle(JavaAppDesc.parse("Hello!"), TKit.workDir()));
+        var appJar = HelloApp.createBundle(JavaAppDesc.parse("Hello!"), TKit.workDir());
 
         //
         // Run test cases from AsyncInnerTest class asynchronously.
@@ -78,7 +78,7 @@ public class AsyncTest {
             var futures = executor.invokeAll(IntStream.range(0, JOB_COUNT).mapToObj(Integer::toString).<Workload>mapMulti((idx, consumer) -> {
                 for (var testFuncName : testFuncNames) {
                     var id = String.format("%s(%s)", testFuncName, idx);
-                    consumer.accept(new Workload(id));
+                    consumer.accept(new Workload(id, appJar));
                 }
             }).toList());
 
@@ -142,15 +142,19 @@ public class AsyncTest {
     }
 
 
-    private record Workload(ByteArrayOutputStream outputSink, String testCaseId) implements Callable<Result>  {
+    private record Workload(
+            String testCaseId,
+            ByteArrayOutputStream outputSink,
+            Path appJar) implements Callable<Result> {
 
         Workload {
-            Objects.requireNonNull(outputSink);
             Objects.requireNonNull(testCaseId);
+            Objects.requireNonNull(outputSink);
+            Objects.requireNonNull(appJar);
         }
 
-        Workload(String testCaseId) {
-            this(new ByteArrayOutputStream(), testCaseId);
+        Workload(String testCaseId, Path appJar) {
+            this(testCaseId, new ByteArrayOutputStream(), appJar);
         }
 
         private String testOutput() {
@@ -159,20 +163,17 @@ public class AsyncTest {
 
         @Override
         public Result call() {
-
-            // Reset the current test inherited in the state from the parent thread.
-            TKit.state(DEFAULT_STATE);
-
-            JPackageCommand.useToolProviderByDefault();
-
             var runArg = String.format("--jpt-run=%s", AsyncInnerTest.class.getName());
 
             Optional<Exception> err = Optional.empty();
             try {
                 try (var out = new PrintStream(outputSink, false, System.out.charset())) {
-                    TKit.withOutput(() -> {
-                        Main.main("--jpt-ignore-logfile", runArg, String.format("--jpt-include=%s", testCaseId));
-                    }, out, out);
+                    ScopedValue.where(APP_JAR, appJar).run(() -> {
+                        TKit.withOutput(() -> {
+                            JPackageCommand.useToolProviderByDefault();
+                            Main.main("--jpt-ignore-logfile", runArg, String.format("--jpt-include=%s", testCaseId));
+                        }, out, out);
+                    });
                 }
             } catch (Exception ex) {
                 err = Optional.of(ex);
@@ -181,8 +182,6 @@ public class AsyncTest {
         }
     }
 
-
     private static final int JOB_COUNT = 30;
-    private static final TKit.State DEFAULT_STATE = TKit.state();
-    private static final InheritableThreadLocal<Path> APP_JAR = new InheritableThreadLocal<>();
+    private static final ScopedValue<Path> APP_JAR = ScopedValue.newInstance();
 }
