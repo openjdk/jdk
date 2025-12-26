@@ -63,10 +63,10 @@ import java.awt.geom.AffineTransform;
 *   @see java.awt.font.LineMetrics
 */
 public class FontRenderContext {
-    private transient final AffineTransform tx;
-    private transient final Object aaHintValue;
-    private transient final Object fmHintValue;
-    private transient final boolean defaulting;
+    private final transient AffineTransform tx;
+    private final transient Object aaHintValue;
+    private final transient Object fmHintValue;
+    private final transient boolean defaulting;
 
     /**
      * Constructs a new {@code FontRenderContext}
