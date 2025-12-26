@@ -31,13 +31,11 @@
  */
 
 import jdk.test.lib.containers.cgroup.MetricsTester;
-import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.internal.platform.Metrics;
 
 public class TestCgroupMetrics {
 
     public static void main(String[] args) throws Exception {
-        DockerTestUtils.checkCanTestDocker();
         MetricsTester.main(args);
     }
 
