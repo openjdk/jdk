@@ -99,9 +99,6 @@
           "evvort even if the usage of old generation is below "            \
           "ShenandoahIgnoreOldGrowthBelowPercentage.")                      \
                                                                             \
-  product(bool, ShenandoahGenerationalAdaptiveTenuring, true, EXPERIMENTAL, \
-          "(Generational mode only) Dynamically adapt tenuring age.")       \
-                                                                            \
   product(bool, ShenandoahGenerationalCensusIgnoreOlderCohorts, true,       \
                                                                EXPERIMENTAL,\
           "(Generational mode only) Ignore mortality rates older than the " \
@@ -126,8 +123,7 @@
           "(Generational mode only) Cohort mortality rates below this "     \
           "value will be treated as indicative of longevity, leading to "   \
           "tenuring. A lower value delays tenuring, a higher value hastens "\
-          "it. Used only when ShenandoahGenerationalhenAdaptiveTenuring is "\
-          "enabled.")                                                       \
+          "it.")                                                            \
           range(0.001,0.999)                                                \
                                                                             \
   product(size_t, ShenandoahGenerationalTenuringCohortPopulationThreshold,  \
