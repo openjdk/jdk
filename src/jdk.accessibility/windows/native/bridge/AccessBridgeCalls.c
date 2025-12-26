@@ -225,11 +225,12 @@ extern "C" {
         theAccessBridgeInitializedFlag = FALSE;
         if (theAccessBridgeInstance != (HANDLE) 0) {
             result = FreeLibrary(theAccessBridgeInstance);
-            if (result != TRUE) {
+            if (result == 0) {
                 error = GetLastError();
             }
-            return TRUE;
+            return result != 0 ? TRUE : FALSE;
         }
+        ((void) error); // Temporary useless code to mark error as being flagged by the compiler
         return FALSE;
     }
 
