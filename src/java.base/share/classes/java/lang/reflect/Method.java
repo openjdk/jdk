@@ -45,6 +45,7 @@ import sun.reflect.annotation.AnnotationType;
 import sun.reflect.annotation.AnnotationParser;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
+import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
 import java.util.StringJoiner;
 
@@ -52,11 +53,6 @@ import java.util.StringJoiner;
  * A {@code Method} provides information about, and access to, a single method
  * on a class or interface.  The reflected method may be a class method
  * or an instance method (including an abstract method).
- *
- * <p>A {@code Method} permits widening conversions to occur when matching the
- * actual parameters to invoke with the underlying method's formal
- * parameters, but it throws an {@code IllegalArgumentException} if a
- * narrowing conversion would occur.
  *
  * @see Member
  * @see java.lang.Class
@@ -483,10 +479,9 @@ public final class Method extends Executable {
     /**
      * Invokes the underlying method represented by this {@code Method}
      * object, on the specified object with the specified parameters.
-     * Individual parameters are automatically unwrapped to match
-     * primitive formal parameters, and both primitive and reference
-     * parameters are subject to method invocation conversions as
-     * necessary.
+     * Each {@code Object} in the {@code args} array is {@linkplain
+     * java.lang.reflect##input-conversions converted} to the type of
+     * the corresponding formal parameter.
      *
      * <p>If the underlying method is static, then the specified {@code obj}
      * argument is ignored. It may be null.
@@ -503,11 +498,9 @@ public final class Method extends Executable {
      * the method is initialized if it has not already been initialized.
      *
      * <p>If the method completes normally, the value it returns is
-     * returned to the caller of invoke; if the value has a primitive
-     * type, it is first appropriately wrapped in an object. However,
-     * if the value has the type of an array of a primitive type, the
-     * elements of the array are <i>not</i> wrapped in objects; in
-     * other words, an array of primitive type is returned.  If the
+     * returned to the caller of invoke after {@linkplain
+     * java.lang.reflect##output-conversions converting} from the
+     * method's return type to {@code Object}.  If the
      * underlying method return type is void, the invocation returns
      * null.
      *
@@ -536,6 +529,9 @@ public final class Method extends Executable {
      *              and the method is an instance method.
      * @throws    ExceptionInInitializerError if the initialization
      * provoked by this method fails.
+     * @see MethodHandles.Lookup#findStatic
+     * @see MethodHandles.Lookup#findVirtual
+     * @see MethodHandles.Lookup#unreflect
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization

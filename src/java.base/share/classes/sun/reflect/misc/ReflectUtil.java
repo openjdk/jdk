@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public final class ReflectUtil {
      * access to constructors.
      *
      * @param currentClass the class performing the access
-     * @param memberClass the declaring class of the member being accessed
+     * @param memberClass the referenced class of the member being accessed
      * @param target the target object if accessing instance field or method;
      *               or null if accessing static field or method or if target
      *               object access rights will be checked later
