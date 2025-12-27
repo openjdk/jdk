@@ -307,12 +307,12 @@ public final class BasicTest {
     @Test
     @Parameter("true")
     @Parameter("false")
-    public void testNoOutputDir(boolean appImage) throws Throwable {
+    public void testNoOutputDir(boolean appImage) throws IOException {
         var cmd = JPackageCommand.helloAppImage();
 
         final var execDir = cmd.outputDir();
 
-        final ThrowingConsumer<JPackageCommand> initializer = cmdNoOutputDir -> {
+        final ThrowingConsumer<JPackageCommand, IOException> initializer = cmdNoOutputDir -> {
             cmd.executePrerequisiteActions();
 
             final var pkgType = cmdNoOutputDir.packageType();
@@ -339,7 +339,7 @@ public final class BasicTest {
 
             // JPackageCommand.execute() will not do the cleanup if `--dest` parameter
             // is not specified, do it manually.
-            TKit.createDirectories(execDir);
+            Files.createDirectories(execDir);
             TKit.deleteDirectoryContentsRecursive(execDir);
         };
 
