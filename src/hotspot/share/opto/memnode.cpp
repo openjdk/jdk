@@ -33,6 +33,8 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/c2_globals.hpp"
+#include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
@@ -42,8 +44,11 @@
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mempointer.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -54,6 +59,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/tribool.hpp"
 #include "utilities/vmError.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -701,6 +707,20 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
   Node* mem = in(MemNode::Memory);   // start searching here...
 
   int cnt = 50;             // Cycle limiter
+  if (is_Load() && alloc != nullptr) {
+    // Get agressive for loads from freshly allocated objects
+    cnt = 1000;
+  }
+
+  // If alloc != nullptr and the allocated object has not escaped the current compilation unit, we
+  // can be more aggressive, walk past calls and memory barriers to find a corresponding store
+  ResourceMark rm;
+  bool is_known_instance = addr_t != nullptr && addr_t->is_known_instance_field();
+  LocalEA local_ea(phase->is_IterGVN(), base);
+  TriBool has_not_escaped = is_known_instance ? TriBool(true)
+                                              : (is_Load() && local_ea.is_candidate() ? TriBool() : TriBool(false));
+
+  // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
   for (;;) {                // While we can dance past unrelated stores...
     if (--cnt < 0)  break;  // Caught in cycle or a complicated dance?
 
@@ -709,15 +729,31 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       Node* st_adr = mem->in(MemNode::Address);
       intptr_t st_offset = 0;
       Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_offset);
-      if (st_base == nullptr)
-        break;              // inscrutable pointer
-
-      // For raw accesses it's not enough to prove that constant offsets don't intersect.
-      // We need the bases to be the equal in order for the offset check to make sense.
-      if ((adr_maybe_raw || check_if_adr_maybe_raw(st_adr)) && st_base != base) {
+      if (st_base == nullptr) {
+        // inscrutable pointer
         break;
       }
 
+      // If the bases are the same and the offsets are the same, it seems that this is the exact
+      // store we are looking for, the caller will check if the type of the store matches
+      if (st_base == base && st_offset == offset) {
+        return mem;
+      }
+
+      // If it is provable that the memory accessed by mem does not overlap the memory accessed by
+      // this, we may walk past mem.
+      // For raw accesses, 2 accesses are independent if they have the same base and the offset
+      // says that they do not overlap.
+      // For heap accesses, 2 accesses are independent if either the bases are provably different
+      // at runtime or the offset says that the accesses do not overlap.
+      if ((adr_maybe_raw || check_if_adr_maybe_raw(st_adr)) && st_base != base) {
+        // Raw accesses can only be provably independent if they have the same base
+        break;
+      }
+
+      // If the offsets say that the accesses do not overlap, then it is provable that mem and this
+      // do not overlap. For example, a LoadI from Object+8 is independent from a StoreL into
+      // Object+12, no matter what the bases are.
       if (st_offset != offset && st_offset != Type::OffsetBot) {
         const int MAX_STORE = MAX2(BytesPerLong, (int)MaxVectorSize);
         assert(mem->as_Store()->memory_size() <= MAX_STORE, "");
@@ -730,25 +766,39 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
           // in the same sequence of RawMem effects.  We sometimes initialize
           // a whole 'tile' of array elements with a single jint or jlong.)
           mem = mem->in(MemNode::Memory);
-          continue;           // (a) advance through independent store memory
+          continue;
         }
       }
-      if (st_base != base &&
-          detect_ptr_independence(base, alloc,
-                                  st_base,
-                                  AllocateNode::Ideal_allocation(st_base),
-                                  phase)) {
-        // Success:  The bases are provably independent.
+
+      // Same base and overlapping offsets, it seems provable that the accesses overlap, give up
+      if (st_base == base) {
+        break;
+      }
+
+      // Try to prove that 2 different base nodes at compile time are different values at runtime
+      bool known_independent = false;
+      if (has_not_escaped && !is_known_instance) {
+        // Since we are walking from a node to its input, if alloc is found that it has not escaped
+        // at an earlier iteration, it must also be found that it has not escaped at the current
+        // iteration
+        assert(local_ea.not_escaped_controls().member(mem->in(0)), "inconsistent");
+
+        // If base is the result of an allocation that has not escaped, we can know all the nodes
+        // that may have the same runtime value as base, these are the transitive outputs of base
+        // along some chains that consist of ConstraintCasts, EncodePs, DecodeNs, Phis, and CMoves
+        known_independent = !local_ea.aliases().member(st_base);
+      } else if (detect_ptr_independence(base, alloc, st_base,
+                                         AllocateNode::Ideal_allocation(st_base),
+                                         phase)) {
+        // detect_ptr_independence == true means that it can prove that base and st_base cannot
+        // have the same runtime value
+        known_independent = true;
+      }
+
+      if (known_independent) {
         mem = mem->in(MemNode::Memory);
-        continue;           // (a) advance through independent store memory
+        continue;
       }
-
-      // (b) At this point, if the bases or offsets do not agree, we lose,
-      // since we have not managed to prove 'this' and 'mem' independent.
-      if (st_base == base && st_offset == offset) {
-        return mem;         // let caller handle steps (c), (d)
-      }
-
     } else if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
       InitializeNode* st_init = mem->in(0)->as_Initialize();
       AllocateNode*  st_alloc = st_init->allocation();
@@ -784,7 +834,6 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
         // From caller, can_see_stored_value will consult find_captured_store.
         return mem;         // let caller handle steps (c), (d)
       }
-
     } else if (find_previous_arraycopy(phase, alloc, mem, false) != nullptr) {
       if (prev != mem) {
         // Found an arraycopy but it doesn't affect that load
@@ -792,35 +841,75 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       }
       // Found an arraycopy that may affect that load
       return mem;
-    } else if (addr_t != nullptr && addr_t->is_known_instance_field()) {
-      // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
-      if (mem->is_Proj() && mem->in(0)->is_Call()) {
-        // ArrayCopyNodes processed here as well.
-        CallNode *call = mem->in(0)->as_Call();
-        if (!call->may_modify(addr_t, phase)) {
-          mem = call->in(TypeFunc::Memory);
-          continue;         // (a) advance through independent call memory
+    } else if (mem->is_MergeMem()) {
+      int alias_idx = phase->C->get_alias_index(adr_type());
+      mem = mem->as_MergeMem()->memory_at(alias_idx);
+      continue;
+    } else if (mem->is_Proj() && mem->in(0)->is_Call()) {
+      // We can walk past a call if we can prove that the call does not modify the memory we are
+      // accessing, this is the case if the allocation has not escaped at this call
+      CallNode* call = mem->in(0)->as_Call();
+      if (has_not_escaped && !is_known_instance) {
+        // Since we are walking from a node to its input, if alloc is found that it has not escaped
+        // at an earlier iteration, it must also be found that it has not escaped at the current
+        // iteration
+        assert(local_ea.not_escaped_controls().member(call), "inconsistent");
+      }
+      if (has_not_escaped.is_default()) {
+        LocalEA::EscapeStatus status = local_ea.check_escape_status(call);
+        if (status == LocalEA::DEAD_PATH) {
+          return phase->C->top();
         }
-      } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
-        ArrayCopyNode* ac = nullptr;
-        if (ArrayCopyNode::may_modify(addr_t, mem->in(0)->as_MemBar(), phase, ac)) {
-          break;
+
+        has_not_escaped = (status == LocalEA::NOT_ESCAPED);
+      }
+      if (!has_not_escaped) {
+        break;
+      }
+
+      // We are more aggressive with known instances, for the others, if this call may modify base,
+      // check_not_escaped would return false
+      if (!is_known_instance || !call->may_modify(addr_t, phase)) {
+        mem = call->in(TypeFunc::Memory);
+        continue;         // (a) advance through independent call memory
+      }
+    } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
+      // We can walk past a memory barrier if we can prove that the allocation has not escaped at
+      // this barrier, hence it is invisible to other threads
+      if (has_not_escaped && !is_known_instance) {
+        // Since we are walking from a node to its input, if alloc is found that it has not escaped
+        // at an earlier iteration, it must also be found that it has not escaped at the current
+        // iteration
+        assert(local_ea.not_escaped_controls().member(mem->in(0)), "inconsistent");
+      }
+      if (has_not_escaped.is_default()) {
+        LocalEA::EscapeStatus status = local_ea.check_escape_status(mem->in(0));
+        if (status == LocalEA::DEAD_PATH) {
+          return phase->C->top();
         }
-        mem = mem->in(0)->in(TypeFunc::Memory);
-        continue;           // (a) advance through independent MemBar memory
-      } else if (mem->is_ClearArray()) {
-        if (ClearArrayNode::step_through(&mem, (uint)addr_t->instance_id(), phase)) {
-          // (the call updated 'mem' value)
-          continue;         // (a) advance through independent allocation memory
-        } else {
-          // Can not bypass initialization of the instance
-          // we are looking for.
-          return mem;
-        }
-      } else if (mem->is_MergeMem()) {
-        int alias_idx = phase->C->get_alias_index(adr_type());
-        mem = mem->as_MergeMem()->memory_at(alias_idx);
-        continue;           // (a) advance through independent MergeMem memory
+
+        has_not_escaped = (status == LocalEA::NOT_ESCAPED);
+      }
+      if (!has_not_escaped) {
+        break;
+      }
+
+      // We are more aggressive with known instances, for the others, if this call may modify base,
+      // check_not_escaped would return false
+      ArrayCopyNode* ac = nullptr;
+      if (is_known_instance && ArrayCopyNode::may_modify(addr_t, mem->in(0)->as_MemBar(), phase, ac)) {
+        break;
+      }
+      mem = mem->in(0)->in(TypeFunc::Memory);
+      continue;
+    } else if (is_known_instance && mem->is_ClearArray()) {
+      if (ClearArrayNode::step_through(&mem, (uint)addr_t->instance_id(), phase)) {
+        // (the call updated 'mem' value)
+        continue;         // (a) advance through independent allocation memory
+      } else {
+        // Can not bypass initialization of the instance
+        // we are looking for.
+        return mem;
       }
     }
 
@@ -1258,6 +1347,222 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
   }
 
   return nullptr;
+}
+
+// Construct a LocalEA object that inspects a node for escape analysis. This constructor will
+// calculate _is_candidate and _aliases.
+MemNode::LocalEA::LocalEA(PhaseIterGVN* phase, Node* base) : _phase(phase), _is_candidate(true), _aliases(), _not_escaped_controls() {
+  if (!DoLocalEscapeAnalysis || phase == nullptr) {
+    _is_candidate = false;
+    return;
+  }
+
+  ciEnv* env = _phase->C->env();
+  if (env->should_retain_local_variables() || env->jvmti_can_walk_any_space()) {
+    // JVMTI can modify local objects, so give up
+    _is_candidate = false;
+  }
+
+  // Collect all nodes in _aliases.
+  // Firstly, we traverse the graph from use to def, this visits all the allocations that may alias
+  // base. Other nodes are collected as well, they are not important in this step as they should be
+  // collected during the second step anyway.
+  _aliases.push(base);
+  for (uint idx = 0; idx < _aliases.size(); idx++) {
+    Node* n = _aliases.at(idx);
+    if (AllocateNode::Ideal_allocation(n) != nullptr) {
+      continue;
+    }
+
+    if (n->is_ConstraintCast() || n->is_DecodeN() || n->is_EncodeP()) {
+      _aliases.push(n->in(1));
+    } else if (n->is_Phi()) {
+      for (uint i = 1; i < n->req(); i++) {
+        Node* in = n->in(i);
+        if (in != nullptr && !phase->type(in)->empty()) {
+          _aliases.push(in);
+        }
+      }
+    } else if (n->is_CMove()) {
+      Node* if_false = n->in(CMoveNode::IfFalse);
+      if (if_false != nullptr && !phase->type(if_false)->empty()) {
+        _aliases.push(if_false);
+      }
+      Node* if_true = n->in(CMoveNode::IfTrue);
+      if (if_true != nullptr && !phase->type(if_true)->empty()) {
+        _aliases.push(if_true);
+      }
+    } else {
+      // If base is not an allocation or a Phi of allocations (e.g. it is a Phi of an allocation
+      // and a load, we cannot perform escape analysis). This branch is pretty conservative.
+      _is_candidate = false;
+      _aliases.clear();
+      return;
+    }
+  }
+
+  // Secondly, from the set of allocations that may alias base, collect all nodes that may alias
+  // them, they may alias base as well. Actually, there may be case that a may alias b and b may
+  // alias c but a may not alias c, but we are conservative here.
+  for (uint idx = 0; idx < _aliases.size(); idx++) {
+    Node* n = _aliases.at(idx);
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* out = n->fast_out(i);
+      if (out->is_ConstraintCast() || out->is_EncodeP() || out->is_DecodeN() ||
+          out->is_Phi() || out->is_CMove()) {
+        _aliases.push(out);
+      }
+    }
+  }
+}
+
+// Check whether the inspected node p has escaped at a certain control node ctl, p has not escaped
+// at ctl if there is no node that:
+// 1. Make p escape.
+// 2. Either:
+//   a. Has no control input.
+//   b. Has a control input that is ctl or a transitive control input of ctl.
+//
+// In other word, p is determined that it has not escaped at ctl if all nodes that make p escape
+// have a control input that is neither nullptr, ctl, nor a transitive control input of ctl.
+MemNode::LocalEA::EscapeStatus MemNode::LocalEA::check_escape_status(Node* ctl) {
+  assert(is_candidate(), "must be a candidate for escape analysis");
+  if (_phase->type(ctl) == Type::TOP) {
+    return DEAD_PATH;
+  }
+
+  // Find all transitive control inputs of ctl that are not dead, if it is determined that alloc
+  // has not escaped at ctl, then it must be the case that it has not escaped at all of these
+  assert(_not_escaped_controls.size() == 0, "must not be computed yet");
+  Node* start = _phase->C->start();
+  _not_escaped_controls.push(ctl);
+  for (uint control_idx = 0; control_idx < _not_escaped_controls.size(); control_idx++) {
+    Node* n = _not_escaped_controls.at(control_idx);
+    assert(_phase->type(n) == Type::CONTROL || _phase->type(n)->base() == Type::Tuple, "must be a control node %s", n->Name());
+    if (n == start) {
+      continue;
+    }
+
+    if (n->is_Region()) {
+      for (uint i = 1; i < n->req(); i++) {
+        Node* in = n->in(i);
+        if (in != nullptr && _phase->type(in) != Type::TOP) {
+          _not_escaped_controls.push(in);
+        }
+      }
+    } else {
+      Node* in = n->in(0);
+      if (in != nullptr && _phase->type(in) != Type::TOP) {
+        _not_escaped_controls.push(in);
+      }
+    }
+  }
+
+  if (!_not_escaped_controls.member(start)) {
+    // If there is no control path from ctl to start, ctl is a dead path, give up
+    _not_escaped_controls.clear();
+    return DEAD_PATH;
+  }
+
+  // Find all nodes that may escape alloc, and decide that it is provable that they must be
+  // executed after ctl
+  ResourceMark rm;
+  // If any of these nodes escapes, then we conservatively say that the inspected node p escapes
+  Unique_Node_List dependencies;
+  for (uint i = 0; i < _aliases.size(); i++) {
+    // If any node that may alias p escapes, then p escapes
+    dependencies.push(_aliases.at(i));
+  }
+  EscapeStatus res = NOT_ESCAPED;
+  for (uint idx = 0; idx < dependencies.size(); idx++) {
+    Node* n = dependencies.at(idx);
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* out = n->fast_out(i);
+      if (out->is_ConstraintCast() || out->is_EncodeP() || out->is_DecodeN() ||
+          out->is_Phi() || out->is_CMove()) {
+        // A node that may alias n, if it escapes, then n escapes, which leads to p escaping
+        dependencies.push(out);
+        continue;
+      } else if (out->is_AddP()) {
+        // Some runtime calls receive a derived pointer but not its base, so we consider these
+        // derived pointers dependency, too
+        dependencies.push(out);
+        continue;
+      }
+
+      Node* c = out->in(0);
+      if (c != nullptr && !_not_escaped_controls.member(c)) {
+        // c is not a live transitive control input of ctl, so out is not executed before ctl,
+        // which means it does not affect the escape status of alloc at ctl
+        continue;
+      }
+
+      if (out->is_Load()) {
+        // A Load does not escape alloc
+      } else if (out->is_Mem()) {
+        // A Store or a LoadStore
+        if (n == out->in(MemNode::ValueIn)) {
+          Node* ptr = out->in(MemNode::Address);
+          if (ptr->is_AddP()) {
+            Node* ptr_base = ptr->as_AddP()->base_node();
+            if (!_phase->type(ptr_base)->isa_oopptr()) {
+              // Maybe a store to raw memory
+              res = ESCAPED;
+              break;
+            }
+
+            // If an object o is stored into a field of a holder h and h has not escaped, we can
+            // say that o has not escaped, too
+            LocalEA store_base_ea(_phase, ptr->as_AddP()->base_node());
+            if (!store_base_ea.is_candidate()) {
+              res = ESCAPED;
+              break;
+            }
+
+            // Push all aliases of h into dependencies, if h escapes, we will find it then
+            for (uint i = 0; i < store_base_ea.aliases().size(); i++) {
+              dependencies.push(store_base_ea.aliases().at(i));
+            }
+          } else {
+            // Do not know into where n is stored, give up
+            res = ESCAPED;
+            break;
+          }
+        } else if (n == out->in(MemNode::Address) && (!out->is_Store() || out->as_Store()->is_mismatched_access())) {
+          // Mismatched accesses can lie in a different alias class and are protected by memory
+          // barriers, so we cannot be aggressive and walk past memory barriers if there is a
+          // mismatched store into it. LoadStoreNodes are also lumped here because there is no
+          // LoadStoreNode::is_mismatched_access.
+          res = ESCAPED;
+          break;
+        }
+      } else if (out->is_Call()) {
+        if (!out->is_AbstractLock() && out->as_Call()->has_non_debug_use(n)) {
+          // A call that receives an object as an argument makes that object escape
+          res = ESCAPED;
+          break;
+        }
+      } else if (out->is_SafePoint()) {
+        // Non-call safepoints are pure control nodes
+      } else if (out->Opcode() == Op_Blackhole) {
+        // Blackhole does not escape an object (in the sense that it does not make its field values
+        // unpredictable)
+      } else {
+        // Conservatively consider all other nodes to make alloc escape
+        res = ESCAPED;
+        break;
+      }
+    }
+
+    if (res == ESCAPED) {
+      break;
+    }
+  }
+
+  if (res == ESCAPED) {
+    _not_escaped_controls.clear();
+  }
+  return res;
 }
 
 //----------------------is_instance_field_load_with_local_phi------------------
@@ -1882,6 +2187,11 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  if (!can_reshape) {
+    phase->record_for_igvn(this);
+    return nullptr;
+  }
+
   Node* mem = in(MemNode::Memory);
   const TypePtr *addr_t = phase->type(address)->isa_ptr();
 
@@ -1951,6 +2261,9 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // the alias index stuff.  So instead, peek through Stores and IFF we can
   // fold up, do so.
   Node* prev_mem = find_previous_store(phase);
+  if (prev_mem != nullptr && prev_mem->is_top()) {
+    return prev_mem;
+  }
   if (prev_mem != nullptr) {
     Node* value = can_see_arraycopy_value(prev_mem, phase);
     if (value != nullptr) {
@@ -3550,6 +3863,9 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     if (result == this) {
       // the store may also apply to zero-bits in an earlier object
       Node* prev_mem = find_previous_store(phase);
+      if (prev_mem != nullptr && prev_mem->is_top()) {
+        return prev_mem;
+      }
       // Steps (a), (b):  Walk past independent stores to find an exact match.
       if (prev_mem != nullptr) {
         Node* prev_val = can_see_stored_value(prev_mem, phase);
