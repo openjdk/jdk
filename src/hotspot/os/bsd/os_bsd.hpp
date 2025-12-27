@@ -27,7 +27,25 @@
 
 #include "runtime/os.hpp"
 
+#ifdef __APPLE__
+#include <mach/vm_statistics.h>
+#endif
+
+// Macro to check if Apple memory tagging is available
+#if defined(__APPLE__) && defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
+#define APPLE_MEMORY_TAGGING_AVAILABLE 1
+#else
+#define APPLE_MEMORY_TAGGING_AVAILABLE 0
+#endif
+
 // Bsd_OS defines the interface to Bsd operating systems
+
+static constexpr int bsd_mmap_fd =
+#if APPLE_MEMORY_TAGGING_AVAILABLE
+  VM_MAKE_TAG(VM_MEMORY_JAVA);
+#else
+  -1;
+#endif
 
 class os::Bsd {
   friend class os;
