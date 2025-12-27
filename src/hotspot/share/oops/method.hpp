@@ -269,6 +269,7 @@ class Method : public Metadata {
   inline int interpreter_throwout_count() const;
 
   u2 size_of_parameters() const { return constMethod()->size_of_parameters(); }
+  u2 number_of_parameters() const;
 
   bool has_stackmap_table() const {
     return constMethod()->has_stackmap_table();
