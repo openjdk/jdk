@@ -315,6 +315,7 @@ uint G1HeapRegionManager::uncommit_inactive_regions(uint limit) {
   return uncommitted;
 }
 
+
 uint G1HeapRegionManager::expand_inactive(uint num_regions) {
   uint offset = 0;
   uint expanded = 0;
@@ -586,6 +587,10 @@ void G1HeapRegionManager::par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClai
 }
 
 uint G1HeapRegionManager::shrink_by(uint num_regions_to_remove) {
+  return shrink_by(num_regions_to_remove, false);
+}
+
+uint G1HeapRegionManager::shrink_by(uint num_regions_to_remove, bool use_time_based_selection) {
   assert(num_committed_regions() > 0, "the region sequence should not be empty");
   assert(num_committed_regions() <= _next_highest_used_hrm_index, "invariant");
   assert(_next_highest_used_hrm_index > 0, "we should have at least one region committed");
@@ -596,21 +601,88 @@ uint G1HeapRegionManager::shrink_by(uint num_regions_to_remove) {
   }
 
   uint removed = 0;
-  uint cur = _next_highest_used_hrm_index;
-  uint idx_last_found = 0;
-  uint num_last_found = 0;
 
-  while ((removed < num_regions_to_remove) &&
-      (num_last_found = find_empty_from_idx_reverse(cur, &idx_last_found)) > 0) {
-    uint to_remove = MIN2(num_regions_to_remove - removed, num_last_found);
+  if (use_time_based_selection) {
+    // Time-based selection: find oldest empty regions across the entire heap
+    removed = shrink_by_time_based_selection(num_regions_to_remove);
+  } else {
+    // Traditional selection: find empty regions from the end of heap (existing behavior)
+    uint cur = _next_highest_used_hrm_index;
+    uint idx_last_found = 0;
+    uint num_last_found = 0;
 
-    shrink_at(idx_last_found + num_last_found - to_remove, to_remove);
+    while ((removed < num_regions_to_remove) &&
+        (num_last_found = find_empty_from_idx_reverse(cur, &idx_last_found)) > 0) {
+      uint to_remove = MIN2(num_regions_to_remove - removed, num_last_found);
 
-    cur = idx_last_found;
-    removed += to_remove;
+      shrink_at(idx_last_found + num_last_found - to_remove, to_remove);
+
+      cur = idx_last_found;
+      removed += to_remove;
+    }
   }
 
   verify_optional();
+
+  return removed;
+}
+
+uint G1HeapRegionManager::shrink_by_time_based_selection(uint num_regions_to_remove) {
+  // Collect all empty regions with their access times for sorting
+  GrowableArray<G1HeapRegion*> empty_regions;
+
+  // Scan all committed regions to find free ones.
+  for (uint i = 0; i < _next_highest_used_hrm_index; i++) {
+    if (is_available(i)) {
+      G1HeapRegion* hr = at(i);
+      if (hr != nullptr && hr->is_free()) {
+        // Check if this region should be considered for time-based uncommit.
+        Ticks current_time = Ticks::now();
+        Tickspan elapsed = current_time - hr->last_access_time();
+        if (elapsed.milliseconds() > G1UncommitDelayMillis) {
+          empty_regions.append(hr);
+        }
+      }
+    }
+  }
+
+  if (empty_regions.length() == 0) {
+    log_debug(gc, sizing)("Time-based shrink: no eligible empty regions found");
+    return 0;
+  }
+
+  // Sort regions by access time (oldest first).
+  // Use qsort for standard library sorting.
+  static auto compare_region_age = [](G1HeapRegion** a, G1HeapRegion** b) -> int {
+    Ticks time_a = (*a)->last_access_time();
+    Ticks time_b = (*b)->last_access_time();
+    if (time_a < time_b) return -1;  // Older first.
+    if (time_a > time_b) return 1;
+    return 0;
+  };
+  empty_regions.sort(compare_region_age);
+
+  // Shrink the oldest regions first
+  uint removed = 0;
+  uint regions_to_process = MIN2(num_regions_to_remove, (uint)empty_regions.length());
+
+  log_debug(gc, sizing)("Time-based shrink: processing %u oldest regions out of %d empty regions",
+            regions_to_process, empty_regions.length());
+
+  for (uint i = 0; i < regions_to_process; i++) {
+    G1HeapRegion* hr = empty_regions.at(i);
+    uint region_index = hr->hrm_index();
+
+    log_debug(gc, sizing)("Time-based shrink: deactivating region %u (last_access=" UINT64_FORMAT "ms ago)",
+              region_index, (Ticks::now() - hr->last_access_time()).milliseconds());
+
+    shrink_at(region_index, 1);
+    removed++;
+  }
+
+  if (removed > 0) {
+    log_info(gc, sizing)("Time-based shrink: deactivated %u oldest empty regions", removed);
+  }
 
   return removed;
 }
