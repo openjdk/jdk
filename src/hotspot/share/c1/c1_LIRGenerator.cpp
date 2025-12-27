@@ -1519,7 +1519,7 @@ void LIRGenerator::do_GetAndOperate(Intrinsic* x) {
   LIRItem off  (x->argument_at(1), this);  // offset of field
   LIRItem value(x->argument_at(2), this);  // operand or swap value
 
-  // fall down to MO_VOLATILE; maybe handle MO_RELEASE, etc., later? 
+  // fall down to MO_VOLATILE; maybe handle MO_RELEASE, etc., later?
   DecoratorSet decorators = IN_HEAP | C1_UNSAFE_ACCESS | MO_SEQ_CST;
 
   if (is_reference_type(type)) {
@@ -2078,7 +2078,7 @@ void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
   DecoratorSet decorators = IN_HEAP | C1_UNSAFE_ACCESS;
 
   if (x->memory_order() != vmIntrinsics::UNSAFE_MO_PLAIN) {
-    // fall down to MO_VOLATILE; maybe handle MO_ACQUIRE later? 
+    // fall down to MO_VOLATILE; maybe handle MO_ACQUIRE later?
     decorators |= MO_SEQ_CST;
   }
   if (type == T_BOOLEAN) {
@@ -2131,7 +2131,7 @@ void LIRGenerator::do_UnsafePut(UnsafePut* x) {
     decorators |= ON_UNKNOWN_OOP_REF;
   }
   if (x->memory_order() != vmIntrinsics::UNSAFE_MO_PLAIN) {
-    // fall down to MO_VOLATILE; maybe handle MO_RELEASE later? 
+    // fall down to MO_VOLATILE; maybe handle MO_RELEASE later?
     decorators |= MO_SEQ_CST;
   }
   access_store_at(decorators, type, src, off.result(), data.result());

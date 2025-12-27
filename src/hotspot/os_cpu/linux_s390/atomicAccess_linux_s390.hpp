@@ -291,7 +291,10 @@ inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
 
 // No direct support for cmpxchg of bytes; emulate using int.
 template<>
-struct AtomicAccess::PlatformCmpxchg<1> : AtomicAccess::CmpxchgByteUsingInt {};
+struct AtomicAccess::PlatformCmpxchg<1> : AtomicAccess::CmpxchgSubwordUsingInt {};
+// No direct support for cmpxchg of shorts; emulate using int.
+template<>
+struct AtomicAccess::PlatformCmpxchg<2> : AtomicAccess::CmpxchgSubwordUsingInt {};
 
 template<>
 template<typename T>
