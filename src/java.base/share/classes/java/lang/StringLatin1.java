@@ -27,6 +27,7 @@ package java.lang;
 
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -39,12 +40,22 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
-import static java.lang.String.checkIndex;
-import static java.lang.String.checkOffset;
 
+/**
+ * Latin-1 string operations.
+ * <p>
+ * Unless stated otherwise, all methods assume that
+ * <ul>
+ * <li>{@code byte[]} arguments denote a Latin-1 string byte array
+ * <li>indices, offsets, and lengths (typically of type {@code int}) are in
+ * number of characters, i.e., the number of {@code byte}s/{@code char}s for
+ * Latin-1 strings, and the number of <a href="Character.html#unicode">Unicode
+ * code units</a> for UTF-16 strings
+ * </ul>
+ */
 final class StringLatin1 {
     static char charAt(byte[] value, int index) {
-        checkIndex(index, value.length);
+        String.checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
     }
 
@@ -84,8 +95,23 @@ final class StringLatin1 {
         System.arraycopy(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
-    @IntrinsicCandidate
+    /**
+     * {@return {@code true} if provided byte arrays contain identical content; {@code false} otherwise}.
+     *
+     * @param value a byte array
+     * @param other a byte array
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     */
     static boolean equals(byte[] value, byte[] other) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        return equals0(value, other);
+    }
+
+    // inline_string_equals
+    @IntrinsicCandidate
+    private static boolean equals0(byte[] value, byte[] other) {
         if (value.length == other.length) {
             for (int i = 0; i < value.length; i++) {
                 if (value[i] != other[i]) {
@@ -97,33 +123,89 @@ final class StringLatin1 {
         return false;
     }
 
-    @IntrinsicCandidate
+    /**
+     * Lexicographically compares two Latin-1 strings as specified in
+     * {@link String#compareTo(String) String::compareTo}.
+     *
+     * @param value a Latin-1 string byte array
+     * @param other a Latin-1 string byte array
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     */
     static int compareTo(byte[] value, byte[] other) {
-        int len1 = value.length;
-        int len2 = other.length;
-        return compareTo(value, other, len1, len2);
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        return compareTo0(value, other);
     }
 
+    // inline_string_compareTo
+    @IntrinsicCandidate
+    private static int compareTo0(byte[] value, byte[] other) {
+        return compareTo(value, other, value.length, other.length);
+    }
+
+    /**
+     * Lexicographically compares two Latin-1 string sub-ranges as specified in
+     * {@link String#compareTo(String) String::compareTo}.
+     *
+     * @param value a Latin-1 string byte array
+     * @param other a Latin-1 string byte array
+     * @param len1 the number of characters in {@code value} to compare
+     * @param len2 the number of characters in {@code other} to compare
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
     static int compareTo(byte[] value, byte[] other, int len1, int len2) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        String.checkOffset(len1, length(value));
+        String.checkOffset(len2, length(other));
         int lim = Math.min(len1, len2);
         int k = ArraysSupport.mismatch(value, other, lim);
         return (k < 0) ? len1 - len2 : getChar(value, k) - getChar(other, k);
     }
 
-    @IntrinsicCandidate
+    /**
+     * Lexicographically compares a Latin-1 string to a UTF-16 string as
+     * specified in {@link String#compareTo(String) String::compareTo}.
+     *
+     * @param value a Latin-1 string byte array
+     * @param other a UTF-16 string byte array
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     */
     static int compareToUTF16(byte[] value, byte[] other) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        return compareToUTF16_0(value, other);
+    }
+
+    // inline_string_compareTo
+    @IntrinsicCandidate
+    private static int compareToUTF16_0(byte[] value, byte[] other) {
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         return compareToUTF16Values(value, other, len1, len2);
     }
 
-    /*
-     * Checks the boundary and then compares the byte arrays.
+    /**
+     * Lexicographically compares a Latin-1 string sub-range to a UTF-16
+     * one as specified in {@link String#compareTo(String) String::compareTo}.
+     *
+     * @param value a Latin-1 string byte array
+     * @param other a UTF-16 string byte array
+     * @param len1 the number of characters in {@code value} to compare
+     * @param len2 the number of characters in {@code other} to compare
+     *
+     * @throws NullPointerException if {@code value} or {@code other} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
     static int compareToUTF16(byte[] value, byte[] other, int len1, int len2) {
-        checkOffset(len1, length(value));
-        checkOffset(len2, StringUTF16.length(other));
-
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
+        String.checkOffset(len1, length(value));
+        String.checkOffset(len2, StringUTF16.length(other));
         return compareToUTF16Values(value, other, len1, len2);
     }
 
@@ -139,9 +221,12 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
+    /**
+     * Case-insensitive {@link #compareTo(byte[], byte[]) compareTo}.
+     */
     static int compareToCI(byte[] value, byte[] other) {
-        int len1 = value.length;
-        int len2 = other.length;
+        int len1 = value.length;    // Implicit null check on `value`
+        int len2 = other.length;    // Implicit null check on `other`
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             if (value[k] != other[k]) {
@@ -159,7 +244,12 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
+    /**
+     * Case-insensitive {@link #compareToUTF16(byte[], byte[]) compareToUTF16}.
+     */
     static int compareToCI_UTF16(byte[] value, byte[] other) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(other);
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         int lim = Math.min(len1, len2);
@@ -307,16 +397,33 @@ final class StringLatin1 {
         return ArraysSupport.hashCodeOfUnsigned(value, 0, value.length, 0);
     }
 
-    // Caller must ensure that from- and toIndex are within bounds
+    /**
+     * Finds the index of the first character matching the provided one in the
+     * given Latin-1 string byte array sub-range. {@code -1} is returned if the
+     * provided character cannot be encoded in Latin-1, or cannot be found in
+     * the target string sub-range.
+     *
+     * @param value a Latin-1 string byte array to search in
+     * @param ch a character to search for
+     * @param fromIndex the index (inclusive) of the first character in the sub-range
+     * @param toIndex the index (exclusive) of the last character in the sub-range
+     * @return the index of the first character matching the provided one in the
+     * given target string sub-range; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
     static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
+        String.checkBoundsBeginEnd(fromIndex, toIndex, value.length);   // Implicit null check on `value`
         if (!canEncode(ch)) {
             return -1;
         }
-        return indexOfChar(value, ch, fromIndex, toIndex);
+        return indexOfChar0(value, ch, fromIndex, toIndex);
     }
 
+    // inline_string_indexOfChar
     @IntrinsicCandidate
-    private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
+    private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
         for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {
@@ -326,22 +433,64 @@ final class StringLatin1 {
         return -1;
     }
 
-    @IntrinsicCandidate
+    /**
+     * Searches for the first occurrence of {@code str} in {@code value}, and,
+     * if found, returns the index of the first character in {@code value};
+     * {@code -1} otherwise.
+     *
+     * @param value a Latin-1 string byte array to search in
+     * @param str a Latin-1 string byte array to search for
+     * @return the index of the first character in {@code value} if a match is
+     * found; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} or {@code str} is null
+     */
     static int indexOf(byte[] value, byte[] str) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(str);
+        return indexOf0(value, str);
+    }
+
+    // inline_string_indexOf
+    @IntrinsicCandidate
+    private static int indexOf0(byte[] value, byte[] str) {
         if (str.length == 0) {
             return 0;
         }
         if (value.length == 0) {
             return -1;
         }
-        return indexOf(value, value.length, str, str.length, 0);
+        return indexOf0(value, value.length, str, str.length, 0);
     }
 
+    /**
+     * Searches for the first occurrence of the given {@code str} sub-range in
+     * the given {@code value} sub-range, and, if found, returns the index of
+     * the first character in {@code value}; {@code -1} otherwise.
+     *
+     * @param value a Latin-1 string byte array to search in
+     * @param valueToIndex the index (exclusive) of the last character in {@code value}
+     * @param str a Latin-1 string byte array to search for
+     * @param strToIndex the index (exclusive) of the last character in {@code str}
+     * @param valueFromIndex the index (inclusive) of the first character in {@code value}
+     * @return the index of the first character in {@code value} if a match is
+     * found; {@code -1} otherwise
+     *
+     * @throws NullPointerException if {@code value} or {@code str} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
+    static int indexOf(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
+        String.checkBoundsBeginEnd(valueFromIndex, valueToIndex, value.length);    // Implicit null check on `value`
+        String.checkBoundsBeginEnd(0, strToIndex, str.length);                     // Implicit null check on `str`
+        return indexOf0(value, valueToIndex, str, strToIndex, valueFromIndex);
+    }
+
+    // inline_string_indexOfI
     @IntrinsicCandidate
-    static int indexOf(byte[] value, int valueCount, byte[] str, int strCount, int fromIndex) {
+    private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
         byte first = str[0];
-        int max = (valueCount - strCount);
-        for (int i = fromIndex; i <= max; i++) {
+        int max = (valueToIndex - strToIndex);
+        for (int i = valueFromIndex; i <= max; i++) {
             // Look for first character.
             if (value[i] != first) {
                 while (++i <= max && value[i] != first);
@@ -349,7 +498,7 @@ final class StringLatin1 {
             // Found first character, now look at the rest of value
             if (i <= max) {
                 int j = i + 1;
-                int end = j + strCount - 1;
+                int end = j + strToIndex - 1;
                 for (int k = 1; j < end && value[j] == str[k]; j++, k++);
                 if (j == end) {
                     // Found whole string.
@@ -855,18 +1004,65 @@ final class StringLatin1 {
                           LATIN1);
     }
 
-    // inflatedCopy byte[] -> char[]
-    @IntrinsicCandidate
+    /**
+     * Exhaustively copies characters from a Latin-1 string byte array sub-range
+     * to the given {@code char} array sub-range.
+     * <p>
+     * This effectively <em>inflates</em> the content from a 1 byte per
+     * character representation to a 2 byte one.
+     *
+     * @param src the source Latin-1 string byte array
+     * @param srcOff the index (inclusive) of the first character in {@code src}
+     * @param dst the target {@code char} array
+     * @param dstOff the index (inclusive) of the first character in {@code dst}
+     * @param len the maximum number of characters to copy
+     *
+     * @throws NullPointerException if {@code src} or {@code dst} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
     static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+        String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
+        String.checkBoundsOffCount(dstOff, len, dst.length);    // Implicit null check on `dst`
+        inflate0(src, srcOff, dst, dstOff, len);
+    }
+
+    // inline_string_copy(compress=false)
+    @IntrinsicCandidate
+    private static void inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
             dst[dstOff++] = (char)(src[srcOff++] & 0xff);
         }
     }
 
-    // inflatedCopy byte[] -> byte[]
-    @IntrinsicCandidate
+    /**
+     * Exhaustively copies characters from a Latin-1 string byte array sub-range
+     * to a UTF-16 one.
+     * <p>
+     * This effectively <em>inflates</em> the content from a 1 byte per
+     * character representation to a 2 byte one.
+     *
+     * @param src the source Latin-1 string byte array
+     * @param srcOff the index (inclusive) of the first character in {@code src}
+     * @param dst the target UTF-16 string byte array
+     * @param dstOff the index (inclusive) of the first character in {@code dst}
+     * @param len the maximum number of characters to copy
+     *
+     * @throws NullPointerException if {@code src} or {@code dst} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
     static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        StringUTF16.inflate(src, srcOff, dst, dstOff, len);
+        String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
+        Objects.requireNonNull(dst);
+        StringUTF16.checkBoundsOffCount(dstOff, len, dst);
+        inflate0(src, srcOff, dst, dstOff, len);
+    }
+
+    // inline_string_copy(compress=false)
+    @IntrinsicCandidate
+    private static void inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        for (int i = 0; i < len; i++) {
+            StringUTF16.putChar(dst, dstOff++, src[srcOff++] & 0xff);
+        }
     }
 
     static class CharsSpliterator implements Spliterator.OfInt {
