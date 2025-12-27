@@ -198,6 +198,18 @@ public class TestPrimitiveTypes {
                 }
                 if (allSame) { throw new RuntimeException("all values were the same for #type"); }
             }
+            {
+                #type[] a = new #type[1_000];
+                LibraryRNG.fill(a);
+                boolean allSame = true;
+                for (int i = 0; i < a.length; i++) {
+                    if (a[i] != a[0]) {
+                        allSame = false;
+                        break;
+                    }
+                }
+                if (allSame) { throw new RuntimeException("all values were the same for #type"); }
+            }
             """
         ));
 

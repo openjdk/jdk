@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 8359412 8370922
+ * @bug 8359412 8370922 8369699
+ * @key randomness
  * @summary Demonstrate the use of Expressions from the Template Library.
  * @modules java.base/jdk.internal.misc
  * @modules jdk.incubator.vector
@@ -37,6 +38,8 @@ package template_framework.examples;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
@@ -48,6 +51,8 @@ import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
 public class TestExpressions {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
@@ -126,7 +131,17 @@ public class TestExpressions {
             );
         });
 
+        // The scalar operations are very important and we would like to always test them all.
         for (Expression operation : Operations.SCALAR_NUMERIC_OPERATIONS) {
+            tests.add(withConstantsTemplate.asToken(operation));
+        }
+
+        // There are a LOT of instructions, especially a lot of vector instructions.
+        // A bit too many to run them all in an individual test.
+        // So let's just sample some at random.
+        for (int i = 0; i < 100; i++) {
+            int r = RANDOM.nextInt(Operations.ALL_OPERATIONS.size());
+            Expression operation = Operations.ALL_OPERATIONS.get(r);
             tests.add(withConstantsTemplate.asToken(operation));
         }
 
@@ -135,7 +150,7 @@ public class TestExpressions {
             // package and class name.
             "p.xyz", "InnerTest",
             // Set of imports.
-            Set.of("compiler.lib.verify.*", "jdk.incubator.vector.Float16"),
+            Set.of("compiler.lib.verify.*", "jdk.incubator.vector.*"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
