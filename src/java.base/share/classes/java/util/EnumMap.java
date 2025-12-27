@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,20 +388,30 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     private class KeySet extends AbstractSet<K> {
+        @Override
         public Iterator<K> iterator() {
             return new KeyIterator();
         }
+        @Override
+        public Spliterator<K> spliterator() {
+            return Spliterators.spliterator(this,
+                    Spliterator.DISTINCT | Spliterator.ORDERED | Spliterator.SORTED | Spliterator.NONNULL);
+        }
+        @Override
         public int size() {
             return size;
         }
+        @Override
         public boolean contains(Object o) {
             return containsKey(o);
         }
+        @Override
         public boolean remove(Object o) {
             int oldSize = size;
             EnumMap.this.remove(o);
             return size != oldSize;
         }
+        @Override
         public void clear() {
             EnumMap.this.clear();
         }
@@ -427,15 +437,23 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     private class Values extends AbstractCollection<V> {
+        @Override
         public Iterator<V> iterator() {
             return new ValueIterator();
         }
+        @Override
+        public Spliterator<V> spliterator() {
+            return Spliterators.spliterator(this, Spliterator.ORDERED);
+        }
+        @Override
         public int size() {
             return size;
         }
+        @Override
         public boolean contains(Object o) {
             return containsValue(o);
         }
+        @Override
         public boolean remove(Object o) {
             o = maskNull(o);
 
@@ -448,6 +466,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
             }
             return false;
         }
+        @Override
         public void clear() {
             EnumMap.this.clear();
         }
@@ -471,28 +490,39 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     private class EntrySet extends AbstractSet<Map.Entry<K,V>> {
+        @Override
         public Iterator<Map.Entry<K,V>> iterator() {
             return new EntryIterator();
         }
-
+        @Override
+        public Spliterator<Entry<K, V>> spliterator() {
+            return Spliterators.spliterator(this,
+                    Spliterator.DISTINCT | Spliterator.ORDERED | Spliterator.SORTED | Spliterator.NONNULL);
+        }
+        @Override
         public boolean contains(Object o) {
             return o instanceof Map.Entry<?, ?> entry
                     && containsMapping(entry.getKey(), entry.getValue());
         }
+        @Override
         public boolean remove(Object o) {
             return o instanceof Map.Entry<?, ?> entry
                     && removeMapping(entry.getKey(), entry.getValue());
         }
+        @Override
         public int size() {
             return size;
         }
+        @Override
         public void clear() {
             EnumMap.this.clear();
         }
+        @Override
         public Object[] toArray() {
             return fillEntryArray(new Object[size]);
         }
         @SuppressWarnings("unchecked")
+        @Override
         public <T> T[] toArray(T[] a) {
             int size = size();
             if (a.length < size)
