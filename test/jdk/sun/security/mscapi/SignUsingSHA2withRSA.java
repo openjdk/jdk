@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,26 @@
  * @bug 6753664 8180570
  * @summary Support SHA256 (and higher) in SunMSCAPI
  * @requires os.family == "windows"
+ * @library /test/lib/
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.x509
  */
 
+import jtreg.SkippedException;
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.x509.X500Name;
 
-import java.security.*;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
+import java.security.Signature;
+import java.security.KeyStore;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 public class SignUsingSHA2withRSA {
 
@@ -57,7 +67,8 @@ public class SignUsingSHA2withRSA {
 
         ks.setKeyEntry("6753664", gen.getPrivateKey(), null,
                 new Certificate[] {
-                        gen.getSelfCertificate(new X500Name("cn=localhost,c=US"), 100)
+                        gen.getSelfCertificate(
+                                new X500Name("cn=localhost,c=US"), 100)
                 });
 
         try {
@@ -74,9 +85,8 @@ public class SignUsingSHA2withRSA {
         if (providers == null) {
             System.out.println("No JCE providers support the " +
                 "'Signature.SHA256withRSA' algorithm");
-            System.out.println("Skipping this test...");
-            return;
-
+            throw new SkippedException("No JCE providers support the " +
+                                       "'Signature.SHA256withRSA' algorithm");
         } else {
             System.out.println("The following JCE providers support the " +
                 "'Signature.SHA256withRSA' algorithm: ");
