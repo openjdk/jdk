@@ -4947,16 +4947,11 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       if (CheckIntrinsics) {
         // Check if an intrinsic is defined for method 'method',
         // but the method is not annotated with @IntrinsicCandidate.
-        vmIntrinsicID iid = method->intrinsic_id();
-        bool is_wrapper = (iid != vmIntrinsics::_none &&
-                           vmIntrinsics::flags_for(iid) == vmIntrinsics::F_PW);
-        bool expect_annotation = (iid != vmIntrinsics::_none && !is_wrapper);
-        if (method->intrinsic_candidate() != expect_annotation) {
-              tty->print("Compiler intrinsic%s is defined for method [%s], "
-              "but the method is %s annotated with @IntrinsicCandidate.%s",
-              (is_wrapper ? " wrapper" : ""),
+        if (method->intrinsic_id() != vmIntrinsics::_none &&
+            !method->intrinsic_candidate()) {
+              tty->print("Compiler intrinsic is defined for method [%s], "
+              "but the method is not annotated with @IntrinsicCandidate.%s",
               method->name_and_sig_as_C_string(),
-              (expect_annotation ? "not" : "incorrectly"),
               NOT_DEBUG(" Method will not be inlined.") DEBUG_ONLY(" Exiting.")
             );
           tty->cr();

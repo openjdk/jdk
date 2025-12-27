@@ -240,7 +240,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   vmIntrinsics::PolymorphicPrefix pfx = vmIntrinsics::polymorphic_prefix(id);
   // possible decoded prefix values:
   int prefix_size = 0;
-  vmIntrinsics::MemoryOrder     mo = vmIntrinsics::MO_NONE;
+  vmIntrinsics::MemoryOrder     mo = vmIntrinsics::UNSAFE_MO_NONE;
   BasicType                     bt = T_ILLEGAL;
   vmIntrinsics::BitsOperation   op = vmIntrinsics::OP_NONE;
   if (pfx != vmIntrinsics::PP_NONE) {
@@ -273,8 +273,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     default:
       ShouldNotReachHere();
     }
-    if (!vmIntrinsics::is_valid_memory_order(moc & ~vmIntrinsics::MO_EXTRA_BITS_MASK))
-      moc = vmIntrinsics::MO_VOLATILE;
+    if (!vmIntrinsics::is_valid_memory_order(moc & ~vmIntrinsics::UNSAFE_MO_EXTRA_BITS_MASK))
+      moc = vmIntrinsics::UNSAFE_MO_VOLATILE;
     mo = (vmIntrinsics::MemoryOrder)moc;
     prefix_size = next_arg - prefix_base;
   }
@@ -2287,15 +2287,15 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
 
 DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(vmIntrinsics::MemoryOrder mo) {
   switch (mo) {
-      case vmIntrinsics::MO_PLAIN:
+      case vmIntrinsics::UNSAFE_MO_PLAIN:
         return MO_UNORDERED;  //meaning: ops may be reordered by both HW and JIT
-      case vmIntrinsics::MO_OPAQUE:
+      case vmIntrinsics::UNSAFE_MO_OPAQUE:
         return MO_RELAXED;    //meaning: ops may be reordered by HW but not JIT
-      case vmIntrinsics::MO_ACQUIRE:
+      case vmIntrinsics::UNSAFE_MO_ACQUIRE:
         return MO_ACQUIRE;
-      case vmIntrinsics::MO_RELEASE:
+      case vmIntrinsics::UNSAFE_MO_RELEASE:
         return MO_RELEASE;
-      case vmIntrinsics::MO_VOLATILE:
+      case vmIntrinsics::UNSAFE_MO_VOLATILE:
         return MO_SEQ_CST;
       default:
         ShouldNotReachHere();
@@ -2349,11 +2349,11 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store,
                                           BasicType type,
                                           int prefix_size) {
   if (callee()->is_static())  return false;  // caller must have the capability!
-  const bool unaligned = (mo & vmIntrinsics::MO_UNALIGNED) != 0;
-  mo = (vmIntrinsics::MemoryOrder)(mo & vmIntrinsics::MO_MODE_MASK);
+  const bool unaligned = (mo & vmIntrinsics::UNSAFE_MO_UNALIGNED) != 0;
+  mo = (vmIntrinsics::MemoryOrder)(mo & vmIntrinsics::UNSAFE_MO_MODE_MASK);
   DecoratorSet decorators = C2_UNSAFE_ACCESS;
-  guarantee(!is_store || mo != vmIntrinsics::MO_ACQUIRE, "Acquire accesses can be produced only for loads");
-  guarantee( is_store || mo != vmIntrinsics::MO_RELEASE, "Release accesses can be produced only for stores");
+  guarantee(!is_store || mo != vmIntrinsics::UNSAFE_MO_ACQUIRE, "Acquire accesses can be produced only for loads");
+  guarantee( is_store || mo != vmIntrinsics::UNSAFE_MO_RELEASE, "Release accesses can be produced only for stores");
   assert(type != T_OBJECT || !unaligned, "unaligned access not supported with object type");
 
   BasicType utype = type == T_OBJECT ? T_OBJECT : T_LONG;
@@ -2364,7 +2364,10 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store,
   }
 
   if (unaligned) {
-    decorators |= C2_UNALIGNED;
+    jint offcon = (jint)argument(prefix_size+2)->find_long_con(-1);
+    offcon &= vmIntrinsics::primitive_type_size(type) - 1;
+    if (offcon != 0)
+      decorators |= C2_UNALIGNED;
   }
 
 #ifndef PRODUCT
@@ -2419,7 +2422,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store,
   // Save state and restore on bailout
   SavedState old_state(this);
 
-  Node* adr = make_unsafe_address(base, offset, type, mo == vmIntrinsics::MO_PLAIN);
+  Node* adr = make_unsafe_address(base, offset, type, mo == vmIntrinsics::UNSAFE_MO_PLAIN);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
 
   if (_gvn.type(base->uncast())->isa_ptr() == TypePtr::NULL_PTR) {
@@ -2582,8 +2585,8 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
   // the correspondences clearer. - dl
 
   if (callee()->is_static())  return false;  // caller must have the capability!
-  const bool weak_cas = (mo & vmIntrinsics::MO_WEAK_CAS) != 0;
-  mo = (vmIntrinsics::MemoryOrder)(mo & vmIntrinsics::MO_MODE_MASK);
+  const bool weak_cas = (mo & vmIntrinsics::UNSAFE_MO_WEAK_CAS) != 0;
+  mo = (vmIntrinsics::MemoryOrder)(mo & vmIntrinsics::UNSAFE_MO_MODE_MASK);
 
   assert(type == T_OBJECT || is_integral_type(type), "Unsafe.java wrapper responsibility");
   BasicType utype = type == T_OBJECT ? T_OBJECT : T_LONG;

@@ -773,38 +773,12 @@ class methodHandle;
   do_name(getFloat_name,"getFloat")             do_name(putFloat_name,"putFloat")                                       \
   do_name(getDouble_name,"getDouble")           do_name(putDouble_name,"putDouble")                                     \
                                                                                                                         \
-  do_intrinsic(_getReference,       jdk_internal_misc_Unsafe,     getReference_name, getReference_signature,     F_PW)  \
-  do_intrinsic(_getBoolean,         jdk_internal_misc_Unsafe,     getBoolean_name, getBoolean_signature,         F_PW)  \
-  do_intrinsic(_getByte,            jdk_internal_misc_Unsafe,     getByte_name, getByte_signature,               F_PW)  \
-  do_intrinsic(_getShort,           jdk_internal_misc_Unsafe,     getShort_name, getShort_signature,             F_PW)  \
-  do_intrinsic(_getChar,            jdk_internal_misc_Unsafe,     getChar_name, getChar_signature,               F_PW)  \
-  do_intrinsic(_getInt,             jdk_internal_misc_Unsafe,     getInt_name, getInt_signature,                 F_PW)  \
-  do_intrinsic(_getLong,            jdk_internal_misc_Unsafe,     getLong_name, getLong_signature,               F_PW)  \
-  do_intrinsic(_getFloat,           jdk_internal_misc_Unsafe,     getFloat_name, getFloat_signature,             F_PW)  \
-  do_intrinsic(_getDouble,          jdk_internal_misc_Unsafe,     getDouble_name, getDouble_signature,           F_PW)  \
-  do_intrinsic(_putReference,       jdk_internal_misc_Unsafe,     putReference_name, putReference_signature,     F_PW)  \
-  do_intrinsic(_putBoolean,         jdk_internal_misc_Unsafe,     putBoolean_name, putBoolean_signature,         F_PW)  \
-  do_intrinsic(_putByte,            jdk_internal_misc_Unsafe,     putByte_name, putByte_signature,               F_PW)  \
-  do_intrinsic(_putShort,           jdk_internal_misc_Unsafe,     putShort_name, putShort_signature,             F_PW)  \
-  do_intrinsic(_putChar,            jdk_internal_misc_Unsafe,     putChar_name, putChar_signature,               F_PW)  \
-  do_intrinsic(_putInt,             jdk_internal_misc_Unsafe,     putInt_name, putInt_signature,                 F_PW)  \
-  do_intrinsic(_putLong,            jdk_internal_misc_Unsafe,     putLong_name, putLong_signature,               F_PW)  \
-  do_intrinsic(_putFloat,           jdk_internal_misc_Unsafe,     putFloat_name, putFloat_signature,             F_PW)  \
-  do_intrinsic(_putDouble,          jdk_internal_misc_Unsafe,     putDouble_name, putDouble_signature,           F_PW)  \
                                                                                                                         \
   do_name(getShortUnaligned_name,"getShortUnaligned")     do_name(putShortUnaligned_name,"putShortUnaligned")           \
   do_name(getCharUnaligned_name,"getCharUnaligned")       do_name(putCharUnaligned_name,"putCharUnaligned")             \
   do_name(getIntUnaligned_name,"getIntUnaligned")         do_name(putIntUnaligned_name,"putIntUnaligned")               \
   do_name(getLongUnaligned_name,"getLongUnaligned")       do_name(putLongUnaligned_name,"putLongUnaligned")             \
                                                                                                                         \
-  do_intrinsic(_getShortUnaligned,         jdk_internal_misc_Unsafe,    getShortUnaligned_name, getShort_signature,     F_PW) \
-  do_intrinsic(_getCharUnaligned,          jdk_internal_misc_Unsafe,    getCharUnaligned_name, getChar_signature,       F_PW) \
-  do_intrinsic(_getIntUnaligned,           jdk_internal_misc_Unsafe,    getIntUnaligned_name, getInt_signature,         F_PW) \
-  do_intrinsic(_getLongUnaligned,          jdk_internal_misc_Unsafe,    getLongUnaligned_name, getLong_signature,       F_PW) \
-  do_intrinsic(_putShortUnaligned,         jdk_internal_misc_Unsafe,    putShortUnaligned_name, putShort_signature,     F_PW) \
-  do_intrinsic(_putCharUnaligned,          jdk_internal_misc_Unsafe,    putCharUnaligned_name, putChar_signature,       F_PW) \
-  do_intrinsic(_putIntUnaligned,           jdk_internal_misc_Unsafe,    putIntUnaligned_name, putInt_signature,         F_PW) \
-  do_intrinsic(_putLongUnaligned,          jdk_internal_misc_Unsafe,    putLongUnaligned_name, putLong_signature,       F_PW) \
                                                                                                                         \
   do_signature(compareAndSetReference_signature,      "(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z")        \
   do_signature(compareAndExchangeReference_signature, "(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
@@ -832,46 +806,24 @@ class methodHandle;
   do_name(weakCompareAndSetLong_name,               "weakCompareAndSetLong")                                            \
   do_name(weakCompareAndSetInt_name,                "weakCompareAndSetInt")                                             \
                                                                                                                         \
-  do_intrinsic(_compareAndSetReference,              jdk_internal_misc_Unsafe,  compareAndSetReference_name,              compareAndSetReference_signature,      F_PW) \
-  do_intrinsic(_compareAndExchangeReference,         jdk_internal_misc_Unsafe,  compareAndExchangeReference_name,         compareAndExchangeReference_signature, F_PW) \
-  do_intrinsic(_compareAndSetLong,                jdk_internal_misc_Unsafe,  compareAndSetLong_name,                compareAndSetLong_signature,        F_PW) \
-  do_intrinsic(_compareAndExchangeLong,           jdk_internal_misc_Unsafe,  compareAndExchangeLong_name,           compareAndExchangeLong_signature,   F_PW) \
-  do_intrinsic(_compareAndSetInt,                 jdk_internal_misc_Unsafe,  compareAndSetInt_name,                 compareAndSetInt_signature,         F_PW) \
-  do_intrinsic(_compareAndExchangeInt,            jdk_internal_misc_Unsafe,  compareAndExchangeInt_name,            compareAndExchangeInt_signature,    F_PW) \
-  do_intrinsic(_compareAndSetByte,                jdk_internal_misc_Unsafe,  compareAndSetByte_name,                compareAndSetByte_signature,        F_PW) \
-  do_intrinsic(_compareAndExchangeByte,           jdk_internal_misc_Unsafe,  compareAndExchangeByte_name,           compareAndExchangeByte_signature,   F_PW) \
-  do_intrinsic(_compareAndSetShort,               jdk_internal_misc_Unsafe,  compareAndSetShort_name,               compareAndSetShort_signature,       F_PW) \
-  do_intrinsic(_compareAndExchangeShort,          jdk_internal_misc_Unsafe,  compareAndExchangeShort_name,          compareAndExchangeShort_signature,  F_PW) \
                                                                                                                                                              \
-  do_intrinsic(_weakCompareAndSetReference,       jdk_internal_misc_Unsafe,  weakCompareAndSetReference_name,          compareAndSetReference_signature,      F_PW)\
-  do_intrinsic(_weakCompareAndSetLong,            jdk_internal_misc_Unsafe,  weakCompareAndSetLong_name,            compareAndSetLong_signature,        F_PW)\
-  do_intrinsic(_weakCompareAndSetInt,             jdk_internal_misc_Unsafe,  weakCompareAndSetInt_name,             compareAndSetInt_signature,         F_PW)\
                            \
-  do_intrinsic(_getAndAddInt,             jdk_internal_misc_Unsafe,     getAndAddInt_name, getAndAddInt_signature, F_PW)      \
    do_name(     getAndAddInt_name,                                      "getAndAddInt")                                       \
    do_signature(getAndAddInt_signature,                                 "(Ljava/lang/Object;JI)I" )                           \
-  do_intrinsic(_getAndAddLong,            jdk_internal_misc_Unsafe,     getAndAddLong_name, getAndAddLong_signature, F_PW)    \
    do_name(     getAndAddLong_name,                                     "getAndAddLong")                                      \
    do_signature(getAndAddLong_signature,                                "(Ljava/lang/Object;JJ)J" )                           \
-  do_intrinsic(_getAndAddByte,            jdk_internal_misc_Unsafe,     getAndAddByte_name, getAndAddByte_signature, F_PW)    \
    do_name(     getAndAddByte_name,                                     "getAndAddByte")                                      \
    do_signature(getAndAddByte_signature,                                "(Ljava/lang/Object;JB)B" )                           \
-  do_intrinsic(_getAndAddShort,           jdk_internal_misc_Unsafe,     getAndAddShort_name, getAndAddShort_signature, F_PW)  \
    do_name(     getAndAddShort_name,                                    "getAndAddShort")                                     \
    do_signature(getAndAddShort_signature,                               "(Ljava/lang/Object;JS)S" )                           \
-  do_intrinsic(_getAndSetInt,             jdk_internal_misc_Unsafe,     getAndSetInt_name, getAndSetInt_signature, F_PW)      \
    do_name(     getAndSetInt_name,                                      "getAndSetInt")                                       \
    do_alias(    getAndSetInt_signature,                                 /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature) \
-  do_intrinsic(_getAndSetLong,            jdk_internal_misc_Unsafe,     getAndSetLong_name, getAndSetLong_signature, F_PW)    \
    do_name(     getAndSetLong_name,                                     "getAndSetLong")                                      \
    do_alias(    getAndSetLong_signature,                                /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)\
-  do_intrinsic(_getAndSetByte,            jdk_internal_misc_Unsafe,     getAndSetByte_name, getAndSetByte_signature, F_PW)    \
    do_name(     getAndSetByte_name,                                     "getAndSetByte")                                      \
    do_alias(    getAndSetByte_signature,                                /*"(Ljava/lang/Object;JB)B"*/ getAndAddByte_signature)\
-  do_intrinsic(_getAndSetShort,           jdk_internal_misc_Unsafe,     getAndSetShort_name, getAndSetShort_signature, F_PW)  \
    do_name(     getAndSetShort_name,                                    "getAndSetShort")                                             \
    do_alias(    getAndSetShort_signature,                               /*"(Ljava/lang/Object;JS)S"*/ getAndAddShort_signature)       \
-  do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_PW)  \
    do_name(     getAndSetReference_name,                                "getAndSetReference")                                         \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
   /* end of wrappers for polymorphic unsafe intrinsics */                                                                    \
@@ -1390,7 +1342,6 @@ class vmIntrinsics : AllStatic {
     F_RN,                       // !static  native !synchronized
     F_SN,                       //  static  native !synchronized
     F_PI,                       // polymorphic intrinsic
-    F_PW,                       // polymorphic intrinsic wrapper (must inline)
 
     FLAG_LIMIT
   };
@@ -1408,8 +1359,7 @@ class vmIntrinsics : AllStatic {
       case F_RN:
         return false;
       case F_PI:
-      case F_PW:
-        return false;  // there is no F_SPI or F_SPW
+        return false;  // there is no F_SPI
       default:
         ShouldNotReachHere();
         return false;
@@ -1425,7 +1375,6 @@ class vmIntrinsics : AllStatic {
       case F_S:
       case F_R:
       case F_PI:
-      case F_PW:
         return false;
       default:
         ShouldNotReachHere();
@@ -1441,7 +1390,6 @@ class vmIntrinsics : AllStatic {
       case F_S:
       case F_R:
       case F_Y:
-      case F_PW:
         return false;
       case F_PI:  // we don't care whether a poly-intrinsic is native or not
         return TriBool();
@@ -1553,17 +1501,17 @@ public:
   // These are also defined as byte constants in the Unsafe class.
   // (See also accessDecorators.hpp for a more detailed API.)
   #define VMI_MEMORY_ORDERS_DO(fn)                \
-    fn(MO_PLAIN,      1)                          \
-    fn(MO_VOLATILE,   2)                          \
-    fn(MO_OPAQUE,     3)                          \
-    fn(MO_ACQUIRE,    4)                          \
-    fn(MO_RELEASE,    8)                          \
-    fn(MO_WEAK_CAS,  16)                          \
-    fn(MO_UNALIGNED, 32)                          \
+    fn(UNSAFE_MO_PLAIN,      1)                   \
+    fn(UNSAFE_MO_VOLATILE,   2)                   \
+    fn(UNSAFE_MO_OPAQUE,     3)                   \
+    fn(UNSAFE_MO_ACQUIRE,    4)                   \
+    fn(UNSAFE_MO_RELEASE,    8)                   \
+    fn(UNSAFE_MO_WEAK_CAS,  16)                   \
+    fn(UNSAFE_MO_UNALIGNED, 32)                   \
     /*end*/
 
   enum MemoryOrder : int {
-    MO_NONE = 0,
+    UNSAFE_MO_NONE = 0,
     #define VMI_MEMORY_ORDER_DEFINE(mo, code)     mo = code,
     VMI_MEMORY_ORDERS_DO(VMI_MEMORY_ORDER_DEFINE)
     #undef VMI_MEMORY_ORDER_DEFINE
@@ -1572,8 +1520,11 @@ public:
     // These are not separately listed, but can appar
     // as MO arguments to unsafe access primitives.
   };
-  static constexpr int MO_MODE_MASK = (MO_PLAIN|MO_VOLATILE|MO_ACQUIRE|MO_RELEASE);
-  static constexpr int MO_EXTRA_BITS_MASK = (MO_WEAK_CAS|MO_UNALIGNED);
+  static constexpr int UNSAFE_MO_MODE_MASK
+      = (UNSAFE_MO_PLAIN|UNSAFE_MO_VOLATILE|
+         UNSAFE_MO_ACQUIRE|UNSAFE_MO_RELEASE|UNSAFE_MO_OPAQUE);
+  static constexpr int UNSAFE_MO_EXTRA_BITS_MASK
+      = (UNSAFE_MO_WEAK_CAS|UNSAFE_MO_UNALIGNED);
 
   // These are defined as byte constants in the Unsafe class.
   // They are used only by Unsafe.getAndOperatePrimitiveBitsMO.
@@ -1597,13 +1548,21 @@ public:
   // valid mo constant is one of plain, volatile, acquire, or release
   static bool is_valid_memory_order(int mo, int optionally_exclude = -1) {
     switch (mo) {
-    case MO_PLAIN:   case MO_VOLATILE:
-    case MO_ACQUIRE: case MO_RELEASE:  case MO_OPAQUE:
+    case UNSAFE_MO_PLAIN:   case UNSAFE_MO_VOLATILE:
+    case UNSAFE_MO_ACQUIRE: case UNSAFE_MO_RELEASE:  case UNSAFE_MO_OPAQUE:
       return (mo != optionally_exclude);
     default:
       return false;
     }
   }
+
+  // The low three bits of the 8 primitive BasicType values encode size.
+  static const int PRIMITIVE_SIZE_MASK = 3;
+  static size_t primitive_type_size(BasicType bt) {
+    assert(is_valid_primitive_type(bt), "BT has no size: %02x", bt);
+    return 1 << (bt & PRIMITIVE_SIZE_MASK);
+  }
+
   static bool is_valid_primitive_type(int bt) {
     // cannot use is_java_primitive because bt might be a weirdo like -1
     return T_BOOLEAN <= bt && bt <= T_LONG;

@@ -3237,7 +3237,7 @@ void GraphBuilder::setup_osr_entry_block() {
       Value off_val = append(new Constant(new IntConstant(offset)));
       get = append(new UnsafeGet(as_BasicType(local->type()), e,
                                  off_val,
-                                 vmIntrinsics::MO_PLAIN/*!is_volatile*/,
+                                 vmIntrinsics::UNSAFE_MO_PLAIN/*!is_volatile*/,
                                  true/*is_raw*/));
     }
     _state->store_local(index, get);
@@ -3723,7 +3723,7 @@ bool GraphBuilder::try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignor
   // after skipping prefix, remember the number of skipped items
   const int prefix_size = prefix_end - args_base - 1;  //do not count receiver
   // if MO is unknown, fall down to MO_VOLATILE
-  if (!vmIntrinsics::is_valid_memory_order(mo))  mo = vmIntrinsics::MO_VOLATILE;
+  if (!vmIntrinsics::is_valid_memory_order(mo))  mo = vmIntrinsics::UNSAFE_MO_VOLATILE;
   BasicType t = (BasicType)bt;
   assert(bt >= 0 && is_java_type(t), "");
   if (op < 0)  op = vmIntrinsics::OP_NONE;

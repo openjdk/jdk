@@ -65,12 +65,6 @@ inline bool match_F_SN(u2 flags) {
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_PW(u2 flags) {
-  const int req = 0;  // the wrapper might be static or not
-  const int neg = JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
-  return (flags & (req | neg)) == req;
-}
-
 inline bool match_F_PI(u2 flags) {
   const int req = 0;  // the intrinsic is a plain or native method
   const int neg = JVM_ACC_SYNCHRONIZED;
@@ -275,11 +269,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_compressStringB:
     case vmIntrinsics::_inflateStringC:
     case vmIntrinsics::_inflateStringB:
-    case vmIntrinsics::_getAndAddInt:
-    case vmIntrinsics::_getAndAddLong:
-    case vmIntrinsics::_getAndSetInt:
-    case vmIntrinsics::_getAndSetLong:
-    case vmIntrinsics::_getAndSetReference:
     case vmIntrinsics::_loadFence:
     case vmIntrinsics::_storeFence:
     case vmIntrinsics::_fullFence:
@@ -387,54 +376,11 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     // these are the polymorphic unsafe primitives
     if (!InlineUnsafeOps) return true;
     break;
-  // these are all wrappers; they are not subject to intrinsic expansion per se:
-  case vmIntrinsics::_getReference:
-  case vmIntrinsics::_getBoolean:
-  case vmIntrinsics::_getByte:
-  case vmIntrinsics::_getShort:
-  case vmIntrinsics::_getChar:
-  case vmIntrinsics::_getInt:
-  case vmIntrinsics::_getLong:
-  case vmIntrinsics::_getFloat:
-  case vmIntrinsics::_getDouble:
-  case vmIntrinsics::_putReference:
-  case vmIntrinsics::_putBoolean:
-  case vmIntrinsics::_putByte:
-  case vmIntrinsics::_putShort:
-  case vmIntrinsics::_putChar:
-  case vmIntrinsics::_putInt:
-  case vmIntrinsics::_putLong:
-  case vmIntrinsics::_putFloat:
-  case vmIntrinsics::_putDouble:
-  case vmIntrinsics::_getAndAddInt:
-  case vmIntrinsics::_getAndAddLong:
-  case vmIntrinsics::_getAndSetInt:
-  case vmIntrinsics::_getAndSetLong:
-  case vmIntrinsics::_getAndSetReference:
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_fullFence:
-  case vmIntrinsics::_compareAndSetLong:
-  case vmIntrinsics::_weakCompareAndSetLong:
-  case vmIntrinsics::_compareAndSetInt:
-  case vmIntrinsics::_weakCompareAndSetInt:
-  case vmIntrinsics::_compareAndSetReference:
-  case vmIntrinsics::_weakCompareAndSetReference:
-  case vmIntrinsics::_compareAndExchangeInt:
-  case vmIntrinsics::_compareAndExchangeLong:
-  case vmIntrinsics::_compareAndExchangeReference:
   case vmIntrinsics::_allocateInstance:
     if (!InlineUnsafeOps) return true;
-    break;
-  case vmIntrinsics::_getShortUnaligned:
-  case vmIntrinsics::_getCharUnaligned:
-  case vmIntrinsics::_getIntUnaligned:
-  case vmIntrinsics::_getLongUnaligned:
-  case vmIntrinsics::_putShortUnaligned:
-  case vmIntrinsics::_putCharUnaligned:
-  case vmIntrinsics::_putIntUnaligned:
-  case vmIntrinsics::_putLongUnaligned:
-    if (!InlineUnsafeOps || !UseUnalignedAccesses) return true;
     break;
   case vmIntrinsics::_hashCode:
     if (!InlineObjectHash) return true;
@@ -792,7 +738,6 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   case F_SN: fname = "native static "; break;
   case F_S:  fname = "static ";        break;
   case F_PI: fname = "/*poly*/ ";      break;
-  case F_PW: fname = "/*poly wrapper*/ "; break;
   default:   break;
   }
   const char* kptr = strrchr(kname, JVM_SIGNATURE_SLASH);

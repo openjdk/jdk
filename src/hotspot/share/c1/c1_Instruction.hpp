@@ -1530,7 +1530,7 @@ LEAF(Intrinsic, StateSplit)
   , _id(id)
   , _args(args)
   , _recv(nullptr)
-  , _memory_order(vmIntrinsics::MO_NONE)
+  , _memory_order(vmIntrinsics::UNSAFE_MO_NONE)
   , _basic_type(T_ILLEGAL)
   , _bits_op(vmIntrinsics::OP_NONE)
   {
@@ -1575,7 +1575,7 @@ LEAF(Intrinsic, StateSplit)
 
   // prefix arguments
   vmIntrinsics::MemoryOrder memory_order() const {
-    assert(_memory_order != vmIntrinsics::MO_NONE, "must be present");
+    assert(_memory_order != vmIntrinsics::UNSAFE_MO_NONE, "must be present");
     return _memory_order;
   }
   BasicType basic_type() const {

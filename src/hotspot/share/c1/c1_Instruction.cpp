@@ -550,17 +550,17 @@ Intrinsic::with_polymorphic_prefix(vmIntrinsics::MemoryOrder memory_order,
   vmIntrinsics::PolymorphicPrefix pfx = vmIntrinsics::polymorphic_prefix(id());
   switch (pfx) {
   case vmIntrinsics::PP_MO:
-    assert(memory_order != vmIntrinsics::MO_NONE, "");
+    assert(memory_order != vmIntrinsics::UNSAFE_MO_NONE, "");
     assert(basic_type == T_OBJECT || basic_type == T_ILLEGAL, "");
     assert(bits_op == vmIntrinsics::OP_NONE, "");
     break;
   case vmIntrinsics::PP_MO_BT:
-    assert(memory_order != vmIntrinsics::MO_NONE, "");
+    assert(memory_order != vmIntrinsics::UNSAFE_MO_NONE, "");
     assert(is_java_primitive(basic_type), "");
     assert(bits_op == vmIntrinsics::OP_NONE, "");
     break;
   case vmIntrinsics::PP_MO_BT_OP:
-    assert(memory_order != vmIntrinsics::MO_NONE, "");
+    assert(memory_order != vmIntrinsics::UNSAFE_MO_NONE, "");
     assert(is_java_primitive(basic_type), "");
     assert(bits_op != vmIntrinsics::OP_NONE, "");
     break;
@@ -569,7 +569,7 @@ Intrinsic::with_polymorphic_prefix(vmIntrinsics::MemoryOrder memory_order,
   }
   // make sure previous settings are empty
   assert(_basic_type == T_ILLEGAL, "");
-  assert(_memory_order == vmIntrinsics::MO_NONE, "");
+  assert(_memory_order == vmIntrinsics::UNSAFE_MO_NONE, "");
   assert(_bits_op == vmIntrinsics::OP_NONE, "");
   // install the settings; some might still be empty
   _memory_order = memory_order;
