@@ -522,7 +522,9 @@ JavaThread::JavaThread(MemTag mem_tag) :
 #endif
 
   _lock_stack(this),
-  _om_cache(this) {
+  _om_cache(this),
+
+  _profile_rng(-1) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -538,6 +540,16 @@ JavaThread::JavaThread(MemTag mem_tag) :
   SafepointMechanism::initialize_header(this);
 
   set_requires_cross_modify_fence(false);
+
+  // Initial state of random-number generator used when profiling
+  // C1-generated code.
+  if (ProfileCaptureRatio > 1) {
+    int state;
+    do {
+      state = os::random();
+    } while (state == 0);
+    _profile_rng = state;
+  }
 
   pd_initialize();
 }

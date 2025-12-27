@@ -927,11 +927,9 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     // MDO cells are intptr_t, so the data_reg width is arch-dependent.
     LIR_Opr data_reg = new_pointer_register();
     LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
-    __ move(data_addr, data_reg);
-    // Use leal instead of add to avoid destroying condition codes on x86
-    LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
-    __ leal(LIR_OprFact::address(fake_incr_value), data_reg);
-    __ move(data_reg, data_addr);
+    LIR_Opr tmp = new_register(T_INT);
+    LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
+    __ increment_counter(step, data_addr, LIR_OprFact::intConst(0), tmp, nullptr);
   }
 }
 
@@ -2373,8 +2371,12 @@ void LIRGenerator::do_Goto(Goto* x) {
     LIR_Opr md_reg = new_register(T_METADATA);
     __ metadata2reg(md->constant_encoding(), md_reg);
 
-    increment_counter(new LIR_Address(md_reg, offset,
-                                      NOT_LP64(T_INT) LP64_ONLY(T_LONG)), DataLayout::counter_increment);
+    LIR_Address *counter_addr = new LIR_Address(md_reg, offset,
+                                           NOT_LP64(T_INT) LP64_ONLY(T_LONG));
+    LIR_Opr tmp = new_register(T_INT);
+    LIR_Opr dummy = LIR_OprFact::intConst(0);
+    LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
+    __ increment_counter(inc, counter_addr, dummy, tmp, nullptr);
   }
 
   // emit phi-instruction move after safepoint since this simplifies
@@ -3172,34 +3174,24 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     ShouldNotReachHere();
   }
   LIR_Address* counter = new LIR_Address(counter_holder, offset, T_INT);
-  LIR_Opr result = new_register(T_INT);
-  __ load(counter, result);
-  __ add(result, step, result);
-  __ store(result, counter);
+  LIR_Opr result = notify ? new_register(T_INT) : LIR_OprFact::intConst(0);
+  LIR_Opr tmp = new_register(T_INT);
+
   if (notify && (!backedge || UseOnStackReplacement)) {
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
-    CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
-    int freq = frequency << InvocationCounter::count_shift;
-    if (freq == 0) {
-      if (!step->is_constant()) {
-        __ cmp(lir_cond_notEqual, step, LIR_OprFact::intConst(0));
-        __ branch(lir_cond_notEqual, overflow);
-      } else {
-        __ branch(lir_cond_always, overflow);
-      }
-    } else {
-      LIR_Opr mask = load_immediate(freq, T_INT);
-      if (!step->is_constant()) {
-        // If step is 0, make sure the overflow check below always fails
-        __ cmp(lir_cond_notEqual, step, LIR_OprFact::intConst(0));
-        __ cmove(lir_cond_notEqual, result, LIR_OprFact::intConst(InvocationCounter::count_increment), result, T_INT);
-      }
-      __ logical_and(result, mask, result);
-      __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
-      __ branch(lir_cond_equal, overflow);
-    }
-    __ branch_destination(overflow->continuation());
+    CodeStub* overflow = new CounterOverflowStub (info, bci, meth);
+    // Zero the low-order bits of the frequency, otherwise we'll miss
+    // overflows when usind randomized profile counters.
+    unsigned int freq = (unsigned int)frequency
+                         >> ratio_shift << ratio_shift
+                         << InvocationCounter::count_shift;
+    __ increment_counter(step, counter, result, tmp,
+                         LIR_OprFact::intConst(freq), overflow, info);
+  } else {
+    __ increment_counter(step, counter, result, tmp,
+                             LIR_OprFact::illegalOpr, nullptr, info);
   }
 }
 
