@@ -1971,27 +1971,6 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     case Op_ConvI2L:
       return false;
 
-    // MaxNode::find_identity_operation
-    //  Finds patterns like Max(A, Max(A, B)) -> Max(A, B)
-    //  This can be a 2-hop search, so maybe notification is not
-    //  good enough.
-    //
-    // Found with:
-    //   compiler/codegen/TestBooleanVect.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_MaxL:
-    case Op_MinL:
-    case Op_MaxI:
-    case Op_MinI:
-    case Op_MaxF:
-    case Op_MinF:
-    case Op_MaxHF:
-    case Op_MinHF:
-    case Op_MaxD:
-    case Op_MinD:
-      return false;
-
-
     // AddINode::Identity
     // Converts (x-y)+y to x
     // Could be issue with notification
@@ -2619,6 +2598,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       Node* u = use->fast_out(i2);
       if (u->Opcode() == Op_AbsD || u->Opcode() == Op_AbsF ||
           u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI) {
+        worklist.push(u);
+      }
+    }
+  }
+  // Check for max(a, max(b, c)) patterns
+  if (use->is_MinMax()) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == use->Opcode()) {
         worklist.push(u);
       }
     }
