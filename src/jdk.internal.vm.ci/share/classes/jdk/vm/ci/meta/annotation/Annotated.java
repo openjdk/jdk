@@ -20,14 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.vm.test;
+package jdk.vm.ci.meta.annotation;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.AnnotatedElement;
 
-@Retention(RetentionPolicy.RUNTIME)
-public @interface MemberDeleted {
-    String value();
-    int retained();
-    int deleted();
+/**
+ * Represents a program element such as a method, constructor, field or class for which annotations
+ * may be directly present. This API is analogous to {@link java.lang.reflect.AnnotatedElement}
+ * except that it only supports {@linkplain AnnotatedElement#getDeclaredAnnotations() declared annotations}.
+ */
+public interface Annotated {
+
+    /**
+     * Gets the class file info for the annotations directly present on this element
+     * or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getDeclaredAnnotationInfo() {
+        return null;
+    }
+
+    /**
+     * Gets the class file info for the type annotations associated with this element
+     * or {@code null} if no such info exists.
+     */
+    default AnnotationsInfo getTypeAnnotationInfo() {
+        return null;
+    }
 }

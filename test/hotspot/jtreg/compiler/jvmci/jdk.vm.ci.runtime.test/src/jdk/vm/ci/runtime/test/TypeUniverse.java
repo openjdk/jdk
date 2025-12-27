@@ -22,12 +22,24 @@
  */
 package jdk.vm.ci.runtime.test;
 
-import static java.lang.reflect.Modifier.isFinal;
-import static java.lang.reflect.Modifier.isStatic;
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.misc.Unsafe;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.runtime.JVMCI;
+import org.junit.Test;
 
 import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.AbstractCollection;
 import java.util.AbstractList;
@@ -48,16 +60,8 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
-
-import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.runtime.JVMCI;
+import static java.lang.reflect.Modifier.isFinal;
+import static java.lang.reflect.Modifier.isStatic;
 
 /**
  * Context for type related tests.
@@ -76,8 +80,25 @@ public class TypeUniverse {
 
     private static List<ConstantValue> constants;
 
-    public class InnerClass {
+    // Define a type-use annotation
+    @Target(ElementType.TYPE_USE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TypeQualifier {
+        String comment() default "";
+        int id() default -1;
+    }
 
+    // Define a parameter annotation
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface ParameterQualifier {
+        String value() default "";
+        int tag() default -1;
+    }
+
+    public class InnerClass {
+        public class InnerInnerClass {
+        }
     }
 
     public static class InnerStaticClass {
@@ -208,6 +229,28 @@ public class TypeUniverse {
         }
     }
 
+    // Annotates the class type String
+    public @TypeQualifier String[][] typeAnnotatedField1;
+    // Annotates the array type String[][]
+    public String @TypeQualifier [][]  typeAnnotatedField2;
+    // Annotates the array type String[]
+    String[] @TypeQualifier [] typeAnnotatedField3;
+
+    public @TypeQualifier(comment = "comment1", id = 42) TypeUniverse.InnerClass.InnerInnerClass typeAnnotatedField4;
+    public TypeUniverse.@TypeQualifier InnerClass.InnerInnerClass typeAnnotatedField5;
+    public TypeUniverse.InnerClass.@TypeQualifier(comment = "47", id = -10) InnerInnerClass typeAnnotatedField6;
+
+    public @TypeQualifier(comment = "comment2", id = 52) TypeUniverse.InnerClass.InnerInnerClass typeAnnotatedMethod1() { return null; }
+    public TypeUniverse.@TypeQualifier InnerClass.InnerInnerClass typeAnnotatedMethod2() { return null; }
+    public TypeUniverse.InnerClass.@TypeQualifier(comment = "57", id = -20) InnerInnerClass typeAnnotatedMethod3() { return null; }
+
+    public void annotatedParameters1(
+            @TypeQualifier(comment = "comment3", id = 62) TypeUniverse this,
+            @TypeQualifier(comment = "comment4", id = 72) @ParameterQualifier String annotatedParam1,
+            int notAnnotatedParam2,
+            @ParameterQualifier(value = "foo", tag = 123)  Thread annotatedParam3) {
+    }
+
     public synchronized Class<?> getArrayClass(Class<?> componentType) {
         Class<?> arrayClass = arrayClasses.get(componentType);
         if (arrayClass == null) {
@@ -232,6 +275,9 @@ public class TypeUniverse {
             for (Class<?> sc : c.getInterfaces()) {
                 addClass(sc);
             }
+            for (Class<?> enclosing = c.getEnclosingClass(); enclosing != null; enclosing = enclosing.getEnclosingClass()) {
+                addClass(enclosing);
+            }
             for (Class<?> dc : c.getDeclaredClasses()) {
                 addClass(dc);
             }
@@ -247,6 +293,70 @@ public class TypeUniverse {
                 arrayClasses.put(c, arrayClass);
                 addClass(arrayClass);
             }
+        }
+    }
+
+    public static Method lookupMethod(Class<?> declaringClass, String methodName, Class<?>... parameterTypes) {
+        try {
+            Method result = declaringClass.getDeclaredMethod(methodName, parameterTypes);
+            result.setAccessible(true);
+            return result;
+        } catch (ReflectiveOperationException | LinkageError cause) {
+            throw new AssertionError(cause);
+        }
+    }
+
+    public static Field lookupField(Class<?> declaringClass, String fieldName) {
+        try {
+            Field result = declaringClass.getDeclaredField(fieldName);
+            result.setAccessible(true);
+            return result;
+        } catch (ReflectiveOperationException | LinkageError cause) {
+            /* Try to get hidden field */
+            try {
+                Method fieldGetDeclaredFields0 = lookupMethod(Class.class, "getDeclaredFields0", boolean.class);
+                Field[] allFields = (Field[]) fieldGetDeclaredFields0.invoke(declaringClass, false);
+                for (Field field : allFields) {
+                    if (field.getName().equals(fieldName)) {
+                        field.setAccessible(true);
+                        return field;
+                    }
+                }
+            } catch (ReflectiveOperationException e) {
+                // ignore
+            }
+            throw new AssertionError(cause);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E extends Throwable> RuntimeException rethrow(Throwable ex) throws E {
+        throw (E) ex;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T invokeMethod(Method method, Object receiver, Object... arguments) {
+        try {
+            method.setAccessible(true);
+            return (T) method.invoke(receiver, arguments);
+        } catch (InvocationTargetException ex) {
+            Throwable cause = ex.getCause();
+            if (cause != null) {
+                throw rethrow(cause);
+            }
+            throw new AssertionError(ex);
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T getFieldValue(Field field, Object receiver) {
+        field.setAccessible(true);
+        try {
+            return (T) field.get(receiver);
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
         }
     }
 }

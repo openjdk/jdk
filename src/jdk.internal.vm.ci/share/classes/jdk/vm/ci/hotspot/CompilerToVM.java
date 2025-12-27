@@ -23,26 +23,28 @@
 
 package jdk.vm.ci.hotspot;
 
-import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
-
-import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.common.InitTimer;
-import static jdk.vm.ci.common.InitTimer.timer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ConstantPool.BootstrapMethodInvocation;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
+
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
+
+import static jdk.vm.ci.common.InitTimer.timer;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 /**
  * Calls from Java into HotSpot. The behavior of all the methods in this class that take a native
@@ -86,7 +88,7 @@ final class CompilerToVM {
 
     @SuppressWarnings("try")
     CompilerToVM() {
-        try (InitTimer t = timer("CompilerToVM.registerNatives")) {
+        try (InitTimer _ = timer("CompilerToVM.registerNatives")) {
             registerNatives();
             ARRAY_BOOLEAN_BASE_OFFSET = arrayBaseOffset(JavaKind.Boolean.getTypeChar());
             ARRAY_BYTE_BASE_OFFSET = arrayBaseOffset(JavaKind.Byte.getTypeChar());
@@ -739,6 +741,11 @@ final class CompilerToVM {
     native HotSpotResolvedJavaMethodImpl asResolvedJavaMethod(Executable executable);
 
     /**
+     * Gets the value of {@code Field.slot}.
+     */
+    native int getReflectionFieldSlot(Field field);
+
+    /**
      * Gets the maximum absolute offset of a PC relative call to {@code address} from any position
      * in the code cache.
      *
@@ -1170,6 +1177,15 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
+     * Gets the {@link ResolvedJavaRecordComponent}s for {@code klass}.
+     */
+    ResolvedJavaRecordComponent[] getRecordComponents(HotSpotResolvedObjectTypeImpl klass) {
+        return getRecordComponents(klass, klass.getKlassPointer());
+    }
+
+    native ResolvedJavaRecordComponent[] getRecordComponents(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+
+    /**
      * Gets the {@link ResolvedJavaMethod}s for all methods of {@code klass}.
      */
     ResolvedJavaMethod[] getAllMethods(HotSpotResolvedObjectTypeImpl klass) {
@@ -1443,90 +1459,34 @@ final class CompilerToVM {
     native void notifyCompilerInliningEvent(int compileId, HotSpotResolvedJavaMethodImpl caller, long callerPointer,
                     HotSpotResolvedJavaMethodImpl callee, long calleePointer, boolean succeeded, String message, int bci);
 
-    /**
-     * Gets the serialized annotation info for {@code type} by calling
-     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
-     */
-    byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
-        try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedClassAnnotationData(type, type.getKlassPointer(),
-                            a.types, a.types.length, a.buffer());
-        }
-    }
+    /// Denotes class file bytes of a `RuntimeVisibleAnnotations` attribute after
+    /// the `u2 attribute_name_index; u4 attribute_length` prefix.
+    static final int DECLARED_ANNOTATIONS = 0;
 
-    native byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, long klassPointer,
-                    Object filter, int filterLength, long filterKlassPointers);
+    /// Denotes class file bytes of a `RuntimeVisibleParameterAnnotations` attribute after
+    /// the `u2 attribute_name_index; u4 attribute_length` prefix.
+    static final int PARAMETER_ANNOTATIONS = 1;
 
-    /**
-     * Gets the serialized annotation info for {@code method} by calling
-     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
-     */
-    byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
-        try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedExecutableAnnotationData(method, method.getMethodPointer(),
-                            a.types, a.types.length, a.buffer());
-        }
-    }
+    /// Denotes class file bytes of a `RuntimeVisibleTypeAnnotations` attribute after
+    /// the `u2 attribute_name_index; u4 attribute_length` prefix.
+    static final int TYPE_ANNOTATIONS = 2;
 
-    native byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, long methodPointer,
-                    Object filter, int filterLength, long filterKlassPointers);
+    /// Denotes class file bytes of a `AnnotationDefault` attribute after
+    /// the `u2 attribute_name_index; u4 attribute_length` prefix.
+    static final int ANNOTATION_MEMBER_VALUE = 3;
 
-    /**
-     * Gets the serialized annotation info for the field denoted by {@code holder} and
-     * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
-     */
-    byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
-        try (KlassPointers a = new KlassPointers(filter)) {
-            return getEncodedFieldAnnotationData(holder, holder.getKlassPointer(), fieldIndex,
-                            a.types, a.types.length, a.buffer());
-        }
-    }
-
-    native byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
-                    Object filterTypes, int filterLength, long filterKlassPointers);
-
-    /**
-     * Helper for passing {@Klass*} values to native code.
-     */
-    static final class KlassPointers implements AutoCloseable {
-        final ResolvedJavaType[] types;
-        long pointersArray;
-        final Unsafe unsafe = UnsafeAccess.UNSAFE;
-
-        KlassPointers(ResolvedJavaType[] types) {
-            this.types = types;
-        }
-
-        /**
-         * Gets the buffer in which to pass the {@Klass*} values to JNI.
-         *
-         * @return a {@Klass*} value if {@code types.length == 1} otherwise the address of a native
-         *         buffer holding an array of {@Klass*} values
-         */
-        long buffer() {
-            int length = types.length;
-            if (length == 1) {
-                return ((HotSpotResolvedObjectTypeImpl) types[0]).getKlassPointer();
-            } else {
-                pointersArray = unsafe.allocateMemory(length * Long.BYTES);
-                long pos = pointersArray;
-                for (int i = 0; i < types.length; i++) {
-                    HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) types[i];
-                    unsafe.putLong(pos, hsType.getKlassPointer());
-                    pos += Long.BYTES;
-                }
-            }
-            return pointersArray;
-        }
-
-        @Override
-        public void close() {
-            if (types.length != 1 && pointersArray != 0) {
-                unsafe.freeMemory(pointersArray);
-                pointersArray = 0;
-            }
-        }
-    }
+    /// Gets the raw bytes of a class file annotations attribute (e.g. `RuntimeVisibleAnnotations`).
+    /// The relationship the arguments is shown below:
+    ///
+    ///  | containerTag |       container class              | containerPointer C++ type | fieldOrRecordComponentIndex            |
+    ///  |--------------|------------------------------------|---------------------------|----------------------------------------|
+    ///  | 't'          | HotSpotResolvedObjectTypeImpl      | Klass*                    | -                                      |
+    ///  | 'm'          | HotSpotResolvedJavaMethodImpl      | Method*                   | -                                      |
+    ///  | 'f'          | HotSpotResolvedObjectTypeImpl      | Klass*                    | index of field in container            |
+    ///  | 'r'          | HotSpotResolvedObjectTypeImpl      | Klass*                    | index of record component in container |
+    ///
+    /// @param category [#DECLARED_ANNOTATIONS], [#PARAMETER_ANNOTATIONS], [#TYPE_ANNOTATIONS] or [#ANNOTATION_MEMBER_VALUE]
+    native byte[] getRawAnnotationBytes(char containerTag, Object container, long containerPointer, int fieldOrRecordComponentIndex, int category);
 
     /**
      * @see HotSpotResolvedJavaMethod#getOopMapAt
@@ -1541,7 +1501,7 @@ final class CompilerToVM {
      * If the current thread is a CompilerThread associated with a JVMCI compiler where
      * newState != CompilerThread::_can_call_java, then _can_call_java is set to newState.
      *
-     * @returns false if no change was made, otherwise true
+     * @return false if no change was made, otherwise true
      */
     native boolean updateCompilerThreadCanCallJava(boolean newState);
 
