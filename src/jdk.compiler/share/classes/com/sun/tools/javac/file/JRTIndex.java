@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,19 +41,18 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import java.util.Set;
 
 import javax.tools.FileObject;
 
+import com.sun.tools.javac.file.LegacyCtPropertiesAccess.LegacyCtPropertiesInfo;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.util.Context;
 
 /**
  * A package-oriented index into the jrt: filesystem.
  */
-public class JRTIndex {
+class JRTIndex implements LegacyCtPropertiesAccess {
     /** Get a shared instance of the cache. */
     private static JRTIndex sharedInstance;
     public static synchronized JRTIndex getSharedInstance() {
@@ -117,60 +116,13 @@ public class JRTIndex {
         /**
          * The info that used to be in ct.sym for classes in this package.
          */
-        final CtSym ctSym;
+        final LegacyCtPropertiesInfo ctProperties;
 
-        private Entry(Map<String, Path> files, Set<RelativeDirectory> subdirs, CtSym ctSym) {
+        private Entry(Map<String, Path> files, Set<RelativeDirectory> subdirs, LegacyCtPropertiesInfo ctProperties) {
             this.files = files;
             this.subdirs = subdirs;
-            this.ctSym = ctSym;
+            this.ctProperties = ctProperties;
         }
-    }
-
-    /**
-     * The info that used to be in ct.sym for classes in a package.
-     */
-    public static class CtSym {
-        /**
-         * The classes in this package are internal and not visible.
-         */
-        public final boolean hidden;
-        /**
-         * The classes in this package are proprietary and will generate a warning.
-         */
-        public final boolean proprietary;
-        /**
-         * The minimum profile in which classes in this package are available.
-         */
-        public final String minProfile;
-
-        CtSym(boolean hidden, boolean proprietary, String minProfile) {
-            this.hidden = hidden;
-            this.proprietary = proprietary;
-            this.minProfile = minProfile;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder("CtSym[");
-            boolean needSep = false;
-            if (hidden) {
-                sb.append("hidden");
-                needSep = true;
-            }
-            if (proprietary) {
-                if (needSep) sb.append(",");
-                sb.append("proprietary");
-                needSep = true;
-            }
-            if (minProfile != null) {
-                if (needSep) sb.append(",");
-                sb.append(minProfile);
-            }
-            sb.append("]");
-            return sb.toString();
-        }
-
-        static final CtSym EMPTY = new CtSym(false, false, null);
     }
 
     /**
@@ -181,8 +133,9 @@ public class JRTIndex {
         entries = new HashMap<>();
     }
 
-    public CtSym getCtSym(CharSequence packageName) throws IOException {
-        return getEntry(RelativeDirectory.forPackage(packageName)).ctSym;
+    @Override
+    public LegacyCtPropertiesInfo getInfo(CharSequence packageName) throws IOException {
+        return getEntry(RelativeDirectory.forPackage(packageName)).ctProperties;
     }
 
     synchronized Entry getEntry(RelativeDirectory rd) throws IOException {
@@ -222,13 +175,14 @@ public class JRTIndex {
             }
             e = new Entry(Collections.unmodifiableMap(files),
                     Collections.unmodifiableSet(subdirs),
-                    getCtInfo(rd));
+                    LegacyCtPropertiesInfo.createLegacyCtPropertiesInfo(rd));
             entries.put(rd, new SoftReference<>(e));
         }
         return e;
     }
 
-    public boolean isInJRT(FileObject fo) {
+    @Override
+    public boolean supportsLegacyFlags(FileObject fo) {
         if (fo instanceof PathFileObject pathFileObject) {
             Path path = pathFileObject.getPath();
             return (path.getFileSystem() == jrtfs);
@@ -237,38 +191,4 @@ public class JRTIndex {
         }
     }
 
-    private CtSym getCtInfo(RelativeDirectory dir) {
-        if (dir.path.isEmpty())
-            return CtSym.EMPTY;
-        // It's a side-effect of the default build rules that ct.properties
-        // ends up as a resource bundle.
-        if (ctBundle == null) {
-            final String bundleName = "com.sun.tools.javac.resources.ct";
-            ctBundle = ResourceBundle.getBundle(bundleName);
-        }
-        try {
-            String attrs = ctBundle.getString(dir.path.replace('/', '.') + '*');
-            boolean hidden = false;
-            boolean proprietary = false;
-            String minProfile = null;
-            for (String attr: attrs.split(" +", 0)) {
-                switch (attr) {
-                    case "hidden":
-                        hidden = true;
-                        break;
-                    case "proprietary":
-                        proprietary = true;
-                        break;
-                    default:
-                        minProfile = attr;
-                }
-            }
-            return new CtSym(hidden, proprietary, minProfile);
-        } catch (MissingResourceException e) {
-            return CtSym.EMPTY;
-        }
-
-    }
-
-    private ResourceBundle ctBundle;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,24 +51,20 @@ import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.comp.Annotate;
-import com.sun.tools.javac.file.JRTIndex;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.file.LegacyCtPropertiesAccess;
+import com.sun.tools.javac.file.LegacyCtPropertiesAccess.LegacyCtPropertiesInfo;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.main.Option;
-import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Dependencies.CompletionCause;
 
 import static javax.tools.StandardLocation.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.main.DelegatingJavaFileManager;
-
-import com.sun.tools.javac.util.Dependencies.CompletionCause;
 
 /**
  *  This class provides operations to locate class definitions
@@ -160,7 +156,7 @@ public class ClassFinder {
      * replacement for the info that used to be in ct.sym.
      * In time, this will go away and be replaced by the module system.
      */
-    private final JRTIndex jrtIndex;
+    private final LegacyCtPropertiesAccess legacyCtPropertiesInfoAccess;
 
     /**
      * Completer that delegates to the complete-method of this class.
@@ -207,18 +203,8 @@ public class ClassFinder {
             ? names.fromString(options.get("failcomplete"))
             : null;
 
-        // Temporary, until more info is available from the module system.
-        boolean useCtProps;
-        JavaFileManager fm = context.get(JavaFileManager.class);
-        if (fm instanceof DelegatingJavaFileManager delegatingJavaFileManager) {
-            fm = delegatingJavaFileManager.getBaseFileManager();
-        }
-        if (fm instanceof JavacFileManager javacFileManager) {
-            useCtProps = javacFileManager.isDefaultBootClassPath() && javacFileManager.isSymbolFileEnabled();
-        } else {
-            useCtProps = false;
-        }
-        jrtIndex = useCtProps && JRTIndex.isAvailable() ? JRTIndex.getSharedInstance() : null;
+        legacyCtPropertiesInfoAccess =
+                JavacFileManager.getLegacyCtPropertiesInfo(fileManager);
 
         profile = Profile.instance(context);
         cachedCompletionFailure = new CompletionFailure(null, () -> null, dcfh);
@@ -241,7 +227,7 @@ public class ClassFinder {
      * available from the module system.
      */
     long getSupplementaryFlags(ClassSymbol c) {
-        if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile) || c.name == names.module_info) {
+        if (!legacyCtPropertiesInfoAccess.supportsLegacyFlags(c.classfile) || c.name == names.module_info) {
             return 0;
         }
 
@@ -257,12 +243,13 @@ public class ClassFinder {
             try {
                 ModuleSymbol owningModule = packge.modle;
                 if (owningModule == syms.noModule) {
-                    JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
+                    LegacyCtPropertiesInfo legacyInfo =
+                            legacyCtPropertiesInfoAccess.getInfo(packge.flatName());
                     Profile minProfile = Profile.DEFAULT;
-                    if (ctSym.proprietary)
+                    if (legacyInfo.proprietary)
                         newFlags |= PROPRIETARY;
-                    if (ctSym.minProfile != null)
-                        minProfile = Profile.lookup(ctSym.minProfile);
+                    if (legacyInfo.minProfile != null)
+                        minProfile = Profile.lookup(legacyInfo.minProfile);
                     if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
                         newFlags |= NOT_IN_PROFILE;
                     }
