@@ -48,6 +48,7 @@ import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
@@ -188,11 +189,9 @@ final class AppImageSigner {
     }
 
     private static boolean isXcodeDevToolsInstalled() {
-        try {
-            return Executor.of("/usr/bin/xcrun", "--help").setQuiet(true).execute() == 0;
-        } catch (IOException ex) {
-            return false;
-        }
+        return Result.of(
+                Executor.of("/usr/bin/xcrun", "--help").setQuiet(true)::executeExpectSuccess,
+                IOException.class).hasValue();
     }
 
     private static void unsign(Path path) throws IOException {

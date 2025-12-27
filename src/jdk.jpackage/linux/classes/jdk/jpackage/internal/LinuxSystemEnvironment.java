@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import jdk.jpackage.internal.model.PackageType;
@@ -38,6 +37,7 @@ import jdk.jpackage.internal.util.Result;
 public interface LinuxSystemEnvironment extends SystemEnvironment {
     boolean soLookupAvailable();
     PackageType nativePackageType();
+    LinuxPackageArch packageArch();
 
     static Result<LinuxSystemEnvironment> create() {
         return detectNativePackageType().map(LinuxSystemEnvironment::create).orElseGet(() -> {
@@ -45,7 +45,7 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
         });
     }
 
-    static Optional<PackageType> detectNativePackageType() {
+    static Optional<StandardPackageType> detectNativePackageType() {
         if (Internal.isDebian()) {
             return Optional.of(StandardPackageType.LINUX_DEB);
         } else if (Internal.isRpm()) {
@@ -55,9 +55,10 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
         }
     }
 
-    static Result<LinuxSystemEnvironment> create(PackageType nativePackageType) {
-        return Result.ofValue(new Stub(LibProvidersLookup.supported(),
-                Objects.requireNonNull(nativePackageType)));
+    static Result<LinuxSystemEnvironment> create(StandardPackageType nativePackageType) {
+        return LinuxPackageArch.create(nativePackageType).map(arch -> {
+            return new Stub(LibProvidersLookup.supported(), nativePackageType, arch);
+        });
     }
 
     static <T, U extends LinuxSystemEnvironment> U createWithMixin(Class<U> type, LinuxSystemEnvironment base, T mixin) {
@@ -79,7 +80,7 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
         }
     }
 
-    record Stub(boolean soLookupAvailable, PackageType nativePackageType) implements LinuxSystemEnvironment {
+    record Stub(boolean soLookupAvailable, PackageType nativePackageType, LinuxPackageArch packageArch) implements LinuxSystemEnvironment {
     }
 
     static final class Internal {

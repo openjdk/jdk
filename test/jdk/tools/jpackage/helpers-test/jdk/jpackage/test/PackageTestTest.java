@@ -213,7 +213,7 @@ public class PackageTestTest extends JUnitAdapter {
         @Override
         public void accept(JPackageCommand cmd, Executor.Result result) {
             tick();
-            jpackageExitCode = result.exitCode();
+            jpackageExitCode = result.getExitCode();
         }
 
         @Override
@@ -371,8 +371,7 @@ public class PackageTestTest extends JUnitAdapter {
                         } catch (IOException ex) {
                             throw new UncheckedIOException(ex);
                         }
-                        return new Executor.Result(actualJPackageExitCode,
-                                this::getPrintableCommandLine).assertExitCodeIs(expectedExitCode);
+                        return new Executor.Result(actualJPackageExitCode).assertExitCodeIs(expectedExitCode);
                     }
                 };
             }).setExpectedExitCode(expectedJPackageExitCode)

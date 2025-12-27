@@ -53,7 +53,7 @@ public final class MacCertificateUtils {
         keychain.map(Keychain::asCliArg).ifPresent(args::add);
 
         return toSupplier(() -> {
-            final var output = Executor.of(args.toArray(String[]::new))
+            final var output = Executor.of(args)
                     .setQuiet(true).saveOutput(true).executeExpectSuccess()
                     .getOutput();
 

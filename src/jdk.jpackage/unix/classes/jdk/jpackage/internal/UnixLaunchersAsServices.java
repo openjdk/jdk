@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.Application;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -36,6 +34,9 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.util.Enquoter;
 
 /**
  * Helper to install launchers as services for Unix installers.
