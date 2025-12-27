@@ -225,8 +225,8 @@ public:
   void record_success_concurrent(bool abbreviated) override;
   void cancel_marking() override;
 
-  // Cancels old gc and transitions to the idle state
-  void cancel_gc();
+  // Abandons all old gc state and transitions to the idle state
+  void abandon_gc();
 
   // The SATB barrier will be "enabled" until old marking completes. This means it is
   // possible for an entire young collection cycle to execute while the SATB barrier is enabled.

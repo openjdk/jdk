@@ -118,7 +118,7 @@ protected:
   void op_cleanup_early();
   void op_evacuate();
   void op_init_update_refs();
-  void op_update_refs();
+  void op_update_refs() const;
   void op_update_thread_roots();
   void op_final_update_refs();
 

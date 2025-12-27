@@ -127,6 +127,11 @@ void ShenandoahGenerationalHeap::post_initialize_heuristics() {
   _old_generation->post_initialize(this);
 }
 
+bool ShenandoahGenerationalHeap::start_old_collection() {
+  static_cast<ShenandoahGenerationalControlThread*>(_control_thread)->wait_for_gc_cycle(GCCause::_shenandoah_concurrent_gc, old_generation());
+  return true;
+}
+
 void ShenandoahGenerationalHeap::initialize_serviceability() {
   assert(mode()->is_generational(), "Only for the generational mode");
   _young_gen_memory_pool = new ShenandoahYoungGenMemoryPool(this);
@@ -938,6 +943,17 @@ private:
 
 void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+
+
+  ShenandoahReferenceProcessor* old_ref_processor = generation->ref_processor()->get_old_generation_ref_processor();
+  if (old_ref_processor != nullptr) {
+    // Discovered lists may have young references with old referents. These references will be
+    // processed at the end of old marking. We need to update them.
+    assert(generation->is_young(), "We should only have old discovered lists in a young collection");
+    ShenandoahPhaseTimings::Phase phase = concurrent ? ShenandoahPhaseTimings::conc_weak_refs : ShenandoahPhaseTimings::degen_gc_weakrefs;
+    old_ref_processor->heal_discovered_lists(phase, workers(), concurrent);
+  }
+
   const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
   if (concurrent) {
@@ -1026,9 +1042,8 @@ void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
 
 void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
-  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
-  // transient state. Otherwise, these actions have no effect.
-  reset_generation_reserves();
+
+  complete_cycle();
 
   if (!old_generation()->is_parsable()) {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
@@ -1037,6 +1052,8 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
+  complete_cycle();
+
   if (!old_generation()->is_parsable()) {
     // Class unloading may render the card offsets unusable, so we must rebuild them before
     // the next remembered set scan. We _could_ let the control thread do this sometime after
@@ -1047,6 +1064,17 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     // throw off the heuristics.
     entry_global_coalesce_and_fill();
   }
+
+}
+
+void ShenandoahGenerationalHeap::complete_cycle() {
+  if (young_generation()->is_bootstrap_cycle()) {
+    // Once the bootstrap cycle is completed, the young generation is no longer obliged to mark old
+    young_generation()->clear_bootstrap_configuration();
+  }
+
+  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
+  // transient state. Otherwise, these actions have no effect.
   reset_generation_reserves();
 }
 
