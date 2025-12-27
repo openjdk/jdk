@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2020, 2026, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.test.lib.containers.cgroup;
 import java.util.Objects;
 
 import jdk.internal.platform.Metrics;
+import jdk.test.lib.containers.docker.DockerTestUtils;
 
 /**
  * Cgroup version agnostic metrics tester
@@ -82,6 +83,7 @@ public class MetricsTester {
     }
 
     public static void main(String[] args) throws Exception {
+        DockerTestUtils.checkCanTestDocker();
         Metrics m = Metrics.systemMetrics();
         // If cgroups is not configured, report success
         if (m == null) {
