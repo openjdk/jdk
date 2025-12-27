@@ -29,11 +29,11 @@ import java.util.Optional;
 /**
  * Default application launcher icon.
  * <p>
- * Default icon is either loaded from the resources of {@link jdk.jpackage} module or picked from the resource directory.
+ * Default icon is loaded from the resources of {@link jdk.jpackage} module.
  * <p>
  * Use {@link #INSTANCE} field to get an instance of this type.
  */
-public interface DefaultLauncherIcon extends LauncherIcon {
+public sealed interface DefaultLauncherIcon extends LauncherIcon {
 
     /**
      * Returns the given icon as {@link DefaultLauncherIcon} type or an empty {@link Optional} instance
@@ -53,5 +53,9 @@ public interface DefaultLauncherIcon extends LauncherIcon {
     /**
      * Singleton.
      */
-    public static DefaultLauncherIcon INSTANCE = new DefaultLauncherIcon() {};
+    public static DefaultLauncherIcon INSTANCE = new Details.Impl();
+
+    static final class Details {
+        private static final class Impl implements DefaultLauncherIcon {}
+    }
 }

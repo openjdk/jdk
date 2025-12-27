@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,12 @@ import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.TestLoggerUtil;
 import jdk.internal.net.http.common.TimeLine;
+import jdk.internal.net.http.quic.CodingContext;
 import jdk.internal.net.http.quic.PacketEmitter;
 import jdk.internal.net.http.quic.PacketSpaceManager;
 import jdk.internal.net.http.quic.PeerConnectionId;
 import jdk.internal.net.http.quic.QuicCongestionController;
+import jdk.internal.net.http.quic.QuicConnectionId;
 import jdk.internal.net.http.quic.QuicRttEstimator;
 import jdk.internal.net.http.quic.QuicTimerQueue;
 import jdk.internal.net.http.quic.frames.AckFrame;
@@ -61,8 +63,6 @@ import jdk.internal.net.http.quic.packets.InitialPacket;
 import jdk.internal.net.http.quic.packets.PacketSpace;
 import jdk.internal.net.http.quic.packets.QuicPacketDecoder;
 import jdk.internal.net.http.quic.packets.QuicPacketEncoder;
-import jdk.internal.net.http.quic.CodingContext;
-import jdk.internal.net.http.quic.QuicConnectionId;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketType;
@@ -608,6 +608,38 @@ public class PacketSpaceManagerTest {
                 public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime, boolean persistent) { }
                 @Override
                 public void packetDiscarded(Collection<QuicPacket> discardedPackets) { }
+                @Override
+                public long congestionWindow() {
+                    return Integer.MAX_VALUE;
+                }
+                @Override
+                public long initialWindow() {
+                    return Integer.MAX_VALUE;
+                }
+                @Override
+                public long maxDatagramSize() {
+                    return 1200;
+                }
+                @Override
+                public boolean isSlowStart() {
+                    return false;
+                }
+                @Override
+                public void updatePacer(Deadline now) { }
+                @Override
+                public boolean isPacerLimited() {
+                    return false;
+                }
+                @Override
+                public boolean isCwndLimited() {
+                    return false;
+                }
+                @Override
+                public Deadline pacerDeadline() {
+                    return Deadline.MIN;
+                }
+                @Override
+                public void appLimited() { }
             };
             manager = new PacketSpaceManager(space, this, timeSource,
                     rttEstimator, congestionController, new DummyQuicTLSEngine(),

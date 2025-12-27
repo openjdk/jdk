@@ -87,14 +87,20 @@ void VM_Version::initialize() {
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
     MSG(TrapBasedNullChecks);
-    FLAG_SET_ERGO(TrapBasedNullChecks,       false);
-    FLAG_SET_ERGO(TrapBasedICMissChecks,     false);
+    MSG(TrapBasedNMethodEntryBarriers);
+    FLAG_SET_ERGO(TrapBasedNullChecks,           false);
+    FLAG_SET_ERGO(TrapBasedICMissChecks,         false);
+    FLAG_SET_ERGO(TrapBasedNMethodEntryBarriers, false);
   }
 
 #ifdef COMPILER2
   if (!UseSIGTRAP) {
     MSG(TrapBasedRangeChecks);
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+    FLAG_SET_ERGO(UsePopCountInstruction, true);
   }
 
   if (PowerArchitecturePPC64 >= 9) {
@@ -105,6 +111,10 @@ void VM_Version::initialize() {
   }
 
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+  if (!SuperwordUseVSX && FLAG_IS_DEFAULT(EnableVectorSupport)) {
+    // VectorSupport intrinsics currently have issues with MaxVectorSize < 16 (JDK-8370803).
+    FLAG_SET_ERGO(EnableVectorSupport, false);
+  }
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_ERGO(AlignVector, false);
   }

@@ -173,7 +173,7 @@ int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *curre
   const LRG &def_lrg = lrgs(_lrg_map.live_range_id(def));
   OptoReg::Name def_reg = def_lrg.reg();
   const RegMask &use_mask = n->in_RegMask(idx);
-  bool can_use = use_mask.Member(def_reg);
+  bool can_use = use_mask.member(def_reg);
   if (!RegMask::is_vector(def->ideal_reg())) {
     // Check for a copy to or from a misaligned pair.
     // It is workaround for a sparc with misaligned pairs.
@@ -678,7 +678,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
             int n_regs = RegMask::num_registers(def_ideal_reg, lrgs(_lrg_map.live_range_id(def)));
             for (int l = 1; l < n_regs; l++) {
               OptoReg::Name ureg_lo = OptoReg::add(ureg,-l);
-              bool is_adjacent = lrgs(useidx).mask().Member(ureg_lo);
+              bool is_adjacent = lrgs(useidx).mask().member(ureg_lo);
               assert(is_adjacent || OptoReg::is_reg(ureg_lo),
                      "only registers can be non-adjacent");
               if (value[ureg_lo] == nullptr && is_adjacent) { // Nearly always adjacent
@@ -762,13 +762,13 @@ void PhaseChaitin::post_allocate_copy_removal() {
         // If the value occupies a register pair, record same info
         // in both registers.
         OptoReg::Name nreg_lo = OptoReg::add(nreg,-1);
-        bool is_adjacent = lrgs(lidx).mask().Member(nreg_lo);
+        bool is_adjacent = lrgs(lidx).mask().member(nreg_lo);
         assert(is_adjacent || OptoReg::is_reg(nreg_lo), "only registers can be non-adjacent");
         if (!is_adjacent) { // Nearly always adjacent
           // Sparc occasionally has non-adjacent pairs.
           // Find the actual other value
-          RegMask tmp = lrgs(lidx).mask();
-          tmp.Remove(nreg);
+          RegMask tmp(lrgs(lidx).mask());
+          tmp.remove(nreg);
           nreg_lo = tmp.find_first_elem();
         }
         if (value[nreg] != val || value[nreg_lo] != val) {

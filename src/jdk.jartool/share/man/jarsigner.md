@@ -255,29 +255,35 @@ the private key:
 
 Table: Default Signature Algorithms and Block File Extensions
 
-keyalg      key size    default sigalg              block file extension
--------     --------    --------------              --------------------
-DSA         any size    SHA256withDSA               .DSA
-RSA         \< 624      SHA256withRSA               .RSA
-            \<= 7680    SHA384withRSA
-            \> 7680     SHA512withRSA
-EC          \< 512      SHA384withECDSA             .EC
-            \>= 512     SHA512withECDSA
-RSASSA-PSS  \< 624      RSASSA-PSS (with SHA-256)   .RSA
-            \<= 7680    RSASSA-PSS (with SHA-384)
-            \> 7680     RSASSA-PSS (with SHA-512)
-EdDSA       255         Ed25519                     .EC
-            448         Ed448
--------     --------    --------------              ------
+keyalg          key size    default sigalg              block file extension
+-------         --------    --------------              --------------------
+DSA             any size    SHA256withDSA               .DSA
+RSA             \< 624      SHA256withRSA               .RSA
+                \<= 7680    SHA384withRSA
+                \> 7680     SHA512withRSA
+EC              \< 512      SHA384withECDSA             .EC
+                \>= 512     SHA512withECDSA
+RSASSA-PSS^1^   \< 624      RSASSA-PSS (with SHA-256)   .RSA
+                \<= 7680    RSASSA-PSS (with SHA-384)
+                \> 7680     RSASSA-PSS (with SHA-512)
+EdDSA^2^                    EdDSA                       .EC
+ML-DSA^2^                   ML-DSA                      .DSA
+-------         --------    --------------              ------
 
-* If an RSASSA-PSS key is encoded with parameters, then jarsigner will use the
+1. If an RSASSA-PSS key is encoded with parameters, then jarsigner will use the
 same parameters in the signature. Otherwise, jarsigner will use parameters that
 are determined by the size of the key as specified in the table above.
 For example, an 3072-bit RSASSA-PSS key will use RSASSA-PSS as the signature
 algorithm and SHA-384 as the hash and MGF1 algorithms.
 
-* If a key algorithm is not listed in this table, the `.DSA` extension
-is used when signing a JAR file.
+2. Modern digital signature algorithms such as EdDSA and ML-DSA use the same
+name for both the key and signature algorithms. Only the signature algorithm
+with the same name can be used with a given key algorithm. The specific
+signature parameter set (for example, Ed25519 or Ed448 for EdDSA) is the
+same as that of the key.
+
+If a key algorithm is not listed in this table, the `.DSA` block file extension
+is always used.
 
 These default signature algorithms can be overridden by using the `-sigalg`
 option.

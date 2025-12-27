@@ -68,12 +68,6 @@ class StubGenerator: public StubCodeGenerator {
   // Support for intptr_t OrderAccess::fence()
   address generate_orderaccess_fence();
 
-  // Support for intptr_t get_previous_sp()
-  //
-  // This routine is used to find the previous stack pointer for the
-  // caller.
-  address generate_get_previous_sp();
-
   //----------------------------------------------------------------------------------------------------
   // Support for void verify_mxcsr()
   //
@@ -392,6 +386,8 @@ class StubGenerator: public StubCodeGenerator {
                                      XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                                      XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, XMMRegister xmm8);
   void ghash_last_8_avx2(Register subkeyHtbl);
+
+  void check_key_offset(Register key, int offset, int load_size);
 
   // Load key and shuffle operation
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);

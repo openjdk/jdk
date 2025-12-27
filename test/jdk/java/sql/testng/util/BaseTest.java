@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.Policy;
 import java.sql.JDBCType;
 import java.sql.SQLException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
+
 import org.testng.annotations.DataProvider;
 
 public class BaseTest {
@@ -47,22 +43,7 @@ public class BaseTest {
     protected final int errorCode = 21;
     protected final String[] msgs = {"Exception 1", "cause 1", "Exception 2",
         "Exception 3", "cause 2"};
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @BeforeMethod
-    public void setUpMethod() throws Exception {
-    }
-
-    @AfterMethod
-    public void tearDownMethod() throws Exception {
-    }
+    private static final String MAX_LENGTH_IDENTIFIER = "a".repeat(128);
 
     /*
      * Take some form of SQLException, serialize and deserialize it
@@ -93,13 +74,6 @@ public class BaseTest {
     }
 
     /*
-     * Utility Method used to set the current Policy
-     */
-    protected static void setPolicy(Policy p) {
-        Policy.setPolicy(p);
-    }
-
-    /*
      * DataProvider used to specify the value to set and check for
      * methods using boolean values
      */
@@ -122,5 +96,100 @@ public class BaseTest {
             o[pos++][0] = c.getVendorTypeNumber();
         }
         return o;
+    }
+
+    /*
+     * DataProvider used to provide strings that will be used to validate
+     * that enquoteLiteral converts a string to a literal and every instance of
+     * a single quote will be converted into two single quotes in the literal.
+     */
+    @DataProvider(name = "validEnquotedLiteralValues")
+    protected Object[][] validEnquotedLiteralValues() {
+        return new Object[][]{
+                {"Hello", "'Hello'"},
+                {"G'Day", "'G''Day'"},
+                {"'G''Day'", "'''G''''Day'''"},
+                {"I'''M", "'I''''''M'"},
+                {"The Dark Knight", "'The Dark Knight'"},
+        };
+    }
+
+    /*
+     * DataProvider used to provide strings that will be used to validate
+     * that enqouteIdentifier returns a simple SQL Identifier or a
+     * quoted identifier
+     */
+    @DataProvider(name = "validIdentifierValues")
+    protected Object[][] validEnquotedIdentifierValues() {
+        return new Object[][]{
+                {"b", false, "b"},
+                {"b", true, "\"b\""},
+                {MAX_LENGTH_IDENTIFIER, false, MAX_LENGTH_IDENTIFIER},
+                {MAX_LENGTH_IDENTIFIER, true, "\"" + MAX_LENGTH_IDENTIFIER + "\""},
+                {"Hello", false, "Hello"},
+                {"Hello", true, "\"Hello\""},
+                {"G'Day", false, "\"G'Day\""},
+                {"G'Day", true, "\"G'Day\""},
+                {"Bruce Wayne", false, "\"Bruce Wayne\""},
+                {"Bruce Wayne", true, "\"Bruce Wayne\""},
+                {"select", false, "\"select\""},
+                {"table", true, "\"table\""},
+                {"GoodDay$", false, "\"GoodDay$\""},
+                {"GoodDay$", true, "\"GoodDay$\""},};
+    }
+
+    /*
+     * DataProvider used to provide strings are invalid for enquoteIdentifier
+     * resulting in a SQLException being thrown
+     */
+    @DataProvider(name = "invalidIdentifierValues")
+    protected Object[][] invalidEnquotedIdentifierValues() {
+        return new Object[][]{
+                {"Hel\"lo", false},
+                {"\"Hel\"lo\"", true},
+                {"Hello" + '\0', false},
+                {"", false},
+                {MAX_LENGTH_IDENTIFIER + 'a', false},};
+    }
+
+    /*
+     * DataProvider used to provide strings that will be used to validate
+     * that isSimpleIdentifier returns the correct value based on the
+     * identifier specified.
+     */
+    @DataProvider(name = "simpleIdentifierValues")
+    protected Object[][] simpleIdentifierValues() {
+        return new Object[][]{
+                {"b", true},
+                {"Hello", true},
+                {"\"Gotham\"", false},
+                {"G'Day", false},
+                {"Bruce Wayne", false},
+                {"GoodDay$", false},
+                {"Dick_Grayson", true},
+                {"Batmobile1966", true},
+                {MAX_LENGTH_IDENTIFIER, true},
+                {MAX_LENGTH_IDENTIFIER + 'a', false},
+                {"", false},
+                {"select", false}
+            };
+    }
+
+    /*
+     * DataProvider used to provide strings that will be used to validate
+     * that enquoteNCharLiteral converts a string to a National Character
+     * literal and every instance of
+     * a single quote will be converted into two single quotes in the literal.
+     */
+    @DataProvider(name = "validEnquotedNCharLiteralValues")
+    protected Object[][] validEnquotedNCharLiteralValues() {
+        return new Object[][]{
+                {"Hello", "N'Hello'"},
+                {"G'Day", "N'G''Day'"},
+                {"'G''Day'", "N'''G''''Day'''"},
+                {"I'''M", "N'I''''''M'"},
+                {"N'Hello'", "N'N''Hello'''"},
+                {"The Dark Knight", "N'The Dark Knight'"}
+        };
     }
 }

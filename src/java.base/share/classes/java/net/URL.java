@@ -42,7 +42,6 @@ import java.util.ServiceLoader;
 import jdk.internal.access.JavaNetURLAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
-import jdk.internal.vm.annotation.AOTRuntimeSetup;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import sun.net.util.IPAddressUtil;
 import static jdk.internal.util.Exceptions.filterNonSocketInfo;
@@ -1747,11 +1746,6 @@ public final class URL implements java.io.Serializable {
     }
 
     static {
-        runtimeSetup();
-    }
-
-    @AOTRuntimeSetup
-    private static void runtimeSetup() {
         SharedSecrets.setJavaNetURLAccess(
                 new JavaNetURLAccess() {
                     @Override

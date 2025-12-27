@@ -490,9 +490,10 @@ public:
   void optimize();
 #ifdef ASSERT
   void verify_optimize();
-  bool verify_Value_for(Node* n);
+  bool verify_Value_for(Node* n, bool strict = false);
   bool verify_Ideal_for(Node* n, bool can_reshape);
   bool verify_Identity_for(Node* n);
+  bool verify_node_invariants_for(const Node* n);
   void verify_empty_worklist(Node* n);
 #endif
 
@@ -528,7 +529,23 @@ public:
 
   // Add users of 'n' to worklist
   static void add_users_to_worklist0(Node* n, Unique_Node_List& worklist);
+
+  // Add one or more users of 'use' to the worklist if it appears that a
+  // known optimization could be applied to those users.
+  // Node 'n' is a node that was modified or is about to get replaced,
+  // and 'use' is one use of 'n'.
+  // Certain optimizations have dependencies that extend beyond a node's
+  // direct inputs, so it is necessary to ensure the appropriate
+  // notifications are made here.
   static void add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List& worklist);
+
+  // Add users of 'n', and any other nodes that could be directly
+  // affected by changes to 'n', to the worklist.
+  // Node 'n' may be a node that is about to get replaced. In this
+  // case, 'n' should not be considered part of the new graph.
+  // Passing the old node (as 'n'), rather than the new node,
+  // prevents unnecessary notifications when the new node already
+  // has other users.
   void add_users_to_worklist(Node* n);
 
   // Replace old node with new one.
@@ -600,6 +617,10 @@ public:
     // '-XX:VerifyIterativeGVN=1000'
     return ((VerifyIterativeGVN % 10000) / 1000) == 1;
   }
+  static bool is_verify_invariants() {
+    // '-XX:VerifyIterativeGVN=10000'
+    return ((VerifyIterativeGVN % 100000) / 10000) == 1;
+  }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;
@@ -643,6 +664,8 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
+  void analyze_step(Unique_Node_List& worklist, Node* n);
+  bool needs_revisit(Node* n) const;
 #ifdef ASSERT
   void verify_type(Node* n, const Type* tnew, const Type* told);
   // For every node n on verify list, check if type(n) == n->Value()
