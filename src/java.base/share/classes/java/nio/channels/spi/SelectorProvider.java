@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,12 +95,10 @@ public abstract class SelectorProvider {
             try {
                 Class<?> clazz = Class.forName(cn, true, ClassLoader.getSystemClassLoader());
                 return (SelectorProvider) clazz.getConstructor().newInstance();
-            } catch (ClassNotFoundException |
-                    NoSuchMethodException |
-                    IllegalAccessException |
-                    InvocationTargetException |
-                    InstantiationException x) {
-                throw new ServiceConfigurationError(null, x);
+            } catch (Throwable t) {
+                    System.err.println("Invalid SelectorProvider specified: " + cn + ". Falling back to default provider.");
+                    // Continue to load default provider
+                    return null;
             }
         }
 
