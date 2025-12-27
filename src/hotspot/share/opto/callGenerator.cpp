@@ -526,6 +526,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
                                         jvms,
                                         allow_inline,
                                         _prof_factor,
+                                        nullptr /*receiver_type*/,
                                         nullptr /*speculative_receiver_type*/,
                                         true /*allow_intrinsics*/);
 
@@ -1103,11 +1104,12 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         int  vtable_index       = Method::invalid_vtable_index;
         bool call_does_dispatch = false;
 
+        const TypeOopPtr* receiver_type = nullptr;
         ciKlass* speculative_receiver_type = nullptr;
         if (is_virtual_or_interface) {
           ciInstanceKlass* klass = target->holder();
-          Node*             receiver_node = kit.argument(0);
-          const TypeOopPtr* receiver_type = gvn.type(receiver_node)->isa_oopptr();
+          Node* receiver_node = kit.argument(0);
+          receiver_type = gvn.type(receiver_node)->isa_oopptr();
           // call_does_dispatch and vtable_index are out-parameters.  They might be changed.
           // optimize_virtual_call() takes 2 different holder
           // arguments for a corner case that doesn't apply here (see
@@ -1123,6 +1125,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms,
                                               allow_inline,
                                               PROB_ALWAYS,
+                                              receiver_type,
                                               speculative_receiver_type);
         return cg;
       } else {
