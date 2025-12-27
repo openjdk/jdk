@@ -74,7 +74,7 @@ final class RuntimeBuilderBuilder {
 
         RuntimeBuilderBuilder apply() {
             impl = new BuildingRuntime(RuntimeBuilderBuilder.this, addModules,
-                    limitModules, validatedOptions(), startupInfos, executorFactory);
+                    limitModules, validatedOptions(), startupInfos);
             return RuntimeBuilderBuilder.this;
         }
 
@@ -85,11 +85,6 @@ final class RuntimeBuilderBuilder {
 
         RuntimeBuilderConfigBuilder limitModules(Set<String> v) {
             limitModules = v;
-            return this;
-        }
-
-        RuntimeBuilderConfigBuilder executorFactory(ExecutorFactory v) {
-            executorFactory = v;
             return this;
         }
 
@@ -105,7 +100,6 @@ final class RuntimeBuilderBuilder {
         private Set<String> addModules;
         private Set<String> limitModules;
         private List<String> options;
-        private ExecutorFactory executorFactory;
         private final List<LauncherStartupInfo> startupInfos;
 
         private static final List<String> DEFAULT_JLINK_OPTIONS = List.of(
@@ -158,7 +152,7 @@ final class RuntimeBuilderBuilder {
 
     private record BuildingRuntime(RuntimeBuilderBuilder thiz, Set<String> addModules,
             Set<String> limitModules, List<String> options,
-            List<LauncherStartupInfo> startupInfos, ExecutorFactory ef) implements Supplier<RuntimeBuilder> {
+            List<LauncherStartupInfo> startupInfos) implements Supplier<RuntimeBuilder> {
 
         @Override
         public RuntimeBuilder get() {
@@ -167,8 +161,7 @@ final class RuntimeBuilderBuilder {
                     Optional.ofNullable(addModules).orElseGet(Set::of),
                     Optional.ofNullable(limitModules).orElseGet(Set::of),
                     Optional.ofNullable(options).orElseGet(List::of),
-                    startupInfos,
-                    ef);
+                    startupInfos);
         }
     }
 

@@ -99,11 +99,6 @@ final class ToolValidator {
         return checkExistsOnly(true);
     }
 
-    ToolValidator executorFactory(ExecutorFactory v) {
-        executorFactory = v;
-        return this;
-    }
-
     ConfigException validate() {
         if (checkExistsOnly) {
             if (Files.isExecutable(toolPath) && !Files.isDirectory(toolPath)) {
@@ -135,7 +130,7 @@ final class ToolValidator {
         String version = null;
 
         try {
-            var result = executorFactory.executor(cmdline).setQuiet(true).saveOutput().execute();
+            var result = Executor.of(cmdline).setQuiet(true).saveOutput().execute();
             var lines = result.content();
             if (versionParser != null && minimalVersion != null) {
                 version = versionParser.apply(lines.stream());
@@ -166,5 +161,4 @@ final class ToolValidator {
     private Function<Path, ConfigException> toolNotFoundErrorHandler;
     private BiFunction<Path, String, ConfigException> toolOldVersionErrorHandler;
     private boolean checkExistsOnly;
-    private ExecutorFactory executorFactory;
 }

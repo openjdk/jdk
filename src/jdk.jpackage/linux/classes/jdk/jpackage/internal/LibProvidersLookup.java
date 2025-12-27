@@ -43,12 +43,8 @@ import java.util.stream.Stream;
  * Builds list of packages providing dynamic libraries for the given set of files.
  */
 public final class LibProvidersLookup {
-    static boolean supported(ExecutorFactory ef) {
-        return (new ToolValidator(TOOL_LDD).executorFactory(ef).validate() == null);
-    }
-
-    public LibProvidersLookup(ExecutorFactory executorFactory) {
-        this.executorFactory = Objects.requireNonNull(executorFactory);
+    static boolean supported() {
+        return (new ToolValidator(TOOL_LDD).validate() == null);
     }
 
     LibProvidersLookup setPackageLookup(PackageLookup v) {
@@ -65,7 +61,7 @@ public final class LibProvidersLookup {
                     Collectors.toList());
         }
 
-        Collection<Path> neededLibs = getNeededLibsForFiles(allPackageFiles, executorFactory);
+        Collection<Path> neededLibs = getNeededLibsForFiles(allPackageFiles);
 
         // Get the list of unique package names.
         List<String> neededPackages = neededLibs.stream().map(libPath -> {
@@ -86,8 +82,8 @@ public final class LibProvidersLookup {
         return neededPackages;
     }
 
-    private static List<Path> getNeededLibsForFile(Path path, ExecutorFactory ef) throws IOException {
-        final var result = ef.executor(TOOL_LDD, path.toString()).saveOutput().execute();
+    private static List<Path> getNeededLibsForFile(Path path) throws IOException {
+        final var result = Executor.of(TOOL_LDD, path.toString()).saveOutput().execute();
 
         if (result.getExitCode() != 0) {
             // objdump failed. This is OK if the tool was applied to not a binary file
@@ -103,13 +99,13 @@ public final class LibProvidersLookup {
         }).filter(Objects::nonNull).map(Path::of).toList();
     }
 
-    private static Collection<Path> getNeededLibsForFiles(List<Path> paths, ExecutorFactory ef) {
+    private static Collection<Path> getNeededLibsForFiles(List<Path> paths) {
         // Depending on tool used, the set can contain full paths (ldd) or
         // only file names (objdump).
         Set<Path> allLibs = paths.stream().map(path -> {
             List<Path> libs;
             try {
-                libs = getNeededLibsForFile(path, ef);
+                libs = getNeededLibsForFile(path);
             } catch (IOException ex) {
                 Log.verbose(ex);
                 libs = Collections.emptyList();
@@ -144,7 +140,6 @@ public final class LibProvidersLookup {
     }
 
     private PackageLookup packageLookup;
-    private final ExecutorFactory executorFactory;
 
     private static final String TOOL_LDD = "ldd";
 

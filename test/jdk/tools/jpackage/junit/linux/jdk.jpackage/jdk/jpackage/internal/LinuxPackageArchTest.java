@@ -135,14 +135,22 @@ public class LinuxPackageArchTest {
 
     private static void test(Optional<String> expectedArch, StandardPackageType pkgType, Script script) {
 
-        Result<LinuxPackageArch> arch = LinuxPackageArch.create(pkgType,
-                MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT));
+        Globals.main(() -> {
 
-        assertEquals(arch.hasValue(), expectedArch.isPresent());
-        expectedArch.ifPresent(v -> {
-            assertEquals(v, arch.orElseThrow().value());
+            ExecutorFactory executorFactory= MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT);
+
+            Globals.instance().executorFactory(executorFactory);
+
+            Result<LinuxPackageArch> arch = LinuxPackageArch.create(pkgType);
+
+            assertEquals(arch.hasValue(), expectedArch.isPresent());
+            expectedArch.ifPresent(v -> {
+                assertEquals(v, arch.orElseThrow().value());
+            });
+
+            assertEquals(List.of(), script.incompleteMocks());
+
+            return 0;
         });
-
-        assertEquals(List.of(), script.incompleteMocks());
     }
 }

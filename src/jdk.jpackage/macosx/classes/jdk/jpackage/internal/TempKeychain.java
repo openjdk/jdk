@@ -36,14 +36,14 @@ import jdk.internal.util.OSVersion;
 
 final class TempKeychain implements Closeable {
 
-    static void withKeychains(Consumer<List<Keychain>> keychainConsumer, List<Keychain> keychains, ExecutorFactory ef) {
+    static void withKeychains(Consumer<List<Keychain>> keychainConsumer, List<Keychain> keychains) {
 
         keychains.forEach(Objects::requireNonNull);
         if (keychains.isEmpty() || OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             keychainConsumer.accept(keychains);
         } else {
             // we need this for OS X 10.12+
-            try (var tempKeychain = new TempKeychain(keychains, ef)) {
+            try (var tempKeychain = new TempKeychain(keychains)) {
                 keychainConsumer.accept(tempKeychain.keychains);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
@@ -51,19 +51,18 @@ final class TempKeychain implements Closeable {
         }
     }
 
-    static void withKeychain(Consumer<Keychain> keychainConsumer, Keychain keychain, ExecutorFactory ef) {
+    static void withKeychain(Consumer<Keychain> keychainConsumer, Keychain keychain) {
 
         Objects.requireNonNull(keychainConsumer);
         withKeychains(keychains -> {
             keychainConsumer.accept(keychains.getFirst());
-        }, List.of(keychain), ef);
+        }, List.of(keychain));
     }
 
-    TempKeychain(List<Keychain> keychains, ExecutorFactory executorFactory) throws IOException {
+    TempKeychain(List<Keychain> keychains) throws IOException {
         this.keychains = Objects.requireNonNull(keychains);
-        this.executorFactory = Objects.requireNonNull(executorFactory);
 
-        final var currentKeychains = Keychain.listKeychains(executorFactory);
+        final var currentKeychains = Keychain.listKeychains();
 
         final var currentKeychainPaths = currentKeychains.stream().map(Keychain::path).toList();
 
@@ -84,7 +83,7 @@ final class TempKeychain implements Closeable {
 
             args.addAll(missingKeychains.stream().map(Keychain::asCliArg).toList());
 
-            executorFactory.executor(args).executeExpectSuccess();
+            Executor.of(args).executeExpectSuccess();
         }
     }
 
@@ -95,11 +94,10 @@ final class TempKeychain implements Closeable {
     @Override
     public void close() throws IOException {
         if (!restoreKeychainsCmd.isEmpty()) {
-            executorFactory.executor(restoreKeychainsCmd).executeExpectSuccess();
+            Executor.of(restoreKeychainsCmd).executeExpectSuccess();
         }
     }
 
     private final List<Keychain> keychains;
     private final List<String> restoreKeychainsCmd;
-    private final ExecutorFactory executorFactory;
 }

@@ -203,7 +203,6 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
         final var configDir = env.configDir();
 
         final var wixPipelineBuilder = WixPipeline.build()
-                .executorFactory(env.objectFactory())
                 .setWixObjDir(wixObjDir)
                 .setWorkDir(env.appImageDir())
                 .addSource(configDir.resolve("main.wxs"), wixVars);

@@ -41,11 +41,9 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
 
     public MacBundlingEnvironment(ObjectFactory objectFactory) {
         super(build(objectFactory).mutate(builder -> {
-            var dmgSysEnv = runOnce(() -> {
-                return MacDmgSystemEnvironment.create(objectFactory);
-            });
-
-            builder.bundler(CREATE_MAC_DMG, dmgSysEnv, MacBundlingEnvironment::createDmdPackage);
+            builder.bundler(CREATE_MAC_DMG,
+                    MacDmgSystemEnvironment::create,
+                    MacBundlingEnvironment::createDmdPackage);
         }).defaultOperation(CREATE_MAC_DMG)
                 .bundler(SIGN_MAC_APP_IMAGE, MacBundlingEnvironment::signAppImage)
                 .bundler(CREATE_MAC_APP_IMAGE, MacBundlingEnvironment::createAppImage)

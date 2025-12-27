@@ -24,22 +24,8 @@
  */
 package jdk.jpackage.internal;
 
-import java.util.List;
-
 @FunctionalInterface
 interface ExecutorFactory {
-
-    default Executor executor(String... cmdline) {
-        return executor(List.of(cmdline));
-    }
-
-    default Executor executor(List<String> cmdline) {
-        return executor(new ProcessBuilder(cmdline));
-    }
-
-    default Executor executor(ProcessBuilder pb) {
-        return executor().processBuilder(pb);
-    }
 
     Executor executor();
 

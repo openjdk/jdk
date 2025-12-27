@@ -207,7 +207,6 @@ final class FromOptions {
                     final var jlinkOptionsBuilder = runtimeBuilderBuilder.forNewRuntime(startupInfos);
                     ADD_MODULES.findIn(options).map(Set::copyOf).ifPresent(jlinkOptionsBuilder::addModules);
                     JLINK_OPTIONS.ifPresentIn(options, jlinkOptionsBuilder::options);
-                    jlinkOptionsBuilder.executorFactory(OptionUtils.objectFactory(options));
                     jlinkOptionsBuilder.apply();
                 });
 

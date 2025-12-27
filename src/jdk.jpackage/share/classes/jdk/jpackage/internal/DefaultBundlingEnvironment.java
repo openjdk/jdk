@@ -74,6 +74,10 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         this.defaultOperationSupplier = Objects.requireNonNull(defaultOperationSupplier).map(DefaultBundlingEnvironment::runOnce);
     }
 
+    ObjectFactory objectFactory() {
+        return objectFactory;
+    }
+
 
     static final class Builder {
 
@@ -200,13 +204,8 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
     @Override
     public void createBundle(BundlingOperationDescriptor op, Options cmdline) {
-
         final var bundler = getBundlerSupplier(op).get().orElseThrow();
-
-        cmdline = OptionUtils.withObjectFactory(cmdline, objectFactory);
-
         Optional<Path> permanentWorkDirectory = Optional.empty();
-
         try (var tempDir = new TempDirectory(cmdline)) {
             if (!tempDir.deleteOnClose()) {
                 permanentWorkDirectory = Optional.of(tempDir.path());

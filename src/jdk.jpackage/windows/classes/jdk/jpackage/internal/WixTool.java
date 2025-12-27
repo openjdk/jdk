@@ -89,7 +89,7 @@ public enum WixTool {
         }
     }
 
-    static WixToolset createToolset(ExecutorFactory ef) {
+    static WixToolset createToolset() {
         Function<List<ToolLookupResult>, Map<WixTool, ToolInfo>> conv = lookupResults -> {
             return lookupResults.stream().filter(ToolLookupResult::isValid).collect(Collectors.
                     groupingBy(lookupResult -> {
@@ -121,7 +121,7 @@ public enum WixTool {
         };
 
         var toolsInPath = Stream.of(values()).map(tool -> {
-            return ToolLookupResult.lookup(tool, Optional.empty(), ef);
+            return ToolLookupResult.lookup(tool, Optional.empty());
         }).filter(Optional::isPresent).map(Optional::get).toList();
 
         // Try to build a toolset from tools in the PATH first.
@@ -133,7 +133,7 @@ public enum WixTool {
         // Look up for WiX tools in known locations.
         var toolsInKnownWiXDirs = findWixInstallDirs().stream().map(dir -> {
             return Stream.of(values()).map(tool -> {
-                return ToolLookupResult.lookup(tool, Optional.of(dir), ef);
+                return ToolLookupResult.lookup(tool, Optional.of(dir));
             });
         }).flatMap(Function.identity()).filter(Optional::isPresent).map(Optional::get).toList();
 
@@ -173,10 +173,9 @@ public enum WixTool {
             Objects.requireNonNull(info);
         }
 
-        static Optional<ToolLookupResult> lookup(WixTool tool, Optional<Path> lookupDir, ExecutorFactory ef) {
+        static Optional<ToolLookupResult> lookup(WixTool tool, Optional<Path> lookupDir) {
             Objects.requireNonNull(tool);
             Objects.requireNonNull(lookupDir);
-            Objects.requireNonNull(ef);
 
             final Path toolPath = lookupDir.map(p -> p.resolve(
                     tool.toolFileName)).orElse(tool.toolFileName);
@@ -186,7 +185,6 @@ public enum WixTool {
 
             final var validator = new ToolValidator(toolPath)
                     .setMinimalVersion(tool.minimalVersion)
-                    .executorFactory(ef)
                     .setToolOldVersionErrorHandler((name, version) -> {
                         tooOld[0] = true;
                         return null;
@@ -235,7 +233,7 @@ public enum WixTool {
                     // Detect FIPS mode
                     var fips = false;
                     try {
-                        final var result = ef.executor(toolPath.toString(), "-?").setQuiet(true).saveOutput(true).execute();
+                        final var result = Executor.of(toolPath.toString(), "-?").setQuiet(true).saveOutput(true).execute();
                         final var exitCode = result.getExitCode();
                         if (exitCode != 0 /* 308 */) {
                             final var output = result.getOutput();

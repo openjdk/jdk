@@ -151,7 +151,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
     }
 
     private List<String> findRequiredPackages() throws IOException {
-        var lookup = new LibProvidersLookup(env.objectFactory());
+        var lookup = new LibProvidersLookup();
         initLibProvidersLookup(lookup);
         return lookup.execute(env.appImageDir());
     }

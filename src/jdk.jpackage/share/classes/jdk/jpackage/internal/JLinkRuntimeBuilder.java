@@ -57,14 +57,13 @@ import jdk.jpackage.internal.model.RuntimeBuilder;
 
 final class JLinkRuntimeBuilder implements RuntimeBuilder {
 
-    private JLinkRuntimeBuilder(List<String> jlinkCmdLine, ExecutorFactory ef) {
+    private JLinkRuntimeBuilder(List<String> jlinkCmdLine) {
         this.jlinkCmdLine = Objects.requireNonNull(jlinkCmdLine);
-        this.ef = Objects.requireNonNull(ef);
     }
 
     @Override
     public void create(AppImageLayout appImageLayout) {
-        toRunnable(ef.executor()
+        toRunnable(Executor.of()
                 .toolProvider(LazyLoad.JLINK_TOOL)
                 .args("--output", appImageLayout.runtimeDirectory().toString())
                 .args(jlinkCmdLine)::executeExpectSuccess).run();
@@ -82,17 +81,10 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
                 ModuleFinder.ofSystem());
     }
 
-    static RuntimeBuilder createJLinkRuntimeBuilder(
-            List<Path> modulePath,
-            Set<String> addModules,
-            Set<String> limitModules,
-            List<String> options,
-            List<LauncherStartupInfo> startupInfos,
-            ExecutorFactory ef) {
-
-        return new JLinkRuntimeBuilder(
-                createJLinkCmdline(modulePath, addModules, limitModules, options, startupInfos),
-                ef);
+    static RuntimeBuilder createJLinkRuntimeBuilder(List<Path> modulePath, Set<String> addModules,
+            Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) {
+        return new JLinkRuntimeBuilder(createJLinkCmdline(modulePath, addModules, limitModules,
+                options, startupInfos));
     }
 
     /**
@@ -266,7 +258,6 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     private final List<String> jlinkCmdLine;
-    private final ExecutorFactory ef;
 
     // The token for "all modules on the module path".
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";

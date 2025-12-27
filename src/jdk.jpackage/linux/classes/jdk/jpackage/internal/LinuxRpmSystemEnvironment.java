@@ -30,9 +30,7 @@ import jdk.jpackage.internal.util.Result;
 
 public interface LinuxRpmSystemEnvironment extends LinuxSystemEnvironment, LinuxRpmSystemEnvironmentMixin {
 
-    static Result<LinuxRpmSystemEnvironment> create(Result<LinuxSystemEnvironment> base, ExecutorFactory ef) {
-        return mixin(LinuxRpmSystemEnvironment.class, base, () -> {
-            return LinuxRpmSystemEnvironmentMixin.create(ef);
-        });
+    static Result<LinuxRpmSystemEnvironment> create(Result<LinuxSystemEnvironment> base) {
+        return mixin(LinuxRpmSystemEnvironment.class, base, LinuxRpmSystemEnvironmentMixin::create);
     }
 }

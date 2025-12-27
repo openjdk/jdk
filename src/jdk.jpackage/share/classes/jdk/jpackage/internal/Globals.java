@@ -26,47 +26,49 @@ package jdk.jpackage.internal;
 
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.util.CompositeProxy;
+import java.util.function.Supplier;
+import jdk.jpackage.internal.model.BundlingEnvironment;
 
-interface ObjectFactory extends ExecutorFactory, RetryExecutorFactory {
+public final class Globals {
 
-    static ObjectFactory.Builder build() {
-        return new Builder();
+    private Globals() {
     }
 
-    static ObjectFactory.Builder build(ObjectFactory from) {
-        return build().initFrom(from);
+    public Globals bundlingEnvironment(BundlingEnvironment v) {
+        Objects.requireNonNull(v);
+        return objectFactory(((DefaultBundlingEnvironment)v).objectFactory());
     }
 
-    static final class Builder {
-        private Builder() {
-        }
-
-        ObjectFactory create() {
-            return CompositeProxy.build().invokeTunnel(CompositeProxyTunnel.INSTANCE).create(
-                    ObjectFactory.class,
-                    Optional.ofNullable(executorFactory).orElse(ExecutorFactory.DEFAULT),
-                    Optional.ofNullable(retryExecutorFactory).orElse(RetryExecutorFactory.DEFAULT));
-        }
-
-        Builder initFrom(ObjectFactory of) {
-            Objects.requireNonNull(of);
-            return executorFactory(of).retryExecutorFactory(of);
-        }
-
-        Builder executorFactory(ExecutorFactory v) {
-            executorFactory = v;
-            return this;
-        }
-
-        Builder retryExecutorFactory(RetryExecutorFactory v) {
-            retryExecutorFactory = v;
-            return this;
-        }
-
-        private ExecutorFactory executorFactory;
-        private RetryExecutorFactory retryExecutorFactory;
+    Globals objectFactory(ObjectFactory v) {
+        checkMutable();
+        objectFactory = Optional.ofNullable(v).orElse(ObjectFactory.DEFAULT);
+        return this;
     }
 
-    static final ObjectFactory DEFAULT = build().create();
+    ObjectFactory objectFactory() {
+        return objectFactory;
+    }
+
+    Globals executorFactory(ExecutorFactory v) {
+        return objectFactory(ObjectFactory.build(objectFactory).executorFactory(v).create());
+    }
+
+    public static int main(Supplier<Integer> mainBody) {
+        return ScopedValue.where(INSTANCE, new Globals()).call(mainBody::get);
+    }
+
+    public static Globals instance() {
+        return INSTANCE.orElse(DEFAULT);
+    }
+
+    private void checkMutable() {
+        if (this == DEFAULT) {
+            throw new UnsupportedOperationException("Can't modify immutable instance");
+        }
+    }
+
+    private ObjectFactory objectFactory = ObjectFactory.DEFAULT;
+
+    private static final ScopedValue<Globals> INSTANCE = ScopedValue.newInstance();
+    private static final Globals DEFAULT = new Globals();
 }

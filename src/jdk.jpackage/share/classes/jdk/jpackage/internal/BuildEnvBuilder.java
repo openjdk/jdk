@@ -48,13 +48,8 @@ final class BuildEnvBuilder {
                     String.format("Root work directory [%s] should be empty or non existent", root));
         }
 
-        return BuildEnv.create(
-                root,
-                Optional.ofNullable(resourceDir),
-                verbose,
-                Optional.ofNullable(objectFactory).orElse(ObjectFactory.DEFAULT),
-                ResourceLocator.class,
-                resolvedAppImageLayout());
+        return BuildEnv.create(root, Optional.ofNullable(resourceDir), verbose,
+                ResourceLocator.class, resolvedAppImageLayout());
     }
 
     BuildEnvBuilder verbose(boolean v) {
@@ -74,11 +69,6 @@ final class BuildEnvBuilder {
 
     BuildEnvBuilder appImageLayout(AppImageLayout v) {
         appImageLayout = v;
-        return this;
-    }
-
-    BuildEnvBuilder objectFactory(ObjectFactory v) {
-        objectFactory = v;
         return this;
     }
 
@@ -107,7 +97,6 @@ final class BuildEnvBuilder {
     private AppImageLayout appImageLayout;
     private Path resourceDir;
     private boolean verbose;
-    private ObjectFactory objectFactory;
 
     private final Path root;
 }

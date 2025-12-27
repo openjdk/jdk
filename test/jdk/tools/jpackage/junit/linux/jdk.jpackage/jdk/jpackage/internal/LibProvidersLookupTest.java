@@ -38,12 +38,17 @@ public class LibProvidersLookupTest {
 
         var ldd = CommandActionSpecs.build().exit(exit).toCommandMockBuilder().name("ldd-mock").create();
 
-        boolean actual = LibProvidersLookup.supported(() -> {
-            return new Executor().mapper(executor -> {
-                return executor.copy().mapper(null).toolProvider(ldd);
+        Globals.main(() -> {
+            Globals.instance().executorFactory(() -> {
+                return new Executor().mapper(executor -> {
+                    return executor.copy().mapper(null).toolProvider(ldd);
+                });
             });
-        });
 
-        assertEquals(exit.exitNormally(), actual);
+            boolean actual = LibProvidersLookup.supported();
+            assertEquals(exit.exitNormally(), actual);
+
+            return 0;
+        });
     }
 }

@@ -36,9 +36,7 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
 
     public WinBundlingEnvironment(ObjectFactory objectFactory) {
         super(build(objectFactory).mutate(builder -> {
-            var sysEnv = runOnce(() -> {
-                return WinSystemEnvironment.create(objectFactory);
-            });
+            var sysEnv = runOnce(WinSystemEnvironment::create);
 
             builder
             .bundler(CREATE_WIN_EXE, sysEnv, WinBundlingEnvironment::createExePackage)

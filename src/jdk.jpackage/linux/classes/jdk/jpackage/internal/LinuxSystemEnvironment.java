@@ -39,27 +39,25 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
     PackageType nativePackageType();
     LinuxPackageArch packageArch();
 
-    static Result<LinuxSystemEnvironment> create(ExecutorFactory ef) {
-        return detectNativePackageType(ef).map(nativePackageType -> {
-            return create(nativePackageType, ef);
-        }).orElseGet(() -> {
+    static Result<LinuxSystemEnvironment> create() {
+        return detectNativePackageType().map(LinuxSystemEnvironment::create).orElseGet(() -> {
             return Result.ofError(new RuntimeException("Unknown native package type"));
         });
     }
 
-    static Optional<StandardPackageType> detectNativePackageType(ExecutorFactory ef) {
-        if (Internal.isDebian(ef)) {
+    static Optional<StandardPackageType> detectNativePackageType() {
+        if (Internal.isDebian()) {
             return Optional.of(StandardPackageType.LINUX_DEB);
-        } else if (Internal.isRpm(ef)) {
+        } else if (Internal.isRpm()) {
             return Optional.of(StandardPackageType.LINUX_RPM);
         } else {
             return Optional.empty();
         }
     }
 
-    static Result<LinuxSystemEnvironment> create(StandardPackageType nativePackageType, ExecutorFactory ef) {
-        return LinuxPackageArch.create(nativePackageType, ef).map(arch -> {
-            return new Stub(LibProvidersLookup.supported(ef), nativePackageType, arch);
+    static Result<LinuxSystemEnvironment> create(StandardPackageType nativePackageType) {
+        return LinuxPackageArch.create(nativePackageType).map(arch -> {
+            return new Stub(LibProvidersLookup.supported(), nativePackageType, arch);
         });
     }
 
@@ -87,11 +85,11 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
 
     static final class Internal {
 
-        private static boolean isDebian(ExecutorFactory ef) {
+        private static boolean isDebian() {
             // we are just going to run "dpkg -s coreutils" and assume Debian
             // or derivative if no error is returned.
             try {
-                ef.executor("dpkg", "-s", "coreutils").executeExpectSuccess();
+                Executor.of("dpkg", "-s", "coreutils").executeExpectSuccess();
                 return true;
             } catch (IOException e) {
                 // just fall thru
@@ -99,11 +97,11 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
             }
         }
 
-        private static boolean isRpm(ExecutorFactory ef) {
+        private static boolean isRpm() {
             // we are just going to run "rpm -q rpm" and assume RPM
             // or derivative if no error is returned.
             try {
-                ef.executor("rpm", "-q", "rpm").executeExpectSuccess();
+                Executor.of("rpm", "-q", "rpm").executeExpectSuccess();
                 return true;
             } catch (IOException e) {
                 // just fall thru

@@ -137,7 +137,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     }
 
     private Executor hdiutil(String... args) {
-        return env.objectFactory().executor(sysEnv.hdiutil().toString()).args(args).storeOutputInFiles();
+        return Executor.of(sysEnv.hdiutil().toString()).args(args).storeOutputInFiles();
     }
 
     private void prepareDMGSetupScript() throws IOException {
@@ -309,7 +309,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
             // to install-dir in DMG as critical error, since it can fail in
             // headless environment.
             try {
-                env.objectFactory().executor(
+                Executor.of(
                         sysEnv.osascript().toString(),
                         normalizedAbsolutePathString(volumeScript())
                 )
@@ -336,14 +336,14 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     // but it seems Finder excepts these bytes to be
                     // "icnC" for the volume icon
                     // (might not work on Mac 10.13 with old XCode)
-                    env.objectFactory().executor(
+                    Executor.of(
                             sysEnv.setFileUtility().orElseThrow().toString(),
                             "-c", "icnC",
                             normalizedAbsolutePathString(volumeIconFile)
                     ).executeExpectSuccess();
                     volumeIconFile.toFile().setReadOnly();
 
-                    env.objectFactory().executor(
+                    Executor.of(
                             sysEnv.setFileUtility().orElseThrow().toString(),
                             "-a", "C",
                             normalizedAbsolutePathString(mountedVolume)
@@ -395,7 +395,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
         // "hdiutil detach" might not work right away due to resource busy error, so
         // repeat detach several times.
-        env.objectFactory().<Void, IOException>retryExecutor(IOException.class).setExecutable(context -> {
+        Globals.instance().objectFactory().<Void, IOException>retryExecutor(IOException.class).setExecutable(context -> {
 
             List<String> cmdline = new ArrayList<>();
             cmdline.add("detach");

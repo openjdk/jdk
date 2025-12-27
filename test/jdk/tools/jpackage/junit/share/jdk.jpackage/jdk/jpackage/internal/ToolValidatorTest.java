@@ -49,7 +49,7 @@ public class ToolValidatorTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testAvailable(boolean checkExistsOnly) {
-        assertNull(newToolValidator(TOOL_JAVA).checkExistsOnly(checkExistsOnly).validate());
+        assertNull(new ToolValidator(TOOL_JAVA).checkExistsOnly(checkExistsOnly).validate());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class ToolValidatorTest {
         // java doesn't recognize "--foo" command line option, but the validation will
         // still pass as there is no minimal version specified and the validator ignores
         // the exit code
-        assertNull(newToolValidator(TOOL_JAVA).setCommandLine("--foo").validate());
+        assertNull(new ToolValidator(TOOL_JAVA).setCommandLine("--foo").validate());
     }
 
     enum TestAvailableMode {
@@ -77,7 +77,7 @@ public class ToolValidatorTest {
     @EnumSource(TestAvailableMode.class)
     public void testAvailable(TestAvailableMode mode) {
         var minVer = TestAvailableMode.EQUALS.parsedVersion;
-        var err = newToolValidator(TOOL_JAVA).setVersionParser(lines -> {
+        var err = new ToolValidator(TOOL_JAVA).setVersionParser(lines -> {
             return mode.parsedVersion;
         }).setMinimalVersion(DottedVersion.greedy(minVer)).validate();
 
@@ -97,7 +97,7 @@ public class ToolValidatorTest {
     public void testAvailable_setToolOldVersionErrorHandler(TestAvailableMode mode) {
         var handler = new ToolOldVersionErrorHandler();
         var minVer = TestAvailableMode.EQUALS.parsedVersion;
-        var err = newToolValidator(TOOL_JAVA).setVersionParser(lines -> {
+        var err = new ToolValidator(TOOL_JAVA).setVersionParser(lines -> {
             return mode.parsedVersion;
         }).setMinimalVersion(DottedVersion.greedy(minVer)).setToolOldVersionErrorHandler(handler).validate();
 
@@ -113,7 +113,7 @@ public class ToolValidatorTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testNotAvailable(boolean checkExistsOnly, @TempDir Path dir) {
-        var err = newToolValidator(dir.resolve("foo")).checkExistsOnly(checkExistsOnly).validate();
+        var err = new ToolValidator(dir.resolve("foo")).checkExistsOnly(checkExistsOnly).validate();
         if (checkExistsOnly) {
             assertValidationFailure(err, false);
         } else {
@@ -124,7 +124,7 @@ public class ToolValidatorTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testToolIsDirectory(boolean checkExistsOnly, @TempDir Path dir) {
-        var err = newToolValidator(dir).checkExistsOnly(checkExistsOnly).validate();
+        var err = new ToolValidator(dir).checkExistsOnly(checkExistsOnly).validate();
         assertValidationFailureNoAdvice(err, !checkExistsOnly);
     }
 
@@ -132,7 +132,7 @@ public class ToolValidatorTest {
     @ValueSource(booleans = {true, false})
     public void testNotAvailable_setToolNotFoundErrorHandler(boolean checkExistsOnly, @TempDir Path dir) {
         var handler = new ToolNotFoundErrorHandler();
-        var err = newToolValidator(dir.resolve("foo")).checkExistsOnly(checkExistsOnly)
+        var err = new ToolValidator(dir.resolve("foo")).checkExistsOnly(checkExistsOnly)
                 .setToolNotFoundErrorHandler(handler)
                 .validate();
         if (checkExistsOnly) {
@@ -148,7 +148,7 @@ public class ToolValidatorTest {
     @ValueSource(booleans = {true, false})
     public void testToolIsDirectory_setToolNotFoundErrorHandler(boolean checkExistsOnly, @TempDir Path dir) {
         var handler = new ToolNotFoundErrorHandler();
-        var err = newToolValidator(dir).checkExistsOnly(checkExistsOnly).validate();
+        var err = new ToolValidator(dir).checkExistsOnly(checkExistsOnly).validate();
         handler.verifyNotCalled();
         assertValidationFailureNoAdvice(err, !checkExistsOnly);
     }
@@ -156,25 +156,25 @@ public class ToolValidatorTest {
     @Test
     public void testVersionParserUsage() {
         // Without minimal version configured, version parser should not be used
-        newToolValidator(TOOL_JAVA).setVersionParser(unused -> {
+        new ToolValidator(TOOL_JAVA).setVersionParser(unused -> {
             throw new AssertionError();
         }).validate();
 
         // Minimal version is 1, actual is 10. Should be OK.
-        assertNull(newToolValidator(TOOL_JAVA).setMinimalVersion(
+        assertNull(new ToolValidator(TOOL_JAVA).setMinimalVersion(
                 DottedVersion.greedy("1")).setVersionParser(unused -> "10").validate());
 
         // Minimal version is 5, actual is 4.99.37. Error expected.
-        assertValidationFailure(newToolValidator(TOOL_JAVA).setMinimalVersion(
+        assertValidationFailure(new ToolValidator(TOOL_JAVA).setMinimalVersion(
                 DottedVersion.greedy("5")).setVersionParser(unused -> "4.99.37").validate(),
                 false);
 
         // Minimal version is 8, actual is 10, lexicographical comparison is used. Error expected.
-        assertValidationFailure(newToolValidator(TOOL_JAVA).setMinimalVersion(
+        assertValidationFailure(new ToolValidator(TOOL_JAVA).setMinimalVersion(
                 "8").setVersionParser(unused -> "10").validate(), false);
 
         // Minimal version is 8, actual is 10, Use DottedVersion class for comparison. Should be OK.
-        assertNull(newToolValidator(TOOL_JAVA).setMinimalVersion(
+        assertNull(new ToolValidator(TOOL_JAVA).setMinimalVersion(
                 DottedVersion.greedy("8")).setVersionParser(unused -> "10").validate());
     }
 
@@ -198,14 +198,6 @@ public class ToolValidatorTest {
         } else {
             assertNull(v.getCause());
         }
-    }
-
-    private static ToolValidator newToolValidator(Path tool) {
-        return new ToolValidator(tool).executorFactory(ExecutorFactory.DEFAULT);
-    }
-
-    private static ToolValidator newToolValidator(String tool) {
-        return new ToolValidator(tool).executorFactory(ExecutorFactory.DEFAULT);
     }
 
 

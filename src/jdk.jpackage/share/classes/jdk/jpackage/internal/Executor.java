@@ -50,6 +50,18 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
 
 final class Executor {
 
+    static Executor of(String... cmdline) {
+        return of(List.of(cmdline));
+    }
+
+    static Executor of(List<String> cmdline) {
+        return of(new ProcessBuilder(cmdline));
+    }
+
+    static Executor of(ProcessBuilder pb) {
+        return Globals.instance().objectFactory().executor().processBuilder(pb);
+    }
+
     public Executor() {
         commandOutputControl = new CommandOutputControl();
         args = new ArrayList<>();
@@ -167,11 +179,6 @@ final class Executor {
         return Optional.ofNullable(mapper);
     }
 
-    Executor retryExecutorFactory(RetryExecutorFactory v) {
-        retryExecutorFactory = v;
-        return this;
-    }
-
     Executor copy() {
         return new Executor(this);
     }
@@ -235,7 +242,7 @@ final class Executor {
     }
 
     RetryExecutor<Result, IOException> retry() {
-        return retryExecutorFactory().<Result, IOException>retryExecutor(IOException.class)
+        return Globals.instance().objectFactory().<Result, IOException>retryExecutor(IOException.class)
                 .setExecutable(this::executeExpectSuccess);
     }
 
@@ -277,10 +284,6 @@ final class Executor {
 
     private boolean dumpOutput() {
         return Log.isVerbose() && !quietCommand;
-    }
-
-    private RetryExecutorFactory retryExecutorFactory() {
-        return Optional.ofNullable(retryExecutorFactory).orElse(RetryExecutorFactory.DEFAULT);
     }
 
     private static void log(Result result, ByteArrayOutputStream outputSink, Charset outputSinkCharset) throws IOException {
@@ -333,5 +336,4 @@ final class Executor {
     private ToolProvider toolProvider;
     private Duration timeout;
     private UnaryOperator<Executor> mapper;
-    private RetryExecutorFactory retryExecutorFactory;
 }

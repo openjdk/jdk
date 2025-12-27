@@ -50,15 +50,15 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
             // Wrap the generic Linux system environment supplier in the run-once wrapper
             // as this supplier is called from both RPM and DEB Linux system environment suppliers.
             var sysEnv = runOnce(() -> {
-                return LinuxSystemEnvironment.create(objectFactory);
+                return LinuxSystemEnvironment.create();
             });
 
             Supplier<Result<LinuxDebSystemEnvironment>> debSysEnv = () -> {
-                return LinuxDebSystemEnvironment.create(sysEnv.get(), objectFactory);
+                return LinuxDebSystemEnvironment.create(sysEnv.get());
             };
 
             Supplier<Result<LinuxRpmSystemEnvironment>> rpmSysEnv = () -> {
-                return LinuxRpmSystemEnvironment.create(sysEnv.get(), objectFactory);
+                return LinuxRpmSystemEnvironment.create(sysEnv.get());
             };
 
             builder.defaultOperation(() -> {

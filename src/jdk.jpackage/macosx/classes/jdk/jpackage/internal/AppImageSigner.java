@@ -48,20 +48,21 @@ import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
 final class AppImageSigner {
 
-    static Consumer<MacBundle> createSigner(MacApplication app, CodesignConfig signingCfg, ExecutorFactory ef) {
+    static Consumer<MacBundle> createSigner(MacApplication app, CodesignConfig signingCfg) {
         return toConsumer(appImage -> {
             try {
-                new AppImageSigner(Codesigners.create(signingCfg, ef), ef).sign(app, appImage);
+                new AppImageSigner(Codesigners.create(signingCfg)).sign(app, appImage);
             } catch (CodesignException ex) {
-                throw handleCodesignException(app, ex, ef);
+                throw handleCodesignException(app, ex);
             } catch (ExceptionBox ex) {
                 if (ex.getCause() instanceof CodesignException codesignEx) {
-                    handleCodesignException(app, codesignEx, ef);
+                    handleCodesignException(app, codesignEx);
                 }
                 throw ex;
             }
@@ -163,7 +164,7 @@ final class AppImageSigner {
         }
     }
 
-    private static CodesignException handleCodesignException(MacApplication app, CodesignException ex, ExecutorFactory ef) {
+    private static CodesignException handleCodesignException(MacApplication app, CodesignException ex) {
         // Log output of "codesign" in case of error. It should help
         // user to diagnose issues when using --mac-app-image-sign-identity.
         // In addition add possible reason for failure. For example
@@ -176,7 +177,7 @@ final class AppImageSigner {
         // Signing might not work without Xcode with command line
         // developer tools. Show user if Xcode is missing as possible
         // reason.
-        if (!isXcodeDevToolsInstalled(ef)) {
+        if (!isXcodeDevToolsInstalled()) {
             Log.info(I18N.getString("message.codesign.failed.reason.xcode.tools"));
         }
 
@@ -187,18 +188,15 @@ final class AppImageSigner {
         return ex;
     }
 
-    private static boolean isXcodeDevToolsInstalled(ExecutorFactory ef) {
-        try {
-            ef.executor("/usr/bin/xcrun", "--help").setQuiet(true).executeExpectSuccess();
-            return true;
-        } catch (IOException ex) {
-            return false;
-        }
+    private static boolean isXcodeDevToolsInstalled() {
+        return Result.of(
+                Executor.of("/usr/bin/xcrun", "--help").setQuiet(true)::executeExpectSuccess,
+                IOException.class).hasValue();
     }
 
-    private void unsign(Path path) throws IOException {
+    private static void unsign(Path path) throws IOException {
         // run quietly
-        executorFactory.executor("/usr/bin/codesign", "--remove-signature", path.toString())
+        Executor.of("/usr/bin/codesign", "--remove-signature", path.toString())
                 .setQuiet(true)
                 .executeExpectSuccess();
     }
@@ -207,9 +205,8 @@ final class AppImageSigner {
         codesigners.accept(path);
     }
 
-    private AppImageSigner(Codesigners codesigners, ExecutorFactory executorFactory) {
+    private AppImageSigner(Codesigners codesigners) {
         this.codesigners = Objects.requireNonNull(codesigners);
-        this.executorFactory = Objects.requireNonNull(executorFactory);
     }
 
     private record Codesigners(Consumer<Path> codesignFile, Consumer<Path> codesignExecutableFile, Consumer<Path> codesignDir) implements Consumer<Path> {
@@ -239,14 +236,12 @@ final class AppImageSigner {
             return Optional.empty();
         }
 
-        static Codesigners create(CodesignConfig signingCfg, ExecutorFactory ef) {
-            Objects.requireNonNull(ef);
-
+        static Codesigners create(CodesignConfig signingCfg) {
             final var signingCfgWithoutEntitlements = CodesignConfig.build().from(signingCfg).entitlements(null).create();
 
-            final var codesignExecutableFile = Codesign.build(signingCfg::toCodesignArgs).executorFactory(ef).quiet(true).create().asConsumer();
-            final var codesignFile = Codesign.build(signingCfgWithoutEntitlements::toCodesignArgs).executorFactory(ef).quiet(true).create().asConsumer();
-            final var codesignDir = Codesign.build(signingCfg::toCodesignArgs).executorFactory(ef).force(true).create().asConsumer();
+            final var codesignExecutableFile = Codesign.build(signingCfg::toCodesignArgs).quiet(true).create().asConsumer();
+            final var codesignFile = Codesign.build(signingCfgWithoutEntitlements::toCodesignArgs).quiet(true).create().asConsumer();
+            final var codesignDir = Codesign.build(signingCfg::toCodesignArgs).force(true).create().asConsumer();
 
             return new Codesigners(codesignFile, codesignExecutableFile, codesignDir);
         }
@@ -267,5 +262,4 @@ final class AppImageSigner {
     }
 
     private final Codesigners codesigners;
-    private final ExecutorFactory executorFactory;
 }

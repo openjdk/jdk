@@ -84,12 +84,20 @@ public class LinuxSystemEnvironmentTest {
                     .map(new CommandMockSpec("dpkg", deb))
                     .createLoop();
 
-            var actual = LinuxSystemEnvironment.detectNativePackageType(
-                    MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT));
+            Globals.main(() -> {
 
-            assertEquals(expect, actual);
+                ExecutorFactory executorFactory = MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT);
 
-            assertEquals(List.of(), script.incompleteMocks());
+                Globals.instance().executorFactory(executorFactory);
+
+                var actual = LinuxSystemEnvironment.detectNativePackageType();
+
+                assertEquals(expect, actual);
+
+                assertEquals(List.of(), script.incompleteMocks());
+
+                return 0;
+            });
         }
     }
 }

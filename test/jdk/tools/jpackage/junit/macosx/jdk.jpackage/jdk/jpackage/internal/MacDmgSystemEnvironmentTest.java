@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.test.mock.CommandActionSpecs;
 import jdk.jpackage.test.mock.CommandMockExit;
 import jdk.jpackage.test.mock.CommandMockSpec;
@@ -143,10 +144,16 @@ public class MacDmgSystemEnvironmentTest {
 
             ExecutorFactory ef = MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT);
 
-            var actual = MacDmgSystemEnvironment.findSetFileUtility(ef);
+            Globals.main(() -> {
+                Globals.instance().executorFactory(ef);
 
-            assertEquals(expected, actual);
-            assertEquals(List.of(), script.incompleteMocks());
+                var actual = MacDmgSystemEnvironment.findSetFileUtility();
+
+                assertEquals(expected, actual);
+                assertEquals(List.of(), script.incompleteMocks());
+
+                return 0;
+            });
         }
     }
 }

@@ -68,11 +68,11 @@ record Keychain(String name) {
         }
     }
 
-    static List<Keychain> listKeychains(ExecutorFactory ef) {
+    static List<Keychain> listKeychains() {
         // Get the current keychain list
         final List<String> cmdOutput;
         try {
-            cmdOutput = ef.executor("/usr/bin/security", "list-keychains").saveOutput(true).executeExpectSuccess().getOutput();
+            cmdOutput = Executor.of("/usr/bin/security", "list-keychains").saveOutput(true).executeExpectSuccess().getOutput();
         } catch (IOException ex) {
             throw I18N.buildException().message("message.keychain.error").cause(ex).create(KeychainException::new);
         }
