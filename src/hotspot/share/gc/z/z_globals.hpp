@@ -128,6 +128,9 @@
           "without the need for UseNUMA")                                   \
           range(1, 16)                                                      \
                                                                             \
+  develop(bool, ZForceHighestHeapBase, false,                               \
+          "Forces the heap base to occupied the highest supported bit")     \
+                                                                            \
   develop(size_t, ZForceDiscontiguousHeapReservations, 0,                   \
           "The gc will attempt to split the heap reservation into this "    \
           "many reservations, subject to available virtual address space "  \

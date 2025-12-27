@@ -26,14 +26,14 @@
 #include "zunittest.hpp"
 
 TEST(ZVirtualMemory, is_null) {
-  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
+  ZAddressOffsetLimitsSetter setter(size_t(16) * G * 1024);
 
   ZVirtualMemory mem;
   EXPECT_TRUE(mem.is_null());
 }
 
 TEST(ZVirtualMemory, accessors) {
-  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
+  ZAddressOffsetLimitsSetter setter(size_t(16) * G * 1024);
 
   {
     ZVirtualMemory mem(zoffset(0), ZGranuleSize);
@@ -55,17 +55,17 @@ TEST(ZVirtualMemory, accessors) {
 
   {
     // Max area - check end boundary
-    ZVirtualMemory mem(zoffset(0), ZAddressOffsetMax);
+    ZVirtualMemory mem(zoffset(0), ZAddressOffsetUpperLimit);
 
     EXPECT_EQ(mem.start(), zoffset(0));
-    EXPECT_EQ(mem.end(), zoffset_end(ZAddressOffsetMax));
-    EXPECT_EQ(mem.size(), ZAddressOffsetMax);
-    EXPECT_EQ(mem.granule_count(), (int)(ZAddressOffsetMax >> ZGranuleSizeShift));
+    EXPECT_EQ(mem.end(), zoffset_end(ZAddressOffsetUpperLimit));
+    EXPECT_EQ(mem.size(), ZAddressOffsetUpperLimit);
+    EXPECT_EQ(mem.granule_count(), (int)(ZAddressOffsetUpperLimit >> ZGranuleSizeShift));
   }
 }
 
 TEST(ZVirtualMemory, resize) {
-  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
+  ZAddressOffsetLimitsSetter setter(size_t(16) * G * 1024);
 
   ZVirtualMemory mem(zoffset(ZGranuleSize * 2), ZGranuleSize * 2) ;
 
@@ -95,7 +95,7 @@ TEST(ZVirtualMemory, resize) {
 }
 
 TEST(ZVirtualMemory, shrink_from_front) {
-  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
+  ZAddressOffsetLimitsSetter setter(size_t(16) * G * 1024);
 
   ZVirtualMemory mem(zoffset(0), ZGranuleSize * 10);
 
@@ -116,7 +116,7 @@ TEST(ZVirtualMemory, shrink_from_front) {
 }
 
 TEST(ZVirtualMemory, shrink_from_back) {
-  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
+  ZAddressOffsetLimitsSetter setter(size_t(16) * G * 1024);
 
   ZVirtualMemory mem(zoffset(0), ZGranuleSize * 10);
 
@@ -130,7 +130,7 @@ TEST(ZVirtualMemory, shrink_from_back) {
 }
 
 TEST(ZVirtualMemory, adjacent_to) {
-  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
+  ZAddressOffsetLimitsSetter setter(size_t(16) * G * 1024);
 
   ZVirtualMemory mem0(zoffset(0), ZGranuleSize);
   ZVirtualMemory mem1(zoffset(ZGranuleSize), ZGranuleSize);
