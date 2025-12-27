@@ -58,15 +58,12 @@ import jdk.jpackage.internal.util.Result;
 class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
     DefaultBundlingEnvironment(Builder builder) {
-        this(builder.objectFactory, Optional.ofNullable(builder.defaultOperationSupplier), builder.bundlers);
+        this(Optional.ofNullable(builder.defaultOperationSupplier), builder.bundlers);
     }
 
-    DefaultBundlingEnvironment(
-            ObjectFactory objectFactory,
-            Optional<Supplier<Optional<BundlingOperationDescriptor>>> defaultOperationSupplier,
+    DefaultBundlingEnvironment(Optional<Supplier<Optional<BundlingOperationDescriptor>>> defaultOperationSupplier,
             Map<BundlingOperationDescriptor, Supplier<Result<Consumer<Options>>>> bundlers) {
 
-        this.objectFactory = Objects.requireNonNull(objectFactory);
         this.bundlers = bundlers.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> {
             return runOnce(e.getValue());
         }));
@@ -76,10 +73,6 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
 
     static final class Builder {
-
-        private Builder(ObjectFactory objectFactory) {
-            this.objectFactory = Objects.requireNonNull(objectFactory);
-        }
 
         Builder defaultOperation(Supplier<Optional<BundlingOperationDescriptor>> v) {
             defaultOperationSupplier = v;
@@ -112,16 +105,11 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
         private Supplier<Optional<BundlingOperationDescriptor>> defaultOperationSupplier;
         private final Map<BundlingOperationDescriptor, Supplier<Result<Consumer<Options>>>> bundlers = new HashMap<>();
-        private final ObjectFactory objectFactory;
     }
 
-
-    static Builder build(ObjectFactory objectFactory) {
-        return new Builder(objectFactory);
-    }
 
     static Builder build() {
-        return build(ObjectFactory.DEFAULT);
+        return new Builder();
     }
 
     static <T> Supplier<T> runOnce(Supplier<T> supplier) {
@@ -200,13 +188,8 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
     @Override
     public void createBundle(BundlingOperationDescriptor op, Options cmdline) {
-
         final var bundler = getBundlerSupplier(op).get().orElseThrow();
-
-        cmdline = OptionUtils.withObjectFactory(cmdline, objectFactory);
-
         Optional<Path> permanentWorkDirectory = Optional.empty();
-
         try (var tempDir = new TempDirectory(cmdline)) {
             if (!tempDir.deleteOnClose()) {
                 permanentWorkDirectory = Optional.of(tempDir.path());
@@ -304,7 +287,6 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
     }
 
 
-    private final ObjectFactory objectFactory;
     private final Map<BundlingOperationDescriptor, Supplier<Result<Consumer<Options>>>> bundlers;
     private final Optional<Supplier<Optional<BundlingOperationDescriptor>>> defaultOperationSupplier;
 }

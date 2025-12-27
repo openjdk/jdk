@@ -43,10 +43,7 @@ import java.util.Optional;
 
 public final class MacCertificateUtils {
 
-    public static Collection<X509Certificate> findCertificates(
-            Optional<Keychain> keychain, Optional<String> certificateNameFilter, ExecutorFactory ef) {
-        Objects.requireNonNull(ef);
-
+    public static Collection<X509Certificate> findCertificates(Optional<Keychain> keychain, Optional<String> certificateNameFilter) {
         List<String> args = new ArrayList<>();
         args.add("/usr/bin/security");
         args.add("find-certificate");
@@ -56,7 +53,7 @@ public final class MacCertificateUtils {
         keychain.map(Keychain::asCliArg).ifPresent(args::add);
 
         return toSupplier(() -> {
-            final var output = ef.executor(args)
+            final var output = Executor.of(args)
                     .setQuiet(true).saveOutput(true).executeExpectSuccess()
                     .getOutput();
 

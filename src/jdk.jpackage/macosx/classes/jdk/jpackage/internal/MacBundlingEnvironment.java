@@ -39,21 +39,13 @@ import jdk.jpackage.internal.model.Package;
 
 public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
 
-    public MacBundlingEnvironment(ObjectFactory objectFactory) {
-        super(build(objectFactory).mutate(builder -> {
-            var dmgSysEnv = runOnce(() -> {
-                return MacDmgSystemEnvironment.create(objectFactory);
-            });
-
-            builder.bundler(CREATE_MAC_DMG, dmgSysEnv, MacBundlingEnvironment::createDmdPackage);
-        }).defaultOperation(CREATE_MAC_DMG)
+    public MacBundlingEnvironment() {
+        super(build()
+                .defaultOperation(CREATE_MAC_DMG)
                 .bundler(SIGN_MAC_APP_IMAGE, MacBundlingEnvironment::signAppImage)
                 .bundler(CREATE_MAC_APP_IMAGE, MacBundlingEnvironment::createAppImage)
+                .bundler(CREATE_MAC_DMG, MacDmgSystemEnvironment::create, MacBundlingEnvironment::createDmdPackage)
                 .bundler(CREATE_MAC_PKG, MacBundlingEnvironment::createPkgPackage));
-    }
-
-    public MacBundlingEnvironment() {
-        this(ObjectFactory.DEFAULT);
     }
 
     private static void createDmdPackage(Options options, MacDmgSystemEnvironment sysEnv) {

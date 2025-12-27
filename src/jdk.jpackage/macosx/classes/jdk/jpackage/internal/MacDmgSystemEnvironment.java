@@ -38,7 +38,7 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
     MacDmgSystemEnvironment {
     }
 
-    static Result<MacDmgSystemEnvironment> create(ExecutorFactory ef) {
+    static Result<MacDmgSystemEnvironment> create() {
         final var errors = Stream.of(HDIUTIL, OSASCRIPT)
                 .map(ToolValidator::new)
                 .map(ToolValidator::checkExistsOnly)
@@ -46,7 +46,7 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
                 .filter(Objects::nonNull)
                 .toList();
         if (errors.isEmpty()) {
-            return Result.ofValue(new MacDmgSystemEnvironment(HDIUTIL, OSASCRIPT, findSetFileUtility(ef)));
+            return Result.ofValue(new MacDmgSystemEnvironment(HDIUTIL, OSASCRIPT, findSetFileUtility()));
         } else {
             return Result.ofErrors(errors);
         }
@@ -55,23 +55,19 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
     // Location of SetFile utility may be different depending on MacOS version
     // We look for several known places and if none of them work will
     // try to find it
-    static Optional<Path> findSetFileUtility(ExecutorFactory ef) {
-        Objects.requireNonNull(ef);
-
+    static Optional<Path> findSetFileUtility() {
         return SETFILE_KNOWN_PATHS.stream().filter(setFilePath -> {
             // Validate SetFile, if Xcode is not installed it will run, but exit with error code
             return Result.of(
-                    ef.executor(setFilePath.toString(), "-h").setQuiet(true)::executeExpectSuccess,
+                    Executor.of(setFilePath.toString(), "-h").setQuiet(true)::executeExpectSuccess,
                     IOException.class).hasValue();
         }).findFirst().or(() -> {
             // generic find attempt
-            final var executor = ef.executor("/usr/bin/xcrun", "-find", "SetFile").setQuiet(true).saveFirstLineOfOutput();
+            final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile").setQuiet(true).saveFirstLineOfOutput();
 
             return Result.of(executor::executeExpectSuccess, IOException.class).flatMap(execResult -> {
                 return Result.of(() -> {
-                    return execResult.stdout().stream().findFirst().map(Path::of).orElseThrow(() -> {
-                        return execResult.unexpected();
-                    });
+                    return execResult.stdout().stream().findFirst().map(Path::of).orElseThrow(execResult::unexpected);
                 }, Exception.class);
             }).value().filter(v -> {
                 return new ToolValidator(v).checkExistsOnly().validate() == null;

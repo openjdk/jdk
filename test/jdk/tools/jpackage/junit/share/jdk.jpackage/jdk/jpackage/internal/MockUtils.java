@@ -25,11 +25,11 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.spi.ToolProvider;
 import jdk.internal.util.OperatingSystem;
@@ -107,9 +107,8 @@ final class MockUtils {
         };
     }
 
-    static CliBundlingEnvironment createBundlingEnvironment(OperatingSystem os, ObjectFactory of) {
+    static CliBundlingEnvironment createBundlingEnvironment(OperatingSystem os) {
         Objects.requireNonNull(os);
-        Objects.requireNonNull(of);
 
         String bundlingEnvironmentClassName;
         switch (os) {
@@ -131,35 +130,33 @@ final class MockUtils {
             var ctor = Class.forName(String.join(".",
                     DefaultBundlingEnvironment.class.getPackageName(),
                     bundlingEnvironmentClassName
-            )).getConstructor(ObjectFactory.class);
-            return (CliBundlingEnvironment)ctor.newInstance(of);
+            )).getConstructor();
+            return (CliBundlingEnvironment)ctor.newInstance();
         }).get();
-    }
-
-    static ToolProvider createJPackageToolProvider(Supplier<CliBundlingEnvironment> supplier) {
-        Objects.requireNonNull(supplier);
-        return new Main.Provider(new Supplier<>() {
-            @Override
-            public CliBundlingEnvironment get() {
-                if (cachedValue == null) {
-                    cachedValue = Objects.requireNonNull(supplier.get());
-                }
-                return cachedValue;
-            }
-            private CliBundlingEnvironment cachedValue;
-        });
     }
 
     static ToolProvider createJPackageToolProvider(OperatingSystem os, ObjectFactory of) {
         Objects.requireNonNull(os);
         Objects.requireNonNull(of);
-        return createJPackageToolProvider(() -> {
-            return createBundlingEnvironment(os, of);
-        });
-    }
 
-    static ToolProvider createJPackageToolProvider(ObjectFactory of) {
-        return createJPackageToolProvider(OperatingSystem.current(), of);
-    }
+        var impl = new Main.Provider(DefaultBundlingEnvironment.runOnce(() -> {
+            return createBundlingEnvironment(os);
+        }));
 
+        return new ToolProvider() {
+
+            @Override
+            public int run(PrintWriter out, PrintWriter err, String... args) {
+                return Globals.main(() -> {
+                    Globals.instance().objectFactory(of);
+                    return impl.run(out, err, args);
+                });
+            }
+
+            @Override
+            public String name() {
+                return impl.name();
+            }
+        };
+    }
 }

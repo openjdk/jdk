@@ -34,20 +34,14 @@ import jdk.jpackage.internal.cli.Options;
 
 public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
 
-    public WinBundlingEnvironment(ObjectFactory objectFactory) {
-        super(build(objectFactory).mutate(builder -> {
-            var sysEnv = runOnce(() -> {
-                return WinSystemEnvironment.create(objectFactory);
-            });
+    public WinBundlingEnvironment() {
+        super(build().mutate(builder -> {
+            var sysEnv = runOnce(WinSystemEnvironment::create);
 
             builder
             .bundler(CREATE_WIN_EXE, sysEnv, WinBundlingEnvironment::createExePackage)
             .bundler(CREATE_WIN_MSI, sysEnv, WinBundlingEnvironment::createMsiPackage);
         }).defaultOperation(CREATE_WIN_EXE).bundler(CREATE_WIN_APP_IMAGE, WinBundlingEnvironment::createAppImage));
-    }
-
-    public WinBundlingEnvironment() {
-        this(ObjectFactory.DEFAULT);
     }
 
     private static void createMsiPackage(Options options, WinSystemEnvironment sysEnv) {

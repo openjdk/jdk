@@ -30,9 +30,7 @@ import jdk.jpackage.internal.util.Result;
 
 public interface LinuxDebSystemEnvironment extends LinuxSystemEnvironment, LinuxDebSystemEnvironmentMixin {
 
-    static Result<LinuxDebSystemEnvironment> create(Result<LinuxSystemEnvironment> base, ExecutorFactory ef) {
-        return mixin(LinuxDebSystemEnvironment.class, base, () -> {
-            return LinuxDebSystemEnvironmentMixin.create(ef);
-        });
+    static Result<LinuxDebSystemEnvironment> create(Result<LinuxSystemEnvironment> base) {
+        return mixin(LinuxDebSystemEnvironment.class, base, LinuxDebSystemEnvironmentMixin::create);
     }
 }

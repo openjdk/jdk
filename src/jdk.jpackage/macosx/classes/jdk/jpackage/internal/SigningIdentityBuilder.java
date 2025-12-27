@@ -82,11 +82,6 @@ final class SigningIdentityBuilder {
         return this;
     }
 
-    SigningIdentityBuilder executorFactory(ExecutorFactory v) {
-        executorFactory = v;
-        return this;
-    }
-
     Optional<SigningConfig> create() {
         if (signingIdentity == null && certificateSelector == null) {
             return Optional.empty();
@@ -108,7 +103,7 @@ final class SigningIdentityBuilder {
 
         final var validatedKeychain = validatedKeychain();
 
-        final var allCertificates = findCertificates(validatedKeychain, Optional.empty(), executorFactory);
+        final var allCertificates = findCertificates(validatedKeychain, Optional.empty());
 
         final var mappedCertficates = allCertificates.stream().<Map.Entry<String, X509Certificate>>mapMulti((cert, acc) -> {
             findSubjectCNs(cert).stream().map(cn -> {
@@ -251,5 +246,4 @@ final class SigningIdentityBuilder {
     private String signingIdentity;
     private CertificateSelector certificateSelector;
     private String keychain;
-    private ExecutorFactory executorFactory;
 }

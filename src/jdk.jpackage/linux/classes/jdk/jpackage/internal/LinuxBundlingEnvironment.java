@@ -36,29 +36,29 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.cli.Options;
-import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.util.Result;
 
 public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
 
-    public LinuxBundlingEnvironment(ObjectFactory objectFactory) {
-        super(build(objectFactory).mutate(builder -> {
+    public LinuxBundlingEnvironment() {
+        super(build().mutate(builder -> {
 
             // Wrap the generic Linux system environment supplier in the run-once wrapper
             // as this supplier is called from both RPM and DEB Linux system environment suppliers.
             var sysEnv = runOnce(() -> {
-                return LinuxSystemEnvironment.create(objectFactory);
+                return LinuxSystemEnvironment.create();
             });
 
             Supplier<Result<LinuxDebSystemEnvironment>> debSysEnv = () -> {
-                return LinuxDebSystemEnvironment.create(sysEnv.get(), objectFactory);
+                return LinuxDebSystemEnvironment.create(sysEnv.get());
             };
 
             Supplier<Result<LinuxRpmSystemEnvironment>> rpmSysEnv = () -> {
-                return LinuxRpmSystemEnvironment.create(sysEnv.get(), objectFactory);
+                return LinuxRpmSystemEnvironment.create(sysEnv.get());
             };
 
             builder.defaultOperation(() -> {
@@ -67,10 +67,6 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
             .bundler(CREATE_LINUX_DEB, debSysEnv, LinuxBundlingEnvironment::createDebPackage)
             .bundler(CREATE_LINUX_RPM, rpmSysEnv, LinuxBundlingEnvironment::createRpmPackage);
         }).bundler(CREATE_LINUX_APP_IMAGE, LinuxBundlingEnvironment::createAppImage));
-    }
-
-    public LinuxBundlingEnvironment() {
-        this(ObjectFactory.DEFAULT);
     }
 
     private static void createDebPackage(Options options, LinuxDebSystemEnvironment sysEnv) {

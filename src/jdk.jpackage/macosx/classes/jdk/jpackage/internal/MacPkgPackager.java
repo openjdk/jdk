@@ -82,7 +82,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         PREPARE_SERVICES
     }
 
-    record InternalPackage(ExecutorFactory ef, Path srcRoot, String identifier, Path path, List<String> otherPkgbuildArgs) {
+    record InternalPackage(Path srcRoot, String identifier, Path path, List<String> otherPkgbuildArgs) {
 
         InternalPackage {
             Objects.requireNonNull(srcRoot);
@@ -108,7 +108,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
             cmdline.addAll(allPkgbuildArgs());
             try {
                 Files.createDirectories(path.getParent());
-                ef.executor(cmdline).executeExpectSuccess();
+                Executor.of(cmdline).executeExpectSuccess();
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
@@ -189,12 +189,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         SUPPORT("support");
 
         InternalPackage createInternalPackage(Path srcRoot, MacPkgPackage pkg, BuildEnv env, List<String> otherPkgbuildArgs) {
-            return new InternalPackage(
-                    env.objectFactory(),
-                    srcRoot,
-                    identifier(pkg),
-                    env.buildRoot().resolve("packages").resolve(filename(pkg)),
-                    otherPkgbuildArgs);
+            return new InternalPackage(srcRoot, identifier(pkg), env.buildRoot().resolve("packages").resolve(filename(pkg)), otherPkgbuildArgs);
         }
 
         private InternalPackageType(String nameSuffix) {
@@ -492,7 +487,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
         Files.createDirectories(cpl.getParent());
 
-        env.objectFactory().executor("/usr/bin/pkgbuild",
+        Executor.of("/usr/bin/pkgbuild",
                 "--root",
                 normalizedAbsolutePathString(env.appImageDir()),
                 "--install-location",
@@ -547,7 +542,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         }
         commandLine.add(normalizedAbsolutePathString(finalPkg));
 
-        env.objectFactory().executor(commandLine).executeExpectSuccess();
+        Executor.of(commandLine).executeExpectSuccess();
     }
 
     private static Optional<Services> createServices(BuildEnv env, MacPkgPackage pkg) {

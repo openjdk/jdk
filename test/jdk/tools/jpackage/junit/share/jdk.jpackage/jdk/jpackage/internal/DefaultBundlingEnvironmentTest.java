@@ -100,8 +100,7 @@ public class DefaultBundlingEnvironmentTest extends JUnitAdapter {
 
         ExecutorFactory recordingExecutorFactory = MockUtils.withCommandListener(executedCommands::add).apply(commandMocksExecutorFactory);
 
-        ToolProvider jpackage = MockUtils.createJPackageToolProvider(
-                op.os(),
+        ToolProvider jpackage = MockUtils.createJPackageToolProvider(op.os(),
                 ObjectFactory.build().executorFactory(recordingExecutorFactory).create());
 
         var inputDir = TKit.createTempDirectory("input");

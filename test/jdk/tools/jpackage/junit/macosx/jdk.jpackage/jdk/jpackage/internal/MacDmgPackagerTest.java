@@ -172,7 +172,7 @@ public class MacDmgPackagerTest {
         };
     }
 
-    private static void runPackagingMock(Path workDir, MacDmgSystemEnvironment sysEnv, ObjectFactory objectFactory) {
+    private static void runPackagingMock(Path workDir, MacDmgSystemEnvironment sysEnv) {
 
         var app = new ApplicationBuilder()
                 .appImageLayout(MacPackagingPipeline.APPLICATION_LAYOUT)
@@ -184,8 +184,7 @@ public class MacDmgPackagerTest {
 
         var macDmgPkg = new MacDmgPackageBuilder(new MacPackageBuilder(new PackageBuilder(macApp, MAC_DMG))).create();
 
-        var buildEnv = new BuildEnvBuilder(workDir.resolve("build-root"))
-                .appImageDirFor(macDmgPkg).objectFactory(objectFactory).create();
+        var buildEnv = new BuildEnvBuilder(workDir.resolve("build-root")).appImageDirFor(macDmgPkg).create();
 
         var packager = new MacDmgPackager(buildEnv, macDmgPkg, workDir, sysEnv);
 
@@ -259,15 +258,19 @@ public class MacDmgPackagerTest {
                     })
                     .create();
 
-            if (expectedErrorType == null) {
-                runPackagingMock(workDir, createSysEnv(scriptSpec()), objectFactory);
-            } else {
-                var ex = assertThrows(Exception.class, () -> {
-                    runPackagingMock(workDir, createSysEnv(scriptSpec()), objectFactory);
-                });
-                var cause = ExceptionBox.unbox(ex);
-                assertEquals(expectedErrorType, cause.getClass());
-            }
+            Globals.main(() -> {
+                Globals.instance().objectFactory(objectFactory);
+                if (expectedErrorType == null) {
+                    runPackagingMock(workDir, createSysEnv(scriptSpec()));
+                } else {
+                    var ex = assertThrows(Exception.class, () -> {
+                        runPackagingMock(workDir, createSysEnv(scriptSpec()));
+                    });
+                    var cause = ExceptionBox.unbox(ex);
+                    assertEquals(expectedErrorType, cause.getClass());
+                }
+                return 0;
+            });
 
             assertEquals(List.of(), script.incompleteMocks());
         }

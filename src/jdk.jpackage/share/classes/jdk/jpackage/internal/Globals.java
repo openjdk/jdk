@@ -24,13 +24,48 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.LinuxSystemEnvironment.mixin;
+import java.util.Optional;
+import java.util.function.Supplier;
 
-import jdk.jpackage.internal.util.Result;
+public final class Globals {
 
-public interface LinuxRpmSystemEnvironment extends LinuxSystemEnvironment, LinuxRpmSystemEnvironmentMixin {
-
-    static Result<LinuxRpmSystemEnvironment> create(Result<LinuxSystemEnvironment> base) {
-        return mixin(LinuxRpmSystemEnvironment.class, base, LinuxRpmSystemEnvironmentMixin::create);
+    private Globals() {
     }
+
+    Globals objectFactory(ObjectFactory v) {
+        checkMutable();
+        objectFactory = Optional.ofNullable(v).orElse(ObjectFactory.DEFAULT);
+        return this;
+    }
+
+    ObjectFactory objectFactory() {
+        return objectFactory;
+    }
+
+    Globals executorFactory(ExecutorFactory v) {
+        return objectFactory(ObjectFactory.build(objectFactory).executorFactory(v).create());
+    }
+
+    public static int main(Supplier<Integer> mainBody) {
+        if (INSTANCE.isBound()) {
+            return mainBody.get();
+        } else {
+            return ScopedValue.where(INSTANCE, new Globals()).call(mainBody::get);
+        }
+    }
+
+    public static Globals instance() {
+        return INSTANCE.orElse(DEFAULT);
+    }
+
+    private void checkMutable() {
+        if (this == DEFAULT) {
+            throw new UnsupportedOperationException("Can't modify immutable instance");
+        }
+    }
+
+    private ObjectFactory objectFactory = ObjectFactory.DEFAULT;
+
+    private static final ScopedValue<Globals> INSTANCE = ScopedValue.newInstance();
+    private static final Globals DEFAULT = new Globals();
 }

@@ -45,6 +45,7 @@ import java.util.function.Supplier;
 import java.util.spi.ToolProvider;
 import jdk.internal.opt.CommandLine;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.Globals;
 import jdk.jpackage.internal.Log;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
@@ -107,6 +108,17 @@ public final class Main {
     }
 
     static int run(Supplier<CliBundlingEnvironment> bundlingEnvSupplier, PrintWriter out, PrintWriter err, String... args) {
+        return Globals.main(() -> {
+            return runWithGlobals(bundlingEnvSupplier, out, err, args);
+        });
+    }
+
+    private static int runWithGlobals(
+            Supplier<CliBundlingEnvironment> bundlingEnvSupplier,
+            PrintWriter out,
+            PrintWriter err,
+            String... args) {
+
         Objects.requireNonNull(bundlingEnvSupplier);
         Objects.requireNonNull(args);
         for (String arg : args) {
@@ -298,7 +310,7 @@ public final class Main {
         return System.getProperty("java.version");
     }
 
-    static CliBundlingEnvironment loadBundlingEnvironment() {
+    private static CliBundlingEnvironment loadBundlingEnvironment() {
         return ServiceLoader.load(
                 CliBundlingEnvironment.class,
                 CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();

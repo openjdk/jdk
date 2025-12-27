@@ -30,15 +30,15 @@ import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.Result;
 
-public record LinuxPackageArch(String value) {
+record LinuxPackageArch(String value) {
 
-    static Result<LinuxPackageArch> create(StandardPackageType pkgType, ExecutorFactory ef) {
+    static Result<LinuxPackageArch> create(StandardPackageType pkgType) {
         switch (pkgType) {
             case LINUX_RPM -> {
-                return rpm(ef).map(LinuxPackageArch::new);
+                return rpm().map(LinuxPackageArch::new);
             }
             case LINUX_DEB -> {
-                return deb(ef).map(LinuxPackageArch::new);
+                return deb().map(LinuxPackageArch::new);
             }
             default -> {
                 throw new IllegalArgumentException();
@@ -46,16 +46,16 @@ public record LinuxPackageArch(String value) {
         }
     }
 
-    private static Result<String> deb(ExecutorFactory ef) {
-        var exec = ef.executor("dpkg", "--print-architecture").saveOutput(true);
+    private static Result<String> deb() {
+        var exec = Executor.of("dpkg", "--print-architecture").saveOutput(true);
         return Result.of(exec::executeExpectSuccess, IOException.class)
                 .flatMap(LinuxPackageArch::getStdoutFirstLine);
     }
 
-    private static Result<String> rpm(ExecutorFactory ef) {
+    private static Result<String> rpm() {
         var errors = new ArrayList<Exception>();
         for (var tool : RpmArchReader.values()) {
-            var result = tool.getRpmArch(ef);
+            var result = tool.getRpmArch();
             if (result.hasValue()) {
                 return result;
             } else {
@@ -79,8 +79,8 @@ public record LinuxPackageArch(String value) {
             this.cmdline = cmdline;
         }
 
-        Result<String> getRpmArch(ExecutorFactory ef) {
-            var exec = ef.executor(cmdline).saveOutput(true);
+        Result<String> getRpmArch() {
+            var exec = Executor.of(cmdline).saveOutput(true);
             return Result.of(exec::executeExpectSuccess, IOException.class)
                     .flatMap(LinuxPackageArch::getStdoutFirstLine);
         }

@@ -26,7 +26,7 @@ package jdk.jpackage.internal;
 
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.util.RetryExecutor;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 interface ObjectFactory extends ExecutorFactory, RetryExecutorFactory {
 
@@ -34,14 +34,24 @@ interface ObjectFactory extends ExecutorFactory, RetryExecutorFactory {
         return new Builder();
     }
 
+    static ObjectFactory.Builder build(ObjectFactory from) {
+        return build().initFrom(from);
+    }
+
     static final class Builder {
         private Builder() {
         }
 
         ObjectFactory create() {
-            return new DefaultObjectFactory(
+            return CompositeProxy.build().invokeTunnel(CompositeProxyTunnel.INSTANCE).create(
+                    ObjectFactory.class,
                     Optional.ofNullable(executorFactory).orElse(ExecutorFactory.DEFAULT),
                     Optional.ofNullable(retryExecutorFactory).orElse(RetryExecutorFactory.DEFAULT));
+        }
+
+        Builder initFrom(ObjectFactory of) {
+            Objects.requireNonNull(of);
+            return executorFactory(of).retryExecutorFactory(of);
         }
 
         Builder executorFactory(ExecutorFactory v) {
@@ -52,27 +62,6 @@ interface ObjectFactory extends ExecutorFactory, RetryExecutorFactory {
         Builder retryExecutorFactory(RetryExecutorFactory v) {
             retryExecutorFactory = v;
             return this;
-        }
-
-        private record DefaultObjectFactory(
-                ExecutorFactory executorFactory,
-                RetryExecutorFactory retryExecutorFactory) implements ObjectFactory {
-
-            DefaultObjectFactory {
-                Objects.requireNonNull(executorFactory);
-                Objects.requireNonNull(retryExecutorFactory);
-            }
-
-            @Override
-            public Executor executor() {
-                return executorFactory.executor().retryExecutorFactory(this);
-            }
-
-            @Override
-            public <T, E extends Exception> RetryExecutor<T, E> retryExecutor(Class<? extends E> exceptionType) {
-                return retryExecutorFactory.retryExecutor(exceptionType);
-            }
-
         }
 
         private ExecutorFactory executorFactory;

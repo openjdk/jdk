@@ -71,14 +71,8 @@ final class WixPipeline {
                 return source.overridePath(normalizePath.apply(source.path));
             }).toList();
 
-            return new WixPipeline(
-                    toolset,
-                    adjustPath(absWorkDir),
-                    absObjWorkDir,
-                    wixVariables,
-                    mapLightOptions(normalizePath),
-                    relSources,
-                    executorFactory);
+            return new WixPipeline(toolset, adjustPath(absWorkDir), absObjWorkDir,
+                    wixVariables, mapLightOptions(normalizePath), relSources);
         }
 
         Builder setWixObjDir(Path v) {
@@ -107,11 +101,6 @@ final class WixPipeline {
             return this;
         }
 
-        Builder executorFactory(ExecutorFactory v) {
-            executorFactory = v;
-            return this;
-        }
-
         private List<String> mapLightOptions(UnaryOperator<Path> normalizePath) {
             var pathOptions = Set.of("-b", "-loc");
             List<String> reply = new ArrayList<>();
@@ -130,7 +119,6 @@ final class WixPipeline {
 
         private Path workDir;
         private Path wixObjDir;
-        private ExecutorFactory executorFactory;
         private final Map<String, String> wixVariables = new HashMap<>();
         private final List<String> lightOptions = new ArrayList<>();
         private final List<WixSource> sources = new ArrayList<>();
@@ -140,22 +128,15 @@ final class WixPipeline {
         return new Builder();
     }
 
-    private WixPipeline(
-            WixToolset toolset,
-            Path workDir,
-            Path wixObjDir,
-            Map<String, String> wixVariables,
-            List<String> lightOptions,
-            List<WixSource> sources,
-            ExecutorFactory executorFactory) {
-
-        this.toolset = Objects.requireNonNull(toolset);
-        this.workDir = Objects.requireNonNull(workDir);
-        this.wixObjDir = Objects.requireNonNull(wixObjDir);
-        this.wixVariables = Objects.requireNonNull(wixVariables);
-        this.lightOptions = Objects.requireNonNull(lightOptions);
-        this.sources = Objects.requireNonNull(sources);
-        this.executorFactory = Objects.requireNonNull(executorFactory);
+    private WixPipeline(WixToolset toolset, Path workDir, Path wixObjDir,
+            Map<String, String> wixVariables, List<String> lightOptions,
+            List<WixSource> sources) {
+        this.toolset = toolset;
+        this.workDir = workDir;
+        this.wixObjDir = wixObjDir;
+        this.wixVariables = wixVariables;
+        this.lightOptions = lightOptions;
+        this.sources = sources;
     }
 
     void buildMsi(Path msi) throws IOException {
@@ -289,7 +270,7 @@ final class WixPipeline {
     }
 
     private void execute(List<String> cmdline) throws IOException {
-        executorFactory.executor(new ProcessBuilder(cmdline).directory(workDir.toFile())).executeExpectSuccess();
+        Executor.of(new ProcessBuilder(cmdline).directory(workDir.toFile())).executeExpectSuccess();
     }
 
     private record WixSource(Path path, Map<String, String> variables) {
@@ -304,5 +285,4 @@ final class WixPipeline {
     private final Path wixObjDir;
     private final Path workDir;
     private final List<WixSource> sources;
-    private final ExecutorFactory executorFactory;
 }

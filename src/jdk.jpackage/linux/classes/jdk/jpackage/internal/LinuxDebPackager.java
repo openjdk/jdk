@@ -75,11 +75,11 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
             try {
                 // Try the real path first as it works better on newer Ubuntu versions
-                return findProvidingPackages(realPath, sysEnv, env.objectFactory());
+                return findProvidingPackages(realPath, sysEnv);
             } catch (IOException ex) {
                 // Try the default path if differ
                 if (!realPath.equals(file)) {
-                    return findProvidingPackages(file, sysEnv, env.objectFactory());
+                    return findProvidingPackages(file, sysEnv);
                 } else {
                     throw ex;
                 }
@@ -106,7 +106,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
         properties.forEach(property -> cmdline.add(property.name));
 
-        Map<String, String> actualValues = env.objectFactory().executor(cmdline)
+        Map<String, String> actualValues = Executor.of(cmdline)
                 .saveOutput(true)
                 .executeExpectSuccess()
                 .getOutput().stream()
@@ -157,7 +157,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         cmdline.addAll(List.of("-b", env.appImageDir().toString(), debFile.toAbsolutePath().toString()));
 
         // run dpkg
-        env.objectFactory().executor(cmdline).retryOnKnownErrorMessage(
+        Executor.of(cmdline).retryOnKnownErrorMessage(
                 "semop(1): encountered an error: Invalid argument").execute();
 
         Log.verbose(I18N.format("message.output-to-location", debFile.toAbsolutePath()));
@@ -231,7 +231,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         }
     }
 
-    private static Stream<String> findProvidingPackages(Path file, LinuxDebSystemEnvironment sysEnv, ExecutorFactory ef) throws IOException {
+    private static Stream<String> findProvidingPackages(Path file, LinuxDebSystemEnvironment sysEnv) throws IOException {
         //
         // `dpkg -S` command does glob pattern lookup. If not the absolute path
         // to the file is specified it might return mltiple package names.
@@ -279,7 +279,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
         var debArch = sysEnv.packageArch().value();
 
-        ef.executor(sysEnv.dpkg().toString(), "-S", file.toString())
+        Executor.of(sysEnv.dpkg().toString(), "-S", file.toString())
                 .saveOutput(true).executeExpectSuccess()
                 .getOutput().forEach(line -> {
                     Matcher matcher = PACKAGE_NAME_REGEX.matcher(line);

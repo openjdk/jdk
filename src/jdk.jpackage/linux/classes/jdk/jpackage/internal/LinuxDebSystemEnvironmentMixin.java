@@ -37,12 +37,9 @@ public interface LinuxDebSystemEnvironmentMixin {
     record Stub(Path dpkg, Path dpkgdeb, Path fakeroot) implements LinuxDebSystemEnvironmentMixin {
     }
 
-    static Result<LinuxDebSystemEnvironmentMixin> create(ExecutorFactory ef) {
+    static Result<LinuxDebSystemEnvironmentMixin> create() {
         final var errors = Stream.of(Internal.TOOL_DPKG_DEB, Internal.TOOL_DPKG, Internal.TOOL_FAKEROOT)
                 .map(ToolValidator::new)
-                .map(validator -> {
-                    return validator.executorFactory(ef);
-                })
                 .map(ToolValidator::validate)
                 .filter(Objects::nonNull)
                 .toList();
