@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,11 @@ class AbstractICache : AllStatic {
   static void invalidate_range(address start, int nbytes);
 };
 
+enum class ICacheInvalidation : uint8_t {
+  NOT_NEEDED = 0,
+  IMMEDIATE  = 1,
+  DEFERRED   = 2
+};
 
 // Must be included before the definition of ICacheStubGenerator
 // because ICacheStubGenerator uses ICache definitions.
@@ -128,5 +133,71 @@ class ICacheStubGenerator : public StubCodeGenerator {
 
   void generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub);
 };
+
+class DefaultICacheInvalidationContext final : StackObj {
+ private:
+  NONCOPYABLE(DefaultICacheInvalidationContext);
+
+  NOT_PRODUCT(static THREAD_LOCAL DefaultICacheInvalidationContext* _current_context;)
+
+  address            _code;
+  int                _size;
+  ICacheInvalidation _mode;
+
+ public:
+  DefaultICacheInvalidationContext(ICacheInvalidation mode)
+      : _code(nullptr), _size(0), _mode(mode) {
+    NOT_PRODUCT(_current_context = this);
+  }
+
+  DefaultICacheInvalidationContext() : DefaultICacheInvalidationContext(ICacheInvalidation::IMMEDIATE) {}
+
+  DefaultICacheInvalidationContext(address code, int size)
+      : _code(code), _size(size), _mode(ICacheInvalidation::DEFERRED) {
+    NOT_PRODUCT(_current_context = this);
+    assert(code != nullptr, "code must not be null for deferred invalidation");
+    assert(size > 0, "size must be positive for deferred invalidation");
+  }
+
+  ~DefaultICacheInvalidationContext() {
+    NOT_PRODUCT(_current_context = nullptr);
+    if (_code != nullptr) {
+      assert(_mode == ICacheInvalidation::DEFERRED, "sanity");
+      assert(_size > 0, "size must be positive for deferred invalidation");
+      ICache::invalidate_range(_code, _size);
+      _code = nullptr;
+      _size = 0;
+      _mode = ICacheInvalidation::NOT_NEEDED;
+    }
+  }
+
+  ICacheInvalidation mode() const {
+    return _mode;
+  }
+
+  void set_has_modified_code() {
+    // No-op for the default implementation.
+  }
+
+  static void invalidate_range(address start, int nbytes) {
+    ICache::invalidate_range(start, nbytes);
+  }
+
+  static void invalidate_word(address addr) {
+    invalidate_range(addr, 4);
+  }
+
+#ifdef ASSERT
+  static DefaultICacheInvalidationContext* current() {
+    return _current_context;
+  }
+#endif
+};
+
+#ifdef PD_ICACHE_INVALIDATION_CONTEXT
+using ICacheInvalidationContext = PD_ICACHE_INVALIDATION_CONTEXT;
+#else
+using ICacheInvalidationContext = DefaultICacheInvalidationContext;
+#endif // PD_ICACHE_INVALIDATION_CONTEXT
 
 #endif // SHARE_RUNTIME_ICACHE_HPP
