@@ -28,6 +28,7 @@ package jdk.internal.util;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
@@ -37,6 +38,7 @@ import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
  *
  * @since 21
  */
+@AOTSafeClassInitializer
 public final class DecimalDigits {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
