@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,21 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+package sun.jvm.hotspot.debugger.macosx;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.debugger.posix.*;
+import sun.jvm.hotspot.debugger.macosx.aarch64.*;
+import sun.jvm.hotspot.debugger.macosx.amd64.*;
 
-/** An Object can represent either a .so or an a.out file. */
-
-class SharedObject extends DSO {
-  SharedObject(BsdDebugger dbg, String filename, long size, Address relocation) {
-    super(filename, size, relocation);
-    this.dbg     = dbg;
-  }
-
-  protected Address newAddress(long address) {
-    return dbg.newAddress(address);
-  }
-
-  protected long getAddressValue(Address addr) {
-    return dbg.getAddressValue(addr);
-  }
-
-  public ClosestSymbol closestSymbolToPC(Address pcAsAddr) throws DebuggerException {
-    return dbg.lookup(dbg.getAddressValue(pcAsAddr));
-  }
-
-  private BsdDebugger   dbg;
+class MacosxThreadContextFactory {
+   static ThreadContext createThreadContext(MacosxDebugger dbg) {
+      String cpu = dbg.getCPU();
+      if (cpu.equals("amd64") || cpu.equals("x86_64")) {
+         return new MacosxAMD64ThreadContext(dbg);
+      } else if (cpu.equals("aarch64")) {
+         return new MacosxAARCH64ThreadContext(dbg);
+      } else {
+         throw new RuntimeException("cpu " + cpu + " is not yet supported");
+      }
+   }
 }

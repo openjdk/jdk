@@ -22,9 +22,9 @@
  *
  */
 
-package sun.jvm.hotspot.runtime.bsd;
+package sun.jvm.hotspot.runtime.macosx;
 
-public class BsdSignals {
+public class MacosxSignals {
   private static String[] signalNames = {
     "",           /* No signal 0 */
     "SIGHUP",     /* hangup */

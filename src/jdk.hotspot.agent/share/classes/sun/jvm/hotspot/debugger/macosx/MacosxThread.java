@@ -22,18 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+package sun.jvm.hotspot.debugger.macosx;
 
 import sun.jvm.hotspot.debugger.*;
 
-class BsdThread implements ThreadProxy {
-    private BsdDebugger debugger;
+class MacosxThread implements ThreadProxy {
+    private MacosxDebugger debugger;
     private int         thread_id;
     private long        unique_thread_id;
 
     /** The address argument must be the address of the _thread_id in the
         OSThread. It's value is result ::gettid() call. */
-    BsdThread(BsdDebugger debugger, Address threadIdAddr, Address uniqueThreadIdAddr) {
+    MacosxThread(MacosxDebugger debugger, Address threadIdAddr, Address uniqueThreadIdAddr) {
         this.debugger = debugger;
         // FIXME: size of data fetched here should be configurable.
         // However, making it so would produce a dependency on the "types"
@@ -42,14 +42,14 @@ class BsdThread implements ThreadProxy {
         this.unique_thread_id = uniqueThreadIdAddr.getCIntegerAt(0, 8, true);
     }
 
-    BsdThread(BsdDebugger debugger, long id) {
+    MacosxThread(MacosxDebugger debugger, long id) {
         this.debugger = debugger;
         // use unique_thread_id to identify thread
         this.unique_thread_id = id;
     }
 
     public boolean equals(Object obj) {
-        if (!(obj instanceof BsdThread other)) {
+        if (!(obj instanceof MacosxThread other)) {
             return false;
         }
 
@@ -66,7 +66,7 @@ class BsdThread implements ThreadProxy {
 
     public ThreadContext getContext() throws IllegalThreadStateException {
         long[] data = debugger.getThreadIntegerRegisterSet(unique_thread_id);
-        ThreadContext context = BsdThreadContextFactory.createThreadContext(debugger);
+        ThreadContext context = MacosxThreadContextFactory.createThreadContext(debugger);
         // null means we failed to get the register set for some reason. The caller
         // is responsible for dealing with the set of null registers in that case.
         if (data != null) {

@@ -22,7 +22,7 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+package sun.jvm.hotspot.debugger.macosx;
 
 import java.util.List;
 import sun.jvm.hotspot.debugger.*;
@@ -32,7 +32,7 @@ import sun.jvm.hotspot.debugger.cdbg.*;
     support 32-bit vs. 64-bit debugging as well as features required
     by the architecture-specific subpackages. */
 
-public interface BsdDebugger extends JVMDebugger {
+public interface MacosxDebugger extends JVMDebugger {
   public String       addressValueToString(long address) throws DebuggerException;
   public boolean      readJBoolean(long address) throws DebuggerException;
   public byte         readJByte(long address) throws DebuggerException;
@@ -44,15 +44,15 @@ public interface BsdDebugger extends JVMDebugger {
   public short        readJShort(long address) throws DebuggerException;
   public long         readCInteger(long address, long numBytes, boolean isUnsigned)
     throws DebuggerException;
-  public BsdAddress readAddress(long address) throws DebuggerException;
-  public BsdAddress readCompOopAddress(long address) throws DebuggerException;
-  public BsdAddress readCompKlassAddress(long address) throws DebuggerException;
-  public BsdOopHandle readOopHandle(long address) throws DebuggerException;
-  public BsdOopHandle readCompOopHandle(long address) throws DebuggerException;
+  public MacosxAddress readAddress(long address) throws DebuggerException;
+  public MacosxAddress readCompOopAddress(long address) throws DebuggerException;
+  public MacosxAddress readCompKlassAddress(long address) throws DebuggerException;
+  public MacosxOopHandle readOopHandle(long address) throws DebuggerException;
+  public MacosxOopHandle readCompOopHandle(long address) throws DebuggerException;
   public long[]       getThreadIntegerRegisterSet(long unique_thread_id) throws DebuggerException;
   public long         getAddressValue(Address addr) throws DebuggerException;
 
-  // For BsdCDebugger
+  // For MacosxCDebugger
   public List<ThreadProxy> getThreadList();
   public List<LoadObject> getLoadObjectList();
   public ClosestSymbol lookup(long address);
