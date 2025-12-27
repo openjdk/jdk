@@ -22,6 +22,7 @@
  *
  */
 
+#include "cppstdlib/cstdlib.hpp"
 #include "jni.h"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
@@ -31,7 +32,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #ifdef __APPLE__
 #include <dlfcn.h>
 #endif
