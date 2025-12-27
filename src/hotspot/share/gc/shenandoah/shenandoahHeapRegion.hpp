@@ -380,25 +380,28 @@ public:
   inline HeapWord* allocate_fill(size_t word_size);
 
   inline void clear_live_data();
-  void set_live_data(size_t s);
-
-  // Increase live data for newly allocated region
-  inline void increase_live_data_alloc_words(size_t s);
+  void set_live_data_after_fullgc(size_t s, ShenandoahMarkingContext* context, size_t index);
 
   // Increase live data for region scanned with GC
   inline void increase_live_data_gc_words(size_t s);
+  inline bool has_marked() const;
 
-  inline bool has_live() const;
+  inline bool has_live(ShenandoahMarkingContext* context, size_t index) const;
 
-  // Represents the number of live bytes identified by most recent marking effort.  Does not include the bytes
-  // above TAMS.
-  inline size_t get_live_data_bytes() const;
+  // Returns bytes identified as live by most recently completed marking effort.  Can only be called during safepoints.
+  inline size_t get_marked_data_bytes() const;
 
-  // Represents the number of live words identified by most recent marking effort.  Does not include the words
-  // above TAMS.
-  inline size_t get_live_data_words() const;
+  // Returns bytes identified as live by most recently completed marking effort, plus allocations above TAMS.
+  // Can only be called during safepoints.
+  inline size_t get_live_data_bytes(ShenandoahMarkingContext* context, size_t index) const;
 
-  inline size_t garbage() const;
+  // Returns words identified as live by most recently completed marking effort, plus allocations above TAMS.
+  // Can only be called during safepoints.
+  inline size_t get_live_data_words(ShenandoahMarkingContext* context, size_t index) const;
+
+  // Returns garbage by calculating difference between used and get_live_data_words.  Can only be called at
+  // safepoints. Allocations above TAMS are considered live.
+  inline size_t garbage(ShenandoahMarkingContext* context, size_t index) const;
 
   void print_on(outputStream* st) const;
 

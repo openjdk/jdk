@@ -1138,8 +1138,11 @@ private:
   void do_work() {
     ShenandoahConcurrentEvacuateRegionObjectClosure cl(_sh);
     ShenandoahHeapRegion* r;
+#ifdef ASSERT
+    ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
+#endif
     while ((r =_cs->claim_next()) != nullptr) {
-      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+      assert(r->has_live(context, r->index()), "Region %zu should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
 
       if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
@@ -1420,7 +1423,7 @@ void ShenandoahHeap::process_gc_stats() const {
 
 size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
-  assert(!start->has_live(), "liveness must be zero");
+  assert(!start->has_live(ShenandoahHeap::heap()->marking_context(), start->index()), "liveness must be zero");
 
   // Do not try to get the size of this humongous object. STW collections will
   // have already unloaded classes, so an unmarked object may have a bad klass pointer.
@@ -2548,6 +2551,9 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
+    ShenandoahOldHeuristics* old_heuristics = old_gen->heuristics();
+    old_heuristics->sort_candidates_by_live();
     size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
     gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
 

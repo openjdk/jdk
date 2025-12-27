@@ -68,12 +68,14 @@ void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(Shenando
   size_t threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
 
   size_t live_cset = 0;
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    size_t new_cset = live_cset + r->get_live_data_bytes();
-    if (new_cset < max_cset && r->garbage() > threshold) {
+    size_t region_index = r->index();
+    size_t new_cset = live_cset + r->get_live_data_bytes(context, region_index);
+    if (new_cset < max_cset && r->garbage(context, region_index) > threshold) {
       live_cset = new_cset;
-      cset->add_region(r);
+      cset->add_region(r, context, region_index);
     }
   }
 }

@@ -187,9 +187,8 @@ private:
           AtomicAccess::add(&_ld[obj_reg->index()], (uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
-          check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live() ||
-                (obj_reg->is_old() && _generation->is_young()),
-                   "Object must belong to region with live data");
+          check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(ShenandoahHeap::heap()->marking_context(), obj_reg->index())
+                || (obj_reg->is_old() && _generation->is_young()), "Object must belong to region with live data");
           break;
         default:
           assert(false, "Unhandled liveness verification");
@@ -367,6 +366,7 @@ class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure
 private:
   size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
   size_t _region_size_bytes, _min_free_size;
+  ShenandoahMarkingContext* _context;
 public:
   ShenandoahCalculateRegionStatsClosure() :
      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0)
@@ -374,14 +374,16 @@ public:
     _region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
     // Retired regions are not necessarily filled, thouugh their remnant memory is considered used.
     _min_free_size = PLAB::min_size() * HeapWordSize;
+    _context = ShenandoahHeap::heap()->marking_context();
   };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
+    size_t index = r->index();
     if (r->is_cset() || r->is_trash()) {
       // Count the entire cset or trashed (formerly cset) region as used
       // Note: Immediate garbage trash regions were never in the cset.
       _used += _region_size_bytes;
-      _garbage += _region_size_bytes - r->get_live_data_bytes();
+      _garbage += _region_size_bytes - r->get_live_data_bytes(_context, index);
       if (r->is_trash()) {
         _trashed_regions++;
         _trashed_used += _region_size_bytes;
@@ -389,7 +391,7 @@ public:
     } else {
       if (r->is_humongous()) {
         _used += _region_size_bytes;
-        _garbage += _region_size_bytes - r->get_live_data_bytes();
+        _garbage += _region_size_bytes - r->get_live_data_bytes(_context, index);
         _humongous_waste += r->free();
       } else {
         size_t alloc_capacity = r->free();
@@ -398,7 +400,7 @@ public:
           alloc_capacity = 0;
         }
         size_t bytes_used_in_region = _region_size_bytes - alloc_capacity;
-        size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes();
+        size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes(_context, index);
         size_t waste_bytes = r->free();
         _used += bytes_used_in_region;
         _garbage += bytes_garbage_in_region;
@@ -535,6 +537,8 @@ private:
         ShouldNotReachHere();
     }
 
+    ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
+    size_t region_index = r->index();
     verify(r, r->capacity() == ShenandoahHeapRegion::region_size_bytes(),
            "Capacity should match region size");
 
@@ -547,10 +551,10 @@ private:
     verify(r, _heap->marking_context()->top_at_mark_start(r) <= r->top(),
            "Complete TAMS should not be larger than top");
 
-    verify(r, r->get_live_data_bytes() <= r->capacity(),
+    verify(r, r->get_live_data_bytes(context, region_index) <= r->capacity(),
            "Live data cannot be larger than capacity");
 
-    verify(r, r->garbage() <= r->capacity(),
+    verify(r, r->garbage(context, region_index) <= r->capacity(),
            "Garbage cannot be larger than capacity");
 
     verify(r, r->used() <= r->capacity(),
@@ -571,7 +575,7 @@ private:
     verify(r, r->get_shared_allocs() + r->get_tlab_allocs() + r->get_gclab_allocs() + r->get_plab_allocs() == r->used(),
            "Accurate accounting: shared + TLAB + GCLAB + PLAB = used");
 
-    verify(r, !r->is_empty() || !r->has_live(),
+    verify(r, !r->is_empty() || !r->has_live(context, region_index),
            "Empty regions should not have live data");
 
     verify(r, r->is_cset() == _heap->collection_set()->is_in(r),
@@ -1017,6 +1021,7 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
   // Step 4. Verify accumulated liveness data, if needed. Only reliable if verification level includes
   // marked objects.
 
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   if (ShenandoahVerifyLevel >= 4 && marked == _verify_marked_complete && liveness == _verify_liveness_complete) {
     for (size_t i = 0; i < _heap->num_regions(); i++) {
       ShenandoahHeapRegion* r = _heap->get_region(i);
@@ -1036,7 +1041,7 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
         verf_live = AtomicAccess::load(&ld[r->index()]);
       }
 
-      size_t reg_live = r->get_live_data_words();
+      size_t reg_live = r->get_live_data_words(context, i);
       if (reg_live != verf_live) {
         stringStream ss;
         r->print_on(&ss);

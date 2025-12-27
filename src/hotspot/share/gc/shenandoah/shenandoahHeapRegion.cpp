@@ -381,9 +381,10 @@ size_t ShenandoahHeapRegion::get_plab_allocs() const {
   return _plab_allocs * HeapWordSize;
 }
 
-void ShenandoahHeapRegion::set_live_data(size_t s) {
+void ShenandoahHeapRegion::set_live_data_after_fullgc(size_t s, ShenandoahMarkingContext* marking_context, size_t index) {
   assert(Thread::current()->is_VM_thread(), "by VM thread");
-  _live_data = (s >> LogHeapWordSize);
+  size_t words_allocated_above_tams = pointer_delta(top(), marking_context->top_at_mark_start(index));
+  _live_data = (s >> LogHeapWordSize) - words_allocated_above_tams;
 }
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
@@ -442,7 +443,8 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
     st->print("|P %5zu%1s", byte_size_in_proper_unit(get_plab_allocs()),   proper_unit_for_byte_size(get_plab_allocs()));
   }
   st->print("|S %5zu%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
-  st->print("|L %5zu%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
+  size_t live_bytes = get_live_data_bytes(ShenandoahHeap::heap()->marking_context(), index());
+  st->print("|L %5zu%1s", byte_size_in_proper_unit(live_bytes),            proper_unit_for_byte_size(live_bytes));
   st->print("|CP %3zu", pin_count());
   st->cr();
 
@@ -885,7 +887,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
 
   switch (new_affiliation) {
     case FREE:
-      assert(!has_live(), "Free region should not have live data");
+      assert(!has_live(ctx, index()), "Free region should not have live data");
       break;
     case YOUNG_GENERATION:
       reset_age();
