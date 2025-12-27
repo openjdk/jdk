@@ -345,4 +345,6 @@ public interface CharSequence {
         while (srcBegin < srcEnd)
             dst[dstBegin++] = charAt(srcBegin++);
     }
+
+    public boolean isNumber();
 }
