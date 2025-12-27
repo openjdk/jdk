@@ -83,10 +83,16 @@ final class WinNTFileSystem extends FileSystem {
     }
 
     private String getPathForWin32Calls(String path) {
+        if (FAIL_IF_EMPTY_PATH)
+            return path;
+
         return (path != null && path.isEmpty()) ? getCWD().getPath() : path;
     }
 
     private File getFileForWin32Calls(File file) {
+        if (FAIL_IF_EMPTY_PATH)
+            return file;
+
         return file.getPath().isEmpty() ? getCWD() : file;
     }
 
