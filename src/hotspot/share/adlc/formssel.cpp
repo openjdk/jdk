@@ -4360,7 +4360,7 @@ bool MatchRule::is_vector() const {
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "SelectFromTwoVector", "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
-    "VectorRearrange", "VectorLoadShuffle", "VectorLoadConst",
+    "VectorRearrange", "VectorLoadShuffle", "VectorLoadConst", "VectorConcatenateAndNarrow",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
@@ -4368,7 +4368,7 @@ bool MatchRule::is_vector() const {
     "FmaVD", "FmaVF", "FmaVHF", "PopCountVI", "PopCountVL", "PopulateIndex", "VectorLongToMask",
     "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
     // Next are vector mask ops.
-    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
+    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast", "VectorMaskWiden",
     "RoundVF", "RoundVD",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
