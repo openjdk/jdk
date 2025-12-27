@@ -1181,10 +1181,10 @@ TEST_VM(os, map_memory_to_file_aligned) {
   EXPECT_TRUE(fd > 0);
   EXPECT_TRUE(os::write(fd, letters, size));
 
-  char* result = os::map_memory_to_file_aligned(os::vm_allocation_granularity(), os::vm_allocation_granularity(), fd, mtTest);
+  char* result = os::map_memory_to_file_aligned(os::vm_page_size(), os::vm_allocation_granularity(), fd, mtTest);
   ASSERT_NOT_NULL(result);
   EXPECT_EQ(strcmp(letters, result), 0);
-  EXPECT_TRUE(os::unmap_memory(result, os::vm_allocation_granularity()));
+  EXPECT_TRUE(os::unmap_memory(result, os::vm_page_size()));
   ::close(fd);
 }
 
