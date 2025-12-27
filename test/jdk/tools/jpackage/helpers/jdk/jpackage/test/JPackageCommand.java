@@ -291,7 +291,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
 
-        ThrowingConsumer<Path> createBulkFile = path -> {
+        ThrowingConsumer<Path, IOException> createBulkFile = path -> {
             Files.createDirectories(path.getParent());
             try (FileOutputStream out = new FileOutputStream(path.toFile())) {
                 byte[] bytes = new byte[4 * 1024];
@@ -328,12 +328,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .removeArgumentWithValue("--input");
     }
 
-    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         prerequisiteActions.add(action);
         return this;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         return addVerifyAction(action, ActionRole.DEFAULT);
     }
 
@@ -343,12 +343,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         ;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action, ActionRole actionRole) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole actionRole) {
         verifyActions.add(action, actionRole);
         return this;
     }
 
-    Stream<ThrowingConsumer<JPackageCommand>> getVerifyActionsWithRole(ActionRole actionRole) {
+    Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> getVerifyActionsWithRole(ActionRole actionRole) {
         return verifyActions.actionsWithRole(actionRole);
     }
 
@@ -777,6 +777,30 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public static void useExecutableByDefault() {
         defaultToolProvider.set(Optional.empty());
+    }
+
+    /**
+     * Starts a new thread. In this thread calls
+     * {@link #useToolProviderByDefault(ToolProvider)} with the specified
+     * {@code jpackageToolProvider} and then calls {@code workload.run()}. Joins the
+     * thread.
+     * <p>
+     * The idea is to run the {@code workload} in the context of the specified
+     * jpackage {@code ToolProvider} without altering the global variable holding
+     * the default jpackage {@code ToolProvider}. The global variable is
+     * thread-local; setting its value in a new thread doesn't alter its copy in the
+     * calling thread.
+     *
+     * @param jpackageToolProvider jpackage {@code ToolProvider}
+     * @param workload             the workload to run
+     */
+    public static void withToolProvider(ToolProvider jpackageToolProvider, Runnable workload) {
+        Objects.requireNonNull(jpackageToolProvider);
+        Objects.requireNonNull(workload);
+        ThrowingRunnable.toRunnable(Thread.ofVirtual().start(() -> {
+            useToolProviderByDefault(jpackageToolProvider);
+            workload.run();
+        })::join).run();
     }
 
     public JPackageCommand useToolProvider(boolean v) {
@@ -1648,16 +1672,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             actions.addAll(other.actions);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
             add(action, ActionRole.DEFAULT);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action, ActionRole role) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole role) {
             verifyMutable();
             actions.add(new Action(action, role));
         }
 
-        Stream<ThrowingConsumer<JPackageCommand>> actionsWithRole(ActionRole role) {
+        Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> actionsWithRole(ActionRole role) {
             Objects.requireNonNull(role);
             return actions.stream().filter(action -> {
                 return Objects.equals(action.role(), role);
@@ -1666,7 +1690,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         private static final class Action implements Consumer<JPackageCommand> {
 
-            Action(ThrowingConsumer<JPackageCommand> impl, ActionRole role) {
+            Action(ThrowingConsumer<JPackageCommand, ? extends Exception> impl, ActionRole role) {
                 this.impl = Objects.requireNonNull(impl);
                 this.role = Objects.requireNonNull(role);
             }
@@ -1675,7 +1699,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return role;
             }
 
-            ThrowingConsumer<JPackageCommand> impl() {
+            ThrowingConsumer<JPackageCommand, ? extends Exception> impl() {
                 return impl;
             }
 
@@ -1688,7 +1712,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
 
             private final ActionRole role;
-            private final ThrowingConsumer<JPackageCommand> impl;
+            private final ThrowingConsumer<JPackageCommand, ? extends Exception> impl;
             private boolean executed;
         }
 
