@@ -127,6 +127,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Branch Protection to use: none, standard, pac-ret")          \
   product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
           "Always merge DMB instructions in code emission")             \
+  product(bool, UsePostCallSequenceWithADRP, false,                     \
+          "Use ADRP/ADR to store metadata within post-call NOP "        \
+          "instruction sequences.")
 
 // end of ARCH_FLAGS
 
