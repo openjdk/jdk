@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8150782 8207027 8266269
  * @compile TestAccessClass.java TestCls.java p/Foo.java q/Bar.java
- * @run testng/othervm -ea -esa test.java.lang.invoke.TestAccessClass
+ * @run junit/othervm -ea -esa test.java.lang.invoke.TestAccessClass
  */
 package test.java.lang.invoke;
 
@@ -36,9 +36,10 @@ import q.Bar;
 
 import static java.lang.invoke.MethodHandles.*;
 
-import static org.testng.AssertJUnit.*;
-
-import org.testng.annotations.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class TestAccessClass {
 
@@ -53,32 +54,34 @@ public class TestAccessClass {
     @Test
     public void initializerNotRun() throws IllegalAccessException {
         lookup().accessClass(Class1.class);
-        assertFalse(initializedClass1);
+        Assertions.assertFalse(initializedClass1);
     }
 
     @Test
     public void returnsSameClassInSamePackage() throws IllegalAccessException {
         Class<?> aClass = lookup().accessClass(Class1.class);
-        assertEquals(Class1.class, aClass);
+        Assertions.assertEquals(Class1.class, aClass);
     }
 
     @Test
     public void returnsSameArrayClassInSamePackage() throws IllegalAccessException {
         Class<?> aClass = lookup().accessClass(Class1[].class);
-        assertEquals(Class1[].class, aClass);
+        Assertions.assertEquals(Class1[].class, aClass);
     }
 
-    @DataProvider
-    Object[][] illegalAccessAccess() {
+    static Object[][] illegalAccessAccess() {
         return new Object[][] {
                 {publicLookup(), Class1.class},
                 {publicLookup(), TestCls.getPrivateSIC()}
         };
     }
 
-    @Test(dataProvider = "illegalAccessAccess", expectedExceptions = {IllegalAccessException.class})
+    @ParameterizedTest
+    @MethodSource("illegalAccessAccess")
     public void illegalAccessExceptionTest(Lookup lookup, Class<?> klass) throws IllegalAccessException {
-        lookup.accessClass(klass);
+        Assertions.assertThrows(IllegalAccessException.class, () -> {
+            lookup.accessClass(klass);
+        });
     }
 
     @Test
@@ -98,8 +101,8 @@ public class TestAccessClass {
         mh.invoke(null);
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
+    @Test
     public void illegalArgument() throws IllegalAccessException {
-        lookup().accessClass(null);
+        Assertions.assertThrows(NullPointerException.class, () -> lookup().accessClass(null));
     }
 }
