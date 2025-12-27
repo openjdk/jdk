@@ -316,6 +316,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
     return;
   }
   traceid sid;
+  bool has_native_frames;
   {
     ResourceMark rm(current);
     JfrStackTrace stacktrace;
@@ -324,12 +325,12 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
       JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
       return;
     }
+    has_native_frames = stacktrace.has_native_frames();
     sid = JfrStackTraceRepository::add(stacktrace);
   }
   assert(sid != 0, "invariant");
 
-
-  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased);
+  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased, has_native_frames);
   if (current == jt) {
     send_safepoint_latency_event(request._request, now, sid, jt);
   }

@@ -29,6 +29,8 @@ import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedMethod;
+import jdk.jfr.consumer.RecordedNativeFrame;
+import jdk.jfr.consumer.RecordedNativeStackTrace;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
@@ -44,6 +46,7 @@ public abstract class ObjectFactory<T> {
     private static final String TYPE_PREFIX_VERSION_2 = Type.TYPES_PREFIX;
     public static final String STACK_FRAME_VERSION_1 = TYPE_PREFIX_VERSION_1 + "StackFrame";
     public static final String STACK_FRAME_VERSION_2 = TYPE_PREFIX_VERSION_2 + "StackFrame";
+    public static final String NATIVE_STACK_FRAME_VERSION_2 = TYPE_PREFIX_VERSION_2 + "NativeStackFrame";
 
     static ObjectFactory<?> create(Type type, TimeConverter timeConverter) {
         switch (type.getName()) {
@@ -61,6 +64,12 @@ public abstract class ObjectFactory<T> {
         case TYPE_PREFIX_VERSION_1 + "StackTrace":
         case TYPE_PREFIX_VERSION_2 + "StackTrace":
             return createStackTraceFactory(type, timeConverter);
+        case TYPE_PREFIX_VERSION_1 + "NativeStackFrame":
+        case TYPE_PREFIX_VERSION_2 + "NativeStackFrame":
+            return createNativeFrameFactory(type, timeConverter);
+        case TYPE_PREFIX_VERSION_1 + "NativeStackTrace":
+        case TYPE_PREFIX_VERSION_2 + "NativeStackTrace":
+            return createNativeStackTraceFactory(type, timeConverter);
         case TYPE_PREFIX_VERSION_1 + "ClassLoader":
         case TYPE_PREFIX_VERSION_2 + "ClassLoader":
             return createClassLoaderFactory(type, timeConverter);
@@ -120,6 +129,24 @@ public abstract class ObjectFactory<T> {
             @Override
             RecordedFrame createTyped(ObjectContext objectContext, long id, Object[] values) {
                 return PRIVATE_ACCESS.newRecordedFrame(objectContext, values);
+            }
+        };
+    }
+
+    private static ObjectFactory<RecordedNativeFrame> createNativeFrameFactory(Type type, TimeConverter timeConverter) {
+        return new ObjectFactory<RecordedNativeFrame>(type, timeConverter) {
+            @Override
+            RecordedNativeFrame createTyped(ObjectContext objectContext, long id, Object[] values) {
+                return PRIVATE_ACCESS.newRecordedNativeFrame(objectContext, values);
+            }
+        };
+    }
+
+    private static ObjectFactory<RecordedNativeStackTrace> createNativeStackTraceFactory(Type type, TimeConverter timeConverter) {
+        return new ObjectFactory<RecordedNativeStackTrace>(type, timeConverter) {
+            @Override
+            RecordedNativeStackTrace createTyped(ObjectContext objectContext, long id, Object[] values) {
+                return PRIVATE_ACCESS.newRecordedNativeStackTrace(objectContext, values);
             }
         };
     }

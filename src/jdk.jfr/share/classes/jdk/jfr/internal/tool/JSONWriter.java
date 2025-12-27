@@ -32,6 +32,7 @@ import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
+import jdk.jfr.consumer.RecordedNativeFrame;
 import jdk.jfr.consumer.RecordedObject;
 
 final class JSONWriter extends EventPrintWriter {
@@ -131,7 +132,8 @@ final class JSONWriter extends EventPrintWriter {
         boolean first = true;
         int depth = 0;
         for (Object arrayElement : array) {
-            if (!(arrayElement instanceof RecordedFrame) || depth < getStackDepth()) {
+            boolean isFrame = arrayElement instanceof RecordedFrame || arrayElement instanceof RecordedNativeFrame;
+            if (!isFrame || depth < getStackDepth()) {
                 printValueDescriptor(first, true, v, arrayElement);
             }
             depth++;
@@ -148,6 +150,11 @@ final class JSONWriter extends EventPrintWriter {
             }
             return;
         }
+        // Special handling for RecordedNativeFrame
+        if (value instanceof RecordedNativeFrame nativeFrame) {
+            printNativeFrame(first, arrayElement, vd.getName(), nativeFrame);
+            return;
+        }
         if (!vd.getFields().isEmpty()) {
             printNewDataStructure(first, arrayElement, vd.getName());
             if (!printIfNull(value)) {
@@ -156,6 +163,13 @@ final class JSONWriter extends EventPrintWriter {
             return;
         }
         printValue(first, arrayElement, vd.getName(), value);
+    }
+
+    private void printNativeFrame(boolean first, boolean arrayElement, String name, RecordedNativeFrame frame) {
+        printNewDataStructure(first, arrayElement, name);
+        printObjectBegin();
+        printValue(true, false, "pc", frame.getProgramCounter());
+        printObjectEnd();
     }
 
     private void printNewDataStructure(boolean first, boolean arrayElement, String name) {

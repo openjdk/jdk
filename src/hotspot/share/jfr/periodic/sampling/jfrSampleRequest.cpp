@@ -24,6 +24,7 @@
 #include "asm/codeBuffer.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
@@ -315,6 +316,58 @@ static inline void set_cpu_time_biased_sample(JfrSampleRequest& request, JavaThr
   request._sample_pc = nullptr;
 }
 
+// Captures PC values from native/C frames starting from the signal context
+// until we reach the last Java frame
+static void capture_native_frames_from_context(JfrSampleRequest& request, void* ucontext,
+                                                JavaThread* jt, int max_frames) {
+  assert(request._native_pcs != nullptr, "invariant");
+  assert(max_frames > 0, "invariant");
+  assert(ucontext != nullptr, "invariant");
+
+  intptr_t* sp;
+  intptr_t* fp;
+  address pc = os::fetch_frame_from_context(ucontext, &sp, &fp);
+  intptr_t* ljf_sp = jt->last_Java_sp();
+  if (pc == nullptr || sp == nullptr || ljf_sp == nullptr) {
+    request._native_frame_count = 0;
+    request._native_truncated = false;
+    return;
+  }
+
+  frame fr(sp, fp, pc);
+  int count = 0;
+  bool truncated = false;
+  while (count < max_frames) {
+    address frame_pc = fr.pc();
+    if (frame_pc == nullptr) {
+      break;
+    }
+    if (!is_aligned(fr.sp(), BytesPerLong)) {
+      break;
+    }
+    if ((intptr_t)fr.sp() >= (intptr_t)ljf_sp) {
+      break;
+    }
+
+    request._native_pcs[count++] = frame_pc;
+    fr = frame::next_frame(fr, jt, RegisterMap::ProcessFrames::skip /* skip watermark checks for signal safety */);
+    if (fr.pc() == nullptr) {
+      break;
+    }
+  }
+
+  // Check if we stopped due to hitting the max_frames limit (truncated)
+  if (count >= max_frames) {
+    address frame_pc = fr.pc();
+    if (frame_pc != nullptr && is_aligned(fr.sp(), BytesPerLong) && (intptr_t)fr.sp() < (intptr_t)ljf_sp) {
+      truncated = true;
+    }
+  }
+
+  request._native_frame_count = count;
+  request._native_truncated = truncated;
+}
+
 void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& request,
                                                             void* ucontext,
                                                             JavaThread* jt,
@@ -329,8 +382,12 @@ void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& re
     intptr_t* fp;
     request._sample_pc = os::fetch_frame_from_context(ucontext, reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
     assert(sp_in_stack(request, jt), "invariant");
+
     if (!build(request, fp, jt)) {
       set_cpu_time_biased_sample(request, jt);
     }
+  }
+  if (request._native_pcs != nullptr) {
+    capture_native_frames_from_context(request, ucontext, jt, JfrStackTrace::MAX_NATIVE_FRAMES);
   }
 }

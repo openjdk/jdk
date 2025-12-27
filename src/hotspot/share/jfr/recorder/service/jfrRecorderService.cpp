@@ -272,12 +272,13 @@ class StackTraceRepository : public StackObj {
   JfrChunkWriter& _cw;
   size_t _elements;
   bool _clear;
+  StacksKind _kind;
 
  public:
-  StackTraceRepository(JfrStackTraceRepository& repo, JfrChunkWriter& cw, bool clear) :
-    _repo(repo), _cw(cw), _elements(0), _clear(clear) {}
+  StackTraceRepository(JfrStackTraceRepository& repo, JfrChunkWriter& cw, bool clear, StacksKind kind) :
+    _repo(repo), _cw(cw), _elements(0), _clear(clear), _kind(kind) {}
   bool process() {
-    _elements = _repo.write(_cw, _clear);
+    _elements = _repo.write(_cw, _clear, _kind);
     return true;
   }
   size_t elements() const { return _elements; }
@@ -285,17 +286,38 @@ class StackTraceRepository : public StackObj {
 };
 
 typedef WriteCheckpointEvent<StackTraceRepository> WriteStackTrace;
+typedef WriteCheckpointEvent<StackTraceRepository> WriteNativeStackTrace;
 
 static u4 flush_stacktrace(JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter) {
-  StackTraceRepository str(stack_trace_repo, chunkwriter, false);
+  // Write natives first, as Java stacktraces may refer to them.
+  StackTraceRepository strn(stack_trace_repo, chunkwriter, false, StacksKind::native);
+  WriteStackTrace wstn(chunkwriter, strn, TYPE_NATIVESTACKTRACE);
+  u4 native_elements = invoke(wstn);
+
+  StackTraceRepository str(stack_trace_repo, chunkwriter, false, StacksKind::java);
   WriteStackTrace wst(chunkwriter, str, TYPE_STACKTRACE);
-  return invoke(wst);
+  u4 elements = invoke(wst);
+  if (elements == 0) {
+    return native_elements;
+  }
+
+  return elements + native_elements;
 }
 
 static u4 write_stacktrace(JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter, bool clear) {
-  StackTraceRepository str(stack_trace_repo, chunkwriter, clear);
+  // Write natives first, as Java stacktraces may refer to them.
+  StackTraceRepository strn(stack_trace_repo, chunkwriter, false, StacksKind::native);
+  WriteStackTrace wstn(chunkwriter, strn, TYPE_NATIVESTACKTRACE);
+  u4 native_elements = invoke(wstn);
+
+  StackTraceRepository str(stack_trace_repo, chunkwriter, clear, StacksKind::java);
   WriteStackTrace wst(chunkwriter, str, TYPE_STACKTRACE);
-  return invoke(wst);
+  u4 elements = invoke(wst);
+  if (elements == 0) {
+    return native_elements;
+  }
+
+  return elements + native_elements;
 }
 
 typedef Content<JfrStorage, &JfrStorage::write> Storage;
