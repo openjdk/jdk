@@ -41,6 +41,7 @@ public:
   void do_thread(Thread* thr) {
     JavaThread* current = JavaThread::cast(thr);
     assert(current == Thread::current(), "Must be self executed.");
+    assert(!current->is_vthread_transition_disabler(), "DBG-TMP");
     JavaThreadState jts = current->thread_state();
 
     current->set_thread_state(_thread_blocked);
