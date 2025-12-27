@@ -65,6 +65,44 @@ inline bool match_F_SN(u2 flags) {
   return (flags & (req | neg)) == req;
 }
 
+inline bool match_F_PW(u2 flags) {
+  const int req = 0;  // the wrapper might be static or not
+  const int neg = JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
+  return (flags & (req | neg)) == req;
+}
+
+inline bool match_F_PI(u2 flags) {
+  const int req = 0;  // the intrinsic is a plain or native method
+  const int neg = JVM_ACC_SYNCHRONIZED;
+  return (flags & (req | neg)) == req;
+}
+
+vmIntrinsics::PolymorphicPrefix
+vmIntrinsics::polymorphic_prefix(vmIntrinsics::ID id) {
+  if (flags_for(id) == F_PI) {
+    switch (id) {
+    case _getReferenceMO:
+    case _putReferenceMO:
+    case _compareAndSetReferenceMO:
+    case _compareAndExchangeReferenceMO:
+      return PP_MO;
+
+    case _getPrimitiveBitsMO:
+    case _putPrimitiveBitsMO:
+    case _compareAndSetPrimitiveBitsMO:
+    case _compareAndExchangePrimitiveBitsMO:
+    case _getAndSetReferenceMO:
+      return PP_MO_BT;
+
+    case _getAndOperatePrimitiveBitsMO:
+      return PP_MO_BT_OP;
+
+    default:  break;
+    }
+  }
+  return PP_NONE;
+}
+
 bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
@@ -336,6 +374,20 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateByteBufferCRC32:
     if (!UseCRC32Intrinsics) return true;
     break;
+  case vmIntrinsics::_getPrimitiveBitsMO:
+  case vmIntrinsics::_putPrimitiveBitsMO:
+  case vmIntrinsics::_getReferenceMO:
+  case vmIntrinsics::_putReferenceMO:
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+  case vmIntrinsics::_compareAndSetReferenceMO:
+  case vmIntrinsics::_compareAndExchangeReferenceMO:
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+  case vmIntrinsics::_getAndSetReferenceMO:
+    // these are the polymorphic unsafe primitives
+    if (!InlineUnsafeOps) return true;
+    break;
+  // these are all wrappers; they are not subject to intrinsic expansion per se:
   case vmIntrinsics::_getReference:
   case vmIntrinsics::_getBoolean:
   case vmIntrinsics::_getByte:
@@ -354,60 +406,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_putLong:
   case vmIntrinsics::_putFloat:
   case vmIntrinsics::_putDouble:
-  case vmIntrinsics::_getReferenceVolatile:
-  case vmIntrinsics::_getBooleanVolatile:
-  case vmIntrinsics::_getByteVolatile:
-  case vmIntrinsics::_getShortVolatile:
-  case vmIntrinsics::_getCharVolatile:
-  case vmIntrinsics::_getIntVolatile:
-  case vmIntrinsics::_getLongVolatile:
-  case vmIntrinsics::_getFloatVolatile:
-  case vmIntrinsics::_getDoubleVolatile:
-  case vmIntrinsics::_putReferenceVolatile:
-  case vmIntrinsics::_putBooleanVolatile:
-  case vmIntrinsics::_putByteVolatile:
-  case vmIntrinsics::_putShortVolatile:
-  case vmIntrinsics::_putCharVolatile:
-  case vmIntrinsics::_putIntVolatile:
-  case vmIntrinsics::_putLongVolatile:
-  case vmIntrinsics::_putFloatVolatile:
-  case vmIntrinsics::_putDoubleVolatile:
-  case vmIntrinsics::_getReferenceAcquire:
-  case vmIntrinsics::_getBooleanAcquire:
-  case vmIntrinsics::_getByteAcquire:
-  case vmIntrinsics::_getShortAcquire:
-  case vmIntrinsics::_getCharAcquire:
-  case vmIntrinsics::_getIntAcquire:
-  case vmIntrinsics::_getLongAcquire:
-  case vmIntrinsics::_getFloatAcquire:
-  case vmIntrinsics::_getDoubleAcquire:
-  case vmIntrinsics::_putReferenceRelease:
-  case vmIntrinsics::_putBooleanRelease:
-  case vmIntrinsics::_putByteRelease:
-  case vmIntrinsics::_putShortRelease:
-  case vmIntrinsics::_putCharRelease:
-  case vmIntrinsics::_putIntRelease:
-  case vmIntrinsics::_putLongRelease:
-  case vmIntrinsics::_putFloatRelease:
-  case vmIntrinsics::_putDoubleRelease:
-  case vmIntrinsics::_getReferenceOpaque:
-  case vmIntrinsics::_getBooleanOpaque:
-  case vmIntrinsics::_getByteOpaque:
-  case vmIntrinsics::_getShortOpaque:
-  case vmIntrinsics::_getCharOpaque:
-  case vmIntrinsics::_getIntOpaque:
-  case vmIntrinsics::_getLongOpaque:
-  case vmIntrinsics::_getFloatOpaque:
-  case vmIntrinsics::_getDoubleOpaque:
-  case vmIntrinsics::_putReferenceOpaque:
-  case vmIntrinsics::_putBooleanOpaque:
-  case vmIntrinsics::_putByteOpaque:
-  case vmIntrinsics::_putShortOpaque:
-  case vmIntrinsics::_putCharOpaque:
-  case vmIntrinsics::_putIntOpaque:
-  case vmIntrinsics::_putLongOpaque:
-  case vmIntrinsics::_putFloatOpaque:
-  case vmIntrinsics::_putDoubleOpaque:
   case vmIntrinsics::_getAndAddInt:
   case vmIntrinsics::_getAndAddLong:
   case vmIntrinsics::_getAndSetInt:
@@ -418,28 +416,13 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_fullFence:
   case vmIntrinsics::_compareAndSetLong:
   case vmIntrinsics::_weakCompareAndSetLong:
-  case vmIntrinsics::_weakCompareAndSetLongPlain:
-  case vmIntrinsics::_weakCompareAndSetLongAcquire:
-  case vmIntrinsics::_weakCompareAndSetLongRelease:
   case vmIntrinsics::_compareAndSetInt:
   case vmIntrinsics::_weakCompareAndSetInt:
-  case vmIntrinsics::_weakCompareAndSetIntPlain:
-  case vmIntrinsics::_weakCompareAndSetIntAcquire:
-  case vmIntrinsics::_weakCompareAndSetIntRelease:
   case vmIntrinsics::_compareAndSetReference:
   case vmIntrinsics::_weakCompareAndSetReference:
-  case vmIntrinsics::_weakCompareAndSetReferencePlain:
-  case vmIntrinsics::_weakCompareAndSetReferenceAcquire:
-  case vmIntrinsics::_weakCompareAndSetReferenceRelease:
   case vmIntrinsics::_compareAndExchangeInt:
-  case vmIntrinsics::_compareAndExchangeIntAcquire:
-  case vmIntrinsics::_compareAndExchangeIntRelease:
   case vmIntrinsics::_compareAndExchangeLong:
-  case vmIntrinsics::_compareAndExchangeLongAcquire:
-  case vmIntrinsics::_compareAndExchangeLongRelease:
   case vmIntrinsics::_compareAndExchangeReference:
-  case vmIntrinsics::_compareAndExchangeReferenceAcquire:
-  case vmIntrinsics::_compareAndExchangeReferenceRelease:
   case vmIntrinsics::_allocateInstance:
     if (!InlineUnsafeOps) return true;
     break;
@@ -687,6 +670,8 @@ vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
   return _none;
 }
 
+// True if the VM version supports it and it is not flag-disabled.
+// (Later, a compiler backend and compiler directives can fine-tune.)
 bool vmIntrinsics::is_intrinsic_available(vmIntrinsics::ID id) {
   return VM_Version::is_intrinsic_supported(id) && !is_disabled_by_flags(id);
 }
@@ -806,6 +791,8 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   case F_RN: fname = "native ";        break;
   case F_SN: fname = "native static "; break;
   case F_S:  fname = "static ";        break;
+  case F_PI: fname = "/*poly*/ ";      break;
+  case F_PW: fname = "/*poly wrapper*/ "; break;
   default:   break;
   }
   const char* kptr = strrchr(kname, JVM_SIGNATURE_SLASH);
@@ -823,7 +810,6 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
 
 #define ID4(x, y, z, f) ((ID3(x, y, z) << vmIntrinsics::log2_FLAG_LIMIT) | (jlong) (f))
 
-#ifndef PRODUCT
 static const jlong intrinsic_info_array[vmIntrinsics::number_of_intrinsics()+1] = {
 #define VM_INTRINSIC_INFO(ignore_id, klass, name, sig, fcode) \
   ID4(SID_ENUM(klass), SID_ENUM(name), SID_ENUM(sig), vmIntrinsics::fcode),
@@ -840,29 +826,28 @@ inline jlong intrinsic_info(vmIntrinsics::ID id) {
 
 vmSymbolID vmIntrinsics::class_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
-  int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
-  assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1021, "");
+  const int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
+  static_assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1021, "");
   return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmSymbolID vmIntrinsics::name_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
-  int shift = vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
-  assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1022, "");
+  const int shift = vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
+  static_assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1022, "");
   return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmSymbolID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
-  int shift = log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
-  assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1023, "");
+  const int shift = log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
+  static_assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1023, "");
   return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
-  int shift = 0, mask = right_n_bits(log2_FLAG_LIMIT);
-  assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 7, "");
+  const int shift = 0, mask = right_n_bits(log2_FLAG_LIMIT);
+  static_assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 7, "");
   return Flags( (info >> shift) & mask );
 }
-#endif // !PRODUCT

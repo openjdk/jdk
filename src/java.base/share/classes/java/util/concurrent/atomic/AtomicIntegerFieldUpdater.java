@@ -485,17 +485,17 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
         public final void set(T obj, int newValue) {
             accessCheck(obj);
-            U.putIntVolatile(obj, offset, newValue);
+            U.putIntMO(Unsafe.MO_VOLATILE, obj, offset, newValue);
         }
 
         public final void lazySet(T obj, int newValue) {
             accessCheck(obj);
-            U.putIntRelease(obj, offset, newValue);
+            U.putIntMO(Unsafe.MO_RELEASE, obj, offset, newValue);
         }
 
         public final int get(T obj) {
             accessCheck(obj);
-            return U.getIntVolatile(obj, offset);
+            return U.getIntMO(Unsafe.MO_VOLATILE, obj, offset);
         }
 
         public final int getAndSet(T obj, int newValue) {

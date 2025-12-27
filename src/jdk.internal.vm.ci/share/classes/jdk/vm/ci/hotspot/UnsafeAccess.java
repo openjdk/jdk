@@ -30,4 +30,5 @@ import jdk.internal.misc.Unsafe;
 class UnsafeAccess {
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    public static final byte MO_VOLATILE = Unsafe.MO_VOLATILE;
 }

@@ -68,6 +68,12 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 
     static int ARRAY_SHIFT;
 
+#if[JdkInternalMisc]
+    // copies of Unsafe.MO_RELEASE and other MO constants
+    static byte UNSAFE_MO_RELEASE, UNSAFE_MO_ACQUIRE, UNSAFE_MO_OPAQUE, UNSAFE_MO_VOLATILE;
+    static byte UNSAFE_MO_WEAK_CAS_ACQUIRE, UNSAFE_MO_WEAK_CAS_PLAIN, UNSAFE_MO_WEAK_CAS_RELEASE, UNSAFE_MO_WEAK_CAS_VOLATILE;
+#end[JdkInternalMisc]
+
     static {
         try {
             Field f = $package$.Unsafe.class.getDeclaredField("theUnsafe");
@@ -95,6 +101,20 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
         int ascale = UNSAFE.arrayIndexScale($type$[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+
+#if[JdkInternalMisc]
+        try {
+            for (Field umoField : $Qualifier$UnsafeAccessTest$Type$.class.getDeclaredFields()) {
+                String name = umoField.getName();
+                if (!name.startsWith("UNSAFE_MO_"))  continue;
+                Field moField = UNSAFE.getClass().getDeclaredField(name.substring("UNSAFE_".length()));
+                byte value = (Byte) moField.get(null);
+                umoField.set(null, value);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+#end[JdkInternalMisc]
     }
 
     static void weakDelay() {
@@ -199,15 +219,15 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 #if[JdkInternalMisc]
         // Lazy
         {
-            UNSAFE.put$MethodAffix$Release(base, offset, $value1$);
-            $type$ x = UNSAFE.get$MethodAffix$Acquire(base, offset);
+            UNSAFE.put$MethodAffix$MO(UNSAFE_MO_RELEASE, base, offset, $value1$);
+            $type$ x = UNSAFE.get$MethodAffix$MO(UNSAFE_MO_ACQUIRE, base, offset);
             assertEquals(x, $value1$, "putRelease $type$ value");
         }
 
         // Opaque
         {
-            UNSAFE.put$MethodAffix$Opaque(base, offset, $value2$);
-            $type$ x = UNSAFE.get$MethodAffix$Opaque(base, offset);
+            UNSAFE.put$MethodAffix$MO(UNSAFE_MO_OPAQUE, base, offset, $value2$);
+            $type$ x = UNSAFE.get$MethodAffix$MO(UNSAFE_MO_OPAQUE, base, offset);
             assertEquals(x, $value2$, "putOpaque $type$ value");
         }
 #end[JdkInternalMisc]
@@ -288,28 +308,28 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$MethodAffix$Acquire(base, offset, $value1$, $value2$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$MO(UNSAFE_MO_ACQUIRE, base, offset, $value1$, $value2$);
             assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$MethodAffix$Acquire(base, offset, $value1$, $value3$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$MO(UNSAFE_MO_ACQUIRE, base, offset, $value1$, $value3$);
             assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$MethodAffix$Release(base, offset, $value2$, $value1$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$MO(UNSAFE_MO_RELEASE, base, offset, $value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$MethodAffix$Release(base, offset, $value2$, $value3$);
+            $type$ r = UNSAFE.compareAndExchange$MethodAffix$MO(UNSAFE_MO_RELEASE, base, offset, $value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
@@ -318,7 +338,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSet$MethodAffix$Plain(base, offset, $value1$, $value2$);
+                success = UNSAFE.compareAndSet$MethodAffix$MO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, $value1$, $value2$);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain $type$");
@@ -327,7 +347,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSet$MethodAffix$Plain(base, offset, $value1$, $value3$);
+            boolean success = UNSAFE.compareAndSet$MethodAffix$MO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, $value1$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value2$, "failing weakCompareAndSetPlain $type$ value");
@@ -336,7 +356,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSet$MethodAffix$Acquire(base, offset, $value2$, $value1$);
+                success = UNSAFE.compareAndSet$MethodAffix$MO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, $value2$, $value1$);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
@@ -345,7 +365,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSet$MethodAffix$Acquire(base, offset, $value2$, $value3$);
+            boolean success = UNSAFE.compareAndSet$MethodAffix$MO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, $value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "failing weakCompareAndSetAcquire $type$ value");
@@ -354,7 +374,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSet$MethodAffix$Release(base, offset, $value1$, $value2$);
+                success = UNSAFE.compareAndSet$MethodAffix$MO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, $value1$, $value2$);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease $type$");
@@ -363,7 +383,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSet$MethodAffix$Release(base, offset, $value1$, $value3$);
+            boolean success = UNSAFE.compareAndSet$MethodAffix$MO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, $value1$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value2$, "failing weakCompareAndSetRelease $type$ value");
@@ -372,7 +392,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSet$MethodAffix$(base, offset, $value2$, $value1$);
+                success = UNSAFE.compareAndSet$MethodAffix$MO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, $value2$, $value1$);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet $type$");
@@ -381,7 +401,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSet$MethodAffix$(base, offset, $value2$, $value3$);
+            boolean success = UNSAFE.compareAndSet$MethodAffix$MO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, $value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSet $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
             assertEquals(x, $value1$, "failing weakCompareAndSet $type$ value");

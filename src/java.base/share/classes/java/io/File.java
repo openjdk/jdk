@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 
 /**
@@ -2057,11 +2058,11 @@ public class File
             pathField = pathField.replace(sep, separatorChar);
         String path = FS.normalize(pathField);
         UNSAFE.putReference(this, PATH_OFFSET, path);
-        UNSAFE.putIntVolatile(this, PREFIX_LENGTH_OFFSET, FS.prefixLength(path));
+        UNSAFE.putIntMO(Unsafe.MO_VOLATILE, this, PREFIX_LENGTH_OFFSET, FS.prefixLength(path));
     }
 
     private static final jdk.internal.misc.Unsafe UNSAFE
-            = jdk.internal.misc.Unsafe.getUnsafe();
+            = Unsafe.getUnsafe();
     private static final long PATH_OFFSET
             = UNSAFE.objectFieldOffset(File.class, "path");
     private static final long PREFIX_LENGTH_OFFSET

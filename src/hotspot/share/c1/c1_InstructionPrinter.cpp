@@ -791,13 +791,6 @@ void InstructionPrinter::do_UnsafePut(UnsafePut* x) {
   output()->put(')');
 }
 
-void InstructionPrinter::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {
-  print_unsafe_op(x, x->is_add()?"UnsafeGetAndSet (add)":"UnsafeGetAndSet");
-  output()->print(", value ");
-  print_value(x->value());
-  output()->put(')');
-}
-
 void InstructionPrinter::do_RangeCheckPredicate(RangeCheckPredicate* x) {
 
   if (x->x() != nullptr && x->y() != nullptr) {

@@ -253,9 +253,8 @@ class LibraryCallKit : public GraphKit {
   int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
   Node* make_unsafe_address(Node*& base, Node* offset, BasicType type = T_ILLEGAL, bool can_cast = false);
 
-  typedef enum { Relaxed, Opaque, Volatile, Acquire, Release } AccessKind;
-  DecoratorSet mo_decorator_for_access_kind(AccessKind kind);
-  bool inline_unsafe_access(bool is_store, BasicType type, AccessKind kind, bool is_unaligned);
+  DecoratorSet mo_decorator_for_access_kind(vmIntrinsics::MemoryOrder mo);
+  bool inline_unsafe_access(bool is_store, vmIntrinsics::MemoryOrder mo, BasicType type, int prefix_size);
   static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
   bool inline_unsafe_newArray(bool uninitialized);
@@ -317,7 +316,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_array_sort();
   bool inline_array_partition();
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
-  bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind, AccessKind access_kind);
+  bool inline_unsafe_load_store(LoadStoreKind kind, vmIntrinsics::MemoryOrder mo, BasicType type, vmIntrinsics::BitsOperation op, int prefix_size);
   bool inline_unsafe_fence(vmIntrinsics::ID id);
   bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);

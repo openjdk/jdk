@@ -4947,11 +4947,16 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       if (CheckIntrinsics) {
         // Check if an intrinsic is defined for method 'method',
         // but the method is not annotated with @IntrinsicCandidate.
-        if (method->intrinsic_id() != vmIntrinsics::_none &&
-            !method->intrinsic_candidate()) {
-              tty->print("Compiler intrinsic is defined for method [%s], "
-              "but the method is not annotated with @IntrinsicCandidate.%s",
+        vmIntrinsicID iid = method->intrinsic_id();
+        bool is_wrapper = (iid != vmIntrinsics::_none &&
+                           vmIntrinsics::flags_for(iid) == vmIntrinsics::F_PW);
+        bool expect_annotation = (iid != vmIntrinsics::_none && !is_wrapper);
+        if (method->intrinsic_candidate() != expect_annotation) {
+              tty->print("Compiler intrinsic%s is defined for method [%s], "
+              "but the method is %s annotated with @IntrinsicCandidate.%s",
+              (is_wrapper ? " wrapper" : ""),
               method->name_and_sig_as_C_string(),
+              (expect_annotation ? "not" : "incorrectly"),
               NOT_DEBUG(" Method will not be inlined.") DEBUG_ONLY(" Exiting.")
             );
           tty->cr();
@@ -4980,6 +4985,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       // The check is potentially expensive, therefore it is available
       // only in debug builds.
 
+      int fails = 0;  // collect all the failing methods at once
       for (auto id : EnumRange<vmIntrinsicID>{}) {
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
@@ -5008,16 +5014,20 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
           if (!match) {
             char buf[1000];
             tty->print("Compiler intrinsic is defined for method [%s], "
-                       "but the method is not available in class [%s].%s",
+                       "but the method is not available in class [%s].",
                         vmIntrinsics::short_name_as_C_string(id, buf, sizeof(buf)),
-                        ik->name()->as_C_string(),
-                        NOT_DEBUG("") DEBUG_ONLY(" Exiting.")
+                        ik->name()->as_C_string()
             );
             tty->cr();
-            DEBUG_ONLY(vm_exit(1));
+            ++fails;
           }
         }
       } // end for
+      if (fails > 0) {
+        tty->print_cr("Compiler intrinsic not available for %d methods.%s",
+                      fails, NOT_DEBUG("") DEBUG_ONLY(" Exiting."));
+        DEBUG_ONLY(vm_exit(1));
+      }
     } // CheckIntrinsics
 #endif // ASSERT
   }
