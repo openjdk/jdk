@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@
 #include "java_lang_NullPointerException.h"
 
 JNIEXPORT jstring JNICALL
-Java_java_lang_NullPointerException_getExtendedNPEMessage(JNIEnv *env, jobject throwable)
+Java_java_lang_NullPointerException_getExtendedNPEMessage(JNIEnv *env, jobject throwable, jint stackOffset, jint searchSlot)
 {
-    return JVM_GetExtendedNPEMessage(env, throwable);
+    return JVM_GetExtendedNPEMessage(env, throwable, stackOffset, searchSlot);
 }
