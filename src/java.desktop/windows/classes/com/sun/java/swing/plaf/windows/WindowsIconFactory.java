@@ -905,10 +905,36 @@ public final class WindowsIconFactory implements Serializable
                         XPStyle xp = XPStyle.getXP();
                         if (xp != null) {
                             Skin skin = xp.getSkin(c, part);
-                            if (icon == null || icon.getIconHeight() <= 16) {
-                                skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
+                            if (WindowsGraphicsUtils.isLeftToRight(c)) {
+                                if (icon == null || icon.getIconHeight() <= 16) {
+                                    skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
+                                } else {
+                                    skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
+                                }
                             } else {
-                                skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
+                                if (icon == null) {
+                                    skin.paintSkin(g, x + 4 * OFFSET, y + OFFSET, state);
+                                } else {
+                                    if (icon.getIconWidth() <= 8) {
+                                        skin.paintSkin(g,
+                                                x + OFFSET,
+                                                (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
+                                    } else if (icon.getIconWidth() <= 16) {
+                                        skin.paintSkin(g,
+                                                x + 2 * OFFSET,
+                                                (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
+                                    } else {
+                                        if ((c instanceof JMenuItem mi) && (mi.getText().isEmpty() || mi.getAccelerator() != null)) {
+                                            skin.paintSkin(g,
+                                                    x + 4 * OFFSET,
+                                                    (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
+                                        } else {
+                                            skin.paintSkin(g,
+                                                    x + 6 * OFFSET,
+                                                    (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
