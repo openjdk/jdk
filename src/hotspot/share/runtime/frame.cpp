@@ -1136,6 +1136,7 @@ void frame::oops_upcall_do(OopClosure* f, const RegisterMap* map) const {
 bool frame::is_deoptimized_frame() const {
   assert(_deopt_state != unknown, "not answerable");
   if (_deopt_state == is_deoptimized) {
+    AARCH64_ONLY(assert(is_compiled_frame(), "only compiled methods can be deoptimized");)
     return true;
   }
 

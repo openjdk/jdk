@@ -1244,6 +1244,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, TraceDeoptimization, false, DIAGNOSTIC,                     \
           "Trace deoptimization")                                           \
                                                                             \
+  product(bool, AlwaysEmitDeoptStubCode, false, DIAGNOSTIC,                 \
+          "Emit deoptimization stub code independently "                    \
+          "of method's stack frame size")                                   \
+                                                                            \
   develop(bool, PrintDeoptimizationDetails, false,                          \
           "Print more information about deoptimization")                    \
                                                                             \

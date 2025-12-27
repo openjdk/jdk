@@ -56,13 +56,13 @@ StackChunkFrameStream<frame_kind>::StackChunkFrameStream(stackChunkOop chunk) DE
   _sp = chunk->start_address() + chunk->sp();
   assert(_sp <= chunk->end_address() + frame::metadata_words, "");
 
-  get_cb();
-
   if (frame_kind == ChunkFrames::Mixed) {
     _unextended_sp = (!is_done() && is_interpreted()) ? unextended_sp_for_interpreter_frame() : _sp;
     assert(_unextended_sp >= _sp - frame::metadata_words, "");
   }
   DEBUG_ONLY(else _unextended_sp = nullptr;)
+
+  get_cb();
 
   if (is_stub()) {
     get_oopmap(pc(), 0);
@@ -257,9 +257,11 @@ inline void StackChunkFrameStream<frame_kind>::get_cb() {
   assert(pc() != nullptr, "");
   assert(dbg_is_safe(pc(), -1), "");
 
-  _cb = CodeCache::find_blob_fast(pc());
+  CodeBlob* out_cb = nullptr;
+  (void) CodeCache::get_deopt_original_pc_and_cb(unextended_sp(), pc(), nullptr, out_cb);
+  assert(out_cb != nullptr, "out_cb was not set");
+  _cb = out_cb;
 
-  assert(_cb != nullptr, "");
   assert(is_interpreted() || ((is_stub() || is_compiled()) && _cb->frame_size() > 0), "");
 }
 

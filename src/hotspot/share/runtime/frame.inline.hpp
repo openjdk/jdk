@@ -28,6 +28,7 @@
 #include "runtime/frame.hpp"
 
 #include "code/codeBlob.inline.hpp"
+#include "code/codeCache.inline.hpp"
 #include "code/nmethod.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/method.hpp"
@@ -72,16 +73,33 @@ inline bool frame::is_compiled_frame() const {
 }
 
 inline address frame::get_deopt_original_pc() const {
+  assert(DeoptimizationBlob::UNPACK_SUBENTRY_COUNT == 0,
+         "Please use get_deopt_original_pc_and_cb when subentries are enabled");
+  CodeBlob* out_cb = nullptr;
+  address original_pc = get_deopt_original_pc_and_cb(out_cb);
+  if (original_pc != nullptr) {
+    assert(out_cb == _cb, "_cb needs to be adjusted)");
+  }
+  return original_pc;
+}
+
+inline address frame::get_deopt_original_pc_and_cb(CodeBlob*& out_cb) const {
+  out_cb = nullptr;
   if (_cb == nullptr)  return nullptr;
 
-  nmethod* nm = _cb->as_nmethod_or_null();
-  if (nm != nullptr && nm->is_deopt_pc(_pc)) {
-    address original_pc = nm->get_original_pc(this);
+  address original_pc = CodeCache::get_deopt_original_pc_and_cb(
+    unextended_sp(), pc(), cb(), out_cb);
+  if (original_pc != nullptr) {
+    assert(out_cb != nullptr, "out_cb was not set");
+
+    nmethod* nm = out_cb->as_nmethod_or_null();
+    assert(nm != nullptr, "not an nmethod");
+    assert(nm->is_deopt_pc(_pc), "mismatch in deopt stub code entry");
     assert(nm->insts_contains_inclusive(original_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
-    return original_pc;
   }
-  return nullptr;
+
+  return original_pc;
 }
 
 template <typename RegisterMapT>
