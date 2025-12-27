@@ -21,11 +21,26 @@
  * questions.
  */
 
+import java.awt.Component;
 import java.awt.Container;
+import java.awt.KeyboardFocusManager;
 import java.awt.Point;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
+import java.awt.event.InputEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.swing.FocusManager;
+
+import java.lang.reflect.InvocationTargetException;
+
 
 import javax.swing.JFrame;
 import javax.swing.SpringLayout;
@@ -110,8 +125,54 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         if (!super.performTest()) {
             return false;
         }
+        final CountDownLatch latch = new CountDownLatch(1);
+        f.addFocusListener(new FocusAdapter() {
+            @Override public void focusGained(FocusEvent e) {
+                latch.countDown();
+            }
+        });
+        if (testResize) {
+            wasLWClicked = false;
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+
+                    public void run() {
+                        testedComponent.setBounds(0, 0,
+                                testedComponent.getPreferredSize().width,
+                                testedComponent.getPreferredSize().height + 20);
+                        Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                                .getFocusOwner();
+                        if (focusOwner == f) {
+                            // frame already had focus
+                            latch.countDown();
+                        } else {
+                            f.requestFocusInWindow();
+                        }
+                    }
+                });
+            } catch (InterruptedException ex) {
+                fail(ex.getMessage());
+            } catch (InvocationTargetException ex) {
+                fail(ex.getMessage());
+            }
+            Point lLoc = testedComponent.getLocationOnScreen();
+            lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
+            try {
+                if (!latch.await(1, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Ancestor frame didn't receive focus");
+                }
+                clickAndBlink(robot, lLoc);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            return wasLWClicked;
+        } else {
+            latch.countDown();
+        }
+
 
         if (!testResize) {
+
             return true;
         }
 
