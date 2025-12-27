@@ -1573,114 +1573,6 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
   BLOCK_COMMENT("} arrays_equals");
 }
 
-// Compare Strings
-
-// For Strings we're passed the address of the first characters in a1 and a2
-// and the length in cnt1. There are two implementations.
-// For arrays >= 8 bytes, all comparisons (except for the tail) are performed
-// 8 bytes at a time. For the tail, we compare a halfword, then a short, and then a byte.
-// For strings < 8 bytes, we compare a halfword, then a short, and then a byte.
-
-void C2_MacroAssembler::string_equals(Register a1, Register a2,
-                                      Register result, Register cnt1)
-{
-  Label SAME, DONE, SHORT, NEXT_WORD, TAIL03, TAIL01;
-  Register tmp1 = t0;
-  Register tmp2 = t1;
-
-  assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2);
-
-  int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-
-  assert((base_offset % (UseCompactObjectHeaders ? 4 :
-                         (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-
-  BLOCK_COMMENT("string_equals {");
-
-  mv(result, false);
-
-  // Load 4 bytes once to compare for alignment before main loop.
-  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
-    subi(cnt1, cnt1, 4);
-    bltz(cnt1, TAIL03);
-    lwu(tmp1, Address(a1));
-    lwu(tmp2, Address(a2));
-    addi(a1, a1, 4);
-    addi(a2, a2, 4);
-    bne(tmp1, tmp2, DONE);
-  }
-
-  // Check for short strings, i.e. smaller than wordSize.
-  subi(cnt1, cnt1, wordSize);
-  bltz(cnt1, SHORT);
-
-#ifdef ASSERT
-  if (AvoidUnalignedAccesses) {
-    Label align_ok;
-    orr(t0, a1, a2);
-    andi(t0, t0, 0x7);
-    beqz(t0, align_ok);
-    stop("bad alignment");
-    bind(align_ok);
-  }
-#endif
-
-  // Main 8 byte comparison loop.
-  bind(NEXT_WORD); {
-    ld(tmp1, Address(a1));
-    ld(tmp2, Address(a2));
-    subi(cnt1, cnt1, wordSize);
-    addi(a1, a1, wordSize);
-    addi(a2, a2, wordSize);
-    bne(tmp1, tmp2, DONE);
-  } bgez(cnt1, NEXT_WORD);
-
-  addi(tmp1, cnt1, wordSize);
-  beqz(tmp1, SAME);
-
-  bind(SHORT);
-  // 0-7 bytes left.
-  test_bit(tmp1, cnt1, 2);
-  beqz(tmp1, TAIL03);
-  {
-    lwu(tmp1, Address(a1));
-    lwu(tmp2, Address(a2));
-    addi(a1, a1, 4);
-    addi(a2, a2, 4);
-    bne(tmp1, tmp2, DONE);
-  }
-
-  bind(TAIL03);
-  // 0-3 bytes left.
-  test_bit(tmp1, cnt1, 1);
-  beqz(tmp1, TAIL01);
-  {
-    lhu(tmp1, Address(a1));
-    lhu(tmp2, Address(a2));
-    addi(a1, a1, 2);
-    addi(a2, a2, 2);
-    bne(tmp1, tmp2, DONE);
-  }
-
-  bind(TAIL01);
-  // 0-1 bytes left.
-  test_bit(tmp1, cnt1, 0);
-  beqz(tmp1, SAME);
-  {
-    lbu(tmp1, Address(a1));
-    lbu(tmp2, Address(a2));
-    bne(tmp1, tmp2, DONE);
-  }
-
-  // Arrays are equal.
-  bind(SAME);
-  mv(result, true);
-
-  // That's it.
-  bind(DONE);
-  BLOCK_COMMENT("} string_equals");
-}
-
 // jdk.internal.util.ArraysSupport.vectorizedHashCode
 void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
                                         Register tmp1, Register tmp2, Register tmp3,
@@ -2631,21 +2523,6 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   bnez(cnt, loop);
 
   mv(result, true);
-}
-
-void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt) {
-  Label DONE;
-  Register tmp1 = t0;
-  Register tmp2 = t1;
-
-  BLOCK_COMMENT("string_equals_v {");
-
-  mv(result, false);
-
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE, Assembler::m2);
-
-  bind(DONE);
-  BLOCK_COMMENT("} string_equals_v");
 }
 
 // used by C2 ClearArray patterns.
