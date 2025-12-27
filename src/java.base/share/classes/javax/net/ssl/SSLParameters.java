@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ public class SSLParameters {
     private String[] applicationProtocols = new String[0];
     private String[] signatureSchemes = null;
     private String[] namedGroups = null;
+    private boolean enableCertificateCompression = true;
 
     /**
      * Constructs SSLParameters.
@@ -959,5 +960,39 @@ public class SSLParameters {
         }
 
         this.namedGroups = tempGroups;
+    }
+
+    /**
+     * Sets whether TLS certificate compression should be enabled.
+     * <p>
+     * This method only applies to TLSv1.3.
+     *
+     * @param   enableCertificateCompression
+     *          {@code true} indicates that TLS certificate compression
+     *          should be enabled; {@code false} indicates that TLS certificate
+     *          compression should be disabled
+     *
+     * @see     #getEnableCertificateCompression()
+     *
+     * @since 27
+     */
+    public void setEnableCertificateCompression(
+            boolean enableCertificateCompression) {
+        this.enableCertificateCompression = enableCertificateCompression;
+    }
+
+    /**
+     * Returns whether TLS certificate compression should be enabled
+     * <p>
+     * This method only applies to TLSv1.3.
+     *
+     * @return  true, if TLS certificate compression should be enabled
+     *
+     * @see     #setEnableCertificateCompression(boolean)
+     *
+     * @since 27
+     */
+    public boolean getEnableCertificateCompression() {
+        return this.enableCertificateCompression;
     }
 }
