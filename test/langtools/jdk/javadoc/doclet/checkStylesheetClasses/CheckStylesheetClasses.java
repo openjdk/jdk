@@ -143,6 +143,9 @@ public class CheckStylesheetClasses {
                 "search-result-desc", "search-result-label", "search-result-link", "selected",
                 "sort-asc", "sort-desc", "two-column-search-results", "visible");
 
+        // used for note tags
+        removeAll(styleSheetNames, "note-tag-important", "note-tag-critical");
+
         // very JDK specific
         styleSheetNames.remove("module-graph");
         styleSheetNames.remove("sealed-graph");

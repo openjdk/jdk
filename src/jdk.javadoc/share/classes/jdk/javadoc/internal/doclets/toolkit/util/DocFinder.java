@@ -52,28 +52,59 @@ public class DocFinder {
 
     @SuppressWarnings("serial")
     public static final class NoOverriddenMethodFound extends Exception {
-
         // only DocFinder should instantiate this exception
         private NoOverriddenMethodFound() { }
     }
 
+    /**
+     * Search for documentation beginning at {@code method}, then iterating through
+     * the list of methods it overrides, until {@code criterion} returns a valid result,
+     * throws an exception or the end of the hierarchy is reached.
+     *
+     * @param method the method where to start searching
+     * @param criterion function to compute the result
+     * @return the result
+     * @param <T> result type
+     * @param <X> exception type
+     * @throws X thrown by {@code criterion}
+     */
     public <T, X extends Throwable> Result<T> search(ExecutableElement method,
                                                      Criterion<T, X> criterion)
             throws X
     {
         try {
-            return search0(method, true, false, criterion);
+            return search0(method, true, criterion);
         } catch (NoOverriddenMethodFound e) {
             // should not happen because the exception flag is unset
             throw new AssertionError(e);
         }
     }
 
-    public <T, X extends Throwable> Result<T> find(ExecutableElement method,
-                                                   Criterion<T, X> criterion)
+    /**
+     * Search for documentation in methods overridden by {@code method}.
+     * If {@code src} is not null, it is the overridden method where to begin searching.
+     * If {@code src} is null, all methods overridden by {@code method} are searched.
+     * If {@code src} is null and {@code method} does not override any methods,
+     * {@code NoOverriddenMethodFound} is thrown.
+     *
+     * @param method the inheriting method
+     * @param src the method where to start searching, or null to search in all overridden methods
+     * @param criterion function to compute the result
+     * @return the result
+     * @param <T> result type
+     * @param <X> exception type
+     * @throws NoOverriddenMethodFound if {@code src} is null and {@code method} does not
+     *         override any methods.
+     * @throws X thrown by {@code criterion}
+     */
+    public <T, X extends Throwable> Result<T> searchInherited(ExecutableElement method,
+                                                     ExecutableElement src,
+                                                     Criterion<T, X> criterion)
             throws NoOverriddenMethodFound, X
     {
-        return search0(method, false, true, criterion);
+        return src == null
+                ? search0(method, false, criterion)
+                : search0(src, true, criterion);
     }
 
     /*
@@ -93,19 +124,18 @@ public class DocFinder {
      * recent call to Criterion::apply.
      *
      * If the given method overrides no methods (i.e. hierarchy consists of the
-     * given method only) and the search is instructed to detect that, the
-     * search terminates with an exception.
+     * given method only) and the search is instructed to not include the given
+     * method, the search terminates with an exception.
      */
     private <T, X extends Throwable> Result<T> search0(ExecutableElement method,
                                                        boolean includeMethodInSearch,
-                                                       boolean throwExceptionIfDoesNotOverride,
                                                        Criterion<T, X> criterion)
             throws NoOverriddenMethodFound, X
     {
         // if the "overrides" check is requested and does not pass, throw the exception
         // first so that it trumps the result that the search would otherwise had
         Iterator<? extends ExecutableElement> methods = overriddenMethodLookup.apply(method).iterator();
-        if (throwExceptionIfDoesNotOverride && !methods.hasNext() ) {
+        if (!includeMethodInSearch && !methods.hasNext() ) {
             throw new NoOverriddenMethodFound();
         }
         Result<T> r = includeMethodInSearch ? criterion.apply(method) : Result.CONTINUE();

@@ -37,6 +37,7 @@ import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.NoteTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.RawTextTree;
@@ -101,7 +102,7 @@ public class CommentHelper {
 
     public String getTagName(DocTree dtree) {
         return switch (dtree.getKind()) {
-            case AUTHOR, DEPRECATED, PARAM, PROVIDES, RETURN, SEE, SERIAL_DATA, SERIAL_FIELD,
+            case AUTHOR, DEPRECATED, NOTE, PARAM, PROVIDES, RETURN, SEE, SERIAL_DATA, SERIAL_FIELD,
                     THROWS, UNKNOWN_BLOCK_TAG, USES, VERSION ->
                     ((BlockTagTree) dtree).getTagName();
             case UNKNOWN_INLINE_TAG ->
@@ -408,6 +409,11 @@ public class CommentHelper {
             @Override
             public List<? extends DocTree> visitLiteral(LiteralTree node, Void p) {
                 return asList(node.getBody().getBody());
+            }
+
+            @Override
+            public List<? extends DocTree> visitNote(NoteTree node, Void unused) {
+                return node.getBody();
             }
 
             @Override
