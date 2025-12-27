@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,11 @@
 package tck.java.time.chrono;
 
 import java.time.Clock;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -77,14 +78,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKHijrahChronology {
 
     //-----------------------------------------------------------------------
@@ -94,35 +97,34 @@ public class TCKHijrahChronology {
     public void test_chrono_byName() {
         Chronology c = HijrahChronology.INSTANCE;
         Chronology test = Chronology.of("Hijrah-umalqura");
-        Assert.assertNotNull(test, "The Hijrah-umalqura calendar could not be found by name");
-        Assert.assertEquals(test.getId(), "Hijrah-umalqura", "ID mismatch");
-        Assert.assertEquals(test.getCalendarType(), "islamic-umalqura", "Type mismatch");
-        Assert.assertEquals(test, c);
+        Assertions.assertNotNull(test, "The Hijrah-umalqura calendar could not be found by name");
+        assertEquals("Hijrah-umalqura", test.getId(), "ID mismatch");
+        assertEquals("islamic-umalqura", test.getCalendarType(), "Type mismatch");
+        assertEquals(c, test);
     }
 
     // Tests for dateNow() method
     @Test
     public void test_dateNow(){
-        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahDate.now()) ;
-        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahDate.now(ZoneId.systemDefault())) ;
-        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahDate.now(Clock.systemDefaultZone())) ;
-        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahDate.now(Clock.systemDefaultZone().getZone())) ;
+        assertEquals(HijrahDate.now(), HijrahChronology.INSTANCE.dateNow()) ;
+        assertEquals(HijrahDate.now(ZoneId.systemDefault()), HijrahChronology.INSTANCE.dateNow()) ;
+        assertEquals(HijrahDate.now(Clock.systemDefaultZone()), HijrahChronology.INSTANCE.dateNow()) ;
+        assertEquals(HijrahDate.now(Clock.systemDefaultZone().getZone()), HijrahChronology.INSTANCE.dateNow()) ;
 
-        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahChronology.INSTANCE.dateNow(ZoneId.systemDefault())) ;
-        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahChronology.INSTANCE.dateNow(Clock.systemDefaultZone())) ;
-        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone())) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(ZoneId.systemDefault()), HijrahChronology.INSTANCE.dateNow()) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(Clock.systemDefaultZone()), HijrahChronology.INSTANCE.dateNow()) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone()), HijrahChronology.INSTANCE.dateNow()) ;
 
         ZoneId zoneId = ZoneId.of("Europe/Paris");
-        assertEquals(HijrahChronology.INSTANCE.dateNow(zoneId), HijrahChronology.INSTANCE.dateNow(Clock.system(zoneId))) ;
-        assertEquals(HijrahChronology.INSTANCE.dateNow(zoneId), HijrahChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone())) ;
-        assertEquals(HijrahChronology.INSTANCE.dateNow(zoneId), HijrahDate.now(Clock.system(zoneId))) ;
-        assertEquals(HijrahChronology.INSTANCE.dateNow(zoneId), HijrahDate.now(Clock.system(zoneId).getZone())) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(Clock.system(zoneId)), HijrahChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone()), HijrahChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(HijrahDate.now(Clock.system(zoneId)), HijrahChronology.INSTANCE.dateNow(zoneId)) ;
+        assertEquals(HijrahDate.now(Clock.system(zoneId).getZone()), HijrahChronology.INSTANCE.dateNow(zoneId)) ;
 
-        assertEquals(HijrahChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId())), HijrahChronology.INSTANCE.dateNow(Clock.systemUTC())) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(Clock.systemUTC()), HijrahChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId()))) ;
     }
 
     // Sample invalid dates
-    @DataProvider(name="badDates")
     Object[][] data_badDates() {
         return new Object[][] {
             {1299, 12, 29},
@@ -143,17 +145,20 @@ public class TCKHijrahChronology {
     }
 
     // This is a negative test to verify if the API throws exception if an invalid date is provided
-    @Test(dataProvider="badDates", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_badDates")
     public void test_badDates(int year, int month, int dom) {
-        HijrahChronology.INSTANCE.date(year, month, dom);
+        Assertions.assertThrows(DateTimeException.class, () -> HijrahChronology.INSTANCE.date(year, month, dom));
     }
 
     // Negative test or dateYearDay with day too large
-    @Test(expectedExceptions=java.time.DateTimeException.class)
+    @Test
     public void test_ofYearDayTooLarge() {
-        int year = 1435;
-        int lengthOfYear = HijrahChronology.INSTANCE.dateYearDay(year, 1).lengthOfYear();
-        HijrahDate hd = HijrahChronology.INSTANCE.dateYearDay(year, lengthOfYear + 1);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            int year = 1435;
+            int lengthOfYear = HijrahChronology.INSTANCE.dateYearDay(year, 1).lengthOfYear();
+            HijrahDate hd = HijrahChronology.INSTANCE.dateYearDay(year, lengthOfYear + 1);
+        });
     }
 
     //-----------------------------------------------------------------------
@@ -198,7 +203,6 @@ public class TCKHijrahChronology {
     //-----------------------------------------------------------------------
     // Tests for HijrahChronology resolve
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_styleByEra")
     Object[][] data_resolve_styleByEra() {
         Object[][] result = new Object[ResolverStyle.values().length * HijrahEra.values().length][];
         int i = 0;
@@ -210,42 +214,44 @@ public class TCKHijrahChronology {
         return result;
     }
 
-    @Test(dataProvider = "resolve_styleByEra")
+    @ParameterizedTest
+    @MethodSource("data_resolve_styleByEra")
     public void test_resolve_yearOfEra_eraOnly_valid(ResolverStyle style, HijrahEra era) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.ERA, (long) era.getValue());
         HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, style);
-        assertEquals(date, null);
-        assertEquals(fieldValues.get(ChronoField.ERA), (Long) (long) era.getValue());
-        assertEquals(fieldValues.size(), 1);
+        assertEquals(null, date);
+        assertEquals((Long) (long) era.getValue(), fieldValues.get(ChronoField.ERA));
+        assertEquals(1, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_styleByEra")
+    @ParameterizedTest
+    @MethodSource("data_resolve_styleByEra")
     public void test_resolve_yearOfEra_eraAndYearOfEraOnly_valid(ResolverStyle style, HijrahEra era) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.ERA, (long) era.getValue());
         fieldValues.put(ChronoField.YEAR_OF_ERA, 1343L);
         HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, style);
-        assertEquals(date, null);
-        assertEquals(fieldValues.get(ChronoField.ERA), null);
-        assertEquals(fieldValues.get(ChronoField.YEAR_OF_ERA), null);
-        assertEquals(fieldValues.get(ChronoField.YEAR), (Long) 1343L);
-        assertEquals(fieldValues.size(), 1);
+        assertEquals(null, date);
+        assertEquals(null, fieldValues.get(ChronoField.ERA));
+        assertEquals(null, fieldValues.get(ChronoField.YEAR_OF_ERA));
+        assertEquals((Long) 1343L, fieldValues.get(ChronoField.YEAR));
+        assertEquals(1, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_styleByEra")
+    @ParameterizedTest
+    @MethodSource("data_resolve_styleByEra")
     public void test_resolve_yearOfEra_eraAndYearOnly_valid(ResolverStyle style, HijrahEra era) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.ERA, (long) era.getValue());
         fieldValues.put(ChronoField.YEAR, 1343L);
         HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, style);
-        assertEquals(date, null);
-        assertEquals(fieldValues.get(ChronoField.ERA), (Long) (long) era.getValue());
-        assertEquals(fieldValues.get(ChronoField.YEAR), (Long) 1343L);
-        assertEquals(fieldValues.size(), 2);
+        assertEquals(null, date);
+        assertEquals((Long) (long) era.getValue(), fieldValues.get(ChronoField.ERA));
+        assertEquals((Long) 1343L, fieldValues.get(ChronoField.YEAR));
+        assertEquals(2, fieldValues.size());
     }
 
-    @DataProvider(name = "resolve_styles")
     Object[][] data_resolve_styles() {
         Object[][] result = new Object[ResolverStyle.values().length][];
         int i = 0;
@@ -255,27 +261,29 @@ public class TCKHijrahChronology {
         return result;
     }
 
-    @Test(dataProvider = "resolve_styles")
+    @ParameterizedTest
+    @MethodSource("data_resolve_styles")
     public void test_resolve_yearOfEra_yearOfEraOnly_valid(ResolverStyle style) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR_OF_ERA, 1343L);
         HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, style);
-        assertEquals(date, null);
-        assertEquals(fieldValues.get(ChronoField.YEAR_OF_ERA), (style != ResolverStyle.STRICT) ? null : (Long) 1343L);
-        assertEquals(fieldValues.get(ChronoField.YEAR), (style == ResolverStyle.STRICT) ? null : (Long) 1343L);
-        assertEquals(fieldValues.size(), 1);
+        assertEquals(null, date);
+        assertEquals((style != ResolverStyle.STRICT) ? null : (Long) 1343L, fieldValues.get(ChronoField.YEAR_OF_ERA));
+        assertEquals((style == ResolverStyle.STRICT) ? null : (Long) 1343L, fieldValues.get(ChronoField.YEAR));
+        assertEquals(1, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_styles")
+    @ParameterizedTest
+    @MethodSource("data_resolve_styles")
     public void test_resolve_yearOfEra_yearOfEraAndYearOnly_valid(ResolverStyle style) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR_OF_ERA, 1343L);
         fieldValues.put(ChronoField.YEAR, 1343L);
         HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, style);
-        assertEquals(date, null);
-        assertEquals(fieldValues.get(ChronoField.YEAR_OF_ERA), null);
-        assertEquals(fieldValues.get(ChronoField.YEAR), (Long) 1343L);
-        assertEquals(fieldValues.size(), 1);
+        assertEquals(null, date);
+        assertEquals(null, fieldValues.get(ChronoField.YEAR_OF_ERA));
+        assertEquals((Long) 1343L, fieldValues.get(ChronoField.YEAR));
+        assertEquals(1, fieldValues.size());
     }
 
     //-----------------------------------------------------------------------
@@ -285,7 +293,6 @@ public class TCKHijrahChronology {
     // 1434=29 30 29 30 29 30 30 29 30 30 29 29  total = 354
     // 1435=30 29 30 29 30 29 30 29 30 30 29 30  total = 355
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_ymd")
     Object[][] data_resolve_ymd() {
         // Compute the number of days in various month and years so that test cases
         // are not dependent on specific calendar data
@@ -364,7 +371,8 @@ public class TCKHijrahChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_lenient(int y, int m, int d, HijrahDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -373,8 +381,8 @@ public class TCKHijrahChronology {
 
         if (expected != null) {
             HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
@@ -385,7 +393,8 @@ public class TCKHijrahChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_smart(int y, int m, int d, HijrahDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -393,11 +402,11 @@ public class TCKHijrahChronology {
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         if (Boolean.TRUE.equals(smart)) {
             HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else if (smart instanceof HijrahDate) {
             HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, smart);
+            assertEquals(smart, date);
         } else {
             try {
                 HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -408,7 +417,8 @@ public class TCKHijrahChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_strict(int y, int m, int d, HijrahDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -416,8 +426,8 @@ public class TCKHijrahChronology {
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         if (strict) {
             HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected, "Resolved to incorrect date");
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date, "Resolved to incorrect date");
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
@@ -429,7 +439,6 @@ public class TCKHijrahChronology {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_yd")
     Object[][] data_resolve_yd() {
         // Compute the number of days in various month and years so that test cases
         // are not dependent on specific calendar data
@@ -478,25 +487,27 @@ public class TCKHijrahChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_lenient(int y, int d, HijrahDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_smart(int y, int d, HijrahDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         if (smart) {
             HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -507,15 +518,16 @@ public class TCKHijrahChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_strict(int y, int d, HijrahDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         if (strict) {
             HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 HijrahDate date = HijrahChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
