@@ -39,6 +39,7 @@ import jdk.jfr.consumer.RecordingFile;
 /**
  * @test
  * @summary Tests RecordingFile::write(Path, Predicate<RecordedEvent>)
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
