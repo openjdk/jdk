@@ -323,11 +323,13 @@ public:
 
   // Inserts the given node into the tree.
   void insert(const K& key, NodeType* node, const NodeType* hint_node = nullptr) {
+    assert(node != nullptr, "must be");
     Cursor node_cursor = cursor(key, hint_node);
     insert_at_cursor(node, node_cursor);
   }
 
   void remove(NodeType* node) {
+    assert(node != nullptr, "must be");
     Cursor node_cursor = cursor(node);
     remove_at_cursor(node_cursor);
   }
@@ -472,6 +474,8 @@ public:
   using BaseType::prev;
 
   void replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor) {
+    assert(new_node != nullptr, "must be");
+    assert(node_cursor.valid() && node_cursor.found(), "must be");
     RBNode<K, V>* old_node = node_cursor.node();
     BaseType::replace_at_cursor(new_node, node_cursor);
     free_node(old_node);
@@ -494,6 +498,7 @@ public:
   }
 
   void free_node(RBNode<K, V>* node) {
+    assert(node != nullptr, "must be");
     node->_value.~V();
     _allocator.free(node);
   }
