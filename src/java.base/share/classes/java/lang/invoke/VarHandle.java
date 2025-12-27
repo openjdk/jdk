@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2009,6 +2009,11 @@ public abstract sealed class VarHandle implements Constable
         }
     }
 
+    // Exists for the adaption mechanism of AccessDescriptor
+    // Each VH should report its explicitly (receiver, coordinates) and
+    // implicitly (static declaring class) used class to MethodHandle.isReachableFrom
+    abstract boolean isReachableFrom(ClassLoader cl);
+
     static final class AccessDescriptor {
         final MethodType symbolicMethodTypeExact;
         final MethodType symbolicMethodTypeErased;
@@ -2016,14 +2021,61 @@ public abstract sealed class VarHandle implements Constable
         final Class<?> returnType;
         final int type;
         final int mode;
+        // Used by adaption - if there's a caller we can better detect leaks
+        final Class<?> caller;
 
-        public AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+        // Adaption mechanism to reduce overhead for non-exact access.
+        // This heuristic assumes that each sigpoly VH signatures usually sees
+        // exactly one VarHandle instance.  In one class file, each sigpoly
+        // signature has one AccessDescriptor.
+        // (See MethodHandleNatives::varHandleOperationLinkerMethod)
+        // For correctness, we must verify the incoming VarHandle; different
+        // sites with the same signature may exist, and adaptedMethodHandle
+        // may be inlined by different callers.
+        // In the long run, we wish to put a specific-type invoker that converts
+        // from one fixed type (symbolicMethodTypeInvoker) to another (the
+        // invocation type of the underlying MemberName, or MH for indirect VH),
+        // perform a foldable lookup with a hash table, and hope C2 inline it
+        // all. Such an optimization applies for general MethodHandle.asType.
+
+        // Object indirection is the best way to ensure the vh and mh are not
+        // from two writes (they must not be tearable)
+        private record Adaption(VarHandle vh, MethodHandle mh) {}
+        // The adaption must not cause classloader leaks
+        private @Stable Adaption adaption;
+
+        AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+            this(symbolicMethodType, type, mode, null);
+        }
+
+        AccessDescriptor(MethodType symbolicMethodType, int type, int mode, Class<?> caller) {
             this.symbolicMethodTypeExact = symbolicMethodType;
             this.symbolicMethodTypeErased = symbolicMethodType.erase();
             this.symbolicMethodTypeInvoker = symbolicMethodType.insertParameterTypes(0, VarHandle.class);
             this.returnType = symbolicMethodType.returnType();
             this.type = type;
             this.mode = mode;
+            this.caller = caller;
+        }
+
+        @ForceInline
+        MethodHandle adaptedMethodHandle(VarHandle vh) {
+            var cache = adaption;
+            if (cache != null && cache.vh == vh) {
+                return cache.mh;
+            }
+
+            var mh = vh.getMethodHandle(mode).asType(symbolicMethodTypeInvoker);
+            if (cache == null) {
+                var loader = caller == null ? ClassLoader.getSystemClassLoader() : caller.getClassLoader();
+                if (vh.isReachableFrom(loader)) {
+                    // Reduce costly object allocation - if our assumption stands,
+                    // the first adaption works, and we don't want allocations for
+                    // every VH invocation.
+                    adaption = new Adaption(vh, mh);
+                }
+            }
+            return mh;
         }
     }
 
