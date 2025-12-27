@@ -32,6 +32,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/suspendResumeManager.hpp"
+#include "utilities/spinYield.hpp"
 
 // This is the closure that prevents a suspended JavaThread from
 // escaping the suspend request.
@@ -60,7 +61,18 @@ public:
     _register_vthread_SR(register_vthread_SR), _did_suspend(false) {
   }
   void do_thread(Thread* thr) {
+    assert(thr != Thread::current(), "must be");
     JavaThread* target = JavaThread::cast(thr);
+    // If the target is in a JNI critical region we can't allow it to be suspended
+    // as it is not in a safe state. If the critical region never terminates then we
+    // hang here. There is no way to time-out and abort the suspend request because
+    // the API does not allow for that - if a thread is live then it can be suspended.
+    if (target->in_critical_atomic()) {
+      SpinYield sy;
+      while (target->in_critical_atomic()) {
+        sy.wait();
+      }
+    }
     _did_suspend = target->suspend_resume_manager()->suspend_with_handshake(_register_vthread_SR);
   }
   bool did_suspend() { return _did_suspend; }
