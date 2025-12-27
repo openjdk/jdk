@@ -23,19 +23,20 @@
 
 /*
  * @test
- *
  * @bug 8316694
  * @summary Verify that nmethod relocation posts the correct JVMTI events
  * @requires vm.jvmti
  * @requires vm.gc == "null" | vm.gc == "Serial"
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires !vm.emulatedClient
  * @library /test/lib /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native NMethodRelocationTest
  */
 
-import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.lang.reflect.Executable;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -48,6 +49,7 @@ import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.code.BlobType;
 import jdk.test.whitebox.code.NMethod;
 
+import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
 
 public class NMethodRelocationTest {
     public static void main(String[] args) throws Exception {
@@ -55,6 +57,7 @@ public class NMethodRelocationTest {
                 "-agentlib:NMethodRelocationTest",
                 "--enable-native-access=ALL-UNNAMED",
                 "-Xbootclasspath/a:.",
+                "-Xbatch",
                 "-XX:+UseSerialGC",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
@@ -64,30 +67,77 @@ public class NMethodRelocationTest {
                 "-XX:+NMethodRelocation",
                 "DoWork");
 
-        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
-        String output = oa.getOutput();
-        if (oa.getExitValue() != 0) {
-            System.err.println(oa.getOutput());
-            throw new RuntimeException("Non-zero exit code returned from the test");
+        Process process = pb.start();
+
+        // Read output as stream
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+
+            Pattern loadPattern = Pattern.compile(
+                    "<COMPILED_METHOD_LOAD>:   name: compiledMethod, code: (0x[0-9a-f]{16})");
+            Pattern unloadPattern = Pattern.compile(
+                    "<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: (0x[0-9a-f]{16})");
+
+            String firstLoadAddress = null;
+            String secondLoadAddress = null;
+
+            String firstUnloadAddress = null;
+            String secondUnloadAddress = null;
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Check for load
+                Matcher loadMatcher = loadPattern.matcher(line);
+                if (loadMatcher.find()) {
+                    // Verify the load events come before the unloads
+                    Asserts.assertNull(firstUnloadAddress);
+                    Asserts.assertNull(secondUnloadAddress);
+
+                    String address = loadMatcher.group(1);
+
+                    if (firstLoadAddress == null) {
+                        System.out.println("Received first COMPILED_METHOD_LOAD event. Address: " + address);
+                        firstLoadAddress = address;
+                    } else if (secondLoadAddress == null) {
+                        System.out.println("Received second COMPILED_METHOD_LOAD event. Address: " + address);
+                        secondLoadAddress = address;
+                    } else {
+                        throw new RuntimeException("Received too many COMPILED_METHOD_LOAD events");
+                    }
+                }
+
+                // Check for unload
+                Matcher unloadMatcher = unloadPattern.matcher(line);
+                if (unloadMatcher.find()) {
+                    // Verify the unload events come after the loads
+                    Asserts.assertNotNull(firstLoadAddress);
+                    Asserts.assertNotNull(secondLoadAddress);
+
+                    String address = unloadMatcher.group(1);
+
+                    if (firstUnloadAddress == null) {
+                        System.out.println("Received first COMPILED_METHOD_UNLOAD event. Address: " + address);
+                        firstUnloadAddress = address;
+                    } else if (secondUnloadAddress == null) {
+                        System.out.println("Received second COMPILED_METHOD_UNLOAD event. Address: " + address);
+                        secondUnloadAddress = address;
+
+                        // We should have all events after receiving second unload
+                        break;
+                    }
+                }
+            }
+
+            Asserts.assertNotNull(firstLoadAddress);
+            Asserts.assertNotNull(secondLoadAddress);
+
+            Asserts.assertNotNull(firstUnloadAddress);
+            Asserts.assertNotNull(secondUnloadAddress);
+
+            Asserts.assertEquals(firstLoadAddress, firstUnloadAddress);
+            Asserts.assertEquals(secondLoadAddress, secondUnloadAddress);
         }
-        Asserts.assertTrue(oa.getExitValue() == 0);
 
-        Pattern pattern = Pattern.compile("(?m)^Relocated nmethod from (0x[0-9a-f]{16}) to (0x[0-9a-f]{16})$");
-        Matcher matcher = pattern.matcher(output);
-
-        if (matcher.find()) {
-            String fromAddr = matcher.group(1);
-            String toAddr = matcher.group(2);
-
-            // Confirm events sent for both original and relocated nmethod
-            oa.shouldContain("<COMPILED_METHOD_LOAD>:   name: compiledMethod, code: " + fromAddr);
-            oa.shouldContain("<COMPILED_METHOD_LOAD>:   name: compiledMethod, code: " + toAddr);
-            oa.shouldContain("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + fromAddr);
-            oa.shouldContain("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + toAddr);
-        } else {
-            System.err.println(oa.getOutput());
-            throw new RuntimeException("Unable to find relocation information");
-        }
+        process.destroy();
     }
 }
 
@@ -107,43 +157,14 @@ class DoWork {
         }
     }
 
-    /**
-     * Returns value of VM option.
-     *
-     * @param name option's name
-     * @return value of option or {@code null}, if option doesn't exist
-     * @throws NullPointerException if name is null
-     */
-    protected static String getVMOption(String name) {
-        Objects.requireNonNull(name);
-        return Objects.toString(WHITE_BOX.getVMFlag(name), null);
-    }
-
-    /**
-     * Returns value of VM option or default value.
-     *
-     * @param name         option's name
-     * @param defaultValue default value
-     * @return value of option or {@code defaultValue}, if option doesn't exist
-     * @throws NullPointerException if name is null
-     * @see #getVMOption(String)
-     */
-    protected static String getVMOption(String name, String defaultValue) {
-        String result = getVMOption(name);
-        return result == null ? defaultValue : result;
-    }
-
     public static void main(String argv[]) throws Exception {
-        run();
-    }
-
-    public static void run() throws Exception {
         Executable method = DoWork.class.getDeclaredMethod("compiledMethod");
         WHITE_BOX.testSetDontInlineMethod(method, true);
 
         WHITE_BOX.enqueueMethodForCompilation(method, COMP_LEVEL_FULL_OPTIMIZATION);
-        while (WHITE_BOX.isMethodQueuedForCompilation(method)) {
-            Thread.onSpinWait();
+
+        if (!WHITE_BOX.isMethodCompiled(method)) {
+            throw new AssertionError("Method not compiled");
         }
 
         NMethod originalNMethod = NMethod.get(method, false);
@@ -164,13 +185,10 @@ class DoWork {
 
         WHITE_BOX.deoptimizeAll();
 
-        WHITE_BOX.fullGC();
-        WHITE_BOX.fullGC();
-
-        WHITE_BOX.lockCompilation();
-
-        System.out.printf("Relocated nmethod from 0x%016x to 0x%016x%n", originalNMethod.code_begin, relocatedNMethod.code_begin);
-        System.out.flush();
+        while (true) {
+            WHITE_BOX.fullGC();
+            System.out.flush();
+        }
     }
 
     public static long compiledMethod() {
