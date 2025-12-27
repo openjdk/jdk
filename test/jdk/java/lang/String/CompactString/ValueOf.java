@@ -31,8 +31,7 @@ import static org.testng.Assert.assertEquals;
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.valueOf.
  *          valueOf(char[] data) is not tested here.
- * @run testng/othervm -XX:+CompactStrings ValueOf
- * @run testng/othervm -XX:-CompactStrings ValueOf
+ * @run testng/othervm ValueOf
  */
 
 public class ValueOf {

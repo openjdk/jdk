@@ -30,7 +30,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.implicit.Merge01
+ * @run main/othervm vm.compiler.optimizations.stringconcat.implicit.Merge01
  */
 
 
@@ -44,6 +44,6 @@
  * @library /vmTestbase
  *          /test/lib
  * @compile -XDstringConcat=inline ../../Merge01.java
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.implicit.Merge01
+ * @run main/othervm vm.compiler.optimizations.stringconcat.implicit.Merge01
  */
 
