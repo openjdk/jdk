@@ -1813,7 +1813,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ testptr(rax, rax);                        // test result
       __ jcc(Assembler::zero, dispatch);         // no osr if null
       // nmethod may have been invalidated (VM may block upon call_VM return)
-      __ cmpb(Address(rax, nmethod::state_offset()), nmethod::in_use);
+      // Load the _hdr pointer from the nmethod into rscratch1
+      __ movptr(rscratch1, Address(rax, nmethod::hdr_offset()));
+      // Load the _state value from _hdr pointer at an offset specified by
+      // nmethod::state_offset() and compare it with nmethod::in_use
+      __ cmpb(Address(rscratch1, nmethod::state_offset()), nmethod::in_use);
       __ jcc(Assembler::notEqual, dispatch);
 
       // We have the address of an on stack replacement routine in rax.
@@ -1849,7 +1853,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ push(retaddr);
 
       // and begin the OSR nmethod
-      __ jmp(Address(rbx, nmethod::osr_entry_point_offset()));
+      // Load the _hdr pointer from the nmethod into rscratch1
+      __ movptr(rscratch1, Address(rbx, nmethod::hdr_offset()));
+      // Jump to the address in _osr_entry_point (which is at an offset from _hdr pointer)
+      __ jmp(Address(rscratch1, nmethod::osr_entry_point_offset()));
     }
   }
 }
