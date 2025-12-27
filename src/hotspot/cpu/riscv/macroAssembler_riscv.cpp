@@ -3143,7 +3143,7 @@ void MacroAssembler::load_short_misaligned(Register dst, Address src, Register t
   if (granularity != 1 && granularity != 2) {
     ShouldNotReachHere();
   }
-  if (AvoidUnalignedAccesses && (granularity != 2)) {
+  if (!UseUnalignedAccesses && (granularity != 2)) {
     assert_different_registers(dst, tmp);
     assert_different_registers(tmp, src.base());
     is_signed ? lb(tmp, Address(src.base(), src.offset() + 1)) : lbu(tmp, Address(src.base(), src.offset() + 1));
@@ -3157,7 +3157,7 @@ void MacroAssembler::load_short_misaligned(Register dst, Address src, Register t
 
 // granularity is 1, 2 OR 4 bytes per load, if granularity 2 or 4 then dst and src.base() allowed to be the same register
 void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity) {
-  if (AvoidUnalignedAccesses && (granularity != 4)) {
+  if (!UseUnalignedAccesses && (granularity != 4)) {
     switch(granularity) {
       case 1:
         assert_different_registers(dst, tmp, src.base());
@@ -3190,7 +3190,7 @@ void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp
 
 // granularity is 1, 2, 4 or 8 bytes per load, if granularity 4 or 8 then dst and src.base() allowed to be same register
 void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tmp, int granularity) {
-  if (AvoidUnalignedAccesses && (granularity != 8)) {
+  if (!UseUnalignedAccesses && (granularity != 8)) {
     switch(granularity){
       case 1:
         assert_different_registers(dst, tmp, src.base());
