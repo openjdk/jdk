@@ -354,15 +354,15 @@ public:
     return adjoinRange(other._lo, other._hi, other._dest, other._cnt, false);
   }
 
-  void print() {
+  void print(outputStream* out = tty) {
     if (is_singleton())
-      tty->print(" {%d}=>%d (cnt=%f)", lo(), dest(), cnt());
+      out->print(" {%d}=>%d (cnt=%f)", lo(), dest(), cnt());
     else if (lo() == min_jint)
-      tty->print(" {..%d}=>%d (cnt=%f)", hi(), dest(), cnt());
+      out->print(" {..%d}=>%d (cnt=%f)", hi(), dest(), cnt());
     else if (hi() == max_jint)
-      tty->print(" {%d..}=>%d (cnt=%f)", lo(), dest(), cnt());
+      out->print(" {%d..}=>%d (cnt=%f)", lo(), dest(), cnt());
     else
-      tty->print(" {%d..%d}=>%d (cnt=%f)", lo(), hi(), dest(), cnt());
+      out->print(" {%d..%d}=>%d (cnt=%f)", lo(), hi(), dest(), cnt());
   }
 };
 

@@ -2635,9 +2635,9 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   C->_in_dump_cnt--;
 }
 
-// call from debugger: dump node to tty with newline
-void Node::dump() const {
-  dump("\n");
+// call from debugger: dump node to st with newline
+void Node::dump(outputStream* st) const {
+  dump("\n", /* mark (use '>') */ false, st);
 }
 
 //------------------------------dump_req--------------------------------------
@@ -2693,8 +2693,8 @@ void Node::dump_out(outputStream* st, DumpConfig* dc) const {
 
 //------------------------------dump-------------------------------------------
 // call from debugger: dump Node's inputs (or outputs if d negative)
-void Node::dump(int d) const {
-  dump_bfs(abs(d), nullptr, (d > 0) ? "+$" : "-$");
+void Node::dump(int d, outputStream* st) const {
+  dump_bfs(abs(d), nullptr, (d > 0) ? "+$" : "-$", st);
 }
 
 //------------------------------dump_ctrl--------------------------------------
@@ -3007,24 +3007,24 @@ void Node_List::yank( Node *n ) {
 }
 
 //------------------------------dump-------------------------------------------
-void Node_List::dump() const {
+void Node_List::dump(outputStream* out) const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
     if (_nodes[i]) {
-      tty->print("%5d--> ", i);
-      _nodes[i]->dump();
+      out->print("%5d--> ", i);
+      _nodes[i]->dump(out);
     }
   }
 #endif
 }
 
-void Node_List::dump_simple() const {
+void Node_List::dump_simple(outputStream* out) const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
     if( _nodes[i] ) {
-      tty->print(" %d", _nodes[i]->_idx);
+      out->print(" %d", _nodes[i]->_idx);
     } else {
-      tty->print(" null");
+      out->print(" null");
     }
   }
 #endif
