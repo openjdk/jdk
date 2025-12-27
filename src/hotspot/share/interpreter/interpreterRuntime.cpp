@@ -1076,6 +1076,10 @@ JRT_ENTRY(nmethod*,
 
   LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must come from interpreter");
+
+  if (JvmtiExport::can_post_frame_pop() && JvmtiExport::has_frame_pop_for_top_frame(current)) {
+    return nullptr; // no OSR if there is a FramePop event request for top frame
+  }
   methodHandle method(current, last_frame.method());
   const int branch_bci = branch_bcp != nullptr ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != nullptr ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
