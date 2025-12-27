@@ -70,12 +70,10 @@ class H3IdleExceedsQuicIdleTimeout {
     private static final String REQ_PATH = "/8371802";
 
     private static HttpTestServer h3Server;
-    private static SSLContext sslCtx;
+    private static final SSLContext sslCtx = SimpleSSLContext.findSSLContext();
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        sslCtx = new SimpleSSLContext().get();
-        assert sslCtx != null : "SSLContext is null";
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslCtx);
         h3Server.addHandler(new Handler(), REQ_PATH);
         h3Server.start();

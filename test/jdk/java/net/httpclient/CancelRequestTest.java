@@ -93,7 +93,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
     private static final Random random = RandomFactory.getRandom();
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
     HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -642,10 +642,6 @@ public class CancelRequestTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         // HTTP/1.1
         HttpTestHandler h1_chunkHandler = new HTTPSlowHandler();
         httpTestServer = HttpTestServer.create(HTTP_1_1);
