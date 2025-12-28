@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1361,6 +1361,7 @@ MemNode::LocalEA::LocalEA(PhaseIterGVN* phase, Node* base) : _phase(phase), _is_
   if (env->should_retain_local_variables() || env->jvmti_can_walk_any_space()) {
     // JVMTI can modify local objects, so give up
     _is_candidate = false;
+    return;
   }
 
   // Collect all nodes in _aliases.
@@ -1519,7 +1520,9 @@ MemNode::LocalEA::EscapeStatus MemNode::LocalEA::check_escape_status(Node* ctl) 
               break;
             }
 
-            // Push all aliases of h into dependencies, if h escapes, we will find it then
+            // This is similar to store_base_ea.check_escape_status(ctl), the differences are that
+            // it avoids the drawbacks of recursion and does not unnecessarily collect
+            // _not_escaped_controls again
             for (uint i = 0; i < store_base_ea.aliases().size(); i++) {
               dependencies.push(store_base_ea.aliases().at(i));
             }
