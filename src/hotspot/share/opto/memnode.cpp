@@ -706,19 +706,19 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
 
   Node* mem = in(MemNode::Memory);   // start searching here...
 
-  int cnt = 50;             // Cycle limiter
-  if (is_Load() && alloc != nullptr) {
-    // Get agressive for loads from freshly allocated objects
-    cnt = 1000;
-  }
-
-  // If alloc != nullptr and the allocated object has not escaped the current compilation unit, we
-  // can be more aggressive, walk past calls and memory barriers to find a corresponding store
+  // If base has not escaped the current compilation unit, we can be more aggressive, walk past
+  // calls and memory barriers to find a corresponding store
   ResourceMark rm;
   bool is_known_instance = addr_t != nullptr && addr_t->is_known_instance_field();
   LocalEA local_ea(phase->is_IterGVN(), base);
   TriBool has_not_escaped = is_known_instance ? TriBool(true)
                                               : (is_Load() && local_ea.is_candidate() ? TriBool() : TriBool(false));
+
+  int cnt = 50; // Cycle limiter
+  if (is_Load() && (has_not_escaped.is_default() || has_not_escaped)) {
+    // Get agressive for loads from freshly allocated objects
+    cnt = 1000;
+  }
 
   // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
   for (;;) {                // While we can dance past unrelated stores...
@@ -742,10 +742,10 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
 
       // If it is provable that the memory accessed by mem does not overlap the memory accessed by
       // this, we may walk past mem.
-      // For raw accesses, 2 accesses are independent if they have the same base and the offset
-      // says that they do not overlap.
+      // For raw accesses, 2 accesses are independent if they have the same base and the offsets
+      // say that they do not overlap.
       // For heap accesses, 2 accesses are independent if either the bases are provably different
-      // at runtime or the offset says that the accesses do not overlap.
+      // at runtime or the offsets say that the accesses do not overlap.
       if ((adr_maybe_raw || check_if_adr_maybe_raw(st_adr)) && st_base != base) {
         // Raw accesses can only be provably independent if they have the same base
         break;
@@ -867,8 +867,9 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
         break;
       }
 
-      // We are more aggressive with known instances, for the others, if this call may modify base,
-      // check_not_escaped would return false
+      // We are more aggressive with known instances. For example, if base is an argument of call
+      // and call is an invocation of unsafe_arraycopy, the global escape analyzer can consider
+      // base not to escape, while the local escape analyzer will be more conservative.
       if (!is_known_instance || !call->may_modify(addr_t, phase)) {
         mem = call->in(TypeFunc::Memory);
         continue;         // (a) advance through independent call memory
@@ -894,8 +895,10 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
         break;
       }
 
-      // We are more aggressive with known instances, for the others, if this call may modify base,
-      // check_not_escaped would return false
+      // We are more aggressive with known instances. For example, if base is an argument of call
+      // and call is an ArrayCopyNode, the global escape analyzer can consider base not to escape,
+      // while the local escape analyzer will be more conservative. This case is about the trailing
+      // memory barrier of an ArrayCopyNode.
       ArrayCopyNode* ac = nullptr;
       if (is_known_instance && ArrayCopyNode::may_modify(addr_t, mem->in(0)->as_MemBar(), phase, ac)) {
         break;
@@ -1395,7 +1398,7 @@ MemNode::LocalEA::LocalEA(PhaseIterGVN* phase, Node* base) : _phase(phase), _is_
       }
     } else {
       // If base is not an allocation or a Phi of allocations (e.g. it is a Phi of an allocation
-      // and a load, we cannot perform escape analysis). This branch is pretty conservative.
+      // and a load), we cannot perform escape analysis. This branch is conservative.
       _is_candidate = false;
       _aliases.clear();
       return;
@@ -1403,7 +1406,7 @@ MemNode::LocalEA::LocalEA(PhaseIterGVN* phase, Node* base) : _phase(phase), _is_
   }
 
   // Secondly, from the set of allocations that may alias base, collect all nodes that may alias
-  // them, they may alias base as well. Actually, there may be case that a may alias b and b may
+  // them, they may alias base as well. Actually, there may be cases that a may alias b and b may
   // alias c but a may not alias c, but we are conservative here.
   for (uint idx = 0; idx < _aliases.size(); idx++) {
     Node* n = _aliases.at(idx);
