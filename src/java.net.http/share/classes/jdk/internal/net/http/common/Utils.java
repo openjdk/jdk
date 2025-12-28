@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -720,6 +720,8 @@ public final class Utils {
         p1.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
         p1.setSignatureSchemes(p.getSignatureSchemes());
         p1.setNamedGroups(p.getNamedGroups());
+        p1.setWantClientAuth(p.getWantClientAuth());
+        p1.setEnableCertificateCompression(p.getEnableCertificateCompression());
         return p1;
     }
 
