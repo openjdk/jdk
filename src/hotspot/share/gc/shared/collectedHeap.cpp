@@ -237,6 +237,7 @@ bool CollectedHeap::supports_concurrent_gc_breakpoints() const {
 }
 
 static bool klass_is_sane(oop object) {
+  const Klass* k = nullptr;
   if (UseCompactObjectHeaders) {
     // With compact headers, we can't safely access the Klass* when
     // the object has been forwarded, because non-full-GC-forwarding
@@ -250,10 +251,12 @@ static bool klass_is_sane(oop object) {
       return true;
     }
 
-    return Metaspace::contains(mark.klass_without_asserts());
+    k = mark.klass_without_asserts();
+  } else {
+    k = object->klass_without_asserts();
   }
 
-  return Metaspace::contains(object->klass_without_asserts());
+  return Metaspace::klass_is_live(k, true);
 }
 
 bool CollectedHeap::is_oop(oop object) const {

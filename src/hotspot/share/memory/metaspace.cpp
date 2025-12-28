@@ -42,6 +42,7 @@
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
+#include "memory/metaspace/metaspaceZapper.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceCriticalAllocation.hpp"
@@ -53,6 +54,8 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/klass.hpp"
+#include "oops/metadata.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
@@ -1043,4 +1046,59 @@ bool Metaspace::in_aot_cache(const void* ptr) {
 // Returns true if pointer points into one of the non-class-space metaspace regions.
 bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
+}
+
+bool Metaspace::metadata_is_live(const Metadata* md, FailureHint* hint) {
+  if (!contains(md)) {
+    (*hint) = FailureHint::outside;
+    return false;
+  }
+#ifdef ASSERT
+  if (!is_aligned(md, metaspace::AllocationAlignmentByteSize)) {
+    (*hint) = FailureHint::inside_but_misaligned;
+    return false;
+  }
+  unsigned token;
+  if (!md->get_metadata_token_safely(&token)) {
+    (*hint) = FailureHint::inside_but_unreadable;
+    return false;
+  }
+  if ((token & Metadata::common_prefix) != Metadata::common_prefix) {
+    if (token == metaspace::Zapper::zap_pattern_chunk) {
+      (*hint) = FailureHint::inside_but_dead_chunk;
+    } else if (token == metaspace::Zapper::zap_pattern_block) {
+      (*hint) = FailureHint::inside_but_dead_block;
+    } else {
+      (*hint) = FailureHint::inside_but_invalid_token;
+    }
+    return false;
+  }
+#endif
+  return true;
+}
+
+bool Metaspace::klass_is_live(const Klass* k, bool must_have_narrow_klass_id) {
+  FailureHint ignored = Metaspace::FailureHint::unknown;
+  return klass_is_live(k, must_have_narrow_klass_id, &ignored);
+}
+
+bool Metaspace::klass_is_live(const Klass* k, bool must_have_narrow_klass_id, FailureHint* hint) {
+  if (!metadata_is_live(k, hint)) {
+    return false;
+  }
+#ifdef ASSERT
+  // Some more specific tests for Klass
+  if (UseCompressedClassPointers && must_have_narrow_klass_id &&
+      !CompressedKlassPointers::is_encodable(k)) {
+    (*hint) = FailureHint::nklass_not_encodable;
+    return false;
+  }
+  const unsigned token = k->get_metadata_token();
+  if (token != Metadata::array_klass_token &&
+      token != Metadata::instance_klass_token) {
+    (*hint) = FailureHint::inside_but_invalid_token;
+    return false;
+  }
+#endif
+  return true;
 }

@@ -31,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ClassLoaderData;
+class Metadata;
 class AOTMetaspace;
 class MetaspaceTracer;
 class Mutex;
@@ -153,6 +154,50 @@ public:
   static inline bool is_in_class_space(const void* ptr) {
     return ptr < _class_space_end && ptr >= _class_space_start;
   }
+
+  // For metadata_is_live and klass_is_live
+  enum class FailureHint {
+    unknown = 0,
+    // outside class space/metaspace
+    outside,
+    // inside but does not meet alignment requirements (esp. for Klass)
+    inside_but_misaligned,
+    // inside but in the uncommitted part of metaspace
+    // (potentially released after class unloading, or never committed in the first place)
+    inside_but_unreadable,
+    // inside, but marked as a dead chunk
+    // (likely released after class unloading)
+    inside_but_dead_chunk,
+    // inside, but marked as a dead block
+    // (possibly prematurely returned block, e.g., after class redefinition)
+    inside_but_dead_block,
+    // inside, but the token is invalid (overwriter, maybe?)
+    inside_but_invalid_token,
+    // a klass needs to be encodable but is not (either outside of encoding range,
+    // so, not in class space nor in CDS archive range) or misaligned
+    nklass_not_encodable
+  };
+
+  // xxx_is_live functions returns true if the pointer given points to
+  // valid metadata. In release builds, it is equivalent to Metaspace::contains. In debug
+  // builds, it checks that:
+  // - the specified metadata is inside class-space or metaspace in committed, readable memory
+  // - not marked as dead space (i.e., not returned prematurely via Metaspace::deallocate)
+  // - correctly aligned for the type (esp. Klass)
+  // - Metadata token is valid specific to this type
+  // Note: Uses SafeFetch, so it's fine to use it on questionable pointers.
+
+  // Checks if an assumed klass location points to live metaspace (including Klass). Optional hint
+  // argument returns failure details.
+  static bool metadata_is_live(const Metadata* md, FailureHint* hint);
+
+  // Checks if an assumed klass location points to a live klass.
+  // Set "must_have_narrow_klass_id" to true if you know the klass should be encodable by narrow Klass,
+  // e.g., if you grabbed the Klass* from an oop header. Set to false if you don't know (if it could
+  // be abstract or interface, which don't have a narrow Klass).
+  // Optional hint argument returns failure details.
+  static bool klass_is_live(const Klass* k, bool must_have_narrow_klass_id, FailureHint* hint);
+  static bool klass_is_live(const Klass* k, bool must_have_narrow_klass_id);
 
   // Free empty virtualspaces
   static void purge(bool classes_unloaded);

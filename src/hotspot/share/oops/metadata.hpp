@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +32,28 @@
 
 // This is the base class for an internal Class related metadata
 class Metadata : public MetaspaceObj {
-  // Debugging hook to check that the metadata has not been deleted.
-  NOT_PRODUCT(int _valid;)
- public:
-  NOT_PRODUCT(Metadata() : _valid(0) {})
-  NOT_PRODUCT(bool is_valid() const { return _valid == 0; })
 
+#ifndef PRODUCT
+  uint32_t _token;
+
+protected:
+  Metadata() : _token(common_prefix) {}
+  void set_metadata_token(uint32_t v) { _token = v; }
+
+public:
+  static constexpr uint32_t common_prefix        = 0x3E7A'0000;
+  static constexpr uint32_t common_prefix_mask   = 0xFFFF'0000;
+  static constexpr uint32_t instance_klass_token = 0x3E7A'0101;
+  static constexpr uint32_t array_klass_token    = 0x3E7A'0102;
+
+  unsigned get_metadata_token() const { return _token; }
+  bool is_valid() const { return (get_metadata_token() & common_prefix_mask) == common_prefix; }
+
+  // Return token via SafeFetch. Returns true if token could be read, false if not.
+  bool get_metadata_token_safely(unsigned* out) const;
+#endif // !PRODUCT
+
+public:
   int identity_hash()                { return (int)(uintptr_t)this; }
 
   virtual bool is_metadata()           const { return true; }
@@ -84,5 +101,7 @@ static void print_on_maybe_null(outputStream* st, const char* str, const M* m) {
     st->cr();
   }
 }
+
+#undef BUILD32
 
 #endif // SHARE_OOPS_METADATA_HPP

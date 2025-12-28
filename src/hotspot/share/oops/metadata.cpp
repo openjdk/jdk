@@ -25,6 +25,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/metadata.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/safefetch.hpp"
 
 void Metadata::set_on_stack(const bool value) {
   // nothing to set for most metadata
@@ -48,3 +49,18 @@ char* Metadata::print_value_string() const {
   print_value_on(&st);
   return st.as_string();
 }
+
+#ifndef PRODUCT
+
+// Return token (read using SafeFetch). In case of a fault, returns Metadata::access_error.
+bool Metadata::get_metadata_token_safely(unsigned* out) const {
+  const int segfault = 0x3a0c3f2; // arbitrary random number
+  unsigned result = SafeFetch32((int*)&_token, 0x3a0c3f2);
+  if (result == segfault) {
+    return false;
+  }
+  (*out) = result;
+  return true;
+}
+
+#endif // !PRODUCT

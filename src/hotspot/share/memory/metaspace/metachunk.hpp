@@ -340,7 +340,10 @@ public:
   void verify() const;
   // Verifies linking with neighbors in virtual space. Needs expand lock protection.
   void verify_neighborhood() const;
+  // Zaps the header (this structure); Note: physically disjunct from the actual chunk!
   void zap_header(uint8_t c = 0x17);
+  // Zaps the chunk itself
+  void zap();
 
   // Returns true if given pointer points into the payload area of this chunk.
   bool is_valid_pointer(const MetaWord* p) const {

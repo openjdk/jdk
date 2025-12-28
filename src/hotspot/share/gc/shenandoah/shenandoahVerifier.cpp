@@ -106,6 +106,15 @@ private:
     }
   }
 
+  void check_v(ShenandoahAsserts::SafeLevel level, oop obj, bool test, const char* fmt, ...) ATTRIBUTE_PRINTF(5, 6) {
+    if (!test) {
+      va_list args;
+      va_start(args, fmt);
+      ShenandoahAsserts::vprintf_failure(level, obj, _interior_loc, _loc, _phase, __FILE__, __LINE__, fmt, args);
+      va_end(args);
+    }
+  }
+
   template <class T>
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
@@ -132,6 +141,8 @@ private:
   }
 
   void verify_oop(oop obj) {
+    Metaspace::FailureHint hint = Metaspace::FailureHint::unknown;
+
     // Perform consistency checks with gradually decreasing safety level. This guarantees
     // that failure report would not try to touch something that was not yet verified to be
     // safe to process.
@@ -151,6 +162,9 @@ private:
 
     check(ShenandoahAsserts::_safe_unknown, obj, klass_valid,
            "Object klass pointer unreadable or invalid");
+
+    check_v(ShenandoahAsserts::_safe_unknown, obj, Metaspace::klass_is_live(obj_klass, true, &hint),
+            "Object klass (" PTR_FORMAT "): invalid klass pointer or dead/invalid Klass (hint: %u)", p2i(obj_klass), (unsigned)hint);
 
     // Verify that obj is not in dead space:
     {
@@ -212,8 +226,10 @@ private:
       Klass* fwd_klass = fwd->klass_or_null();
       check(ShenandoahAsserts::_safe_oop, obj, fwd_klass != nullptr,
              "Forwardee klass pointer should not be null");
-      check(ShenandoahAsserts::_safe_oop, obj, Metaspace::contains(fwd_klass),
-             "Forwardee klass pointer must go to metaspace");
+      check_v(ShenandoahAsserts::_safe_oop, obj, Metaspace::klass_is_live(fwd_klass, true, &hint),
+             "Forwardee klass pointer (" PTR_FORMAT "): invalid klass pointer or dead/invalid Klass (hint: %u)",
+             p2i(fwd_klass), (unsigned)hint);
+
       check(ShenandoahAsserts::_safe_oop, obj, obj_klass == fwd_klass,
              "Forwardee klass pointer must go to metaspace");
 
@@ -245,15 +261,16 @@ private:
     // dead.
 
     if (obj_klass == vmClasses::Class_klass()) {
-      const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
-      check(ShenandoahAsserts::_safe_oop, obj,
-            klass == nullptr || Metaspace::contains(klass),
-            "Mirrored instance class should point to Metaspace");
-
-      const Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
-      check(ShenandoahAsserts::_safe_oop, obj,
-            array_klass == nullptr || Metaspace::contains(array_klass),
-            "Mirrored array class should point to Metaspace");
+      const Klass* const klass = (const Klass*) fwd->metadata_field(java_lang_Class::klass_offset());
+      check_v(ShenandoahAsserts::_safe_oop, obj,
+              klass == nullptr || Metaspace::klass_is_live(klass, false /* possibly not encodable */, &hint),
+             "Instance class mirror (" PTR_FORMAT "): invalid klass pointer or dead/invalid Klass (hint: %u)",
+             p2i(obj_klass), (unsigned)hint);
+      const Klass* const array_klass = (const Klass*) fwd->metadata_field(java_lang_Class::array_klass_offset());
+      check_v(ShenandoahAsserts::_safe_oop, obj,
+            array_klass == nullptr || Metaspace::klass_is_live(array_klass, true, &hint),
+            "Array class mirror (" PTR_FORMAT "): invalid klass pointer or dead/invalid Klass (hint: %u)",
+            p2i(array_klass), (unsigned)hint);
     }
 
     // ------------ obj and fwd are safe at this point --------------

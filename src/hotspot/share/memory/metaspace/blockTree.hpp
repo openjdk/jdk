@@ -30,6 +30,7 @@
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metablock.hpp"
+#include "memory/metaspace/metaspaceZapper.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -77,14 +78,9 @@ class BlockTree: public CHeapObj<mtMetaspace> {
 
   struct Node {
 
-    static const intptr_t _canary_value =
-        NOT_LP64(0x4e4f4445) LP64_ONLY(0x4e4f44454e4f4445ULL); // "NODE" resp "NODENODE"
-
-    // Note: we afford us the luxury of an always-there canary value.
-    //  The space for that is there (these nodes are only used to manage larger blocks).
-    //  It is initialized in debug and release, but only automatically tested
-    //  in debug.
-    const intptr_t _canary;
+    // A leading canary section that is zapped with the same metaspace zap pattern
+    // as the rest of the payload following the header (and all of dead/unsused metaspace).
+    MetaWord _canary;
 
     // Normal tree node stuff...
     //  (Note: all null if this is a stacked node)
@@ -100,8 +96,12 @@ class BlockTree: public CHeapObj<mtMetaspace> {
     // tree and need additional space for weighting information).
     const size_t _word_size;
 
+    const MetaWord* base() const { return (MetaWord*) this; }
+    MetaWord* base()             { return (MetaWord*) this; }
+    const MetaWord* end() const  { return base() + _word_size; }
+
     Node(size_t word_size) :
-      _canary(_canary_value),
+      _canary(0),
       _parent(nullptr),
       _left(nullptr),
       _right(nullptr),
@@ -110,13 +110,24 @@ class BlockTree: public CHeapObj<mtMetaspace> {
     {}
 
 #ifdef ASSERT
+    void zap() {
+      // Zap first word of header and payload that follows
+      Zapper::zap_location(&_canary, Zapper::zap_pattern_block);
+      Zapper::zap_payload(this, _word_size, Zapper::zap_pattern_block);
+    }
+    bool check_zap() const {
+      return Zapper::is_zapped_location(&_canary) &&
+             Zapper::is_zapped_location(end() - 1);
+    }
     bool valid() const {
-      return _canary == _canary_value &&
-        _word_size >= sizeof(Node) &&
-        _word_size < chunklevel::MAX_CHUNK_WORD_SIZE;
+      return _word_size > sizeof(Node) && // at least one word larger
+             _word_size < chunklevel::MAX_CHUNK_WORD_SIZE // but not larger than a root chunk
+             DEBUG_ONLY(&& check_zap());
     }
 #endif
   };
+
+  STATIC_ASSERT(is_aligned(sizeof(Node), sizeof(MetaWord)));
 
   // Needed for verify() and print_tree()
   struct walkinfo;
@@ -128,9 +139,12 @@ class BlockTree: public CHeapObj<mtMetaspace> {
 
 public:
 
-  // Minimum word size a block has to be to be added to this structure (note ceil division).
-  const static size_t MinWordSize =
-      (sizeof(Node) + sizeof(MetaWord) - 1) / sizeof(MetaWord);
+  // Public only for tests
+  static constexpr size_t header_wordsize = sizeof(Node) / sizeof(MetaWord);
+
+  // Minimum word size a block has to be to be added to this structure
+  // (Node size + at least one word; smaller blocks -> BinList)
+  constexpr static size_t MinWordSize = header_wordsize + 1;
 
 private:
 
@@ -335,7 +349,6 @@ private:
   }
 
 #ifdef ASSERT
-  void zap_block(MetaBlock block);
   // Helper for verify()
   void verify_node_pointer(const Node* n) const;
 #endif // ASSERT
@@ -346,7 +359,6 @@ public:
 
   // Add a memory block to the tree. Its content will be overwritten.
   void add_block(MetaBlock block) {
-    DEBUG_ONLY(zap_block(block);)
     const size_t word_size = block.word_size();
     assert(word_size >= MinWordSize, "invalid block size %zu", word_size);
     Node* n = new(block.base()) Node(word_size);
@@ -355,6 +367,7 @@ public:
     } else {
       insert(_root, n);
     }
+    DEBUG_ONLY(n->zap();)
     _counter.add(word_size);
   }
 
@@ -383,8 +396,6 @@ public:
       result = MetaBlock((MetaWord*)n, n->_word_size);
 
       _counter.sub(n->_word_size);
-
-      DEBUG_ONLY(zap_block(result);)
     }
     return result;
   }
