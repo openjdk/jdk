@@ -43,6 +43,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -66,6 +67,7 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.RetryExecutor;
+import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
@@ -73,6 +75,7 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 import org.xml.sax.SAXException;
 
 public final class MacHelper {
@@ -435,31 +438,29 @@ public final class MacHelper {
 
         final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
 
-        final var unpackadeRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
+        final var unpackedRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
 
-        var cmd = new JPackageCommand()
-                .useToolProvider(true)
-                .ignoreDefaultRuntime(true)
-                .dumpOutput(true)
-                .setPackageType(PackageType.MAC_DMG)
-                .setArgumentValue("--name", "foo")
-                .addArguments("--runtime-image", runtimeImage)
-                .addArguments("--dest", runtimeBundleWorkDir);
+        // Preferably create a DMG bundle, fallback to PKG if DMG packaging is disabled.
+        new PackageTest().forTypes(Stream.of(
+                PackageType.MAC_DMG,
+                PackageType.MAC_PKG
+        ).filter(PackageType::isEnabled).findFirst().orElseThrow(PackageType::throwSkippedExceptionIfNativePackagingUnavailable))
+        .addInitializer(cmd -> {
+            cmd.useToolProvider(true)
+            .ignoreDefaultRuntime(true)
+            .dumpOutput(true)
+            .removeArgumentWithValue("--input")
+            .setArgumentValue("--name", "foo")
+            .setArgumentValue("--runtime-image", runtimeImage)
+            .setArgumentValue("--dest", runtimeBundleWorkDir);
 
-        mutator.ifPresent(cmd::mutate);
+            mutator.ifPresent(cmd::mutate);
+        }).addInstallVerifier(cmd -> {
+            final Path bundleRoot = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+            FileUtils.copyRecursive(bundleRoot, unpackedRuntimeBundleDir, LinkOption.NOFOLLOW_LINKS);
+        }).run(Action.CREATE, Action.UNPACK, Action.VERIFY_INSTALL, Action.PURGE);
 
-        cmd.execute();
-
-        MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            if (dmgImage.endsWith(cmd.appInstallationDirectory().getFileName())) {
-                Executor.of("cp", "-R")
-                        .addArgument(dmgImage)
-                        .addArgument(unpackadeRuntimeBundleDir)
-                        .execute(0);
-            }
-        });
-
-        return unpackadeRuntimeBundleDir;
+        return unpackedRuntimeBundleDir;
     }
 
     public static Consumer<JPackageCommand> useKeychain(MacSign.ResolvedKeychain keychain) {
@@ -502,7 +503,7 @@ public final class MacHelper {
 
         @Override
         public String toString() {
-            var sb = new StringBuffer();
+            var sb = new StringBuilder();
             applyTo((optionName, _) -> {
                 sb.append(String.format("{%s: %s}", optionName, certRequest));
             });
