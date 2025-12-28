@@ -2060,7 +2060,7 @@ public final class Unsafe {
     /** Throws the exception without telling the verifier. */
     public native void throwException(Throwable ee);
 
-    // Here is the zoo of CAS operations in use (beyond the VH later):
+    // Here is the zoo of CAS operations in use (beyond the VH layer):
     // compareAndSet{Reference,Long,Int} (Volatile only)
     // compareAndExchange{Reference,Long,Int}{Plain,Acquire,Release,''}
     // weakCompareAndSet{Reference,Long,Int}{Plain,Acquire,Release,''}
@@ -2085,8 +2085,8 @@ public final class Unsafe {
      */
     @ForceInline
     public boolean compareAndSetReference(Object o, long offset,
-                                                Object expected,
-                                                Object x) {
+                                          Object expected,
+                                          Object x) {
         return compareAndSetReferenceMO(MO_VOLATILE, o, offset, expected, x);
     }
 
@@ -2107,9 +2107,9 @@ public final class Unsafe {
      */
     @IntrinsicCandidate
     public native boolean compareAndSetReferenceMO(byte memoryOrder,
-                                                         Object o, long offset,
-                                                         Object expected,
-                                                         Object x);
+                                                   Object o, long offset,
+                                                   Object expected,
+                                                   Object x);
 
     /**
      * Atomically updates Java variable to {@code x} if it is currently
@@ -2121,25 +2121,25 @@ public final class Unsafe {
      */
     @ForceInline
     public Object compareAndExchangeReference(Object o, long offset,
-                                                    Object expected,
-                                                    Object x) {
+                                              Object expected,
+                                              Object x) {
         return compareAndExchangeReferenceMO(MO_VOLATILE, o, offset, expected, x);
     }
 
     /** Convenience for {@code compareAndSetReferenceMO(MO_WEAK_CAS_VOLATILE ...)}. */
     @ForceInline
     public boolean weakCompareAndSetReference(Object o, long offset,
-                                                    Object expected,
-                                                    Object x) {
+                                              Object expected,
+                                              Object x) {
         return compareAndSetReferenceMO(MO_WEAK_CAS_VOLATILE, o, offset, expected, x);
     }
 
     // The native method can treat every memory access as MO_VOLATILE.
     @IntrinsicCandidate
     public native Object compareAndExchangeReferenceMO(byte memoryOrder,
-                                                             Object o, long offset,
-                                                             Object expected,
-                                                             Object x);
+                                                       Object o, long offset,
+                                                       Object expected,
+                                                       Object x);
 
     /**
      * Intrinsic for performing compare-and-set on a primitive variable

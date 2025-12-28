@@ -859,6 +859,7 @@ UNSAFE_ENTRY_SCOPED(jlong, Unsafe_CompareAndExchangePrimitiveBitsMO(JNIEnv *env,
          "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   assert(vmIntrinsics::is_valid_primitive_type(basic_type),
          "bad BT bits from Java: 0x%02x", basic_type & 0xFF);
+  guarantee(basic_type != T_SHORT, "FIXME - support short cmpxchg");
   oop p = JNIHandles::resolve(obj);
   auto addr = index_oop_from_field_offset_long(p, offset);
   // just use MO_VOLATILE for all MO inputs

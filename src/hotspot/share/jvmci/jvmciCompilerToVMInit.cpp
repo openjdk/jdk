@@ -303,7 +303,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 static jboolean is_c1_supported(vmIntrinsics::ID id){
     jboolean supported = false;
 #ifdef COMPILER1
-    supported = (jboolean) Compiler::is_intrinsic_supported(id);
+    supported = (jboolean) Compiler::is_intrinsic_supported_nv(id);
 #endif
     return supported;
 }
@@ -311,7 +311,7 @@ static jboolean is_c1_supported(vmIntrinsics::ID id){
 static jboolean is_c2_supported(vmIntrinsics::ID id){
     jboolean supported = false;
 #ifdef COMPILER2
-    supported = (jboolean) C2Compiler::is_intrinsic_supported(id);
+    supported = (jboolean) C2Compiler::is_intrinsic_supported_nv(id);
 #endif
     return supported;
 }

@@ -136,7 +136,7 @@ public:
   // Print compilation timers and statistics
   virtual void print_timers();
 
-  virtual bool is_intrinsic_supported(const methodHandle& method);
+  virtual bool is_intrinsic_supported(vmIntrinsics::ID id);
 
   // Gets the number of methods that have been successfully compiled by
   // a call to JVMCICompiler::compile_method().

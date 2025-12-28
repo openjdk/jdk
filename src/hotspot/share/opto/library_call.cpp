@@ -310,11 +310,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dsignum:
   case vmIntrinsics::_roundF:
   case vmIntrinsics::_roundD:
-  case vmIntrinsics::_fsignum:                  return inline_math_native(intrinsic_id());
+  case vmIntrinsics::_fsignum:                  return inline_math_native(id);
 
   case vmIntrinsics::_notify:
   case vmIntrinsics::_notifyAll:
-    return inline_notify(intrinsic_id());
+    return inline_notify(id);
 
   case vmIntrinsics::_addExactI:                return inline_math_addExactI(false /* add */);
   case vmIntrinsics::_addExactL:                return inline_math_addExactL(false /* add */);
@@ -364,24 +364,22 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_inflateStringC:
   case vmIntrinsics::_inflateStringB:           return inline_string_copy(!is_compress);
 
-  case vmIntrinsics::_getReferenceMO:           return inline_unsafe_access(!is_store, mo, bt, prefix_size);
-  case vmIntrinsics::_getPrimitiveBitsMO:       return inline_unsafe_access(!is_store, mo, bt, prefix_size);
-  case vmIntrinsics::_putReferenceMO:           return inline_unsafe_access( is_store, mo, bt, prefix_size);
-  case vmIntrinsics::_putPrimitiveBitsMO:       return inline_unsafe_access( is_store, mo, bt, prefix_size);
+  case vmIntrinsics::_getReferenceMO:           // fall through:
+  case vmIntrinsics::_getPrimitiveBitsMO:       // fall through:
+  case vmIntrinsics::_putReferenceMO:           // fall through:
+  case vmIntrinsics::_putPrimitiveBitsMO:       return inline_unsafe_access(id, mo, bt, prefix_size);
 
-  case vmIntrinsics::_compareAndSetReferenceMO:         return inline_unsafe_load_store(LS_cmp_swap,      mo, bt, op, prefix_size);
-  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:     return inline_unsafe_load_store(LS_cmp_swap,      mo, bt, op, prefix_size);
-
-  case vmIntrinsics::_compareAndExchangeReferenceMO:    return inline_unsafe_load_store(LS_cmp_exchange,  mo, bt, op, prefix_size);
-  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:return inline_unsafe_load_store(LS_cmp_exchange,  mo, bt, op, prefix_size);
-
-  case vmIntrinsics::_getAndSetReferenceMO:             return inline_unsafe_load_store(LS_get_set,       mo, bt, op, prefix_size);
-  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:     return inline_unsafe_load_store(LS_get_set,       mo, bt, op, prefix_size);
+  case vmIntrinsics::_compareAndSetReferenceMO:         // fall through:
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:     // fall through:
+  case vmIntrinsics::_compareAndExchangeReferenceMO:    // fall through:
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:// fall through:
+  case vmIntrinsics::_getAndSetReferenceMO:             // fall through:
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:     return inline_unsafe_load_store(id, mo, bt, op, prefix_size);
 
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:
-  case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
+  case vmIntrinsics::_fullFence:                return inline_unsafe_fence(id);
 
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
@@ -436,7 +434,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isHidden:
-  case vmIntrinsics::_getSuperclass:            return inline_native_Class_query(intrinsic_id());
+  case vmIntrinsics::_getSuperclass:            return inline_native_Class_query(id);
 
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_floatToIntBits:
@@ -445,13 +443,13 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_floatToFloat16:
-  case vmIntrinsics::_float16ToFloat:           return inline_fp_conversions(intrinsic_id());
-  case vmIntrinsics::_sqrt_float16:             return inline_fp16_operations(intrinsic_id(), 1);
-  case vmIntrinsics::_fma_float16:              return inline_fp16_operations(intrinsic_id(), 3);
+  case vmIntrinsics::_float16ToFloat:           return inline_fp_conversions(id);
+  case vmIntrinsics::_sqrt_float16:             return inline_fp16_operations(id, 1);
+  case vmIntrinsics::_fma_float16:              return inline_fp16_operations(id, 3);
   case vmIntrinsics::_floatIsFinite:
   case vmIntrinsics::_floatIsInfinite:
   case vmIntrinsics::_doubleIsFinite:
-  case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(intrinsic_id());
+  case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(id);
 
   case vmIntrinsics::_numberOfLeadingZeros_i:
   case vmIntrinsics::_numberOfLeadingZeros_l:
@@ -464,20 +462,20 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
   case vmIntrinsics::_reverseBytes_s:
-  case vmIntrinsics::_reverseBytes_c:           return inline_number_methods(intrinsic_id());
+  case vmIntrinsics::_reverseBytes_c:           return inline_number_methods(id);
 
   case vmIntrinsics::_compress_i:
   case vmIntrinsics::_compress_l:
   case vmIntrinsics::_expand_i:
-  case vmIntrinsics::_expand_l:                 return inline_bitshuffle_methods(intrinsic_id());
+  case vmIntrinsics::_expand_l:                 return inline_bitshuffle_methods(id);
 
   case vmIntrinsics::_compareUnsigned_i:
-  case vmIntrinsics::_compareUnsigned_l:        return inline_compare_unsigned(intrinsic_id());
+  case vmIntrinsics::_compareUnsigned_l:        return inline_compare_unsigned(id);
 
   case vmIntrinsics::_divideUnsigned_i:
   case vmIntrinsics::_divideUnsigned_l:
   case vmIntrinsics::_remainderUnsigned_i:
-  case vmIntrinsics::_remainderUnsigned_l:      return inline_divmod_methods(intrinsic_id());
+  case vmIntrinsics::_remainderUnsigned_l:      return inline_divmod_methods(id);
 
   case vmIntrinsics::_getCallerClass:           return inline_native_Reflection_getCallerClass();
 
@@ -490,18 +488,18 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_Class_cast:               return inline_Class_cast();
 
   case vmIntrinsics::_aescrypt_encryptBlock:
-  case vmIntrinsics::_aescrypt_decryptBlock:    return inline_aescrypt_Block(intrinsic_id());
+  case vmIntrinsics::_aescrypt_decryptBlock:    return inline_aescrypt_Block(id);
 
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
-    return inline_cipherBlockChaining_AESCrypt(intrinsic_id());
+    return inline_cipherBlockChaining_AESCrypt(id);
 
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
-    return inline_electronicCodeBook_AESCrypt(intrinsic_id());
+    return inline_electronicCodeBook_AESCrypt(id);
 
   case vmIntrinsics::_counterMode_AESCrypt:
-    return inline_counterMode_AESCrypt(intrinsic_id());
+    return inline_counterMode_AESCrypt(id);
 
   case vmIntrinsics::_galoisCounterMode_AESCrypt:
     return inline_galoisCounterMode_AESCrypt();
@@ -511,7 +509,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
   case vmIntrinsics::_sha3_implCompress:
-    return inline_digestBase_implCompress(intrinsic_id());
+    return inline_digestBase_implCompress(id);
   case vmIntrinsics::_double_keccak:
     return inline_double_keccak();
 
@@ -611,13 +609,13 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
-    return inline_fma(intrinsic_id());
+    return inline_fma(id);
 
   case vmIntrinsics::_isDigit:
   case vmIntrinsics::_isLowerCase:
   case vmIntrinsics::_isUpperCase:
   case vmIntrinsics::_isWhitespace:
-    return inline_character_compare(intrinsic_id());
+    return inline_character_compare(id);
 
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:
@@ -633,7 +631,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_maxF_strict:
   case vmIntrinsics::_minD_strict:
   case vmIntrinsics::_maxD_strict:
-    return inline_min_max(intrinsic_id());
+    return inline_min_max(id);
 
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
@@ -702,7 +700,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented intrinsic %s(%d)",
-                    vmIntrinsics::name_at(intrinsic_id()), vmIntrinsics::as_int(intrinsic_id()));
+                    vmIntrinsics::name_at(id), vmIntrinsics::as_int(id));
     }
 #endif
     return false;
@@ -2286,7 +2284,7 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
 }
 
 DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(vmIntrinsics::MemoryOrder mo) {
-  switch (mo) {
+  switch (mo & vmIntrinsics::UNSAFE_MO_MODE_MASK) {
       case vmIntrinsics::UNSAFE_MO_PLAIN:
         return MO_UNORDERED;  //meaning: ops may be reordered by both HW and JIT
       case vmIntrinsics::UNSAFE_MO_OPAQUE:
@@ -2344,10 +2342,12 @@ void LibraryCallKit::SavedState::discard() {
   _discarded = true;
 }
 
-bool LibraryCallKit::inline_unsafe_access(bool is_store,
+bool LibraryCallKit::inline_unsafe_access(vmIntrinsics::ID id,
                                           vmIntrinsics::MemoryOrder mo,
                                           BasicType type,
                                           int prefix_size) {
+  const bool is_store = (id == vmIntrinsics::_putReferenceMO ||
+                         id == vmIntrinsics::_putPrimitiveBitsMO);
   if (callee()->is_static())  return false;  // caller must have the capability!
   const bool unaligned = (mo & vmIntrinsics::UNSAFE_MO_UNALIGNED) != 0;
   mo = (vmIntrinsics::MemoryOrder)(mo & vmIntrinsics::UNSAFE_MO_MODE_MASK);
@@ -2555,24 +2555,21 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store,
 }
 
 //----------------------------inline_unsafe_load_store----------------------------
-// This method serves a couple of different customers (depending on LoadStoreKind):
+// This method serves a few different customers, depending on intrinsic ID:
 //
-// LS_cmp_swap:
-// LS_cmp_swap_weak:
-//   boolean compareAndSetReferenceMO(    MO,    Object,long, Object e, Object x);
-//   boolean compareAndSetPrimitiveBitsMO(MO,BT, Object,long, long   e, long x);
+//   1. boolean compareAndSetReferenceMO(        MO,    Object,long, Object e, Object x)
+//   2. boolean compareAndSetPrimitiveBitsMO(    MO,BT, Object,long, long   e, long   x)
+//   3. Object compareAndExchangeReferenceMO(    MO,    Object,long, Object e, Object x)
+//   4. Object compareAndExchangePrimitiveBitsMO(MO,BT, Object,long, long   e, long   x)
+//   5. long   getAndSetReferenceMO(             MO,    Object,long, Object newValue)
+//   6. long getAndOperatePrimitiveBitsMO(       MO,BT, Object,long, long newValueOrDelta)
+// The odd-numbered items work on T_OBJECT, while the even ones work on primitives.
+// The primitives are always carried in a long, which we note as 'utype=T_LONG'.
+// The first two return boolean, which we note as 'returns_boolean'.
+// The last two do not expect a particular value in storage, so they have no 'e'.
+// We note this condition with 'expects_value'.
 //
-// LS_cmp_exchange:
-//   Object compareAndExchangeReferenceMO(    MO,    Object,long, Object e, Object x);
-//   Object compareAndExchangePrimitiveBitsMO(MO,BT, Object,long, Object e, Object x);
-//
-// LS_get_set:
-//   int    getAndSetReferenceMO(      MO,    Object,long, Object newValue)
-// LS_get_set:
-// LS_get_add:
-//   int  getAndOperatePrimitiveBitsMO(MO,BT, Object,long, long newValueOrDelta)
-//
-bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
+bool LibraryCallKit::inline_unsafe_load_store(vmIntrinsics::ID id,
                                               vmIntrinsics::MemoryOrder mo,
                                               BasicType type,
                                               vmIntrinsics::BitsOperation op,
@@ -2585,32 +2582,47 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
   // the correspondences clearer. - dl
 
   if (callee()->is_static())  return false;  // caller must have the capability!
-  const bool weak_cas = (mo & vmIntrinsics::UNSAFE_MO_WEAK_CAS) != 0;
+  bool weak_cas = (mo & vmIntrinsics::UNSAFE_MO_WEAK_CAS) != 0;
   mo = (vmIntrinsics::MemoryOrder)(mo & vmIntrinsics::UNSAFE_MO_MODE_MASK);
 
   assert(type == T_OBJECT || is_integral_type(type), "Unsafe.java wrapper responsibility");
   BasicType utype = type == T_OBJECT ? T_OBJECT : T_LONG;
 
-  // FIXME: we need to ask the backend if 16-bit and 8-bit types are supported.
-  // Now that the intrinsics are simplified, we need to directly ask about
-  // match rules, or (better yet) build matcher queries that can express
-  // not only an intrinsic (or match rule) but some poly-prefix parameters.
-  if (is_subword_type(type))  return false;  //FIXME
-
   bool returns_boolean = false;
-  switch (kind) {
-  case LS_cmp_swap:
+  bool expects_value = false;
+  bool backend_check_done = false;
+  switch (id) {
+  case vmIntrinsics::_compareAndSetReferenceMO:
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
     returns_boolean = true;
-    if (weak_cas)
-      kind = LS_cmp_swap_weak;  // user supplied optional MO_WEAK_CAS bit
+    expects_value = true;
+    if (weak_cas) {
+      int mo_weak = mo | vmIntrinsics::UNSAFE_MO_WEAK_CAS;
+      if (C2Compiler::is_intrinsic_supported_nv(id,
+                                                (vmIntrinsics::MemoryOrder)mo_weak,
+                                                type, op)) {
+        backend_check_done = true;
+        break;
+      } else {
+        weak_cas = false;
+      }
+    }
     break;
-  case LS_get_set:
+
+  case vmIntrinsics::_compareAndExchangeReferenceMO:
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+    expects_value = true;
+    break;
+
+  case vmIntrinsics::_getAndSetReferenceMO:
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    returns_boolean = expects_value = false;
     switch (op) {
-    case vmIntrinsics::OP_SWAP:
     case vmIntrinsics::OP_NONE:
-      break;                // user requested op'=' or (for ref) no op
-    case vmIntrinsics::OP_ADD:
-      kind = LS_get_add;  // user requested op'+'
+      op = vmIntrinsics::OP_SWAP; // T_OBJECT implicitly uses OP_SWAP
+      break;
+    case vmIntrinsics::OP_SWAP:   // user requested op'=' or (for ref) no op
+    case vmIntrinsics::OP_ADD:    // user requested op'+'
       break;
     default:
       // FIXME: intrinsic expansion NYI for bitswise and/or/xor
@@ -2622,6 +2634,10 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
     }
   default:
     break;
+  }
+  if (!backend_check_done &&
+      !C2Compiler::is_intrinsic_supported_nv(id, mo, type, op)) {
+    return false;   // no support for this type and/or operation
   }
 
   DecoratorSet decorators = C2_UNSAFE_ACCESS;
@@ -2636,9 +2652,7 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
     for (int i = 0; i < prefix_size; i++)
       assert(sig->type_at(i)->basic_type() == T_BYTE, "prefix args are bytes");
     rtype = sig->return_type()->basic_type();
-    switch(kind) {
-      case LS_get_add:
-      case LS_get_set: {
+    if (!expects_value) {  // get-and-set, get-and-operate
       // Check the signatures.
 #ifdef ASSERT
       assert(rtype == utype, "get and set must return the expected type");
@@ -2647,10 +2661,7 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
       assert(sig->type_at(prefix_size+1)->basic_type() == T_LONG, "get and set offset is long");
       assert(sig->type_at(prefix_size+2)->basic_type() == utype, "get and set must take expected type as new value/delta");
 #endif // ASSERT
-        break;
-      }
-      case LS_cmp_swap:
-      case LS_cmp_swap_weak: {
+    } else if (returns_boolean) {  // compare-and-set
       // Check the signatures.
 #ifdef ASSERT
       assert(rtype == T_BOOLEAN, "CAS must return boolean");
@@ -2660,9 +2671,7 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
       assert(sig->type_at(prefix_size+2)->basic_type() == utype, "CAS e value is utype");
       assert(sig->type_at(prefix_size+3)->basic_type() == utype, "CAS x value is utype");
 #endif // ASSERT
-        break;
-      }
-      case LS_cmp_exchange: {
+    } else {  // compare-and-exchange
       // Check the signatures.
 #ifdef ASSERT
       assert(rtype == utype, "CAS must return the expected type");
@@ -2672,10 +2681,6 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
       assert(sig->type_at(prefix_size+2)->basic_type() == utype, "CAS e value is utype");
       assert(sig->type_at(prefix_size+3)->basic_type() == utype, "CAS x value is utype");
 #endif // ASSERT
-        break;
-      }
-      default:
-        ShouldNotReachHere();
     }
   }
 #endif //PRODUCT
@@ -2688,27 +2693,17 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
   Node* offset   = nullptr;
   Node* oldval   = nullptr;
   Node* newval   = nullptr;
-  switch(kind) {
-    case LS_cmp_swap:
-    case LS_cmp_swap_weak:
-    case LS_cmp_exchange: {
-      const bool two_slot_utype = type2size[utype] == 2;
-      base     = argument(prefix_size+1);  // type: oop
-      offset   = argument(prefix_size+2);  // type: long
-      oldval   = argument(prefix_size+4);  // type: oop or long
-      newval   = argument(prefix_size+(two_slot_utype ? 6 : 5));  // type: oop or long
-      break;
-    }
-    case LS_get_add:
-    case LS_get_set: {
-      base     = argument(prefix_size+1);  // type: oop
-      offset   = argument(prefix_size+2);  // type: long
-      oldval   = nullptr;
-      newval   = argument(prefix_size+4);  // type: ooop or long
-      break;
-    }
-    default:
-      ShouldNotReachHere();
+  if (expects_value) {
+    const bool two_slot_utype = type2size[utype] == 2;
+    base     = argument(prefix_size+1);  // type: oop
+    offset   = argument(prefix_size+2);  // type: long
+    oldval   = argument(prefix_size+4);  // type: oop or long
+    newval   = argument(prefix_size+(two_slot_utype ? 6 : 5));  // type: oop or long
+  } else {
+    base     = argument(prefix_size+1);  // type: oop
+    offset   = argument(prefix_size+2);  // type: long
+    oldval   = nullptr;
+    newval   = argument(prefix_size+4);  // type: ooop or long
   }
 
   // Build field offset expression.
@@ -2738,23 +2733,14 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
   const Type *value_type = Type::get_const_basic_type(type);
 
-  switch (kind) {
-    case LS_get_set:
-    case LS_cmp_exchange: {
-      if (type == T_OBJECT) {
-        const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
-        if (tjp != nullptr) {
-          value_type = tjp;
-        }
+  if (type == T_OBJECT) {
+    // Try to figure out a better type than just Object.
+    if (!(expects_value && returns_boolean)) {  // but not for compare-and-set
+      const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
+      if (tjp != nullptr) {
+        value_type = tjp;
       }
-      break;
     }
-    case LS_cmp_swap:
-    case LS_cmp_swap_weak:
-    case LS_get_add:
-      break;
-    default:
-      ShouldNotReachHere();
   }
 
   // Null check receiver.
@@ -2787,31 +2773,29 @@ bool LibraryCallKit::inline_unsafe_load_store(LoadStoreKind kind,
   }
 
   Node* result = nullptr;
-  switch (kind) {
-    case LS_cmp_exchange: {
+  if (expects_value) {
+    if (!returns_boolean) {
       result = access_atomic_cmpxchg_val_at(base, adr, adr_type, alias_idx,
                                             oldval, newval, value_type, type, decorators);
-      break;
-    }
-    case LS_cmp_swap_weak:
-      decorators |= C2_WEAK_CMPXCHG;
-    case LS_cmp_swap: {
+    } else {
+      if (weak_cas)
+        decorators |= C2_WEAK_CMPXCHG;
       result = access_atomic_cmpxchg_bool_at(base, adr, adr_type, alias_idx,
                                              oldval, newval, value_type, type, decorators);
-      break;
     }
-    case LS_get_set: {
+  } else {
+    switch (op) {
+    case vmIntrinsics::OP_SWAP:
       result = access_atomic_xchg_at(base, adr, adr_type, alias_idx,
                                      newval, value_type, type, decorators);
       break;
-    }
-    case LS_get_add: {
+    case vmIntrinsics::OP_ADD:
       result = access_atomic_add_at(base, adr, adr_type, alias_idx,
                                     newval, value_type, type, decorators);
       break;
-    }
     default:
       ShouldNotReachHere();
+    }
   }
 
   if (!returns_boolean && type_is_narrow_int) {

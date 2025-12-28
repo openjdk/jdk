@@ -3727,27 +3727,32 @@ bool GraphBuilder::try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignor
   BasicType t = (BasicType)bt;
   assert(bt >= 0 && is_java_type(t), "");
   if (op < 0)  op = vmIntrinsics::OP_NONE;
+  // Having collected the prefix, make one more check for backend support.
+  if (!_compilation->compiler()
+      ->is_intrinsic_supported(id, (vmIntrinsics::MemoryOrder)mo,
+                               t, (vmIntrinsics::BitsOperation)op)) {
+    return false;
+  }
+  // We know it is supported.  Now emit the code.
   switch(id) {
   case vmIntrinsics::_getReferenceMO:
     assert(t == T_OBJECT, "");    // and fall through
   case vmIntrinsics::_getPrimitiveBitsMO:
-    append_unsafe_get(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size); break;
+    append_unsafe_get(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size);
+    return true;
 
   case vmIntrinsics::_putReferenceMO:
     assert(t == T_OBJECT, "");    // and fall through
   case vmIntrinsics::_putPrimitiveBitsMO:
-    append_unsafe_put(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size); break;
+    append_unsafe_put(callee, (vmIntrinsics::MemoryOrder)mo, t, prefix_size);
+    return true;
 
   case vmIntrinsics::_compareAndSetReferenceMO:
     assert(t == T_OBJECT, "");    // and fall through
   case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
-    if (t == T_INT || t == T_LONG || t == T_OBJECT) {
-      append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
-                        vmIntrinsics::OP_NONE, prefix_size);
-      return true;
-    }
-    // FIXME: detect other combinations supported by platform
-    return false;
+    append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
+                      vmIntrinsics::OP_NONE, prefix_size);
+    return true;
 
   case vmIntrinsics::_getAndSetReferenceMO:
     assert(t == T_OBJECT, "");
@@ -3755,36 +3760,13 @@ bool GraphBuilder::try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignor
     op = vmIntrinsics::OP_SWAP;
     // and fall through
   case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
-    switch (op) {
-    case vmIntrinsics::OP_ADD:
-      if (t == T_INT  && !VM_Version::supports_atomic_getadd4()) return false;
-      if (t == T_LONG && !VM_Version::supports_atomic_getadd8()) return false;
-      break;
-    case vmIntrinsics::OP_SWAP:
-      if (t == T_INT  && !VM_Version::supports_atomic_getset4()) return false;
-      if (t == T_LONG && !VM_Version::supports_atomic_getset8()) return false;
-      break;
-    default:
-      return false;
-    }
-    // FIXME: Most platforms (including arm64 and x64) support byte
-    // and short as well, and with all the bitwise combination ops.
-    if (t == T_INT || t == T_LONG || t == T_OBJECT) {
-      append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
-                        (vmIntrinsics::BitsOperation)op, prefix_size);
-      return true;
-    }
-    return false;  // no other combinations supported
-
-  case vmIntrinsics::_compareAndExchangeReferenceMO:
-  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
-    // FIXME:  Most platforms support full cmpxchg in all sizes.
-    return false;
+    append_unsafe_CAS(callee, (vmIntrinsics::MemoryOrder)mo, t,
+                      (vmIntrinsics::BitsOperation)op, prefix_size);
+    return true;
 
   default:
     return false;
   }
-  return true;
 }
 
 
@@ -3797,6 +3779,10 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     VM_ENTRY_MARK;
     methodHandle mh(THREAD, callee->get_Method());
     is_available = _compilation->compiler()->is_intrinsic_available(mh, _compilation->directive());
+    if (is_available && mh->is_synchronized()) {
+      // C1 does not support intrinsification of synchronized methods.
+      is_available = false;
+    }
   }
 
   if (!is_available) {

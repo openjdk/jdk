@@ -222,12 +222,7 @@ void C2Compiler::print_timers() {
   Compile::print_timers();
 }
 
-bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
-  return C2Compiler::is_intrinsic_supported(id);
-}
-
-bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
+bool C2Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (id < vmIntrinsics::FIRST_ID || id > vmIntrinsics::LAST_COMPILER_INLINE) {
@@ -373,11 +368,18 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #else
     if (!Matcher::match_rule_supported(Op_CompareAndSwapP)) return false;
 #endif
+    // The intrinsic expansion logic will re-check for a specific match rule,
+    // because at that point the UNSAFE_MO_WEAK_CAS bit will be known.
     break;
   /* CompareAndSet, Int/Long: */
   case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
     if (!(Matcher::match_rule_supported(Op_CompareAndSwapL) ||
-          Matcher::match_rule_supported(Op_CompareAndSwapI))) return false;
+          Matcher::match_rule_supported(Op_CompareAndSwapI) ||
+          Matcher::match_rule_supported(Op_CompareAndSwapS) ||
+          Matcher::match_rule_supported(Op_CompareAndSwapB))) return false;
+    // The intrinsic expansion logic will re-check for a specific match rule,
+    // because at that point the size (from the BT argument) will be known.
+    // Also at that point the UNSAFE_MO_WEAK_CAS bit will be known.
     break;
 
   /* CompareAndExchange, Object: */
@@ -398,10 +400,17 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 
   /* GetAndSet/GetAndAdd, Int/Long: */
   case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
-    if (!(Matcher::match_rule_supported(Op_GetAndAddI) ||
+    if (!(Matcher::match_rule_supported(Op_GetAndAddB) ||
+          Matcher::match_rule_supported(Op_GetAndAddS) ||
+          Matcher::match_rule_supported(Op_GetAndAddI) ||
           Matcher::match_rule_supported(Op_GetAndAddL) ||
+          Matcher::match_rule_supported(Op_GetAndSetB) ||
+          Matcher::match_rule_supported(Op_GetAndSetS) ||
           Matcher::match_rule_supported(Op_GetAndSetI) ||
           Matcher::match_rule_supported(Op_GetAndSetL))) return false;
+    // The intrinsic expansion logic will re-check for a specific match rule,
+    // because at that point the size (from the BT argument) will be known.
+    // The OP (add vs. swap vs. any other thing) will also be known and tested.
     break;
   case vmIntrinsics::_getAndSetReferenceMO:
 #ifdef _LP64
@@ -706,6 +715,104 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   }
   return true;
 }
+
+bool C2Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
+                                           vmIntrinsics::MemoryOrder mo,
+                                           BasicType bt,
+                                           vmIntrinsics::BitsOperation op) {
+  assert(vmIntrinsics::polymorphic_prefix(id) != vmIntrinsics::PP_NONE, "");
+  if (!is_intrinsic_supported_nv(id))  return false;
+  int matchop = -1;
+  BasicType btn = bt;
+#ifdef LP64
+  if (btn == T_OBJECT && UseCompressedOops)  btn = T_NARROWOOP;
+#endif //LP64
+
+  switch (id) {
+  case vmIntrinsics::_compareAndSetReferenceMO:
+    assert(bt == T_OBJECT, "");    // and fall through
+    assert(op == vmIntrinsics::OP_NONE, "");
+  case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+    if ((mo & vmIntrinsics::UNSAFE_MO_WEAK_CAS) != 0) {
+      switch (btn) {
+      case T_OBJECT:      matchop = Op_WeakCompareAndSwapP; break;
+      case T_NARROWOOP:   matchop = Op_WeakCompareAndSwapN; break;
+      case T_BYTE:        matchop = Op_WeakCompareAndSwapB; break;
+      case T_SHORT:       matchop = Op_WeakCompareAndSwapS; break;
+      case T_INT:         matchop = Op_WeakCompareAndSwapI; break;
+      case T_LONG:        matchop = Op_WeakCompareAndSwapL; break;
+      default:  ShouldNotReachHere();
+      }
+    } else {
+      switch (btn) {
+      case T_OBJECT:      matchop = Op_CompareAndSwapP; break;
+      case T_NARROWOOP:   matchop = Op_CompareAndSwapN; break;
+      case T_BYTE:        matchop = Op_CompareAndSwapB; break;
+      case T_SHORT:       matchop = Op_CompareAndSwapS; break;
+      case T_INT:         matchop = Op_CompareAndSwapI; break;
+      case T_LONG:        matchop = Op_CompareAndSwapL; break;
+      default:  ShouldNotReachHere();
+      }
+    }
+    break;
+
+  case vmIntrinsics::_compareAndExchangeReferenceMO:
+    assert(bt == T_OBJECT, "");    // and fall through
+    assert(op == vmIntrinsics::OP_NONE, "");
+  case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+    switch (btn) {
+    case T_OBJECT:      matchop = Op_CompareAndExchangeP; break;
+    case T_NARROWOOP:   matchop = Op_CompareAndExchangeN; break;
+    case T_BYTE:        matchop = Op_CompareAndExchangeB; break;
+    case T_SHORT:       matchop = Op_CompareAndExchangeS; break;
+    case T_INT:         matchop = Op_CompareAndExchangeI; break;
+    case T_LONG:        matchop = Op_CompareAndExchangeL; break;
+    default:  ShouldNotReachHere();
+    }
+    break;
+
+  case vmIntrinsics::_getAndSetReferenceMO:
+    assert(bt == T_OBJECT, "");
+    assert(op == vmIntrinsics::OP_NONE, "");
+    op = vmIntrinsics::OP_SWAP;
+    // and fall through
+  case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    switch (op) {
+    case vmIntrinsics::OP_SWAP:
+      switch (btn) {
+      case T_OBJECT:      matchop = Op_GetAndSetP; break;
+      case T_NARROWOOP:   matchop = Op_GetAndSetN; break;
+      case T_BYTE:        matchop = Op_GetAndSetB; break;
+      case T_SHORT:       matchop = Op_GetAndSetS; break;
+      case T_INT:         matchop = Op_GetAndSetI; break;
+      case T_LONG:        matchop = Op_GetAndSetL; break;
+      default:  ShouldNotReachHere();
+      }
+      break;
+    case vmIntrinsics::OP_ADD:
+      switch (btn) {
+      case T_BYTE:        matchop = Op_GetAndAddB; break;
+      case T_SHORT:       matchop = Op_GetAndAddS; break;
+      case T_INT:         matchop = Op_GetAndAddI; break;
+      case T_LONG:        matchop = Op_GetAndAddL; break;
+      default:  ShouldNotReachHere();
+      }
+      break;
+    default:
+      // FIXME: Most platforms (including arm64 and x64) support byte
+      // and short as well, and with all the bitwise combination ops.
+      return false;
+    }
+    break;
+
+  default:
+    // The simple getters and setters must have full coverage in the AD file.
+    return true;
+  }
+  assert(matchop >= 0, "");
+  return Matcher::match_rule_supported(matchop);
+}
+
 
 int C2Compiler::initial_code_buffer_size(int const_size) {
   // See Compile::init_scratch_buffer_blob
