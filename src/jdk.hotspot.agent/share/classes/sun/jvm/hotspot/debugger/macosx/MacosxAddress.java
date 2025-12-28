@@ -22,15 +22,15 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+package sun.jvm.hotspot.debugger.macosx;
 
 import sun.jvm.hotspot.debugger.*;
 
-class BsdAddress implements Address {
-    protected BsdDebugger debugger;
+class MacosxAddress implements Address {
+    protected MacosxDebugger debugger;
     protected long addr;
 
-    BsdAddress(BsdDebugger debugger, long addr) {
+    MacosxAddress(MacosxDebugger debugger, long addr) {
         this.debugger = debugger;
         this.addr = addr;
     }
@@ -44,11 +44,11 @@ class BsdAddress implements Address {
             return false;
         }
 
-        if (!(arg instanceof BsdAddress)) {
+        if (!(arg instanceof MacosxAddress)) {
             return false;
         }
 
-        return (addr == ((BsdAddress) arg).addr);
+        return (addr == ((MacosxAddress) arg).addr);
     }
 
     public int hashCode() {
@@ -182,7 +182,7 @@ class BsdAddress implements Address {
     if (value == 0) {
       return null;
     }
-    return new BsdAddress(debugger, value);
+    return new MacosxAddress(debugger, value);
   }
 
   public OopHandle  addOffsetToAsOopHandle(long offset) throws UnsupportedOperationException {
@@ -190,7 +190,7 @@ class BsdAddress implements Address {
     if (value == 0) {
       return null;
     }
-    return new BsdOopHandle(debugger, value);
+    return new MacosxOopHandle(debugger, value);
   }
 
   /** (FIXME: any signed/unsigned issues? Should this work for
@@ -199,7 +199,7 @@ class BsdAddress implements Address {
     if (arg == null) {
       return addr;
     }
-    return addr - ((BsdAddress) arg).addr;
+    return addr - ((MacosxAddress) arg).addr;
   }
 
   // Two's complement representation.
@@ -211,7 +211,7 @@ class BsdAddress implements Address {
     if (a == null) {
       return false;
     }
-    BsdAddress arg = (BsdAddress) a;
+    MacosxAddress arg = (MacosxAddress) a;
     if ((addr >= 0) && (arg.addr < 0)) {
       return true;
     }
@@ -225,7 +225,7 @@ class BsdAddress implements Address {
     if (a == null) {
       return false;
     }
-    BsdAddress arg = (BsdAddress) a;
+    MacosxAddress arg = (MacosxAddress) a;
     if ((addr >= 0) && (arg.addr < 0)) {
       return true;
     }
@@ -239,7 +239,7 @@ class BsdAddress implements Address {
     if (a == null) {
       return true;
     }
-    BsdAddress arg = (BsdAddress) a;
+    MacosxAddress arg = (MacosxAddress) a;
     if ((addr >= 0) && (arg.addr < 0)) {
       return false;
     }
@@ -253,7 +253,7 @@ class BsdAddress implements Address {
     if (a == null) {
       return true;
     }
-    BsdAddress arg = (BsdAddress) a;
+    MacosxAddress arg = (MacosxAddress) a;
     if ((addr >= 0) && (arg.addr < 0)) {
       return false;
     }
@@ -268,7 +268,7 @@ class BsdAddress implements Address {
     if (value == 0) {
       return null;
     }
-    return new BsdAddress(debugger, value);
+    return new MacosxAddress(debugger, value);
   }
 
   public Address    orWithMask(long mask) throws UnsupportedOperationException {
@@ -276,7 +276,7 @@ class BsdAddress implements Address {
     if (value == 0) {
       return null;
     }
-    return new BsdAddress(debugger, value);
+    return new MacosxAddress(debugger, value);
   }
 
   public Address    xorWithMask(long mask) throws UnsupportedOperationException {
@@ -284,7 +284,7 @@ class BsdAddress implements Address {
     if (value == 0) {
       return null;
     }
-    return new BsdAddress(debugger, value);
+    return new MacosxAddress(debugger, value);
   }
 
   public long asLongValue() { return addr; }
@@ -304,10 +304,10 @@ class BsdAddress implements Address {
     // p/n indicates whether the interior address is really positive
     // or negative. In unsigned terms, p1 < p2 < n1 < n2.
 
-    BsdAddress p1 = new BsdAddress(null, 0x7FFFFFFFFFFFFFF0L);
-    BsdAddress p2 = (BsdAddress) p1.addOffsetTo(10);
-    BsdAddress n1 = (BsdAddress) p2.addOffsetTo(10);
-    BsdAddress n2 = (BsdAddress) n1.addOffsetTo(10);
+    MacosxAddress p1 = new MacosxAddress(null, 0x7FFFFFFFFFFFFFF0L);
+    MacosxAddress p2 = (MacosxAddress) p1.addOffsetTo(10);
+    MacosxAddress n1 = (MacosxAddress) p2.addOffsetTo(10);
+    MacosxAddress n2 = (MacosxAddress) n1.addOffsetTo(10);
 
     // lessThan positive tests
     check(p1.lessThan(p2), "lessThan 1");
@@ -393,6 +393,6 @@ class BsdAddress implements Address {
     check(!p2.greaterThanOrEqual(n1), "greaterThanOrEqual 15");
     check(!p1.greaterThanOrEqual(p2), "greaterThanOrEqual 16");
 
-    System.err.println("BsdAddress: all tests passed successfully.");
+    System.err.println("MacosxAddress: all tests passed successfully.");
   }
 }

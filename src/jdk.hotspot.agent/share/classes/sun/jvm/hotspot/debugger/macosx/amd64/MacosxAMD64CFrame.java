@@ -22,18 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd.amd64;
+package sun.jvm.hotspot.debugger.macosx.amd64;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.amd64.*;
-import sun.jvm.hotspot.debugger.bsd.*;
+import sun.jvm.hotspot.debugger.macosx.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.runtime.amd64.*;
 
-public final class BsdAMD64CFrame extends BasicCFrame {
-   public BsdAMD64CFrame(BsdDebugger dbg, Address rsp, Address rbp, Address rip) {
+public final class MacosxAMD64CFrame extends BasicCFrame {
+   public MacosxAMD64CFrame(MacosxDebugger dbg, Address rsp, Address rbp, Address rip) {
       super(dbg.getCDebugger());
       this.rsp = rsp;
       this.rbp = rbp;
@@ -87,7 +87,7 @@ public final class BsdAMD64CFrame extends BasicCFrame {
       if (nextPC == null) {
         return null;
       }
-      return new BsdAMD64CFrame(dbg, nextRSP, nextRBP, nextPC);
+      return new MacosxAMD64CFrame(dbg, nextRSP, nextRBP, nextPC);
    }
 
    @Override
@@ -100,5 +100,5 @@ public final class BsdAMD64CFrame extends BasicCFrame {
    private Address rsp;
    private Address rip;
    private Address rbp;
-   private BsdDebugger dbg;
+   private MacosxDebugger dbg;
 }
