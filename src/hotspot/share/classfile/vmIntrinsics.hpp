@@ -1560,7 +1560,7 @@ public:
   static const int PRIMITIVE_SIZE_MASK = 3;
   static size_t primitive_type_size(BasicType bt) {
     assert(is_valid_primitive_type(bt), "BT has no size: %02x", bt);
-    return 1 << (bt & PRIMITIVE_SIZE_MASK);
+    return (size_t)1 << (bt & PRIMITIVE_SIZE_MASK);
   }
 
   static bool is_valid_primitive_type(int bt) {
