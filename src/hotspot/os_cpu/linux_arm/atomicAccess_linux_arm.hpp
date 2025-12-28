@@ -142,10 +142,7 @@ struct AtomicAccess::PlatformAdd<8> : AtomicAccess::AddUsingCmpxchg<8> {};
 
 // No direct support for cmpxchg of bytes; emulate using int.
 template<>
-struct AtomicAccess::PlatformCmpxchg<1> : AtomicAccess::CmpxchgSubwordUsingInt<1> {};
-// No direct support for cmpxchg of shorts; emulate using int.
-template<>
-struct AtomicAccess::PlatformCmpxchg<2> : AtomicAccess::CmpxchgSubwordUsingInt<2> {};
+struct AtomicAccess::PlatformCmpxchg<1> : AtomicAccess::CmpxchgByteUsingInt {};
 
 
 inline int32_t reorder_cmpxchg_func(int32_t exchange_value,

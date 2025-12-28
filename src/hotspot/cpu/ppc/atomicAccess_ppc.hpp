@@ -280,11 +280,6 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
   return PrimitiveConversions::cast<T>((unsigned char)old_value);
 }
 
-// Use a canned algorithm for 16 bits.
-// FIXME: reconcile this decision with the above code for 8 bits.
-template<>
-struct AtomicAccess::PlatformCmpxchg<2> : AtomicAccess::CmpxchgSubwordUsingInt<2> {};
-
 template<>
 template<typename T>
 inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,

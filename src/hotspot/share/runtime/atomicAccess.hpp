@@ -367,7 +367,7 @@ private:
   struct CmpxchgImpl;
 
   // Platform-specific implementation of cmpxchg.  Support for sizes
-  // of 1, 2, 4, and 8 are required.  The class is a function object that
+  // of 1, 4, and 8 are required.  The class is a function object that
   // must be default constructable, with these requirements:
   //
   // - dest is of type T*.
@@ -404,8 +404,7 @@ private:
   // accesses for 1-byte and 8-byte widths. To use, derive PlatformCmpxchg<1>,
   // PlatformAdd<S>, PlatformXchg<S> from these classes.
 public: // Temporary, can't be private: C++03 11.4/2. Fixed by C++11.
-  template<size_t byte_size>
-  struct CmpxchgSubwordUsingInt;
+  struct CmpxchgByteUsingInt;
   template<size_t byte_size>
   struct XchgUsingCmpxchg;
   template<size_t byte_size>
@@ -420,7 +419,7 @@ private:
   struct XchgImpl;
 
   // Platform-specific implementation of xchg.  Support for sizes
-  // of 1, 2, 4, and 8 are required.  The class is a function object
+  // of 1, 4, and 8 are required.  The class is a function object
   // that must be default constructable, with these requirements:
   //
   // - dest is of type T*.
@@ -672,12 +671,9 @@ struct AtomicAccess::PlatformCmpxchg {
 // Define the class before including platform file, which may use this
 // as a base class, requiring it be complete.  The definition is later
 // in this file, near the other definitions related to cmpxchg.
-template<size_t byte_size>
-struct AtomicAccess::CmpxchgSubwordUsingInt {
-  template<typename T>
-  static T get_subword_in_int(uint32_t n, uint32_t idx);
-  template<typename T>
-  static uint32_t set_subword_in_int(uint32_t n, T sw, uint32_t idx);
+struct AtomicAccess::CmpxchgByteUsingInt {
+  static uint8_t get_byte_in_int(uint32_t n, uint32_t idx);
+  static uint32_t set_byte_in_int(uint32_t n, uint8_t b, uint32_t idx);
   template<typename T>
   T operator()(T volatile* dest,
                T compare_value,
@@ -722,7 +718,6 @@ public:
       old_value = AtomicAccess::load(dest);
       new_value = old_value + add_value;
     } while (old_value != AtomicAccess::cmpxchg(dest, old_value, new_value, order));
-    STATIC_ASSERT(!std::is_floating_point<D>::value);  //FP messes up while(x!=y)
     return old_value;
   }
 };
@@ -1097,38 +1092,28 @@ inline T AtomicAccess::cmpxchg_using_helper(Fn fn,
        PrimitiveConversions::cast<Type>(compare_value)));
 }
 
-template<size_t byte_size>
-template<typename T>
-inline uint32_t AtomicAccess::CmpxchgSubwordUsingInt<byte_size>::set_subword_in_int(uint32_t n,
-                                                                                    T sw,
-                                                                                    uint32_t idx) {
-  STATIC_ASSERT(sizeof(T) == byte_size);
+inline uint32_t AtomicAccess::CmpxchgByteUsingInt::set_byte_in_int(uint32_t n,
+                                                                   uint8_t b,
+                                                                   uint32_t idx) {
   uint32_t bitsIdx = BitsPerByte * idx;
-  uint32_t bitSize = BitsPerByte * byte_size;
-  uint32_t bitMask = right_n_bits(bitSize);
-  uint32_t newBits = bitMask & static_cast<uint32_t>(sw);
-  return (( n & ~(bitMask << bitsIdx))
-          |      (newBits << bitsIdx));
+  return (n & ~(static_cast<uint32_t>(0xff) << bitsIdx))
+          | (static_cast<uint32_t>(b) << bitsIdx);
 }
 
-template<size_t byte_size>
-template<typename T>
-inline T AtomicAccess::CmpxchgSubwordUsingInt<byte_size>::get_subword_in_int(uint32_t n,
-                                                                             uint32_t idx) {
-  STATIC_ASSERT(sizeof(T) == byte_size);
+inline uint8_t AtomicAccess::CmpxchgByteUsingInt::get_byte_in_int(uint32_t n,
+                                                                  uint32_t idx) {
   uint32_t bitsIdx = BitsPerByte * idx;
-  return (T)(n >> bitsIdx);
+  return (uint8_t)(n >> bitsIdx);
 }
 
-template<size_t byte_size>
 template<typename T>
-inline T AtomicAccess::CmpxchgSubwordUsingInt<byte_size>::operator()(T volatile* dest,
-                                                                     T compare_value,
-                                                                     T exchange_value,
-                                                                     atomic_memory_order order) const {
-  STATIC_ASSERT(sizeof(T) == byte_size);
-  T canon_exchange_value = exchange_value;
-  T canon_compare_value = compare_value;
+inline T AtomicAccess::CmpxchgByteUsingInt::operator()(T volatile* dest,
+                                                       T compare_value,
+                                                       T exchange_value,
+                                                       atomic_memory_order order) const {
+  STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
+  uint8_t canon_exchange_value = exchange_value;
+  uint8_t canon_compare_value = compare_value;
   volatile uint32_t* aligned_dest
     = reinterpret_cast<volatile uint32_t*>(align_down(dest, sizeof(uint32_t)));
   uint32_t offset = checked_cast<uint32_t>(pointer_delta(dest, aligned_dest, 1));
@@ -1139,14 +1124,14 @@ inline T AtomicAccess::CmpxchgSubwordUsingInt<byte_size>::operator()(T volatile*
 
   // current value may not be what we are looking for, so force it
   // to that value so the initial cmpxchg will fail if it is different
-  uint32_t cur = set_subword_in_int(AtomicAccess::load(aligned_dest), canon_compare_value, idx);
+  uint32_t cur = set_byte_in_int(AtomicAccess::load(aligned_dest), canon_compare_value, idx);
 
   // always execute a real cmpxchg so that we get the required memory
   // barriers even on initial failure
   do {
     // value to swap in matches current value
-    // except for the one or two bytes we want to update
-    uint32_t new_value = set_subword_in_int(cur, canon_exchange_value, idx);
+    // except for the one byte we want to update
+    uint32_t new_value = set_byte_in_int(cur, canon_exchange_value, idx);
 
     uint32_t res = cmpxchg(aligned_dest, cur, new_value, order);
     if (res == cur) break;      // success
@@ -1155,10 +1140,9 @@ inline T AtomicAccess::CmpxchgSubwordUsingInt<byte_size>::operator()(T volatile*
     // our view of the current int
     cur = res;
     // if our byte is still as cur we loop and try again
-  } while (get_subword_in_int<T>(cur, idx) == canon_compare_value);
+  } while (get_byte_in_int(cur, idx) == canon_compare_value);
 
-  STATIC_ASSERT(!std::is_floating_point<T>::value);  //FP messes up while(x!=y)
-  return get_subword_in_int<T>(cur, idx);
+  return PrimitiveConversions::cast<T>(get_byte_in_int(cur, idx));
 }
 
 // Handle xchg for integral types.
@@ -1242,7 +1226,6 @@ inline T AtomicAccess::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
   do {
     old_value = AtomicAccess::load(dest);
   } while (old_value != AtomicAccess::cmpxchg(dest, old_value, exchange_value, order));
-  STATIC_ASSERT(!std::is_floating_point<T>::value);  //FP messes up while(x!=y)
   return old_value;
 }
 
