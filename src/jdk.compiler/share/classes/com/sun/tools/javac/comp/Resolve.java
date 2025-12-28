@@ -3843,12 +3843,15 @@ public class Resolve {
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
         while (env1.outer != null) {
+            // If the local class is defined inside a static method, and the instance creation expression
+            // occurs in that same method, the creation occurs (technically) inside a static context, but that's ok.
             if (env1.info.scope.owner == owner) {
                 return (staticOnly) ?
                     new BadLocalClassCreation(c) :
                     owner;
+            } else if (isStatic(env1) || env1.enclClass.sym.isStatic()) {
+                staticOnly = true;
             }
-            if (isStatic(env1)) staticOnly = true;
             env1 = env1.outer;
         }
         return owner.kind == MTH ?
