@@ -117,7 +117,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
 // Use a canned algorithm for 16 bits.
 // FIXME: reconcile this decision with the above code for 8 bits.
 template<>
-struct AtomicAccess::PlatformCmpxchg<2> : AtomicAccess::CmpxchgSubwordUsingInt {};
+struct AtomicAccess::PlatformCmpxchg<2> : AtomicAccess::CmpxchgSubwordUsingInt<2> {};
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
 // The implementation of `__atomic_compare_exchange` lacks sign extensions

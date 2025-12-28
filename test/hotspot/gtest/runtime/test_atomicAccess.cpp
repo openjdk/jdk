@@ -105,6 +105,11 @@ TEST_VM(AtomicAccessXchgTest, int8) {
   Support().test();
 }
 
+TEST_VM(AtomicAccessXchgTest, int16) {
+  using Support = AtomicAccessXchgTestSupport<int8_t>;
+  Support().test();
+}
+
 TEST_VM(AtomicAccessXchgTest, int32) {
   using Support = AtomicAccessXchgTestSupport<int32_t>;
   Support().test();
@@ -333,6 +338,14 @@ TEST_VM(AtomicAccessBitopsTest, int8) {
 }
 
 TEST_VM(AtomicAccessBitopsTest, uint8) {
+  AtomicAccessBitopsTestSupport<uint8_t>()();
+}
+
+TEST_VM(AtomicAccessBitopsTest, int16) {
+  AtomicAccessBitopsTestSupport<int8_t>()();
+}
+
+TEST_VM(AtomicAccessBitopsTest, uint16) {
   AtomicAccessBitopsTestSupport<uint8_t>()();
 }
 

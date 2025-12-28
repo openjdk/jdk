@@ -117,6 +117,6 @@ DEFINE_INTRINSIC_CMPXCHG(InterlockedCompareExchange64, __int64)
 // Use a canned algorithm for 16 bits.
 // FIXME: reconcile this decision with the above code for 8 bits.
 template<>
-struct AtomicAccess::PlatformCmpxchg<2> : AtomicAccess::CmpxchgSubwordUsingInt {};
+struct AtomicAccess::PlatformCmpxchg<2> : AtomicAccess::CmpxchgSubwordUsingInt<2> {};
 
 #endif // OS_CPU_WINDOWS_AARCH64_ATOMICACCESS_WINDOWS_AARCH64_HPP

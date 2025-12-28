@@ -1105,8 +1105,10 @@ inline uint32_t AtomicAccess::CmpxchgSubwordUsingInt<byte_size>::set_subword_in_
   STATIC_ASSERT(sizeof(T) == byte_size);
   uint32_t bitsIdx = BitsPerByte * idx;
   uint32_t bitSize = BitsPerByte * byte_size;
-  return (n & ~(static_cast<uint32_t>(right_n_bits(bitSize)) << bitsIdx))
-          | (static_cast<uint32_t>(sw) << bitsIdx);
+  uint32_t bitMask = right_n_bits(bitSize);
+  uint32_t newBits = bitMask & static_cast<uint32_t>(sw);
+  return (( n & ~(bitMask << bitsIdx))
+          |      (newBits << bitsIdx));
 }
 
 template<size_t byte_size>
