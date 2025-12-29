@@ -99,7 +99,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * <th scope="row">redirectStderr(true) and dumpOutput(true)</th>
  * <td>
  * <p>
- * dumpStdout(): STDOUT & STDERR interleaved
+ * dumpStdout(): STDOUT and STDERR interleaved
  * <p>
  * dumpStderr(): unchanged</td>
  * <td>
@@ -152,7 +152,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * <th scope="row">redirectStderr(true) and dumpOutput(true)</th>
  * <td>
  * <p>
- * System.out: STDOUT & STDERR interleaved
+ * System.out: STDOUT and STDERR interleaved
  * <p>
  * System.err: unchanged</td>
  * <td>
@@ -194,8 +194,9 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * <p>
  * The table below shows how different parameter combinations affect the
  * properties of {@link Result} objects returned by
- * {@link #execute(ProcessBuilder)} or {@link #execute(ProcessBuilder, long)} or
- * {@link #execute(ToolProvider, String...)} when processing character streams:
+ * {@link #execute(ProcessBuilder, long)} or
+ * {@link #execute(ToolProvider, long, String...)} when processing character
+ * streams:
  * <table border="1">
  * <thead>
  * <tr>
@@ -209,7 +210,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * discardStderr(false)</th>
  * <td>
  * <p>
- * content(): STDOUT & STDERR interleaved
+ * content(): STDOUT and STDERR interleaved
  * <p>
  * findStdout(): {@code Optional.empty()}
  * <p>
@@ -326,8 +327,8 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * <p>
  * The table below shows how different parameter combinations affect the
  * properties of {@link Result} objects returned by
- * {@link #execute(ProcessBuilder)} or {@link #execute(ProcessBuilder, long)} or
- * {@link #execute(ToolProvider, String...)} when processing byte streams:
+ * {@link #execute(ProcessBuilder, long)} or
+ * {@link #execute(ToolProvider, long, String...)} when processing byte streams:
  * <table border="1">
  * <thead>
  * <tr>
@@ -340,7 +341,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  * discardStderr(false)</th>
  * <td>
  * <p>
- * byteContent(): STDOUT & STDERR interleaved
+ * byteContent(): STDOUT and STDERR interleaved
  * <p>
  * findByteStdout(): {@code Optional.empty()}
  * <p>
@@ -623,10 +624,10 @@ public final class CommandOutputControl {
     }
 
     /**
-     * Returns the value passed in the last call of {@link #isStoreOutputInFiles(boolean)}
+     * Returns the value passed in the last call of {@link #storeOutputInFiles(boolean)}
      * method on this object, or {@code false} if the method has not been called.
      *
-     * @return the value passed in the last call of {@link #isStoreOutputInFiles(boolean)}
+     * @return the value passed in the last call of {@link #storeOutputInFiles(boolean)}
      */
     public boolean isStoreOutputInFiles() {
         return Flag.STORE_OUTPUT_IN_FILES.isSet(flags);
