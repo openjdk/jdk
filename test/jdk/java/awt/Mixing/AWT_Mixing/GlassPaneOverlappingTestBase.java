@@ -131,8 +131,8 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                 latch.countDown();
             }
         });
-        if (testResize) {
-            wasLWClicked = false;
+        if (!testResize) {
+            return true;
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
 
