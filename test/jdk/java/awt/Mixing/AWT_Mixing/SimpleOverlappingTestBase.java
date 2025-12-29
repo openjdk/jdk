@@ -182,7 +182,6 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
             ancestor.dispose();
         }
 
-
         return wasLWClicked;
     }
 
