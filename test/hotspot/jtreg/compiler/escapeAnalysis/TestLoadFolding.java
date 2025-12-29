@@ -241,7 +241,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "1"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.ALLOC, "1"})
     public int test112() {
         // The object has been stored into memory but the destination does not escape
         PointHolder h = new PointHolder();
@@ -254,7 +254,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "2"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.ALLOC, "2"})
     public int test113() {
         // The object has been stored into memory but the destination has not escaped
         PointHolder h = new PointHolder();
@@ -267,7 +267,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "3"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.ALLOC, "3"})
     public int test114(boolean b) {
         // A Phi has been stored into memory but the destination has not escaped
         PointHolder h = new PointHolder();
@@ -281,7 +281,7 @@ public class TestLoadFolding {
     }
 
     @Test
-    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, failOn = IRNode.LOAD_I, counts = {IRNode.ALLOC, "3"})
+    @IR(applyIf = {"DoLocalEscapeAnalysis", "true"}, counts = {IRNode.ALLOC, "3"})
     public int test115(boolean b) {
         // The object has been stored into a Phi but the destination has not escaped
         PointHolder h1 = new PointHolder();

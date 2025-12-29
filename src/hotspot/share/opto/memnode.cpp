@@ -1506,34 +1506,21 @@ MemNode::LocalEA::EscapeStatus MemNode::LocalEA::check_escape_status(Node* ctl) 
       } else if (out->is_Mem()) {
         // A Store or a LoadStore
         if (n == out->in(MemNode::ValueIn)) {
-          Node* ptr = out->in(MemNode::Address);
-          if (ptr->is_AddP()) {
-            Node* ptr_base = ptr->as_AddP()->base_node();
-            if (!_phase->type(ptr_base)->isa_oopptr()) {
-              // Maybe a store to raw memory
-              res = ESCAPED;
-              break;
-            }
-
-            // If an object o is stored into a field of a holder h and h has not escaped, we can
-            // say that o has not escaped, too
-            LocalEA store_base_ea(_phase, ptr->as_AddP()->base_node());
-            if (!store_base_ea.is_candidate()) {
-              res = ESCAPED;
-              break;
-            }
-
-            // This is similar to store_base_ea.check_escape_status(ctl), the differences are that
-            // it avoids the drawbacks of recursion and does not unnecessarily collect
-            // _not_escaped_controls again
-            for (uint i = 0; i < store_base_ea.aliases().size(); i++) {
-              dependencies.push(store_base_ea.aliases().at(i));
-            }
-          } else {
-            // Do not know into where n is stored, give up
-            res = ESCAPED;
-            break;
-          }
+          // You may wonder if we can reason about the escape status of the destination memory
+          // here so that we can determine that an object has not escaped if the object into which
+          // it is stored has not escaped. Unfortunately, this store breaks _aliases, because there
+          // is now a memory that can alias the object we are analyzed, and a load from such memory
+          // is not visited by this analysis. For example:
+          //   Object o = new Object;
+          //   Holder h = new Holder;
+          //   h.o = o;
+          //   do_something();
+          //   Object p = h.o;
+          //   escape(p);
+          // Then, o escapes at escape(p), but we will not visit that. In order for this to work,
+          // the constructor needs to be more conservative when it collects _aliases.
+          res = ESCAPED;
+          break;
         } else if (n == out->in(MemNode::Address) && (!out->is_Store() || out->as_Store()->is_mismatched_access())) {
           // Mismatched accesses can lie in a different alias class and are protected by memory
           // barriers, so we cannot be aggressive and walk past memory barriers if there is a
