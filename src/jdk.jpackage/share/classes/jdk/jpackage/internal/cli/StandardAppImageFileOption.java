@@ -169,15 +169,6 @@ public final class StandardAppImageFileOption {
             .mutate(setPlatformScope(OperatingSystem.MACOS))
             .toOptionValueBuilder().id(StandardOption.MAC_APP_STORE.id()).create();
 
-    /**
-     * Is an application image is signed. macOS-only.
-     */
-    public static final OptionValue<Boolean> MAC_SIGNED = booleanOption("signed")
-            .inScope(AppImageFileOptionScope.APP)
-            .mutate(setPlatformScope(OperatingSystem.MACOS))
-            .toOptionValueBuilder().id(StandardOption.MAC_SIGN.id()).create();
-
-
     public static final class InvalidOptionValueException extends RuntimeException {
 
         InvalidOptionValueException(String str, Throwable t) {

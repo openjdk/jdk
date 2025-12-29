@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.MacSign.DigestAlgorithm.SHA256;
 
 import java.nio.file.Path;
@@ -32,7 +31,6 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.test.MacSign.CertificateHash;
@@ -91,10 +89,14 @@ public final class MacSignVerify {
     }
 
     public static Optional<PListReader> findEntitlements(Path path) {
-        final var exec = Executor.of("/usr/bin/codesign", "-d", "--entitlements", "-", "--xml", path.toString()).saveOutput().dumpOutput();
+        final var exec = Executor.of(
+                "/usr/bin/codesign",
+                "-d",
+                "--entitlements", "-",
+                "--xml", path.toString()).saveOutput().dumpOutput().binaryOutput();
         final var result = exec.execute();
-        var xml = result.stdout();
-        if (xml.isEmpty()) {
+        var xml = result.byteStdout();
+        if (xml.length == 0) {
             return Optional.empty();
         } else {
             return Optional.of(MacHelper.readPList(xml));
@@ -134,13 +136,14 @@ public final class MacSignVerify {
     public static final String ADHOC_SIGN_ORIGIN = "-";
 
     public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path) {
-        final var exec = Executor.of("/usr/sbin/spctl", "-vv", "--raw", "--assess", "--type", type.value(), path.toString()).saveOutput().discardStderr();
-        final var result = exec.executeWithoutExitCodeCheck();
-        TKit.assertTrue(Set.of(0, 3).contains(result.getExitCode()),
-                String.format("Check exit code of command %s is either 0 or 3", exec.getPrintableCommandLine()));
-        return toSupplier(() -> {
-            return new PListReader(String.join("", result.getOutput()).getBytes()).findValue("assessment:originator");
-        }).get();
+        final var result = Executor.of(
+                "/usr/sbin/spctl",
+                "-vv",
+                "--raw",
+                "--assess",
+                "--type", type.value(),
+                path.toString()).saveOutput().discardStderr().binaryOutput().execute(0, 3);
+        return MacHelper.readPList(result.byteStdout()).findValue("assessment:originator");
     }
 
     public static Optional<String> findCodesignSignOrigin(Path path) {
