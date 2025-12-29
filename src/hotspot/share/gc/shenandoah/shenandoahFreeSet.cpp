@@ -2866,7 +2866,7 @@ void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition
   }
 
   ls.print(" %s freeset stats: Partition count: %zu, Reserved: " PROPERFMT ", Max free available in a single region: " PROPERFMT ";",
-            partition_name(partition_id),
+            ShenandoahRegionPartitions::partition_name(partition_id),
             _partitions.count(partition_id),
             PROPERFMTARGS(total_free), PROPERFMTARGS(max)
           );
