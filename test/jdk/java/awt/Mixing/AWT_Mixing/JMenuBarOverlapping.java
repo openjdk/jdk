@@ -73,8 +73,6 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.setLayout(new GridLayout(0,1));
         frame.setSize(200, 200);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
         menuBar = new JMenuBar();
         JMenu menu = new JMenu("Test Menu");
         ActionListener menuListener = new ActionListener() {
