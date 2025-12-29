@@ -101,7 +101,6 @@ public class MixingPanelsResizing {
     }
 
     private static String readInputStream(InputStream is) throws IOException {
-
         byte[] buffer = new byte[4096];
         int len = 0;
         StringBuilder sb = new StringBuilder();
@@ -115,7 +114,6 @@ public class MixingPanelsResizing {
 
     private static void init() throws Exception {
         //*** Create instructions for the user here ***
-
         borderShift = frameBorderCounter();
         borderShift =
                 Math.abs(borderShift) == 1 ? borderShift : (borderShift / 2);
@@ -252,7 +250,6 @@ public class MixingPanelsResizing {
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
     public static void main(String args[]) throws Exception {
-
         try {
             UIManager.setLookAndFeel(
                     UIManager.getCrossPlatformLookAndFeelClassName());
@@ -301,12 +298,10 @@ public class MixingPanelsResizing {
     }//main
 
     public static synchronized void setTimeoutTo(int seconds) {
-
         sleepTime = seconds * 1000;
     }
 
     public static synchronized void pass() {
-
         System.out.println("The test passed.");
         System.out.println("The test is over, hit  Ctl-C to stop Java VM");
         //first check if this is executing in main thread
@@ -328,7 +323,6 @@ public class MixingPanelsResizing {
     }
 
     public static synchronized void fail(String whyFailed) {
-
         System.out.println("The test failed: " + whyFailed);
         System.out.println("The test is over, hit  Ctl-C to stop Java VM");
         //check if this called from main thread
@@ -343,7 +337,6 @@ public class MixingPanelsResizing {
     }//fail()
 
     private static boolean isAlmostEqualColor(Color color, Color refColor) {
-
         System.out.println("Comparing color: " + color + " with reference " +
                 "color: " + refColor);
         return color.equals(refColor)
@@ -353,7 +346,6 @@ public class MixingPanelsResizing {
     }
 
     static class TestPassedException extends RuntimeException {
-
     }
 
 }// class JButtonInGlassPane
