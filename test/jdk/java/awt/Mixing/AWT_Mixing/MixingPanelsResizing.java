@@ -346,13 +346,10 @@ public class MixingPanelsResizing {
 
         System.out.println("Comparing color: " + color + " with reference " +
                 "color: " + refColor);
-        return color.equals(refColor) ||
-                Math.abs(color.getRed() - refColor.getRed()) <
-                        TOLERANCE_MACOSX &&
-                        Math.abs(color.getGreen() - refColor.getGreen()) <
-                                TOLERANCE_MACOSX &&
-                        Math.abs(color.getBlue() - refColor.getBlue()) <
-                                TOLERANCE_MACOSX;
+        return color.equals(refColor)
+               || (Math.abs(color.getRed() - refColor.getRed()) < TOLERANCE_MACOSX
+                   && Math.abs(color.getGreen() - refColor.getGreen()) < TOLERANCE_MACOSX
+                   && Math.abs(color.getBlue() - refColor.getBlue()) < TOLERANCE_MACOSX);
     }
 
     static class TestPassedException extends RuntimeException {
