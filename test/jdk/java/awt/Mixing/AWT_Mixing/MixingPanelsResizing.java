@@ -78,7 +78,6 @@ public class MixingPanelsResizing {
     private static int borderShift;
 
     private static int frameBorderCounter() {
-
         String JAVA_HOME = System.getProperty("java.home");
         try {
             Process p = Runtime.getRuntime()
