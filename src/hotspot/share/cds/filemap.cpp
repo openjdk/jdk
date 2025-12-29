@@ -1843,7 +1843,7 @@ bool FileMapHeader::validate() {
     if (_bci_profile_width != BciProfileWidth) {
       AOTMetaspace::report_loading_error("The %s's BciProfileWidth setting (%d)"
                                             " does not equal the current BciProfileWidth setting (%d).", file_type,
-                                            (int)_bci_profile_width, (int)BciProfileWidth);
+                                            _bci_profile_width, BciProfileWidth);
       return false;
     }
     if (_type_profile_casts != TypeProfileCasts) {

@@ -153,7 +153,7 @@ private:
   int     _type_profile_args_limit;
   int     _type_profile_parms_limit;
   intx    _type_profile_width;
-  intx    _bci_profile_width;
+  int     _bci_profile_width;
   bool    _profile_traps;
   bool    _type_profile_casts;
   int     _spec_trap_limit_extra_entries;
