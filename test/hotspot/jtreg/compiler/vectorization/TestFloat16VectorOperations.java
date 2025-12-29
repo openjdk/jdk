@@ -33,14 +33,15 @@
 */
 
 package compiler.vectorization;
-import compiler.lib.ir_framework.*;
-import jdk.incubator.vector.Float16;
-import static jdk.incubator.vector.Float16.*;
-import static java.lang.Float.*;
-import java.util.Arrays;
-import jdk.test.lib.*;
 import compiler.lib.generators.Generator;
+import compiler.lib.ir_framework.*;
+import compiler.lib.verify.Verify;
+import java.util.Arrays;
+import jdk.incubator.vector.Float16;
+import jdk.test.lib.*;
 import static compiler.lib.generators.Generators.G;
+import static java.lang.Float.*;
+import static jdk.incubator.vector.Float16.*;
 
 public class TestFloat16VectorOperations {
     private short[] input1;
@@ -70,14 +71,6 @@ public class TestFloat16VectorOperations {
         if(!expected_fp16.equals(actual_fp16)) {
             String inputs = Arrays.toString(Arrays.copyOfRange(values, 0, arity - 1));
             throw new AssertionError("Result Mismatch!, input = " + inputs + " actual = " + actual_fp16 +  " expected = " + expected_fp16);
-        }
-    }
-
-    public static void assertResults(short expected, short actual, String reductionFunc) {
-        Float16 expected_fp16 = shortBitsToFloat16(expected);
-        Float16 actual_fp16 = shortBitsToFloat16(actual);
-        if(!expected_fp16.equals(actual_fp16)) {
-            throw new AssertionError("Result Mismatch!, reduction type = " + reductionFunc + " actual = " + actual_fp16 +  " expected = " + expected_fp16);
         }
     }
 
@@ -463,7 +456,7 @@ public class TestFloat16VectorOperations {
     public short vectorAddReductionFloat16() {
         short result = (short) 0;
         for (int i = 0; i < LEN; i++) {
-            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i])));
         }
         return result;
     }
@@ -474,7 +467,7 @@ public class TestFloat16VectorOperations {
         for (int i = 0; i < LEN; ++i) {
             expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i]));
         }
-        assertResults(expected, vectorAddReductionFloat16(), "vectorAddReductionFloat16");
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorAddReductionFloat16()));
     }
 
     @Test
@@ -485,7 +478,7 @@ public class TestFloat16VectorOperations {
     public short vectorMulReductionFloat16() {
         short result = floatToFloat16(1.0f);
         for (int i = 0; i < LEN; i++) {
-            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i])));
         }
         return result;
     }
@@ -496,7 +489,7 @@ public class TestFloat16VectorOperations {
         for (int i = 0; i < LEN; ++i) {
             expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i]));
         }
-        assertResults(expected, vectorMulReductionFloat16(), "vectorMulReductionFloat16");
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMulReductionFloat16()));
     }
 
     // This testcase verifies that autovectorization takes place in scenarios where masked
@@ -509,10 +502,10 @@ public class TestFloat16VectorOperations {
     public short vectorAddReductionFloat16Partial() {
         short result = (short) 0;
         for (int i = 0; i < LEN; i+=8) {
-            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
-            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+1])));
-            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+2])));
-            result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+3])));
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i])));
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+1])));
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+2])));
+            result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+3])));
         }
         return result;
     }
@@ -526,7 +519,7 @@ public class TestFloat16VectorOperations {
             expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i+2]));
             expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i+3]));
         }
-        assertResults(expected, vectorAddReductionFloat16Partial(), "vectorAddReductionFloat16Partial");
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorAddReductionFloat16Partial()));
     }
 
     // Partial multiply reduction for floating point is disabled on aarch64. This test makes sure that code that performs such partial
@@ -536,10 +529,10 @@ public class TestFloat16VectorOperations {
     public short vectorMulReductionFloat16Partial() {
         short result = floatToFloat16(1.0f);
         for (int i = 0; i < LEN; i+=8) {
-            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i])));
-            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+1])));
-            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+2])));
-            result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(input1[i+3])));
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i])));
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+1])));
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+2])));
+            result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(input1[i+3])));
         }
         return result;
     }
@@ -553,6 +546,6 @@ public class TestFloat16VectorOperations {
             expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i+2]));
             expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i+3]));
         }
-        assertResults(expected, vectorMulReductionFloat16Partial(), "vectorMulReductionFloat16Partial");
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMulReductionFloat16Partial()));
     }
 }

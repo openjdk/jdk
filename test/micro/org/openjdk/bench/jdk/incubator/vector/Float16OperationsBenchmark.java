@@ -320,7 +320,7 @@ public class Float16OperationsBenchmark {
     public short ReductionAddFP16() {
        short result = (short) 0;
        for (int i = 0; i < vectorDim; i++) {
-           result = float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(vector1[i])));
+           result = float16ToRawShortBits(add(shortBitsToFloat16(result), shortBitsToFloat16(vector1[i])));
        }
        return result;
     }
@@ -329,7 +329,7 @@ public class Float16OperationsBenchmark {
     public short ReductionMulFP16() {
        short result = floatToFloat16(1.0f);
        for (int i = 0; i < vectorDim; i++) {
-           result = float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(result), Float16.shortBitsToFloat16(vector1[i])));
+           result = float16ToRawShortBits(multiply(shortBitsToFloat16(result), shortBitsToFloat16(vector1[i])));
        }
        return result;
     }
