@@ -29,7 +29,6 @@
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
-#include "runtime/icache.hpp"
 #include "runtime/mutexLocker.hpp"
 
 class AbstractCompiler;
@@ -42,6 +41,7 @@ class Dependencies;
 class DirectiveSet;
 class DebugInformationRecorder;
 class ExceptionHandlerTable;
+class ICacheInvalidationContext;
 class ImplicitExceptionTable;
 class JvmtiThreadState;
 class MetadataClosure;
