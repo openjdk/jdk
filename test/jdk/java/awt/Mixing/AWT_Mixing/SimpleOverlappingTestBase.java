@@ -178,18 +178,6 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
-            try {
-                if (!latch.await(1L, TimeUnit.SECONDS)) {
-                    throw new RuntimeException(
-                            "Ancestor frame didn't receive focus");
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-
-        clickAndBlink(robot, lLoc);
         if (ancestor != null && isMultiFramesTest()) {
             ancestor.dispose();
         }
