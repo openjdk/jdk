@@ -24,5 +24,5 @@
  */
 package jdk.jpackage.internal;
 
-public interface SystemEnvironment {
+interface SystemEnvironment {
 }

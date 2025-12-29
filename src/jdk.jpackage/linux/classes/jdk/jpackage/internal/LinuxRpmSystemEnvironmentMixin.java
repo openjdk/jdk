@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.Result;
 
-public interface LinuxRpmSystemEnvironmentMixin {
+interface LinuxRpmSystemEnvironmentMixin {
     Path rpm();
     Path rpmbuild();
 

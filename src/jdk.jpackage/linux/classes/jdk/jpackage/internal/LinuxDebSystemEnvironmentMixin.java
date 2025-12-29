@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.Result;
 
-public interface LinuxDebSystemEnvironmentMixin {
+interface LinuxDebSystemEnvironmentMixin {
     Path dpkg();
     Path dpkgdeb();
     Path fakeroot();

@@ -34,7 +34,7 @@ import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.util.CompositeProxy;
 import jdk.jpackage.internal.util.Result;
 
-public interface LinuxSystemEnvironment extends SystemEnvironment {
+interface LinuxSystemEnvironment extends SystemEnvironment {
     boolean soLookupAvailable();
     PackageType nativePackageType();
     LinuxPackageArch packageArch();
@@ -62,7 +62,7 @@ public interface LinuxSystemEnvironment extends SystemEnvironment {
     }
 
     static <T, U extends LinuxSystemEnvironment> U createWithMixin(Class<U> type, LinuxSystemEnvironment base, T mixin) {
-        return CompositeProxy.create(type, base, mixin);
+        return CompositeProxy.build().invokeTunnel(CompositeProxyTunnel.INSTANCE).create(type, base, mixin);
     }
 
     static <T, U extends LinuxSystemEnvironment> Result<U> mixin(Class<U> type,

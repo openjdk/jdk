@@ -28,7 +28,7 @@ import static jdk.jpackage.internal.LinuxSystemEnvironment.mixin;
 
 import jdk.jpackage.internal.util.Result;
 
-public interface LinuxDebSystemEnvironment extends LinuxSystemEnvironment, LinuxDebSystemEnvironmentMixin {
+interface LinuxDebSystemEnvironment extends LinuxSystemEnvironment, LinuxDebSystemEnvironmentMixin {
 
     static Result<LinuxDebSystemEnvironment> create(Result<LinuxSystemEnvironment> base) {
         return mixin(LinuxDebSystemEnvironment.class, base, LinuxDebSystemEnvironmentMixin::create);
