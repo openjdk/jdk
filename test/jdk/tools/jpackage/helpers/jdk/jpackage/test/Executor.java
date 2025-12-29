@@ -177,6 +177,15 @@ public final class Executor extends CommandArguments<Executor> {
         return binaryOutput(true);
     }
 
+    public Executor charset(Charset v) {
+        commandOutputControl.charset(v);
+        return this;
+    }
+
+    public Charset charset() {
+        return commandOutputControl.charset();
+    }
+
     Executor storeOutputInFiles(boolean v) {
         commandOutputControl.storeOutputInFiles(v);
         return this;
@@ -319,8 +328,8 @@ public final class Executor extends CommandArguments<Executor> {
         }).get();
     }
 
-    public Result execute(int expectedCode) {
-        return executeWithoutExitCodeCheck().assertExitCodeIs(expectedCode);
+    Result execute(int mainExitCode, int... otherExitCodes) {
+        return executeWithoutExitCodeCheck().assertExitCodeIs(mainExitCode, otherExitCodes);
     }
 
     public Result execute() {

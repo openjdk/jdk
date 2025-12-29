@@ -105,6 +105,15 @@ final class Executor {
         return storeOutputInFiles(true);
     }
 
+    Executor binaryOutput(boolean v) {
+        commandOutputControl.binaryOutput(v);
+        return this;
+    }
+
+    Executor binaryOutput() {
+        return binaryOutput(true);
+    }
+
     Executor discardStdout(boolean v) {
         commandOutputControl.discardStdout(v);
         return this;
@@ -239,6 +248,10 @@ final class Executor {
 
     Result executeExpectSuccess() throws IOException {
         return execute().expectExitCode(0);
+    }
+
+    Result executeExpect(int mainExitCode, int... otherExitCodes) throws IOException {
+        return execute().expectExitCode(mainExitCode, otherExitCodes);
     }
 
     RetryExecutor<Result, IOException> retry() {
