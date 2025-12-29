@@ -26,7 +26,6 @@
 #include "asm/macroAssembler.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
-#include "gc/shared/barrierSetNMethod.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
