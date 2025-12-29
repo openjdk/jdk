@@ -38,7 +38,6 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-
 import javax.swing.UIManager;
 
 import test.java.awt.regtesthelpers.Util;
@@ -116,7 +115,9 @@ public class MixingPanelsResizing {
         //*** Create instructions for the user here ***
         borderShift = frameBorderCounter();
         borderShift =
-                Math.abs(borderShift) == 1 ? borderShift : (borderShift / 2);
+                Math.abs(borderShift) == 1 ?
+                borderShift :
+                (borderShift / 2);
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 // prepare controls
@@ -163,8 +164,8 @@ public class MixingPanelsResizing {
         Util.waitForIdle(robot);
 
         SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
 
+            public void run() {
                 lLoc = frame.getLocationOnScreen();
                 lLoc.translate(frame.getWidth() + borderShift,
                         frame.getHeight() + borderShift);
