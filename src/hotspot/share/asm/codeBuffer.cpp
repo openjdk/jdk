@@ -928,6 +928,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Needs to be initialized when calling fix_relocation_after_move.
   cb.blob()->set_ctable_begin(cb.consts()->start());
 
+  // Move all the code and relocations to the new blob:
   relocate_code_to(&cb);
 
   // some internal addresses, _last_insn _last_label, are used during code emission,
