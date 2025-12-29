@@ -123,7 +123,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             }
         });
         if (!testResize) {
-            return true;
+            wasLWClicked = false;
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -158,7 +158,6 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         } else {
             latch.countDown();
         }
-
 
         if (!testResize) {
 
