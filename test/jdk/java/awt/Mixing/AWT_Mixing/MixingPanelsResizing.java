@@ -178,7 +178,6 @@ public class MixingPanelsResizing {
         Runnable test = new Runnable() {
 
             public void run() {
-
                 Point btnLoc = jbutton.getLocationOnScreen();
                 Color c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
                 System.out.println("Color picked for jbutton: " + c);
