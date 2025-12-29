@@ -27,7 +27,7 @@ package jdk.test.lib.containers.cgroup;
 import java.util.Objects;
 
 import jdk.internal.platform.Metrics;
-import jdk.test.lib.containers.docker.DockerTestUtils;
+import jtreg.SkippedException;
 
 /**
  * Cgroup version agnostic metrics tester
@@ -83,12 +83,10 @@ public class MetricsTester {
     }
 
     public static void main(String[] args) throws Exception {
-        DockerTestUtils.checkCanTestDocker();
         Metrics m = Metrics.systemMetrics();
         // If cgroups is not configured, report success
         if (m == null) {
-            System.out.println("TEST PASSED!!!");
-            return;
+            throw new SkippedException("Cgroup is not configured, test skipped.");
         }
 
         boolean inContainer = false;
