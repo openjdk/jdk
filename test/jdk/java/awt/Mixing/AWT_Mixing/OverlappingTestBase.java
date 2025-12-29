@@ -382,9 +382,8 @@ public abstract class OverlappingTestBase {
     protected String failMessage = "The LW component did not received the click.";
 
     private static boolean isValidForPixelCheck(Component component) {
-        return !(component == null ||
-                (component instanceof java.awt.Scrollbar) ||
-                (isMac && (component instanceof java.awt.Button)));
+        return !(component instanceof java.awt.Scrollbar) &&
+                (!isMac || !(component instanceof java.awt.Button));
     }
 
     /**
