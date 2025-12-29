@@ -70,8 +70,8 @@ public class JSplitPaneOverlapping extends OverlappingTestBase {
         p.setPreferredSize(new Dimension(500, 500));
         propagateAWTControls(p);
         sp1 = new JScrollPane(p);
-        currentAwtControl.setForeground(Color.white);
-        currentAwtControl.setBackground(Color.white);
+        currentAwtControl.setForeground(Color.WHITE);
+        currentAwtControl.setBackground(Color.WHITE);
 
         JButton button = new JButton("JButton");
         button.setBackground(Color.RED);
