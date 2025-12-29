@@ -100,8 +100,8 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSecurityPropertiesDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, true));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintPropertiesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export, true, false));
@@ -339,6 +339,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
+
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   // load VMSupport
   Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
@@ -383,7 +384,15 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   output()->print_raw((const char*)addr, ba->length());
 }
 
-void PrintSecurityPropertiesDCmd::execute(DCmdSource source, TRAPS) {
+PrintPropertiesDCmd::PrintPropertiesDCmd(outputStream* output, bool heap) :
+                                          DCmdWithParser(output, heap),
+  _system("-system", "print system properties", "BOOLEAN", false, "false"),
+  _security("-security", "print security properties", "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_system);
+  _dcmdparser.add_dcmd_option(&_security);
+}
+
+void PrintPropertiesDCmd::execute(DCmdSource source, TRAPS) {
     // Load jdk.internal.vm.VMSupport
     Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
     Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
@@ -401,8 +410,11 @@ void PrintSecurityPropertiesDCmd::execute(DCmdSource source, TRAPS) {
     // Invoke the serializeSecurityPropertiesToByteArray method
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
-
-    Symbol* method_name = vmSymbols::serializeSecurityPropertiesToByteArray_name();
+    if (_system.value()) {
+      method_name = vmSymbols::serializePropertiesToByteArray_name()();
+    } else if (_security.value()) {
+      method_name = vmSymbols::serializeSecurityPropertiesToByteArray_name();
+    }
     Symbol* signature = vmSymbols::void_byte_array_signature();
 
     JavaCalls::call_static(&result,

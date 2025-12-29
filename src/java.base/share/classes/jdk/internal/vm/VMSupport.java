@@ -81,16 +81,6 @@ public class VMSupport {
     }
 
     /**
-     * Writes the given security properties list to a byte array and returns it. The stream written
-     * to the byte array is ISO 8859-1 encoded.
-     */
-    private static byte[] serializeSecurityPropertiesToByteArray(Properties p) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream(4096);
-        p.store(out, null);
-        return out.toByteArray();
-    }
-
-    /**
      * @return a Properties object containing only the entries in {@code p}
      *          whose key and value are both Strings
      */
@@ -112,7 +102,7 @@ public class VMSupport {
 
     public static byte[] serializeSecurityPropertiesToByteArray() throws IOException {
         Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getCurrentProperties();
-        return serializeSecurityPropertiesToByteArray(onlyStrings(p));
+        return serializePropertiesToByteArray(onlyStrings(p));
     }
 
     public static byte[] serializeAgentPropertiesToByteArray() throws IOException {
