@@ -67,7 +67,6 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-
         cb = new JComboBox(petStrings);
         cb.setPreferredSize(new Dimension(frame.getContentPane().getWidth(), 20));
         cb.addActionListener(new ActionListener() {
