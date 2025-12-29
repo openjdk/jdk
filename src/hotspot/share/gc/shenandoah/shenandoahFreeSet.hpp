@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "logging/logStream.hpp"
 
 
 // ShenandoahRegionPartitions provides an abstraction to help organize the implementation of ShenandoahFreeSet.  This
@@ -586,6 +587,7 @@ private:
   // Determine whether we prefer to allocate from left to right or from right to left within the OldCollector free-set.
   void establish_old_collector_alloc_bias();
 
+  void log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls);
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
