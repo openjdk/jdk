@@ -30,7 +30,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 // Interface for updating the instruction cache.  Whenever the VM
 // modifies code, part of the processor instruction cache potentially
 // has to be flushed.
