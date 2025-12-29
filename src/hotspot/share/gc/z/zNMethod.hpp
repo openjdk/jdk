@@ -56,9 +56,11 @@ public:
   static void set_guard_value(nmethod* nm, int value);
 
   static void nmethod_patch_barriers(nmethod* nm);
+  static void nmethod_patch_barriers(nmethod* nm, ICacheInvalidationContext* icic);
 
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
   static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);
+  static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, ICacheInvalidationContext* icic);
 
   static void nmethods_do_begin(bool secondary);
   static void nmethods_do_end(bool secondary);

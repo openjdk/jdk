@@ -56,7 +56,17 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     break;
   }
 
-  ICacheInvalidationContext::invalidate_range(addr(), bytes);
+  assert(_binding != nullptr, "expect to be called with RelocIterator in use");
+
+  if (UseDeferredICacheInvalidation) {
+    assert(ICacheInvalidationContext::current() != nullptr &&
+           (ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
+            ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED),
+           "UseDeferredICacheInvalidation requires ICache invalidation mode to be deferred or unneeded.");
+    return;
+  }
+
+  ICache::invalidate_range(addr(), bytes);
 }
 
 address Relocation::pd_call_destination(address orig_addr) {
@@ -117,5 +127,6 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
   }
 }
 
-void metadata_Relocation::pd_fix_value(address x) {
+bool metadata_Relocation::pd_fix_value(address x) {
+  return false;
 }

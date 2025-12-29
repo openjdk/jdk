@@ -621,8 +621,7 @@ Metadata* metadata_Relocation::metadata_value() {
 bool metadata_Relocation::fix_metadata_relocation() {
   if (!metadata_is_immediate()) {
     // get the metadata from the pool, and re-insert it into the instruction:
-    pd_fix_value(value());
-    return true;
+    return pd_fix_value(value());
   }
   return false;
 }

@@ -675,7 +675,6 @@ void CodeCache::nmethods_do(NMethodClosure* cl) {
   assert_locked_or_safepoint(CodeCache_lock);
   NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
-    ICacheInvalidationContext icic;
     cl->do_nmethod(iter.method());
   }
 }

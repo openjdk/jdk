@@ -74,11 +74,11 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   {
     ICacheInvalidationContext icic;
     // Heal barriers
-    ZNMethod::nmethod_patch_barriers(nm);
+    ZNMethod::nmethod_patch_barriers(nm, &icic);
 
     // Heal oops
     ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
-    ZNMethod::nmethod_oops_do_inner(nm, &cl);
+    ZNMethod::nmethod_oops_do_inner(nm, &cl, &icic);
   }
 
   const uintptr_t prev_color = ZNMethod::color(nm);

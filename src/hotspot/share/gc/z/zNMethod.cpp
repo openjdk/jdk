@@ -246,11 +246,15 @@ void ZNMethod::set_guard_value(nmethod* nm, int value) {
 }
 
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
+  ICacheInvalidationContext icic;
+  nmethod_patch_barriers(nm, &icic);
+}
+
+void ZNMethod::nmethod_patch_barriers(nmethod* nm, ICacheInvalidationContext* icic) {
   ZBarrierSetAssembler* const bs_asm = ZBarrierSet::assembler();
   ZArrayIterator<ZNMethodDataBarrier> iter(gc_data(nm)->barriers());
-  ICacheInvalidationContext icic;
   if (gc_data(nm)->barriers()->is_nonempty()) {
-    icic.set_has_modified_code();
+    icic->set_has_modified_code();
   }
   for (ZNMethodDataBarrier barrier; iter.next(&barrier);) {
     bs_asm->patch_barrier_relocation(barrier._reloc_addr, barrier._reloc_format);
@@ -263,6 +267,11 @@ void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
 }
 
 void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
+  ICacheInvalidationContext icic;
+  nmethod_oops_do_inner(nm, cl, &icic);
+}
+
+void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, ICacheInvalidationContext* icic) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -288,7 +297,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
 
   // Process non-immediate oops
   if (data->has_non_immediate_oops()) {
-    nm->fix_non_immediate_oop_relocations();
+    nm->fix_non_immediate_oop_relocations(icic);
   }
 }
 

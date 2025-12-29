@@ -134,41 +134,24 @@ class ICacheStubGenerator : public StubCodeGenerator {
   void generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub);
 };
 
-class DefaultICacheInvalidationContext final : StackObj {
+class DefaultICacheInvalidationContext : StackObj {
  private:
   NONCOPYABLE(DefaultICacheInvalidationContext);
 
   NOT_PRODUCT(static THREAD_LOCAL DefaultICacheInvalidationContext* _current_context;)
 
-  address            _code;
-  int                _size;
   ICacheInvalidation _mode;
 
  public:
   DefaultICacheInvalidationContext(ICacheInvalidation mode)
-      : _code(nullptr), _size(0), _mode(mode) {
+      : _mode(mode) {
     NOT_PRODUCT(_current_context = this);
   }
 
   DefaultICacheInvalidationContext() : DefaultICacheInvalidationContext(ICacheInvalidation::IMMEDIATE) {}
 
-  DefaultICacheInvalidationContext(address code, int size)
-      : _code(code), _size(size), _mode(ICacheInvalidation::DEFERRED) {
-    NOT_PRODUCT(_current_context = this);
-    assert(code != nullptr, "code must not be null for deferred invalidation");
-    assert(size > 0, "size must be positive for deferred invalidation");
-  }
-
   ~DefaultICacheInvalidationContext() {
     NOT_PRODUCT(_current_context = nullptr);
-    if (_code != nullptr) {
-      assert(_mode == ICacheInvalidation::DEFERRED, "sanity");
-      assert(_size > 0, "size must be positive for deferred invalidation");
-      ICache::invalidate_range(_code, _size);
-      _code = nullptr;
-      _size = 0;
-      _mode = ICacheInvalidation::NOT_NEEDED;
-    }
   }
 
   ICacheInvalidation mode() const {
@@ -179,14 +162,6 @@ class DefaultICacheInvalidationContext final : StackObj {
     // No-op for the default implementation.
   }
 
-  static void invalidate_range(address start, int nbytes) {
-    ICache::invalidate_range(start, nbytes);
-  }
-
-  static void invalidate_word(address addr) {
-    invalidate_range(addr, 4);
-  }
-
 #ifdef ASSERT
   static DefaultICacheInvalidationContext* current() {
     return _current_context;
@@ -194,10 +169,16 @@ class DefaultICacheInvalidationContext final : StackObj {
 #endif
 };
 
-#ifdef PD_ICACHE_INVALIDATION_CONTEXT
-using ICacheInvalidationContext = PD_ICACHE_INVALIDATION_CONTEXT;
-#else
-using ICacheInvalidationContext = DefaultICacheInvalidationContext;
+#ifndef PD_ICACHE_INVALIDATION_CONTEXT
+#define PD_ICACHE_INVALIDATION_CONTEXT DefaultICacheInvalidationContext
 #endif // PD_ICACHE_INVALIDATION_CONTEXT
+
+class ICacheInvalidationContext final : public PD_ICACHE_INVALIDATION_CONTEXT {
+ private:
+  NONCOPYABLE(ICacheInvalidationContext);
+
+ public:
+  using PD_ICACHE_INVALIDATION_CONTEXT::PD_ICACHE_INVALIDATION_CONTEXT;
+};
 
 #endif // SHARE_RUNTIME_ICACHE_HPP

@@ -723,11 +723,6 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
 }
 
 void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
-  assert(ICacheInvalidationContext::current() != nullptr,
-         "ICache invalidation context should be set");
-  assert(ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
-         ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED,
-         "ICache invalidation should be deferred or unneeded");
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("done with CodeBuffer:");
@@ -796,6 +791,7 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
   // relocated when the corresponding instruction in the code (e.g., a
   // call) is relocated. Stubs are placed behind the main code
   // section, so that section has to be copied before relocating.
+  ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
     CodeSection* dest_cs = dest->code_section(n);
     if (dest_cs->is_empty() || (dest_cs->locs_count() == 0)) continue;  // skip trivial section
@@ -932,11 +928,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Needs to be initialized when calling fix_relocation_after_move.
   cb.blob()->set_ctable_begin(cb.consts()->start());
 
-  {
-    ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
-    // Move all the code and relocations to the new blob:
-    relocate_code_to(&cb);
-  }
+  relocate_code_to(&cb);
 
   // some internal addresses, _last_insn _last_label, are used during code emission,
   // adjust them in expansion

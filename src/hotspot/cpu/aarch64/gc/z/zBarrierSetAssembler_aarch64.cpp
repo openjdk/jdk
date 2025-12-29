@@ -879,7 +879,14 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     ShouldNotReachHere();
   }
 
-  ICacheInvalidationContext::invalidate_word((address)patch_addr);
+  if (UseDeferredICacheInvalidation) {
+    assert(ICacheInvalidationContext::current() != nullptr &&
+           ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED,
+           "UseDeferredICacheInvalidation requires ICache invalidation mode to be deferred.");
+    return;
+  }
+
+  ICache::invalidate_word((address)patch_addr);
 }
 
 #ifdef COMPILER1

@@ -1029,7 +1029,8 @@ class metadata_Relocation : public DataRelocation {
   // Fixes a Metadata pointer in the code. Most platforms embeds the
   // Metadata pointer in the code at compile time so this is empty
   // for them.
-  void pd_fix_value(address x);
+  // Returns true if code was modified.
+  bool pd_fix_value(address x);
 
  public:
   int metadata_index() { return _metadata_index; }

@@ -60,27 +60,27 @@ class ICache : public AbstractICache {
   }
 };
 
-class AArch64ICacheInvalidationContext final : StackObj {
+class AArch64ICacheInvalidationContext : StackObj {
  private:
   NONCOPYABLE(AArch64ICacheInvalidationContext);
 
+#ifdef ASSERT
   static THREAD_LOCAL AArch64ICacheInvalidationContext* _current_context;
+  AArch64ICacheInvalidationContext* _parent = nullptr;
+#endif
 
-  AArch64ICacheInvalidationContext* _parent;
-  address                           _code;
-  int                               _size;
   ICacheInvalidation                _mode;
   bool                              _has_modified_code;
 
  public:
   AArch64ICacheInvalidationContext(ICacheInvalidation mode)
-      : _parent(nullptr), _code(nullptr), _size(0), _mode(mode), _has_modified_code(false) {
+      : _mode(mode), _has_modified_code(false) {
+    assert(_current_context == nullptr || _mode == ICacheInvalidation::NOT_NEEDED,
+           "nested ICacheInvalidationContext only supported for NOT_NEEDED mode");
+#ifdef ASSERT
     _parent = _current_context;
     _current_context = this;
-    if (_parent != nullptr) {
-      // The parent context is in charge of icache invalidation.
-      _mode = (_parent->mode() == ICacheInvalidation::IMMEDIATE) ? ICacheInvalidation::IMMEDIATE : ICacheInvalidation::NOT_NEEDED;
-    }
+#endif
   }
 
   AArch64ICacheInvalidationContext()
@@ -88,48 +88,10 @@ class AArch64ICacheInvalidationContext final : StackObj {
                                             ? ICacheInvalidation::DEFERRED
                                             : ICacheInvalidation::IMMEDIATE) {}
 
-  AArch64ICacheInvalidationContext(address code, int size)
-      : _parent(nullptr),
-        _code(code),
-        _size(size),
-        _mode(ICacheInvalidation::DEFERRED),
-        _has_modified_code(true) {
-    assert(_current_context == nullptr,
-           "nested ICacheInvalidationContext(code, size) not supported");
-    assert(code != nullptr, "code must not be null for deferred invalidation");
-    assert(size > 0, "size must be positive for deferred invalidation");
-
-    _current_context = this;
-
-    if (UseDeferredICacheInvalidation) {
-      // With hardware dcache and icache coherency, we don't need _code.
-      _code = nullptr;
-      _size = 0;
-    }
-  }
-
   ~AArch64ICacheInvalidationContext() {
-    _current_context = _parent;
+    NOT_PRODUCT(_current_context = _parent);
 
-    if (_code != nullptr) {
-      assert(_size > 0, "size must be positive for deferred invalidation");
-      assert(_mode == ICacheInvalidation::DEFERRED, "sanity");
-      assert(_has_modified_code, "sanity");
-      assert(_parent == nullptr, "sanity");
-
-      ICache::invalidate_range(_code, _size);
-      return;
-    }
-
-    if (!_has_modified_code) {
-      return;
-    }
-
-    if (_parent != nullptr) {
-      _parent->set_has_modified_code();
-    }
-
-    if (_mode != ICacheInvalidation::DEFERRED) {
+    if (_mode != ICacheInvalidation::DEFERRED || !_has_modified_code ) {
       return;
     }
 
@@ -186,25 +148,11 @@ class AArch64ICacheInvalidationContext final : StackObj {
     _has_modified_code = true;
   }
 
+#ifdef ASSERT
   static AArch64ICacheInvalidationContext* current() {
     return _current_context;
   }
-
-  static void invalidate_range(address start, int nbytes) {
-    if (UseDeferredICacheInvalidation) {
-      assert(_current_context != nullptr &&
-             (_current_context->mode() == ICacheInvalidation::DEFERRED ||
-              _current_context->mode() == ICacheInvalidation::NOT_NEEDED),
-            "UseDeferredICacheInvalidation requires ICache invalidation mode to be deferred or unneeded.");
-      return;
-    }
-
-    ICache::invalidate_range(start, nbytes);
-  }
-
-  static void invalidate_word(address addr) {
-    invalidate_range(addr, 4);
-  }
+#endif
 };
 
 #define PD_ICACHE_INVALIDATION_CONTEXT AArch64ICacheInvalidationContext

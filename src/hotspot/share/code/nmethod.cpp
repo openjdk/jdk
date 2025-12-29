@@ -1325,15 +1325,11 @@ nmethod::nmethod(
 #endif
     _immutable_data_ref_count_offset = 0;
 
-    {
-      // Optimize ICache invalidation by batching it for the whole blob if
-      // possible.
-      ICacheInvalidationContext icic(code_begin(), code_size());
-      code_buffer->copy_code_and_locs_to(this);
-      code_buffer->copy_values_to(this);
-    }
+    code_buffer->copy_code_and_locs_to(this);
+    code_buffer->copy_values_to(this);
 
     post_init();
+    ICache::invalidate_range(code_begin(), code_size());
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -1504,6 +1500,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   memcpy(consts_begin(), nm.consts_begin(), nm.data_end() - nm.consts_begin());
 
   // Fix relocation
+  ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
   RelocIterator iter(this);
   CodeBuffer src(&nm);
   CodeBuffer dst(this);
@@ -1554,11 +1551,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   }
 
   run_nmethod_entry_barrier();
-  nmethod* nm_copy;
-  {
-    ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
-    nm_copy = new (size(), code_blob_type) nmethod(*this);
-  }
+  nmethod* nm_copy = new (size(), code_blob_type) nmethod(*this);
 
   if (nm_copy == nullptr) {
     return nullptr;
@@ -1791,16 +1784,10 @@ nmethod::nmethod(
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
 
-    {
-      // Optimize ICache invalidation by batching it for the whole blob if
-      // possible.
-      ICacheInvalidationContext icic(code_begin(), code_size());
-      // Copy code and relocation info
-      code_buffer->copy_code_and_locs_to(this);
-      // Copy oops and metadata
-      code_buffer->copy_values_to(this);
-    }
-
+    // Copy code and relocation info
+    code_buffer->copy_code_and_locs_to(this);
+    // Copy oops and metadata
+    code_buffer->copy_values_to(this);
     dependencies->copy_to(this);
     // Copy PcDesc and ScopeDesc data
     debug_info->copy_to(this);
@@ -1828,6 +1815,7 @@ nmethod::nmethod(
     init_immutable_data_ref_count();
 
     post_init();
+    ICache::invalidate_range(code_begin(), code_size());
 
     // we use the information of entry points to find out if a method is
     // static or non static
@@ -2068,6 +2056,7 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
 }
 
 void nmethod::fix_all_oop_relocations() {
+  ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
   // re-patch all oop-bearing instructions, just in case some oops moved
   RelocIterator iter(this);
   while (iter.next()) {
@@ -2090,25 +2079,33 @@ void nmethod::fix_all_oop_relocations() {
 }
 
 void nmethod::fix_non_immediate_oop_relocations() {
+  ICacheInvalidationContext icic;
+  fix_non_immediate_oop_relocations(&icic);
+}
+
+void nmethod::fix_non_immediate_oop_relocations(ICacheInvalidationContext* icic) {
   // re-patch all oop-bearing instructions, just in case some oops moved
   RelocIterator iter(this);
-  ICacheInvalidationContext icic;
+  bool modified_code = false;
   while (iter.next()) {
-    bool modified_code = false;
+    bool modified_inst = false;
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();
       if (!reloc->oop_is_immediate()) {
         // get the oop from the pool, and re-insert it into the instruction
         reloc->set_value(reloc->value());
-        modified_code = true;
+        modified_inst = true;
       }
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
-      modified_code = reloc->fix_metadata_relocation();
+      modified_inst = reloc->fix_metadata_relocation();
     }
-    if (modified_code) {
-      icic.set_has_modified_code();
+    if (modified_inst) {
+      modified_code = true;
     }
+  }
+  if (modified_code) {
+    icic->set_has_modified_code();
   }
 }
 

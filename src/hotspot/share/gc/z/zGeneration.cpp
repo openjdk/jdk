@@ -1439,11 +1439,11 @@ public:
       {
         ICacheInvalidationContext icic;
         // Heal barriers
-        ZNMethod::nmethod_patch_barriers(nm);
+        ZNMethod::nmethod_patch_barriers(nm, &icic);
 
         // Heal oops
         ZUncoloredRootProcessOopClosure cl(ZNMethod::color(nm));
-        ZNMethod::nmethod_oops_do_inner(nm, &cl);
+        ZNMethod::nmethod_oops_do_inner(nm, &cl, &icic);
       }
 
       log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by old remapping", p2i(nm));

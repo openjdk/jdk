@@ -29,6 +29,7 @@
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/mutexLocker.hpp"
 
 class AbstractCompiler;
@@ -809,6 +810,7 @@ protected:
 
 public:
   void fix_non_immediate_oop_relocations();
+  void fix_non_immediate_oop_relocations(ICacheInvalidationContext* icic);
   void fix_all_oop_relocations();
 
   bool is_at_poll_return(address pc);

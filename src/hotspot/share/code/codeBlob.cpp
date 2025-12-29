@@ -336,10 +336,8 @@ RuntimeBlob::RuntimeBlob(
     return;
   }
 
-  // Optimize ICache invalidation by batching it for the whole blob if
-  // possible.
-  ICacheInvalidationContext icic(code_begin(), code_size());
   cb->copy_code_and_locs_to(this);
+  ICache::invalidate_range(code_begin(), code_size());
 }
 
 void RuntimeBlob::free(RuntimeBlob* blob) {
