@@ -303,6 +303,13 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     /*package-private*/
     abstract Vector<E> fromIntValues(int[] values);
 
+    /*package-private*/
+    abstract int laneBasicType();
+
+    /*package-private*/
+    abstract Class<?> carrierType();
+
+
     /**
      * Do not use a dummy except to call methods on it when you don't
      * care about the lane values.  The main benefit of it is to
@@ -320,7 +327,7 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         return makeDummyVector();
     }
     private AbstractVector<E> makeDummyVector() {
-        Object za = Array.newInstance(elementType(), laneCount);
+        Object za = Array.newInstance(carrierType(), laneCount);
         return dummyVector = vectorFactory.apply(za);
         // This is the only use of vectorFactory.
         // All other factory requests are routed
@@ -415,18 +422,29 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     Object iotaArray() {
         // Create an iota array.  It's OK if this is really slow,
         // because it happens only once per species.
-        Object ia = Array.newInstance(laneType.elementType,
-                                      laneCount);
+        Object ia = Array.newInstance(carrierType(), laneCount);
         assert(ia.getClass() == laneType.arrayType);
         checkValue(laneCount-1);  // worst case
-        for (int i = 0; i < laneCount; i++) {
-            if ((byte)i == i)
-                Array.setByte(ia, i, (byte)i);
-            else if ((short)i == i)
-                Array.setShort(ia, i, (short)i);
-            else
-                Array.setInt(ia, i, i);
-            assert(Array.getDouble(ia, i) == i);
+        if (elementType() == Float16.class) {
+            for (int i = 0; i < laneCount; i++) {
+                // All the numbers in the range [0 2048] are directly representable
+                // in IEEE 754 binary16 format without the precision loss.
+                if (i < 2049) {
+                    Array.setShort(ia, i, Float.floatToFloat16((float)i));
+                } else {
+                    assert(Float16.valueOf(i).intValue() == i);
+                }
+            }
+        } else {
+            for (int i = 0; i < laneCount; i++) {
+                if ((byte)i == i)
+                    Array.setByte(ia, i, (byte)i);
+                else if ((short)i == i)
+                    Array.setShort(ia, i, (short)i);
+                else
+                    Array.setInt(ia, i, i);
+                assert(Array.getDouble(ia, i) == i);
+            }
         }
         return ia;
     }
@@ -624,6 +642,8 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
             s = IntVector.species(shape); break;
         case LaneType.SK_LONG:
             s = LongVector.species(shape); break;
+        case LaneType.SK_FLOAT16:
+            s = Float16Vector.species(shape); break;
         }
         if (s == null) {
             // NOTE: The result of this method is guaranteed to be
