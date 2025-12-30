@@ -59,6 +59,12 @@ callbackCompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
         first_load_addr = code_addr;
     } else if (second_load_addr == nullptr) {
         second_load_addr = code_addr;
+
+        // Verify that the addresses are differnt
+        if (first_load_addr == second_load_addr) {
+            printf("ERROR: Load events for 'compiledMethod' are expected to use different addresses.\n");
+            exit(1);
+        }
     } else {
         printf("ERROR: Received too many load events for 'compiledMethod'\n");
         exit(1);
@@ -95,6 +101,12 @@ callbackCompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
         first_unload_addr = code_addr;
     } else {
         second_unload_addr = code_addr;
+
+        // Verify that the addresses are differnt
+        if (first_unload_addr == second_unload_addr) {
+            printf("ERROR: Unload events for 'compiledMethod' are expected to use different addresses.\n");
+            exit(1);
+        }
 
         // LOAD and UNLOAD events should report the same two addresses, but the order of
         // the UNLOADs is not guaranteed, since the GC may unload either nmethod first.
