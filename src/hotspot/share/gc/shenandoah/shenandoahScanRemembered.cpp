@@ -197,7 +197,7 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
       current_card_index = object_card_index;
       card_end_address = _rs->addr_for_card_index(object_card_index + 1);
       set_first_start(object_card_index, offset_in_card);
-    }`
+    }
 
     assert(card_end_address != nullptr, "Card end address cannot be null here");
     if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::lab_alignment_reserve()) {
