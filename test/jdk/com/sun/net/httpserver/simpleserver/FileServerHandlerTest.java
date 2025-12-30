@@ -47,17 +47,15 @@ import com.sun.net.httpserver.SimpleFileServer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FileServerHandlerTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
     static final Class<RuntimeException> RE = RuntimeException.class;
 
-    public Object[][] notAllowedMethods() {
+    public static Object[][] notAllowedMethods() {
         var l = List.of("POST", "PUT", "DELETE", "TRACE", "OPTIONS");
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }
@@ -72,7 +70,7 @@ public class FileServerHandlerTest {
         assertEquals("HEAD, GET", exchange.getResponseHeaders().getFirst("allow"));
     }
 
-    public Object[][] notImplementedMethods() {
+    public static Object[][] notImplementedMethods() {
         var l = List.of("GARBAGE", "RUBBISH", "TRASH", "FOO", "BAR");
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }

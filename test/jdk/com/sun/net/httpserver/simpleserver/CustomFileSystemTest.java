@@ -81,11 +81,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CustomFileSystemTest {
     static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
@@ -93,7 +91,7 @@ public class CustomFileSystemTest {
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeAll
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
@@ -208,7 +206,7 @@ public class CustomFileSystemTest {
         }
     }
 
-    public Object[][] indexFiles() {
+    public static Object[][] indexFiles() {
         var fileContent = openHTML + """
                 <h1>This is an index file</h1>
                 """ + closeHTML;
@@ -441,7 +439,7 @@ public class CustomFileSystemTest {
         }
     }
 
-    private void createSymLink(Path symlink, Path target) {
+    private static void createSymLink(Path symlink, Path target) {
         try {
             Files.createSymbolicLink(symlink, target);
         } catch (UnsupportedOperationException uoe) {
@@ -502,7 +500,7 @@ public class CustomFileSystemTest {
         }
     }
 
-    private Path createHiddenFile(Path root) throws IOException {
+    private static Path createHiddenFile(Path root) throws IOException {
         Path file;
         if (Platform.isWindows()) {
             file = Files.createFile(root.resolve("aFile.txt"));
@@ -514,7 +512,7 @@ public class CustomFileSystemTest {
         return file;
     }
 
-    private Path createFileInHiddenDirectory(Path root) throws IOException {
+    private static Path createFileInHiddenDirectory(Path root) throws IOException {
         Path dir;
         Path file;
         if (Platform.isWindows()) {

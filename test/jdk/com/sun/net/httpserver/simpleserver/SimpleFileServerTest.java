@@ -61,11 +61,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SimpleFileServerTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
@@ -83,7 +81,7 @@ public class SimpleFileServerTest {
     static final String EXPECTED_LAST_MODIFIED_OF_FAVICON = "Mon, 23 May 1995 11:11:11 GMT";
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
@@ -261,7 +259,7 @@ public class SimpleFileServerTest {
         }
     }
 
-    public Object[][] indexFiles() {
+    public static Object[][] indexFiles() {
         var fileContent = openHTML + """
                 <h1>This is an index file</h1>
                 """ + closeHTML;
@@ -494,7 +492,7 @@ public class SimpleFileServerTest {
         }
     }
 
-    private void createSymLink(Path symlink, Path target) {
+    private static void createSymLink(Path symlink, Path target) {
         try {
             Files.createSymbolicLink(symlink, target);
         } catch (UnsupportedOperationException uoe) {
@@ -555,7 +553,7 @@ public class SimpleFileServerTest {
         }
     }
 
-    private Path createHiddenFile(Path root) throws IOException {
+    private static Path createHiddenFile(Path root) throws IOException {
         Path file;
         if (Platform.isWindows()) {
             file = Files.createFile(root.resolve("aFile.txt"));
@@ -567,7 +565,7 @@ public class SimpleFileServerTest {
         return file;
     }
 
-    private Path createFileInHiddenDirectory(Path root) throws IOException {
+    private static Path createFileInHiddenDirectory(Path root) throws IOException {
         Path dir;
         Path file;
         if (Platform.isWindows()) {
@@ -725,7 +723,7 @@ public class SimpleFileServerTest {
     }
 
     @AfterAll
-    public void teardown() throws IOException {
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

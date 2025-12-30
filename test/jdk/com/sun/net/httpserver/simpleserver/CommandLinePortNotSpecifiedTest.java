@@ -44,9 +44,7 @@ import static java.lang.System.out;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CommandLinePortNotSpecifiedTest {
 
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
@@ -59,7 +57,7 @@ public class CommandLinePortNotSpecifiedTest {
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
@@ -86,7 +84,7 @@ public class CommandLinePortNotSpecifiedTest {
      * unlikely but not impossible case that the port is already in use.
      */
     @Test
-    public void testPortNotSpecified() throws Throwable {
+    public static void testPortNotSpecified() throws Throwable {
         out.println("\n--- testPortNotSpecified");
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
@@ -96,7 +94,7 @@ public class CommandLinePortNotSpecifiedTest {
     }
 
     @AfterAll
-    public void teardown() throws IOException {
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

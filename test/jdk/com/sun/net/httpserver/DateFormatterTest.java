@@ -57,10 +57,9 @@ import org.junit.jupiter.api.TestInstance;
  * @build DateFormatterTest
  * @run junit/othervm DateFormatterTest
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DateFormatterTest {
 
-    private HttpServer server;
+    private static HttpServer server;
 
     static URI httpURI;
     static final Integer ITERATIONS = 10;
@@ -68,7 +67,7 @@ public class DateFormatterTest {
     static Pattern pattern;
 
     @BeforeAll
-    public void setUp() throws IOException, URISyntaxException {
+    public static void setUp() throws IOException, URISyntaxException {
         String days = "(Mon|Tue|Wed|Thu|Fri|Sat|Sun)(,)";
         String dayNo = "(\\s\\d\\d\\s)";
         String month = "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)";
@@ -89,7 +88,7 @@ public class DateFormatterTest {
     }
 
     @AfterAll
-    public void cleanUp() {
+    public static void cleanUp() {
         server.stop(0);
     }
 

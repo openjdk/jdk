@@ -63,9 +63,7 @@ import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MapToPathTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
@@ -78,7 +76,7 @@ public class MapToPathTest {
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
@@ -91,7 +89,7 @@ public class MapToPathTest {
         createDirectories(TEST_DIR);
     }
 
-    private void createDirectories(Path testDir) throws IOException {
+    private static void createDirectories(Path testDir) throws IOException {
         //      Create directory tree:
         //
         //      |-- TEST_DIR
@@ -361,7 +359,7 @@ public class MapToPathTest {
     }
 
     @AfterAll
-    public void teardown() throws IOException {
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

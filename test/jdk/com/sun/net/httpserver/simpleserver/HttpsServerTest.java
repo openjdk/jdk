@@ -59,9 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HttpsServerTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
@@ -70,10 +68,10 @@ public class HttpsServerTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    SSLContext sslContext;
+    static SSLContext sslContext;
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);

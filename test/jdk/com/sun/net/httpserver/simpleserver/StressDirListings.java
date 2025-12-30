@@ -50,9 +50,7 @@ import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class StressDirListings {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
@@ -69,10 +67,10 @@ public class StressDirListings {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    HttpServer simpleFileServer;
+    static HttpServer simpleFileServer;
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         out.println(now() + " creating server");
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
@@ -86,7 +84,7 @@ public class StressDirListings {
     }
 
     @AfterAll
-    public void teardown() {
+    public static void teardown() {
         out.println(now() + " stopping server");
         simpleFileServer.stop(0);
         out.println(now() + " server stopped");

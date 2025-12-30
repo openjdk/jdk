@@ -62,11 +62,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class OutputFilterTest {
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
@@ -79,7 +77,7 @@ public class OutputFilterTest {
     static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeAll
-    public void setup() {
+    public static void setup() {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             logger.setLevel(Level.ALL);
@@ -211,7 +209,7 @@ public class OutputFilterTest {
         }
     }
 
-    public Object[][] throwingHandler() {
+    public static Object[][] throwingHandler() {
         return new Object[][] {
                 {VERBOSE, "Error: server exchange handling failed: IOE ThrowingHandler" + System.lineSeparator()},
                 {INFO, "Error: server exchange handling failed: IOE ThrowingHandler" + System.lineSeparator()},

@@ -47,7 +47,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 /*
  * @test
@@ -57,7 +56,6 @@ import org.junit.jupiter.api.TestInstance;
  * @build jdk.test.lib.net.URIBuilder
  * @run junit/othervm ServerMimeTypesResolutionTest
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ServerMimeTypesResolutionTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
@@ -73,7 +71,7 @@ public class ServerMimeTypesResolutionTest {
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeAll
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);

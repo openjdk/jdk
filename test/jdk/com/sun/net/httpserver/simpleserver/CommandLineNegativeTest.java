@@ -43,11 +43,9 @@ import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CommandLineNegativeTest {
 
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
@@ -59,7 +57,7 @@ public class CommandLineNegativeTest {
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
@@ -67,7 +65,7 @@ public class CommandLineNegativeTest {
         Files.createFile(TEST_FILE);
     }
 
-    public Object[][] unknownOption() {
+    public static Object[][] unknownOption() {
         return new Object[][] {
                 {"--unknownOption"},
                 {"null"}
@@ -83,7 +81,7 @@ public class CommandLineNegativeTest {
                 .shouldContain("Error: unknown option: " + opt);
     }
 
-    public Object[][] tooManyOptionArgs() {
+    public static Object[][] tooManyOptionArgs() {
         return new Object[][] {
                 {"-b", "localhost"},
                 {"-d", "/some/path"},
@@ -106,7 +104,7 @@ public class CommandLineNegativeTest {
                 .shouldContain("Error: unknown option: " + arg);
     }
 
-    public Object[][] noArg() {
+    public static Object[][] noArg() {
         return new Object[][] {
                 {"-b", """
                     -b, --bind-address    - Address to bind to. Default: %s (loopback).
@@ -134,7 +132,7 @@ public class CommandLineNegativeTest {
                 .shouldContain(msg);
     }
 
-    public Object[][] invalidValue() {
+    public static Object[][] invalidValue() {
         return new Object[][] {
                 {"-b", "[127.0.0.1]"},
                 {"-b", "badhost"},
@@ -157,7 +155,7 @@ public class CommandLineNegativeTest {
                 .shouldContain("Error: invalid value given for " + opt + ": " + val);
     }
 
-    public Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
+    public static Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
 
     @ParameterizedTest
     @MethodSource("portOptions")
@@ -168,7 +166,7 @@ public class CommandLineNegativeTest {
                 .shouldContain("Error: server config failed: " + "port out of range:65536");
     }
 
-    public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
+    public static Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 
     @ParameterizedTest
     @MethodSource("directoryOptions")
@@ -211,7 +209,7 @@ public class CommandLineNegativeTest {
     }
 
     @AfterAll
-    public void teardown() throws IOException {
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

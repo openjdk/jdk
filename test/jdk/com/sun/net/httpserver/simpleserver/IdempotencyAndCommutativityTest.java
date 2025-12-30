@@ -44,7 +44,6 @@ import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -56,7 +55,6 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @build jdk.test.lib.net.URIBuilder
  * @run junit/othervm IdempotencyAndCommutativityTest
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IdempotencyAndCommutativityTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
@@ -73,7 +71,7 @@ public class IdempotencyAndCommutativityTest {
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
@@ -92,7 +90,7 @@ public class IdempotencyAndCommutativityTest {
     record ExchangeValues(String method, String resource, int respCode, String contentType) {}
 
     // Creates an exhaustive set of binary exchange sequences
-    public Object[][] allBinarySequences() {
+    public static Object[][] allBinarySequences() {
         final List<ExchangeValues> sequences =  List.of(
                 new ExchangeValues("GET",     FILE_NAME,         200, "text/plain"),
                 new ExchangeValues("GET",     DIR_NAME,          200, "text/html; charset=UTF-8"),

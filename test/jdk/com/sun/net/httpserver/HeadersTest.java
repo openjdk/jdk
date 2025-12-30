@@ -69,11 +69,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HeadersTest {
 
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
@@ -161,7 +159,7 @@ public class HeadersTest {
         assertThrows(NPE, () -> h.set("Foo", null));
     }
 
-    public Object[][] responseHeaders() {
+    public static Object[][] responseHeaders() {
         final var listWithNull = new LinkedList<String>();
         listWithNull.add(null);
         return new Object[][] {

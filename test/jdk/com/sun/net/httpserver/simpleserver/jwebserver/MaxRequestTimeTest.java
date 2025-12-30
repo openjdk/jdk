@@ -54,7 +54,6 @@ import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 /**
  * This test confirms that the jwebserver does not wait indefinitely for
@@ -71,7 +70,6 @@ import org.junit.jupiter.api.TestInstance;
  *    2. an HTTPS request fails due to the server closing the connection
  *    3. another HTTP request is handled successfully.
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MaxRequestTimeTest {
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
     static final String LOCALE_OPT = "-J-Duser.language=en -J-Duser.country=US";
@@ -84,7 +82,7 @@ public class MaxRequestTimeTest {
     static SSLContext sslContext;
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
@@ -125,7 +123,7 @@ public class MaxRequestTimeTest {
                 </html>
                 """;
 
-    void sendHTTPRequest() throws IOException, InterruptedException {
+    static void sendHTTPRequest() throws IOException, InterruptedException {
         out.println("\n--- sendHTTPRequest");
         var client = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
@@ -135,7 +133,7 @@ public class MaxRequestTimeTest {
         assertEquals(expectedBody, response.body());
     }
 
-    void sendHTTPSRequest() throws IOException, InterruptedException {
+    static void sendHTTPSRequest() throws IOException, InterruptedException {
         out.println("\n--- sendHTTPSRequest");
         var client = HttpClient.newBuilder()
                 .sslContext(sslContext)
@@ -151,7 +149,7 @@ public class MaxRequestTimeTest {
     }
 
     @AfterAll
-    public void teardown() throws IOException {
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

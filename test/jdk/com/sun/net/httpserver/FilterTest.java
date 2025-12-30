@@ -54,11 +54,9 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FilterTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
@@ -69,7 +67,7 @@ public class FilterTest {
     static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeAll
-    public void setup() {
+    public static void setup() {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             logger.setLevel(Level.ALL);

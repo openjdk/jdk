@@ -45,11 +45,9 @@ import static java.lang.System.out;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CommandLinePositiveTest {
 
     static final String JAVA_VERSION = System.getProperty("java.version");
@@ -88,7 +86,7 @@ public class CommandLinePositiveTest {
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         if (Files.exists(ROOT_DIR)) {
             FileUtils.deleteFileTreeWithRetry(ROOT_DIR);
         }
@@ -108,7 +106,7 @@ public class CommandLinePositiveTest {
         }
     }
 
-    public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
+    public static Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 
     @ParameterizedTest
     @MethodSource("directoryOptions")
@@ -133,7 +131,7 @@ public class CommandLinePositiveTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    public Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
+    public static Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
 
     @ParameterizedTest
     @MethodSource("portOptions")
@@ -146,7 +144,7 @@ public class CommandLinePositiveTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    public Object[][] helpOptions() { return new Object[][] {{"-h"}, {"-?"}, {"--help"}}; }
+    public static Object[][] helpOptions() { return new Object[][] {{"-h"}, {"-?"}, {"--help"}}; }
 
     static final String USAGE_TEXT = """
             Usage: jwebserver [-b bind address] [-p port] [-d directory]
@@ -176,7 +174,7 @@ public class CommandLinePositiveTest {
                 .shouldContain(OPTIONS_TEXT);
     }
 
-    public Object[][] versionOptions() { return new Object[][] {{"-version"}, {"--version"}}; }
+    public static Object[][] versionOptions() { return new Object[][] {{"-version"}, {"--version"}}; }
 
     @ParameterizedTest
     @MethodSource("versionOptions")
@@ -188,7 +186,7 @@ public class CommandLinePositiveTest {
                 .shouldHaveExitValue(0);
     }
 
-    public Object[][] bindOptions() { return new Object[][] {{"-b"}, {"--bind-address"}}; }
+    public static Object[][] bindOptions() { return new Object[][] {{"-b"}, {"--bind-address"}}; }
 
     @ParameterizedTest
     @MethodSource("bindOptions")
@@ -228,7 +226,7 @@ public class CommandLinePositiveTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    public Object[][] outputOptions() { return new Object[][] {{"-o"}, {"--output"}}; }
+    public static Object[][] outputOptions() { return new Object[][] {{"-o"}, {"--output"}}; }
 
     @ParameterizedTest
     @MethodSource("outputOptions")
@@ -253,7 +251,7 @@ public class CommandLinePositiveTest {
     }
 
     @AfterAll
-    public void teardown() throws IOException {
+    public static void teardown() throws IOException {
         if (Files.exists(ROOT_DIR)) {
             FileUtils.deleteFileTreeWithRetry(ROOT_DIR);
         }
