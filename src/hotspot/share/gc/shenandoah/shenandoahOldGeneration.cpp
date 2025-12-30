@@ -624,6 +624,23 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
   }
 }
 
+void ShenandoahOldGeneration::update_card_table(HeapWord* start, HeapWord* end) const {
+  HeapWord* address = start;
+  HeapWord* next_card_start = start;
+  while (address < end) {
+    // TODO: Experiment with more precise card marking by iterating fields in object
+    // TODO: We also only need to register start and end objects for each card
+    const size_t object_size_words = cast_to_oop(address)->size();
+    HeapWord* end_address = address + object_size_words;
+    _card_scan->register_object_without_lock(address);
+    if (end_address >= next_card_start) {
+      _card_scan->mark_range_as_dirty(address, object_size_words);
+      next_card_start = align_up(end_address, CardTable::card_size_in_words());
+    }
+    address = end_address;
+  }
+}
+
 void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words) const {
   // Only register the copy of the object that won the evacuation race.
   _card_scan->register_object_without_lock(obj);

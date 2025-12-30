@@ -178,6 +178,8 @@ public:
   void handle_failed_promotion(Thread* thread, size_t size);
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
+  void update_card_table(HeapWord* start, HeapWord* end) const;
+
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
   void handle_evacuation(HeapWord* obj, size_t words) const;
 
