@@ -24,7 +24,14 @@
 #include <inttypes.h>
 #include <jvmti.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+// Track nmethod addresses for LOAD and UNLOAD events
+static const void* first_load_addr      = nullptr;
+static const void* second_load_addr     = nullptr;
+static const void* first_unload_addr    = nullptr;
+static const void* second_unload_addr   = nullptr;
 
 /**
  * Callback for COMPILED_METHOD_LOAD event.
@@ -38,14 +45,24 @@ callbackCompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
     char* sig = nullptr;
 
     if (jvmti->GetMethodName(method, &name, &sig, nullptr) != JVMTI_ERROR_NONE) {
-        printf("    [Could not retrieve method name]\n");
-        fflush(stdout);
         return;
     }
 
-    printf("<COMPILED_METHOD_LOAD>:   name: %s, code: 0x%016" PRIxPTR "\n",
-        name, (uintptr_t)code_addr);
-    fflush(stdout);
+    // Only track events for "compiledMethod"
+    if (strcmp(name, "compiledMethod") != 0) {
+        return;
+    }
+
+    printf("<COMPILED_METHOD_LOAD>:   name: %s, code: 0x%016" PRIxPTR "\n", name, (uintptr_t)code_addr);
+
+    if (first_load_addr == nullptr) {
+        first_load_addr = code_addr;
+    } else if (second_load_addr == nullptr) {
+        second_load_addr = code_addr;
+    } else {
+        printf("ERROR: Received too many load events for 'compiledMethod'\n");
+        exit(1);
+    }
 }
 
 /**
@@ -58,13 +75,37 @@ callbackCompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
     char* sig = nullptr;
 
     if (jvmti->GetMethodName(method, &name, &sig, nullptr) != JVMTI_ERROR_NONE) {
-        printf("    [Could not retrieve method name]\n");
-        fflush(stdout);
         return;
     }
-    printf("<COMPILED_METHOD_UNLOAD>:   name: %s, code: 0x%016" PRIxPTR "\n",
-        name, (uintptr_t)code_addr);
-    fflush(stdout);
+
+    // Only track events for "compiledMethod"
+    if (strcmp(name, "compiledMethod") != 0) {
+        return;
+    }
+
+    printf("<COMPILED_METHOD_UNLOAD>:   name: %s, code: 0x%016" PRIxPTR "\n", name, (uintptr_t)code_addr);
+
+    // Validate both loads have occurred
+    if (first_load_addr == nullptr || second_load_addr == nullptr) {
+        printf("ERROR: UNLOAD event for 'compiledMethod' occured before both LOAD events\n");
+        exit(1);
+    }
+
+    if (first_unload_addr == nullptr) {
+        first_unload_addr = code_addr;
+    } else {
+        second_unload_addr = code_addr;
+
+        // LOAD and UNLOAD events should report the same two addresses, but the order of
+        // the UNLOADs is not guaranteed, since the GC may unload either nmethod first.
+        if ((first_load_addr == first_unload_addr  && second_load_addr == second_unload_addr) ||
+            (first_load_addr == second_unload_addr && second_load_addr == first_unload_addr)) {
+            exit(0);
+        } else {
+            printf("ERROR: Address mismatch for 'compiledMethod' events\n");
+            exit(1);
+        }
+    }
 }
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
