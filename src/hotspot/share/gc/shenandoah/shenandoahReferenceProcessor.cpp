@@ -311,6 +311,9 @@ void ShenandoahReferenceProcessor::reset_thread_locals() {
 
 void ShenandoahReferenceProcessor::set_mark_closure(uint worker_id, ShenandoahMarkRefsSuperClosure* mark_closure) {
   _ref_proc_thread_locals[worker_id].set_mark_closure(mark_closure);
+  if (_old_generation_ref_processor != nullptr) {
+    _old_generation_ref_processor->set_mark_closure(worker_id, mark_closure);
+  }
 }
 
 void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
