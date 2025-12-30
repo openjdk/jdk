@@ -1144,7 +1144,7 @@ class DatagramChannelImpl
             ensureOpen();
             // do nothing if virtual thread has forced the socket to be non-blocking
             if (!forcedNonBlocking) {
-                IOUtil.configureBlocking(fd, block);
+                NIOUtil.configureBlocking(fd, block);
             }
         }
     }
@@ -1157,7 +1157,7 @@ class DatagramChannelImpl
         assert readLock.isHeldByCurrentThread() || writeLock.isHeldByCurrentThread();
         synchronized (stateLock) {
             if (!forcedNonBlocking && isOpen()) {
-                IOUtil.configureBlocking(fd, block);
+                NIOUtil.configureBlocking(fd, block);
                 return true;
             } else {
                 return false;
@@ -1174,7 +1174,7 @@ class DatagramChannelImpl
         if (!forcedNonBlocking) {
             synchronized (stateLock) {
                 ensureOpen();
-                IOUtil.configureBlocking(fd, false);
+                NIOUtil.configureBlocking(fd, false);
                 forcedNonBlocking = true;
             }
         }
@@ -1412,7 +1412,7 @@ class DatagramChannelImpl
 
             // copy the blocking mode
             if (!isBlocking() || forcedNonBlocking) {
-                IOUtil.configureBlocking(newfd, false);
+                NIOUtil.configureBlocking(newfd, false);
             }
 
             // dup this channel's socket to the new socket. If this succeeds then
@@ -1944,6 +1944,6 @@ class DatagramChannelImpl
         throws IOException;
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
     }
 }

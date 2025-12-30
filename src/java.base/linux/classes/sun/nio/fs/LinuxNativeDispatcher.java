@@ -90,7 +90,6 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
     private static native void init();
 
     static {
-        jdk.internal.loader.BootLoader.loadLibrary("nio");
         init();
     }
 }
