@@ -417,7 +417,7 @@ public final class CommandOutputControl {
         dumpStdout = other.dumpStdout;
         dumpStderr = other.dumpStderr;
         charset = other.charset;
-        processNotifier = other.processNotifier;
+        processListener = other.processListener;
     }
 
     /**
@@ -762,24 +762,24 @@ public final class CommandOutputControl {
      * begin being pumped.
      *
      * @param v the callback for notifying a subprocess being started or
-     *          {@code null} to
+     *          {@code null}
      * @return this
      */
-    public CommandOutputControl processNotifier(Consumer<Process> v) {
-        processNotifier = v;
+    public CommandOutputControl processListener(Consumer<Process> v) {
+        processListener = v;
         return this;
     }
 
     /**
      * Returns an {@code Optional} wrapping the value passed in the last call of
-     * {@link #processNotifier(Consumer)} method on this object, or an empty
-     * {@code Optional} if the method has not been called.
+     * {@link #processListener(Consumer)} method on this object, or an empty
+     * {@code Optional} if the method has not been called or {@code null} was passed in the last call.
      *
      * @return an {@code Optional} wrapping the value passed in the last call of
-     *         {@link #processNotifier(Consumer)}
+     *         {@link #processListener(Consumer)}
      */
-    public Optional<Consumer<Process>> processNotifier() {
-        return Optional.ofNullable(processNotifier);
+    public Optional<Consumer<Process>> processListener() {
+        return Optional.ofNullable(processListener);
     }
 
     /**
@@ -1096,7 +1096,7 @@ public final class CommandOutputControl {
             stderrGobbler = Optional.empty();
         }
 
-        processNotifier().ifPresent(c -> {
+        processListener().ifPresent(c -> {
             c.accept(process);
         });
 
@@ -1844,7 +1844,7 @@ public final class CommandOutputControl {
     private PrintStream dumpStdout;
     private PrintStream dumpStderr;
     private Charset charset;
-    private Consumer<Process> processNotifier;
+    private Consumer<Process> processListener;
 
     // Executor to run subprocess output stream gobblers.
     // Output stream gobblers should start fetching output streams ASAP after the process starts.

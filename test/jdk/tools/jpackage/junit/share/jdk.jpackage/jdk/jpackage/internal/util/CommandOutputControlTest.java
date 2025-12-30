@@ -392,7 +392,7 @@ public class CommandOutputControlTest {
 
         var processDestroyer = Slot.<CompletableFuture<Void>>createEmpty();
 
-        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).processNotifier(process -> {
+        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).processListener(process -> {
             // Once we are notified the process has been started, schedule its destruction.
             // Give it a second to warm up and print some output and then destroy it.
             processDestroyer.set(CompletableFuture.runAsync(toRunnable(() -> {
@@ -429,7 +429,7 @@ public class CommandOutputControlTest {
                 CommandAction.echoStderr("Bye stderr")
         ));
 
-        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).processNotifier(toConsumer(process -> {
+        var coc = new CommandOutputControl().saveOutput(true).dumpOutput(true).processListener(toConsumer(process -> {
             // Close process output stream(s). This should make corresponding stream gobbler(s) throw IOException.
             switch (action) {
                 case STDOUT -> {
