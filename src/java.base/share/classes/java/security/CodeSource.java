@@ -242,7 +242,7 @@ public class CodeSource implements java.io.Serializable {
                 return signers.clone();
 
             } else {
-                return null;
+                return new CodeSigner[0];
             }
 
         } else {

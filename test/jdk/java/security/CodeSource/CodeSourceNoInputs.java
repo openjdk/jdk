@@ -21,8 +21,7 @@
  * questions.
  */
 
-import java.net.URL;
-import java.net.URI;
+import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
@@ -34,7 +33,7 @@ import java.security.cert.Certificate;
  *          CodeSource is created with empty or null certs argument, or
  *          there are no X509 certificates in certs
  */
-public class GetCodeSignersNoCerts {
+public class CodeSourceNoInputs {
     private static final Certificate NON_X509_CERT = new Certificate("") {
         @Override
         public byte[] getEncoded() {
@@ -61,15 +60,31 @@ public class GetCodeSignersNoCerts {
     };
 
     public static void main(String[] args) throws Exception {
-        URL location = URI.create("file:///ignored").toURL();
+        CodeSource cs;
 
-        CodeSource cs = new CodeSource(location, new Certificate[0]);
-        cs.getCodeSigners();
+        cs = new CodeSource(null, (Certificate[]) null);
+        if (cs.getCodeSigners() != null || cs.getCertificates() != null) {
+            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return null for new CodeSource(null, (Certificate[]) null)");
+        }
 
-        cs = new CodeSource(location, (Certificate[]) null);
-        cs.getCodeSigners();
+        cs = new CodeSource(null, (CodeSigner[]) null);
+        if (cs.getCodeSigners() != null || cs.getCertificates() != null) {
+            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return null for new CodeSource(null, (CodeSigners[]) null)");
+        }
 
-        cs = new CodeSource(location, new Certificate[]{NON_X509_CERT});
-        cs.getCodeSigners();
+        cs = new CodeSource(null, new Certificate[0]);
+        if (cs.getCodeSigners().length != 0 || cs.getCertificates().length != 0) {
+            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return empty arrays for new CodeSource(null, new Certificate[0])");
+        }
+
+        cs = new CodeSource(null, new CodeSigner[0]);
+        if (cs.getCodeSigners().length != 0 || cs.getCertificates().length != 0) {
+            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return empty arrays for new CodeSource(null, new CodeSigners[0])");
+        }
+
+        cs = new CodeSource(null, new Certificate[]{NON_X509_CERT});
+        if (cs.getCodeSigners().length != 0 || cs.getCertificates() == null) {
+            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return arrays for new CodeSource(null, new CodeSigners[1]{ A-NON-X509-CERTIFICATE })");
+        }
     }
 }
