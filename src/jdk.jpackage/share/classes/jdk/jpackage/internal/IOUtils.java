@@ -60,15 +60,4 @@ final class IOUtils {
             throw new JPackageException(I18N.format("error.cannot-write-to-output-dir", outdir.toAbsolutePath()));
         }
     }
-
-    public static long getPID(Process p) {
-        try {
-            return p.pid();
-        } catch (UnsupportedOperationException ex) {
-            Log.verbose(ex); // Just log exception and ignore it. This method
-                             // is used for verbose output, so not a problem
-                             // if unsupported.
-            return -1;
-        }
-    }
 }
