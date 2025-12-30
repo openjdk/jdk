@@ -294,13 +294,18 @@ void ShenandoahFreeSet::reset_bytes_allocated_since_gc_start(size_t initial_byte
   //    _total_bytes_previously_allocated and _mutator_bytes_allocated_since_gc_start.
   // Since _mutator_bytes_allocated_since_gc_start does not start at zero, we subtract initial_bytes_allocated so as
   // to not double count these allocated bytes.
-  _total_bytes_previously_allocated += _mutator_bytes_allocated_since_gc_start - initial_bytes_allocated;
-#define KELVIN_DEBUG_BYTES_ALLOCATED
-#ifdef KELVIN_DEBUG_BYTES_ALLOCATED
-  log_info(gc)("reset_bytes_allocated_since_gc_start() adds %zu - %zu to _total_bytes_previously_allocated to yield: %zu",
-               _mutator_bytes_allocated_since_gc_start, initial_bytes_allocated, _total_bytes_previously_allocated);
-#endif
+  size_t original_mutator_bytes_allocated_since_gc_start = _mutator_bytes_allocated_since_gc_start;
+
+  // Setting _mutator_bytes_allocated_since_gc_start before _total_bytes_previously_allocated reduces the damage
+  // in the case that the control or regulator thread queries get_bytes_allocated_since_previous_sample() between
+  // the two assignments.
+  //
+  // These are not declared as volatile so the compiler or hardware may reorder the assignments.  The implementation of
+  // get_bytes_allocated_since_previous_cycle() is robust to this possibility, as are triggering heuristics.  The current
+  // implementation assumes we are better off to tolerate the very rare race rather than impose a synchronization penalty
+  // on every update and fetch.  (Perhaps it would be better to make the opposite tradeoff for improved maintainability.)
   _mutator_bytes_allocated_since_gc_start = initial_bytes_allocated;
+  _total_bytes_previously_allocated += original_mutator_bytes_allocated_since_gc_start - initial_bytes_allocated;
 }
 
 void ShenandoahFreeSet::increase_bytes_allocated(size_t bytes) {
