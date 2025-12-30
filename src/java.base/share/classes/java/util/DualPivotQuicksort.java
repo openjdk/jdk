@@ -42,48 +42,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * There are also additional algorithms, invoked from the Dual-Pivot
  * Quicksort such as merging sort, sorting network, heap sort, mixed
  * insertion sort, counting sort and parallel merge sort. The actual
- * sorting algorithm depends on the data type and array size.<p>
- *
- * <b>Type: int/long/float/double</b><p>
- *
- * If the array size is small, invoke mixed insertion sort on non-leftmost
- * parts or insertion sort on leftmost part.<p>
- *
- * Then try merging sort which is the best on almost sorted arrays.<p>
- *
- * On the next step check the recursion depth to avoid quadratic time
- * with heap sort.<p>
- *
- * Then apply Quicksort with two pivots on random data, otherwise
- * run one-pivot Quicksort.<p>
- *
- * <b>Type: float/double</b><p>
- *
- * Floating-point values require additional steps to process
- * negative zeros -0.0 and NaNs (Not-a-Number) before sorting and
- * re-arrange negative zeros at the end.<p>
- *
- * <b>Type: byte</b><p>
- *
- * Invoke insertion sort, if the array size is small, otherwise switch
- * to counting sort.<p>
- *
- * <b>Type: char/short</b><p>
- *
- * Invoke counting sort on large array, otherwise run insertion sort
- * on small array.<p>
- *
- * On the next step check the recursion depth to avoid quadratic time
- * with counting sort.<p>
- *
- * Then apply Quicksort with two pivots on random data, otherwise
- * run one-pivot Quicksort.<p>
- *
- * <b>Parallel sorting (int/long/float/double)</b><p>
- *
- * If the array size is small, sequential sort is run. Otherwise
- * invoke parallel merge sort (the recursion depth depends on
- * parallelism level), then run parallel Quicksort.
+ * sorting algorithm depends on the data type and array size.
  *
  * @author Vladimir Yaroslavskiy
  * @author Jon Bentley
@@ -97,18 +56,60 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 final class DualPivotQuicksort {
 
     /**
-     * Prevents instantiation.
+     * <b>High-level description of sorting logic.</b><p>
+     *
+     * <b>Type: int/long/float/double</b><p>
+     *
+     * If the array size is small, invoke mixed insertion sort on
+     * non-leftmost parts or insertion sort on leftmost part.<p>
+     *
+     * Then try merging sort which is the best on almost
+     * sorted arrays.<p>
+     *
+     * Then check the recursion depth to avoid quadratic time
+     * with heap sort.<p>
+     *
+     * Then apply Quicksort with two pivots on random data,
+     * otherwise run one-pivot Quicksort.<p>
+     *
+     * <b>Type: float/double</b><p>
+     *
+     * Floating-point values require additional steps to process
+     * negative zeros -0.0 and NaNs (Not-a-Number) and re-arrange
+     * negative zeros at the end.<p>
+     *
+     * <b>Type: byte</b><p>
+     *
+     * Invoke insertion sort, if the array size is small,
+     * otherwise switch to counting sort.<p>
+     *
+     * <b>Type: char/short</b><p>
+     *
+     * Invoke counting sort on large array, otherwise run
+     * insertion sort on small array.<p>
+     *
+     * Then check the recursion depth to avoid quadratic time
+     * with counting sort.<p>
+     *
+     * Then apply Quicksort with two pivots on random data,
+     * otherwise run one-pivot Quicksort.<p>
+     *
+     * <b>Parallel sorting (int/long/float/double)</b><p>
+     *
+     * If the array size is small, sequential sort is run.
+     * Otherwise invoke parallel merge sort (the recursion depth
+     * depends on parallelism level), then run parallel Quicksort.
      */
     private DualPivotQuicksort() {}
 
-    /* --------------------- Insertion sort --------------------- */
+    /* ----------------------- Insertion sort ----------------------- */
 
     /**
      * Max size of array to use insertion sort (the best on shuffle data).
      */
     private static final int MAX_INSERTION_SORT_SIZE = 37;
 
-    /* ---------------------- Merging sort ---------------------- */
+    /* ------------------------ Merging sort ------------------------ */
 
     /**
      * Min size of array to use merging sort (the best on stagger data).
@@ -125,7 +126,7 @@ final class DualPivotQuicksort {
      */
     private static final int MAX_RUN_CAPACITY = 10 << 10;
 
-    /* ---------------------- Digital sort ---------------------- */
+    /* ------------------------ Digital sort ------------------------ */
 
     /**
      * Min size of array to use counting sort (the best on random data).
@@ -137,14 +138,14 @@ final class DualPivotQuicksort {
      */
     private static final int MIN_NUMERICAL_SORT_SIZE = 9 << 10;
 
-    /* --------------------- Parallel sort ---------------------- */
+    /* ----------------------- Parallel sort ------------------------ */
 
     /**
      * Min size of array to perform sorting in parallel (the best on stagger data).
      */
     private static final int MIN_PARALLEL_SORT_SIZE = 3 << 10;
 
-    /* --------------------- Infrastructure --------------------- */
+    /* ----------------------- Infrastructure ----------------------- */
 
     /**
      * Max recursive depth before switching to heap sort.
@@ -299,7 +300,7 @@ final class DualPivotQuicksort {
             /*
              * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE + bits * 5) {
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
                 sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET,
                     low, high, DualPivotQuicksort::insertionSort);
                 return;
@@ -395,12 +396,12 @@ final class DualPivotQuicksort {
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
-                    sorter.fork(bits | 1, indices[1] + 1, high);
-                } else {
+                if (sorter == null) {
                     sort(sorter, a, bits | 1, indices[0] + 1, indices[1]);
                     sort(sorter, a, bits | 1, indices[1] + 1, high);
+                } else {
+                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
+                    sorter.fork(bits | 1, indices[1] + 1, high);
                 }
 
             } else { // Partitioning with one pivot
@@ -413,10 +414,10 @@ final class DualPivotQuicksort {
                  * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.fork(bits | 1, indices[1], high);
-                } else {
+                if (sorter == null) {
                     sort(sorter, a, bits | 1, indices[1], high);
+                } else {
+                    sorter.fork(bits | 1, indices[1], high);
                 }
             }
             high = indices[0]; // Iterate along the left part
@@ -853,7 +854,7 @@ final class DualPivotQuicksort {
         /*
          * Merge the left and right parts.
          */
-        if (hi1 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
+        if (hi2 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
             new Merger<>(null, dst, k, src, lo1, hi1, lo2, hi2).invoke();
         } else {
             mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
@@ -875,39 +876,53 @@ final class DualPivotQuicksort {
     private static void mergeParts(Merger<int[]> merger, int[] dst, int k,
             int[] src, int lo1, int hi1, int lo2, int hi2) {
 
-        while (true) {
+        while (hi2 - lo2 + hi1 - lo1 > MIN_PARALLEL_SORT_SIZE) {
+            int mi1, mi2;
+
             /*
              * The first part must be larger.
              */
             if (hi1 - lo1 < hi2 - lo2) {
-                int lo = lo1; lo1 = lo2; lo2 = lo;
-                int hi = hi1; hi1 = hi2; hi2 = hi;
-            }
 
-            /*
-             * Merge the small parts sequentially.
-             */
-            if (hi1 - lo1 < MIN_PARALLEL_SORT_SIZE) {
-                break;
-            }
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi2 = (lo2 + hi2) >>> 1;
+                mi1 = hi1;
+                int key = src[mi2];
 
-            /*
-             * Find the median of the larger part.
-             */
-            int mi1 = (lo1 + hi1) >>> 1;
-            int mi2 = hi2;
-            int key = src[mi1];
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo1; mi0 < mi1; ) {
+                    int mid = (mi0 + mi1) >>> 1;
 
-            /*
-             * Split the smaller part.
-             */
-            for (int mi0 = lo2; mi0 < mi2; ) {
-                int mid = (mi0 + mi2) >>> 1;
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi1 = mid;
+                    }
+                }
+            } else {
 
-                if (key > src[mid]) {
-                    mi0 = mid + 1;
-                } else {
-                    mi2 = mid;
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi1 = (lo1 + hi1) >>> 1;
+                mi2 = hi2;
+                int key = src[mi1];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo2; mi0 < mi2; ) {
+                    int mid = (mi0 + mi2) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi2 = mid;
+                    }
                 }
             }
 
@@ -917,7 +932,7 @@ final class DualPivotQuicksort {
             merger.fork(k, lo1, mi1, lo2, mi2);
 
             /*
-             * Reserve space for the second parts.
+             * Skip the first parts.
              */
             k += mi2 - lo2 + mi1 - lo1;
 
@@ -929,14 +944,9 @@ final class DualPivotQuicksort {
         }
 
         /*
-         * Check if the array is already ordered and then merge the parts.
+         * Merge the small parts sequentially.
          */
-        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
-            mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
-        } else {
-            System.arraycopy(src, lo1, dst, k, hi1 - lo1);
-            System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
-        }
+        mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
     }
 
     /**
@@ -953,37 +963,39 @@ final class DualPivotQuicksort {
     private static void mergeParts(int[] dst, int k,
             int[] src, int lo1, int hi1, int lo2, int hi2) {
 
-        if (src[hi1 - 1] < src[hi2 - 1]) {
-            while (lo1 < hi1) {
-                int next = src[lo1];
+        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
+            if (src[hi1 - 1] < src[hi2 - 1]) {
+                while (lo1 < hi1) {
+                    int next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
-                }
-            }
-        } else if (src[hi1 - 1] > src[hi2 - 1]) {
-            while (lo2 < hi2) {
-                int next = src[lo1];
+            } else if (src[hi1 - 1] > src[hi2 - 1]) {
+                while (lo2 < hi2) {
+                    int next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
-                }
-            }
-        } else {
-            while (lo1 < hi1 && lo2 < hi2) {
-                int next = src[lo1];
+            } else {
+                while (lo1 < hi1 && lo2 < hi2) {
+                    int next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
-                }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
             }
         }
@@ -992,7 +1004,7 @@ final class DualPivotQuicksort {
          * Copy the tail of the left and right parts.
          */
         System.arraycopy(src, lo1, dst, k, hi1 - lo1);
-        System.arraycopy(src, lo2, dst, k, hi2 - lo2);
+        System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
 
     /**
@@ -1090,7 +1102,7 @@ final class DualPivotQuicksort {
             /*
              * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE + bits * 5) {
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
                 sort(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET,
                     low, high, DualPivotQuicksort::insertionSort);
                 return;
@@ -1186,12 +1198,12 @@ final class DualPivotQuicksort {
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
-                    sorter.fork(bits | 1, indices[1] + 1, high);
-                } else {
+                if (sorter == null) {
                     sort(sorter, a, bits | 1, indices[0] + 1, indices[1]);
                     sort(sorter, a, bits | 1, indices[1] + 1, high);
+                } else {
+                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
+                    sorter.fork(bits | 1, indices[1] + 1, high);
                 }
 
             } else { // Partitioning with one pivot
@@ -1204,10 +1216,10 @@ final class DualPivotQuicksort {
                  * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.fork(bits | 1, indices[1], high);
-                } else {
+                if (sorter == null) {
                     sort(sorter, a, bits | 1, indices[1], high);
+                } else {
+                    sorter.fork(bits | 1, indices[1], high);
                 }
             }
             high = indices[0]; // Iterate along the left part
@@ -1644,7 +1656,7 @@ final class DualPivotQuicksort {
         /*
          * Merge the left and right parts.
          */
-        if (hi1 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
+        if (hi2 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
             new Merger<>(null, dst, k, src, lo1, hi1, lo2, hi2).invoke();
         } else {
             mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
@@ -1666,39 +1678,53 @@ final class DualPivotQuicksort {
     private static void mergeParts(Merger<long[]> merger, long[] dst, int k,
             long[] src, int lo1, int hi1, int lo2, int hi2) {
 
-        while (true) {
+        while (hi2 - lo2 + hi1 - lo1 > MIN_PARALLEL_SORT_SIZE) {
+            int mi1, mi2;
+
             /*
              * The first part must be larger.
              */
             if (hi1 - lo1 < hi2 - lo2) {
-                int lo = lo1; lo1 = lo2; lo2 = lo;
-                int hi = hi1; hi1 = hi2; hi2 = hi;
-            }
 
-            /*
-             * Merge the small parts sequentially.
-             */
-            if (hi1 - lo1 < MIN_PARALLEL_SORT_SIZE) {
-                break;
-            }
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi2 = (lo2 + hi2) >>> 1;
+                mi1 = hi1;
+                long key = src[mi2];
 
-            /*
-             * Find the median of the larger part.
-             */
-            int mi1 = (lo1 + hi1) >>> 1;
-            int mi2 = hi2;
-            long key = src[mi1];
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo1; mi0 < mi1; ) {
+                    int mid = (mi0 + mi1) >>> 1;
 
-            /*
-             * Split the smaller part.
-             */
-            for (int mi0 = lo2; mi0 < mi2; ) {
-                int mid = (mi0 + mi2) >>> 1;
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi1 = mid;
+                    }
+                }
+            } else {
 
-                if (key > src[mid]) {
-                    mi0 = mid + 1;
-                } else {
-                    mi2 = mid;
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi1 = (lo1 + hi1) >>> 1;
+                mi2 = hi2;
+                long key = src[mi1];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo2; mi0 < mi2; ) {
+                    int mid = (mi0 + mi2) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi2 = mid;
+                    }
                 }
             }
 
@@ -1708,7 +1734,7 @@ final class DualPivotQuicksort {
             merger.fork(k, lo1, mi1, lo2, mi2);
 
             /*
-             * Reserve space for the second parts.
+             * Skip the first parts.
              */
             k += mi2 - lo2 + mi1 - lo1;
 
@@ -1720,14 +1746,9 @@ final class DualPivotQuicksort {
         }
 
         /*
-         * Check if the array is already ordered and then merge the parts.
+         * Merge the small parts sequentially.
          */
-        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
-            mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
-        } else {
-            System.arraycopy(src, lo1, dst, k, hi1 - lo1);
-            System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
-        }
+        mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
     }
 
     /**
@@ -1744,37 +1765,39 @@ final class DualPivotQuicksort {
     private static void mergeParts(long[] dst, int k,
             long[] src, int lo1, int hi1, int lo2, int hi2) {
 
-        if (src[hi1 - 1] < src[hi2 - 1]) {
-            while (lo1 < hi1) {
-                long next = src[lo1];
+        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
+            if (src[hi1 - 1] < src[hi2 - 1]) {
+                while (lo1 < hi1) {
+                    long next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
-                }
-            }
-        } else if (src[hi1 - 1] > src[hi2 - 1]) {
-            while (lo2 < hi2) {
-                long next = src[lo1];
+            } else if (src[hi1 - 1] > src[hi2 - 1]) {
+                while (lo2 < hi2) {
+                    long next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
-                }
-            }
-        } else {
-            while (lo1 < hi1 && lo2 < hi2) {
-                long next = src[lo1];
+            } else {
+                while (lo1 < hi1 && lo2 < hi2) {
+                    long next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
-                }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
             }
         }
@@ -1783,7 +1806,7 @@ final class DualPivotQuicksort {
          * Copy the tail of the left and right parts.
          */
         System.arraycopy(src, lo1, dst, k, hi1 - lo1);
-        System.arraycopy(src, lo2, dst, k, hi2 - lo2);
+        System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
 
     /**
@@ -1926,7 +1949,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void sort(char[] a, int bits, int low, int high) {
+    static void sort(char[] a, int bits, int low, int high) {
         while (true) {
             int size = high - low;
 
@@ -2340,7 +2363,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    private static void sort(short[] a, int bits, int low, int high) {
+    static void sort(short[] a, int bits, int low, int high) {
         while (true) {
             int size = high - low;
 
@@ -2835,7 +2858,7 @@ final class DualPivotQuicksort {
             /*
              * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE + bits * 5) {
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
                 sort(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET,
                     low, high, DualPivotQuicksort::insertionSort);
                 return;
@@ -2931,12 +2954,12 @@ final class DualPivotQuicksort {
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
-                    sorter.fork(bits | 1, indices[1] + 1, high);
-                } else {
+                if (sorter == null) {
                     sort(sorter, a, bits | 1, indices[0] + 1, indices[1]);
                     sort(sorter, a, bits | 1, indices[1] + 1, high);
+                } else {
+                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
+                    sorter.fork(bits | 1, indices[1] + 1, high);
                 }
 
             } else { // Partitioning with one pivot
@@ -2949,10 +2972,10 @@ final class DualPivotQuicksort {
                  * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.fork(bits | 1, indices[1], high);
-                } else {
+                if (sorter == null) {
                     sort(sorter, a, bits | 1, indices[1], high);
+                } else {
+                    sorter.fork(bits | 1, indices[1], high);
                 }
             }
             high = indices[0]; // Iterate along the left part
@@ -3389,7 +3412,7 @@ final class DualPivotQuicksort {
         /*
          * Merge the left and right parts.
          */
-        if (hi1 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
+        if (hi2 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
             new Merger<>(null, dst, k, src, lo1, hi1, lo2, hi2).invoke();
         } else {
             mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
@@ -3411,39 +3434,53 @@ final class DualPivotQuicksort {
     private static void mergeParts(Merger<float[]> merger, float[] dst, int k,
             float[] src, int lo1, int hi1, int lo2, int hi2) {
 
-        while (true) {
+        while (hi2 - lo2 + hi1 - lo1 > MIN_PARALLEL_SORT_SIZE) {
+            int mi1, mi2;
+
             /*
              * The first part must be larger.
              */
             if (hi1 - lo1 < hi2 - lo2) {
-                int lo = lo1; lo1 = lo2; lo2 = lo;
-                int hi = hi1; hi1 = hi2; hi2 = hi;
-            }
 
-            /*
-             * Merge the small parts sequentially.
-             */
-            if (hi1 - lo1 < MIN_PARALLEL_SORT_SIZE) {
-                break;
-            }
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi2 = (lo2 + hi2) >>> 1;
+                mi1 = hi1;
+                float key = src[mi2];
 
-            /*
-             * Find the median of the larger part.
-             */
-            int mi1 = (lo1 + hi1) >>> 1;
-            int mi2 = hi2;
-            float key = src[mi1];
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo1; mi0 < mi1; ) {
+                    int mid = (mi0 + mi1) >>> 1;
 
-            /*
-             * Split the smaller part.
-             */
-            for (int mi0 = lo2; mi0 < mi2; ) {
-                int mid = (mi0 + mi2) >>> 1;
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi1 = mid;
+                    }
+                }
+            } else {
 
-                if (key > src[mid]) {
-                    mi0 = mid + 1;
-                } else {
-                    mi2 = mid;
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi1 = (lo1 + hi1) >>> 1;
+                mi2 = hi2;
+                float key = src[mi1];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo2; mi0 < mi2; ) {
+                    int mid = (mi0 + mi2) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi2 = mid;
+                    }
                 }
             }
 
@@ -3453,7 +3490,7 @@ final class DualPivotQuicksort {
             merger.fork(k, lo1, mi1, lo2, mi2);
 
             /*
-             * Reserve space for the second parts.
+             * Skip the first parts.
              */
             k += mi2 - lo2 + mi1 - lo1;
 
@@ -3465,14 +3502,9 @@ final class DualPivotQuicksort {
         }
 
         /*
-         * Check if the array is already ordered and then merge the parts.
+         * Merge the small parts sequentially.
          */
-        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
-            mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
-        } else {
-            System.arraycopy(src, lo1, dst, k, hi1 - lo1);
-            System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
-        }
+        mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
     }
 
     /**
@@ -3489,37 +3521,39 @@ final class DualPivotQuicksort {
     private static void mergeParts(float[] dst, int k,
             float[] src, int lo1, int hi1, int lo2, int hi2) {
 
-        if (src[hi1 - 1] < src[hi2 - 1]) {
-            while (lo1 < hi1) {
-                float next = src[lo1];
+        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
+            if (src[hi1 - 1] < src[hi2 - 1]) {
+                while (lo1 < hi1) {
+                    float next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
-                }
-            }
-        } else if (src[hi1 - 1] > src[hi2 - 1]) {
-            while (lo2 < hi2) {
-                float next = src[lo1];
+            } else if (src[hi1 - 1] > src[hi2 - 1]) {
+                while (lo2 < hi2) {
+                    float next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
-                }
-            }
-        } else {
-            while (lo1 < hi1 && lo2 < hi2) {
-                float next = src[lo1];
+            } else {
+                while (lo1 < hi1 && lo2 < hi2) {
+                    float next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
-                }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
             }
         }
@@ -3528,7 +3562,7 @@ final class DualPivotQuicksort {
          * Copy the tail of the left and right parts.
          */
         System.arraycopy(src, lo1, dst, k, hi1 - lo1);
-        System.arraycopy(src, lo2, dst, k, hi2 - lo2);
+        System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
 
     /**
@@ -3683,7 +3717,7 @@ final class DualPivotQuicksort {
             /*
              * Invoke adaptive insertion sort on small leftmost part.
              */
-            if (size < MAX_INSERTION_SORT_SIZE + bits * 5) {
+            if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
                 sort(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET,
                     low, high, DualPivotQuicksort::insertionSort);
                 return;
@@ -3779,12 +3813,12 @@ final class DualPivotQuicksort {
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
-                    sorter.fork(bits | 1, indices[1] + 1, high);
-                } else {
+                if (sorter == null) {
                     sort(sorter, a, bits | 1, indices[0] + 1, indices[1]);
                     sort(sorter, a, bits | 1, indices[1] + 1, high);
+                } else {
+                    sorter.fork(bits | 1, indices[0] + 1, indices[1]);
+                    sorter.fork(bits | 1, indices[1] + 1, high);
                 }
 
             } else { // Partitioning with one pivot
@@ -3797,10 +3831,10 @@ final class DualPivotQuicksort {
                  * known pivot. All elements from the central part are
                  * equal and therefore already sorted.
                  */
-                if (size > MIN_PARALLEL_SORT_SIZE && sorter != null) {
-                    sorter.fork(bits | 1, indices[1], high);
-                } else {
+                if (sorter == null) {
                     sort(sorter, a, bits | 1, indices[1], high);
+                } else {
+                    sorter.fork(bits | 1, indices[1], high);
                 }
             }
             high = indices[0]; // Iterate along the left part
@@ -4237,7 +4271,7 @@ final class DualPivotQuicksort {
         /*
          * Merge the left and right parts.
          */
-        if (hi1 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
+        if (hi2 - lo1 > MIN_PARALLEL_SORT_SIZE && sorter != null) {
             new Merger<>(null, dst, k, src, lo1, hi1, lo2, hi2).invoke();
         } else {
             mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
@@ -4259,39 +4293,53 @@ final class DualPivotQuicksort {
     private static void mergeParts(Merger<double[]> merger, double[] dst, int k,
             double[] src, int lo1, int hi1, int lo2, int hi2) {
 
-        while (true) {
+        while (hi2 - lo2 + hi1 - lo1 > MIN_PARALLEL_SORT_SIZE) {
+            int mi1, mi2;
+
             /*
              * The first part must be larger.
              */
             if (hi1 - lo1 < hi2 - lo2) {
-                int lo = lo1; lo1 = lo2; lo2 = lo;
-                int hi = hi1; hi1 = hi2; hi2 = hi;
-            }
 
-            /*
-             * Merge the small parts sequentially.
-             */
-            if (hi1 - lo1 < MIN_PARALLEL_SORT_SIZE) {
-                break;
-            }
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi2 = (lo2 + hi2) >>> 1;
+                mi1 = hi1;
+                double key = src[mi2];
 
-            /*
-             * Find the median of the larger part.
-             */
-            int mi1 = (lo1 + hi1) >>> 1;
-            int mi2 = hi2;
-            double key = src[mi1];
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo1; mi0 < mi1; ) {
+                    int mid = (mi0 + mi1) >>> 1;
 
-            /*
-             * Split the smaller part.
-             */
-            for (int mi0 = lo2; mi0 < mi2; ) {
-                int mid = (mi0 + mi2) >>> 1;
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi1 = mid;
+                    }
+                }
+            } else {
 
-                if (key > src[mid]) {
-                    mi0 = mid + 1;
-                } else {
-                    mi2 = mid;
+                /*
+                 * Find the median of the larger part.
+                 */
+                mi1 = (lo1 + hi1) >>> 1;
+                mi2 = hi2;
+                double key = src[mi1];
+
+                /*
+                 * Split the smaller part.
+                 */
+                for (int mi0 = lo2; mi0 < mi2; ) {
+                    int mid = (mi0 + mi2) >>> 1;
+
+                    if (key > src[mid]) {
+                        mi0 = mid + 1;
+                    } else {
+                        mi2 = mid;
+                    }
                 }
             }
 
@@ -4301,7 +4349,7 @@ final class DualPivotQuicksort {
             merger.fork(k, lo1, mi1, lo2, mi2);
 
             /*
-             * Reserve space for the second parts.
+             * Skip the first parts.
              */
             k += mi2 - lo2 + mi1 - lo1;
 
@@ -4313,14 +4361,9 @@ final class DualPivotQuicksort {
         }
 
         /*
-         * Check if the array is already ordered and then merge the parts.
+         * Merge the small parts sequentially.
          */
-        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
-            mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
-        } else {
-            System.arraycopy(src, lo1, dst, k, hi1 - lo1);
-            System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
-        }
+        mergeParts(dst, k, src, lo1, hi1, lo2, hi2);
     }
 
     /**
@@ -4337,37 +4380,39 @@ final class DualPivotQuicksort {
     private static void mergeParts(double[] dst, int k,
             double[] src, int lo1, int hi1, int lo2, int hi2) {
 
-        if (src[hi1 - 1] < src[hi2 - 1]) {
-            while (lo1 < hi1) {
-                double next = src[lo1];
+        if (lo1 < hi1 && lo2 < hi2 && src[hi1 - 1] > src[lo2]) {
+            if (src[hi1 - 1] < src[hi2 - 1]) {
+                while (lo1 < hi1) {
+                    double next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
-                }
-            }
-        } else if (src[hi1 - 1] > src[hi2 - 1]) {
-            while (lo2 < hi2) {
-                double next = src[lo1];
+            } else if (src[hi1 - 1] > src[hi2 - 1]) {
+                while (lo2 < hi2) {
+                    double next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
-                }
-            }
-        } else {
-            while (lo1 < hi1 && lo2 < hi2) {
-                double next = src[lo1];
+            } else {
+                while (lo1 < hi1 && lo2 < hi2) {
+                    double next = src[lo1];
 
-                if (next <= src[lo2]) {
-                    dst[k++] = src[lo1++];
-                }
-                if (next >= src[lo2]) {
-                    dst[k++] = src[lo2++];
+                    if (next <= src[lo2]) {
+                        dst[k++] = src[lo1++];
+                    }
+                    if (next >= src[lo2]) {
+                        dst[k++] = src[lo2++];
+                    }
                 }
             }
         }
@@ -4376,7 +4421,7 @@ final class DualPivotQuicksort {
          * Copy the tail of the left and right parts.
          */
         System.arraycopy(src, lo1, dst, k, hi1 - lo1);
-        System.arraycopy(src, lo2, dst, k, hi2 - lo2);
+        System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
 
     /**
@@ -4436,12 +4481,13 @@ final class DualPivotQuicksort {
          * Check if we can skip the given digit.
          */
         for (int c : count) {
+            if (c == 0) {
+                continue;
+            }
             if (c == total) {
                 return false;
             }
-            if (c > 0) {
-                break;
-            }
+            break;
         }
 
         /*
@@ -4531,8 +4577,18 @@ final class DualPivotQuicksort {
         }
 
         private void fork(int depth, int low, int high) {
-            addToPendingCount(1);
-            new Sorter<>(this, a, b, low, high - low, offset, depth).fork();
+            if (high - low < MIN_PARALLEL_SORT_SIZE) {
+                switch(a) {
+                    case int[] ai -> sort(null, ai, depth, low, high);
+                    case long[] al -> sort(null, al, depth, low, high);
+                    case float[] af -> sort(null, af, depth, low, high);
+                    case double[] ad -> sort(null, ad, depth, low, high);
+                    default -> throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
+                }
+            } else {
+                addToPendingCount(1);
+                new Sorter<>(this, a, b, low, high - low, offset, depth).fork();
+            }
         }
     }
 
