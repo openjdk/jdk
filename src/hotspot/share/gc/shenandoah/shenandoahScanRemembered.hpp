@@ -603,6 +603,8 @@ public:
   // as address.
   void register_object_without_lock(HeapWord* address);
 
+  void update_card_table(HeapWord* start, HeapWord* end);
+
   // During the reference updates phase of GC, we walk through each old-gen memory region that was
   // not part of the collection set and we invalidate all unmarked objects.  As part of this effort,
   // we coalesce neighboring dead objects in order to make future remembered set scanning more
@@ -812,6 +814,10 @@ public:
     } else {
       return nullptr;
     }
+  }
+
+  void update_card_table(HeapWord* start, HeapWord* end) const {
+    _scc->update_card_table(start, end);
   }
 
   // Return true iff this object is "properly" registered.
