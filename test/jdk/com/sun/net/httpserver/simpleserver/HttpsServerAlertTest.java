@@ -59,7 +59,11 @@ public class HttpsServerAlertTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+
+    static {
+        SSLContext.setDefault(sslContext);
+    }
 
     @BeforeAll
     public static void setup() throws IOException {
@@ -69,8 +73,6 @@ public class HttpsServerAlertTest {
             ch.setLevel(Level.ALL);
             LOGGER.addHandler(ch);
         }
-        sslContext = new SimpleSSLContext().get();
-        SSLContext.setDefault(sslContext);
     }
 
     @Test

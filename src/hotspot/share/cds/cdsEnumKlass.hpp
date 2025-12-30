@@ -35,7 +35,7 @@ class JavaFieldStream;
 class KlassSubGraphInfo;
 
 // This is legacy support for enum classes before JEP 483. This code is not needed when
-// CDSConfig::is_initing_classes_at_dump_time()==true.
+// CDSConfig::is_dumping_aot_linked_classes()==true.
 class CDSEnumKlass: AllStatic {
 public:
   static bool is_enum_obj(oop orig_obj);
