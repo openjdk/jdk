@@ -3064,15 +3064,13 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void gcm_counterMode_AESCrypt_block(int round, Register in, Register out, Register key, Register counter,
-                                      Register input_len, VectorRegister *working_vregs, Register tmp1, Register tmp2,
-                                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
+  void gcm_counterMode_AESCrypt_blocks(int round, Register in, Register out, Register key, Register counter,
+                                       Register input_len, VectorRegister *working_vregs, Register tmp1, Register tmp2,
+                                       VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
     const Register block_size = tmp1;
     const Register len        = tmp2;
 
-    Label L_exit;
     __ srli(len, input_len, 4);
-    __ beqz(len, L_exit);
 
     const unsigned int BLOCK_SIZE = 16;
     const unsigned int MASK_VALUE = 0b1000; // we need {1, 0, 0, 0} mask value here
@@ -3102,19 +3100,16 @@ class StubGenerator: public StubCodeGenerator {
       __ bnez(len, L_aes_ctr_loop);
 
     __ vse32_v(vtmp1, counter);
-    __ bind(L_exit);
   }
 
-  void gcm_ghash(Register state, Register subkeyH, Register ct, Register input_len, Register tmp,
-                 VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
+  void gcm_ghash_blocks(Register state, Register subkeyH, Register ct, Register input_len, Register tmp,
+                        VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
     const Register len = tmp;
     __ srli(len, input_len, 4);
 
     ghash_loop(state, subkeyH, ct, len, vtmp1, vtmp2, vtmp3);
 
-    // we only calculate the data more than 16Byte
-    __ andi(len, input_len, -16);
-    __ mv(x10, len);
+    __ mv(x10, input_len);
     __ leave();
     __ ret();
   }
@@ -3164,6 +3159,12 @@ class StubGenerator: public StubCodeGenerator {
     const address start = __ pc();
     __ enter();
 
+    Label L_exit;
+    // Requires PARALLEN_LEN (512) bytes to efficiently use the intrinsic
+    __ mv(t0, -1 << 9);
+    __ andr(input_len, input_len, t0);
+    __ beqz(input_len, L_exit);
+
     Label L_aes128, L_aes192;
     // Compute #rounds for AES based on the length of the key array
     __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -3173,18 +3174,23 @@ class StubGenerator: public StubCodeGenerator {
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs crypt with key += 15*16
-    gcm_counterMode_AESCrypt_block(15, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
-    gcm_ghash(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
+    gcm_counterMode_AESCrypt_blocks(15, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
 
     // Note: the following function performs crypt with key += 13*16
     __ bind(L_aes192);
-    gcm_counterMode_AESCrypt_block(13, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
-    gcm_ghash(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
+    gcm_counterMode_AESCrypt_blocks(13, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
 
     // Note: the following function performs crypt with key += 11*16
     __ bind(L_aes128);
-    gcm_counterMode_AESCrypt_block(11, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
-    gcm_ghash(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
+    gcm_counterMode_AESCrypt_blocks(11, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
+
+    __ bind(L_exit);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
 
     return start;
   }
