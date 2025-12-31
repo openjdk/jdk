@@ -38,6 +38,18 @@ import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
 public class VectorStoreMaskIdentityTest {
+    private static final VectorSpecies<Byte> B64 = ByteVector.SPECIES_64;
+    private static final VectorSpecies<Short> S64 = ShortVector.SPECIES_64;
+    private static final VectorSpecies<Short> S128 = ShortVector.SPECIES_128;
+    private static final VectorSpecies<Integer> I64 = IntVector.SPECIES_64;
+    private static final VectorSpecies<Integer> I128 = IntVector.SPECIES_128;
+    private static final VectorSpecies<Integer> I256 = IntVector.SPECIES_256;
+    private static final VectorSpecies<Long> L128 = LongVector.SPECIES_128;
+    private static final VectorSpecies<Long> L256 = LongVector.SPECIES_256;
+    private static final VectorSpecies<Float> F128 = FloatVector.SPECIES_128;
+    private static final VectorSpecies<Float> F256 = FloatVector.SPECIES_256;
+    private static final VectorSpecies<Double> D128 = DoubleVector.SPECIES_128;
+    private static final VectorSpecies<Double> D256 = DoubleVector.SPECIES_256;
     private static final int LENGTH = 256; // large enough
     private static boolean[] mask_in;
     private static boolean[] mask_out;
@@ -90,14 +102,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityByte() {
-        testOneCastKernel(ByteVector.SPECIES_64, ShortVector.SPECIES_128);
-        verifyResult(ByteVector.SPECIES_64.length());
+        testOneCastKernel(B64, S128);
+        verifyResult(B64.length());
 
-        testTwoCastsKernel(ByteVector.SPECIES_64, ShortVector.SPECIES_128, ByteVector.SPECIES_64);
-        verifyResult(ByteVector.SPECIES_64.length());
+        testTwoCastsKernel(B64, S128, B64);
+        verifyResult(B64.length());
 
-        testThreeCastsKernel(ByteVector.SPECIES_64, ShortVector.SPECIES_128, ByteVector.SPECIES_64, ShortVector.SPECIES_128);
-        verifyResult(ByteVector.SPECIES_64.length());
+        testThreeCastsKernel(B64, S128, B64, S128);
+        verifyResult(B64.length());
     }
 
     @Test
@@ -107,14 +119,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityByte256() {
-        testOneCastKernel(ByteVector.SPECIES_64, IntVector.SPECIES_256);
-        verifyResult(ByteVector.SPECIES_64.length());
+        testOneCastKernel(B64, I256);
+        verifyResult(B64.length());
 
-        testTwoCastsKernel(ByteVector.SPECIES_64, ShortVector.SPECIES_128, IntVector.SPECIES_256);
-        verifyResult(ByteVector.SPECIES_64.length());
+        testTwoCastsKernel(B64, S128, I256);
+        verifyResult(B64.length());
 
-        testThreeCastsKernel(ByteVector.SPECIES_64, ShortVector.SPECIES_128, FloatVector.SPECIES_256, IntVector.SPECIES_256);
-        verifyResult(ByteVector.SPECIES_64.length());
+        testThreeCastsKernel(B64, S128, F256, I256);
+        verifyResult(B64.length());
     }
 
     @Test
@@ -124,14 +136,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityShort() {
-        testOneCastKernel(ShortVector.SPECIES_128, ByteVector.SPECIES_64);
-        verifyResult(ShortVector.SPECIES_128.length());
+        testOneCastKernel(S128, B64);
+        verifyResult(S128.length());
 
-        testTwoCastsKernel(ShortVector.SPECIES_64, IntVector.SPECIES_128, ShortVector.SPECIES_64);
-        verifyResult(ShortVector.SPECIES_64.length());
+        testTwoCastsKernel(S64, I128, S64);
+        verifyResult(S64.length());
 
-        testThreeCastsKernel(ShortVector.SPECIES_128, ByteVector.SPECIES_64, ShortVector.SPECIES_128, ByteVector.SPECIES_64);
-        verifyResult(ShortVector.SPECIES_128.length());
+        testThreeCastsKernel(S128, B64, S128, B64);
+        verifyResult(S128.length());
     }
 
     @Test
@@ -141,14 +153,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityShort256() {
-        testOneCastKernel(ShortVector.SPECIES_128, IntVector.SPECIES_256);
-        verifyResult(ShortVector.SPECIES_128.length());
+        testOneCastKernel(S128, I256);
+        verifyResult(S128.length());
 
-        testTwoCastsKernel(ShortVector.SPECIES_64, IntVector.SPECIES_128, LongVector.SPECIES_256);
-        verifyResult(ShortVector.SPECIES_64.length());
+        testTwoCastsKernel(S64, I128, L256);
+        verifyResult(S64.length());
 
-        testThreeCastsKernel(ShortVector.SPECIES_128, ByteVector.SPECIES_64, FloatVector.SPECIES_256, IntVector.SPECIES_256);
-        verifyResult(ShortVector.SPECIES_128.length());
+        testThreeCastsKernel(S128, B64, F256, I256);
+        verifyResult(S128.length());
     }
 
     @Test
@@ -158,14 +170,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityInt() {
-        testOneCastKernel(IntVector.SPECIES_MAX, FloatVector.SPECIES_MAX);
-        verifyResult(IntVector.SPECIES_MAX.length());
+        testOneCastKernel(I128, F128);
+        verifyResult(I128.length());
 
-        testTwoCastsKernel(IntVector.SPECIES_128, ShortVector.SPECIES_64, FloatVector.SPECIES_128);
-        verifyResult(IntVector.SPECIES_128.length());
+        testTwoCastsKernel(I128, S64, F128);
+        verifyResult(I128.length());
 
-        testThreeCastsKernel(IntVector.SPECIES_128, ShortVector.SPECIES_64, FloatVector.SPECIES_128, ShortVector.SPECIES_64);
-        verifyResult(IntVector.SPECIES_128.length());
+        testThreeCastsKernel(I128, S64, F128, S64);
+        verifyResult(I128.length());
     }
 
     @Test
@@ -175,14 +187,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityInt256() {
-        testOneCastKernel(IntVector.SPECIES_MAX, FloatVector.SPECIES_MAX);
-        verifyResult(IntVector.SPECIES_MAX.length());
+        testOneCastKernel(I128, F128);
+        verifyResult(I128.length());
 
-        testTwoCastsKernel(IntVector.SPECIES_128, ShortVector.SPECIES_64, LongVector.SPECIES_256);
-        verifyResult(IntVector.SPECIES_128.length());
+        testTwoCastsKernel(I128, S64, L256);
+        verifyResult(I128.length());
 
-        testThreeCastsKernel(IntVector.SPECIES_128, ShortVector.SPECIES_64, FloatVector.SPECIES_128, LongVector.SPECIES_256);
-        verifyResult(IntVector.SPECIES_128.length());
+        testThreeCastsKernel(I128, S64, F128, L256);
+        verifyResult(I128.length());
     }
 
     @Test
@@ -192,14 +204,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityLong() {
-        testOneCastKernel(LongVector.SPECIES_MAX, DoubleVector.SPECIES_MAX);
-        verifyResult(LongVector.SPECIES_MAX.length());
+        testOneCastKernel(L128, D128);
+        verifyResult(L128.length());
 
-        testTwoCastsKernel(LongVector.SPECIES_128, IntVector.SPECIES_64, DoubleVector.SPECIES_128);
-        verifyResult(LongVector.SPECIES_128.length());
+        testTwoCastsKernel(L128, I64, D128);
+        verifyResult(L128.length());
 
-        testThreeCastsKernel(LongVector.SPECIES_128, IntVector.SPECIES_64, DoubleVector.SPECIES_128, IntVector.SPECIES_64);
-        verifyResult(LongVector.SPECIES_128.length());
+        testThreeCastsKernel(L128, I64, D128, I64);
+        verifyResult(L128.length());
     }
 
     @Test
@@ -209,14 +221,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityLong256() {
-        testOneCastKernel(LongVector.SPECIES_MAX, DoubleVector.SPECIES_MAX);
-        verifyResult(LongVector.SPECIES_MAX.length());
+        testOneCastKernel(L128, D128);
+        verifyResult(L128.length());
 
-        testTwoCastsKernel(LongVector.SPECIES_256, IntVector.SPECIES_128, ShortVector.SPECIES_64);
-        verifyResult(LongVector.SPECIES_256.length());
+        testTwoCastsKernel(L256, I128, S64);
+        verifyResult(L256.length());
 
-        testThreeCastsKernel(LongVector.SPECIES_256, IntVector.SPECIES_128, FloatVector.SPECIES_128, ShortVector.SPECIES_64);
-        verifyResult(LongVector.SPECIES_256.length());
+        testThreeCastsKernel(L256, I128, F128, S64);
+        verifyResult(L256.length());
     }
 
     @Test
@@ -226,14 +238,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityFloat() {
-        testOneCastKernel(FloatVector.SPECIES_MAX, IntVector.SPECIES_MAX);
-        verifyResult(FloatVector.SPECIES_MAX.length());
+        testOneCastKernel(F128, I128);
+        verifyResult(F128.length());
 
-        testTwoCastsKernel(FloatVector.SPECIES_128, ShortVector.SPECIES_64, IntVector.SPECIES_128);
-        verifyResult(FloatVector.SPECIES_128.length());
+        testTwoCastsKernel(F128, S64, I128);
+        verifyResult(F128.length());
 
-        testThreeCastsKernel(FloatVector.SPECIES_128, ShortVector.SPECIES_64, IntVector.SPECIES_128, ShortVector.SPECIES_64);
-        verifyResult(FloatVector.SPECIES_128.length());
+        testThreeCastsKernel(F128, S64, I128, S64);
+        verifyResult(F128.length());
     }
 
     @Test
@@ -243,14 +255,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityFloat256() {
-        testOneCastKernel(FloatVector.SPECIES_MAX, IntVector.SPECIES_MAX);
-        verifyResult(FloatVector.SPECIES_MAX.length());
+        testOneCastKernel(F128, I128);
+        verifyResult(F128.length());
 
-        testTwoCastsKernel(FloatVector.SPECIES_128, ShortVector.SPECIES_64, LongVector.SPECIES_256);
-        verifyResult(FloatVector.SPECIES_128.length());
+        testTwoCastsKernel(F128, S64, L256);
+        verifyResult(F128.length());
 
-        testThreeCastsKernel(FloatVector.SPECIES_128, ShortVector.SPECIES_64, IntVector.SPECIES_128, LongVector.SPECIES_256);
-        verifyResult(FloatVector.SPECIES_128.length());
+        testThreeCastsKernel(F128, S64, I128, L256);
+        verifyResult(F128.length());
     }
 
     @Test
@@ -260,14 +272,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityDouble() {
-        testOneCastKernel(DoubleVector.SPECIES_MAX, LongVector.SPECIES_MAX);
-        verifyResult(DoubleVector.SPECIES_MAX.length());
+        testOneCastKernel(D128, L128);
+        verifyResult(D128.length());
 
-        testTwoCastsKernel(DoubleVector.SPECIES_128, IntVector.SPECIES_64, LongVector.SPECIES_128);
-        verifyResult(DoubleVector.SPECIES_128.length());
+        testTwoCastsKernel(D128, I64, L128);
+        verifyResult(D128.length());
 
-        testThreeCastsKernel(DoubleVector.SPECIES_128, IntVector.SPECIES_64, LongVector.SPECIES_128, IntVector.SPECIES_64);
-        verifyResult(DoubleVector.SPECIES_128.length());
+        testThreeCastsKernel(D128, I64, L128, I64);
+        verifyResult(D128.length());
     }
 
     @Test
@@ -277,14 +289,14 @@ public class VectorStoreMaskIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityDouble256() {
-        testOneCastKernel(DoubleVector.SPECIES_MAX, LongVector.SPECIES_MAX);
-        verifyResult(DoubleVector.SPECIES_MAX.length());
+        testOneCastKernel(D128, L128);
+        verifyResult(D128.length());
 
-        testTwoCastsKernel(DoubleVector.SPECIES_256, ShortVector.SPECIES_64, IntVector.SPECIES_128);
-        verifyResult(DoubleVector.SPECIES_256.length());
+        testTwoCastsKernel(D256, S64, I128);
+        verifyResult(D256.length());
 
-        testThreeCastsKernel(DoubleVector.SPECIES_256, ShortVector.SPECIES_64, LongVector.SPECIES_256, IntVector.SPECIES_128);
-        verifyResult(DoubleVector.SPECIES_256.length());
+        testThreeCastsKernel(D256, S64, L256, I128);
+        verifyResult(D256.length());
     }
 
     public static void main(String[] args) {

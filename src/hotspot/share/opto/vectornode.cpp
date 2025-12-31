@@ -1056,12 +1056,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 // This function can be used to eliminate the VectorMaskCast in such patterns.
 Node* VectorNode::uncast_mask(Node* n) {
   while (n->Opcode() == Op_VectorMaskCast) {
-    Node* in1 = n->in(1);
-    if (!in1->isa_Vector()) {
-      break;
-    }
-    assert(n->as_Vector()->length() == in1->as_Vector()->length(), "vector length must match");
-    n = in1;
+    n = n->in(1);
   }
   return n;
 }
@@ -1489,7 +1484,8 @@ Node* VectorStoreMaskNode::Identity(PhaseGVN* phase) {
   //   VectorStoreMask (VectorMaskCast* VectorLoadMask bv) elem_size ==> bv
   //   vector[n]{bool} => vector[n]{t} => vector[n]{bool}
   Node* in1 = VectorNode::uncast_mask(in(1));
-  if (in1->Opcode() == Op_VectorLoadMask && length() == in1->as_Vector()->length()) {
+  if (in1->Opcode() == Op_VectorLoadMask) {
+    assert(length() == in1->as_Vector()->length(), "vector length must match");
     return in1->in(1);
   }
   return this;
