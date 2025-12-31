@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1919,7 +1919,12 @@ Node* VectorMaskToLongNode::Ideal_MaskAll(PhaseGVN* phase) {
   // saved with a predicate type.
   if (in1->Opcode() == Op_VectorStoreMask) {
     Node* mask = in1->in(1);
-    assert(!Matcher::mask_op_prefers_predicate(Opcode(), mask->bottom_type()->is_vect()), "sanity");
+    const TypeVect* mask_vt = mask->bottom_type()->isa_vect();
+    if (mask_vt == nullptr) {
+      // Skip optimization if mask type is not a vector (e.g., Type::TOP for dead code).
+      return nullptr;
+    }
+    assert(!Matcher::mask_op_prefers_predicate(Opcode(), mask_vt), "sanity");
     in1 = mask;
   }
   if (VectorNode::is_all_ones_vector(in1)) {
