@@ -35,7 +35,6 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
