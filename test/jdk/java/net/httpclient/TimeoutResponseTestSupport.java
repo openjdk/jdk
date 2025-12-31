@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,11 @@ public class TimeoutResponseTestSupport {
 
     private static final SSLContext SSL_CONTEXT = createSslContext();
 
+    private static final long timeoutFactor = (long)Float.parseFloat(
+            System.getProperty("test.timeout.factor", "1.0"));
     protected static final Duration REQUEST_TIMEOUT =
-            Duration.ofMillis(Long.parseLong(System.getProperty("test.requestTimeoutMillis")));
+            Duration.ofMillis(Long.parseLong(System.getProperty("test.requestTimeoutMillis"))
+            * timeoutFactor);
 
     static {
         assertTrue(
@@ -104,7 +107,8 @@ public class TimeoutResponseTestSupport {
             // Verify that the total response failure waits exceed the request timeout
             var totalResponseFailureWaitDuration = Duration
                     .ofMillis(RESPONSE_FAILURE_WAIT_DURATION_MILLIS)
-                    .multipliedBy(RETRY_LIMIT);
+                    .multipliedBy(RETRY_LIMIT)
+                    .multipliedBy(timeoutFactor);
             if (totalResponseFailureWaitDuration.compareTo(REQUEST_TIMEOUT) <= 0) {
                 var message = ("`test.responseFailureWaitDurationMillis * jdk.httpclient.redirects.retrylimit` (%s * %s = %s) " +
                         "must be greater than `test.requestTimeoutMillis` (%s)")
