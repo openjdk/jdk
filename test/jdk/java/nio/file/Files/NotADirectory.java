@@ -51,6 +51,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -141,6 +142,20 @@ public class NotADirectory {
     public void readPosix() throws IOException {
         assertThrows(NoSuchFileException.class,
                      () -> Files.readAttributes(BOGUS, PosixFileAttributes.class));
+    }
+
+    @Test
+    public void readBasicIfExists() throws IOException {
+        assertNull(
+            BOGUS.getFileSystem().provider().readAttributesIfExists(
+                BOGUS, BasicFileAttributes.class));
+    }
+
+    @Test
+    public void readPosixIfExists() throws IOException {
+        assertNull(
+            BOGUS.getFileSystem().provider().readAttributesIfExists(
+                BOGUS, PosixFileAttributes.class));
     }
 
     @Test

@@ -98,7 +98,8 @@ class UnixFileAttributes
                                                   path, flag, attrs);
         if (errno == 0)
             return attrs;
-        else if (errno == UnixConstants.ENOENT)
+        else if (errno == UnixConstants.ENOENT ||
+                 errno == UnixConstants.ENOTDIR)
             return null;
         else
             throw new UnixException(errno);
