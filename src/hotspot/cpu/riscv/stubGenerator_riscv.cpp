@@ -3161,8 +3161,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_exit;
     // Requires PARALLEN_LEN (512) bytes to efficiently use the intrinsic
-    __ mv(t0, -1 << 9);
-    __ andr(input_len, input_len, t0);
+    __ andi(input_len, input_len, -512);
     __ beqz(input_len, L_exit);
 
     Label L_aes128, L_aes192;
