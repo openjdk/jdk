@@ -57,6 +57,7 @@ class Code {
     public static final int HTTP_ENTITY_TOO_LARGE = 413;
     public static final int HTTP_REQ_TOO_LONG = 414;
     public static final int HTTP_UNSUPPORTED_TYPE = 415;
+    public static final int HTTP_RANGE_NOT_SATISFIABLE = 416;
     public static final int HTTP_INTERNAL_ERROR = 500;
     public static final int HTTP_NOT_IMPLEMENTED = 501;
     public static final int HTTP_BAD_GATEWAY = 502;
@@ -97,6 +98,7 @@ class Code {
         case HTTP_ENTITY_TOO_LARGE: return " Request Entity Too Large";
         case HTTP_REQ_TOO_LONG: return " Request-URI Too Large";
         case HTTP_UNSUPPORTED_TYPE: return " Unsupported Media Type";
+        case HTTP_RANGE_NOT_SATISFIABLE: return " Range Not Satisfiable";
         case HTTP_INTERNAL_ERROR: return " Internal Server Error";
         case HTTP_NOT_IMPLEMENTED: return " Not Implemented";
         case HTTP_BAD_GATEWAY: return " Bad Gateway";
