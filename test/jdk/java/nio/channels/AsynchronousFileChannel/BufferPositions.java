@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8374382
- * @summary Test AsynchronousFileChannel.read/write with ByteBuffers varied buffer positions
+ * @summary Test AsynchronousFileChannel.read/write with ByteBuffers and varied buffer positions
  * @run junit/othervm BufferPositions
  */
 
