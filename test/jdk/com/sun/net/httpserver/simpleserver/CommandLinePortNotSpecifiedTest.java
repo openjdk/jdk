@@ -84,7 +84,7 @@ public class CommandLinePortNotSpecifiedTest {
      * unlikely but not impossible case that the port is already in use.
      */
     @Test
-    public static void testPortNotSpecified() throws Throwable {
+    public void testPortNotSpecified() throws Throwable {
         out.println("\n--- testPortNotSpecified");
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
