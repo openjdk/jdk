@@ -55,6 +55,11 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Test execution order does not follow order of declaration in source
+ * without this annotation, and the accompanying @Order(n) annotations.
+ * Use this, if test side-effects require a specific predictable execution order
+ */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class BasicAuthenticatorRealm {
 
