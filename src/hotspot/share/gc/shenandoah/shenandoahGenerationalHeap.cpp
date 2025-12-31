@@ -250,6 +250,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     if (UseTLAB) {
       switch (TO_GENERATION) {
         case YOUNG_GENERATION: {
+          HISTOGRAM_TIME_DESCRIBED_BLOCK("allocate_for_young");
           copy = allocate_from_gclab(thread, size);
           if ((copy == nullptr) && (size < ShenandoahThreadLocalData::gclab_size(thread))) {
             // GCLAB allocation failed because we are bumping up against the limit on young evacuation reserve.  Try resetting
@@ -263,6 +264,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
         case OLD_GENERATION: {
           PLAB* plab = ShenandoahThreadLocalData::plab(thread);
           if (plab != nullptr) {
+            HISTOGRAM_TIME_DESCRIBED_BLOCK("allocate_for_old");
             has_plab = true;
             copy = allocate_from_plab(thread, size, is_promotion);
             if ((copy == nullptr) && (size < ShenandoahThreadLocalData::plab_size(thread)) &&
@@ -296,6 +298,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
       if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
+        HISTOGRAM_TIME_DESCRIBED_BLOCK("allocate_shared");
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, TO_GENERATION, is_promotion);
         copy = allocate_memory(req);
         alloc_from_lab = false;
@@ -332,9 +335,20 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   }
 
   // Copy the object:
-  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
-  oop copy_val = cast_to_oop(copy);
+  if (TO_GENERATION == YOUNG_GENERATION) {
+    HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_young_to_young");
+    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
+  } else {
+    if (FROM_GENERATION == YOUNG_GENERATION) {
+      HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_young_to_old");
+      Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
+    } else {
+      HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_old_to_old");
+      Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
+    }
+  }
 
+  oop copy_val = cast_to_oop(copy);
   // Update the age of the evacuated object
   if (TO_GENERATION == YOUNG_GENERATION && is_aging_cycle()) {
     increase_object_age(copy_val, from_region_age + 1);
@@ -436,6 +450,7 @@ inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, 
 
 // Establish a new PLAB and allocate size HeapWords within it.
 HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion) {
+  HISTOGRAM_TIME_BLOCK
   assert(mode()->is_generational(), "PLABs only relevant to generational GC");
 
   const size_t plab_min_size = this->plab_min_size();
@@ -521,6 +536,7 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
 }
 
 HeapWord* ShenandoahGenerationalHeap::allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size) {
+  HISTOGRAM_TIME_BLOCK
   // Align requested sizes to card-sized multiples.  Align down so that we don't violate max size of TLAB.
   assert(is_aligned(min_size, CardTable::card_size_in_words()), "Align by design");
   assert(word_size >= min_size, "Requested PLAB is too small");
@@ -539,6 +555,7 @@ HeapWord* ShenandoahGenerationalHeap::allocate_new_plab(size_t min_size, size_t 
 }
 
 void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
+  HISTOGRAM_TIME_BLOCK
   // We don't enforce limits on plab evacuations.  We let it consume all available old-gen memory in order to reduce
   // probability of an evacuation failure.  We do enforce limits on promotion, to make sure that excessive promotion
   // does not result in an old-gen evacuation failure.  Note that a failed promotion is relatively harmless.  Any

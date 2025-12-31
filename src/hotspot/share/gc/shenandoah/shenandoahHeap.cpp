@@ -844,6 +844,7 @@ void ShenandoahHeap::handle_force_counters_update() {
 }
 
 HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) {
+  HISTOGRAM_TIME_BLOCK
   // New object should fit the GCLAB size
   size_t min_size = MAX2(size, PLAB::min_size());
 
@@ -868,7 +869,10 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
 
   // Retire current GCLAB, and allocate a new one.
   PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-  gclab->retire();
+  {
+    HISTOGRAM_TIME_DESCRIBED_BLOCK("retire_gclab");
+    gclab->retire();
+  }
 
   size_t actual_size = 0;
   HeapWord* gclab_buf = allocate_new_gclab(min_size, new_size, &actual_size);
@@ -909,6 +913,7 @@ HeapWord* ShenandoahHeap::allocate_new_tlab(size_t min_size,
 HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
                                              size_t word_size,
                                              size_t* actual_size) {
+  HISTOGRAM_TIME_BLOCK
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_gclab(min_size, word_size);
   HeapWord* res = allocate_memory(req);
   if (res != nullptr) {

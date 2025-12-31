@@ -172,6 +172,7 @@ void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
 }
 
 void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
+  HISTOGRAM_TIME_BLOCK
   assert(is_aligned(start, CardTable::card_size_in_words()), "PLAB start should be aligned with card size");
   assert(is_aligned(end, CardTable::card_size_in_words()), "PLAB end should be aligned with card size");
   HeapWord* address = start;
@@ -199,10 +200,11 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
       set_first_start(object_card_index, offset_in_card);
     }
 
-    assert(card_end_address != nullptr, "Card end address cannot be null here");
-    if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::lab_alignment_reserve()) {
-      set_last_start(object_card_index, offset_in_card);
-    }
+    set_last_start(object_card_index, offset_in_card);
+    // assert(card_end_address != nullptr, "Card end address cannot be null here");
+    // if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::lab_alignment_reserve()) {
+    //   set_last_start(object_card_index, offset_in_card);
+    // }
 
     address = object_end_address;
   }
