@@ -1748,7 +1748,7 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
         ResourceMark rm;
         int name_len = name()->utf8_length();
         char* name_str = name()->as_utf8();
-        TempNewSymbol trial_name = SymbolTable::probe(name_str, name_len - strlen(native_suffix));
+        TempNewSymbol trial_name = SymbolTable::probe(name_str, name_len - (int)strlen(native_suffix));
         if (trial_name == nullptr) {
           break;                  // no such symbol
         }
