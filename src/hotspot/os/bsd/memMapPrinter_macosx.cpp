@@ -25,6 +25,7 @@
 
 #if defined(__APPLE__)
 
+#include "cppstdlib/cstdlib.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -34,7 +35,6 @@
 
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <libproc.h>
 #include <unistd.h>
 

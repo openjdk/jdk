@@ -32,8 +32,9 @@
 #ifndef OS_AIX_LIBPERFSTAT_AIX_HPP
 #define OS_AIX_LIBPERFSTAT_AIX_HPP
 
+#include "cppstdlib/cstdlib.hpp"
+
 #include <sys/types.h>
-#include <stdlib.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // These are excerpts from the AIX 7.1 libperfstat.h -
