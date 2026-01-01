@@ -33,6 +33,7 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/threads.hpp"
@@ -196,8 +197,8 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
     // Diagnostic option to force deoptimization 1 in 10 times. It is otherwise
     // a very rare event.
     if (DeoptimizeNMethodBarriersALot && !nm->is_osr_method()) {
-      static volatile uint32_t counter=0;
-      if (AtomicAccess::add(&counter, 1u) % 10 == 0) {
+      static Atomic<uint32_t> counter{0};
+      if (counter.add_then_fetch(1u) % 10 == 0) {
         may_enter = false;
       }
     }

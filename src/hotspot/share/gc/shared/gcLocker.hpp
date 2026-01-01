@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "memory/allStatic.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 
 // GCLocker provides synchronization between the garbage collector (GC) and
@@ -43,11 +44,11 @@
 
 class GCLocker: public AllStatic {
   static Monitor* _lock;
-  static volatile bool _is_gc_request_pending;
+  static Atomic<bool> _is_gc_request_pending;
 
 #ifdef ASSERT
   // Debug-only: to track the number of java threads in critical-region.
-  static uint64_t _verify_in_cr_count;
+  static Atomic<uint64_t> _verify_in_cr_count;
 #endif
   static void enter_slow(JavaThread* current_thread);
 
