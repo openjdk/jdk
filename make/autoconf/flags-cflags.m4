@@ -230,7 +230,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wunused-const-variable=1 -Wunused-function -Wunused-result \
           -Wunused-value"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
-      WARNINGS_ENABLE_ADDITIONAL_JVM=""
+      WARNINGS_ENABLE_ADDITIONAL_JVM="-Wzero-as-null-pointer-constant"
 
       # These warnings will never be turned on, since they generate too many
       # false positives.
@@ -253,7 +253,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wpointer-arith -Wsign-compare -Wreorder \
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
       WARNINGS_ENABLE_ADDITIONAL_CXX=""
-      WARNINGS_ENABLE_ADDITIONAL_JVM=""
+      WARNINGS_ENABLE_ADDITIONAL_JVM="-Wzero-as-null-pointer-constant"
 
       # These warnings will never be turned on, since they generate too many
       # false positives.
