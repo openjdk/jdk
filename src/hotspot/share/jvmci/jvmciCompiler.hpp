@@ -138,6 +138,11 @@ public:
 
   virtual bool is_intrinsic_supported(vmIntrinsics::ID id);
 
+  virtual bool is_intrinsic_supported(vmIntrinsics::ID id,
+                                      vmIntrinsics::MemoryOrder mo,
+                                      BasicType bt = T_OBJECT,
+                                      vmIntrinsics::BitsOperation op = vmIntrinsics::OP_NONE);
+
   // Gets the number of methods that have been successfully compiled by
   // a call to JVMCICompiler::compile_method().
   int methods_compiled() { return _methods_compiled; }

@@ -207,6 +207,13 @@ bool JVMCICompiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   return runtime->is_intrinsic_supported(&jvmciEnv, (jint) id);
 }
 
+bool JVMCICompiler::is_intrinsic_supported(vmIntrinsics::ID id,
+                                           vmIntrinsics::MemoryOrder mo,
+                                           BasicType bt,
+                                           vmIntrinsics::BitsOperation op) {
+  return is_intrinsic_supported(id);
+}
+
 void JVMCICompiler::CodeInstallStats::print_on(outputStream* st, const char* prefix) const {
   double time = _timer.seconds();
   st->print_cr("%s%7.3f s (installs: %d, CodeBlob total size: %d, CodeBlob code size: %d)",

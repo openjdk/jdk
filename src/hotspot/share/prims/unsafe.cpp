@@ -859,15 +859,22 @@ UNSAFE_ENTRY_SCOPED(jlong, Unsafe_CompareAndExchangePrimitiveBitsMO(JNIEnv *env,
          "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   assert(vmIntrinsics::is_valid_primitive_type(basic_type),
          "bad BT bits from Java: 0x%02x", basic_type & 0xFF);
-  guarantee(basic_type != T_SHORT, "FIXME - support short cmpxchg");
+  guarantee(basic_type != T_SHORT && basic_type != T_BYTE, "FIXME - support u1/u2 cmpxchg");
   oop p = JNIHandles::resolve(obj);
   auto addr = index_oop_from_field_offset_long(p, offset);
   // just use MO_VOLATILE for all MO inputs
+  julong result = static_cast<julong>(~e);
   TYPE_SIZE_SWITCH(basic_type, val_t, {
       auto expect = static_cast<val_t>(e);
       auto update = static_cast<val_t>(x);
-      return AtomicAccess::cmpxchg(static_cast<volatile val_t*>(addr), expect, update);
+      if constexpr (sizeof(val_t) < sizeof(juint)) { //FIXME
+        assert(false, "should not execute this case");
+      } else {
+        auto res = AtomicAccess::cmpxchg(static_cast<volatile val_t*>(addr), expect, update);
+        result = static_cast<julong>(res);
+      }
     });
+  return static_cast<jlong>(result);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReferenceMO(JNIEnv *env, jobject unsafe,
@@ -893,15 +900,22 @@ UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetPrimitiveBitsMO(JNIEnv *env, j
          "bad MO bits from Java: 0x%02x", memory_order & 0xFF);
   assert(vmIntrinsics::is_valid_primitive_type(basic_type),
          "bad BT bits from Java: 0x%02x", basic_type & 0xFF);
+  guarantee(basic_type != T_SHORT && basic_type != T_BYTE, "FIXME - support u1/u2 cmpxchg");
   oop p = JNIHandles::resolve(obj);
   auto addr = index_oop_from_field_offset_long(p, offset);
   // just use MO_VOLATILE for all MO inputs
+  bool result = false;
   TYPE_SIZE_SWITCH(basic_type, val_t, {
       auto expect = static_cast<val_t>(e);
       auto update = static_cast<val_t>(x);
-      auto actual = AtomicAccess::cmpxchg(static_cast<volatile val_t*>(addr), expect, update);
-      return actual == expect;
+      if constexpr (sizeof(val_t) < sizeof(juint)) { //FIXME
+        assert(false, "should not execute this case");
+      } else {
+        auto actual = AtomicAccess::cmpxchg(static_cast<volatile val_t*>(addr), expect, update);
+        result = (actual == expect);
+      }
     });
+  return result;
 } UNSAFE_END
 
 static void post_thread_park_event(EventThreadPark* event, const oop obj, jlong timeout_nanos, jlong until_epoch_millis) {
@@ -1068,7 +1082,7 @@ static void check_static_constant(JavaThread* thread, InstanceKlass* uk,
   if (strncmp(name, "UNSAFE_", 7) == 0)
     name += 7;  // skip that prefix
   int fieldcv = value == -1 ? 0 : -1;  // force mismatch if not changed
-  TempNewSymbol fname = SymbolTable::probe(name, strlen(name));
+  TempNewSymbol fname = SymbolTable::probe(name, (int)strlen(name));
   if (fname != nullptr) {
     fieldDescriptor fd;
     if (uk->find_local_field(fname, vmSymbols::byte_signature(), &fd)) {

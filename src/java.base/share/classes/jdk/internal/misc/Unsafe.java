@@ -147,7 +147,7 @@ public final class Unsafe {
      * can be freely reordered, forwards and backwards relative to
      * each other, as long as they do not violate the program order
      * within the current thread.  The reordering of these accesses can
-     * by limited, in well-defined ways, by fences and non-plain accesses.
+     * be limited, in well-defined ways, by fences and non-plain accesses.
      * <p>
      * It is important to remember that both the compiler and hardware
      * can perform reordering, as they work to improve performance.
