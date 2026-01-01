@@ -1218,7 +1218,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
   return result;
 C2V_END
 
-C2V_VMENTRY_0(jobject, getInvalidationReasonDescription, (JNIEnv *env, jobject, jint invalidation_reason))
+C2V_VMENTRY_NULL(jobject, getInvalidationReasonDescription, (JNIEnv *env, jobject, jint invalidation_reason))
   HandleMark hm(THREAD);
   JNIHandleMark jni_hm(thread);
   nmethod::InvalidationReason reason = static_cast<nmethod::InvalidationReason>(invalidation_reason);

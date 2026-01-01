@@ -124,7 +124,7 @@ CompressedOops::Mode AOTMappedHeapWriter::narrow_oop_mode() {
 
 address AOTMappedHeapWriter::narrow_oop_base() {
   if (is_writing_deterministic_heap()) {
-    return (address)0;
+    return nullptr;
   } else {
     return CompressedOops::base();
   }

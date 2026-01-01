@@ -132,10 +132,10 @@ VStatus VLoop::check_preconditions_helper() {
       tty->print_cr(" Infrastructure for speculative runtime-checks:");
       if (_auto_vectorization_parse_predicate_proj != nullptr) {
         tty->print_cr("  auto_vectorization_parse_predicate_proj: speculate and trap");
-        _auto_vectorization_parse_predicate_proj->dump_bfs(5,0,"");
+        _auto_vectorization_parse_predicate_proj->dump_bfs(5, nullptr, "");
       } else if (_multiversioning_fast_proj != nullptr) {
         tty->print_cr("  multiversioning_fast_proj: speculate and multiversion");
-        _multiversioning_fast_proj->dump_bfs(5,0,"");
+        _multiversioning_fast_proj->dump_bfs(5, nullptr, "");
       } else {
         tty->print_cr("  Not found.");
       }
