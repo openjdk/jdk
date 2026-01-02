@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_CONCURRENTHASHTABLE_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -246,7 +247,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   const size_t _log2_start_size;  // Start size.
   const size_t _grow_hint;        // Number of linked items
 
-  volatile bool _size_limit_reached;
+  Atomic<bool> _size_limit_reached;
 
   // We serialize resizers and other bulk operations which do not support
   // concurrent resize with this lock.
@@ -255,7 +256,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   // taking the mutex after a safepoint this bool is the actual state. After
   // acquiring the mutex you must check if this is already locked. If so you
   // must drop the mutex until the real lock holder grabs the mutex.
-  volatile Thread* _resize_lock_owner;
+  Atomic<Thread*> _resize_lock_owner;
 
   // Return true if lock mutex/state succeeded.
   bool try_resize_lock(Thread* locker);
@@ -273,7 +274,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   // this field keep tracks if a version of the hash-table was ever been seen.
   // We the working thread pointer as tag for debugging. The _invisible_epoch
   // can only be used by the owner of _resize_lock.
-  volatile Thread* _invisible_epoch;
+  Atomic<Thread*> _invisible_epoch;
 
   // Scoped critical section, which also handles the invisible epochs.
   // An invisible epoch/version do not need a write_synchronize().
@@ -435,11 +436,11 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   size_t get_size_log2(Thread* thread);
   static size_t get_node_size() { return sizeof(Node); }
   static size_t get_dynamic_node_size(size_t value_size);
-  bool is_max_size_reached() { return _size_limit_reached; }
+  bool is_max_size_reached() { return _size_limit_reached.load_relaxed(); }
 
   // This means no paused bucket resize operation is going to resume
   // on this table.
-  bool is_safepoint_safe() { return _resize_lock_owner == nullptr; }
+  bool is_safepoint_safe() { return _resize_lock_owner.load_relaxed() == nullptr; }
 
   // Re-size operations.
   bool shrink(Thread* thread, size_t size_limit_log2 = 0);
@@ -451,8 +452,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
 
   // All callbacks for get are under critical sections. Other callbacks may be
   // under critical section or may have locked parts of table. Calling any
-  // methods on the table during a callback is not supported.Only MultiGetHandle
-  // supports multiple gets.
+  // methods on the table during a callback is not supported.
 
   // Get methods return true on found item with LOOKUP_FUNC and FOUND_FUNC is
   // called.
@@ -537,18 +537,6 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   // Moves all nodes from this table to to_cht with new hash code.
   // Must be done at a safepoint.
   void rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, MT>* to_cht);
-
-  // Scoped multi getter.
-  class MultiGetHandle : private ScopedCS {
-   public:
-    MultiGetHandle(Thread* thread, ConcurrentHashTable<CONFIG, MT>* cht)
-      : ScopedCS(thread, cht) {}
-    // In the MultiGetHandle scope you can lookup items matching LOOKUP_FUNC.
-    // The VALUEs are safe as long as you never save the VALUEs outside the
-    // scope, e.g. after ~MultiGetHandle().
-    template <typename LOOKUP_FUNC>
-    VALUE* get(LOOKUP_FUNC& lookup_f, bool* grow_hint = nullptr);
-  };
 
  private:
   class BucketsOperation;
