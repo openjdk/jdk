@@ -82,9 +82,6 @@ public:
 
 // See also: get_system_properties in attachListener.cpp
 class PrintSystemPropertiesDCmd : public DCmd {
-protected:
-  DCmdArgument<bool> _system;
-  DCmdArgument<bool> _security;
 public:
   PrintSystemPropertiesDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
     static const char* name() { return "VM.system_properties"; }
@@ -103,8 +100,8 @@ protected:
   DCmdArgument<bool> _security;
 public:
     PrintPropertiesDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
-    static const char* name() { return "VM.properties -system" + "VM.properties -system"; }
-    static const char* description() { return "Print system or security properties."; }
+    static const char* name() { return "VM.properties"; }
+    static const char* description() { return "Print -system or -security properties. (VM.properties -arg"; }
     static const char* impact() { return "Low"; }
     virtual void execute(DCmdSource source, TRAPS);
 };
@@ -141,7 +138,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS, type);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 class JVMTIDataDumpDCmd : public DCmd {
