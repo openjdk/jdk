@@ -84,8 +84,8 @@ public class UnixSystem {
     private static final AddressLayout C_POINTER
             = ((AddressLayout) LINKER.canonicalLayouts().get("void*"))
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, C_CHAR));
-    private static final ValueLayout.OfLong C_LONG
-            = (ValueLayout.OfLong) LINKER.canonicalLayouts().get("long");
+    private static final ValueLayout.OfLong C_SIZE_T
+            = (ValueLayout.OfLong) LINKER.canonicalLayouts().get("size_t");
 
     private static Linker.Option ccs = Linker.Option.captureCallState("errno");
     private static final StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
@@ -108,7 +108,7 @@ public class UnixSystem {
     private static final MethodHandle getpwuid_r = LINKER
             .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getpwuid_r"),
                     FunctionDescriptor.of(C_INT, C_INT, C_POINTER, C_POINTER,
-                            C_LONG, C_POINTER));
+                            C_SIZE_T, C_POINTER));
 
     private static final GroupLayout passwd_layout = MemoryLayout.structLayout(
             C_POINTER.withName("pw_name"),
@@ -166,7 +166,9 @@ public class UnixSystem {
             var result = scope.allocate(C_POINTER);
             var buffer = scope.allocate(GETPW_R_SIZE_MAX);
             var tmpUid = (int)getuid.invokeExact();
-            int out = (int) getpwuid_r.invokeExact(
+            // Do not call invokeExact because GETPW_R_SIZE_MAX is not
+            // always size_t on the system.
+            int out = (int) getpwuid_r.invoke(
                     tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
             if (out != 0 || result.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
                 if (out != 0) {
