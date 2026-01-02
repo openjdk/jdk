@@ -33,6 +33,7 @@ import javax.security.auth.spi.*;
 import com.sun.security.auth.UnixPrincipal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * This {@code LoginModule} imports a user's Unix
@@ -120,15 +121,20 @@ public class UnixLoginModule implements LoginModule {
      */
     public boolean login() throws LoginException {
 
+        // Fail immediately on Windows to avoid cygwin-like functions being
+        // loaded, which are not supported and could have a different `size_t`.
+        if (OperatingSystem.isWindows()) {
+            throw new FailedLoginException
+                    ("Failed in attempt to import " +
+                            "the underlying system identity information" +
+                            " on " + System.getProperty("os.name"));
+        }
+
         try {
-            // TODO: Shall we fail early for unsupported systems?
-            // 1. If it's Windows, we should fail immediately to avoid
-            //    cygwin-like functions being loaded, which are not supported
-            //    and could have a different `long`.
-            // 2. The FFM code has only been tested on macOS and Linux and
-            //    might fail on other *nix systems. Especially, the `passwd`
-            //    struct could be defined differently, although I've checked
-            //    several and an extra 100 chars at the end seems enough.
+            // The FFM code has only been tested on macOS and Linux and
+            // might fail on other *nix systems. Especially, the `passwd`
+            // struct could be defined differently. I've checked several
+            // and an extra 100 chars at the end seems enough.
             ss = new UnixSystem();
         } catch (ExceptionInInitializerError | UnsatisfiedLinkError ule) {
             // Errors could happen in either static blocks or the constructor,
@@ -144,6 +150,7 @@ public class UnixLoginModule implements LoginModule {
             throw error;
         }
         if (ss.getUsername() != null) {
+            // When getpwuid_r fails, username will not be available.
             userPrincipal = new UnixPrincipal(ss.getUsername());
         }
         UIDPrincipal = new UnixNumericUserPrincipal(ss.getUid());

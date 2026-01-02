@@ -133,7 +133,9 @@ public class UnixSystem {
     private static final long pw_name_offset
             = passwd_layout.byteOffset(groupElement("pw_name"));
 
-    // sysconf(_SC_GETPW_R_SIZE_MAX) on macOS is 4096 and 1024 on Linux
+    // sysconf(_SC_GETPW_R_SIZE_MAX) on macOS is 4096 and 1024 on Linux.
+    // Not calling sysconf() here because _SC_GETPW_R_SIZE_MAX is different
+    // on different platforms.
     private static final long GETPW_R_SIZE_MAX = 4096L;
 
     /**
