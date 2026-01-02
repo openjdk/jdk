@@ -142,6 +142,10 @@ public:
   // Return true iff the collection set is primed with at least one old-gen region.
   bool prime_collection_set(ShenandoahCollectionSet* set);
 
+  // Sort candidates between _next_old_collection_candidate (inclusive) and _last_old_collection_candidate (exclusive)
+  // by live data, updating _live_bytes_in_unprocessed_candidates to represent the amount of data remaining to be evacuated.
+  void sort_candidates_by_live();
+
   // How many old-collection candidates have not yet been processed?
   uint unprocessed_old_collection_candidates() const;
 
