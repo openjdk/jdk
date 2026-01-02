@@ -172,10 +172,10 @@ class NFInstruction(Instruction):
     def __init__(self, name, aname, no_flag):
         super().__init__(name, aname)
         self.no_flag = no_flag
-    
+
     def cstr(self):
         return f'__ {self._name}(' + ', '.join([op.cstr() for op in self.operands]) + (f', {str(self.no_flag).lower()}' if self.no_flag is not None else '') + ');'
-    
+
     def astr(self):
         # JDK assembler uses 'cl' for shift instructions with one operand by default
         cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
@@ -305,10 +305,10 @@ class CondRegRegRegInstruction(Instruction):
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.reg3)
         self.demote = True
-    
+
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
-    
+
     def astr(self):
         operands = self.operands
         if self.demote:
@@ -326,10 +326,10 @@ class CondRegRegMemInstruction(Instruction):
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.mem)
         self.demote = True
-    
+
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
-    
+
     def astr(self):
         operands = self.operands
         if self.demote:

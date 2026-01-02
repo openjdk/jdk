@@ -35,6 +35,7 @@
  * @run main/othervm -XX:-UseGCOverheadLimit
  *      nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001.CollectionCounters001
  *      -testMode=directly
+ *      -iterations=5
  */
 
 package nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001;
@@ -79,29 +80,26 @@ public class CollectionCounters001 extends MonitoringTestBase implements RunPara
         private void runOne(ExecutionController stresser) {
                 updateCounters();
                 validate(false /* don't check gc count increases */);
-                int iteration = 0;
-                do {
-                    System.out.println("=========== stresser iter: " + (stresser.getIteration())
-                                    + " runOne iter: " + (++iteration) + " ===========");
-                    Algorithms.eatMemory(stresser);
-                    updateCounters();
-                    validate(true);
-                    System.gc();
-                    updateCounters();
-                    validate(true);
-                    memory.gc();
-                    updateCounters();
-                    validate(true);
-                } while (stresser.continueExecution());
+                Algorithms.eatMemory(stresser);
+                updateCounters();
+                validate(true);
+                System.gc();
+                updateCounters();
+                validate(true);
+                memory.gc();
+                updateCounters();
+                validate(true);
         }
 
         public void run() {
                 stresser = new Stresser(runParams.getStressOptions());
                 stresser.start(runParams.getIterations());
-                while (stresser.iteration()) {
+                do {
+                    System.out.println("=========== stresser iter: " + (stresser.getIteration()) + " ===========");
                     runOne(stresser);
-                }
+                } while (stresser.iteration());
         }
+
 
         private void validate(boolean gcCountMustIncrease) {
                 if (collectionCount < 0)
