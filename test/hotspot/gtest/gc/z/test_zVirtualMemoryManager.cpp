@@ -52,7 +52,7 @@ public:
   }
 };
 
-class ZVirtualMemoryManagerTest : public ZTest {
+class ZVirtualMemoryManagerTest : public ZVMTest {
 private:
   static constexpr size_t ReservationSize = 32 * M;
 
