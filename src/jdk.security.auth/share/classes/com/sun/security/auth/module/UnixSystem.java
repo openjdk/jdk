@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.VarHandle;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 
@@ -67,6 +69,10 @@ public class UnixSystem {
      */
     protected long[] groups;
 
+    // Record the reason why getpwuid_r failed. UnixLoginModule
+    // will display the message when debug is on.
+    String getpwuid_r_error = null;
+
     private static final Linker LINKER = Linker.nativeLinker();
     private static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup()
             .or(LINKER.defaultLookup());
@@ -81,9 +87,18 @@ public class UnixSystem {
     private static final ValueLayout.OfLong C_LONG
             = (ValueLayout.OfLong) LINKER.canonicalLayouts().get("long");
 
+    private static Linker.Option ccs = Linker.Option.captureCallState("errno");
+    private static final StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
+    private static final VarHandle errnoHandle = capturedStateLayout.varHandle(
+            MemoryLayout.PathElement.groupElement("errno"));
+
+    private static final MethodHandle strerror = LINKER
+            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("strerror"),
+                    FunctionDescriptor.of(C_POINTER, C_INT));
+
     private static final MethodHandle getgroups = LINKER
             .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getgroups"),
-                    FunctionDescriptor.of(C_INT, C_INT, C_POINTER));
+                    FunctionDescriptor.of(C_INT, C_INT, C_POINTER), ccs);
     private static final MethodHandle getuid = LINKER
             .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getuid"),
                     FunctionDescriptor.of(C_INT));
@@ -127,15 +142,19 @@ public class UnixSystem {
      */
     public UnixSystem() {
         try (Arena scope = Arena.ofConfined()) {
-            int groupnum = (int) getgroups.invokeExact(0, MemorySegment.NULL);
+            MemorySegment capturedState = scope.allocate(capturedStateLayout);
+            int groupnum = (int) getgroups.invokeExact(capturedState, 0, MemorySegment.NULL);
             if (groupnum == -1) {
                 throw new RuntimeException("getgroups returns " + groupnum);
             }
 
             var gs = scope.allocate(C_INT, groupnum);
-            groupnum = (int) getgroups.invokeExact(groupnum, gs);
+            groupnum = (int) getgroups.invokeExact(capturedState, groupnum, gs);
             if (groupnum == -1) {
-                throw new RuntimeException("getgroups returns " + groupnum);
+                var errno = (int) errnoHandle.get(capturedState, 0L);
+                var errMsg = (MemorySegment) strerror.invokeExact(errno);
+                throw new RuntimeException("getgroups returns " + groupnum
+                        + ". Reason: " + errMsg.reinterpret(Long.MAX_VALUE).getString(0));
             }
 
             groups = new long[groupnum];
@@ -143,20 +162,26 @@ public class UnixSystem {
                 groups[i] = gs.getAtIndex(C_INT, i);
             }
 
-            var resbuf = scope.allocate(passwd_layout);
-            var pwd = scope.allocate(C_POINTER);
-            var pwd_buf = scope.allocate(GETPW_R_SIZE_MAX);
+            var pwd = scope.allocate(passwd_layout);
+            var result = scope.allocate(C_POINTER);
+            var buffer = scope.allocate(GETPW_R_SIZE_MAX);
             var tmpUid = (int)getuid.invokeExact();
             int out = (int) getpwuid_r.invokeExact(
-                    tmpUid, resbuf, pwd_buf, GETPW_R_SIZE_MAX, pwd);
-            if (out != 0 || pwd.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
+                    tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
+            if (out != 0 || result.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
+                if (out != 0) {
+                    var err = (MemorySegment) strerror.invokeExact(out);
+                    getpwuid_r_error = err.reinterpret(Long.MAX_VALUE).getString(0);
+                } else {
+                    getpwuid_r_error = "the requested entry is not found";
+                }
                 uid = tmpUid;
                 gid = (int)getgid.invokeExact();
                 username = null;
             } else {
-                uid = resbuf.get(pw_uid_layout, pw_uid_offset);
-                gid = resbuf.get(pw_gid_layout, pw_gid_offset);
-                username = resbuf.get(pw_name_layout, pw_name_offset).getString(0);
+                uid = pwd.get(pw_uid_layout, pw_uid_offset);
+                gid = pwd.get(pw_gid_layout, pw_gid_offset);
+                username = pwd.get(pw_name_layout, pw_name_offset).getString(0);
             }
         } catch (Throwable t) {
             var error = new UnsatisfiedLinkError("FFM calls failed");

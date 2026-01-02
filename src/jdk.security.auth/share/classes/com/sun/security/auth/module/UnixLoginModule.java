@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,9 @@ public class UnixLoginModule implements LoginModule {
             }
             throw error;
         }
-        userPrincipal = new UnixPrincipal(ss.getUsername());
+        if (ss.getUsername() != null) {
+            userPrincipal = new UnixPrincipal(ss.getUsername());
+        }
         UIDPrincipal = new UnixNumericUserPrincipal(ss.getUid());
         GIDPrincipal = new UnixNumericGroupPrincipal(ss.getGid(), true);
         long[] unixGroups = null;
@@ -162,6 +164,10 @@ public class UnixLoginModule implements LoginModule {
                     "succeeded importing info: ");
             System.out.println("\t\t\tuid = " + ss.getUid());
             System.out.println("\t\t\tgid = " + ss.getGid());
+            System.out.println("\t\t\tusername = " + ss.getUsername());
+            if (ss.getpwuid_r_error != null) {
+                System.out.println("\t\t\t\t[Reason: " + ss.getpwuid_r_error + "]");
+            }
             if (unixGroups != null) {
                 for (int i = 0; i < unixGroups.length; i++) {
                     System.out.println("\t\t\tsupp gid = " + unixGroups[i]);
@@ -206,12 +212,15 @@ public class UnixLoginModule implements LoginModule {
                 throw new LoginException
                     ("commit Failed: Subject is Readonly");
             }
-            if (!subject.getPrincipals().contains(userPrincipal))
+            if (userPrincipal != null && !subject.getPrincipals().contains(userPrincipal)) {
                 subject.getPrincipals().add(userPrincipal);
-            if (!subject.getPrincipals().contains(UIDPrincipal))
+            }
+            if (!subject.getPrincipals().contains(UIDPrincipal)) {
                 subject.getPrincipals().add(UIDPrincipal);
-            if (!subject.getPrincipals().contains(GIDPrincipal))
+            }
+            if (!subject.getPrincipals().contains(GIDPrincipal)) {
                 subject.getPrincipals().add(GIDPrincipal);
+            }
             for (int i = 0; i < supplementaryGroups.size(); i++) {
                 if (!subject.getPrincipals().contains
                     (supplementaryGroups.get(i)))
