@@ -58,6 +58,16 @@ static LogOutput* dummy_output(size_t id) {
   return reinterpret_cast<LogOutput*>(id + 1);
 }
 
+static LogStdoutOutput* dummy_stdout() {
+  static LogStdoutOutput dummy_stdout;
+  return &dummy_stdout;
+}
+
+static LogStderrOutput* dummy_stderr() {
+  static LogStderrOutput dummy_stderr;
+  return &dummy_stderr;
+}
+
 // Randomly update and verify some outputs some number of times
 TEST(LogOutputList, set_output_level_update) {
   const size_t TestOutputCount = 10;
@@ -174,7 +184,7 @@ TEST(LogOutputList, is_level_single_output) {
   for (size_t i = LogLevel::First; i < LogLevel::Count; i++) {
     LogLevelType level = static_cast<LogLevelType>(i);
     LogOutputList list;
-    list.set_output_level(LogConfiguration::StdoutLog, level);
+    list.set_output_level(dummy_stdout(), level);
     for (size_t j = LogLevel::First; j < LogLevel::Count; j++) {
       LogLevelType other = static_cast<LogLevelType>(j);
       // Verify that levels finer than the current level for stdout are reported as disabled,
@@ -202,8 +212,8 @@ TEST(LogOutputList, is_level_empty) {
 // Test is_level() on lists with two outputs on different levels
 TEST(LogOutputList, is_level_multiple_outputs) {
   for (size_t i = LogLevel::First; i < LogLevel::Count - 1; i++) {
-      LogOutput* dummy1 = LogConfiguration::StdoutLog;
-      LogOutput* dummy2 = LogConfiguration::StderrLog;
+      LogOutput* dummy1 = dummy_stdout();
+      LogOutput* dummy2 = dummy_stderr();
       LogLevelType first = static_cast<LogLevelType>(i);
       LogLevelType second = static_cast<LogLevelType>(i + 1);
       LogOutputList list;
@@ -227,19 +237,19 @@ TEST(LogOutputList, level_for) {
   LogOutputList list;
 
   // Ask the empty list about stdout, stderr
-  EXPECT_EQ(LogLevel::Off, list.level_for(LogConfiguration::StdoutLog));
-  EXPECT_EQ(LogLevel::Off, list.level_for(LogConfiguration::StderrLog));
+  EXPECT_EQ(LogLevel::Off, list.level_for(dummy_stdout()));
+  EXPECT_EQ(LogLevel::Off, list.level_for(dummy_stderr()));
 
   // Ask for level in a list with two outputs on different levels
-  list.set_output_level(LogConfiguration::StdoutLog, LogLevel::Info);
-  list.set_output_level(LogConfiguration::StderrLog, LogLevel::Trace);
-  EXPECT_EQ(LogLevel::Info, list.level_for(LogConfiguration::StdoutLog));
-  EXPECT_EQ(LogLevel::Trace, list.level_for(LogConfiguration::StderrLog));
+  list.set_output_level(dummy_stdout(), LogLevel::Info);
+  list.set_output_level(dummy_stderr(), LogLevel::Trace);
+  EXPECT_EQ(LogLevel::Info, list.level_for(dummy_stdout()));
+  EXPECT_EQ(LogLevel::Trace, list.level_for(dummy_stderr()));
 
   // Remove and ask again
-  list.set_output_level(LogConfiguration::StdoutLog, LogLevel::Off);
-  EXPECT_EQ(LogLevel::Off, list.level_for(LogConfiguration::StdoutLog));
-  EXPECT_EQ(LogLevel::Trace, list.level_for(LogConfiguration::StderrLog));
+  list.set_output_level(dummy_stdout(), LogLevel::Off);
+  EXPECT_EQ(LogLevel::Off, list.level_for(dummy_stdout()));
+  EXPECT_EQ(LogLevel::Trace, list.level_for(dummy_stderr()));
 
   // Ask about an unknown output
   LogOutput* dummy = dummy_output(4711);
@@ -252,5 +262,5 @@ TEST(LogOutputList, level_for) {
   }
 
   // Make sure the stderr level is still the same
-  EXPECT_EQ(LogLevel::Trace, list.level_for(LogConfiguration::StderrLog));
+  EXPECT_EQ(LogLevel::Trace, list.level_for(dummy_stderr()));
 }
