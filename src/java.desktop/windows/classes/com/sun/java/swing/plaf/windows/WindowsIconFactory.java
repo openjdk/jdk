@@ -920,18 +920,24 @@ public final class WindowsIconFactory implements Serializable
                                                 x + OFFSET,
                                                 (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
                                     } else if (icon.getIconWidth() <= 16) {
-                                        skin.paintSkin(g,
-                                                x + 2 * OFFSET,
+                                        if ((c instanceof JMenuItem mi) && mi.getText().isEmpty()) {
+                                            skin.paintSkin(g,
+                                                (mi.getAccelerator() != null) ? (x + 2 * OFFSET) : (x + 3 * OFFSET),
                                                 (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
+                                        } else {
+                                            skin.paintSkin(g,
+                                                (type == JRadioButtonMenuItem.class) ? (x + 4 * OFFSET) : (x + 3 * OFFSET),
+                                                (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
+                                        }
                                     } else {
                                         if ((c instanceof JMenuItem mi) && (mi.getText().isEmpty() || mi.getAccelerator() != null)) {
                                             skin.paintSkin(g,
-                                                    x + 4 * OFFSET,
-                                                    (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
+                                                (type == JRadioButtonMenuItem.class) ? (x + 3 * OFFSET) : (x + 4 * OFFSET),
+                                                (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
                                         } else {
                                             skin.paintSkin(g,
-                                                    x + 6 * OFFSET,
-                                                    (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
+                                                x + 7 * OFFSET,
+                                                (icon.getIconHeight() <= 16) ? y + OFFSET : (y + icon.getIconHeight() / 2), state);
                                         }
                                     }
                                 }
