@@ -106,6 +106,11 @@ public:
     }
   };
 
+  static zoffset to_offset(uintptr_t from_index) {
+    // ZForwardingEntry expects the lower three alignment bits to be 0.
+    return to_zoffset(from_index << 3);
+  }
+
   // Test functions
 
   static void setup(ZForwarding* forwarding) {
@@ -137,7 +142,7 @@ public:
       ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
 
-      forwarding->insert(from_index, zoffset(from_index), &cursor);
+      forwarding->insert(from_index, to_offset(from_index), &cursor);
     }
 
     // Verify
@@ -149,7 +154,7 @@ public:
       ASSERT_TRUE(entry.populated()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
-      ASSERT_EQ(entry.to_offset(), from_index) << CAPTURE(size);
+      ASSERT_EQ(entry.to_offset(), untype(to_offset(from_index))) << CAPTURE(size);
     }
   }
 
@@ -165,7 +170,7 @@ public:
       ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
 
-      forwarding->insert(from_index, zoffset(from_index), &cursor);
+      forwarding->insert(from_index, to_offset(from_index), &cursor);
     }
 
     // Verify populated even indices
@@ -177,7 +182,7 @@ public:
       ASSERT_TRUE(entry.populated()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
-      ASSERT_EQ(entry.to_offset(), from_index) << CAPTURE(size);
+      ASSERT_EQ(entry.to_offset(), untype(to_offset(from_index))) << CAPTURE(size);
     }
 
     // Verify empty odd indices

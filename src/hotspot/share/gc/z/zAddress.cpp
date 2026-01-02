@@ -135,6 +135,12 @@ void ZGlobalsPointers::set_heap_limits(uintptr_t heap_base, uintptr_t heap_upper
         "Unexpected ZAddressOffsetUpperLimit: " PTR_FORMAT " ZAddressOffsetMax: " PTR_FORMAT,
         ZAddressOffsetUpperLimit, ZAddressOffsetMax);
   }
+
+  // Larger heap bases requires partial array mark entries
+  const size_t required_shift = ZAddressHeapBaseShift - ZMarkPartialArrayEntryOffsetBits;
+  ZMarkPartialArrayMinSizeShift = MAX2(required_shift, ZMarkPartialArrayMinSizeShift);
+  ZMarkPartialArrayMinSize = (size_t)1 << ZMarkPartialArrayMinSizeShift;
+  ZMarkPartialArrayMinLength = ZMarkPartialArrayMinSize / oopSize;
 }
 
 size_t ZGlobalsPointers::ZAddressPlatformHeapBaseMaxShift;

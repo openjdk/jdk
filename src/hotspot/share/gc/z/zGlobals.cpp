@@ -35,3 +35,7 @@ int        ZObjectAlignmentMediumShift;
 
 const int& ZObjectAlignmentSmall       = MinObjAlignmentInBytes;
 int        ZObjectAlignmentMedium;
+
+size_t     ZMarkPartialArrayMinSizeShift;
+size_t     ZMarkPartialArrayMinSize;
+size_t     ZMarkPartialArrayMinLength;
