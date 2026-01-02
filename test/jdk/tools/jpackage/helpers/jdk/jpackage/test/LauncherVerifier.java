@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,8 +457,10 @@ public final class LauncherVerifier {
     private static final class DefaultEntitlements {
         private static Map<String, Object> loadFromResources(String resourceName) {
             return ThrowingSupplier.toSupplier(() -> {
-                var bytes = ResourceLocator.class.getResourceAsStream(resourceName).readAllBytes();
-                return new PListReader(bytes).toMap(true);
+                try (var in = ResourceLocator.class.getResourceAsStream(resourceName)) {
+                    var bytes = in.readAllBytes();
+                    return new PListReader(bytes).toMap(true);
+                }
             }).get();
         }
 

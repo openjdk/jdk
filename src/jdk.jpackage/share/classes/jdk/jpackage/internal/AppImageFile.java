@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,12 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.APP_VERSION;
-import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.DESCRIPTION;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_NAME;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -162,7 +163,8 @@ final class AppImageFile {
         final var relativeAppImageFilePath = appImageDir.relativize(appImageFilePath);
 
         try {
-            final Document doc = XmlUtils.initDocumentBuilder().parse(Files.newInputStream(appImageFilePath));
+            final Document doc = XmlUtils.initDocumentBuilder().parse(
+                    new ByteArrayInputStream(Files.readAllBytes(appImageFilePath)));
 
             final XPath xPath = XPathFactory.newInstance().newXPath();
 
