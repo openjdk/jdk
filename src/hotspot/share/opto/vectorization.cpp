@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -132,10 +132,10 @@ VStatus VLoop::check_preconditions_helper() {
       tty->print_cr(" Infrastructure for speculative runtime-checks:");
       if (_auto_vectorization_parse_predicate_proj != nullptr) {
         tty->print_cr("  auto_vectorization_parse_predicate_proj: speculate and trap");
-        _auto_vectorization_parse_predicate_proj->dump_bfs(5,0,"");
+        _auto_vectorization_parse_predicate_proj->dump_bfs(5, nullptr, "");
       } else if (_multiversioning_fast_proj != nullptr) {
         tty->print_cr("  multiversioning_fast_proj: speculate and multiversion");
-        _multiversioning_fast_proj->dump_bfs(5,0,"");
+        _multiversioning_fast_proj->dump_bfs(5, nullptr, "");
       } else {
         tty->print_cr("  Not found.");
       }
