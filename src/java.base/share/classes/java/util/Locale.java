@@ -535,34 +535,13 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3><a id="legacy_language_codes">Legacy language codes</a></h3>
  *
- * <p>Locale's constructors have always converted three language codes to
- * their earlier, obsoleted forms: {@code he} maps to {@code iw},
- * {@code yi} maps to {@code ji}, and {@code id} maps to
- * {@code in}. Since Java SE 17, this is no longer the case. Each
- * language maps to its new form; {@code iw} maps to {@code he}, {@code ji}
- * maps to {@code yi}, and {@code in} maps to {@code id}.
- *
- * <p>For backwards compatible behavior, the system property
- * {@systemProperty java.locale.useOldISOCodes} reverts the behavior
- * back to that of before Java SE 17. If the system property is set to
- * {@code true}, those three current language codes are mapped to their
- * backward compatible forms. The property is only read at Java runtime
- * startup and subsequent calls to {@code System.setProperty()} will
- * have no effect. <b>As of Java SE 25, the use of the
- * {@code java.locale.useOldISOCodes} system property is deprecated.
- * This backwards compatible behavior will be removed in a future release
- * of the JDK.</b>
- *
- * <p>The APIs added in Java SE 7 map between the old and new language codes,
- * maintaining the mapped codes internal to Locale (so that
- * {@code getLanguage} and {@code toString} reflect the mapped
- * code, which depends on the {@code java.locale.useOldISOCodes} system
- * property), but using the new codes in the BCP 47 language tag APIs (so
- * that {@code toLanguageTag} reflects the new one). This
- * preserves the equivalence between Locales no matter which code or
- * API is used to construct them. Java's default resource bundle
- * lookup mechanism also implements this mapping, so that resources
- * can be named using either convention, see {@link ResourceBundle.Control}.
+ * <p>For compatibility, a {@code Locale} created with one of the
+ * three obsolete language codes, {@code iw}, {@code ji}, or {@code in},
+ * will map the language to its modern equivalent, {@code he}, {@code yi},
+ * or {@code id}, respectively.
+ * <p>The default resource bundle lookup mechanism also implements
+ * this mapping, so that resources can be named using either convention,
+ * see {@link ResourceBundle.Control}.
  *
  * @spec https://www.rfc-editor.org/info/rfc4647
  *      RFC 4647: Matching of Language Tags
@@ -992,8 +971,8 @@ public final class Locale implements Cloneable, Serializable {
         }
     }
 
-    private static final Supplier<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
-            StableValue.supplier(new Supplier<>() {
+    private static final LazyConstant<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public ReferencedKeyMap<Object, Locale> get() {
                     return ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
@@ -2330,8 +2309,8 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultDisplayLocale;
     private static volatile Locale defaultFormatLocale;
 
-    private final transient Supplier<String> languageTag =
-            StableValue.supplier(new Supplier<>() {
+    private final transient LazyConstant<String> languageTag =
+            LazyConstant.of(new Supplier<>() {
                 @Override
                 public String get() {
                     return computeLanguageTag();
@@ -2364,27 +2343,22 @@ public final class Locale implements Cloneable, Serializable {
 
         if (ret == null || ret.equals(type)) {
             // no localization for this type. try combining key/type separately
-            String displayType = type;
-            switch (key) {
-            case "cu":
-                displayType = lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
-                break;
-            case "rg":
-                if (type != null &&
-                    // UN M.49 code should not be allowed here
-                    type.matches("^[a-zA-Z]{2}[zZ]{4}$")) {
-                        displayType = lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT));
-                }
-                break;
-            case "tz":
-                displayType = TimeZoneNameUtility.convertLDMLShortID(type)
-                    .map(id -> TimeZoneNameUtility.retrieveGenericDisplayName(id, TimeZone.LONG, inLocale))
-                    .orElse(type);
-                break;
-            }
             ret = MessageFormat.format(lr.getLocaleName("ListKeyTypePattern"),
                 getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY),
-                Optional.ofNullable(displayType).orElse(type));
+                switch (key) {
+                    case "cu" -> {
+                        var cname = lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
+                        yield cname != null ? cname : type;
+                    }
+                    case "rg" -> type != null && type.matches("^[a-zA-Z]{2}[zZ]{4}$") ?
+                        // UN M.49 code should not be allowed here
+                        lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT)) :
+                        type;
+                    case "tz" -> TimeZoneNameUtility.convertLDMLShortID(type)
+                        .map(id -> TimeZoneNameUtility.retrieveGenericDisplayName(id, TimeZone.LONG, inLocale))
+                        .orElse(type);
+                    default -> type;
+                });
         }
 
         return ret;
@@ -2532,8 +2506,7 @@ public final class Locale implements Cloneable, Serializable {
 
     private static String convertOldISOCodes(String language) {
         // we accept both the old and the new ISO codes for the languages whose ISO
-        // codes have changed, but we always store the NEW code, unless the property
-        // java.locale.useOldISOCodes is set to "true"
+        // codes have changed, but we always store the NEW code
         return BaseLocale.convertOldISOCodes(LocaleUtils.toLowerString(language).intern());
     }
 

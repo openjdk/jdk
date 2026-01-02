@@ -34,33 +34,29 @@ using namespace testing;
 
 class ZMapperTest : public ZTest {
 private:
-  static constexpr size_t ReservationSize = 32 * M;
+  static constexpr size_t ReservationSize = 3 * ZGranuleSize;
 
-  ZVirtualMemoryReserver* _reserver;
-  ZVirtualMemoryRegistry* _registry;
+  ZTestAddressReserver       _zaddress_reserver;
+  ZVirtualMemoryReservation* _reservation;
+  ZVirtualMemoryRegistry*    _registry;
 
 public:
   virtual void SetUp() {
-    // Only run test on supported Windows versions
-    if (!is_os_supported()) {
-      GTEST_SKIP() << "OS not supported";
-    }
+    _zaddress_reserver.SetUp(ReservationSize);
+    _reservation = _zaddress_reserver.reservation();
+    _registry = _zaddress_reserver.registry();
 
-    _reserver = (ZVirtualMemoryReserver*)os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
-    _reserver = ::new (_reserver) ZVirtualMemoryReserver(ReservationSize);
-    _registry = &_reserver->_registry;
+    if (_reservation->reserved() < ReservationSize || !_registry->is_contiguous()) {
+      GTEST_SKIP() << "Fixture failed to reserve adequate memory, reserved "
+          << (_reservation->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
+    }
   }
 
   virtual void TearDown() {
-    if (!is_os_supported()) {
-      // Test skipped, nothing to cleanup
-      return;
-    }
-
     // Best-effort cleanup
-    _reserver->unreserve_all();
-    _reserver->~ZVirtualMemoryReserver();
-    os::free(_reserver);
+    _registry = nullptr;
+    _reservation = nullptr;
+    _zaddress_reserver.TearDown();
   }
 
   void test_unreserve() {
@@ -73,11 +69,11 @@ public:
     ASSERT_EQ(top,    ZVirtualMemory(bottom.start() + 2 * ZGranuleSize, ZGranuleSize));
 
     // Unreserve the middle part
-    _reserver->unreserve(middle);
+    _reservation->unreserve(middle);
 
     // Make sure that we still can unreserve the memory before and after
-    _reserver->unreserve(bottom);
-    _reserver->unreserve(top);
+    _reservation->unreserve(bottom);
+    _reservation->unreserve(top);
   }
 };
 

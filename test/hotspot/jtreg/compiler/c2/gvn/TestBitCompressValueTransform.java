@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8350896
+ * @bug 8350896 8370459
  * @library /test/lib /
  * @summary C2: wrong result: Integer/Long.compress gets wrong type from CompressBitsNode::Value.
  * @run driver compiler.c2.gvn.TestBitCompressValueTransform
@@ -62,11 +62,15 @@ public class TestBitCompressValueTransform {
     public final long LIMIT_L7 = GEN_L.next();
     public final long LIMIT_L8 = GEN_L.next();
 
-    public final int BOUND_LO_I = GEN_I.next();
-    public final int BOUND_HI_I = GEN_I.next();
+    public final int BOUND1_LO_I = GEN_I.next();
+    public final int BOUND2_LO_I = GEN_I.next();
+    public final int BOUND1_HI_I = GEN_I.next();
+    public final int BOUND2_HI_I = GEN_I.next();
 
-    public final long BOUND_LO_L = GEN_L.next();
-    public final long BOUND_HI_L = GEN_L.next();
+    public final long BOUND1_LO_L = GEN_L.next();
+    public final long BOUND2_LO_L = GEN_L.next();
+    public final long BOUND1_HI_L = GEN_L.next();
+    public final long BOUND2_HI_L = GEN_L.next();
 
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
@@ -327,7 +331,8 @@ public class TestBitCompressValueTransform {
 
     @DontCompile
     public int test16_interpreted(int src, int mask) {
-        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
+        mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
         int res = Integer.compress(src, mask);
 
         if (res > LIMIT_I1) {
@@ -360,7 +365,8 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public int test16(int src, int mask) {
-        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
+        mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
         int res = Integer.compress(src, mask);
 
         // Check the result with some random value ranges, if any of the
@@ -411,7 +417,8 @@ public class TestBitCompressValueTransform {
 
     @DontCompile
     public int test17_interpreted(int src, int mask) {
-        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
+        mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
         int res = Integer.expand(src, mask);
 
         if (res > LIMIT_I1) {
@@ -444,7 +451,8 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public int test17(int src, int mask) {
-        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
+        mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
         int res = Integer.expand(src, mask);
 
         // Check the result with some random value ranges, if any of the
@@ -495,7 +503,8 @@ public class TestBitCompressValueTransform {
 
     @DontCompile
     public long test18_interpreted(long src, long mask) {
-        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
+        mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
         long res = Long.compress(src, mask);
 
         if (res > LIMIT_L1) {
@@ -528,7 +537,8 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public long test18(long src, long mask) {
-        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
+        mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
         long res = Long.compress(src, mask);
 
         // Check the result with some random value ranges, if any of the
@@ -579,7 +589,8 @@ public class TestBitCompressValueTransform {
 
     @DontCompile
     public long test19_interpreted(long src, long mask) {
-        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
+        mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
         long res = Long.expand(src, mask);
 
         if (res > LIMIT_L1) {
@@ -612,7 +623,8 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public long test19(long src, long mask) {
-        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
+        mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
         long res = Long.expand(src, mask);
 
         // Check the result with some random value ranges, if any of the
@@ -659,6 +671,90 @@ public class TestBitCompressValueTransform {
             expected += test19_interpreted(arg1, arg2);
         }
         Asserts.assertEQ(actual, expected);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public static long test20(int x) {
+        // Analysis of when this is used to produce wrong results on Windows:
+        //
+        // src  = -2683206580L = ffff_ffff_6011_844c
+        // mask = 0..maxuint, at runtime: 4294950911 = 0xffff_bfff
+        //
+        // Hence we go to the B) case of CompressBits in bitshuffle_value
+        //
+        // mask_bit_width = 64
+        // clz = 32
+        // result_bit_width = 32
+        //
+        // So we have result_bit_width < mask_bit_width
+        //
+        // And we do:
+        // lo = result_bit_width == mask_bit_width ? lo : 0L;
+        // -> lo = 0
+        //
+        // And we do:
+        // hi = MIN2((jlong)((1UL << result_bit_width) - 1L), hi);
+        //
+        // But watch out: on windows 1UL is only a 32 bit value. Intended was probably 1ULL.
+        // So when we calculate "1UL << 32", we just get 1. And so then hi would be 0 now.
+        // If we instead did "1ULL << 32", we would get 0x1_0000_0000, and hi = 0xffff_ffff.
+        //
+        // We create type [lo, hi]:
+        // Windows: [0, 0]           -> constant zero
+        // correct:  [0, 0xffff_ffff] -> does not constant fold. At runtime: 0x3008_c44c
+        return Long.compress(-2683206580L, Integer.toUnsignedLong(x));
+    }
+
+    @DontCompile
+    public static long test20_interpreted(int x) {
+        return Long.compress(-2683206580L, Integer.toUnsignedLong(x));
+    }
+
+    @Run (test = "test20")
+    public void run20() {
+        for (int i = 0; i < 100; i++) {
+            int arg = GEN_I.next();
+
+            long actual = test20(arg);
+            long expected = test20_interpreted(arg);
+            Asserts.assertEQ(actual, expected);
+        }
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public static long test21(long x) {
+        // Analysis of when this is used to produce wrong results on Windows:
+        //
+        // Very similar to case in test20, but this time we go into the A) case.
+        //
+        // maskcon = 0xffff_ffff
+        // bitcount = 32
+        //
+        // And now the problematic part:
+        // hi = (1UL << bitcount) - 1;
+        //
+        // On Windows, this becomes 0 (but it should be 0xffff_ffff).
+        // Hence, the range wrongly collapses to [0, 0], and the CompressBits node
+        // is wrongly replaced with a zero constant.
+        return Long.compress(x, 0xffff_ffffL);
+    }
+
+    @DontCompile
+    public static long test21_interpreted(long x) {
+        return Long.compress(x, 0xffff_ffffL);
+    }
+
+    @Run (test = "test21")
+    public void run21() {
+        for (int i = 0; i < 100; i++) {
+            int arg = GEN_I.next();
+
+            long actual = test21(arg);
+            long expected = test21_interpreted(arg);
+            Asserts.assertEQ(actual, expected);
+        }
     }
 
     public static void main(String[] args) {

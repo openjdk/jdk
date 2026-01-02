@@ -168,19 +168,20 @@ end
 # Print heap information
 define zph
     printf "Heap\n"
-    printf "     Young Phase:       %u\n", ZHeap::_heap->_young->_phase
-    printf "     Old Phase:         %u\n", ZHeap::_heap->_old->_phase
-    printf "     Young SeqNum:      %u\n", ZHeap::_heap->_young->_seqnum
-    printf "     Old SeqNum:        %u\n", ZHeap::_heap->_old->_seqnum
-    printf "     Offset Max:        %-15llu (0x%llx)\n", ZAddressOffsetMax, ZAddressOffsetMax
-    printf "     Page Size Small:   %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
-    printf "     Page Size Medium:  %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium
+    printf "     Young Phase:        %u\n", ZHeap::_heap->_young->_phase
+    printf "     Old Phase:          %u\n", ZHeap::_heap->_old->_phase
+    printf "     Young SeqNum:       %u\n", ZHeap::_heap->_young->_seqnum
+    printf "     Old SeqNum:         %u\n", ZHeap::_heap->_old->_seqnum
+    printf "     Offset Max:         %-15llu (0x%llx)\n", ZAddressOffsetMax, ZAddressOffsetMax
+    printf "     Offset Upper Limit: %-15llu (0x%llx)\n", ZAddressOffsetUpperLimit, ZAddressOffsetUpperLimit
+    printf "     Page Size Small:    %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
+    printf "     Page Size Medium:   %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium
     printf "Metadata Bits\n"
-    printf "     Good:              0x%016llx\n", ZPointerStoreGoodMask
-    printf "     Bad:               0x%016llx\n", ZPointerStoreBadMask
-    printf "     MarkedYoung:       0x%016llx\n", ZPointerMarkedYoung
-    printf "     MarkedOld:         0x%016llx\n", ZPointerMarkedOld
-    printf "     Remapped:          0x%016llx\n", ZPointerRemapped
+    printf "     Good:               0x%016llx\n", ZPointerStoreGoodMask
+    printf "     Bad:                0x%016llx\n", ZPointerStoreBadMask
+    printf "     MarkedYoung:        0x%016llx\n", ZPointerMarkedYoung
+    printf "     MarkedOld:          0x%016llx\n", ZPointerMarkedOld
+    printf "     Remapped:           0x%016llx\n", ZPointerRemapped
 end
 
 define print_bits

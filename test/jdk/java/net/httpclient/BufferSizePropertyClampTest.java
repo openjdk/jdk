@@ -29,6 +29,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -68,13 +69,20 @@ class BufferSizePropertyClampTest {
     private static final List<String> CLIENT_LOGGER_MESSAGES =
             Collections.synchronizedList(new ArrayList<>());
 
+    private static final String EXPECTED_MSG =
+            "ERROR: Property value for jdk.httpclient.bufsize={0} not in [1..16,384]: using default=16,384";
+
+    private static String format(String pattern, Object... args) {
+        return new MessageFormat(pattern, Locale.ROOT).format(args);
+    }
+
     @BeforeAll
     static void registerLoggerHandler() {
         CLIENT_LOGGER.addHandler(new Handler() {
 
             @Override
             public void publish(LogRecord record) {
-                var message = MessageFormat.format(record.getMessage(), record.getParameters());
+                var message = format(record.getMessage(), record.getParameters());
                 CLIENT_LOGGER_MESSAGES.add(message);
             }
 
@@ -97,10 +105,8 @@ class BufferSizePropertyClampTest {
         assertEquals(
                 1, CLIENT_LOGGER_MESSAGES.size(),
                 "Unexpected number of logger messages: " + CLIENT_LOGGER_MESSAGES);
-        var expectedMessage = "ERROR: Property value for jdk.httpclient.bufsize=" +
-                System.getProperty("jdk.httpclient.bufsize") +
-                " not in [1..16384]: using default=16384";
-        assertEquals(expectedMessage, CLIENT_LOGGER_MESSAGES.getFirst().replaceAll(",", ""));
+        var expectedMessage = format(EXPECTED_MSG, Integer.getInteger("jdk.httpclient.bufsize"));
+        assertEquals(expectedMessage, CLIENT_LOGGER_MESSAGES.getFirst());
     }
 
 }

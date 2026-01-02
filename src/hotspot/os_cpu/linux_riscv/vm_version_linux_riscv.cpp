@@ -104,11 +104,15 @@ uint32_t VM_Version::cpu_vector_length() {
 }
 
 void VM_Version::RVExtFeatureValue::log_enabled() {
-  log_debug(os, cpu)("Enabled RV64 feature \"%s\"", pretty());
+  log_info(os, cpu)("Enabled RV64 feature \"%s\"", pretty());
+}
+
+void VM_Version::RVExtFeatureValue::log_disabled(const char* reason) {
+  log_info(os, cpu)("Disabled RV64 feature \"%s\" (%s)", pretty(), reason);
 }
 
 void VM_Version::RVNonExtFeatureValue::log_enabled() {
-  log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
+  log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
 void VM_Version::setup_cpu_available_features() {
@@ -193,7 +197,7 @@ void VM_Version::setup_cpu_available_features() {
     // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
     int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
     if (ret == 0) {
-      log_debug(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
     } else {
       FLAG_SET_ERGO(UseCtxFencei, false);
       log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");

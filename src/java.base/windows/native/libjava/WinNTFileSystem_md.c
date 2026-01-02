@@ -59,7 +59,7 @@ Java_java_io_WinNTFileSystem_initIDs(JNIEnv *env, jclass cls)
 
 /* -- Path operations -- */
 
-extern int wcanonicalize(const WCHAR *path, WCHAR *out, int len);
+extern WCHAR* wcanonicalize(const WCHAR *path, WCHAR *out, int len);
 
 /**
  * Retrieves the fully resolved (final) path for the given path or NULL
@@ -274,43 +274,28 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
          */
         int len = (int)wcslen(path);
         len += currentDirLength(path, len);
+        WCHAR* fp;
         if (len  > MAX_PATH_LENGTH - 1) {
             WCHAR *cp = (WCHAR*)malloc(len * sizeof(WCHAR));
             if (cp != NULL) {
-                if (wcanonicalize(path, cp, len) >= 0) {
-                    rv = (*env)->NewString(env, cp, (jsize)wcslen(cp));
+                if ((fp = wcanonicalize(path, cp, len)) != NULL) {
+                    rv = (*env)->NewString(env, fp, (jsize)wcslen(fp));
+                    if (fp != cp)
+                        free(fp);
                 }
                 free(cp);
             } else {
                 JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
             }
-        } else if (wcanonicalize(path, canonicalPath, MAX_PATH_LENGTH) >= 0) {
-            rv = (*env)->NewString(env, canonicalPath, (jsize)wcslen(canonicalPath));
+        } else if ((fp = wcanonicalize(path, canonicalPath, MAX_PATH_LENGTH)) != NULL) {
+            rv = (*env)->NewString(env, fp, (jsize)wcslen(fp));
+            if (fp != canonicalPath)
+                free(fp);
         }
     } END_UNICODE_STRING(env, path);
     if (rv == NULL && !(*env)->ExceptionCheck(env)) {
         JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
     }
-    return rv;
-}
-
-
-JNIEXPORT jstring JNICALL
-Java_java_io_WinNTFileSystem_getFinalPath0(JNIEnv* env, jobject this, jstring pathname) {
-    jstring rv = NULL;
-
-    WITH_UNICODE_STRING(env, pathname, path) {
-        WCHAR* finalPath = getFinalPath(env, path);
-        if (finalPath != NULL) {
-            rv = (*env)->NewString(env, finalPath, (jsize)wcslen(finalPath));
-            free(finalPath);
-        }
-    } END_UNICODE_STRING(env, path);
-
-    if (rv == NULL && !(*env)->ExceptionCheck(env)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
-    }
-
     return rv;
 }
 

@@ -130,7 +130,8 @@ typedef ZValue<ZPerNUMAStorage, ZPartition> ZPerNUMAZPartition;
   declare_constant(ZAddressOffsetShift)                                                              \
   declare_constant(ZAddressOffsetBits)                                                               \
   declare_constant(ZAddressOffsetMask)                                                               \
-  declare_constant(ZAddressOffsetMax)
+  declare_constant(ZAddressOffsetMax)                                                                \
+  declare_constant(ZAddressOffsetUpperLimit)
 
 #define VM_TYPES_Z(declare_type, declare_toplevel_type, declare_integer_type)                        \
   declare_toplevel_type(zoffset)                                                                     \

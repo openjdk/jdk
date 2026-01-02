@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4198081
+ * @bug 4198081 8357252
  * @key headful
  * @summary Arabic characters should appear instead of boxes and be correctly shaped.
  *          Hebrew characters should appear instead of boxes.

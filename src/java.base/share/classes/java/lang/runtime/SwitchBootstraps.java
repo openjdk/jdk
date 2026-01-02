@@ -777,7 +777,7 @@ public final class SwitchBootstraps {
         return name + "$$TypeSwitch";
     }
 
-    // this method should be in sync with com.sun.tools.javac.code.Types.checkUnconditionallyExactPrimitives
+    // this method should be in sync with com.sun.tools.javac.code.Types.isUnconditionallyExactTypeBased
     private static boolean unconditionalExactnessCheck(Class<?> selectorType, Class<?> targetType) {
         Wrapper selectorWrapper = Wrapper.forBasicType(selectorType);
         Wrapper targetWrapper   = Wrapper.forBasicType(targetType);

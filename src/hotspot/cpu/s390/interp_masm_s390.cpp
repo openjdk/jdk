@@ -575,11 +575,17 @@ void InterpreterMacroAssembler::store_ptr(int n, Register val) {
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted(Register method) {
   // Satisfy interpreter calling convention (see generate_normal_entry()).
   z_lgr(Z_R10, Z_SP); // Set sender sp (aka initial caller sp, aka unextended sp).
-  // Record top_frame_sp, because the callee might modify it, if it's compiled.
-  assert_different_registers(Z_R1, method);
-  z_sgrk(Z_R1, Z_SP, Z_fp);
-  z_srag(Z_R1, Z_R1, Interpreter::logStackElementSize);
-  z_stg(Z_R1, _z_ijava_state_neg(top_frame_sp), Z_fp);
+#ifdef ASSERT
+  NearLabel ok;
+  Register tmp = Z_R1;
+  z_lg(tmp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+  z_slag(tmp, tmp, Interpreter::logStackElementSize);
+  z_agr(tmp, Z_fp);
+  z_cgr(tmp, Z_SP);
+  z_bre(ok);
+  stop("corrupted top_frame_sp");
+  bind(ok);
+#endif
   save_bcp();
   save_esp();
   z_lgr(Z_method, method); // Set Z_method (kills Z_fp!).
@@ -1013,7 +1019,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   NearLabel done, slow_case;
 
-  lightweight_lock(monitor, object, header, tmp, slow_case);
+  fast_lock(monitor, object, header, tmp, slow_case);
   z_bru(done);
 
   bind(slow_case);
@@ -1048,7 +1054,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   clear_mem(obj_entry, sizeof(oop));
 
-  lightweight_unlock(object, header, current_header, slow_case);
+  fast_unlock(object, header, current_header, slow_case);
   z_bru(done);
 
   // The lock has been converted into a heavy lock and hence
@@ -1917,6 +1923,11 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool     stack_is_empty,
 
   // Adjust stack pointer for additional monitor entry.
   resize_frame(RegisterOrConstant((intptr_t) delta), Z_fp, false);
+
+  // Rtemp3 is free at this point, use it to store top_frame_sp
+  z_sgrk(Rtemp3, Z_SP, Z_fp);
+  z_srag(Rtemp3, Rtemp3, Interpreter::logStackElementSize);
+  reg2mem_opt(Rtemp3, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
 
   if (!stack_is_empty) {
     // Must copy stack contents down.

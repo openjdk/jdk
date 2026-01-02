@@ -59,10 +59,10 @@
   fatal(msg ": " PTR_FORMAT " %zuM (%d)", \
         (addr), (size) / M, GetLastError())
 
-zaddress_unsafe ZMapper::reserve(zaddress_unsafe addr, size_t size) {
+uintptr_t ZMapper::reserve(uintptr_t addr, size_t size) {
   void* const res = ZSyscall::VirtualAlloc2(
     GetCurrentProcess(),                   // Process
-    (void*)untype(addr),                   // BaseAddress
+    (void*)addr,                           // BaseAddress
     size,                                  // Size
     MEM_RESERVE | MEM_RESERVE_PLACEHOLDER, // AllocationType
     PAGE_NOACCESS,                         // PageProtection
@@ -71,19 +71,19 @@ zaddress_unsafe ZMapper::reserve(zaddress_unsafe addr, size_t size) {
     );
 
   // Caller responsible for error handling
-  return to_zaddress_unsafe((uintptr_t)res);
+  return (uintptr_t)res;
 }
 
-void ZMapper::unreserve(zaddress_unsafe addr, size_t size) {
+void ZMapper::unreserve(uintptr_t addr, size_t size) {
   const bool res = ZSyscall::VirtualFreeEx(
     GetCurrentProcess(), // hProcess
-    (void*)untype(addr), // lpAddress
+    (void*)addr,         // lpAddress
     0,                   // dwSize
     MEM_RELEASE          // dwFreeType
     );
 
   if (!res) {
-    fatal_error("Failed to unreserve memory", untype(addr), size);
+    fatal_error("Failed to unreserve memory", addr, size);
   }
 }
 
@@ -223,14 +223,14 @@ HANDLE ZMapper::create_shared_awe_section() {
   return section;
 }
 
-zaddress_unsafe ZMapper::reserve_for_shared_awe(HANDLE awe_section, zaddress_unsafe addr, size_t size) {
+uintptr_t ZMapper::reserve_for_shared_awe(HANDLE awe_section, uintptr_t addr, size_t size) {
   MEM_EXTENDED_PARAMETER parameter = { 0 };
   parameter.Type = MemExtendedParameterUserPhysicalHandle;
   parameter.Handle = awe_section;
 
   void* const res = ZSyscall::VirtualAlloc2(
     GetCurrentProcess(),        // Process
-    (void*)untype(addr),        // BaseAddress
+    (void*)addr,                // BaseAddress
     size,                       // Size
     MEM_RESERVE | MEM_PHYSICAL, // AllocationType
     PAGE_READWRITE,             // PageProtection
@@ -239,25 +239,29 @@ zaddress_unsafe ZMapper::reserve_for_shared_awe(HANDLE awe_section, zaddress_uns
     );
 
   // Caller responsible for error handling
-  return to_zaddress_unsafe((uintptr_t)res);
+  return (uintptr_t)res;
 }
 
-void ZMapper::unreserve_for_shared_awe(zaddress_unsafe addr, size_t size) {
+void ZMapper::unreserve_for_shared_awe(uintptr_t addr, size_t size) {
   bool res = VirtualFree(
-    (void*)untype(addr), // lpAddress
-    0,                   // dwSize
-    MEM_RELEASE          // dwFreeType
+    (void*)addr, // lpAddress
+    0,           // dwSize
+    MEM_RELEASE  // dwFreeType
     );
 
   if (!res) {
     fatal("Failed to unreserve memory: " PTR_FORMAT " %zuM (%d)",
-          untype(addr), size / M, GetLastError());
+          addr, size / M, GetLastError());
   }
 }
 
 void ZMapper::split_placeholder(zaddress_unsafe addr, size_t size) {
+  split_placeholder_untyped(untype(addr), size);
+}
+
+void ZMapper::split_placeholder_untyped(uintptr_t addr, size_t size) {
   const bool res = VirtualFree(
-    (void*)untype(addr),                   // lpAddress
+    (void*)addr,                           // lpAddress
     size,                                  // dwSize
     MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER // dwFreeType
     );
