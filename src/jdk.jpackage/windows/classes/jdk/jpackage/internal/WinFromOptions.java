@@ -49,7 +49,7 @@ import jdk.jpackage.internal.model.WinLauncher;
 import jdk.jpackage.internal.model.WinLauncherMixin;
 import jdk.jpackage.internal.model.WinMsiPackage;
 
-final class WinFromOpions {
+final class WinFromOptions {
 
     static WinApplication createWinApplication(Options options) {
 
