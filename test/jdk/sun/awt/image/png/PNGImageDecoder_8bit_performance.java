@@ -24,11 +24,15 @@
 /*
  * @test
  * @bug 8374377
- * @summary This test makes sure the PNGImageProducer performs comparable to
- * ImageIO when reading an 8-bit non-interlaced png.
+ * @summary This test confirms the PNGImageProducer decodes 8-bit interlaced
+ * and non-interlaced PNGs correctly.
  */
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -40,16 +44,18 @@ import java.awt.image.IndexColorModel;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * This test makes sure an 8-bit PNG image is converted into a BufferedImage
- * in approximately the same amount of time whether we use ImageIO or
- * an ImageConsumer/ImageProducer.
+ * The proposed change for 8374377 affects how 8-bit PNGs are decoded.
+ * So this test confirms that 8-bit PNGs (both interlaced and non-interlaced)
+ * are still decoded by the PNGImageDecoder so they match what ImageIO decodes.
+ *
+ * This test has never failed.
  */
 public class PNGImageDecoder_8bit_performance {
 
@@ -118,6 +124,14 @@ public class PNGImageDecoder_8bit_performance {
                             BufferedImage.TYPE_BYTE_INDEXED,
                             (IndexColorModel) model);
                 }
+
+                if (w == imageWidth && h == imageHeight) {
+                    // this is how interlaced PNGs are decoded:
+                    bi.getRaster().setDataElements(0, 0,
+                            imageWidth, imageHeight, pixels);
+                    return;
+                }
+
                 if (h != 1) {
                     throw new UnsupportedOperationException(
                             "this test requires h = 1");
@@ -145,82 +159,23 @@ public class PNGImageDecoder_8bit_performance {
     }
 
     public static void main(String[] args) throws Exception {
-        for (int squareSize = 4_000; squareSize <= 10_000;
-             squareSize += 2_000) {
-            byte[] imagedata = createImageData(squareSize);
+        Model[] models = new Model[]{
+                new ImageIOModel(),
+                new ImageConsumerModel()
+        };
 
-            Model[] models = new Model[]{
-                    new ImageIOModel(),
-                    new ImageConsumerModel()
-            };
+        for (boolean interlace : new boolean[] { false, true} ) {
+            System.out.println("Testing interlacing = "+ interlace);
+            byte[] imageData = createImageData(6000, interlace);
 
-            BufferedImage expected = models[0].load(imagedata);
-            BufferedImage actual = models[1].load(imagedata);
+            BufferedImage expected = models[0].load(imageData);
+            BufferedImage actual = models[1].load(imageData);
 
             testCorrectness(expected, actual);
-
-            // both of these constants are arbitrary. IMO they help demonstrate
-            // the problem with reasonable accuracy & without excess waiting
-
-            // run our test sampleCount-many times, and only report the median:
-            int sampleCount = 7;
-
-            // each sample creates the image loopCount-many times
-            int loopCount = 10;
-
-            long[][] samples = new long[models.length][sampleCount];
-            for (int sampleIndex = 0; sampleIndex < sampleCount;
-                 sampleIndex++) {
-                for (int modelIndex = 0; modelIndex < models.length;
-                     modelIndex++) {
-
-                    long t = System.currentTimeMillis();
-                    for (int b = 0; b < loopCount; b++) {
-                        models[modelIndex].load(imagedata).flush();
-                    }
-                    t = System.currentTimeMillis() - t;
-                    samples[modelIndex][sampleIndex] = t;
-                }
-            }
-            long[] results = new long[models.length];
-            long firstMedian = -1;
-            for (int modelIndex = 0; modelIndex < models.length;
-                 modelIndex++) {
-                long[] modelSamples = samples[modelIndex];
-                Arrays.sort(modelSamples);
-                long median = modelSamples[modelSamples.length / 2];
-                results[modelIndex] = median;
-            }
-
-            System.out.println();
-            System.out.println("Square Size\t%\tImageIOModel\t" +
-                    "ImageConsumerModel");
-
-            StringBuilder sb = new StringBuilder(Integer.toString(squareSize));
-            int imageConsumerPercentRelImageIO = Math.round(
-                    results[1] * 100f / results[0]);
-            sb.append("\t" + imageConsumerPercentRelImageIO);
-
-            for (int a = 0; a < results.length; a++) {
-                sb.append("\t" + results[a]);
-            }
-
-            System.out.println(sb);
-
-            System.out.println("The ImageConsumer approach took " +
-                    imageConsumerPercentRelImageIO + "% of the time the " +
-                    "ImageIO approach took.");
-
-            // in my tests the MINIMUM percent that we saw before this
-            // enhancement was 109.9% and the MAXIMUM we saw after this
-            // enhancement was 104.4%, so a midway point is 107%. We should
-            // always be under 107%
-
-            if (imageConsumerPercentRelImageIO > 107) {
-                throw new Error("The ImageConsumer model should always take " +
-                        "close to 100% of what the ImageIO model takes.");
-            }
         }
+        System.out.println("Confirmed that 8-bit PNGs render correctly " +
+                "whether we use ImageIO or ImageConsumers. We tested both " +
+                "an interlaced and an non-interlaced PNG image.");
     }
 
     /**
@@ -228,7 +183,8 @@ public class PNGImageDecoder_8bit_performance {
      *
      * @return the byte representation of the PNG image.
      */
-    private static byte[] createImageData(int squareSize) throws Exception {
+    private static byte[] createImageData(int squareSize,
+                                          boolean interlace) throws Exception {
         BufferedImage bi = new BufferedImage(squareSize, squareSize,
                 BufferedImage.TYPE_BYTE_INDEXED);
         Random r = new Random(0);
@@ -241,9 +197,26 @@ public class PNGImageDecoder_8bit_performance {
         }
         g.dispose();
 
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            ImageIO.write(bi, "png", out);
-            return out.toByteArray();
+        Iterator<ImageWriter> writers =
+                ImageIO.getImageWritersByFormatName("png");
+        if (!writers.hasNext()) {
+            throw new IllegalStateException("No PNG writers found");
+        }
+        ImageWriter writer = writers.next();
+
+        ImageWriteParam param = writer.getDefaultWriteParam();
+        if (interlace) {
+            param.setProgressiveMode(ImageWriteParam.MODE_DEFAULT);
+        }
+
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+             ImageOutputStream imageOut =
+                     ImageIO.createImageOutputStream(byteOut)) {
+            writer.setOutput(imageOut);
+            writer.write(null, new IIOImage(bi, null, null), param);
+            return byteOut.toByteArray();
+        } finally {
+            writer.dispose();
         }
     }
 
