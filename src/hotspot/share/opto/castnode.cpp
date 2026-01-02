@@ -213,6 +213,9 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
               if (use->in(0) == in(0)) {
                 continue;
               }
+              if (use->is_Load() && !use->as_Load()->rc_constant_folded()) {
+                continue;
+              }
               Node* addr = use->in(MemNode::Address);
               const Type* addr_t = phase->type(addr);
               assert(addr_t->make_oopptr()->isa_aryptr(), "");
@@ -246,82 +249,91 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                 assert(addr == base, "");
                 Node* mem_ctrl = use->in(0);
                 bool safe_mem_access = false;
-                if (mem_ctrl->is_IfTrue() && mem_ctrl->in(0)->is_RangeCheck() &&
-                    mem_ctrl->in(0)->in(1)->is_Bool() && mem_ctrl->in(0)->in(1)->as_Bool()->_test._test == BoolTest::lt &&
-                    mem_ctrl->in(0)->in(1)->in(1)->Opcode() == Op_CmpU) {
-                  Node* cmpu = mem_ctrl->in(0)->in(1)->in(1);
-                  Node* range_addr = phase->transform(new AddPNode(base, base, phase->MakeConX( arrayOopDesc::length_offset_in_bytes())));
-                  Node* range = phase->transform(new LoadRangeNode(nullptr, phase->C->immutable_memory(), range_addr));
-                  Node* uncasted_range = uncasted_adds_or_subs(range, phase);
-                  Node* uncasted_cmpu_in2 = uncasted_adds_or_subs(cmpu->in(2), phase);
-                  if (uncasted_range == uncasted_cmpu_in2) {
-                    if (clones.size() <= 2) {
-                      const Type* elem_t = addr_t->make_oopptr()->is_aryptr()->elem();
-                      assert(elem_t != Type::BOTTOM, "");
-                      BasicType bt = elem_t->array_element_basic_type();
-                      uint shift  = exact_log2(type2aelembytes(bt));
-                      uint header = arrayOopDesc::base_offset_in_bytes(bt);
-                      Node* addp1 = phase->transform(new AddPNode(base, base, phase->MakeConX(header)));
-                      Node* idx = Compile::conv_I2X_index(phase, cmpu->in(1), addr_t->is_aryptr()->size(), mem_ctrl);
-                      Node* scale = phase->transform( new LShiftXNode(idx, phase->intcon(shift)));
-                      Node* addp2 = phase->transform(new AddPNode(base, addp1, scale));
-                      Node* uncasted_addp2 = uncasted_adds_or_subs(addp2, phase);
-                      Node* uncasted_addr = uncasted_adds_or_subs(use->in(MemNode::Address), phase);
-
-                      if (uncasted_addr == uncasted_addp2) {
-                        safe_mem_access = true;
-                      }
-
-                      if (uncasted_addp2->outcnt() == 0) {
-                        igvn->remove_dead_node(uncasted_addp2);
-                      }
-                      if (uncasted_addr->outcnt() == 0) {
-                        igvn->remove_dead_node(uncasted_addr);
-                      }
-                      if (addp2->outcnt() == 0) {
-                        igvn->remove_dead_node(addp2);
-                      }
-                    }
-                  }
-                  if (uncasted_range->outcnt() == 0) {
-                    igvn->remove_dead_node(uncasted_range);
-                  }
-                  if (uncasted_cmpu_in2->outcnt() == 0) {
-                    igvn->remove_dead_node(uncasted_cmpu_in2);
-                  }
-                    }
+                // if (mem_ctrl->is_IfTrue() && mem_ctrl->in(0)->is_RangeCheck() &&
+                //     mem_ctrl->in(0)->in(1)->is_Bool() && mem_ctrl->in(0)->in(1)->as_Bool()->_test._test == BoolTest::lt &&
+                //     mem_ctrl->in(0)->in(1)->in(1)->Opcode() == Op_CmpU) {
+                //   Node* cmpu = mem_ctrl->in(0)->in(1)->in(1);
+                //   Node* range_addr = phase->transform(new AddPNode(base, base, phase->MakeConX( arrayOopDesc::length_offset_in_bytes())));
+                //   Node* range = phase->transform(new LoadRangeNode(nullptr, phase->C->immutable_memory(), range_addr));
+                //   Node* uncasted_range = uncasted_adds_or_subs(range, phase);
+                //   Node* uncasted_cmpu_in2 = uncasted_adds_or_subs(cmpu->in(2), phase);
+                //   if (uncasted_range == uncasted_cmpu_in2) {
+                //     if (clones.size() <= 2) {
+                //       const Type* elem_t = addr_t->make_oopptr()->is_aryptr()->elem();
+                //       assert(elem_t != Type::BOTTOM, "");
+                //       BasicType bt = elem_t->array_element_basic_type();
+                //       uint shift  = exact_log2(type2aelembytes(bt));
+                //       uint header = arrayOopDesc::base_offset_in_bytes(bt);
+                //       Node* addp1 = phase->transform(new AddPNode(base, base, phase->MakeConX(header)));
+                //       Node* idx = Compile::conv_I2X_index(phase, cmpu->in(1), addr_t->is_aryptr()->size(), mem_ctrl);
+                //       Node* scale = phase->transform( new LShiftXNode(idx, phase->intcon(shift)));
+                //       Node* addp2 = phase->transform(new AddPNode(base, addp1, scale));
+                //       Node* uncasted_addp2 = uncasted_adds_or_subs(addp2, phase);
+                //       Node* uncasted_addr = uncasted_adds_or_subs(use->in(MemNode::Address), phase);
+                //
+                //       if (uncasted_addr == uncasted_addp2) {
+                //         safe_mem_access = true;
+                //       }
+                //
+                //       if (uncasted_addp2->outcnt() == 0) {
+                //         igvn->remove_dead_node(uncasted_addp2);
+                //       }
+                //       if (uncasted_addr->outcnt() == 0) {
+                //         igvn->remove_dead_node(uncasted_addr);
+                //       }
+                //       if (addp2->outcnt() == 0) {
+                //         igvn->remove_dead_node(addp2);
+                //       }
+                //     }
+                //   }
+                //   if (uncasted_range->outcnt() == 0) {
+                //     igvn->remove_dead_node(uncasted_range);
+                //   }
+                //   if (uncasted_cmpu_in2->outcnt() == 0) {
+                //     igvn->remove_dead_node(uncasted_cmpu_in2);
+                //   }
+                //     }
                 if (!safe_mem_access) {
-                  if (clones.size() <= 2) {
-                    assert(clones.at(0) == stack.node_at(stack.size()-1), "");
-                    assert(clones.size() == 2 && clones.at(1) == stack.node_at(stack.size()-2), "");
-                    Node* prev_before = this;
-                    Node* prev_after = in(1);
-                    for (uint i = 1; i < stack.size() - clones.size(); ++i) {
-                      Node* n = stack.node_at(i);
-                      Node* clone = n->clone();
-                      int nb = clone->replace_edge(prev_before, prev_after);
-                      assert(nb > 0, "");
-                      prev_before = n;
-                      prev_after = phase->transform(clone);
+                  Node* prev_before = this;
+                  Node* prev_after = in(1);
+                  uint i;
+                  for (i = 1; i < stack.size(); ++i) {
+                    Node* n = stack.node_at(i);
+                    if (n->is_AddP()) {
+                      i++;
+                      assert(prev_before == n->in(AddPNode::Offset), "");
+                      break;
                     }
-                    Node* offset = phase->transform(new AddXNode(prev_after, clones.at(0)->in(AddPNode::Offset)));
-                    const Type* elem_t = addr_t->make_oopptr()->is_aryptr()->elem();
-                    assert(elem_t != Type::BOTTOM, "");
-                    BasicType bt = elem_t->array_element_basic_type();
-                    uint shift  = exact_log2(type2aelembytes(bt));
-                    uint header = arrayOopDesc::base_offset_in_bytes(bt);
-                    offset = phase->transform(new SubXNode(offset, phase->MakeConX(header)));
-                    Node* range_addr = phase->transform(new AddPNode(base, base, phase->MakeConX( arrayOopDesc::length_offset_in_bytes())));
-                    Node* range = phase->transform(new LoadRangeNode(nullptr, phase->C->immutable_memory(), range_addr));
-                    range = phase->transform(new ConvI2LNode(range));
-                    range = phase->transform(new LShiftLNode(range, phase->intcon(shift)));
-                    Node* cmp = phase->transform(new CmpULNode(offset, range));
-                    if (phase->type(cmp) == TypeInt::CC_LT) {
-                      safe_mem_access = true;
-                    } else {
-                      if (cmp->outcnt() == 0) {
-                        igvn->remove_dead_node(cmp);
-                      }
+                    Node* clone = n->clone();
+                    int nb = clone->replace_edge(prev_before, prev_after);
+                    assert(nb > 0, "");
+                    prev_before = n;
+                    prev_after = phase->transform(clone);
+                  }
+                  assert(i < stack.size(), "");
+                  Node* offset = prev_after;
+                  for (; i < stack.size(); ++i) {
+                    Node* n = stack.node_at(i);
+                    assert(n->is_AddP(), "");
+                    offset = phase->transform(new AddXNode(prev_after, n->in(AddPNode::Offset)));
+                  }
+                  const Type* elem_t = addr_t->make_oopptr()->is_aryptr()->elem();
+                  assert(elem_t != Type::BOTTOM, "");
+                  BasicType bt = elem_t->array_element_basic_type();
+                  uint shift = exact_log2(type2aelembytes(bt));
+                  uint header = arrayOopDesc::base_offset_in_bytes(bt);
+                  offset = phase->transform(new SubXNode(offset, phase->MakeConX(header)));
+                  Node* range_addr = phase->transform(
+                    new AddPNode(base, base, phase->MakeConX(arrayOopDesc::length_offset_in_bytes())));
+                  Node* range = phase->transform(new LoadRangeNode(nullptr, phase->C->immutable_memory(), range_addr));
+                  range = phase->transform(new ConvI2LNode(range));
+                  range = phase->transform(new LShiftLNode(range, phase->intcon(shift)));
+                  Node* cmp = phase->transform(new CmpULNode(offset, range));
+                  if (phase->type(cmp) == TypeInt::CC_LT) {
+                    safe_mem_access = true;
+                  } else {
+                    if (cmp->outcnt() == 0) {
+                      igvn->remove_dead_node(cmp);
                     }
                   }
                 }

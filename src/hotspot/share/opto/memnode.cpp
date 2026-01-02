@@ -956,7 +956,7 @@ bool LoadNode::cmp(const Node &n) const {
   return Type::equals(_type, load._type) &&
          _control_dependency == load._control_dependency &&
          _mo == load._mo &&
-         _offset_range == load._offset_range;
+         _rc_constant_folded == load._rc_constant_folded;
 }
 const Type *LoadNode::bottom_type() const { return _type; }
 uint LoadNode::ideal_reg() const {
@@ -982,6 +982,9 @@ void LoadNode::dump_spec(outputStream *st) const {
       st->print("unknown reason");
     }
     st->print(")");
+  }
+  if (_rc_constant_folded) {
+    st->print(" rc_constant_folded");
   }
 }
 #endif
@@ -1015,7 +1018,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
-                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
+                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data, bool rc_constant_folded) {
   Compile* C = gvn.C;
   assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
 
@@ -1033,25 +1036,25 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
           "raw memory operations should have control edge");
   LoadNode* load = nullptr;
   switch (bt) {
-  case T_BOOLEAN: load = new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_BYTE:    load = new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_INT:     load = new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_CHAR:    load = new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_SHORT:   load = new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_LONG:    load = new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic_access); break;
-  case T_FLOAT:   load = new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency); break;
-  case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access); break;
-  case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency); break;
+  case T_BOOLEAN: load = new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_BYTE:    load = new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_INT:     load = new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_CHAR:    load = new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_SHORT:   load = new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_LONG:    load = new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic_access, rc_constant_folded); break;
+  case T_FLOAT:   load = new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, rc_constant_folded); break;
+  case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access, rc_constant_folded); break;
+  case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency, rc_constant_folded); break;
   case T_OBJECT:
   case T_NARROWOOP:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-      load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency);
+      load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency, rc_constant_folded);
     } else
 #endif
     {
       assert(!adr->bottom_type()->is_ptr_to_narrowoop() && !adr->bottom_type()->is_ptr_to_narrowklass(), "should have got back a narrow oop");
-      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr(), mo, control_dependency);
+      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr(), mo, control_dependency, rc_constant_folded);
     }
     break;
   default:
@@ -1094,6 +1097,15 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
   }
 
   return false;
+}
+
+LoadNode* LoadNode::with_rc_constant_folded() const {
+  if (!_rc_constant_folded) {
+    LoadNode* ld = clone()->as_Load();
+    ld->_rc_constant_folded = true;
+    return ld;
+  }
+  return nullptr;
 }
 
 // Is the value loaded previously stored by an arraycopy? If so return

@@ -557,6 +557,7 @@ class IfProjNode : public CProjNode {
 public:
   IfProjNode(IfNode *ifnode, uint idx) : CProjNode(ifnode,idx) {}
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
   // Return the other IfProj node.
   IfProjNode* other_if_proj() const {
