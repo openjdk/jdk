@@ -78,7 +78,7 @@ import org.xml.sax.SAXException;
 public final class MacHelper {
 
     public static void withExplodedDmg(JPackageCommand cmd,
-            ThrowingConsumer<Path> consumer) {
+            ThrowingConsumer<Path, ? extends Exception> consumer) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
 
         // Explode DMG assuming this can require interaction, thus use `yes`.
@@ -795,6 +795,15 @@ public final class MacHelper {
                 ),
                 PropertyFinder.appImageFileOptional(AppImageFile::mainLauncherClassName).map(getPackageIdFromClassName)
         ).orElseGet(cmd::name);
+    }
+
+    public static boolean isForAppStore(JPackageCommand cmd) {
+        return PropertyFinder.findAppProperty(cmd,
+                PropertyFinder.cmdlineBooleanOption("--mac-app-store"),
+                PropertyFinder.appImageFile(appImageFile -> {
+                    return Boolean.toString(appImageFile.macAppStore());
+                })
+        ).map(Boolean::parseBoolean).orElse(false);
     }
 
     public static boolean isXcodeDevToolsInstalled() {

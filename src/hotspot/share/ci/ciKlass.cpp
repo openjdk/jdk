@@ -217,15 +217,6 @@ jint ciKlass::modifier_flags() {
 }
 
 // ------------------------------------------------------------------
-// ciKlass::access_flags
-jint ciKlass::access_flags() {
-  assert(is_loaded(), "not loaded");
-  GUARDED_VM_ENTRY(
-    return get_Klass()->access_flags().as_unsigned_short();
-  )
-}
-
-// ------------------------------------------------------------------
 // ciKlass::misc_flags
 klass_flags_t ciKlass::misc_flags() {
   assert(is_loaded(), "not loaded");
