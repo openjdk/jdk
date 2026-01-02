@@ -400,27 +400,20 @@
           "reserve/waste is incorrect, at the risk that application "       \
           "runs out of memory too early.")                                  \
                                                                             \
-  product(uintx, ShenandoahOldEvacRatioPercent, 75, EXPERIMENTAL,           \
-          "The maximum proportion of evacuation from old-gen memory, "      \
-          "expressed as a percentage. The default value 75 denotes that "   \
-          "no more than 75% of the collection set evacuation workload may " \
-          "be towards evacuation of old-gen heap regions. This limits both "\
-          "the promotion of aged regions and the compaction of existing "   \
-          "old regions. A value of 75 denotes that the total evacuation "   \
-          "work may increase to up to four times the young gen evacuation " \
-          "work. A larger value allows quicker promotion and allows "       \
-          "a smaller number of mixed evacuations to process "               \
-          "the entire list of old-gen collection candidates at the cost "   \
-          "of an increased disruption of the normal cadence of young-gen "  \
-          "collections.  A value of 100 allows a mixed evacuation to "      \
-          "focus entirely on old-gen memory, allowing no young-gen "        \
-          "regions to be collected, likely resulting in subsequent "        \
-          "allocation failures because the allocation pool is not "         \
-          "replenished.  A value of 0 allows a mixed evacuation to "        \
-          "focus entirely on young-gen memory, allowing no old-gen "        \
-          "regions to be collected, likely resulting in subsequent "        \
-          "promotion failures and triggering of stop-the-world full GC "    \
-          "events.")                                                        \
+  product(uintx, ShenandoahOldEvacPercent, 75, EXPERIMENTAL,                \
+          "The maximum evacuation to old-gen expressed as a percent of "    \
+          "the total live memory within the collection set.  With the "     \
+          "default setting, if collection set evacuates X, no more than "   \
+          "75% of X may hold objects evacuated from old or promoted to "    \
+          "old from young.  A value of 100 allows the entire collection "   \
+          "set to be comprised of old-gen regions and young regions that "  \
+          "have reached the tenure age.  Larger values allow fewer mixed "  \
+          "evacuations to reclaim all the garbage from old.  Smaller "      \
+          "values result in less variation in GC cycle times between "      \
+          "young vs. mixed cycles.  A value of 0 prevents mixed "           \
+          "evacations from running and blocks promotion of aged regions "   \
+          "by evacuation.  Setting the value to 0 does not prevent "        \
+          "regions from being promoted in place.")                          \
           range(0,100)                                                      \
                                                                             \
   product(bool, ShenandoahEvacTracking, false, DIAGNOSTIC,                  \
