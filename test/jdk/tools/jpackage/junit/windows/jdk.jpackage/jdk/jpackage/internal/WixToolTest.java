@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,9 @@
 package jdk.jpackage.internal;
 
 import static java.util.stream.Collectors.toMap;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,28 +35,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.WixTool.ToolInfo;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
-import jdk.jpackage.internal.resources.ResourceLocator;
-import jdk.jpackage.internal.util.PathUtils;
-import jdk.jpackage.test.Annotations.ParameterSupplier;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.CfgFile;
-import jdk.jpackage.test.JUnitAdapter;
-import jdk.jpackage.test.JarBuilder;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.mock.CommandActionSpecs;
+import jdk.jpackage.test.mock.CommandMock;
+import jdk.jpackage.test.mock.CommandMockSpec;
+import jdk.jpackage.test.mock.Script;
+import jdk.jpackage.test.stdmock.JPackageMockUtils;
+import jdk.jpackage.test.stdmock.WixToolMock;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 
-public class WixToolTest extends JUnitAdapter {
+class WixToolTest {
 
-    @Test(ifOS = OperatingSystem.WINDOWS)
-    @ParameterSupplier
-    public void test(TestSpec spec) throws IOException {
-        spec.run();
+    @ParameterizedTest
+    @MethodSource
+    void test(TestSpec spec, @TempDir Path workDir) throws IOException {
+        spec.run(workDir);
     }
 
     public static Collection<Object[]> test() {
@@ -96,12 +90,12 @@ public class WixToolTest extends JUnitAdapter {
                         .tool(tool("foo").candle("3.14.1.8722"))
                         .tool(tool("foo").light("3.14.1.8722"))
                         .tool(tool("foo").wix("5.0.2+aa65968c")),
-                // WiX3 (good), WiX4+ (broken)
+                // WiX3 (good), WiX4+ (bad version)
                 TestSpec.build()
                         .expect(toolset().version("3.14.1.8722").put(WixToolsetType.Wix3, "foo"))
                         .tool(tool("foo").candle("3.14.1.8722"))
                         .tool(tool("foo").light("3.14.1.8722"))
-                        .tool(MockupGenericCommand.build().dir("foo").wix("").stdout("Blah-blah-blah"))
+                        .tool(tool("foo").wix("Blah-blah-blah"))
         ).forEach(builders::add);
 
         for (var oldLightStatus : ToolStatus.values()) {
@@ -147,14 +141,17 @@ public class WixToolTest extends JUnitAdapter {
             return Stream.of(status).allMatch(Predicate.isEqual(GOOD));
         }
 
-        Optional<MockupCommand> map(MockupWixTool.Builder builder) {
+        Optional<CommandMockSpec> map(WixToolMock builder) {
             switch (this) {
                 case MISSING -> {
                     return Optional.empty();
                 }
                 case UNEXPECTED_STDOUT -> {
-                    var mockup = builder.create();
-                    return Optional.of(MockupGenericCommand.build().path(mockup.path()).stdout("Blah-Blah-Blah").create());
+                    var mock = builder.create();
+                    return Optional.of(new CommandMockSpec(
+                            mock.name(),
+                            mock.mockName(),
+                            CommandActionSpecs.build().stdout("Blah-Blah-Blah").exit().create()));
                 }
                 case GOOD -> {
                 }
@@ -164,49 +161,52 @@ public class WixToolTest extends JUnitAdapter {
         }
     }
 
-    record TestSpec(WixToolset expected, List<Path> lookupDirs, Collection<MockupCommand> specs) {
+    record TestSpec(WixToolset expected, List<Path> lookupDirs, Collection<CommandMockSpec> mocks) {
         TestSpec {
             Objects.requireNonNull(expected);
 
-            if (lookupDirs.isEmpty() || specs.isEmpty()) {
+            if (lookupDirs.isEmpty() || mocks.isEmpty()) {
                 throw new IllegalArgumentException();
             }
 
             lookupDirs.forEach(WixToolTest::assertIsRelative);
 
             // Ensure tool paths are unique.
-            specs.stream().map(MockupCommand::path).collect(toMap(x -> x, x -> x));
+            mocks.stream().map(CommandMockSpec::name).collect(toMap(x -> x, x -> x));
         }
 
-        void run() throws IOException {
-            var workDir = TKit.workDir();
+        @Override
+        public String toString() {
+            var tokens = new ArrayList<String>();
+            tokens.add(expected.toString());
+            tokens.add(String.format("lookupDirs=%s", lookupDirs));
+            tokens.add(mocks.toString());
+            return String.join(", ", tokens);
+        }
 
-            var jar = workDir.resolve("mockups.jar");
+        void run(Path workDir) {
+            var scriptBuilder = Script.build().commandMockBuilderMutator(CommandMock.Builder::repeatInfinitely);
+            mocks.stream().map(mockSpec -> {
+                return new CommandMockSpec(workDir.resolve(mockSpec.name()), mockSpec.mockName(), mockSpec.actions());
+            }).forEach(scriptBuilder::map);
 
-            var jarBuilder = new JarBuilder().setOutputJar(jar);
-            for (var c : List.of(MockupWixTool.MAIN_CLASS_NAME, MockupGenericCommand.MAIN_CLASS_NAME)) {
-                jarBuilder.addSourceFile(TKit.TEST_SRC_ROOT.resolve(String.format("apps/%s.java", c)));
-            }
-            jarBuilder.create();
+            scriptBuilder.map(_ -> true, CommandMock.ioerror("non-existent"));
 
-            for (var spec : specs) {
-                spec.create(workDir, jar);
-            }
+            var script = scriptBuilder.createLoop();
 
-            var toolset = WixTool.createToolset(() -> {
-                return lookupDirs.stream().map(workDir::resolve).toList();
-            }, false);
+            Globals.main(() -> {
+                JPackageMockUtils.buildJPackage()
+                        .script(script)
+                        .listener(System.out::println)
+                        .applyToGlobals();
 
-            for (var spec : specs) {
-                var resolvedErrFile = workDir.resolve(spec.errorFilePath());
-                if (Files.isRegularFile(resolvedErrFile)) {
-                    var content = Files.readAllLines(resolvedErrFile);
-                    content.forEach(System.err::println);
-                    fail(String.format("Error file [%s] exists"));
-                }
-            }
+                var toolset = WixTool.createToolset(() -> {
+                    return lookupDirs.stream().map(workDir::resolve).toList();
+                }, false);
 
-            assertEquals(resolveAt(expected, workDir), toolset);
+                assertEquals(resolveAt(expected, workDir), toolset);
+                return 0;
+            });
         }
 
         static Builder build() {
@@ -220,7 +220,7 @@ public class WixToolTest extends JUnitAdapter {
                         expected,
                         Stream.concat(
                                 lookupDirs.stream(),
-                                tools.stream().map(MockupCommand::path).map(Path::getParent)
+                                tools.stream().map(CommandMockSpec::name).map(Path::getParent)
                         ).distinct().toList(),
                         tools);
             }
@@ -243,271 +243,20 @@ public class WixToolTest extends JUnitAdapter {
                 return this;
             }
 
-            Builder tool(MockupCommand v) {
+            Builder tool(CommandMockSpec v) {
                 tools.add(Objects.requireNonNull(v));
                 return this;
             }
 
-            Builder tool(MockupWixTool.Builder builder) {
-                return tool(builder.create());
-            }
-
-            Builder tool(MockupGenericCommand.Builder builder) {
-                return tool(builder.create());
+            Builder tool(WixToolMock v) {
+                tools.add(v.create());
+                return this;
             }
 
             private WixToolset expected;
             private List<Path> lookupDirs = new ArrayList<>();
-            private List<MockupCommand> tools = new ArrayList<>();
+            private List<CommandMockSpec> tools = new ArrayList<>();
         }
-    }
-
-    private sealed interface MockupCommand {
-        default void create(Path root, Path mockupCommandJar) throws IOException {
-            var resolvedPath = root.resolve(path());
-
-            Files.createDirectories(resolvedPath.getParent());
-            try (var in = ResourceLocator.class.getResourceAsStream("jpackageapplauncher.exe")) {
-                Files.copy(in, resolvedPath);
-            }
-
-            var cfgFilePath = resolvedPath.getParent().resolve("app").resolve(PathUtils.replaceSuffix(resolvedPath.getFileName(), ".cfg"));
-            var cfgFile = new CfgFile();
-
-            var mainClass = mainClass();
-
-            cfgFile.addValue("Application", "app.classpath", PathUtils.normalizedAbsolutePathString(mockupCommandJar));
-            cfgFile.addValue("Application", "app.mainclass", mainClass);
-            cfgFile.addValue("Application", "app.runtime", System.getProperty("java.home"));
-
-            var errorFile = PathUtils.normalizedAbsolutePathString(root.resolve(errorFilePath()));
-
-            Stream.of(
-                    Stream.of(Map.entry("error-file", errorFile)),
-                    javaProperties(resolvedPath).entrySet().stream()
-            ).flatMap(x -> x).forEach(e -> {
-                var str = String.format("-Djpackage.test.%s.%s=%s", mainClass, e.getKey(), Objects.requireNonNull(e.getValue()));
-                cfgFile.addValue("JavaOptions", "java-options", str);
-            });
-
-            Files.createDirectories(cfgFilePath.getParent());
-            cfgFile.save(cfgFilePath);
-        }
-
-        default Path errorFilePath() {
-            return path().getParent().resolve(PathUtils.replaceSuffix(path().getFileName(), ".error"));
-        }
-
-        Path path();
-        String mainClass();
-        Map<String, String> javaProperties(Path resolvedPath);
-    }
-
-    private record MockupWixTool(Path dir, WixTool type, String version, boolean fips) implements MockupCommand {
-
-        MockupWixTool {
-            Objects.requireNonNull(dir);
-            Objects.requireNonNull(type);
-            Objects.requireNonNull(version);
-        }
-
-        @Override
-        public Path path() {
-            return dir.resolve(type.fileName());
-        }
-
-        @Override
-        public String mainClass() {
-            return MAIN_CLASS_NAME;
-        }
-
-        @Override
-        public Map<String, String> javaProperties(Path resolvedPath) {
-            return Map.of(
-                    "version", version,
-                    "fips", Boolean.toString(fips),
-                    "type", type.name().toUpperCase()
-            );
-        }
-
-        static Builder build() {
-            return new Builder();
-        }
-
-        static final class Builder {
-
-            MockupCommand create() {
-                return new MockupWixTool(dir, type, version, fips);
-            }
-
-            Builder fips(Boolean v) {
-                fips = v;
-                return this;
-            }
-
-            Builder fips() {
-                return fips(true);
-            }
-
-            Builder dir(Path v) {
-                dir = v;
-                return this;
-            }
-
-            Builder type(WixTool v) {
-                type = v;
-                return this;
-            }
-
-
-            Builder version(String v) {
-                version = v;
-                return this;
-            }
-
-            Builder candle(String version) {
-                return type(WixTool.Candle3).version(version);
-            }
-
-            Builder light(String version) {
-                return type(WixTool.Light3).version(version);
-            }
-
-            Builder wix(String version) {
-                return type(WixTool.Wix4).version(version);
-            }
-
-            private Path dir;
-            private WixTool type;
-            private String version;
-            private boolean fips;
-        }
-
-        static final String MAIN_CLASS_NAME = "MockupWixTool";
-    }
-
-    private record MockupGenericCommand(Path path, List<String> stdout, List<String> stderr, int exitCode) implements MockupCommand {
-
-        MockupGenericCommand {
-            Objects.requireNonNull(path);
-            Objects.requireNonNull(stdout);
-            Objects.requireNonNull(stderr);
-        }
-
-        @Override
-        public String mainClass() {
-            return MAIN_CLASS_NAME;
-        }
-
-        @Override
-        public Map<String, String> javaProperties(Path resolvedPath) {
-            Function<String, Path> dataFilePath = role -> {
-                return resolvedPath.getParent().resolve(String.format("%s-%s.txt",
-                        PathUtils.replaceSuffix(resolvedPath.getFileName(), ""), Objects.requireNonNull(role)));
-            };
-
-            var props = new HashMap<String, String>();
-
-            if (!stdout.isEmpty()) {
-                var file = dataFilePath.apply("stdout");
-                TKit.createTextFile(file, stdout);
-                props.put("stdout-file", PathUtils.normalizedAbsolutePathString(file));
-            }
-
-            if (!stderr.isEmpty()) {
-                var file = dataFilePath.apply("stderr");
-                TKit.createTextFile(file, stderr);
-                props.put("stderr-file", PathUtils.normalizedAbsolutePathString(file));
-            }
-
-            if (exitCode != 0) {
-                props.put("exit", Integer.toString(exitCode));
-            }
-
-            return props;
-        }
-
-        static Builder build() {
-            return new Builder();
-        }
-
-        static final class Builder {
-
-            MockupCommand create() {
-                return new MockupGenericCommand(
-                        dir.resolve(name),
-                        stdout,
-                        stderr,
-                        exitCode);
-            }
-
-            Builder dir(Path v) {
-                dir = v;
-                return this;
-            }
-
-            Builder dir(String v) {
-                return dir(Path.of(v));
-            }
-
-            Builder name(Path v) {
-                name = v;
-                return this;
-            }
-
-            Builder name(String v) {
-                return name(Path.of(v));
-            }
-
-            Builder path(Path v) {
-                return dir(v.getParent()).name(v.getFileName());
-            }
-
-            Builder stdout(String... lines) {
-                stdout = List.of(lines);
-                return this;
-            }
-
-            Builder stderr(String... lines) {
-                stderr = List.of(lines);
-                return this;
-            }
-
-            Builder exitCode(int v) {
-                exitCode = v;
-                return this;
-            }
-
-            Builder candle(String version) {
-                return exitCode(0).stderr().stdout(
-                        "Windows Installer XML Toolset Compiler version " + Objects.requireNonNull(version),
-                        "Copyright (c) .NET Foundation and contributors. All rights reserved.",
-                        "",
-                        " usage:  candle.exe [-?] [-nologo] [-out outputFile] sourceFile [sourceFile ...] [@responseFile]"
-                ).name(WixTool.Candle3.fileName());
-            }
-
-            Builder light(String version) {
-                return exitCode(0).stderr().stdout(
-                        "Windows Installer XML Toolset Linker version " + Objects.requireNonNull(version),
-                        "Copyright (c) .NET Foundation and contributors. All rights reserved.",
-                        "",
-                        " usage:  light.exe [-?] [-b bindPath] [-nologo] [-out outputFile] objectFile [objectFile ...] [@responseFile]"
-                ).name(WixTool.Light3.fileName());
-            }
-
-            Builder wix(String version) {
-                return exitCode(0).stderr().stdout(version).name(WixTool.Wix4.fileName());
-            }
-
-            private Path dir;
-            private Path name;
-            private List<String> stdout = List.of();
-            private List<String> stderr = List.of();
-            private int exitCode;
-        }
-
-        static final String MAIN_CLASS_NAME = "MockupCommand";
     }
 
     private final static class WixToolsetBuilder {
@@ -565,15 +314,15 @@ public class WixToolTest extends JUnitAdapter {
         return new WixToolsetBuilder();
     }
 
-    private static MockupWixTool.Builder tool() {
-        return MockupWixTool.build();
+    private static WixToolMock tool() {
+        return new WixToolMock();
     }
 
-    private static MockupWixTool.Builder tool(Path dir) {
+    private static WixToolMock tool(Path dir) {
         return tool().dir(dir);
     }
 
-    private static MockupWixTool.Builder tool(String dir) {
+    private static WixToolMock tool(String dir) {
         return tool(Path.of(dir));
     }
 
@@ -595,12 +344,6 @@ public class WixToolTest extends JUnitAdapter {
         if (path.isAbsolute()) {
             throw new IllegalArgumentException();
         }
-    }
-
-    static {
-        // Ensure JUnitAdapter class is initialized to get the value of the "test.src"
-        // property set when the test is executed by a test runner other than jtreg.
-        toRunnable(() -> MethodHandles.lookup().ensureInitialized(JUnitAdapter.class)).run();
     }
 }
 

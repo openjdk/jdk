@@ -33,7 +33,8 @@
  * @summary Test WiX Toolset lookup algorithm
  * @requires (os.family == "windows")
  * @library /test/jdk/tools/jpackage/helpers
- * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.mock.*
+ * @build jdk.jpackage.test.stdmock.*
  * @compile/module=jdk.jpackage -Xlint:all -Werror
  *    jdk/jpackage/internal/WixToolTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.WixToolTest
