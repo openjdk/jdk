@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8305457 8342936 8351435 8344706 8361613 8374217
+ * @bug 8305457 8342936 8351435 8344706 8361613
  * @summary java.lang.IO tests
  * @library /test/lib
  * @run junit IO
