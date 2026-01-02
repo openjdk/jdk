@@ -508,7 +508,7 @@ final class PackagingPipeline {
         try {
             builder.create().call();
         } catch (Exception ex) {
-            throw ExceptionBox.rethrowUnchecked(ex);
+            throw ExceptionBox.toUnchecked(ex);
         }
     }
 

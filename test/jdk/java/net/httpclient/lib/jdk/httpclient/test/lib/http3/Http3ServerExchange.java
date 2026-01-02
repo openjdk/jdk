@@ -108,6 +108,11 @@ public final class Http3ServerExchange implements Http2TestExchange {
         rspheadersBuilder = new HttpHeadersBuilder();
     }
 
+    Http3ServerConnection http3Connection() {
+        return serverConn;
+    }
+
+
     String connectionTag() {
         return serverConn.quicConnection().logTag();
     }
