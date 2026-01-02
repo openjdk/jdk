@@ -42,9 +42,11 @@ import java.io.UncheckedIOException;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -88,7 +90,7 @@ public final class MacHelper {
         // See JDK-8373105. "hdiutil" does not handle such cases very good.
         final var mountRoot = TKit.createTempDirectory("mountRoot");
 
-        // Explode DMG assuming this can require interaction, thus use `yes`.
+        // Explode the DMG assuming this can require interaction if the DMG has a license, thus use `yes`.
         final var attachExec = Executor.of("sh", "-c", String.join(" ",
                 "yes",
                 "|",
@@ -106,8 +108,26 @@ public final class MacHelper {
 
         boolean mountPointInitialized = false;
         try {
+            byte[] stdout = attachResult.byteStdout();
+
+            // If the DMG has a license, it will be printed to the stdout before the plist content.
+            // All bytes before the XML declaration of the plist must be skipped.
+            // We need to find the location of the {'<', '?', 'x', 'm', 'l'} byte array
+            // (the XML declaration) in the captured binary stdout.
+            // Instead of crafting an ad-hoc function that operates on byte arrays,
+            // we will convert the byte array into a String instance using
+            // an 8-bit character set (ISO-8859-1) and use the standard String#indexOf().
+            var startPlistIndex = new String(stdout, StandardCharsets.ISO_8859_1).indexOf("<?xml");
+
+            byte[] plistXml;
+            if (startPlistIndex > 0) {
+                plistXml = Arrays.copyOfRange(stdout, startPlistIndex, stdout.length);
+            } else {
+                plistXml = stdout;
+            }
+
             // One of "dict" items of "system-entities" array property should contain "mount-point" string property.
-            mountPoint = readPList(attachResult.byteStdout()).queryArrayValue("system-entities", false)
+            mountPoint = readPList(plistXml).queryArrayValue("system-entities", false)
                     .map(PListReader.class::cast)
                     .map(dict -> {
                         return dict.findValue("mount-point");
@@ -301,7 +321,7 @@ public final class MacHelper {
     }
 
     static boolean isBundleSigned(MacBundle bundle) {
-        return MacSignVerify.findSpctlSignOrigin(MacSignVerify.SpctlType.EXEC, bundle.root()).isPresent();
+        return MacSignVerify.findSpctlSignOrigin(MacSignVerify.SpctlType.EXEC, bundle.root(), true).isPresent();
     }
 
     private static void createFaPListFragmentFromFaProperties(JPackageCommand cmd, XMLStreamWriter xml)

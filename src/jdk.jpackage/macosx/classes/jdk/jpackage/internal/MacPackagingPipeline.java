@@ -279,16 +279,27 @@ final class MacPackagingPipeline {
     }
 
     static boolean isSigned(MacBundle bundle) {
-        var exec = Executor.of(
+
+        var result = toSupplier(Executor.of(
                 "/usr/sbin/spctl",
                 "-vv",
                 "--raw",
                 "--assess",
                 "--type", "exec",
-                bundle.root().toString()).saveOutput(true).binaryOutput();
-        return toSupplier(() -> {
-            return new PListReader(exec.executeExpect(0, 3).byteStdout()).findValue("assessment:originator").isPresent();
-        }).get();
+                bundle.root().toString()).setQuiet(true).saveOutput(true).binaryOutput()::execute).get();
+
+        switch (result.getExitCode()) {
+            case 0, 3 -> {
+                // These exit codes are accompanied with valid plist xml.
+                return toSupplier(() -> {
+                    return new PListReader(result.byteStdout()).findValue("assessment:originator").isPresent();
+                }).get();
+            }
+            default -> {
+                // Likely to be an "a sealed resource is missing or invalid" error.
+                return false;
+            }
+        }
     }
 
     private static void copyAppImage(MacPackage pkg, AppImageLayout srcAppImage,

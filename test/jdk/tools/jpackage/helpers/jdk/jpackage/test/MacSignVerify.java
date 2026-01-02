@@ -136,13 +136,32 @@ public final class MacSignVerify {
     public static final String ADHOC_SIGN_ORIGIN = "-";
 
     public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path) {
-        final var result = Executor.of(
+        return findSpctlSignOrigin(type, path, false);
+    }
+
+    public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path, boolean acceptBrokenSignature) {
+        final var exec = Executor.of(
                 "/usr/sbin/spctl",
                 "-vv",
                 "--raw",
                 "--assess",
                 "--type", type.value(),
-                path.toString()).saveOutput().discardStderr().binaryOutput().execute(0, 3);
+                path.toString()).saveOutput().discardStderr().binaryOutput();
+        Executor.Result result;
+        if (acceptBrokenSignature) {
+            result = exec.executeWithoutExitCodeCheck();
+            switch (result.getExitCode()) {
+                case 0, 3 -> {
+                    // NOP
+                }
+                default -> {
+                    // No plist XML to process.
+                    return Optional.empty();
+                }
+            }
+        } else {
+            result = exec.execute(0, 3);
+        }
         return MacHelper.readPList(result.byteStdout()).findValue("assessment:originator");
     }
 
