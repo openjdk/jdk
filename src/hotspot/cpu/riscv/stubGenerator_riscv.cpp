@@ -3065,16 +3065,14 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void gcm_counterMode_AESCrypt_blocks(int round, Register in, Register out, Register key, Register counter,
-                                       Register input_len, VectorRegister *working_vregs, Register tmp1, Register tmp2,
+                                       Register input_len, VectorRegister *working_vregs, Register tmp1,
                                        VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
-    const Register block_size = tmp1;
-    const Register len        = tmp2;
+    const Register len        = tmp1;
 
     __ srli(len, input_len, 4);
 
     const unsigned int BLOCK_SIZE = 16;
     const unsigned int MASK_VALUE = 0b1000; // we need {1, 0, 0, 0} mask value here
-    __ mv(block_size, BLOCK_SIZE);
     __ vsetivli(x0, 1, Assembler::e8, Assembler::m1);
     __ vmv_v_i(v0, MASK_VALUE);
 
@@ -3091,8 +3089,8 @@ class StubGenerator: public StubCodeGenerator {
       __ vle32_v(vtmp3, in);
       __ vxor_vv(vtmp2, vtmp2, vtmp3);
       __ vse32_v(vtmp2, out);
-      __ add(out, out, block_size);
-      __ add(in, in, block_size);
+      __ addi(out, out, BLOCK_SIZE);
+      __ addi(in, in, BLOCK_SIZE);
       __ sub(len, len, 1);
       __ vrev8_v(vtmp1, vtmp1, Assembler::VectorMask::v0_t);
       __ vadd_vi(vtmp1, vtmp1, 0x1, Assembler::VectorMask::v0_t);
@@ -3145,7 +3143,6 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register keylen     = x28;
     const Register tmp1       = x29;
-    const Register tmp2       = x30;
 
     VectorRegister working_vregs[] = {
       v1, v2, v3, v4, v5, v6, v7, v8,
@@ -3173,17 +3170,17 @@ class StubGenerator: public StubCodeGenerator {
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs crypt with key += 15*16
-    gcm_counterMode_AESCrypt_blocks(15, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
+    gcm_counterMode_AESCrypt_blocks(15, in, out, key, counter, input_len, working_vregs, tmp1, vtmp1, vtmp2, vtmp3);
     gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
 
     // Note: the following function performs crypt with key += 13*16
     __ bind(L_aes192);
-    gcm_counterMode_AESCrypt_blocks(13, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
+    gcm_counterMode_AESCrypt_blocks(13, in, out, key, counter, input_len, working_vregs, tmp1, vtmp1, vtmp2, vtmp3);
     gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
 
     // Note: the following function performs crypt with key += 11*16
     __ bind(L_aes128);
-    gcm_counterMode_AESCrypt_blocks(11, in, out, key, counter, input_len, working_vregs, tmp1, tmp2, vtmp1, vtmp2, vtmp3);
+    gcm_counterMode_AESCrypt_blocks(11, in, out, key, counter, input_len, working_vregs, tmp1, vtmp1, vtmp2, vtmp3);
     gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, tmp1, vtmp1, vtmp2, vtmp3);
 
     __ bind(L_exit);
