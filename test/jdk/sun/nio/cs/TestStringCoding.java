@@ -169,6 +169,12 @@ public class TestStringCoding {
         if (!Arrays.equals(baSC, baNIO)) {
             throw new RuntimeException("getBytes(cs) failed  -> " + cs.name());
         }
+        //getBytesLength(cs);
+        int getBytesLength = str.getBytesLength(cs);
+        if (baSC.length != getBytesLength) {
+            throw new RuntimeException(String.format("getBytesLength failed (%d != %d) -> %s",
+                    baSC.length, getBytesLength, cs.name()));
+        }
         return baSC;
     }
 
