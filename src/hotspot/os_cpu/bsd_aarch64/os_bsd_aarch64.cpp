@@ -521,10 +521,6 @@ void os::current_thread_enable_wx(WXMode mode) {
 }
 #endif
 
-static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
-  *(jlong *) dst = *(const jlong *) src;
-}
-
 extern "C" {
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
@@ -559,28 +555,28 @@ extern "C" {
     if (from > to) {
       const jshort *end = from + count;
       while (from < end)
-        *(to++) = *(from++);
+        *((volatile jshort*) to++) = *(from++);
     }
     else if (from < to) {
       const jshort *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        *(to--) = *(from--);
+        *((volatile jshort*) to--) = *(from--);
     }
   }
   void _Copy_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
     if (from > to) {
       const jint *end = from + count;
       while (from < end)
-        *(to++) = *(from++);
+        *((volatile jint*) to++) = *(from++);
     }
     else if (from < to) {
       const jint *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        *(to--) = *(from--);
+        *((volatile jint*) to--) = *(from--);
     }
   }
 
@@ -588,14 +584,14 @@ extern "C" {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        atomic_copy64(from++, to++);
+        *((volatile jlong*) to++) = *(from++);
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        atomic_copy64(from--, to--);
+        *((volatile jlong*) to--) = *(from--);
     }
   }
 
