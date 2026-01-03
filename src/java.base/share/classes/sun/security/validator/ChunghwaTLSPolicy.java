@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,15 +43,15 @@ final class ChunghwaTLSPolicy {
 
     private static final Debug debug = Debug.getInstance("certpath");
 
-    // SHA-256 certificate fingerprints of distrusted root for TLS
+    // SHA-256 certificate fingerprint of distrusted root for TLS
     // cacerts alias: chunghwaepkirootca
     // DN: OU=ePKI Root Certification Authority,
     //     O="Chunghwa Telecom Co., Ltd.", C=TW
     private static final String FINGERPRINT =
             "C0A6F4DC63A24BFDCF54EF2A6A082A0A72DE35803E2FF5FF527AE5D87206DFD5";
 
-    // Any TLS Server certificate that is anchored by one of the Chunghwa
-    // roots above and is issued after this date will be distrusted.
+    // Any TLS Server certificate that is anchored by the Chunghwa
+    // root above and is issued after this date will be distrusted.
     private static final LocalDate MARCH_17_2026 =
         LocalDate.of(2026, Month.MARCH, 17);
 

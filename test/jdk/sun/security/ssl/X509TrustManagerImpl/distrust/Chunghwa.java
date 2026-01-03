@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,7 @@ public class Chunghwa {
 
     private static final String CERT_PATH = "chains" + File.separator + "chunghwa";
 
-    // Each of the roots have a test certificate chain stored in a file
-    // named "<root>-chain.pem".
+    // The ePKI root has a test named "chunghwaepkirootca-chain.pem".
     private static final String ROOT_TO_TEST = "chunghwaepkirootca";
 
     // Date after the restrictions take effect
@@ -55,12 +54,6 @@ public class Chunghwa {
             LocalDate.of(2026, 03, 18).atStartOfDay(ZoneOffset.UTC);
 
     public static void main(String[] args) throws Exception {
-
-        // All the test certificates are signed with SHA-1, so we need
-        // to remove the constraint that disallows SHA-1 certificates.
-        String prop = Security.getProperty("jdk.certpath.disabledAlgorithms");
-        String newProp = prop.replace(", SHA1 jdkCA & usage TLSServer", "");
-        Security.setProperty("jdk.certpath.disabledAlgorithms", newProp);
 
         Distrust distrust = new Distrust(args);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,8 @@ enum CADistrustPolicy {
     },
 
     /**
-     * Distrust TLS Server certificates anchored by a Chunghwa ePKI root CA and
-     * issued after March 17, 2026. If enabled, this policy is currently
+     * Distrust TLS Server certificates anchored by the Chunghwa ePKI root CA
+     * and issued after March 17, 2026. If enabled, this policy is currently
      * enforced by the PKIX and SunX509 TrustManager implementations
      * of the SunJSSE provider implementation.
      */
