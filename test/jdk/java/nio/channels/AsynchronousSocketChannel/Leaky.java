@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
  * @bug 4607272 6999915 7185340
  * @summary Unit test for AsynchronousSocketChannel
  * @modules java.management
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @run main/othervm -XX:+DisableExplicitGC -XX:MaxDirectMemorySize=75m Leaky
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
@@ -82,6 +86,7 @@ public class Leaky {
     }
 
     public static void main(String[] args) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         ThreadFactory threadFactory = new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
