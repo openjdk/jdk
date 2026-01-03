@@ -164,7 +164,8 @@ public class PngImageDecoder8BitTest {
     /**
      * Encode an image as 8-bit PNG.
      */
-    private static byte[] encodePNG(BufferedImage bi, boolean interlace) throws IOException {
+    private static byte[] encodePNG(BufferedImage bi, boolean interlace)
+            throws IOException {
         Iterator<ImageWriter> writers =
                 ImageIO.getImageWritersByFormatName("png");
         if (!writers.hasNext()) {
