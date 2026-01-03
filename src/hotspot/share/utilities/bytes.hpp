@@ -25,7 +25,10 @@
 #ifndef SHARE_UTILITIES_BYTES_HPP
 #define SHARE_UTILITIES_BYTES_HPP
 
-#include "utilities/macros.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/byteswap.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/unalignedAccess.hpp"
 
 class Endian : AllStatic {
 public:
@@ -48,6 +51,55 @@ public:
   }
 };
 
-#include CPU_HEADER(bytes)
+class Bytes : AllStatic {
+ public:
+  // Efficient reading and writing of unaligned unsigned data in platform-specific byte ordering.
+  template <typename T>
+  static inline T get_native(const void* p) {
+    return UnalignedAccess::load<T>(p);
+  }
+
+  template <typename T>
+  static inline void put_native(void* p, T x) {
+    UnalignedAccess::store<T>(p, x);
+  }
+
+  static inline u2   get_native_u2(address p)         { return get_native<u2>(p); }
+  static inline u4   get_native_u4(address p)         { return get_native<u4>(p); }
+  static inline u8   get_native_u8(address p)         { return get_native<u8>(p); }
+  static inline void put_native_u2(address p, u2 x)   { put_native<u2>(p, x); }
+  static inline void put_native_u4(address p, u4 x)   { put_native<u4>(p, x); }
+  static inline void put_native_u8(address p, u8 x)   { put_native<u8>(p, x); }
+
+  // Efficient reading and writing of unaligned unsigned data in Java
+  // byte ordering (i.e. big-endian ordering).
+  template <typename T>
+  static inline T get_Java(const address p) {
+    T x = get_native<T>(p);
+
+    if (Endian::is_Java_byte_ordering_different()) {
+      x = byteswap(x);
+    }
+
+    return x;
+  }
+
+  template <typename T>
+  static inline void put_Java(address p, T x) {
+    if (Endian::is_Java_byte_ordering_different()) {
+      x = byteswap(x);
+    }
+
+    put_native<T>(p, x);
+  }
+
+  static inline u2   get_Java_u2(address p)           { return get_Java<u2>(p); }
+  static inline u4   get_Java_u4(address p)           { return get_Java<u4>(p); }
+  static inline u8   get_Java_u8(address p)           { return get_Java<u8>(p); }
+
+  static inline void put_Java_u2(address p, u2 x)     { put_Java<u2>(p, x); }
+  static inline void put_Java_u4(address p, u4 x)     { put_Java<u4>(p, x); }
+  static inline void put_Java_u8(address p, u8 x)     { put_Java<u8>(p, x); }
+};
 
 #endif // SHARE_UTILITIES_BYTES_HPP
