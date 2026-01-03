@@ -1720,7 +1720,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ beq(CR0, Lforward);
 
     // Has the nmethod been invalidated already?
-    __ lbz(R0, in_bytes(nmethod::state_offset()), R3_RET);
+    // Load the _hdr pointer from the nmethod
+    __ ld(R0, in_bytes(nmethod::hdr_offset()), R3_RET);
+    // Load _state value from _hdr at an offset specified by nmethod::state_offset()
+    __ lbz(R0, in_bytes(nmethod::state_offset()), R0);
     __ cmpwi(CR0, R0, nmethod::in_use);
     __ bne(CR0, Lforward);
 
@@ -1741,7 +1744,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     JFR_ONLY(__ leave_jfr_critical_section();)
 
     // Jump to the osr code.
-    __ ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
+    // Load the _hdr pointer from the nmethod
+    __ ld(R11_scratch1, in_bytes(nmethod::hdr_offset()), osr_nmethod);
+    // Load _osr_entry_point address from _hdr at an offset specified
+    // by nmethod::osr_entry_point_offset()
+    __ ld(R11_scratch1, nmethod::osr_entry_point_offset(), R11_scratch1);
     __ mtlr(R12_scratch2);
     __ mtctr(R11_scratch1);
     __ bctr();

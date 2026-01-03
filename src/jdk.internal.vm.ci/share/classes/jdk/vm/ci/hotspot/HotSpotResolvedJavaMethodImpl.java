@@ -465,7 +465,10 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     public boolean hasCompiledCodeAtLevel(int level) {
         long compiledCode = getCompiledCode();
         if (compiledCode != 0) {
-            return UNSAFE.getByte(compiledCode + config().nmethodCompLevelOffset) == level;
+            long nmethod_hdr = UNSAFE.getAddress(compiledCode + config().nmethodHdrOffset);
+            if (nmethod_hdr != 0) {
+                return UNSAFE.getByte(nmethod_hdr + config().nmethodHeaderCompLevelOffset) == level;
+            }
         }
         return false;
     }
