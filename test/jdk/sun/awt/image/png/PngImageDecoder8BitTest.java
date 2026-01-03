@@ -230,10 +230,14 @@ public class PngImageDecoder8BitTest {
     private static void testCorrectness(BufferedImage expected,
                                         BufferedImage actual) {
         if (expected.getWidth() != actual.getWidth()) {
-            throw new Error();
+            throw new RuntimeException("expected.getWidth() = " +
+                    expected.getWidth() + ", actual.getWidth() = " +
+                    actual.getWidth());
         }
         if (expected.getHeight() != actual.getHeight()) {
-            throw new Error();
+            throw new RuntimeException("expected.getHeight() = " +
+                    expected.getHeight() + ", actual.getHeight() = " +
+                    actual.getHeight());
         }
         for (int y = 0; y < expected.getHeight(); y++) {
             for (int x = 0; x < expected.getWidth(); x++) {
