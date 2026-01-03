@@ -197,6 +197,16 @@ source %{
           return false;
         }
         break;
+      case Op_MinReductionVHF:
+      case Op_MaxReductionVHF:
+        // Reductions with less than 8 bytes vector length are not supported.
+        // FEAT_FP16 is enabled if both "fphp" and "asimdhp" features are supported.
+        // Only the Neon instructions need this check. SVE supports half-precision floats
+        // by default.
+        if (length_in_bytes < 8 || (UseSVE == 0 && !is_feat_fp16_supported())) {
+          return false;
+        }
+        break;
       case Op_MulReductionVD:
       case Op_MulReductionVF:
       case Op_MulReductionVI:
@@ -357,6 +367,8 @@ source %{
       case Op_AndReductionV:
       case Op_OrReductionV:
       case Op_XorReductionV:
+      case Op_MinReductionVHF:
+      case Op_MaxReductionVHF:
       // Mask is needed for partial Op_VectorMaskFirstTrue, because when the
       // input predicate is all-false, the result should be the vector length
       // instead of the vector register size.
@@ -2375,50 +2387,31 @@ instruct reduce_$1L_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc,
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-dnl REDUCE_MAXMIN_F($1,   $2,      $3,    $4,    $5,    $6   )
-dnl REDUCE_MAXMIN_F(type, op_name, insn1, insn2, insn3, insn4)
-define(`REDUCE_MAXMIN_F', `
-instruct reduce_$1F(vRegF dst, vRegF fsrc, vReg vsrc) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT);
-  match(Set dst ($2 fsrc vsrc));
+dnl REDUCE_MAXMIN_FP($1,   $2,      $3,   $4,  $5,    $6,    $7,    $8   )
+dnl REDUCE_MAXMIN_FP(type, op_name, kind, arg, insn1, insn2, insn3, insn4)
+define(`REDUCE_MAXMIN_FP', `
+instruct reduce_$1$3(vReg`'ifelse($3, D, D, F) dst, vReg`'ifelse($3, D, D, F) $4, vReg vsrc) %{
+ifelse($3, HF, `dnl',
+`  predicate(Matcher::vector_element_basic_type(n->in(2)) == ifelse($3, F, T_FLOAT, $3, D, T_DOUBLE));')
+  match(Set dst ($2 $4 vsrc));
   effect(TEMP_DEF dst);
-  format %{ "reduce_$1F $dst, $fsrc, $vsrc" %}
+  format %{ "reduce_$1$3 $dst, $$4, $vsrc" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      if (length_in_bytes == 8) {
-        __ $3($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
+      ifelse($3, HF, `__ $5($dst$$FloatRegister, get_arrangement(in(2)), $vsrc$$FloatRegister);',
+      $3, F, `if (length_in_bytes == 8) {
+        __ $5($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
       } else {
-        __ $4($dst$$FloatRegister, __ T4S, $vsrc$$FloatRegister);
-      }
+        __ $6($dst$$FloatRegister, __ T4S, $vsrc$$FloatRegister);
+      }',
+        $3, D, `__ $5($dst$$FloatRegister, $vsrc$$FloatRegister, __ D);')
     } else {
       assert(UseSVE > 0, "must be sve");
       assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-      __ $5($dst$$FloatRegister, __ S, ptrue, $vsrc$$FloatRegister);
+      __ $7($dst$$FloatRegister, __ ifelse($3, F, S, $3, D, D, $3, HF, H), ptrue, $vsrc$$FloatRegister);
     }
-    __ $6($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}')dnl
-dnl
-dnl REDUCE_MAXMIN_D($1,   $2,      $3,    $4,    $5   )
-dnl REDUCE_MAXMIN_D(type, op_name, insn1, insn2, insn3)
-define(`REDUCE_MAXMIN_D', `
-instruct reduce_$1D(vRegD dst, vRegD dsrc, vReg vsrc) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE);
-  match(Set dst ($2 dsrc vsrc));
-  effect(TEMP_DEF dst);
-  format %{ "reduce_$1D $dst, $dsrc, $vsrc" %}
-  ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      __ $3($dst$$FloatRegister, $vsrc$$FloatRegister, __ D);
-    } else {
-      assert(UseSVE > 0, "must be sve");
-      assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-      __ $4($dst$$FloatRegister, __ D, ptrue, $vsrc$$FloatRegister);
-    }
-    __ $5($dst$$FloatRegister, $dst$$FloatRegister, $dsrc$$FloatRegister);
+    __ $8($dst$$FloatRegister, $dst$$FloatRegister, $$4$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -2449,13 +2442,15 @@ dnl
 dnl REDUCE_MAXMIN_FP_PREDICATE($1,   $2,       $3,       $4,      $5,    $6   )
 dnl REDUCE_MAXMIN_FP_PREDICATE(type, is_float, arg_name, op_name, insn1, insn2)
 define(`REDUCE_MAXMIN_FP_PREDICATE', `
-instruct reduce_$1$2_masked(vReg$2 dst, vReg$2 $3, vReg vsrc, pRegGov pg) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == ifelse($2, F, T_FLOAT, T_DOUBLE));
+instruct reduce_$1$2_masked(vReg`'ifelse($2, HF, F, $2) dst, vReg`'ifelse($2, HF, F, $2) $3, vReg vsrc, pRegGov pg) %{
+  predicate(ifelse($2, HF,
+                 `UseSVE > 0',
+                 `UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == ifelse($2, F, T_FLOAT, $2, D, T_DOUBLE)'));
   match(Set dst ($4 (Binary $3 vsrc) pg));
   effect(TEMP_DEF dst);
   format %{ "reduce_$1$2_masked $dst, $$3, $pg, $vsrc" %}
   ins_encode %{
-    __ $5($dst$$FloatRegister, __ ifelse($2, F, S, D), $pg$$PRegister, $vsrc$$FloatRegister);
+    __ $5($dst$$FloatRegister, __ ifelse($2, F, S, $2, D, D, $2, HF, H), $pg$$PRegister, $vsrc$$FloatRegister);
     __ $6($dst$$FloatRegister, $dst$$FloatRegister, $$3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -2471,15 +2466,19 @@ REDUCE_MAXMIN_I_SVE(max, MaxReductionV)
 REDUCE_MAXMIN_L_NEON(max, MaxReductionV)
 REDUCE_MAXMIN_L_SVE(max, MaxReductionV)
 
+// reduction maxHF
+REDUCE_MAXMIN_FP(max, MaxReductionVHF, HF, fsrc, fmaxv, fmaxv, sve_fmaxv, fmaxh)
+
 // reduction maxF
-REDUCE_MAXMIN_F(max, MaxReductionV, fmaxp, fmaxv, sve_fmaxv, fmaxs)
+REDUCE_MAXMIN_FP(max, MaxReductionV,   F,  fsrc, fmaxp, fmaxv, sve_fmaxv, fmaxs)
 
 // reduction maxD
-REDUCE_MAXMIN_D(max, MaxReductionV, fmaxp, sve_fmaxv, fmaxd)
+REDUCE_MAXMIN_FP(max, MaxReductionV,   D,  dsrc, fmaxp, fmaxp, sve_fmaxv, fmaxd)
 
 // reduction max - predicated
 REDUCE_MAXMIN_INT_PREDICATE(max, I, iRegIorL2I, MaxReductionV)
 REDUCE_MAXMIN_INT_PREDICATE(max, L, iRegL,      MaxReductionV)
+REDUCE_MAXMIN_FP_PREDICATE(max, HF, fsrc, MaxReductionVHF, sve_fmaxv, fmaxh)
 REDUCE_MAXMIN_FP_PREDICATE(max, F, fsrc, MaxReductionV, sve_fmaxv, fmaxs)
 REDUCE_MAXMIN_FP_PREDICATE(max, D, dsrc, MaxReductionV, sve_fmaxv, fmaxd)
 
@@ -2493,15 +2492,19 @@ REDUCE_MAXMIN_I_SVE(min, MinReductionV)
 REDUCE_MAXMIN_L_NEON(min, MinReductionV)
 REDUCE_MAXMIN_L_SVE(min, MinReductionV)
 
+// reduction minHF
+REDUCE_MAXMIN_FP(min, MinReductionVHF, HF, fsrc, fminv, fminv, sve_fminv, fminh)
+
 // reduction minF
-REDUCE_MAXMIN_F(min, MinReductionV, fminp, fminv, sve_fminv, fmins)
+REDUCE_MAXMIN_FP(min, MinReductionV,   F,  fsrc, fminp, fminv, sve_fminv, fmins)
 
 // reduction minD
-REDUCE_MAXMIN_D(min, MinReductionV, fminp, sve_fminv, fmind)
+REDUCE_MAXMIN_FP(min, MinReductionV,   D,  dsrc, fminp, fminp, sve_fminv, fmind)
 
 // reduction min - predicated
 REDUCE_MAXMIN_INT_PREDICATE(min, I, iRegIorL2I, MinReductionV)
 REDUCE_MAXMIN_INT_PREDICATE(min, L, iRegL,      MinReductionV)
+REDUCE_MAXMIN_FP_PREDICATE(min, HF, fsrc, MinReductionVHF, sve_fminv, fminh)
 REDUCE_MAXMIN_FP_PREDICATE(min, F, fsrc, MinReductionV, sve_fminv, fmins)
 REDUCE_MAXMIN_FP_PREDICATE(min, D, dsrc, MinReductionV, sve_fminv, fmind)
 

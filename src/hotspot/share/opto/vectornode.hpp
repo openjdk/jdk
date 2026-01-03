@@ -1032,12 +1032,32 @@ public:
   virtual int Opcode() const;
 };
 
+//------------------------------MinReductionVHFNode--------------------------------------
+// Vector min half float as a reduction
+class MinReductionVHFNode : public ReductionNode {
+public:
+  MinReductionVHFNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
+  uint ideal_reg() const override { return Op_RegF; }
+};
+
 //------------------------------MaxReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
 class MaxReductionVNode : public ReductionNode {
 public:
   MaxReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+};
+
+//------------------------------MaxReductionVHFNode--------------------------------------
+// Vector max half float as a reduction
+class MaxReductionVHFNode : public ReductionNode {
+public:
+  MaxReductionVHFNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
+  uint ideal_reg() const override { return Op_RegF; }
 };
 
 //------------------------------CompressVNode--------------------------------------
