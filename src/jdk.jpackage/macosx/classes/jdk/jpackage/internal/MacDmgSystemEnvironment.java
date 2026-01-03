@@ -59,11 +59,11 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
         return SETFILE_KNOWN_PATHS.stream().filter(setFilePath -> {
             // Validate SetFile, if Xcode is not installed it will run, but exit with error code
             return Result.of(
-                    Executor.of(setFilePath.toString(), "-h").setQuiet(true)::executeExpectSuccess,
+                    Executor.of(setFilePath.toString(), "-h").quiet()::executeExpectSuccess,
                     IOException.class).hasValue();
         }).findFirst().or(() -> {
             // generic find attempt
-            final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile").setQuiet(true).saveFirstLineOfOutput();
+            final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile").quiet().saveFirstLineOfOutput();
 
             return Result.of(executor::executeExpectSuccess, IOException.class).flatMap(execResult -> {
                 return Result.of(() -> {

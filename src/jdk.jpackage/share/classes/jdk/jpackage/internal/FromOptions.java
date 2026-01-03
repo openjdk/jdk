@@ -202,7 +202,7 @@ final class FromOptions {
                         if (startupInfo instanceof LauncherModularStartupInfo modularStartupInfo) {
                             modularStartupInfo.moduleVersion().ifPresent(moduleVersion -> {
                                 appBuilder.version(moduleVersion);
-                                Log.verbose(I18N.format("message.module-version",
+                                Log.trace(I18N.format("message.module-version",
                                         moduleVersion, modularStartupInfo.moduleName()));
                             });
                         }

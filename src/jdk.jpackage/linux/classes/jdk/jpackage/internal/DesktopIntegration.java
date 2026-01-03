@@ -30,7 +30,6 @@ import static jdk.jpackage.internal.model.LauncherShortcut.toRequest;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +48,6 @@ import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.Logger;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.util.CompositeProxy;
 import jdk.jpackage.internal.util.Enquoter;
@@ -432,9 +430,7 @@ final class DesktopIntegration extends ShellCustomAction {
             BufferedImage bi = ImageIO.read(path.toFile());
             return Math.max(bi.getWidth(), bi.getHeight());
         } catch (IOException e) {
-            LOGGER.log(Level.ERROR, () -> {
-                return String.format("Failed to get dimensions of an image at [%s]", path);
-            }, e);
+            Log.trace(e, "Failed to get dimensions of an image at [%s]", path);
         }
         return 0;
     }
@@ -509,6 +505,4 @@ final class DesktopIntegration extends ShellCustomAction {
     private final List<DesktopIntegration> nestedIntegrations;
 
     private final Map<String, String> desktopFileData;
-
-    private final static System.Logger LOGGER = Logger.MAIN.get();
 }

@@ -47,6 +47,7 @@ import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.LauncherIconVerifier;
 import jdk.jpackage.test.LinuxHelper;
@@ -326,6 +327,7 @@ public class IconTest {
             cmd.saveConsoleOutput(true);
             cmd.setFakeRuntime();
             cmd.addArguments(extraJPackageArgs);
+            cmd.setEnabledMessageCategories(MessageCategory.RESOURCES).setDisabledMessageCategories();
         });
     }
 

@@ -21,17 +21,21 @@
  * questions.
  */
 
+import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
+import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
+
 import java.io.IOException;
 import java.nio.file.Path;
-import jdk.jpackage.test.TKit;
+import java.util.List;
+import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
+import jdk.jpackage.test.JPackageOutputValidator;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameters;
-import java.util.List;
-import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
-import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --resource-dir option. The test should set --resource-dir to point to
@@ -52,7 +56,7 @@ import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutpu
 
 public class WinResourceTest {
 
-    public WinResourceTest(String wixSource, String expectedLogMessage) {
+    public WinResourceTest(String wixSource, CannedFormattedString expectedLogMessage) {
          this.wixSource = wixSource;
          this.expectedLogMessage = expectedLogMessage;
     }
@@ -60,8 +64,10 @@ public class WinResourceTest {
     @Parameters
     public static List<Object[]> data() {
         return List.of(new Object[][]{
-            {"main.wxs", "Using custom package resource [Main WiX project file]"},
-            {"overrides.wxi", "Using custom package resource [Overrides WiX project file]"},
+            {"main.wxs", JPackageStringBundle.MAIN.cannedFormattedString(
+                    "message.using-custom-resource", "[Main WiX project file]", "main.wxs")},
+            {"overrides.wxi", JPackageStringBundle.MAIN.cannedFormattedString(
+                    "message.using-custom-resource", "[Overrides WiX project file]", "overrides.wxi")},
         });
     }
 
@@ -81,6 +87,20 @@ public class WinResourceTest {
             // Create invalid WiX source file in a resource dir.
             TKit.createTextFile(resourceDir.resolve(wixSource), List.of(
                     "any string that is an invalid WiX source file"));
+
+            // Need summary to pick WiX version.
+            // Need errors to pick WiX error messages.
+            // Need resources to pick log messages on custom resource usage.
+            cmd.setEnabledMessageCategories(
+                    MessageCategory.SUMMARY,
+                    MessageCategory.ERRORS,
+                    MessageCategory.RESOURCES).setDisabledMessageCategories();
+
+            new JPackageOutputValidator()
+                    .matchTimestamps()
+                    .stripTimestamps()
+                    .expectMatchingStrings(expectedLogMessage)
+                    .applyTo(cmd);
         })
         .addBundleVerifier((cmd, result) -> {
             // Assert jpackage picked custom main.wxs and failed as expected by
@@ -92,17 +112,12 @@ public class WinResourceTest {
                 expectedWixErrorMsg = "error WIX0104: Not a valid source file";
             }
 
-            TKit.assertTextStream(expectedLogMessage)
-                    .predicate(String::startsWith)
-                    .apply(JPackageCommand.stripTimestamps(
-                            result.getOutput().stream()).iterator());
-            TKit.assertTextStream(expectedWixErrorMsg)
-                    .apply(result.getOutput());
+            TKit.assertTextStream(expectedWixErrorMsg).apply(result.stderr());
         })
         .setExpectedExitCode(1)
         .run();
     }
 
     final String wixSource;
-    final String expectedLogMessage;
+    final CannedFormattedString expectedLogMessage;
 }

@@ -130,7 +130,7 @@ final class ToolValidator {
         String version = null;
 
         try {
-            var result = Executor.of(cmdline).setQuiet(true).saveOutput().execute();
+            var result = Executor.of(cmdline).quiet().saveOutput().execute();
             var lines = result.content();
             if (versionParser != null && minimalVersion != null) {
                 version = versionParser.apply(lines.stream());

@@ -211,9 +211,9 @@ public class SigningPackageTwoStepTest {
             }
         }
 
-        expected.ifPresent(cmd::validateOut);
+        expected.ifPresent(cmd::validateErr);
         unexpected.forEach(str -> {
-            cmd.validateOut(TKit.assertTextStream(cmd.getValue(str)).negate());
+            cmd.validateErr(TKit.assertTextStream(cmd.getValue(str)).negate());
         });
     }
 }

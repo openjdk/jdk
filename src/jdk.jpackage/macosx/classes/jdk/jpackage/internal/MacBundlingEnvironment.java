@@ -81,7 +81,7 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
                 AppImageBundleType.MAC_APP_IMAGE.label(),
                 PathUtils.normalizedAbsolutePath(env.appImageDir()));
 
-        OptionUtils.finalizeAndPrintSummary(options, pkg, Log::verbose);
+        OptionUtils.finalizeAndPrintSummary(options, pkg);
 
         buildPipeline(pkg).create().execute(env, pkg, env.appImageDir());
     }

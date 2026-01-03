@@ -78,10 +78,10 @@ public class MacSignTest {
 
         final var group = TKit.TextStreamVerifier.group();
 
-        group.add(TKit.assertTextStream(JPackageStringBundle.MAIN.cannedFormattedString(
+        group.add(TKit.assertTextStream(JPackageCommand.makeProgressWarning(
                 "message.codesign.failed.reason.app.content").getValue()).predicate(String::equals));
 
-        final var xcodeWarning = TKit.assertTextStream(JPackageStringBundle.MAIN.cannedFormattedString(
+        final var xcodeWarning = TKit.assertTextStream(JPackageCommand.makeProgressWarning(
                 "message.codesign.failed.reason.xcode.tools").getValue()).predicate(String::equals);
 
         if (!MacHelper.isXcodeDevToolsInstalled()) {
@@ -230,8 +230,8 @@ public class MacSignTest {
                  * identities without validation to signing commands, signing a .pkg installer
                  * with a name matching two signing identities succeeds.
                  */
-                new JPackageOutputValidator().stdout()
-                        .expectMatchingStrings(JPackageStringBundle.MAIN.cannedFormattedString("warning.unsigned.app.image", "pkg"))
+                new JPackageOutputValidator().stderr()
+                        .expectMatchingStrings(JPackageCommand.makeSummaryWarning("warning.unsigned.app.image", "pkg"))
                         .validateEndOfStream()
                         .applyTo(cmd);
 

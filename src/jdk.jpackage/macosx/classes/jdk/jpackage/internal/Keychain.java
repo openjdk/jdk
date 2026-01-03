@@ -72,7 +72,7 @@ record Keychain(String name) {
         // Get the current keychain list
         final List<String> cmdOutput;
         try {
-            cmdOutput = Executor.of("/usr/bin/security", "list-keychains").saveOutput(true).executeExpectSuccess().getOutput();
+            cmdOutput = Executor.of("/usr/bin/security", "list-keychains").quiet().saveOutput(true).executeExpectSuccess().stdout();
         } catch (IOException ex) {
             throw I18N.buildException().message("message.keychain.error").cause(ex).create(KeychainException::new);
         }

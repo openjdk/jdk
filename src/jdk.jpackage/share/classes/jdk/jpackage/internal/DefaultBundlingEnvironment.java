@@ -129,11 +129,11 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(app);
         Objects.requireNonNull(pipelineBuilder);
 
-        OptionUtils.finalizeAndPrintSummary(options, app, Log::verbose);
+        OptionUtils.finalizeAndPrintSummary(options, app);
 
         final var outputDir = PathUtils.normalizedAbsolutePath(OptionUtils.outputDir(options).resolve(app.appImageDirName()));
 
-        Log.verbose(I18N.getString("message.create-app-image"));
+        Log.progress(I18N.format("message.create-app-image"));
 
         IOUtils.writableOutputDir(outputDir.getParent());
 
@@ -147,7 +147,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
         pipelineBuilder.create().execute(BuildEnv.withAppImageDir(env, outputDir), app);
 
-        Log.verbose(I18N.getString("message.app-image-created"));
+        Log.progress(I18N.format("message.app-image-created"));
     }
 
     static <T extends Package> void createNativePackage(Options options,
@@ -172,7 +172,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(createPipelineBuilder);
         Objects.requireNonNull(pipelineBuilderMutatorFactory);
 
-        OptionUtils.finalizeAndPrintSummary(options, pkg, Log::verbose);
+        OptionUtils.finalizeAndPrintSummary(options, pkg);
 
         var pipelineBuilder = Objects.requireNonNull(createPipelineBuilder.apply(pkg));
 
@@ -211,7 +211,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
             throw new UncheckedIOException(ex);
         } finally {
             permanentWorkDirectory.ifPresent(workDir -> {
-                Log.verbose(I18N.format("message.debug-working-directory", workDir.toAbsolutePath()));
+                Log.progress(I18N.format("message.debug-working-directory", workDir.toAbsolutePath()));
             });
         }
     }

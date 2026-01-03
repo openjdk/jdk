@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.io.Reader;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleReference;
@@ -37,7 +36,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.model.Logger;
 
 record ModuleInfo(String name, Optional<String> version, Optional<String> mainClass, Optional<URI> location) {
 
@@ -93,14 +91,10 @@ record ModuleInfo(String name, Optional<String> version, Optional<String> mainCl
                 return Optional.empty();
             }
         } catch (IOException|IllegalArgumentException ex) {
-            LOGGER.log(Level.ERROR, () -> {
-                return String.format("Failed to read modules from [%s]", releaseFile);
-            }, ex);
+            Log.trace(ex, "Failed to read modules from [%s]", releaseFile);
             return Optional.empty();
         }
 
         return Optional.of(new ModuleInfo(moduleName, Optional.empty(), Optional.empty(), Optional.empty()));
     }
-
-    private final static System.Logger LOGGER = Logger.MAIN.get();
 }

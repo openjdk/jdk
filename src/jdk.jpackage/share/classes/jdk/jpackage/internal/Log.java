@@ -25,103 +25,59 @@
 
 package jdk.jpackage.internal;
 
-import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import jdk.jpackage.internal.log.ProgressLogger;
+import jdk.jpackage.internal.log.ResourceLogger;
+import jdk.jpackage.internal.log.StandardLogger;
+import jdk.jpackage.internal.log.TraceLogger;
 
 /**
  * Log
  *
  * General purpose logging mechanism.
  */
-public class Log {
-    public static class Logger {
-        private boolean verbose = false;
-        private PrintWriter out = null;
-        private PrintWriter err = null;
+final class Log {
 
-        // verbose defaults to true unless environment variable JPACKAGE_DEBUG
-        // is set to true.
-        // Then it is only set to true by using --verbose jpackage option
-
-        public Logger() {
-            verbose = ("true".equals(System.getenv("JPACKAGE_DEBUG")));
-        }
-
-        public void setVerbose() {
-            verbose = true;
-        }
-
-        public boolean isVerbose() {
-            return verbose;
-        }
-
-        public void setPrintWriter(PrintWriter out, PrintWriter err) {
-            this.out = out;
-            this.err = err;
-        }
-
-        public void info(String msg) {
-            if (out != null) {
-                out.println(msg);
-            }
-        }
-
-        public void fatalError(String msg) {
-            if (err != null) {
-                err.println(msg);
-            }
-        }
-
-        public void error(String msg) {
-            msg = addTimestamp(msg);
-            if (err != null) {
-                err.println(msg);
-            }
-        }
-
-        public void verbose(Throwable t) {
-            if (out != null && verbose) {
-                out.print(addTimestamp(""));
-                t.printStackTrace(out);
-            }
-        }
-
-        public void verbose(String msg) {
-            msg = addTimestamp(msg);
-            if (out != null && verbose) {
-                out.println(msg);
-            }
-        }
-
-        private String addTimestamp(String msg) {
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
-            Date time = new Date(System.currentTimeMillis());
-            return String.format("[%s] %s", sdf.format(time), msg);
-        }
+    static void trace(String format, Object... args) {
+        tracer().trace(format, args);
     }
 
-    public static void info(String msg) {
-        Globals.instance().logger().info(msg);
+    static void trace(Throwable t, String format, Object... args) {
+        tracer().trace(t, format, args);
     }
 
-    public static void fatalError(String msg) {
-        Globals.instance().logger().fatalError(msg);
+    static void trace(Throwable t) {
+        tracer().trace(t);
     }
 
-    public static void error(String msg) {
-        Globals.instance().logger().error(msg);
+    static void useResource(String localizedMsg) {
+        resourceLogger().useResource(localizedMsg);
     }
 
-    public static boolean isVerbose() {
-        return Globals.instance().logger().isVerbose();
+    static void progress(String localizedMsg) {
+        progressLogger().progress(localizedMsg);
     }
 
-    public static void verbose(String msg) {
-        Globals.instance().logger().verbose(msg);
+    static void progressWarning(Exception cause) {
+        progressLogger().progressWarning(cause);
     }
 
-    public static void verbose(Throwable t) {
-        Globals.instance().logger().verbose(t);
+    static void progressWarning(Exception cause, String localizedMsg) {
+        progressLogger().progressWarning(cause, localizedMsg);
+    }
+
+    static void progressWarning(String localizedMsg) {
+        progressLogger().progressWarning(localizedMsg);
+    }
+
+    private static TraceLogger tracer() {
+        return Globals.instance().logger(StandardLogger.TRACE_LOGGER);
+    }
+
+    private static ProgressLogger progressLogger() {
+        return Globals.instance().logger(StandardLogger.PROGRESS_LOGGER);
+    }
+
+    private static ResourceLogger resourceLogger() {
+        return Globals.instance().logger(StandardLogger.RESOURCE_LOGGER);
     }
 }

@@ -67,6 +67,7 @@ import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.SetBuilder;
+import jdk.jpackage.internal.log.LogEnvironment;
 
 /**
  * jpackage command line options
@@ -107,7 +108,15 @@ public final class StandardOption {
 
     static final OptionValue<Boolean> VERSION = auxilaryOption("version").create();
 
-    public static final OptionValue<Boolean> VERBOSE = auxilaryOption("verbose").create();
+    static final OptionValue<LogEnvironment.Builder> VERBOSE = option("verbose", LogEnvironment.Builder.class)
+            .scope(StandardBundlingOperation.values())
+            .inScope(NOT_BUILDING_APP_IMAGE)
+            .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
+            .converterExceptionFormatString("error.parameter-invalid-value")
+            .converter(LogConfigParser::valueOf)
+            .defaultOptionalValue(LogConfigParser.defaultVerbose())
+            .valuePattern("configuration")
+            .create();
 
     public static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)

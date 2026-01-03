@@ -64,8 +64,45 @@ Generic Options:
           removed upon the task completion.
   --vendor <vendor string>
           Vendor of the application
-  --verbose
-          Enables verbose output
+  --verbose [<configuration>]
+          Configures verbose output. Where
+
+          <configuration>      ::= <logger> ":" <console>
+                                 | <console>
+                                 | <logger>
+
+          <logger>             ::= "log"
+
+          <console>            ::= <console-categories>
+                                 | "!" <console-categories>
+
+          <console-categories> ::= <console-category>
+                                 | <console-category> "," <console-categories>
+
+          <console-category>   ::= "errors"
+                                 | "progress"
+                                 | "resources"
+                                 | "summary"
+                                 | "tools"
+                                 | "trace"
+                                 | "warnings"
+
+          Suppress all console output, enable logging via System.Logger API:
+              --verbose log
+          Enable all message categories in the console:
+              --verbose !
+          Enable all message categories, but "trace" and "tools" in the console:
+              --verbose !trace,tools
+          Enable "trace" and "tools" message categories in the console:
+              --verbose trace,tools
+          Enable "trace" and "tools" message categories in the console and
+          enable logging via System.Logger API:
+              --verbose log:trace,tools
+
+          If the option is specified without the value, it is equivalent to
+              --verbose !trace
+          If the option is not specified it is equivalent to
+              --verbose errors,warnings
   --version
           Print the product version to the output stream and exit.
 
