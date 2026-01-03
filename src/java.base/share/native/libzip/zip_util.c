@@ -568,7 +568,7 @@ static jlong
 readCEN(jzfile *zip, jint knownTotal)
 {
     /* Following are unsigned 32-bit */
-    jlong endpos, end64pos, cenpos, cenlen, cenoff;
+    jlong endpos, end64pos, cenpos, cenlen, cenoff, total64;
     /* Following are unsigned 16-bit */
     jint total, tablelen, i, j;
     unsigned char *cenbuf = NULL;
@@ -604,7 +604,16 @@ readCEN(jzfile *zip, jint knownTotal)
         if ((end64pos = findEND64(zip, end64buf, endpos)) != -1) {
             cenlen = ZIP64_ENDSIZ(end64buf);
             cenoff = ZIP64_ENDOFF(end64buf);
-            total = (jint)ZIP64_ENDTOT(end64buf);
+            total64 = ZIP64_ENDTOT(end64buf);
+            /* ZIP64 size, offset and total-count fields are unsigned 64-bit
+             * values. Sizes and offsets that do not fit in signed jlong
+             * (i.e., >= 2^63), or total values that do not fit in jint, are
+             * not supported and indicate a corrupt or invalid zip file.
+             */
+            if (cenlen < 0 || cenoff < 0 || total64 < 0 || total64 > INT_MAX) {
+                ZIP_FORMAT_ERROR("Zip64 END values exceed supported size");
+            }
+            total = (jint)total64;
             endpos = end64pos;
 #ifdef USE_MMAP
             endhdrlen = ZIP64_ENDHDR;
