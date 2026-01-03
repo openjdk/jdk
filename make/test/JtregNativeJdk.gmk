@@ -111,6 +111,25 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libCreationTimeHelper := -ldl
 endif
 
+# Kerberos native test library configuration
+ifeq ($(call isTargetOs, linux), true)
+  # Linux: only build if krb5 is enabled and working
+  ifeq ($(ENABLE_LIBKRB5_LINUX), true)
+    BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeCredentialCacheHelper := $(KRB5_LIBS)
+    BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libNativeCredentialCacheHelper := $(KRB5_CFLAGS)
+  else
+    # Exclude the Kerberos test library if krb5 is not available on Linux
+    BUILD_JDK_JTREG_EXCLUDE += libNativeCredentialCacheHelper.c
+  endif
+else ifeq ($(call isTargetOs, macosx), true)
+  # macOS: build with system krb5 and disable deprecation warnings
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeCredentialCacheHelper := $(KRB5_LIBS)
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libNativeCredentialCacheHelper := $(KRB5_CFLAGS) -Wno-deprecated-declarations
+else
+  # Other platforms: exclude the library
+  BUILD_JDK_JTREG_EXCLUDE += libNativeCredentialCacheHelper.c
+endif
+
 ifeq ($(ASAN_ENABLED), true)
   # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
   # default ASan options.

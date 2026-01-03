@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,24 @@
  * questions.
  */
 
-#import "sun_security_krb5_Credentials.h"
-#import <Kerberos/Kerberos.h>
-#import <string.h>
-#import <time.h>
+/*
+ * Unified Kerberos native credential cache implementation for MacOSX/Linux.
+ */
+
+#include "sun_security_krb5_Credentials.h"
+#include <string.h>
+#include <time.h>
+#include <stdarg.h>
+
+#ifdef MACOSX
+    // Mac OS X specific includes
+    #import <Kerberos/Kerberos.h>
+#elif defined(LINUX)
+    // Linux specific includes
+    #include <krb5/krb5.h>
+    #include <arpa/inet.h>
+    #include <com_err.h>
+#endif
 
 #include "jni_util.h"
 
@@ -72,7 +86,7 @@ static jobject BuildClientPrincipal(JNIEnv *env, krb5_context kcontext, krb5_pri
 static jobject BuildEncryptionKey(JNIEnv *env, krb5_keyblock *cryptoKey);
 static jobject BuildTicketFlags(JNIEnv *env, krb5_flags flags);
 static jobject BuildKerberosTime(JNIEnv *env, krb5_timestamp kerbtime);
-static jobject BuildAddressList(JNIEnv *env, krb5_address **kerbtime);
+static jobject BuildAddressList(JNIEnv *env, krb5_address **addresses);
 
 static void printiferr (errcode_t err, const char *format, ...);
 
@@ -446,9 +460,6 @@ outer_cleanup:
     return krbCreds;
 }
 
-
-#pragma mark -
-
 jobject BuildTicket(JNIEnv *env, krb5_data *encodedTicket)
 {
     // To build a Ticket, we need to make a byte array out of the EncodedTicket.
@@ -567,6 +578,10 @@ jobject BuildAddressList(JNIEnv *env, krb5_address **addresses) {
         p++;
     }
 
+    if (addressCount == 0) {
+        return NULL;
+    }
+
     jobject address_list = (*env)->NewObjectArray(env, addressCount, hostAddressClass, NULL);
 
     if (address_list == NULL) {
@@ -606,8 +621,6 @@ jobject BuildAddressList(JNIEnv *env, krb5_address **addresses) {
 
     return address_list;
 }
-
-#pragma mark - Utility methods -
 
 static void printiferr (errcode_t err, const char *format, ...)
 {
