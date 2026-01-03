@@ -60,18 +60,22 @@ public:
   bool contains(oop obj) const override;
 
   void reserve_task_queues(uint workers) override;
-  void set_old_gen_task_queues(ShenandoahObjToScanQueueSet* old_gen_queues) {
-    _old_gen_task_queues = old_gen_queues;
-  }
+
   ShenandoahObjToScanQueueSet* old_gen_task_queues() const override {
     return _old_gen_task_queues;
   }
 
   // Returns true if the young generation is configured to enqueue old
   // oops for the old generation mark queues.
-  bool is_bootstrap_cycle() {
+  bool is_bootstrap_cycle() const {
     return _old_gen_task_queues != nullptr;
   }
+
+  // Take a reference to the old task queues and reference processor
+  void prepare_for_bootstrap(ShenandoahGeneration* generation);
+
+  // Clear references to old gen marking
+  void clear_bootstrap_configuration();
 
   size_t bytes_allocated_since_gc_start() const override;
   size_t used() const override;
