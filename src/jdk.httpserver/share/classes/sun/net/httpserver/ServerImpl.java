@@ -31,6 +31,7 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpUpgradeHandler;
 import com.sun.net.httpserver.HttpsConfigurator;
 import sun.net.httpserver.HttpConnection.State;
 
@@ -899,6 +900,22 @@ class ServerImpl {
                     uc.doFilter(new HttpsExchangeImpl(tx));
                 } else {
                     uc.doFilter(new HttpExchangeImpl(tx));
+                }
+
+                // Handle protocol upgrade if requested
+                if (tx.isUpgraded()) {
+                    HttpUpgradeHandler upgradeHandler = tx.getUpgradeHandler();
+                    if (upgradeHandler != null) {
+                        try {
+                            // Transfer control to the upgrade handler with raw streams
+                            upgradeHandler.handle(rawin, rawout);
+                        } catch (IOException e) {
+                            logger.log(Level.DEBUG, "Upgrade handler exception", e);
+                        } finally {
+                            // After upgrade handler completes, close the connection
+                            closeConnection(connection);
+                        }
+                    }
                 }
 
             } catch (Exception e) {
