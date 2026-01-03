@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -556,10 +556,20 @@ const char* nearest_symbol(struct symtab* symtab, uintptr_t offset,
   if (!symtab) return NULL;
   for (; n < symtab->num_symbols; n++) {
      struct elf_symbol* sym = &(symtab->symbols[n]);
-     if (sym->name != NULL &&
-         offset >= sym->offset && offset < sym->offset + sym->size) {
-        if (poffset) *poffset = (offset - sym->offset);
-        return sym->name;
+     if (sym->name != NULL && offset >= sym->offset) {
+       // __restore_rt is special case. It is known as signal trampoline.
+       // See:
+       //   - sysdeps/unix/sysv/linux/x86_64/libc_sigaction.c in glibc
+       //   - gdb/amd64-linux-tdep.c in GDB
+       // Size of signal trampoline might be zero.
+       if (strcmp("__restore_rt", sym->name) == 0 && offset == sym->offset) {
+         if (poffset) *poffset = 0;
+         static const char *sighandler_desc = "<signal handler called>";
+         return sighandler_desc;
+       } else if (offset < sym->offset + sym->size) {
+         if (poffset) *poffset = (offset - sym->offset);
+         return sym->name;
+       }
      }
   }
   return NULL;
