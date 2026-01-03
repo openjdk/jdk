@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +134,20 @@ public final class DecimalDigits {
             p = 10 * p;
         }
         return 19 + d;
+    }
+
+    /**
+     * Determine whether the two character in str are both digits. If they are, return (str[offset] - '0') * 10 + (str[offset + 1] - '0'), otherwise return -1
+     * @param str The input LATIN1 encoded String value
+     * @param offset the offset
+     * @return If both characters are digits, return (str[offset] - '0') * 10 + (str[offset + 1] - '0'), otherwise return -1
+     */
+    public static int digit2(byte[] str, int offset) {
+        byte c0 = str[offset], c1 = str[offset + 1];
+        if (c0 >= '0' && c0 <= '9' && c1 >= '0' && c1 <= '9') {
+            return c0 * 10 + c1 - ('0' * 10 + '0');
+        }
+        return -1;
     }
 
     /**
