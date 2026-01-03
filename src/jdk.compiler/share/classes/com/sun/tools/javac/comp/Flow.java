@@ -50,6 +50,7 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.comp.ExhaustivenessComputer.ExhaustivenessResult;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
@@ -696,9 +697,18 @@ public class Flow {
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                tree.isExhaustive |= exhaustiveness.exhausts(tree.selector, tree.cases);
                 if (!tree.isExhaustive) {
-                    log.error(tree, Errors.NotExhaustiveStatement);
+                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+
+                    tree.isExhaustive = exhaustivenessResult.exhaustive();
+
+                    if (!tree.isExhaustive) {
+                        if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
+                            log.error(tree, Errors.NotExhaustiveStatement);
+                        } else {
+                            logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveStatementDetails);
+                        }
+                    }
                 }
             }
             if (!tree.hasUnconditionalPattern && !exhaustiveSwitch) {
@@ -735,14 +745,35 @@ public class Flow {
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 tree.isExhaustive = true;
             } else {
-                tree.isExhaustive = exhaustiveness.exhausts(tree.selector, tree.cases);
+                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+
+                tree.isExhaustive = exhaustivenessResult.exhaustive();
+
+                if (!tree.isExhaustive) {
+                    if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
+                        log.error(tree, Errors.NotExhaustive);
+                    } else {
+                        logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveDetails);
+                    }
+                }
             }
 
-            if (!tree.isExhaustive) {
-                log.error(tree, Errors.NotExhaustive);
-            }
             alive = prevAlive;
             alive = alive.or(resolveYields(tree, prevPendingExits));
+        }
+
+        private void logNotExhaustiveError(DiagnosticPosition pos,
+                                           ExhaustivenessResult exhaustivenessResult,
+                                           Error errorKey) {
+            List<JCDiagnostic> details =
+                    exhaustivenessResult.notExhaustiveDetails()
+                                       .stream()
+                                       .sorted((pd1, pd2) -> pd1.toString().compareTo(pd2.toString()))
+                                       .map(detail -> diags.fragment(Fragments.NotExhaustiveDetail(detail)))
+                                       .collect(List.collector());
+            JCDiagnostic main = diags.error(null, log.currentSource(), pos, errorKey);
+            JCDiagnostic d = new JCDiagnostic.MultilineDiagnostic(main, details);
+            log.report(d);
         }
 
         public void visitTry(JCTry tree) {
