@@ -929,6 +929,11 @@ final class Finished {
                 }
             }
 
+            if (chc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "FINISHED messages must align with a record boundary");
+            }
+
             FinishedMessage fm = new FinishedMessage(chc, message);
             if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
@@ -1070,6 +1075,11 @@ final class Finished {
                     throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                             "Unexpected Finished handshake message");
                 }
+            }
+
+            if (shc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "FINISHED messages must align with a record boundary");
             }
 
             FinishedMessage fm = new FinishedMessage(shc, message);
