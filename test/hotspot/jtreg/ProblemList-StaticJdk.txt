@@ -1,4 +1,5 @@
 # Dynamically link with JDK/VM native libraries
+gtest/CheckShuffledGtest.java                           8356201 generic-all
 gtest/GTestWrapper.java                                 8356201 generic-all
 gtest/LargePageGtests.java#use-large-pages              8356201 generic-all
 gtest/LargePageGtests.java#use-large-pages-1G           8356201 generic-all
