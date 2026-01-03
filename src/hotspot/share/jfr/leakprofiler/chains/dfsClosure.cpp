@@ -35,6 +35,8 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/stack.inline.hpp"
 
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 
@@ -48,6 +50,7 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
   // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
   start_edge->pointee()->oop_iterate(&dfs);
+  dfs.drain_probe_stack();
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
@@ -60,52 +63,91 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   dfs._max_depth = 1;
   RootSetClosure<DFSClosure> rs(&dfs);
   rs.process();
+  dfs.drain_probe_stack();
 
   // Depth-first search
   dfs._max_depth = max_dfs_depth;
   dfs._ignore_root_set = true;
   rs.process();
+  dfs.drain_probe_stack();
 }
 
 DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
-  _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
+  _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false),
+  _probe_stack(MIN2(256UL, max_dfs_depth)) {
 }
 
-void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
-  assert(pointee != nullptr, "invariant");
-  assert(!reference.is_null(), "invariant");
+#ifdef ASSERT
+DFSClosure::~DFSClosure() {
+  assert(_probe_stack.is_empty() || GranularTimer::is_finished(),
+         "Should have drained the probe stack");
+}
+#endif // ASSERT
 
-  if (GranularTimer::is_finished()) {
-    return;
-  }
+void DFSClosure::drain_probe_stack() {
 
-  if (_depth == 0 && _ignore_root_set) {
-    // Root set is already marked, but we want
-    // to continue, so skip is_marked check.
-    assert(_mark_bits->is_marked(pointee), "invariant");
-    _reference_stack[_depth] = reference;
-  } else {
-    if (_mark_bits->is_marked(pointee)) {
-      return;
+  while (!_probe_stack.is_empty() &&
+         !GranularTimer::is_finished()) {
+
+    const ProbeStackItem psi = _probe_stack.pop();
+
+    const UnifiedOopRef reference = psi.r;
+    assert(!reference.is_null(), "invariant");
+    const oop pointee = reference.dereference();
+    assert(pointee != nullptr, "invariant");
+
+    _depth = psi.depth;
+
+    if (_depth == 0 && _ignore_root_set) {
+      // Root set is already marked, but we want
+      // to continue, so skip is_marked check.
+      assert(_mark_bits->is_marked(pointee), "invariant");
+      _reference_stack[_depth] = reference;
+    } else {
+      if (_mark_bits->is_marked(pointee)) {
+        continue;
+      }
+      _mark_bits->mark_obj(pointee);
+      _reference_stack[_depth] = reference;
+      // is the pointee a sample object?
+      if (pointee->mark().is_marked()) {
+        add_chain();
+      }
     }
-    _mark_bits->mark_obj(pointee);
-    _reference_stack[_depth] = reference;
-    // is the pointee a sample object?
-    if (pointee->mark().is_marked()) {
-      add_chain();
+    assert(_max_depth >= 1, "invariant");
+    if (_depth < _max_depth - 1) {
+      _depth++; // increase range for do_oop() to pick up
+
+      if (pointee->is_objArray()) {
+        objArrayOop pointee_oa = (objArrayOop)pointee;
+        const int len = pointee_oa->length();
+        // since our stack items are larger than those of GC marking stacks,
+        // we use a smaller stride
+        const int stridelen = MAX2((uintx)1, ObjArrayMarkingStride / 2);
+        const int begidx = psi.chunk * stridelen;
+        const int endidx = MIN2(len, (psi.chunk + 1) * stridelen);
+        if (endidx > begidx) {
+          if (endidx < len) {
+            ProbeStackItem psi2 = psi;
+            psi2.chunk ++;
+            _probe_stack.push(psi2);
+tty->print_cr("adding cont task %u %d", psi2.depth, psi2.chunk);
+          }
+          pointee_oa->oop_iterate_range(this, begidx, endidx);
+        }
+      } else {
+        pointee->oop_iterate(this);
+      }
+
+      assert(_depth > 0, "invariant");
+      _depth--;
     }
-  }
-  assert(_max_depth >= 1, "invariant");
-  if (_depth < _max_depth - 1) {
-    _depth++;
-    pointee->oop_iterate(this);
-    assert(_depth > 0, "invariant");
-    _depth--;
   }
 }
 
 void DFSClosure::add_chain() {
+
   const size_t array_length = _depth + 2;
 
   ResourceMark rm;
@@ -135,7 +177,8 @@ void DFSClosure::do_oop(oop* ref) {
   assert(is_aligned(ref, HeapWordSize), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
   if (pointee != nullptr) {
-    closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
+    ProbeStackItem psi { UnifiedOopRef::encode_in_heap(ref), checked_cast<unsigned>(_depth), 0 };
+    _probe_stack.push(psi);
   }
 }
 
@@ -144,7 +187,8 @@ void DFSClosure::do_oop(narrowOop* ref) {
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
   if (pointee != nullptr) {
-    closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
+    ProbeStackItem psi { UnifiedOopRef::encode_in_heap(ref), checked_cast<unsigned>(_depth), 0 };
+    _probe_stack.push(psi);
   }
 }
 
@@ -152,5 +196,6 @@ void DFSClosure::do_root(UnifiedOopRef ref) {
   assert(!ref.is_null(), "invariant");
   const oop pointee = ref.dereference();
   assert(pointee != nullptr, "invariant");
-  closure_impl(ref, pointee);
+  ProbeStackItem psi { ref, checked_cast<unsigned>(_depth), 0 };
+  _probe_stack.push(psi);
 }
