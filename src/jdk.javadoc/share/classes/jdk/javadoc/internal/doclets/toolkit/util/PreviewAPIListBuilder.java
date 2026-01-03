@@ -25,9 +25,10 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
+import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.NoteTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
-import com.sun.source.doctree.UnknownInlineTagTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -145,9 +146,9 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
             CommentHelper ch = utils.getCommentHelper(element);
             if (ch.dcTree != null) {
                 var jep = ch.dcTree.getFullBody().stream()
-                        .filter(dt -> dt.getKind() == DocTree.Kind.UNKNOWN_INLINE_TAG)
-                        .map(dt -> (UnknownInlineTagTree) dt)
-                        .filter(t -> previewNoteTag.equals(t.getTagName()) && !t.getContent().isEmpty())
+                        .filter(dt -> dt.getKind() == DocTree.Kind.NOTE)
+                        .map(dt -> (NoteTree) dt)
+                        .filter(t -> previewNoteTag.equals(t.getTagName()))
                         .map(this::findJEP)
                         .filter(Objects::nonNull)
                         .findFirst();
@@ -182,17 +183,23 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
         return elementNotes;
     }
 
-    private JEP findJEP(UnknownInlineTagTree tag) {
-        var content = tag.getContent().toString().trim().split("\\s+", 2);
-        try {
-            var jnum = Integer.parseInt(content[0]);
-            for (var jep : jeps.values()) {
-                if (jep.number == jnum) {
-                    return jep;
+    private JEP findJEP(NoteTree tag) {
+        var jepAttr = tag.getAttributes().stream()
+                .filter(dt -> dt.getKind() == DocTree.Kind.ATTRIBUTE)
+                .map(t -> (AttributeTree) t)
+                .filter(attr -> "jep".equalsIgnoreCase(attr.getName().toString()))
+                .findFirst();
+        if (jepAttr.isPresent()) {
+            try {
+                var jnum = Integer.parseInt(jepAttr.get().getValue().toString());
+                for (var jep : jeps.values()) {
+                    if (jep.number == jnum) {
+                        return jep;
+                    }
                 }
+            } catch (NumberFormatException nfe) {
+                // print warning?
             }
-        } catch (NumberFormatException nfe) {
-            // print warning?
         }
         return null;
     }
