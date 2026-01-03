@@ -1,0 +1,161 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package com.sun.tools.javac.file;
+
+import java.io.IOException;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import javax.tools.FileObject;
+
+import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
+
+/**
+ * Support for legacy ct.properties.
+ *
+ * This interface is used:
+ *
+ * - when compiling with --source 8 to fill in (JDK 8) profile information,
+ * mark classes in certain non-API packages as proprietary (which then leads to
+ * the "sun.proprietary" warning when used), and hide other non-API packages.
+ * For the source data see:
+ * src/jdk.compiler/share/classes/com/sun/tools/javac/resources/ct.properties
+ *
+ * - when compiling with --source >8, this interface is only used to determine
+ * if a file supports the proprietary flag (i.e. is on the default system path
+ * of the default filemanager, and the proprietary flag is not disabled). The
+ * proprietary flag is automatically filled for all classes in the jdk.unsupported
+ * module.
+ *
+ * The --source above may be explicit or implicit.
+ *
+ * When compiling with --release N, this legacy support is not directly used,
+ * as the relevant information is accessible from the lib/ct.sym file that
+ * contains the historical API record.
+ */
+public interface LegacyCtPropertiesAccess {
+
+    public static LegacyCtPropertiesAccess NOOP = new LegacyCtPropertiesAccess() {
+        @Override
+        public boolean supportsLegacyFlags(FileObject fo) {
+            return false;
+        }
+
+        @Override
+        public LegacyCtPropertiesInfo getInfo(CharSequence packge) {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+    };
+
+    /**
+     * {@return true iff legacy flags may be needed for the given file.}
+     */
+    public boolean supportsLegacyFlags(FileObject fo);
+
+    /**
+     * {@return The legacy information for the given package.}
+     */
+    public LegacyCtPropertiesInfo getInfo(CharSequence packge) throws IOException;
+
+    /**
+     * The info that used to be in ct.sym for classes in a package.
+     */
+    public static class LegacyCtPropertiesInfo {
+        /**
+         * The classes in this package are internal and not visible.
+         */
+        public final boolean hidden;
+        /**
+         * The classes in this package are proprietary and will generate a warning.
+         */
+        public final boolean proprietary;
+        /**
+         * The minimum profile in which classes in this package are available.
+         */
+        public final String minProfile;
+
+        private LegacyCtPropertiesInfo(boolean hidden, boolean proprietary, String minProfile) {
+            this.hidden = hidden;
+            this.proprietary = proprietary;
+            this.minProfile = minProfile;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("CtSym[");
+            boolean needSep = false;
+            if (hidden) {
+                sb.append("hidden");
+                needSep = true;
+            }
+            if (proprietary) {
+                if (needSep) sb.append(",");
+                sb.append("proprietary");
+                needSep = true;
+            }
+            if (minProfile != null) {
+                if (needSep) sb.append(",");
+                sb.append(minProfile);
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+
+        static LegacyCtPropertiesInfo createLegacyCtPropertiesInfo(RelativeDirectory dir) {
+            if (dir.path.isEmpty())
+                return LegacyCtPropertiesInfo.EMPTY;
+            // It's a side-effect of the default build rules that ct.properties
+            // ends up as a resource bundle.
+            if (ctBundle == null) {
+                final String bundleName = "com.sun.tools.javac.resources.ct";
+                ctBundle = ResourceBundle.getBundle(bundleName);
+            }
+            try {
+                String attrs = ctBundle.getString(dir.path.replace('/', '.') + '*');
+                boolean hidden = false;
+                boolean proprietary = false;
+                String minProfile = null;
+                for (String attr: attrs.split(" +", 0)) {
+                    switch (attr) {
+                        case "hidden":
+                            hidden = true;
+                            break;
+                        case "proprietary":
+                            proprietary = true;
+                            break;
+                        default:
+                            minProfile = attr;
+                    }
+                }
+                return new LegacyCtPropertiesInfo(hidden, proprietary, minProfile);
+            } catch (MissingResourceException e) {
+                return LegacyCtPropertiesInfo.EMPTY;
+            }
+        }
+
+        private static ResourceBundle ctBundle;
+
+        private static final LegacyCtPropertiesInfo EMPTY = new LegacyCtPropertiesInfo(false, false, null);
+    }
+}
