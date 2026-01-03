@@ -131,12 +131,6 @@ typedef union jvalue {
     jobject  l;
 } jvalue;
 
-struct _jfieldID;
-typedef struct _jfieldID *jfieldID;
-
-struct _jmethodID;
-typedef struct _jmethodID *jmethodID;
-
 /* Return values from jobjectRefType */
 typedef enum _jobjectType {
      JNIInvalidRefType    = 0,
@@ -144,6 +138,12 @@ typedef enum _jobjectType {
      JNIGlobalRefType     = 2,
      JNIWeakGlobalRefType = 3
 } jobjectRefType;
+
+struct _jfieldID;
+typedef struct _jfieldID *jfieldID;
+
+struct _jmethodID;
+typedef struct _jmethodID *jmethodID;
 
 
 #endif /* JNI_TYPES_ALREADY_DEFINED_IN_JNI_MD_H */
