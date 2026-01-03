@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6251738 8226279 8297802 8305407
+ * @bug 6251738 8226279 8297802 8305407 8309748
  * @summary JDK-8226279 javadoc should support a new at-spec tag
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -343,16 +343,15 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("external-specs.html", true,
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
-                    <button id="external-specs-tab0" role="tab" aria-selected="true" aria-controls="external-specs.tabpanel" \
-                    tabindex="0" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs', 2)" \
-                    class="active-table-tab">All Specifications</button>\
-                    <button id="external-specs-tab1" role="tab" aria-selected="false" aria-controls="external-specs.tabpanel" \
-                    tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab1', 2)" \
-                    class="table-tab">example.com</button>\
-                    <button id="external-specs-tab2" role="tab" aria-selected="false" aria-controls="external-specs.tabpanel" \
-                    tabindex="-1" onkeydown="switchTab(event)" onclick="show('external-specs', 'external-specs-tab2', 2)" \
-                    class="table-tab">example.net</button></div>
+                    <label for="specs-by-domain">Show specifications by host name:</label> <select id="specs-by-domain">
+                    <option value>All host names</option>
+                    <option value="1">example.com</option>
+                    <option value="2">example.net</option>
+                    </select>
+                    <div id="external-specs">
+                    <div class="table-tabs">
+                    <div class="caption"><span>External Specifications</span></div>
+                    </div>
                     <div id="external-specs.tabpanel" role="tabpanel" aria-labelledby="external-specs-tab0">
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Specification</div>
@@ -369,7 +368,25 @@ public class TestSpecTag extends JavadocTester {
                     <ul class="ref-list">
                     <li><code><a href="p/C.html#example-2">class p.C</a></code></li>
                     </ul>
-                    </div>""");
+                    </div>""",
+                """
+                    <script type="text/javascript">let select = document.getElementById('specs-by-domain');
+                    select.addEventListener("change", selectHost);
+                    addEventListener("pageshow", selectHost);
+                    function selectHost() {
+                        const selectedClass = select.value ? "external-specs-tab" + select.value : "external-specs";
+                        let tabPanel = document.getElementById("external-specs.tabpanel");
+                        let count = 0;
+                        tabPanel.querySelectorAll("div.external-specs").forEach(function(elem) {
+                            elem.style.display = elem.classList.contains(selectedClass) ? "" : "none";
+                            if (elem.style.display === "") {
+                                let isEvenRow = count++ % 4 < 2;
+                                toggleStyle(elem.classList, isEvenRow, evenRowColor, oddRowColor);
+                            }
+                        });
+                    }
+                    selectHost();
+                    </script>""");
     }
 
     @Test
