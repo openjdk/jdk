@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::Node*
 ConcurrentHashTable<CONFIG, MT>::
   Node::next() const
 {
-  return AtomicAccess::load_acquire(&_next);
+  return _next.load_acquire();
 }
 
 // Bucket
@@ -72,19 +72,26 @@ inline typename ConcurrentHashTable<CONFIG, MT>::Node*
 ConcurrentHashTable<CONFIG, MT>::
   Bucket::first_raw() const
 {
-  return AtomicAccess::load_acquire(&_first);
+  return _first.load_acquire();
 }
 
 template <typename CONFIG, MemTag MT>
 inline void ConcurrentHashTable<CONFIG, MT>::
   Bucket::release_assign_node_ptr(
-    typename ConcurrentHashTable<CONFIG, MT>::Node* const volatile * dst,
+    const Atomic<typename ConcurrentHashTable<CONFIG, MT>::Node*>* dst,
     typename ConcurrentHashTable<CONFIG, MT>::Node* node) const
 {
   // Due to this assert this methods is not static.
   assert(is_locked(), "Must be locked.");
-  Node** tmp = (Node**)dst;
-  AtomicAccess::release_store(tmp, clear_set_state(node, *dst));
+  Atomic<Node*>* tmp = const_cast<Atomic<Node*>*>(dst);
+  tmp->release_store(clear_set_state(node, dst->load_relaxed()));
+}
+
+template <typename CONFIG, MemTag MT>
+inline void ConcurrentHashTable<CONFIG, MT>::
+  Bucket::assign(const Bucket& bucket)
+{
+  _first.store_relaxed(bucket._first.load_relaxed());
 }
 
 template <typename CONFIG, MemTag MT>
@@ -93,7 +100,7 @@ ConcurrentHashTable<CONFIG, MT>::
   Bucket::first() const
 {
   // We strip the states bit before returning the ptr.
-  return clear_state(AtomicAccess::load_acquire(&_first));
+  return clear_state(_first.load_acquire());
 }
 
 template <typename CONFIG, MemTag MT>
@@ -134,9 +141,9 @@ inline void ConcurrentHashTable<CONFIG, MT>::
      typename ConcurrentHashTable<CONFIG, MT>::Node* node)
 {
   assert(is_locked(), "Must be locked.");
-  Node* const volatile * ret = first_ptr();
-  while (clear_state(*ret) != nullptr) {
-    ret = clear_state(*ret)->next_ptr();
+  const Atomic<Node*>* ret = first_ptr();
+  while (clear_state(ret->load_relaxed()) != nullptr) {
+    ret = clear_state(ret->load_relaxed())->next_ptr();
   }
   release_assign_node_ptr(ret, node);
 }
@@ -150,7 +157,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   if (is_locked()) {
     return false;
   }
-  if (AtomicAccess::cmpxchg(&_first, expect, node) == expect) {
+  if (_first.compare_exchange(expect, node) == expect) {
     return true;
   }
   return false;
@@ -165,7 +172,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   }
   // We will expect a clean first pointer.
   Node* tmp = first();
-  if (AtomicAccess::cmpxchg(&_first, tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
+  if (_first.compare_exchange(tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
     return true;
   }
   return false;
@@ -178,7 +185,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   assert(is_locked(), "Must be locked.");
   assert(!have_redirect(),
          "Unlocking a bucket after it has reached terminal state.");
-  AtomicAccess::release_store(&_first, clear_state(first()));
+  _first.release_store(clear_state(first()));
 }
 
 template <typename CONFIG, MemTag MT>
@@ -186,7 +193,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   Bucket::redirect()
 {
   assert(is_locked(), "Must be locked.");
-  AtomicAccess::release_store(&_first, set_state(_first, STATE_REDIRECT_BIT));
+  _first.release_store(set_state(_first.load_relaxed(), STATE_REDIRECT_BIT));
 }
 
 // InternalTable
@@ -413,8 +420,8 @@ inline void ConcurrentHashTable<CONFIG, MT>::
     bucket->lock();
 
     size_t odd_index = even_index + _table->_size;
-    _new_table->get_buckets()[even_index] = *bucket;
-    _new_table->get_buckets()[odd_index] = *bucket;
+    _new_table->get_buckets()[even_index].assign(*bucket);
+    _new_table->get_buckets()[odd_index].assign(*bucket);
 
     // Moves lockers go to new table, where they will wait until unlock() below.
     bucket->redirect(); /* Must release stores above */
@@ -445,7 +452,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
 {
   Bucket* bucket = get_bucket_locked(thread, lookup_f.get_hash());
   assert(bucket->is_locked(), "Must be locked.");
-  Node* const volatile * rem_n_prev = bucket->first_ptr();
+  const Atomic<Node*>* rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
   while (rem_n != nullptr) {
     if (lookup_f.equals(rem_n->value())) {
@@ -534,7 +541,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
 
   size_t dels = 0;
   Node* ndel[StackBufferSize];
-  Node* const volatile * rem_n_prev = bucket->first_ptr();
+  const Atomic<Node*>* rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
   while (rem_n != nullptr) {
     if (lookup_f.is_dead(rem_n->value())) {
@@ -643,8 +650,8 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
     return false;
   }
   Node* delete_me = nullptr;
-  Node* const volatile * even = new_table->get_bucket(even_index)->first_ptr();
-  Node* const volatile * odd = new_table->get_bucket(odd_index)->first_ptr();
+  const Atomic<Node*>* even = new_table->get_bucket(even_index)->first_ptr();
+  const Atomic<Node*>* odd = new_table->get_bucket(odd_index)->first_ptr();
   while (aux != nullptr) {
     bool dead_hash = false;
     size_t aux_hash = CONFIG::get_hash(*aux->value(), &dead_hash);
@@ -742,11 +749,11 @@ inline void ConcurrentHashTable<CONFIG, MT>::
     b_old_even->lock();
     b_old_odd->lock();
 
-    _new_table->get_buckets()[bucket_it] = *b_old_even;
+    _new_table->get_buckets()[bucket_it].assign(*b_old_even);
 
     // Put chains together.
     _new_table->get_bucket(bucket_it)->
-      release_assign_last_node_next(*(b_old_odd->first_ptr()));
+      release_assign_last_node_next(b_old_odd->first_ptr()->load_relaxed());
 
     b_old_even->redirect();
     b_old_odd->redirect();
@@ -981,7 +988,7 @@ inline size_t ConcurrentHashTable<CONFIG, MT>::
                      size_t num_del, Node** ndel, GrowableArrayCHeap<Node*, MT>& extra)
 {
   size_t dels = 0;
-  Node* const volatile * rem_n_prev = bucket->first_ptr();
+  const Atomic<Node*>* rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
   while (rem_n != nullptr) {
     if (eval_f(rem_n->value())) {
