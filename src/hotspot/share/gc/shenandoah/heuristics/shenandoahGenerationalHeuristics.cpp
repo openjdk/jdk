@@ -146,7 +146,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
         }
       }
     } else if (region->is_trash()) {
-      // Count in just trashed collection set, during coalesced CM-with-UR
+      // Count in just trashed humongous continuations
       immediate_regions++;
       immediate_garbage += garbage;
     }
