@@ -559,7 +559,9 @@ but you will most likely need to install developer packages.</p>
 <p>For apt-based distributions (Debian, Ubuntu, etc), try this:</p>
 <pre><code>sudo apt-get install build-essential autoconf</code></pre>
 <p>For rpm-based distributions (Fedora, Red Hat, etc), try this:</p>
-<pre><code>sudo yum groupinstall &quot;Development Tools&quot;</code></pre>
+<pre><code>sudo yum group install development-tools</code></pre>
+or
+<pre><code>sudo dnf group install development-tools</code></pre>
 <p>For Alpine Linux, aside from basic tooling, install the GNU versions
 of some programs:</p>
 <pre><code>sudo apk add build-base bash grep zip</code></pre>
