@@ -160,6 +160,10 @@ public class MainTest extends JUnitAdapter {
     }
 
     private static Collection<TestSpec> testOutput() {
+
+        // Non-empty directory
+        var invalidTempValue = Path.of(System.getProperty("java.home")).toString();
+
         return Stream.of(
                 // Print the tool version
                 build().expectShortHelp(),
@@ -180,7 +184,23 @@ public class MainTest extends JUnitAdapter {
                 // Invalid command line requesting to print the version of the tool.
                 // Additional error messages may be printed if the default bundling operation
                 // can not be identified; don't verify these errors in the output.
-                build().args("foo", "--version").stderrMatchType(OutputMatchType.STARTS_WITH).expectErrors(I18N.format("error.non-option-arguments", 1))
+                build().args("foo", "--version").stderrMatchType(OutputMatchType.STARTS_WITH).expectErrors(I18N.format("error.non-option-arguments", 1)),
+                // Should print two errors: one for the invalid value of the "--type" option
+                // and another for the invalid value of the "--verbose" option.
+                build().args("--temp", invalidTempValue, "--verbose", "bar").expectErrors(
+                        I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp"),
+                        I18N.format("error.parameter-invalid-value", "bar", "--verbose")),
+                build().args("--verbose", "bar", "--temp", invalidTempValue).expectErrors(
+                        I18N.format("error.parameter-invalid-value", "bar", "--verbose"),
+                        I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp")),
+                // This is just for the coverage.
+                build().args("--verbose", "errors", "--temp", invalidTempValue).expectErrors(
+                        I18N.format("error.parameter-not-empty-directory", invalidTempValue, "--temp")),
+                // Silent failure.
+                build().args("--verbose", "", "--temp", invalidTempValue).expectErrorExitCode(),
+                // If the value of the "--type" option is invalid, this is the only reported error.
+                build().args("--type", "foo", "--verbose", "bar").expectErrors(
+                        I18N.format("ERR_InvalidInstallerType", "foo"))
         ).map(TestSpec.Builder::create).toList();
     }
 

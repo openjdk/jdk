@@ -43,13 +43,6 @@ interface BuildEnv {
     Path buildRoot();
 
     /**
-     * Returns <code>true</code> if the build should be verbose output.
-     *
-     * @return <code>true</code> if the build should be verbose output
-     */
-    boolean verbose();
-
-    /**
      * Returns the path of the resource directory or an empty {@link Optional}
      * instance if none is configured with the build.
      *
@@ -108,15 +101,25 @@ interface BuildEnv {
         return ((Internal.DefaultBuildEnv)env).copyWithAppImageLayout(appImageLayout);
     }
 
-    static BuildEnv create(Path buildRoot, Optional<Path> resourceDir, boolean verbose,
-            Class<?> resourceLocator, AppImageLayout appImageLayout) {
-        return new Internal.DefaultBuildEnv(buildRoot, resourceDir, verbose,
-                resourceLocator, appImageLayout);
+    static BuildEnv create(
+            Path buildRoot,
+            Optional<Path> resourceDir,
+            Class<?> resourceLocator,
+            AppImageLayout appImageLayout) {
+
+        return new Internal.DefaultBuildEnv(
+                buildRoot,
+                resourceDir,
+                resourceLocator,
+                appImageLayout);
     }
 
     static final class Internal {
-        private record DefaultBuildEnv(Path buildRoot, Optional<Path> resourceDir,
-                boolean verbose, Class<?> resourceLocator,
+
+        private record DefaultBuildEnv(
+                Path buildRoot,
+                Optional<Path> resourceDir,
+                Class<?> resourceLocator,
                 AppImageLayout appImageLayout) implements BuildEnv {
 
             DefaultBuildEnv {
@@ -131,7 +134,7 @@ interface BuildEnv {
             }
 
             DefaultBuildEnv copyWithAppImageLayout(AppImageLayout v) {
-                return new DefaultBuildEnv(buildRoot, resourceDir, verbose, resourceLocator, v);
+                return new DefaultBuildEnv(buildRoot, resourceDir, resourceLocator, v);
             }
 
             @Override

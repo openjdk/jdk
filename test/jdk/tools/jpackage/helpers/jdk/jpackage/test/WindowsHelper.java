@@ -43,6 +43,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
@@ -241,21 +242,39 @@ public class WindowsHelper {
 
     public enum WixType {
         WIX3,
-        WIX4
+        WIX4,
+        ;
+
+        public String buildTool() {
+            switch (this) {
+                case WIX3 -> {
+                    return "light.exe";
+                }
+                case WIX4 -> {
+                    return "wix.exe";
+                }
+                default -> {
+                    throw new AssertionError();
+                }
+            }
+        }
     }
 
     public static WixType getWixTypeFromVerboseJPackageOutput(Executor.Result result) {
-        return result.getOutput().stream().map(str -> {
-            if (str.contains("[light.exe]")) {
+
+        var summaryWixVersion = JPackageStringBundle.MAIN.cannedFormattedString(
+                "summary.property.wix-version").getValue() + ": ";
+
+        return result.stdout().stream().filter(str -> {
+            return str.startsWith(summaryWixVersion);
+        }).findFirst().map(str -> {
+            var ver = str.substring(summaryWixVersion.length());
+            if (DottedVersion.compareComponents(DottedVersion.lazy(ver), DottedVersion.greedy("4.0")) < 0) {
                 return WixType.WIX3;
-            } else if (str.contains("[wix.exe]")) {
-                return WixType.WIX4;
             } else {
-                return null;
+                return WixType.WIX4;
             }
-        }).filter(Objects::nonNull).reduce((a, b) -> {
-            throw new IllegalArgumentException("Invalid input: multiple invocations of WiX tools");
-        }).orElseThrow(() -> new IllegalArgumentException("Invalid input: no invocations of WiX tools"));
+        }).orElseThrow(() -> new IllegalArgumentException("Invalid input: no WiX version detected"));
     }
 
     static Optional<Path> toShortPath(Path path) {

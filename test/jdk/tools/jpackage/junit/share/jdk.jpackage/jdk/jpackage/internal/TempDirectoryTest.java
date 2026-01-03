@@ -25,7 +25,6 @@ package jdk.jpackage.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,10 +50,13 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.cli.LogConfigParser.MessageCategory;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardOption;
+import jdk.jpackage.internal.log.LogEnvironment;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.RetryExecutor;
+import jdk.jpackage.internal.util.SetBuilder;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.PathDeletionPreventer;
@@ -155,10 +157,22 @@ public class TempDirectoryTest {
     private void test_close_impl(CloseType closeType, Path root) throws IOException {
         var logSink = new StringWriter();
         var logPrintWriter = new PrintWriter(logSink, true);
-        Globals.instance().loggerOutputStreams(logPrintWriter, logPrintWriter);
-        if (closeType.isVerbose()) {
-            Globals.instance().loggerVerbose();
-        }
+        Globals.instance().logEnv(LogEnvironment.build()
+                .out(logPrintWriter)
+                .err(logPrintWriter)
+                .mutate(logEnvBuilder -> {
+                    SetBuilder.<MessageCategory>build(MessageCategory.values())
+                            .remove(MessageCategory.SYSTEM_LOGGER)
+                            .mutate(b -> {
+                                if (!closeType.isVerbose()) {
+                                    b.remove(MessageCategory.WARNINGS);
+                                }
+                            })
+                            .create()
+                            .forEach(messageCategory -> {
+                                messageCategory.applyTo(logEnvBuilder);
+                            });
+                }).create());
 
         final var workDir = root.resolve("workdir");
         Files.createDirectories(workDir);
@@ -214,13 +228,13 @@ public class TempDirectoryTest {
         }
 
         logPrintWriter.flush();
-        var logMessages = new BufferedReader(new StringReader(logSink.toString())).lines().toList();
+        var logLines = new BufferedReader(new StringReader(logSink.toString())).lines().toList();
 
         assertTrue(Files.isDirectory(root));
 
         if (closeType.isSuccess()) {
             assertFalse(Files.exists(tempDir.path()));
-            assertEquals(List.of(), logMessages);
+            assertEquals(List.of(), logLines);
         } else {
             assertTrue(Files.isDirectory(tempDir.path()));
             assertTrue(Files.exists(leftoverPath));
@@ -238,12 +252,17 @@ public class TempDirectoryTest {
                     throw new AssertionError();
                 }
             }
-            assertEquals(List.of(I18N.format(errMessage, leftoverPath)), logMessages.subList(0, 1));
 
             if (closeType.isVerbose()) {
-                // Check the log contains a stacktrace
-                assertNotEquals(1, logMessages.size());
+                assertEquals(2, logLines.size());
+                assertEquals(List.of(I18N.format("progress.warning-header", I18N.format(errMessage, leftoverPath))), logLines.subList(0, 1));
+                assertTrue(logLines.get(1).startsWith(I18N.format("progress.warning-header", "")), () -> {
+                    return String.format("Check [%s] starts with [%s]", logLines.get(1), I18N.format("progress.warning-header", ""));
+                });
+            } else {
+                assertEquals(List.of(), logLines);
             }
+
             FileUtils.deleteRecursive(tempDir.path());
         }
     }

@@ -28,7 +28,6 @@ import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.System.Logger.Level;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,7 +51,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.Logger;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import org.w3c.dom.Document;
@@ -178,7 +176,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
             IOUtils.copyFile(licenseFile, destFile);
 
             RtfConverter.createSimple(licenseFile).ifPresent(toConsumer(rtfConverter -> {
-                LOGGER.log(Level.TRACE, "Convert a copy of the license file [%s] to RTF", licenseFile);
+                Log.trace("Convert a copy of the license file [%s] to RTF", licenseFile);
                 destFile.toFile().setWritable(true);
                 rtfConverter.convert(destFile);
             }));
@@ -191,7 +189,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
 
         final var msiOut = outputDir.resolve(pkg.packageFileNameWithSuffix());
 
-        Log.verbose(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
+        Log.progress(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
 
         final var wixVars = createWixVars();
 
@@ -253,7 +251,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
                                 custom.getFileName().toString())))
-                .peek(custom -> Log.verbose(I18N.format(
+                .peek(custom -> Log.useResource(I18N.format(
                         "message.using-custom-resource", String.format("[%s]",
                                 I18N.getString("resource.wxl-file")),
                         custom.getFileName()))).toList();
@@ -407,6 +405,4 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
     private final List<WixFragmentBuilder> wixFragments;
     private final Path installerIcon;
     private WixPipeline wixPipeline;
-
-    private final static System.Logger LOGGER = Logger.MAIN.get();
 }

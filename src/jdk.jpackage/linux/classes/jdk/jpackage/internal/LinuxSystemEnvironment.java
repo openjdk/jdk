@@ -96,7 +96,7 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
             // we are just going to run "dpkg -s coreutils" and assume Debian
             // or derivative if no error is returned.
             try {
-                Executor.of("dpkg", "-s", "coreutils").executeExpectSuccess();
+                Executor.of("dpkg", "-s", "coreutils").quiet().executeExpectSuccess();
                 return true;
             } catch (IOException e) {
                 // just fall thru
@@ -108,7 +108,7 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
             // we are just going to run "rpm -q rpm" and assume RPM
             // or derivative if no error is returned.
             try {
-                Executor.of("rpm", "-q", "rpm").executeExpectSuccess();
+                Executor.of("rpm", "-q", "rpm").quiet().executeExpectSuccess();
                 return true;
             } catch (IOException e) {
                 // just fall thru

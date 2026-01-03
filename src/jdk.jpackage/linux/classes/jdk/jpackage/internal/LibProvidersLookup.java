@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -39,7 +38,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.model.Logger;
 
 /**
  * Builds list of packages providing dynamic libraries for the given set of files.
@@ -73,13 +71,11 @@ public final class LibProvidersLookup {
                         .filter(Predicate.not(String::isBlank))
                         .distinct()
                         .toList();
-                LOGGER.log(Level.TRACE, "{0} is provided by {1}", libPath, packageNames);
+                Log.trace("%s is provided by %s", libPath, packageNames);
                 return packageNames;
             } catch (IOException ex) {
                 // Ignore and keep going
-                LOGGER.log(Level.ERROR, () -> {
-                    return String.format("Failed to get required packages for [%s]", libPath);
-                }, ex);
+                Log.trace(ex, "Failed to get required packages for [%s]", libPath);
                 return List.<String>of();
             }
         }).flatMap(List::stream).sorted().distinct().toList();
@@ -88,7 +84,7 @@ public final class LibProvidersLookup {
     }
 
     private static List<Path> getNeededLibsForFile(Path path) throws IOException {
-        final var result = Executor.of(TOOL_LDD, path.toString()).saveOutput().execute();
+        final var result = Executor.of(TOOL_LDD, path.toString()).quiet().saveOutput().execute();
 
         if (result.getExitCode() != 0) {
             // ldd failed. This is OK if the tool was applied to not a binary file
@@ -112,9 +108,7 @@ public final class LibProvidersLookup {
             try {
                 libs = getNeededLibsForFile(path);
             } catch (IOException ex) {
-                LOGGER.log(Level.ERROR, () -> {
-                    return String.format("Failed to get required libraries for [%s]", path);
-                }, ex);
+                Log.trace(ex, "Failed to get required libraries for [%s]", path);
                 libs = Collections.emptyList();
             }
             return libs;
@@ -169,6 +163,4 @@ public final class LibProvidersLookup {
     //
     private static final Pattern LIB_IN_LDD_OUTPUT_REGEX = Pattern.compile(
             "^\\s*\\S+\\s*=>\\s*(\\S+)\\s+\\(0[xX]\\p{XDigit}+\\)");
-
-    private static final System.Logger LOGGER = Logger.MAIN.get();
 }

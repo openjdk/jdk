@@ -28,7 +28,6 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -45,7 +44,6 @@ import java.util.stream.Stream;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.DottedVersion;
-import jdk.jpackage.internal.model.Logger;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.Slot;
 
@@ -127,7 +125,7 @@ public enum WixTool {
                         .collect(toSet());
                 if (sameVersionTools.equals(Set.of(Candle3)) || sameVersionTools.equals(Set.of(Light3))) {
                     // There is only one tool from WiX v3 toolset of some version available. Discard it.
-                    LOGGER.log(Level.TRACE, "Discard [{0}]: incomplete", sameVersionLookupResults.getFirst().info());
+                    Log.trace("Discard [%s]: incomplete", sameVersionLookupResults.getFirst().info());
                     return false;
                 } else {
                     return true;
@@ -147,14 +145,14 @@ public enum WixTool {
             // Try to build a toolset found in the PATH and in known locations.
             return Stream.of(WixToolsetType.values()).map(toolsetType -> {
                 return WixToolset.create(toolsetType.getTools(), tools);
-            }).filter(Optional::isPresent).map(Optional::get).findFirst();
+            }).flatMap(Optional::stream).findFirst();
         };
 
         final List<ToolLookupResult> toolsInPath;
         if (searchInPath) {
             toolsInPath = Stream.of(values()).map(tool -> {
                 return ToolLookupResult.lookup(tool, Optional.empty());
-            }).filter(Optional::isPresent).map(Optional::get).toList();
+            }).flatMap(Optional::stream).toList();
         } else {
             toolsInPath = List.of();
         }
@@ -165,7 +163,7 @@ public enum WixTool {
             var toolsInKnownWiXDirs = wixInstallDirs.get().stream().map(dir -> {
                 return Stream.of(values()).map(tool -> {
                     return ToolLookupResult.lookup(tool, Optional.of(dir));
-                }).filter(Optional::isPresent).map(Optional::get);
+                }).flatMap(Optional::stream);
             }).flatMap(x -> x).toList();
 
             // Build a toolset found in the PATH and in known locations.
@@ -194,9 +192,9 @@ public enum WixTool {
             });
         });
 
-        LOGGER.log(Level.TRACE, "Using {0} WiX Toolkit v{1}", toolset.getType(), toolset.getVersion());
+        Log.trace("Using %s WiX Toolkit v%s", toolset.getType(), toolset.getVersion());
         toolset.getType().getTools().stream().sorted().forEach(tool -> {
-            LOGGER.log(Level.TRACE, "{0}: {1}", tool, toolset.getToolPath(tool));
+            Log.trace("%s: %s", tool, toolset.getToolPath(tool));
         });
 
         return toolset;
@@ -214,9 +212,9 @@ public enum WixTool {
             Objects.requireNonNull(lookupDir);
 
             lookupDir.ifPresentOrElse(theLookupDir -> {
-                LOGGER.log(Level.TRACE, "Look up for {0} in [{1}] directory", tool.toolFileName, theLookupDir);
+                Log.trace("Look up for %s in [%s] directory", tool.toolFileName, theLookupDir);
             }, () -> {
-                LOGGER.log(Level.TRACE, "Look up for {0} in the PATH", tool.toolFileName);
+                Log.trace("Look up for %s in the PATH", tool.toolFileName);
             });
 
             final Path toolPath = lookupDir.map(p -> {
@@ -278,7 +276,7 @@ public enum WixTool {
                     // Detect FIPS mode
                     var fips = false;
                     try {
-                        final var result = Executor.of(toolPath.toString(), "-?").setQuiet(true).saveOutput(true).execute();
+                        final var result = Executor.of(toolPath.toString(), "-?").quiet().saveOutput(true).execute();
                         final var exitCode = result.getExitCode();
                         if (exitCode != 0 /* 308 */) {
                             final var output = result.getOutput();
@@ -287,21 +285,17 @@ public enum WixTool {
                             }
                         }
                     } catch (IOException ex) {
-                        LOGGER.log(Level.ERROR, () -> {
-                            return String.format("Failed to execute [%s] command with '-?' option to detect FIPS mode. Assume FIPS=false", toolPath);
-                        }, ex);
+                        Log.trace(ex, "Failed to execute [%s] command with '-?' option to detect FIPS mode. Assume FIPS=false", toolPath);
                     }
                     info = new DefaultCandleInfo(info, fips);
                 }
 
-                LOGGER.log(Level.TRACE, "Found [{0}]", info);
+                Log.trace("Found [%s]", info);
 
                 return Optional.of(new ToolLookupResult(tool, info));
             } else {
                 if (parsedVersion.find().isPresent()) {
-                    LOGGER.log(Level.TRACE, () -> {
-                        return String.format("Discard [%s]: failed validation", new DefaultToolInfo(toolPath, parsedVersion.get()));
-                    });
+                    Log.trace("Discard [%s]: failed validation", new DefaultToolInfo(toolPath, parsedVersion.get()));
                 }
                 return Optional.empty();
             }
@@ -330,9 +324,7 @@ public enum WixTool {
             try {
                 return Path.of(v);
             } catch (InvalidPathException ex) {
-                LOGGER.log(Level.ERROR, () -> {
-                    return String.format("The value of environment variable '%s' [%s] is not a path", envVar, v);
-                }, ex);
+                Log.trace(ex, "The value of environment variable '%s' [%s] is not a path", envVar, v);
                 return null;
             }
         });
@@ -349,7 +341,7 @@ public enum WixTool {
         return Stream.of(
                 getEnvVariableAsPath("USERPROFILE"),
                 Optional.ofNullable(System. getProperty("user.home")).map(Path::of)
-        ).filter(Optional::isPresent).map(Optional::get).map(path -> {
+        ).flatMap(Optional::stream).map(path -> {
             return path.resolve(".dotnet/tools");
         }).filter(Files::isDirectory).distinct().toList();
     }
@@ -366,9 +358,7 @@ public enum WixTool {
             try (var paths = Files.walk(path, 1)) {
                 return paths.toList();
             } catch (IOException ex) {
-                LOGGER.log(Level.ERROR, () -> {
-                    return String.format("Can not get a listing of [%s] directory", path);
-                }, ex);
+                Log.trace(ex, "Can not get a listing of [%s] directory", path);
                 return List.<Path>of();
             }
         }).flatMap(List::stream)
@@ -380,6 +370,4 @@ public enum WixTool {
 
     private final Path toolFileName;
     private final DottedVersion minimalVersion;
-
-    private final static System.Logger LOGGER = Logger.MAIN.get();
 }

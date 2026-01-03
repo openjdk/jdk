@@ -28,8 +28,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.PackageTest;
@@ -58,6 +58,8 @@ public class LinuxResourceTest {
             cmd
             .setFakeRuntime()
             .saveConsoleOutput(true)
+            .setEnabledMessageCategories(MessageCategory.RESOURCES, MessageCategory.PROGRESS, MessageCategory.WARNINGS)
+            .setDisabledMessageCategories()
             .addArguments("--resource-dir", TKit.createTempDirectory("resources"));
         })
         .forTypes(PackageType.LINUX_DEB)
@@ -182,14 +184,13 @@ public class LinuxResourceTest {
 
             final var customResourcePath = customResourcePath();
 
-            new JPackageOutputValidator()
-                    .expectMatchingStrings(
-                            MAIN.cannedFormattedString("error.unexpected-package-property", name, expectedValue, customValue, customResourcePath),
-                            MAIN.cannedFormattedString("error.unexpected-package-property.advice", token, customValue, name, customResourcePath)
-                    )
-                    .matchTimestamps()
-                    .stripTimestamps()
-                    .applyTo(cmd);
+            new JPackageOutputValidator().stderr().expectMatchingStrings(
+                    JPackageCommand.makeProgressWarning("error.unexpected-package-property", name, expectedValue, customValue, customResourcePath)
+            ).applyTo(cmd);
+
+            new JPackageOutputValidator().expectMatchingStrings(
+                    MAIN.cannedFormattedString("error.unexpected-package-property.advice", token, customValue, name, customResourcePath)
+            ).matchTimestamps().stripTimestamps().applyTo(cmd);
         }
 
         private Path customResourcePath() {

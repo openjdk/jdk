@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.LinuxSystemEnvironment.isWithRequiredPackagesSearch;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +41,6 @@ import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.Logger;
 
 abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<PackagingPipeline.Builder> {
 
@@ -138,12 +136,12 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         final List<String> neededLibPackages;
         if (withRequiredPackagesLookup) {
             neededLibPackages = findRequiredPackages();
-            LOGGER.log(Level.TRACE, "Runtime image requires: {0}", neededLibPackages);
+            Log.trace("Runtime image requires: %s", neededLibPackages);
         } else {
             neededLibPackages = Collections.emptyList();;
         }
 
-        LOGGER.log(Level.TRACE, "Features of the package require: {0}", caPackages);
+        Log.trace("Features of the package require: %s", caPackages);
 
         // Merge all package lists together.
         // Filter out empty names, sort and remove duplicates.
@@ -152,7 +150,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
                 .filter(Predicate.not(String::isEmpty))
                 .sorted().distinct().toList();
 
-        LOGGER.log(Level.TRACE, "Required packages: {0}", requiredPackages);
+        Log.trace("Required packages: %s", requiredPackages);
     }
 
     private List<String> findRequiredPackages() throws IOException {
@@ -167,14 +165,14 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
             errors = findErrorsInOutputPackage();
         } catch (IOException ex) {
             // Ignore error as it is not critical. Just report it.
-            LOGGER.log(Level.ERROR, ex);
+            Log.trace(ex);
             return;
         }
 
         for (var ex : errors) {
-            Log.verbose(ex.getLocalizedMessage());
+            Log.progressWarning(ex);
             if (ex instanceof ConfigException cfgEx) {
-                Log.verbose(cfgEx.getAdvice());
+                Log.progress(cfgEx.getAdvice());
             }
         }
     }
@@ -185,6 +183,4 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
     private final boolean withRequiredPackagesLookup;
     private List<String> requiredPackages;
     private final List<ShellCustomAction> customActions;
-
-    private final static System.Logger LOGGER = Logger.MAIN.get();
 }

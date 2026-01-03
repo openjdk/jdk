@@ -67,7 +67,7 @@ public final class Codesign {
             }
 
             return new Codesign(cmdline, quiet ? exec -> {
-                exec.setQuiet(true);
+                exec.quiet();
             } : null);
         }
 
