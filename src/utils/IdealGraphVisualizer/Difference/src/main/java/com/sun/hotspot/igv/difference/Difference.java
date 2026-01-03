@@ -157,6 +157,33 @@ public class Difference {
             edge.setState(InputBlockEdge.State.DELETED);
         }
 
+        // Difference between dominator block edges
+        aEdges.clear();
+        for (InputBlockEdge edge : a.getBlockDominatorEdges()) {
+            aEdges.add(new Pair<>(edge.getFrom().getName(), edge.getTo().getName()));
+        }
+        for (InputBlockEdge bEdge : b.getBlockDominatorEdges()) {
+            InputBlock from = bEdge.getFrom();
+            InputBlock to = bEdge.getTo();
+            Pair<String, String> pair = new Pair<>(from.getName(), to.getName());
+            if (aEdges.contains(pair)) {
+                // same
+                graph.addDominatorBlockEdge(blocksMap.get(from), blocksMap.get(to));
+                aEdges.remove(pair);
+            } else {
+                // added
+                InputBlockEdge edge = graph.addDominatorBlockEdge(blocksMap.get(from), blocksMap.get(to));
+                edge.setState(InputBlockEdge.State.NEW);
+            }
+        }
+        for (Pair<String, String> deleted : aEdges) {
+            // removed
+            InputBlock from = graph.getBlock(deleted.getLeft());
+            InputBlock to = graph.getBlock(deleted.getRight());
+            InputBlockEdge edge = graph.addDominatorBlockEdge(from, to);
+            edge.setState(InputBlockEdge.State.DELETED);
+        }
+
         Set<InputNode> nodesA = new HashSet<>(a.getNodes());
         Set<InputNode> nodesB = new HashSet<>(b.getNodes());
 

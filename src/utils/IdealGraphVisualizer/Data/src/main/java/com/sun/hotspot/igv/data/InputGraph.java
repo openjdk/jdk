@@ -37,6 +37,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private Group parentGroup;
     private final Map<String, InputBlock> blocks;
     private final List<InputBlockEdge> blockEdges;
+    private final List<InputBlockEdge> blockDominatorEdges;
     private final Map<Integer, InputBlock> nodeToBlock;
     private final Map<Integer, InputLiveRange> liveRanges;
     private Map<Integer, LivenessInfo> livenessInfo;
@@ -47,6 +48,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private final InputGraph firstGraph;
     private final InputGraph secondGraph;
     private final ChangedEvent<InputGraph> displayNameChangedEvent = new ChangedEvent<>(this);
+    private boolean isScheduled;
 
     public InputGraph(InputGraph firstGraph, InputGraph secondGraph) {
         this(firstGraph.getName() + " Δ " + secondGraph.getName(), firstGraph, secondGraph);
@@ -69,6 +71,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         defNodes = new LinkedHashMap<>();
         useNodes = new LinkedHashMap<>();
         blockEdges = new ArrayList<>();
+        blockDominatorEdges = new ArrayList<>();
         nodeToBlock = new LinkedHashMap<>();
         isDiffGraph = firstGraph != null && secondGraph != null;
         this.firstGraph = firstGraph;
@@ -77,6 +80,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
             this.firstGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
             this.secondGraph.getDisplayNameChangedEvent().addListener(l -> displayNameChangedEvent.fire());
         }
+        this.isScheduled = false;
     }
 
     public boolean isDiffGraph() {
@@ -111,6 +115,12 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         InputBlockEdge edge = new InputBlockEdge(left, right, label);
         blockEdges.add(edge);
         left.addSuccessor(right);
+        return edge;
+    }
+
+    public InputBlockEdge addDominatorBlockEdge(InputBlock dominator, InputBlock dominated) {
+        InputBlockEdge edge = new InputBlockEdge(dominator, dominated, null);
+        blockDominatorEdges.add(edge);
         return edge;
     }
 
@@ -191,6 +201,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     public void clearBlocks() {
         blocks.clear();
         blockEdges.clear();
+        blockDominatorEdges.clear();
         nodeToBlock.clear();
     }
 
@@ -399,7 +410,11 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public InputBlock addBlock(String name) {
-        final InputBlock b = new InputBlock(this, name);
+        return addBlock(name, null);
+    }
+
+    public InputBlock addBlock(String name, String iDom) {
+        final InputBlock b = new InputBlock(this, name, iDom);
         blocks.put(b.getName(), b);
         return b;
     }
@@ -412,8 +427,20 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return Collections.unmodifiableList(blockEdges);
     }
 
+    public Collection<InputBlockEdge> getBlockDominatorEdges() {
+        return Collections.unmodifiableList(blockDominatorEdges);
+    }
+
     @Override
     public Folder getParent() {
         return parent;
+    }
+
+    public void setScheduled(boolean isScheduled) {
+        this.isScheduled = isScheduled;
+    }
+
+    public boolean isScheduled() {
+        return isScheduled;
     }
 }
