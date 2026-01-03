@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,10 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
             Map<BundlingOperationDescriptor, Supplier<Result<Consumer<Options>>>> bundlers) {
 
         this.bundlers = bundlers.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> {
-            return new CachingSupplier<>(e.getValue());
+            return runOnce(e.getValue());
         }));
 
-        this.defaultOperationSupplier = Objects.requireNonNull(defaultOperationSupplier).map(CachingSupplier::new);
+        this.defaultOperationSupplier = Objects.requireNonNull(defaultOperationSupplier).map(DefaultBundlingEnvironment::runOnce);
     }
 
 
@@ -98,6 +98,11 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
             return bundler(op, () -> Result.ofValue(bundler));
         }
 
+        Builder mutate(Consumer<Builder> mutator) {
+            mutator.accept(this);
+            return this;
+        }
+
         private Supplier<Optional<BundlingOperationDescriptor>> defaultOperationSupplier;
         private final Map<BundlingOperationDescriptor, Supplier<Result<Consumer<Options>>>> bundlers = new HashMap<>();
     }
@@ -105,6 +110,10 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
     static Builder build() {
         return new Builder();
+    }
+
+    static <T> Supplier<T> runOnce(Supplier<T> supplier) {
+        return new CachingSupplier<>(supplier);
     }
 
     static <T extends SystemEnvironment> Supplier<Result<Consumer<Options>>> createBundlerSupplier(
@@ -279,5 +288,5 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
 
 
     private final Map<BundlingOperationDescriptor, Supplier<Result<Consumer<Options>>>> bundlers;
-    private final Optional<CachingSupplier<Optional<BundlingOperationDescriptor>>> defaultOperationSupplier;
+    private final Optional<Supplier<Optional<BundlingOperationDescriptor>>> defaultOperationSupplier;
 }
