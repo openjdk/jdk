@@ -4072,6 +4072,22 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return this;
     }
 
+    @Override
+    @ForceInline
+    final
+    ShortVector maybeSwapOnConverted(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
+        if (bo == ByteOrder.BIG_ENDIAN) {
+            int sBytes = srcSpecies.elementSize();
+            int tBytes = this.vspecies().elementSize();
+            if (sBytes == tBytes) return this;
+            if (sBytes % tBytes != 0) return this;
+            int subLanesPerSrc = sBytes / tBytes;
+            VectorShuffle<Short> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+            return this.rearrange(shuffle);
+        }
+        return this;
+    }
+
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_SHORT_INDEX_SCALE);
     static final long ARRAY_BASE =
