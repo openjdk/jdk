@@ -35,6 +35,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/xmlstream.hpp"
 
 // The MemoryFileTracker tracks memory of 'memory files',
 // storage with its own memory space separate from the process.
@@ -88,6 +89,7 @@ public:
 
   // Print detailed report of file
   void print_report_on(const MemoryFile* file, outputStream* stream, size_t scale);
+  void print_report_xml_on(const MemoryFile* file, xmlStream* stream, size_t scale);
 
   const GrowableArrayCHeap<MemoryFile*, mtNMT>& files();
 
@@ -113,7 +115,9 @@ public:
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);
 
     static void print_report_on(const MemoryFile* device, outputStream* stream, size_t scale);
+    static void print_report_xml_on(const MemoryFile* device, xmlStream* stream, size_t scale);
     static void print_all_reports_on(outputStream* stream, size_t scale);
+    static void print_all_reports_xml_on(xmlStream* stream, size_t scale);
 
     static const GrowableArrayCHeap<MemoryFile*, mtNMT>& files();
   };
