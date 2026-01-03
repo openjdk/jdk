@@ -40,6 +40,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -145,7 +146,9 @@ public class DowncallLinker {
         Arena unboxArena = callingSequence.allocationSize() != 0
                 ? SharedUtils.newBoundedArena(callingSequence.allocationSize())
                 : SharedUtils.DUMMY_ARENA;
-        List<MemorySessionImpl> acquiredScopes = new ArrayList<>();
+        record ScopeAndTicket(MemorySessionImpl session, int ticket) {}
+        List<ScopeAndTicket> acquiredScopes = new ArrayList<>();
+
         try (unboxArena) {
             MemorySegment returnBuffer = null;
 
@@ -172,10 +175,10 @@ public class DowncallLinker {
                 if (callingSequence.functionDesc().argumentLayouts().get(i) instanceof AddressLayout) {
                     MemorySessionImpl sessionImpl = ((AbstractMemorySegmentImpl) arg).sessionImpl();
                     if (!(callingSequence.needsReturnBuffer() && i == 0)) { // don't acquire unboxArena's scope
-                        sessionImpl.acquire0();
+                        int ticket = sessionImpl.acquire0();
                         // add this scope _after_ we acquire, so we only release scopes we actually acquired
                         // in case an exception occurs
-                        acquiredScopes.add(sessionImpl);
+                        acquiredScopes.add(new ScopeAndTicket(sessionImpl, ticket));
                     }
                 }
                 BindingInterpreter.unbox(arg, callingSequence.argumentBindings(i), storeFunc, unboxArena);
@@ -205,8 +208,10 @@ public class DowncallLinker {
                         allocator);
             }
         } finally {
-            for (MemorySessionImpl sessionImpl : acquiredScopes) {
-                sessionImpl.release0();
+            for (ScopeAndTicket scope : acquiredScopes) {
+                int ticket = scope.ticket;
+                MemorySessionImpl sessionImpl = scope.session;
+                sessionImpl.release0(ticket);
             }
         }
     }

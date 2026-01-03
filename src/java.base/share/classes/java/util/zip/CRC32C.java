@@ -174,12 +174,12 @@ public final class CRC32C implements Checksum {
         }
 
         if (buffer.isDirect()) {
-            NIO_ACCESS.acquireSession(buffer);
+            int ticket = NIO_ACCESS.acquireSession(buffer);
             try {
                 crc = updateDirectByteBuffer(crc, NIO_ACCESS.getBufferAddress(buffer),
                         pos, limit);
             } finally {
-                NIO_ACCESS.releaseSession(buffer);
+                NIO_ACCESS.releaseSession(buffer, ticket);
             }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(),

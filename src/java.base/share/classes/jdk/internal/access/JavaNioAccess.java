@@ -96,19 +96,19 @@ public interface JavaNioAccess {
      * Used by operations to make a buffer's session non-closeable
      * (for the duration of the operation) by acquiring the session.
      * {@snippet lang = java:
-     * acquireSession(buffer);
+     * int ticket = acquireSession(buffer);
      * try {
      *     performOperation(buffer);
      * } finally {
-     *     releaseSession(buffer);
+     *     releaseSession(buffer, ticket);
      * }
      *}
      *
-     * @see #releaseSession(Buffer)
+     * @see #releaseSession(Buffer, int)
      */
-    void acquireSession(Buffer buffer);
+    int acquireSession(Buffer buffer);
 
-    void releaseSession(Buffer buffer);
+    void releaseSession(Buffer buffer, int ticket);
 
     boolean isThreadConfined(Buffer buffer);
 

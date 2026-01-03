@@ -46,6 +46,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -145,15 +146,15 @@ public final class FallbackLinker extends AbstractLinker {
                                 int capturedStateMask, boolean allowsHeapAccess) {}
 
     private static Object doDowncall(SegmentAllocator returnAllocator, Object[] args, DowncallData invData) {
-        List<MemorySessionImpl> acquiredSessions = new ArrayList<>();
+        record ScopeAndTicket(MemorySessionImpl session, int ticket) {}
+        List<ScopeAndTicket> acquiredSessions = new ArrayList<>();
         try (Arena arena = Arena.ofConfined()) {
             int argStart = 0;
             Object[] heapBases = invData.allowsHeapAccess() ? new Object[args.length] : null;
 
             MemorySegment target = (MemorySegment) args[argStart++];
             MemorySessionImpl targetImpl = ((AbstractMemorySegmentImpl) target).sessionImpl();
-            targetImpl.acquire0();
-            acquiredSessions.add(targetImpl);
+            acquiredSessions.add(new ScopeAndTicket(targetImpl, targetImpl.acquire0()));
 
             MemorySegment capturedState = null;
             Object captureStateHeapBase = null;
@@ -165,8 +166,7 @@ public final class FallbackLinker extends AbstractLinker {
                     captureStateHeapBase = capturedState.heapBase().orElse(null);
                 }
                 MemorySessionImpl capturedStateImpl = ((AbstractMemorySegmentImpl) capturedState).sessionImpl();
-                capturedStateImpl.acquire0();
-                acquiredSessions.add(capturedStateImpl);
+                acquiredSessions.add(new ScopeAndTicket(capturedStateImpl, capturedStateImpl.acquire0()));
             }
 
             List<MemoryLayout> argLayouts = invData.argLayouts();
@@ -178,8 +178,7 @@ public final class FallbackLinker extends AbstractLinker {
                 if (layout instanceof AddressLayout) {
                     AbstractMemorySegmentImpl ms = (AbstractMemorySegmentImpl) arg;
                     MemorySessionImpl sessionImpl = ms.sessionImpl();
-                    sessionImpl.acquire0();
-                    acquiredSessions.add(sessionImpl);
+                    acquiredSessions.add(new ScopeAndTicket(sessionImpl, sessionImpl.acquire0()));
                     if (invData.allowsHeapAccess() && !ms.isNative()) {
                         heapBases[i] = ms.unsafeGetBase();
                         // write the offset to the arg segment, add array ptr to it in native code
@@ -206,8 +205,8 @@ public final class FallbackLinker extends AbstractLinker {
 
             return readValue(retSeg, invData.returnLayout());
         } finally {
-            for (MemorySessionImpl session : acquiredSessions) {
-                session.release0();
+            for (ScopeAndTicket scopeAndTicket : acquiredSessions) {
+                scopeAndTicket.session.release0(scopeAndTicket.ticket);
             }
         }
     }
