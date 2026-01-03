@@ -771,9 +771,6 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register b
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                      Register addr, Register count, Register preserve) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
-
-  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-  CardTable* ct = bs->card_table();
   assert_different_registers(addr, count, R0);
 
   Label L_skip_loop, L_store_loop;
