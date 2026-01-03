@@ -894,6 +894,13 @@ clearStep(jthread thread, StepRequest *step)
          *          be needed on the next step.
          */
 
+        jint state = getThreadState(thread);
+        if (state & JVMTI_THREAD_STATE_TERMINATED) {
+            // If this thread has terminated, there is no need to do any of the
+            // below, and doing so would produce errors.
+            return;
+        }
+
         jvmtiError error;
         jboolean needsSuspending; // true if we needed to suspend this thread
 
@@ -902,7 +909,6 @@ clearStep(jthread thread, StepRequest *step)
         if (isSameObject(getEnv(), threadControl_currentThread(), thread)) {
             needsSuspending = JNI_FALSE;
         } else {
-            jint state = getThreadState(thread);
             needsSuspending = ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0);
         }
 
