@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@ package sun.jvm.hotspot.debugger.windbg;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.windows.amd64.*;
+import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.AddressOps;
 
 class WindbgCDebugger implements CDebugger {
@@ -69,11 +71,23 @@ class WindbgCDebugger implements CDebugger {
   public CFrame topFrameForThread(ThreadProxy thread) throws DebuggerException {
     if (dbg.getCPU().equals("amd64")) {
       AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
+
+      // rbp is not needed null check because it could be used as GPR by compiler (cl.exe) option.
       Address rbp = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
-      if (rbp == null) return null;
+
+      Address rsp = context.getRegisterAsAddress(AMD64ThreadContext.RSP);
+      if (rsp == null) return null;
       Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
       if (pc == null) return null;
-      return new WindowsAMD64CFrame(dbg, rbp, pc);
+
+      Threads threads = VM.getVM().getThreads();
+      JavaThread ownerThread = IntStream.range(0, threads.getNumberOfThreads())
+                                        .mapToObj(threads::getJavaThreadAt)
+                                        .filter(jt -> thread.equals(jt.getThreadProxy()))
+                                        .findFirst()
+                                        .orElse(null);
+
+      return new WindowsAMD64CFrame(dbg, ownerThread, rsp, rbp, pc);
     } else {
       // unsupported CPU!
       return null;
