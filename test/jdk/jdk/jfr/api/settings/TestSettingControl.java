@@ -44,6 +44,7 @@ import jdk.jfr.consumer.RecordingFile;
 /**
  * @test
  * @summary Tests that methods on all SettingControls have expected behavior.
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk

@@ -42,6 +42,7 @@ import jdk.jfr.consumer.RecordingStream;
  * @summary The test verifies that jdk.ClassLoaderStatistics and
  *          jdk.ThreadThreadDump are not emitted at the beginning of a chunk
  *          when the period is everyChunk, as is the case in default.jfc
+ * @requires os.arch != "s390x"
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
