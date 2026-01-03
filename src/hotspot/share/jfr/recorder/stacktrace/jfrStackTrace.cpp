@@ -50,8 +50,23 @@ static inline void copy_frames(JfrStackFrames* lhs_frames, const JfrStackFrames*
   memcpy(lhs_frames->adr_at(0), rhs_frames->adr_at(0), rhs_frames->length() * sizeof(JfrStackFrame));
 }
 
+static inline void copy_native_frames(JfrNativeStackFrames* lhs_frames, const JfrNativeStackFrames* rhs_frames) {
+  assert(lhs_frames != nullptr, "invariant");
+  assert(rhs_frames != nullptr, "invariant");
+
+  if (lhs_frames->length() == 0) {
+    return;
+  }
+
+  assert(lhs_frames->capacity() == rhs_frames->length(), "invariant");
+  assert(lhs_frames->length() == rhs_frames->length(), "invariant");
+  assert(lhs_frames->capacity() == lhs_frames->length(), "invariant");
+  memcpy(lhs_frames->adr_at(0), rhs_frames->adr_at(0), rhs_frames->length() * sizeof(JfrNativeStackFrame));
+}
+
 JfrStackTrace::JfrStackTrace() :
   _next(nullptr),
+  _native_frames_above(new JfrNativeStackFrames(MIN2(JfrOptionSet::stackdepth(), (u4)JfrStackTrace::MAX_NATIVE_FRAMES))),
   _frames(new JfrStackFrames(JfrOptionSet::stackdepth())), // ResourceArea
   _id(0),
   _hash(0),
@@ -59,11 +74,14 @@ JfrStackTrace::JfrStackTrace() :
   _max_frames(JfrOptionSet::stackdepth()),
   _frames_ownership(false),
   _reached_root(false),
+  _native_reached_root(false),
   _lineno(false),
-  _written(false) {}
+  _written(false),
+  _natives_written(false) {}
 
 JfrStackTrace::JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next) :
   _next(next),
+  _native_frames_above(new (mtTracing) JfrNativeStackFrames(trace.number_of_native_frames_above(), trace.number_of_native_frames_above(), mtTracing)), // CHeap
   _frames(new (mtTracing) JfrStackFrames(trace.number_of_frames(), trace.number_of_frames(), mtTracing)), // CHeap
   _id(id),
   _hash(trace._hash),
@@ -71,14 +89,18 @@ JfrStackTrace::JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrSt
   _max_frames(trace._max_frames),
   _frames_ownership(true),
   _reached_root(trace._reached_root),
+  _native_reached_root(trace._native_reached_root),
   _lineno(trace._lineno),
-  _written(false) {
+  _written(false),
+  _natives_written(false) {
   copy_frames(_frames, trace._frames);
+  copy_native_frames(_native_frames_above, trace._native_frames_above);
 }
 
 JfrStackTrace::~JfrStackTrace() {
   if (_frames_ownership) {
     delete _frames;
+    delete _native_frames_above;
   }
 }
 
@@ -87,8 +109,24 @@ int JfrStackTrace::number_of_frames() const {
   return _frames->length();
 }
 
+int JfrStackTrace::number_of_native_frames_above() const {
+  assert(_native_frames_above != nullptr, "invariant");
+  return _native_frames_above->length();
+}
+
 template <typename Writer>
 static void write_stacktrace(Writer& w, traceid id, bool reached_root, const JfrStackFrames* frames) {
+  w.write(static_cast<u8>(id));
+  w.write(static_cast<u1>(!reached_root));
+  const int nr_of_frames = frames->length();
+  w.write(static_cast<u4>(nr_of_frames));
+  for (int i = 0; i < nr_of_frames; ++i) {
+    frames->at(i).write(w);
+  }
+}
+
+template <typename Writer>
+static void write_native_stacktrace(Writer& w, traceid id, bool reached_root, const JfrNativeStackFrames* frames) {
   w.write(static_cast<u8>(id));
   w.write(static_cast<u1>(!reached_root));
   const int nr_of_frames = frames->length();
@@ -110,12 +148,34 @@ void JfrStackTrace::write(JfrCheckpointWriter& cpw) const {
   _written = true;
 }
 
+void JfrStackTrace::write_natives(JfrChunkWriter& cw) const {
+  assert(!_natives_written, "invariant");
+  write_native_stacktrace(cw, _id, _native_reached_root, _native_frames_above);
+  _natives_written = true;
+}
+
+void JfrStackTrace::write_natives(JfrCheckpointWriter& cpw) const {
+  assert(!_natives_written, "invariant");
+  write_native_stacktrace(cpw, _id, _native_reached_root, _native_frames_above);
+  _natives_written = true;
+}
+
+
 bool JfrStackTrace::equals(const JfrStackTrace& rhs) const {
-  if (_reached_root != rhs._reached_root || _frames->length() != rhs.number_of_frames() || _hash != rhs._hash) {
+  if (_reached_root != rhs._reached_root || _frames->length() != rhs.number_of_frames()
+    || _native_reached_root != rhs._native_reached_root || _hash != rhs._hash) {
     return false;
   }
   for (int i = 0; i < _frames->length(); ++i) {
     if (!_frames->at(i).equals(rhs._frames->at(i))) {
+      return false;
+    }
+  }
+  if (_native_frames_above->length() != rhs._native_frames_above->length()) {
+    return false;
+  }
+  for (int i = 0; i < _native_frames_above->length(); ++i) {
+    if (!_native_frames_above->at(i).equals(rhs._native_frames_above->at(i))) {
       return false;
     }
   }
@@ -149,7 +209,22 @@ void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request
   _count++;
 }
 
+void JfrStackTrace::populate_native_frames_from_request(const JfrSampleRequest& request) {
+  assert(_native_frames_above != nullptr, "invariant");
+  assert(_native_frames_above->length() == 0, "invariant");
+
+  if (request._native_pcs == nullptr || request._native_frame_count == 0) {
+    _native_reached_root = true;
+    return;
+  }
+  for (int i = 0; i < request._native_frame_count; i++) {
+    _native_frames_above->append(JfrNativeStackFrame(request._native_pcs[i]));
+  }
+  _native_reached_root = !request._native_truncated;
+}
+
 bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request) {
+  populate_native_frames_from_request(request);
   if (is_interpreter(request)) {
     record_interpreter_top_frame(request);
     if (frame.pc() == nullptr) {
@@ -157,7 +232,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuat
       return true;
     }
   }
-  return record(jt, frame, in_continuation, 0);
+  return record(jt, frame, in_continuation, 0, -1);
 }
 
 bool JfrStackTrace::record(JavaThread* jt, int skip, int64_t stack_filter_id) {
@@ -187,6 +262,7 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_con
   HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.
   JfrVframeStream vfs(jt, frame, in_continuation, false);
   _reached_root = true;
+  // Native frames are captured separately in signal handler context and are not subject to the skip parameter.
   for (int i = 0; i < skip; ++i) {
     if (vfs.at_end()) {
       break;
@@ -230,6 +306,9 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_con
     _hash = (_hash * 31) + type;
     _frames->append(JfrStackFrame(mid, bci, type, method->method_holder()));
     _count++;
+  }
+  for (int i = 0; i < _native_frames_above->length(); ++i) {
+    _hash = (_hash * 31) + (uintptr_t)_native_frames_above->at(i).pc();
   }
   return _count > 0;
 }

@@ -30,6 +30,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"
+#include "runtime/registerMap.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -441,7 +442,7 @@ class frame {
   void interpreter_frame_print_on(outputStream* st) const;
   void print_on_error(outputStream* st, char* buf, int buflen, bool verbose = false) const;
   static void print_C_frame(outputStream* st, char* buf, int buflen, address pc);
-  static frame next_frame(frame fr, Thread* t); // For native stack walking
+  static frame next_frame(frame fr, Thread* t, RegisterMap::ProcessFrames process_frames = RegisterMap::ProcessFrames::include); // For native stack walking
 
 #ifndef PRODUCT
   // Add annotated descriptions of memory locations belonging to this frame to values

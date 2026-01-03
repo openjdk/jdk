@@ -32,6 +32,7 @@ import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
+import jdk.jfr.consumer.RecordedNativeFrame;
 import jdk.jfr.consumer.RecordedObject;
 
 final class XMLWriter extends EventPrintWriter {
@@ -105,7 +106,8 @@ final class XMLWriter extends EventPrintWriter {
         int depth = 0;
         for (int index = 0; index < array.length; index++) {
             Object arrayElement = array[index];
-            if (!(arrayElement instanceof RecordedFrame) || depth < getStackDepth()) {
+            boolean isFrame = arrayElement instanceof RecordedFrame || arrayElement instanceof RecordedNativeFrame;
+            if (!isFrame || depth < getStackDepth()) {
                 printValueDescriptor(v, array[index], index);
             }
             depth++;

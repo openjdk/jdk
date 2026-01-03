@@ -26,6 +26,7 @@
 #define SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP
 
 #include "jfr/recorder/stacktrace/jfrStackFrame.hpp"
+#include "jfr/recorder/stacktrace/jfrNativeStackFrame.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
@@ -46,6 +47,7 @@ class JfrStackTrace : public JfrCHeapObj {
   friend class StackTraceResolver;
  private:
   const JfrStackTrace* _next;
+  JfrNativeStackFrames* _native_frames_above;
   JfrStackFrames* _frames;
   traceid _id;
   traceid _hash;
@@ -53,13 +55,17 @@ class JfrStackTrace : public JfrCHeapObj {
   u4 _max_frames;
   bool _frames_ownership;
   bool _reached_root;
+  bool _native_reached_root;
   mutable bool _lineno;
   mutable bool _written;
+  mutable bool _natives_written;
 
   const JfrStackTrace* next() const { return _next; }
 
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
+  void write_natives(JfrChunkWriter& cw) const;
+  void write_natives(JfrCheckpointWriter& cpw) const;
   bool equals(const JfrStackTrace& rhs) const;
 
   void set_id(traceid id) { _id = id; }
@@ -68,15 +74,20 @@ class JfrStackTrace : public JfrCHeapObj {
   void resolve_linenos() const;
 
   int number_of_frames() const;
+  int number_of_native_frames_above() const;
   bool have_lineno() const { return _lineno; }
   bool full_stacktrace() const { return _reached_root; }
   bool record_inner(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id = -1);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id = -1);
   void record_interpreter_top_frame(const JfrSampleRequest& request);
+  void populate_native_frames_from_request(const JfrSampleRequest& request);
 
   JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next);
 
  public:
+  // Native frame capture uses stack allocation in signal handler context to avoid heap allocation.
+  static const int MAX_NATIVE_FRAMES = 128;
+
   // ResourceArea allocation, remember ResourceMark.
   JfrStackTrace();
   ~JfrStackTrace();
@@ -87,6 +98,8 @@ class JfrStackTrace : public JfrCHeapObj {
   bool record(JavaThread* current_thread, int skip, int64_t stack_filter_id);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request);
   bool should_write() const { return !_written; }
+  bool should_write_natives() const { return !_natives_written && has_native_frames(); }
+  bool has_native_frames() const { return _native_frames_above != nullptr && _native_frames_above->length() > 0; }
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP
