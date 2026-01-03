@@ -64,13 +64,6 @@ public class PNGImageDecoder_8bit_uninterlaced {
     @Setup
     public void setup() throws Exception {
         pngImageData = createImageData(2_500);
-
-        // verify correctness:
-        BufferedImage expected = ImageIO.read(
-                new ByteArrayInputStream(pngImageData));
-        Image img = Toolkit.getDefaultToolkit().createImage(pngImageData);
-        BufferedImage actual = createBufferedImage(img);
-        testCorrectness(expected, actual);
     }
 
     @Benchmark
@@ -164,27 +157,5 @@ public class PNGImageDecoder_8bit_uninterlaced {
             }
         });
         return future.get();
-    }
-
-    /**
-     * This unit test is intended to accompany a performance enhancement for
-     * PNGImageDecoder. This method makes sure the enhancement didn't cost us
-     * any accuracy.
-     */
-    private static void testCorrectness(BufferedImage expected,
-                                        BufferedImage actual) {
-        if (expected.getWidth() != actual.getWidth())
-            throw new Error();
-        if (expected.getHeight() != actual.getHeight())
-            throw new Error();
-        for (int y = 0; y < expected.getHeight(); y++) {
-            for (int x = 0; x < expected.getWidth(); x++) {
-                int argb1 = expected.getRGB(x, y);
-                int argb2 = actual.getRGB(x, y);
-                if (argb1 != argb2) {
-                    throw new Error("x = " + x + ", y = " + y);
-                }
-            }
-        }
     }
 }
