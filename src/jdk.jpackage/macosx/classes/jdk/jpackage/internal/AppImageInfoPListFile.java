@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.util.XmlUtils.initDocumentBuilder;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,7 +51,8 @@ record AppImageInfoPListFile(String bundleIdentifier, String bundleName, String 
     static AppImageInfoPListFile loadFromInfoPList(Path infoPListFile)
             throws IOException, InvalidPlistFileException, SAXException {
 
-        final var plistReader = new PListReader(initDocumentBuilder().parse(Files.newInputStream(infoPListFile)));
+        final var plistReader = new PListReader(initDocumentBuilder().parse(
+                new ByteArrayInputStream(Files.readAllBytes(infoPListFile))));
 
         try {
             return new AppImageInfoPListFile(
