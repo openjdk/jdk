@@ -305,8 +305,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_indexOfU_char:            return inline_string_indexOfChar(StrIntrinsicNode::U);
   case vmIntrinsics::_indexOfL_char:            return inline_string_indexOfChar(StrIntrinsicNode::L);
 
-  case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
-
   case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 
   case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
@@ -1028,12 +1026,6 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node
     result = new StrCompNode(control(), memory(TypeAryPtr::BYTES),
                              str1_start, cnt1, str2_start, cnt2, ae);
     break;
-  case Op_StrEquals:
-    // We already know that cnt1 == cnt2 here (checked in 'inline_string_equals').
-    // Use the constant length if there is one because optimized match rule may exist.
-    result = new StrEqualsNode(control(), memory(TypeAryPtr::BYTES),
-                               str1_start, str2_start, cnt2->is_Con() ? cnt2 : cnt1, ae);
-    break;
   default:
     ShouldNotReachHere();
     return nullptr;
@@ -1064,54 +1056,6 @@ bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
 
   Node* result = make_string_method_node(Op_StrComp, arg1_start, arg1_cnt, arg2_start, arg2_cnt, ae);
   set_result(result);
-  return true;
-}
-
-//------------------------------inline_string_equals------------------------
-bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
-  Node* arg1 = argument(0);
-  Node* arg2 = argument(1);
-
-  // paths (plus control) merge
-  RegionNode* region = new RegionNode(3);
-  Node* phi = new PhiNode(region, TypeInt::BOOL);
-
-  if (!stopped()) {
-
-    arg1 = must_be_not_null(arg1, true);
-    arg2 = must_be_not_null(arg2, true);
-
-    // Get start addr and length of first argument
-    Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
-    Node* arg1_cnt    = load_array_length(arg1);
-
-    // Get start addr and length of second argument
-    Node* arg2_start  = array_element_address(arg2, intcon(0), T_BYTE);
-    Node* arg2_cnt    = load_array_length(arg2);
-
-    // Check for arg1_cnt != arg2_cnt
-    Node* cmp = _gvn.transform(new CmpINode(arg1_cnt, arg2_cnt));
-    Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
-    Node* if_ne = generate_slow_guard(bol, nullptr);
-    if (if_ne != nullptr) {
-      phi->init_req(2, intcon(0));
-      region->init_req(2, if_ne);
-    }
-
-    // Check for count == 0 is done by assembler code for StrEquals.
-
-    if (!stopped()) {
-      Node* equals = make_string_method_node(Op_StrEquals, arg1_start, arg1_cnt, arg2_start, arg2_cnt, ae);
-      phi->init_req(1, equals);
-      region->init_req(1, control());
-    }
-  }
-
-  // post merge
-  set_control(_gvn.transform(region));
-  record_for_igvn(region);
-
-  set_result(_gvn.transform(phi));
   return true;
 }
 

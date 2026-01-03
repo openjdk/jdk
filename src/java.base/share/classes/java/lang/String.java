@@ -2084,7 +2084,7 @@ public final class String
         }
         return (anObject instanceof String aString)
                 && (!COMPACT_STRINGS || this.coder == aString.coder)
-                && StringLatin1.equals(value, aString.value);
+                && Arrays.equals(value, aString.value);
     }
 
     /**

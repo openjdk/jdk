@@ -32,16 +32,6 @@
  */
 
 /*
- * @test id=StringEquals
- * @bug 8020282
- * @summary Test that we do not generate redundant leas on x86 for String.Equals.
- * @requires os.simpleArch == "x64" & vm.opt.TieredCompilation != false
- * @modules jdk.compiler/com.sun.tools.javac.util
- * @library /test/lib /
- * @run driver compiler.codegen.TestRedundantLea StringEquals
- */
-
-/*
  * @test id=StringInflate
  * @bug 8020282
  * @summary Test that we do not generate redundant leas on x86 for StringConcat intrinsics.
@@ -110,10 +100,6 @@ public class TestRedundantLea {
             case "GetAndSet" -> {
                 framework = new TestFramework(GetAndSetTest.class);
             }
-            case "StringEquals" -> {
-                framework = new TestFramework(StringEqualsTest.class);
-                framework.addHelperClasses(StringEqualsTestHelper.class);
-            }
             case "StringInflate" -> {
                 framework = new TestFramework(StringInflateTest.class);
                 framework.addFlags("--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
@@ -163,47 +149,6 @@ class GetAndSetTest {
         applyIf = {"OptoPeephole", "true"})
     public void testGetAndSet() {
         obj.getAndSet(CURRENT);
-    }
-}
-
-// This generates leaP* rules for the chained dereferences of the String.value
-// fields that are used in the string_equals VM intrinsic.
-class StringEqualsTest {
-    final StringEqualsTestHelper strEqHelper = new StringEqualsTestHelper("I am the string that is tested against");
-
-    @Setup
-    private static Object[] setup() {
-        return new Object[]{"I will be compared!"};
-    }
-
-    @Test
-    @IR(counts = {IRNode.LEA_P, "=2"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIfPlatform = {"mac", "false"})
-    // Negative test
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"OptoPeephole", "false"})
-    // Test that the peephole worked for leaPCompressedOopOffset
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIf = {"OptoPeephole", "true"})
-    @Arguments(setup = "setup")
-    public boolean test(String str) {
-        return strEqHelper.doEquals(str);
-    }
-}
-
-class StringEqualsTestHelper {
-    private String str;
-
-    public StringEqualsTestHelper(String str) {
-        this.str = str;
-    }
-
-    @ForceInline
-    public boolean doEquals(String other) {
-        return this.str.equals(other);
     }
 }
 
