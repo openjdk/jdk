@@ -322,6 +322,11 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VF, "AddReductionVF");
     }
 
+    public static final String ADD_REDUCTION_VHF = PREFIX + "ADD_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(ADD_REDUCTION_VHF, "AddReductionVHF");
+    }
+
     public static final String ADD_REDUCTION_VI = PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
     static {
         superWordNodes(ADD_REDUCTION_VI, "AddReductionVI");
@@ -1552,6 +1557,11 @@ public class IRNode {
     public static final String MUL_REDUCTION_VF = PREFIX + "MUL_REDUCTION_VF" + POSTFIX;
     static {
         superWordNodes(MUL_REDUCTION_VF, "MulReductionVF");
+    }
+
+    public static final String MUL_REDUCTION_VHF = PREFIX + "MUL_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(MUL_REDUCTION_VHF, "MulReductionVHF");
     }
 
     public static final String MUL_REDUCTION_VI = PREFIX + "MUL_REDUCTION_VI" + POSTFIX;
