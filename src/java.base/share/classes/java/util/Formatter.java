@@ -37,7 +37,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.invoke.MethodHandle;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -438,6 +437,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is
  *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.
+ *     Not all subtypes of {@link TemporalAccessor} carry a time zone, though,
+ *     so in such cases this conversion throws an {@link IllegalFormatConversionException}.
+ *
  *
  * <tr><th scope="row" style="vertical-align:top">{@code 'Z'}
  *     <td> A string representing the abbreviation for the time zone.  This
@@ -446,6 +448,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.  The Formatter's locale will
  *     supersede the locale of the argument (if any).
+ *     Not all subtypes of {@link TemporalAccessor} carry a time zone, though,
+ *     so in such cases this conversion throws an {@link IllegalFormatConversionException}.
  *
  * <tr><th scope="row" style="vertical-align:top">{@code 's'}
  *     <td> Seconds since the beginning of the epoch starting at 1 January 1970
@@ -555,6 +559,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <tr><th scope="row" style="vertical-align:top">{@code 'c'}
  *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
  *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
+ *     Not all subtypes of {@link TemporalAccessor} carry a time zone, though,
+ *     so in such cases this conversion throws an {@link IllegalFormatConversionException}.
  *
  * </tbody>
  * </table>
@@ -1726,6 +1732,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is
  *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.
+ *     Not all subtypes of {@link TemporalAccessor} carry a time zone, though,
+ *     so in such cases this conversion throws an {@link IllegalFormatConversionException}.
  *
  * <tr><th scope="row" style="vertical-align:top">{@code 'Z'}
  *     <td style="vertical-align:top"> <code>'&#92;u005a'</code>
@@ -1735,6 +1743,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.  The Formatter's locale will
  *     supersede the locale of the argument (if any).
+ *     Not all subtypes of {@link TemporalAccessor} carry a time zone, though,
+ *     so in such cases this conversion throws an {@link IllegalFormatConversionException}.
  *
  * <tr><th scope="row" style="vertical-align:top">{@code 's'}
  *     <td style="vertical-align:top"> <code>'&#92;u0073'</code>
@@ -1871,6 +1881,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     <td style="vertical-align:top"> <code>'&#92;u0063'</code>
  *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
  *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
+ *     Not all subtypes of {@link TemporalAccessor} carry a time zone, though,
+ *     so in such cases this conversion throws an {@link IllegalFormatConversionException}.
  *
  * </tbody>
  * </table>
