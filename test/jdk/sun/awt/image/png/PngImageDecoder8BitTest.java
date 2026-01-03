@@ -57,7 +57,7 @@ import java.util.concurrent.ExecutionException;
  *
  * This test has never failed.
  */
-public class PNGImageDecoder_8bit_performance {
+public class PngImageDecoder8BitTest {
 
     interface Model {
         BufferedImage load(byte[] imagedata) throws Exception;
