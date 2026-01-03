@@ -1094,9 +1094,6 @@ const int ObjectAlignmentInBytes = 8;
           "Inline allocations larger than this in doublewords must go slow")\
           range(0, (1 << (BitsPerInt - LogBytesPerLong - 1)) - 1)           \
                                                                             \
-  product_pd(bool, CompactStrings,                                          \
-          "Enable Strings to use single byte chars in backing store")       \
-                                                                            \
   product_pd(uint, TypeProfileLevel,                                        \
           "=XYZ, with Z: Type profiling of arguments at call; "             \
                      "Y: Type profiling of return value at call; "          \

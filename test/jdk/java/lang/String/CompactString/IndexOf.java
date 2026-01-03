@@ -30,8 +30,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.indexOf.
- * @run testng/othervm -XX:+CompactStrings IndexOf
- * @run testng/othervm -XX:-CompactStrings IndexOf
+ * @run testng/othervm IndexOf
  */
 
 public class IndexOf extends CompactString {

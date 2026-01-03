@@ -30,6 +30,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.explicit.Explicit01
+ * @run main/othervm vm.compiler.optimizations.stringconcat.explicit.Explicit01
  */
 

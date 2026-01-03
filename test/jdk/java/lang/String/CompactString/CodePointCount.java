@@ -30,8 +30,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.codePointCount.
- * @run testng/othervm -XX:+CompactStrings CodePointCount
- * @run testng/othervm -XX:-CompactStrings CodePointCount
+ * @run testng/othervm CodePointCount
  */
 
 public class CodePointCount extends CompactString {
