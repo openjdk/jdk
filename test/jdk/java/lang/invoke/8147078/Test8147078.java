@@ -23,17 +23,18 @@
 
 /* @test
  * @bug 8147078
- * @run testng/othervm -ea -esa Test8147078
+ * @run junit/othervm -ea -esa Test8147078
  */
-
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import static org.testng.AssertJUnit.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Test8147078 {
 
@@ -65,16 +66,10 @@ public class Test8147078 {
 
     @Test
     public void testNoExceptionType() {
-        boolean caught = false;
-        try {
+        var cce = assertThrows(ClassCastException.class, () -> {
             MethodHandle eek = (MethodHandle) MH_catchException.invoke(MH_target, String.class, MH_handler);
-        } catch (ClassCastException cce) {
-            assertEquals("java.lang.String", cce.getMessage());
-            caught = true;
-        } catch (Throwable t) {
-            fail("unexpected exception caught: " + t);
-        }
-        assertTrue(caught);
+        });
+        Assertions.assertEquals("java.lang.String", cce.getMessage());
     }
 
 }
