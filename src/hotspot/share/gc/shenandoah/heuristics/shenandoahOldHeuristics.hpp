@@ -203,6 +203,8 @@ public:
 
   void record_success_degenerated() override;
 
+  void record_unsuccessful_degenerated() override;
+
   void record_success_full() override;
 
   const char* name() override;
