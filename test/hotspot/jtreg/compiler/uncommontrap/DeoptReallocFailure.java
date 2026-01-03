@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8146416
  * @library /test/lib /
  *
@@ -32,7 +32,20 @@
  *      -XX:+WhiteBoxAPI -Xbatch -Xmx100m
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.DeoptReallocFailure::main
  *      compiler.uncommontrap.DeoptReallocFailure
+ */
+
+/*
+ * @test id=with-deopt-stub-code
+ * @library /test/lib /
  *
+ * @requires os.arch=="aarch64"
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI -Xbatch -Xmx100m
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.DeoptReallocFailure::main
+ *      -XX:+AlwaysEmitDeoptStubCode
+ *      compiler.uncommontrap.DeoptReallocFailure
  */
 
 package compiler.uncommontrap;

@@ -167,6 +167,9 @@ class CodeCache : AllStatic {
   static int find_oopmap_slot_fast(void* start);        // Returns a fast oopmap slot if there is any; -1 otherwise
   static nmethod*  find_nmethod(void* start);           // Returns the nmethod containing the given address
 
+  static bool is_deopt_pc(address pc, bool strictly_compiled, CodeBlob* input_cb); // Returns whether pc is a deoptimization handler entry point
+  static address get_deopt_original_pc_and_cb(intptr_t* unextended_sp, address pc, CodeBlob* cb, CodeBlob*& out_cb); // Returns original PC and code blob
+
   static int       blob_count();                        // Returns the total number of CodeBlobs in the cache
   static int       blob_count(CodeBlobType code_blob_type);
   static int       adapter_count();                     // Returns the total number of Adapters in the cache

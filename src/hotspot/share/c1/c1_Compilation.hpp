@@ -101,11 +101,11 @@ class Compilation: public StackObj {
   void build_hir();
   void emit_lir();
 
-  void emit_code_epilog(LIR_Assembler* assembler);
+  void emit_code_epilog(LIR_Assembler* assembler, int frame_size_in_bytes);
   int  emit_code_body();
 
   int  compile_java_method();
-  void install_code(int frame_size);
+  void install_code(ByteSize frame_size);
   void compile_method();
 
   void generate_exception_handler_table();

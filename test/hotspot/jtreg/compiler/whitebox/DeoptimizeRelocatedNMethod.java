@@ -23,7 +23,7 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8316694
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
@@ -33,6 +33,21 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
+ * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
+ */
+
+/*
+ * @test id=with-deopt-stub-code
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ * @requires vm.opt.DeoptimizeALot != true
+ * @requires os.arch=="aarch64"
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires !vm.emulatedClient
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
+ * -XX:+AlwaysEmitDeoptStubCode
  * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
  */
 

@@ -1725,7 +1725,18 @@ nmethod::nmethod(
 #endif
     {
       // Exception handler and deopt handler are in the stub section
-      assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
+      if (AlwaysEmitDeoptStubCode
+          || frame_size >= DeoptimizationBlob::UNPACK_SUBENTRY_COUNT) {
+        assert(offsets->value(CodeOffsets::Deopt) != -1, "must have deopt entry");
+      } else {
+        assert(offsets->value(CodeOffsets::Deopt) == -1, "must not have a deopt entry");
+      }
+
+      if (offsets->value(CodeOffsets::Deopt) != -1) {
+        _deopt_handler_entry_offset    = _stub_offset + offsets->value(CodeOffsets::Deopt);
+      } else {
+        _deopt_handler_entry_offset    = -1;
+      }
 
       bool has_exception_handler = (offsets->value(CodeOffsets::Exceptions) != -1);
       assert(has_exception_handler == (compiler->type() != compiler_c2),
@@ -1735,9 +1746,8 @@ nmethod::nmethod(
       } else {
         _exception_offset = -1;
       }
-
-      _deopt_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::Deopt);
     }
+
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       // C1 generates UnwindHandler at the end of instructions section.
       // Calculate positive offset as distance between the start of stubs section
