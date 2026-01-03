@@ -837,7 +837,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
         } catch (Exception ex) { throw new Error(ex); }
     }
     private void resetSeed(long seedVal) {
-        unsafe.putReferenceVolatile(this, seedOffset, new AtomicLong(seedVal));
+        unsafe.putReferenceMO(Unsafe.MO_VOLATILE, this, seedOffset, new AtomicLong(seedVal));
     }
 
     /**

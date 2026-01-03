@@ -94,7 +94,6 @@ class       Base;
 class   UnsafeOp;
 class     UnsafeGet;
 class     UnsafePut;
-class     UnsafeGetAndSet;
 class   ProfileCall;
 class   ProfileReturnType;
 class   ProfileInvoke;
@@ -188,7 +187,6 @@ class InstructionVisitor: public StackObj {
   virtual void do_ExceptionObject(ExceptionObject* x) = 0;
   virtual void do_UnsafeGet      (UnsafeGet*       x) = 0;
   virtual void do_UnsafePut      (UnsafePut*       x) = 0;
-  virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
   virtual void do_ProfileReturnType (ProfileReturnType*  x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
@@ -1501,13 +1499,17 @@ LEAF(MonitorExit, AccessMonitor)
   }
 };
 
-
 LEAF(Intrinsic, StateSplit)
  private:
   vmIntrinsics::ID _id;
   ArgsNonNullState _nonnull_state;
   Values*          _args;
   Value            _recv;
+
+  // polymorphic prefix arguments, if applicable, set neutrally if not:
+  vmIntrinsics::MemoryOrder   _memory_order;
+  BasicType                   _basic_type;
+  vmIntrinsics::BitsOperation _bits_op;
 
  public:
   // preserves_state can be set to true for Intrinsics
@@ -1528,6 +1530,9 @@ LEAF(Intrinsic, StateSplit)
   , _id(id)
   , _args(args)
   , _recv(nullptr)
+  , _memory_order(vmIntrinsics::UNSAFE_MO_NONE)
+  , _basic_type(T_ILLEGAL)
+  , _bits_op(vmIntrinsics::OP_NONE)
   {
     assert(args != nullptr, "args must exist");
     ASSERT_VALUES
@@ -1567,6 +1572,25 @@ LEAF(Intrinsic, StateSplit)
     StateSplit::input_values_do(f);
     for (int i = 0; i < _args->length(); i++) f->visit(_args->adr_at(i));
   }
+
+  // prefix arguments
+  vmIntrinsics::MemoryOrder memory_order() const {
+    assert(_memory_order != vmIntrinsics::UNSAFE_MO_NONE, "must be present");
+    return _memory_order;
+  }
+  BasicType basic_type() const {
+    assert(_basic_type != T_ILLEGAL, "must be present");
+    return _basic_type;
+  }
+  vmIntrinsics::BitsOperation bits_op() const {
+    assert(_bits_op != vmIntrinsics::OP_NONE, "must be present");
+    return _bits_op;
+  }
+  // one-time setup after creation, required for polymorphic intrinsics
+  Intrinsic* with_polymorphic_prefix(
+      vmIntrinsics::MemoryOrder memory_order,
+      BasicType basic_type = T_OBJECT,
+      vmIntrinsics::BitsOperation bits_op = vmIntrinsics::OP_NONE);
 };
 
 
@@ -2139,14 +2163,15 @@ BASE(UnsafeOp, Instruction)
  private:
   Value _object;                                 // Object to be fetched from or mutated
   Value _offset;                                 // Offset within object
-  bool  _is_volatile;                            // true if volatile - dl/JSR166
+  vmIntrinsics::MemoryOrder _memory_order;       // MO_PLAIN, MO_VOLATILE - dl/JSR166
   BasicType _basic_type;                         // ValueType can not express byte-sized integers
 
  protected:
   // creation
-  UnsafeOp(BasicType basic_type, Value object, Value offset, bool is_put, bool is_volatile)
+  UnsafeOp(BasicType basic_type, Value object, Value offset, bool is_put,
+           vmIntrinsics::MemoryOrder memory_order)
     : Instruction(is_put ? voidType : as_ValueType(basic_type)),
-    _object(object), _offset(offset), _is_volatile(is_volatile), _basic_type(basic_type)
+    _object(object), _offset(offset), _memory_order(memory_order), _basic_type(basic_type)
   {
     //Note:  Unsafe ops are not not guaranteed to throw NPE.
     // Convservatively, Unsafe operations must be pinned though we could be
@@ -2159,7 +2184,7 @@ BASE(UnsafeOp, Instruction)
   BasicType basic_type()                         { return _basic_type; }
   Value object()                                 { return _object; }
   Value offset()                                 { return _offset; }
-  bool  is_volatile()                            { return _is_volatile; }
+  vmIntrinsics::MemoryOrder memory_order()       { return _memory_order; }
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { f->visit(&_object);
@@ -2170,14 +2195,14 @@ LEAF(UnsafeGet, UnsafeOp)
  private:
   bool _is_raw;
  public:
-  UnsafeGet(BasicType basic_type, Value object, Value offset, bool is_volatile)
-  : UnsafeOp(basic_type, object, offset, false, is_volatile)
+  UnsafeGet(BasicType basic_type, Value object, Value offset, vmIntrinsics::MemoryOrder memory_order)
+  : UnsafeOp(basic_type, object, offset, false, memory_order)
   {
     ASSERT_VALUES
     _is_raw = false;
   }
-  UnsafeGet(BasicType basic_type, Value object, Value offset, bool is_volatile, bool is_raw)
-  : UnsafeOp(basic_type, object, offset, false, is_volatile), _is_raw(is_raw)
+  UnsafeGet(BasicType basic_type, Value object, Value offset, vmIntrinsics::MemoryOrder memory_order, bool is_raw)
+  : UnsafeOp(basic_type, object, offset, false, memory_order), _is_raw(is_raw)
   {
     ASSERT_VALUES
   }
@@ -2191,36 +2216,14 @@ LEAF(UnsafePut, UnsafeOp)
  private:
   Value _value;                                  // Value to be stored
  public:
-  UnsafePut(BasicType basic_type, Value object, Value offset, Value value, bool is_volatile)
-  : UnsafeOp(basic_type, object, offset, true, is_volatile)
+  UnsafePut(BasicType basic_type, Value object, Value offset, Value value, vmIntrinsics::MemoryOrder memory_order)
+  : UnsafeOp(basic_type, object, offset, true, memory_order)
     , _value(value)
   {
     ASSERT_VALUES
   }
 
   // accessors
-  Value value()                                  { return _value; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeOp::input_values_do(f);
-                                                   f->visit(&_value); }
-};
-
-LEAF(UnsafeGetAndSet, UnsafeOp)
- private:
-  Value _value;                                  // Value to be stored
-  bool  _is_add;
- public:
-  UnsafeGetAndSet(BasicType basic_type, Value object, Value offset, Value value, bool is_add)
-  : UnsafeOp(basic_type, object, offset, false, false)
-    , _value(value)
-    , _is_add(is_add)
-  {
-    ASSERT_VALUES
-  }
-
-  // accessors
-  bool is_add() const                            { return _is_add; }
   Value value()                                  { return _value; }
 
   // generic

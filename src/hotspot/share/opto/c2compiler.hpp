@@ -66,11 +66,27 @@ public:
   // assuming a non-virtual dispatch. (A virtual dispatch is
   // possible for only a limited set of available intrinsics whereas
   // a non-virtual dispatch is possible for all available intrinsics.)
+  // Return true if the intrinsic `id` is supported by C2.
   // Return false otherwise.
-  virtual bool is_intrinsic_supported(const methodHandle& method);
+  virtual bool is_intrinsic_supported(vmIntrinsics::ID id) {
+    return is_intrinsic_supported_nv(id);
+  }
+  // Fine-grained query about polymorphic intrinsics,
+  // applicable only to an intrinsic with a polymorphic prefix.
+  virtual bool is_intrinsic_supported(vmIntrinsics::ID id,
+                                      vmIntrinsics::MemoryOrder mo,
+                                      BasicType bt = T_OBJECT,
+                                      vmIntrinsics::BitsOperation op = vmIntrinsics::OP_NONE) {
+    return is_intrinsic_supported_nv(id, mo, bt, op);
+  }
+  static bool is_intrinsic_supported_nv(vmIntrinsics::ID id);
+  // Fine-grained query about polymorphic intrinsics,
+  // applicable only to an intrinsic with a polymorphic prefix.
+  static bool is_intrinsic_supported_nv(vmIntrinsics::ID id,
+                                        vmIntrinsics::MemoryOrder mo,
+                                        BasicType bt,
+                                        vmIntrinsics::BitsOperation op);
 
-  // Return true if the intrinsic `id` is supported by C2
-  static bool is_intrinsic_supported(vmIntrinsics::ID id);
   // Initial size of the code buffer (may be increased at runtime)
   static int initial_code_buffer_size(int const_size = initial_const_capacity);
 };
