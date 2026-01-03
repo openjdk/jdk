@@ -240,7 +240,9 @@ public class PngImageDecoder8BitTest {
                 int argb1 = expected.getRGB(x, y);
                 int argb2 = actual.getRGB(x, y);
                 if (argb1 != argb2) {
-                    throw new Error("x = " + x + ", y = " + y);
+                    throw new RuntimeException("x = " + x + ", y = " + y +
+                            " argb1 = " + Integer.toUnsignedString(argb1, 16) +
+                            " argb2 = " + Integer.toUnsignedString(argb2, 16));
                 }
             }
         }
