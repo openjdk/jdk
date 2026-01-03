@@ -745,9 +745,6 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
-
-  // Flush generated code
-  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
 // Move all my code into another code buffer.  Consult applicable
@@ -794,6 +791,7 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
   // relocated when the corresponding instruction in the code (e.g., a
   // call) is relocated. Stubs are placed behind the main code
   // section, so that section has to be copied before relocating.
+  ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
     CodeSection* dest_cs = dest->code_section(n);
     if (dest_cs->is_empty() || (dest_cs->locs_count() == 0)) continue;  // skip trivial section

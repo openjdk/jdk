@@ -988,8 +988,6 @@ class oop_Relocation : public DataRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  void fix_oop_relocation();        // reasserts oop value
-
   void verify_oop_relocation();
 
   address value() override { return *reinterpret_cast<address*>(oop_addr()); }
@@ -1031,7 +1029,8 @@ class metadata_Relocation : public DataRelocation {
   // Fixes a Metadata pointer in the code. Most platforms embeds the
   // Metadata pointer in the code at compile time so this is empty
   // for them.
-  void pd_fix_value(address x);
+  // Returns true if code was modified.
+  bool pd_fix_value(address x);
 
  public:
   int metadata_index() { return _metadata_index; }
@@ -1040,7 +1039,7 @@ class metadata_Relocation : public DataRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  void fix_metadata_relocation();        // reasserts metadata value
+  bool fix_metadata_relocation();        // reasserts metadata value
 
   address value() override { return (address) *metadata_addr(); }
 

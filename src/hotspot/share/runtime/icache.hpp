@@ -71,6 +71,11 @@ class AbstractICache : AllStatic {
   static void invalidate_range(address start, int nbytes);
 };
 
+enum class ICacheInvalidation : uint8_t {
+  NOT_NEEDED = 0,
+  IMMEDIATE  = 1,
+  DEFERRED   = 2
+};
 
 // Must be included before the definition of ICacheStubGenerator
 // because ICacheStubGenerator uses ICache definitions.
@@ -127,6 +132,53 @@ class ICacheStubGenerator : public StubCodeGenerator {
   // the StubCodeMark destructor is invoked.
 
   void generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub);
+};
+
+class DefaultICacheInvalidationContext : StackObj {
+ private:
+  NONCOPYABLE(DefaultICacheInvalidationContext);
+
+  NOT_PRODUCT(static THREAD_LOCAL DefaultICacheInvalidationContext* _current_context;)
+
+  ICacheInvalidation _mode;
+
+ public:
+  DefaultICacheInvalidationContext(ICacheInvalidation mode)
+      : _mode(mode) {
+    NOT_PRODUCT(_current_context = this);
+  }
+
+  DefaultICacheInvalidationContext() : DefaultICacheInvalidationContext(ICacheInvalidation::IMMEDIATE) {}
+
+  ~DefaultICacheInvalidationContext() {
+    NOT_PRODUCT(_current_context = nullptr);
+  }
+
+  ICacheInvalidation mode() const {
+    return _mode;
+  }
+
+  void set_has_modified_code() {
+    // No-op for the default implementation.
+  }
+
+#ifdef ASSERT
+  static DefaultICacheInvalidationContext* current() {
+    return _current_context;
+  }
+#endif
+};
+
+#ifndef PD_ICACHE_INVALIDATION_CONTEXT
+#define PD_ICACHE_INVALIDATION_CONTEXT DefaultICacheInvalidationContext
+#endif // PD_ICACHE_INVALIDATION_CONTEXT
+
+class ICacheInvalidationContext final : public PD_ICACHE_INVALIDATION_CONTEXT {
+ private:
+  NONCOPYABLE(ICacheInvalidationContext);
+
+ public:
+  using PD_ICACHE_INVALIDATION_CONTEXT::PD_ICACHE_INVALIDATION_CONTEXT;
 };
 
 #endif // SHARE_RUNTIME_ICACHE_HPP

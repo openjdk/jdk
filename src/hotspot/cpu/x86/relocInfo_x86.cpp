@@ -175,5 +175,6 @@ address Relocation::pd_get_address_from_code() {
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
 }
 
-void metadata_Relocation::pd_fix_value(address x) {
+bool metadata_Relocation::pd_fix_value(address x) {
+  return false;
 }
