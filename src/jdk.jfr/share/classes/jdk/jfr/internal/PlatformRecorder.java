@@ -557,6 +557,7 @@ public final class PlatformRecorder {
         copy.setStartTime(r.getStartTime());
         copy.setStopTime(r.getStopTime());
         copy.setFlushInterval(r.getFlushInterval());
+        copy.setDummyRecording(r.isDummyRecording());
 
         if (r.getState() == RecordingState.NEW) {
             return newRec;
