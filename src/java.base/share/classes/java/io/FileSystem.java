@@ -32,8 +32,15 @@ import java.lang.annotation.Native;
  */
 
 abstract class FileSystem {
+    /* -- Legacy empty path behavior -- */
 
-    /* -- Current Working Directory --*/
+    private static final String FAIL_IF_EMPTY_PATH_PROPERTY =
+        "jdk.io.File.failIfEmptyPath";
+
+    protected static final boolean FAIL_IF_EMPTY_PATH =
+        Boolean.getBoolean(FAIL_IF_EMPTY_PATH_PROPERTY);
+
+    /* -- Current Working Directory -- */
 
     /* lazy initialization of CWD object */
     private static class CurrentWorkingDirectoryHolder {
