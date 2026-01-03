@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,13 +216,13 @@ TEST(opto, canonicalize_constraints) {
 
 // Implementations of TypeIntMirror methods for testing purposes
 template <class S, class U>
-const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
-  return this;
+TypeIntMirror<S, U> TypeIntMirror<S, U>::make(const TypeIntMirror<S, U>& t, int widen) {
+  return t;
 }
 
 template <class S, class U>
-TypeIntMirror<S, U> TypeIntMirror<S, U>::meet(const TypeIntMirror& o) const {
-  return TypeIntHelper::int_type_union(*this, o);
+const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
+  return this;
 }
 
 template <class S, class U>
