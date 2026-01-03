@@ -226,8 +226,11 @@ public:
          Base,                  // Base oop, for GC purposes
          Address,               // Actually address, derived from base
          Offset } ;             // Offset added to address
-  AddPNode( Node *base, Node *ptr, Node *off ) : Node(nullptr,base,ptr,off) {
+  AddPNode(Node *base, Node *ptr, Node *off) : Node(nullptr,base,ptr,off) {
     init_class_id(Class_AddP);
+    assert((ptr->bottom_type() == Type::TOP) ||
+      ((base == Compile::current()->top()) == (ptr->bottom_type()->make_ptr()->isa_oopptr() == nullptr)),
+      "base input only needed for heap addresses");
   }
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
