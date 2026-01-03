@@ -22,10 +22,11 @@
  */
 package jdk.vm.ci.meta;
 
+import jdk.vm.ci.meta.Assumptions.AssumptionResult;
+import jdk.vm.ci.meta.annotation.Annotated;
+
 import java.lang.reflect.AnnotatedElement;
 import java.util.List;
-
-import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 
 /**
  * Represents a resolved Java type. Types include primitives, objects, {@code void}, and arrays
@@ -313,6 +314,18 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     ResolvedJavaField[] getStaticFields();
 
     /**
+     * Returns whether this type is a {@link Record}.
+     */
+    boolean isRecord();
+
+    /**
+     * Returns an array of {@code ResolvedJavaRecordComponent} objects representing all the
+     * record components of this record class, or {@code null} if this class is
+     * not a record class.
+     */
+    ResolvedJavaRecordComponent[] getRecordComponents();
+
+    /**
      * Returns the instance field of this class (or one of its super classes) at the given offset,
      * or {@code null} if there is no such field.
      *
@@ -409,12 +422,15 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     boolean isCloneableWithAllocation();
 
     /**
-     * Lookup an unresolved type relative to an existing resolved type.
+     * Looks up {@code unresolvedJavaType} using the class loader of this resolved type.
+     *
+     * @param resolve specifies whether to attempt resolution if there is no currently resolved
+     *               type corresponding to {@code unresolvedJavaType}
+     * @return a resolved type for {@code unresolvedJavaType} or null
+     * @throws LinkageError if {@code resolve == true} and resolution failed
      */
     @SuppressWarnings("unused")
-    default ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, boolean resolve) {
-        return null;
-    }
+    ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, boolean resolve);
 
     @SuppressWarnings("unused")
     default ResolvedJavaField resolveField(UnresolvedJavaField unresolvedJavaField, ResolvedJavaType accessingClass) {

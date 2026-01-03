@@ -69,7 +69,7 @@ public class JVMCI {
                         errorMessage.format("The VM does not support the JVMCI API.%n");
                         errorMessage.format("Currently used Java home directory is %s.%n", javaHome);
                         errorMessage.format("Currently used VM configuration is: %s", vmName);
-                        throw new UnsupportedOperationException(errorMessage.toString());
+                        throw new UnsupportedOperationException(errorMessage.toString(), e);
                     } finally {
                         initializing = false;
                     }

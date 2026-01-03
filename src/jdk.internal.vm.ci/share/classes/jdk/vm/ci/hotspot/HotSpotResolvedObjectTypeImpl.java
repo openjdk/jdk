@@ -22,27 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static java.util.Objects.requireNonNull;
-import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
-import static jdk.vm.ci.hotspot.HotSpotConstantPool.isSignaturePolymorphicHolder;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmClassModifiers;
-import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-
-import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.Assumptions.ConcreteMethod;
 import jdk.vm.ci.meta.Assumptions.ConcreteSubtype;
@@ -54,9 +34,26 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaRecordComponent;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaField;
 import jdk.vm.ci.meta.UnresolvedJavaType;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.List;
+
+import static java.util.Objects.requireNonNull;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.HotSpotConstantPool.isSignaturePolymorphicHolder;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotModifiers.jvmClassModifiers;
+import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 /**
  * Implementation of {@link JavaType} for resolved non-primitive HotSpot classes. This class is not
@@ -73,6 +70,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      */
     private final long klassPointer;
 
+    private ResolvedJavaRecordComponent[] recordComponents;
     private HotSpotResolvedJavaMethodImpl[] methodCacheArray;
     private HashMap<Long, HotSpotResolvedJavaMethodImpl> methodCacheHashMap;
     private volatile HotSpotResolvedJavaField[] instanceFields;
@@ -513,7 +511,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public HotSpotConstantPool getConstantPool() {
-        if (constantPool == null || !isArray() && UNSAFE.getAddress(getKlassPointer() + config().instanceKlassConstantsOffset) != constantPool.getConstantPoolPointer()) {
+        if (isArray()) {
+            return null;
+        }
+        if (constantPool == null || UNSAFE.getAddress(getKlassPointer() + config().instanceKlassConstantsOffset) != constantPool.getConstantPoolPointer()) {
             /*
              * If the pointer to the ConstantPool has changed since this was last read refresh the
              * HotSpotConstantPool wrapper object. This ensures that uses of the constant pool are
@@ -648,7 +649,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return null;
     }
 
-    private FieldInfo[] getFieldInfo() {
+    FieldInfo[] getFieldInfo() {
         if (fieldInfo == null) {
             fieldInfo = runtime().compilerToVm.getDeclaredFieldsInfo(this);
         }
@@ -717,24 +718,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             this.initializerIndex = initializerIndex;
         }
 
-        private int getClassfileFlags() {
+        int getClassfileFlags() {
             return classfileFlags;
         }
 
-        private int getInternalFlags() {
+        int getInternalFlags() {
             return internalFlags;
-        }
-
-        private int getNameIndex() {
-            return nameIndex;
-        }
-
-        private int getSignatureIndex() {
-            return signatureIndex;
-        }
-
-        private int getConstantValueIndex() {
-            return initializerIndex;
         }
 
         public int getOffset() {
@@ -831,6 +820,26 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
     }
 
+    @Override
+    public boolean isRecord() {
+        HotSpotResolvedObjectTypeImpl superclass = getSuperclass();
+        if (!isLeaf() || superclass == null || !superclass.equals(runtime().getJavaLangRecord())) {
+            return false;
+        }
+        return UNSAFE.getAddress(getKlassPointer() + config().instanceKlassRecordComponentsOffset) != 0;
+    }
+
+    @Override
+    public ResolvedJavaRecordComponent[] getRecordComponents() {
+        if (!isRecord()) {
+            return null;
+        }
+        if (recordComponents == null) {
+            recordComponents = compilerToVM().getRecordComponents(this);
+        }
+        return recordComponents;
+    }
+
     /**
      * Gets the instance or static fields of this class.
      *
@@ -838,7 +847,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * @param prepend an array to be prepended to the returned result
      */
     private HotSpotResolvedJavaField[] getFields(boolean retrieveStaticFields, HotSpotResolvedJavaField[] prepend) {
-        HotSpotVMConfig config = config();
         int resultCount = 0;
         int index = 0;
 
@@ -890,22 +898,32 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * @param includingInherited if true, expand this query to include superclasses of this type
      */
     private boolean mayHaveAnnotations(boolean includingInherited) {
-        if (isArray()) {
-            return false;
-        }
-        HotSpotVMConfig config = config();
-        final long metaspaceAnnotations = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassAnnotationsOffset);
-        if (metaspaceAnnotations != 0) {
-            long classAnnotations = UNSAFE.getAddress(metaspaceAnnotations + config.annotationsClassAnnotationsOffset);
-            if (classAnnotations != 0) {
-                return true;
-            }
+        if (hasDirectAnnotations(false)) {
+            return true;
         }
         if (includingInherited) {
             HotSpotResolvedObjectTypeImpl superClass = getSuperclass();
             if (superClass != null) {
                 return superClass.mayHaveAnnotations(true);
             }
+        }
+        return false;
+    }
+
+    /**
+     * Returns whether this type has type annotations ({@code typeAnnotations == true}) or
+     * non-inherited declared annotations ({@code typeAnnotations == false}).
+     */
+    private boolean hasDirectAnnotations(boolean typeAnnotations) {
+        if (isArray()) {
+            return false;
+        }
+        HotSpotVMConfig config = config();
+        final long metaspaceAnnotations = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassAnnotationsOffset);
+        if (metaspaceAnnotations != 0) {
+            int annotationsOffset = typeAnnotations?config.annotationsClassTypeAnnotationsOffset: config.annotationsClassAnnotationsOffset;
+            long classAnnotations = UNSAFE.getAddress(metaspaceAnnotations + annotationsOffset);
+            return classAnnotations != 0;
         }
         return false;
     }
@@ -1094,11 +1112,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, boolean resolve) {
-        JavaType javaType = HotSpotJVMCIRuntime.runtime().lookupType(unresolvedJavaType.getName(), this, resolve);
-        if (javaType instanceof ResolvedJavaType) {
-            return (ResolvedJavaType) javaType;
-        }
-        return null;
+        return lookupType(unresolvedJavaType, this, resolve);
     }
 
     @Override
@@ -1122,27 +1136,20 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
-        if (!mayHaveAnnotations(true)) {
-            checkIsAnnotation(annotationType);
+    public AnnotationsInfo getDeclaredAnnotationInfo() {
+        if (!hasDirectAnnotations(false)) {
             return null;
         }
-        return getFirstAnnotationOrNull(getAnnotationData0(annotationType));
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('t', this, this.getKlassPointer(), 0, CompilerToVM.DECLARED_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getConstantPool(), this);
     }
 
     @Override
-    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        if (!mayHaveAnnotations(true)) {
-            checkIsAnnotation(type1);
-            checkIsAnnotation(type2);
-            checkAreAnnotations(types);
-            return List.of();
+    public AnnotationsInfo getTypeAnnotationInfo() {
+        if (!hasDirectAnnotations(true)) {
+            return null;
         }
-        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
-    }
-
-    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedClassAnnotationData(this, filter);
-        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('t', this, this.getKlassPointer(), 0, CompilerToVM.TYPE_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getConstantPool(), this);
     }
 }
