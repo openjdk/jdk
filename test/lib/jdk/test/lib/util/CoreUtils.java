@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ public class CoreUtils {
                     line = line.trim();
                     System.out.println(line);
                     if (line.startsWith("|")) {
-                        if (line.split("\s", 2)[0].endsWith("systemd-coredump")) {
+                        if (line.split("\\s+", 2)[0].endsWith("systemd-coredump")) {
                             // A systemd linux system. Try to retrieve core
                             // file. It can take a few seconds for the system to
                             // process the just produced core file so we may need to
