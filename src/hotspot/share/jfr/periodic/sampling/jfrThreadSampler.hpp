@@ -25,10 +25,13 @@
 #ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLER_HPP
 #define SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLER_HPP
 
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 
 class JfrThreadSampler : public JfrCHeapObj {
   friend class JfrRecorder;
+  friend class JfrSamplerThread;
+
  private:
   void create_sampler(int64_t java_period_millis, int64_t native_period_millis);
   void update_run_state(int64_t java_period_millis, int64_t native_period_millis);
@@ -44,6 +47,9 @@ class JfrThreadSampler : public JfrCHeapObj {
  public:
   static void set_java_sample_period(int64_t period_millis);
   static void set_native_sample_period(int64_t period_millis);
+
+  // Sample a single java thread
+  static void sample_thread(JavaThread* const jt, jobject target, AsyncCallback callback, void* context);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLER_HPP
