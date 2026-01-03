@@ -73,6 +73,7 @@ private:
       ciConstant value() const { return _value; }
   };
 
+  const int IDENTITY_HASH_OFFSET = -1;
   GrowableArray<ConstantValue>* _constant_values = nullptr;
 
 protected:
@@ -182,6 +183,8 @@ public:
     assert(is_type_array(), "bad cast");
     return (ciTypeArray*)this;
   }
+
+  ciConstant identity_hash();
 
   // Print debugging output about this ciObject.
   void print(outputStream* st);
