@@ -431,7 +431,6 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // The store should be captured by InitializeNode and turned into initialized store later.
   Node* field_store = gvn.transform(kit.access_store_at(vec_obj,
                                                         vec_field,
-                                                        vec_adr_type,
                                                         arr,
                                                         TypeOopPtr::make_from_klass(field->type()->as_klass()),
                                                         T_OBJECT,
@@ -472,11 +471,10 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     Node* vec_field_ld;
     {
       DecoratorSet decorators = MO_UNORDERED | IN_HEAP;
-      C2AccessValuePtr addr(vec_adr, vec_adr->bottom_type()->is_ptr());
       MergeMemNode* local_mem = MergeMemNode::make(mem);
       gvn.record_for_igvn(local_mem);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, addr);
+      C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, vec_adr);
       const Type* type = TypeOopPtr::make_from_klass(field->type()->as_klass());
       vec_field_ld = bs->load_at(access, type);
     }

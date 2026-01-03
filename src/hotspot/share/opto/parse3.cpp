@@ -165,7 +165,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
     type = Type::get_const_basic_type(bt);
   }
 
-  Node* ld = access_load_at(obj, adr, adr_type, type, bt, decorators);
+  Node* ld = access_load_at(obj, adr, type, bt, decorators);
 
   // Adjust Java stack
   if (type2size[bt] == 1)
@@ -227,7 +227,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
       field_type = Type::BOTTOM;
     }
   }
-  access_store_at(obj, adr, adr_type, val, field_type, bt, decorators);
+  access_store_at(obj, adr, val, field_type, bt, decorators);
 
   if (is_field) {
     // Remember we wrote a volatile field.
@@ -310,14 +310,13 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
     jint length_con = find_int_con(length, -1);
     guarantee(length_con >= 0, "non-constant multianewarray");
     ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
-    const TypePtr* adr_type = TypeAryPtr::OOPS;
     const TypeOopPtr*    elemtype = _gvn.type(array)->is_aryptr()->elem()->make_oopptr();
     const intptr_t header   = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     for (jint i = 0; i < length_con; i++) {
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
       intptr_t offset = header + ((intptr_t)i << LogBytesPerHeapOop);
       Node*    eaddr  = basic_plus_adr(array, offset);
-      access_store_at(array, eaddr, adr_type, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
+      access_store_at(array, eaddr, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
     }
   }
   return array;
