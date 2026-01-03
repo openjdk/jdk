@@ -178,7 +178,7 @@ class MemDetailReporter : public MemSummaryReporter {
   int report_virtual_memory_allocation_sites();
 
   // Report a virtual memory region
-  void report_virtual_memory_region(const ReservedMemoryRegion* rgn);
+  void report_virtual_memory_region(const VirtualMemoryRegion* rgn);
 };
 
 /*
