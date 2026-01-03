@@ -62,14 +62,12 @@ public class FixedThreadPoolTest {
     static Http2TestServer httpServer, httpsServer;
     static HttpClient client = null;
     static ExecutorService exec;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static String httpURIString, httpsURIString;
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
             httpServer = new Http2TestServer(false, 0, exec, sslContext);
             httpServer.addHandler(new Http2EchoHandler(), "/");
