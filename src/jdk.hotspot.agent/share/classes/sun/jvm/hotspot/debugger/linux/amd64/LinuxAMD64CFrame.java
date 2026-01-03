@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,48 @@
 
 package sun.jvm.hotspot.debugger.linux.amd64;
 
+import java.util.function.Function;
+
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.linux.*;
+import sun.jvm.hotspot.debugger.linux.amd64.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.runtime.amd64.*;
 
 public final class LinuxAMD64CFrame extends BasicCFrame {
+
+   private static LinuxAMD64CFrame getFrameFromReg(LinuxDebugger dbg, Function<Integer, Address> getreg) {
+      Address rip = getreg.apply(AMD64ThreadContext.RIP);
+      Address rsp = getreg.apply(AMD64ThreadContext.RSP);
+      Address libptr = dbg.findLibPtrByAddress(rip);
+      Address cfa = getreg.apply(AMD64ThreadContext.RBP);
+      DwarfParser dwarf = null;
+
+      if (libptr != null) { // Native frame
+        dwarf = new DwarfParser(libptr);
+        try {
+          dwarf.processDwarf(rip);
+        } catch (DebuggerException e) {
+          // DWARF processing should succeed when the frame is native
+          // but it might fail if Common Information Entry (CIE) has language
+          // personality routine and/or Language Specific Data Area (LSDA).
+          return new LinuxAMD64CFrame(dbg, rsp, cfa, rip, dwarf, true);
+        }
+
+        cfa = getreg.apply(dwarf.getCFARegister())
+                    .addOffsetTo(dwarf.getCFAOffset());
+      }
+
+      return (cfa == null) ? null
+                           : new LinuxAMD64CFrame(dbg, rsp, cfa, rip, dwarf);
+   }
+
+   public static LinuxAMD64CFrame getTopFrame(LinuxDebugger dbg, Address rip, ThreadContext context) {
+      return getFrameFromReg(dbg, context::getRegisterAsAddress);
+   }
 
    public static LinuxAMD64CFrame getTopFrame(LinuxDebugger dbg, Address rsp, Address rip, ThreadContext context) {
       Address libptr = dbg.findLibPtrByAddress(rip);
@@ -102,12 +135,14 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
      }
    }
 
-   private boolean isValidFrame(Address nextCFA, boolean isNative) {
+   private boolean isValidFrame(Address nextCFA, boolean isNative, boolean isSigTrampoline) {
      // CFA should never be null.
      // nextCFA must be greater than current CFA, if frame is native.
      // Java interpreter frames can share the CFA (frame pointer).
+     // If caller is signal trampoline, this check should be skipped
+     // because SP points rt_sigframe.
      return nextCFA != null &&
-         (!isNative || (isNative && nextCFA.greaterThan(cfa)));
+         (isSigTrampoline || !isNative || (isNative && nextCFA.greaterThan(cfa)));
    }
 
    private Address getNextRSP() {
@@ -120,6 +155,7 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
    private Address getNextCFA(DwarfParser nextDwarf, ThreadContext context, Address senderFP, Address senderPC) {
      Address nextCFA;
      boolean isNative = false;
+     boolean isSigTrampoline = false;
 
      if (senderFP == null) {
        senderFP = cfa.getAddressAt(0);  // RBP by default
@@ -149,6 +185,10 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
            throw new DebuggerException("Unsupported CFA register: " + nextCFAReg);
          }
        }
+
+       // Check whether caller is signal trampoline
+       var sym = dbg.lookup(dbg.getAddressValue(senderPC));
+       isSigTrampoline = sym != null && sym.getName().equals("<signal handler called>");
      }
 
      // Sanity check for next CFA address
@@ -159,7 +199,7 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
        return null;
      }
 
-     return isValidFrame(nextCFA, isNative) ? nextCFA : null;
+     return isValidFrame(nextCFA, isNative, isSigTrampoline) ? nextCFA : null;
    }
 
    @Override
@@ -171,6 +211,13 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
    public CFrame sender(ThreadProxy th, Address sp, Address fp, Address pc) {
      if (finalFrame) {
        return null;
+     }
+
+     var sym = closestSymbolToPC();
+     if (sym != null && sym.getName().equals("<signal handler called>")) {
+       // RSP points signal context
+       //   https://github.com/torvalds/linux/blob/v6.17/arch/x86/kernel/signal.c#L94
+       return getFrameFromReg(dbg, r -> LinuxAMD64ThreadContext.getRegFromSignalTrampoline(this.rsp, r.intValue()));
      }
 
      ThreadContext context = th.getContext();
