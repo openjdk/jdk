@@ -41,9 +41,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageConsumer;
 import java.awt.image.IndexColorModel;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Random;
@@ -58,35 +57,6 @@ import java.util.concurrent.ExecutionException;
  * This test has never failed.
  */
 public class PngImageDecoder8BitTest {
-
-    interface Model {
-        BufferedImage load(byte[] imagedata) throws Exception;
-    }
-
-    /**
-     * This creates a BufferedImage using ImageIO.
-     */
-    static class ImageIOModel implements Model {
-
-        @Override
-        public BufferedImage load(byte[] imagedata) throws Exception {
-            try (InputStream in = new ByteArrayInputStream(imagedata)) {
-                return ImageIO.read(in);
-            }
-        }
-    }
-
-    /**
-     * This creates a BufferedImage using an ImageConsumer and ImageProducer.
-     */
-    static class ImageConsumerModel implements Model {
-
-        @Override
-        public BufferedImage load(byte[] imagedata) throws Exception {
-            Image img = Toolkit.getDefaultToolkit().createImage(imagedata);
-            return createBufferedImage(img);
-        }
-    }
 
     static BufferedImage createBufferedImage(Image img)
             throws ExecutionException, InterruptedException {
@@ -159,33 +129,25 @@ public class PngImageDecoder8BitTest {
     }
 
     public static void main(String[] args) throws Exception {
-        Model[] models = new Model[]{
-                new ImageIOModel(),
-                new ImageConsumerModel()
-        };
-
+        BufferedImage expected = createImageData();
         for (boolean interlace : new boolean[] { false, true} ) {
             System.out.println("Testing interlacing = "+ interlace);
-            byte[] imageData = createImageData(6000, interlace);
+            byte[] imageData = encodePNG(expected, interlace);
 
-            BufferedImage expected = models[0].load(imageData);
-            BufferedImage actual = models[1].load(imageData);
+            Image i = Toolkit.getDefaultToolkit().createImage(imageData);
+            BufferedImage actual = createBufferedImage(i);
 
             testCorrectness(expected, actual);
         }
-        System.out.println("Confirmed that 8-bit PNGs render correctly " +
-                "whether we use ImageIO or ImageConsumers. We tested both " +
-                "an interlaced and an non-interlaced PNG image.");
+        System.out.println("Confirmed that 8-bit PNGs decode correctly " +
+                "whether we use interlacing or not.");
     }
 
     /**
      * Create a large sample image stored as an 8-bit PNG.
-     *
-     * @return the byte representation of the PNG image.
      */
-    private static byte[] createImageData(int squareSize,
-                                          boolean interlace) throws Exception {
-        BufferedImage bi = new BufferedImage(squareSize, squareSize,
+    private static BufferedImage createImageData() {
+        BufferedImage bi = new BufferedImage(6000, 6000,
                 BufferedImage.TYPE_BYTE_INDEXED);
         Random r = new Random(0);
         Graphics2D g = bi.createGraphics();
@@ -196,7 +158,13 @@ public class PngImageDecoder8BitTest {
                     radius, radius);
         }
         g.dispose();
+        return bi;
+    }
 
+    /**
+     * Encode an image as 8-bit PNG.
+     */
+    private static byte[] encodePNG(BufferedImage bi, boolean interlace) throws IOException {
         Iterator<ImageWriter> writers =
                 ImageIO.getImageWritersByFormatName("png");
         if (!writers.hasNext()) {
