@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,37 +107,6 @@ LIR_Opr LIR_Assembler::osrBufferPointer() {
 
 //--------------fpu register translations-----------------------
 
-
-address LIR_Assembler::float_constant(float f) {
-  address const_addr = __ float_constant(f);
-  if (const_addr == nullptr) {
-    bailout("const section overflow");
-    return __ code()->consts()->start();
-  } else {
-    return const_addr;
-  }
-}
-
-
-address LIR_Assembler::double_constant(double d) {
-  address const_addr = __ double_constant(d);
-  if (const_addr == nullptr) {
-    bailout("const section overflow");
-    return __ code()->consts()->start();
-  } else {
-    return const_addr;
-  }
-}
-
-address LIR_Assembler::int_constant(jlong n) {
-  address const_addr = __ long_constant(n);
-  if (const_addr == nullptr) {
-    bailout("const section overflow");
-    return __ code()->consts()->start();
-  } else {
-    return const_addr;
-  }
-}
 
 void LIR_Assembler::breakpoint() { Unimplemented(); }
 
@@ -558,8 +528,14 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       if (__ operand_valid_for_float_immediate(c->as_jfloat())) {
         __ fmovs(dest->as_float_reg(), (c->as_jfloat()));
       } else {
-        __ adr(rscratch1, InternalAddress(float_constant(c->as_jfloat())));
-        __ ldrs(dest->as_float_reg(), Address(rscratch1));
+        union {
+          jfloat as_float;
+          uint32_t as_uint32;
+        };
+
+        as_float = c->as_jfloat();
+        __ movw(rscratch1, as_uint32);
+        __ fmovs(dest->as_float_reg(), rscratch1);
       }
       break;
     }
@@ -568,8 +544,27 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       if (__ operand_valid_for_float_immediate(c->as_jdouble())) {
         __ fmovd(dest->as_double_reg(), (c->as_jdouble()));
       } else {
-        __ adr(rscratch1, InternalAddress(double_constant(c->as_jdouble())));
-        __ ldrd(dest->as_double_reg(), Address(rscratch1));
+        union {
+          jdouble as_double;
+          uint64_t as_uint64;
+        };
+        as_double = c->as_jdouble();
+
+        int insns_for_mov_imm64 = __ mov_immediate64_insts_count(rscratch1, as_uint64);
+        if (insns_for_mov_imm64 + 1 <= 4) {
+          __ mov_immediate64(rscratch1, as_uint64);
+          __ fmovd(dest->as_double_reg(), rscratch1);
+        } else {
+          Label after_constant;
+          Label constant;
+          __ ldrd(dest->as_double_reg(), constant);
+          __ b(after_constant);
+
+          __ bind(constant);
+          __ emit_double(as_double);
+
+          __ bind(after_constant);
+        }
       }
       break;
     }
