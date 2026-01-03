@@ -165,6 +165,8 @@ class MethodCounters : public Metadata {
     return false;
   }
 
+  bool has_valid_method_training_data();
+
 #if INCLUDE_CDS
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);

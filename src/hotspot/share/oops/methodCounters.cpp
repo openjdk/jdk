@@ -95,6 +95,12 @@ void MethodCounters::restore_unshareable_info(TRAPS) {
 }
 #endif // INCLUDE_CDS
 
+bool MethodCounters::has_valid_method_training_data() {
+  Metadata* mtd = method_training_data();
+  Metadata* mts = method_training_data_sentinel();
+  return mtd != mts;
+}
+
 void MethodCounters::print_on(outputStream* st) const {
   assert(is_methodCounters(), "should be method counters");
   st->print("method counters");
