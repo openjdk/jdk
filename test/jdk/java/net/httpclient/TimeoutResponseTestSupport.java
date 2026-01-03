@@ -74,11 +74,9 @@ public class TimeoutResponseTestSupport {
 
     private static final SSLContext SSL_CONTEXT = createSslContext();
 
-    private static final long timeoutFactor = (long)Float.parseFloat(
-            System.getProperty("test.timeout.factor", "1.0"));
     protected static final Duration REQUEST_TIMEOUT =
-            Duration.ofMillis(Long.parseLong(System.getProperty("test.requestTimeoutMillis"))
-            * timeoutFactor);
+            Duration.ofMillis(jdk.test.lib.Utils.adjustTimeout(
+                Long.parseLong(System.getProperty("test.requestTimeoutMillis"))));
 
     static {
         assertTrue(
@@ -90,7 +88,8 @@ public class TimeoutResponseTestSupport {
             Integer.parseInt(System.getProperty("jdk.httpclient.redirects.retrylimit", "0"));
 
     private static final long RESPONSE_FAILURE_WAIT_DURATION_MILLIS =
-            Long.parseLong(System.getProperty("test.responseFailureWaitDurationMillis", "0"));
+            jdk.test.lib.Utils.adjustTimeout(
+                Long.parseLong(System.getProperty("test.responseFailureWaitDurationMillis", "0")));
 
     static {
         if (RETRY_LIMIT > 0) {
@@ -107,8 +106,7 @@ public class TimeoutResponseTestSupport {
             // Verify that the total response failure waits exceed the request timeout
             var totalResponseFailureWaitDuration = Duration
                     .ofMillis(RESPONSE_FAILURE_WAIT_DURATION_MILLIS)
-                    .multipliedBy(RETRY_LIMIT)
-                    .multipliedBy(timeoutFactor);
+                    .multipliedBy(RETRY_LIMIT);
             if (totalResponseFailureWaitDuration.compareTo(REQUEST_TIMEOUT) <= 0) {
                 var message = ("`test.responseFailureWaitDurationMillis * jdk.httpclient.redirects.retrylimit` (%s * %s = %s) " +
                         "must be greater than `test.requestTimeoutMillis` (%s)")
