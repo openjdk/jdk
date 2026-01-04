@@ -36,7 +36,6 @@ hotspot_all_no_apps = \
 # Component test groups
 
 hotspot_compiler = \
-  applications/ctw/modules \
   compiler
 
 hotspot_compiler_resourcehogs = \
@@ -523,6 +522,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/aotFlags \
  -runtime/cds/appcds/aotProfile \
  -runtime/cds/appcds/BadBSM.java \
+ -runtime/cds/appcds/cacheObject/ArchiveHeapTestClass.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
  -runtime/cds/appcds/CDSandJFR.java \

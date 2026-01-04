@@ -285,13 +285,12 @@ void Matcher::match( ) {
     _parm_regs[i].set_pair(reg2, reg1);
   }
 
-  // Finally, make sure the incoming arguments take up an even number of
-  // words, in case the arguments or locals need to contain doubleword stack
-  // slots.  The rest of the system assumes that stack slot pairs (in
-  // particular, in the spill area) which look aligned will in fact be
-  // aligned relative to the stack pointer in the target machine.  Double
-  // stack slots will always be allocated aligned.
-  _new_SP = OptoReg::Name(align_up(_in_arg_limit, (int)RegMask::SlotsPerLong));
+  // Allocated register sets are aligned to their size. Offsets to the stack
+  // pointer have to be aligned to the size of the access. For this _new_SP is
+  // aligned to the size of the largest register set with the stack alignment as
+  // limit and a minimum of SlotsPerLong (2).
+  int vector_aligment = MIN2(C->max_vector_size(), stack_alignment_in_bytes()) / VMRegImpl::stack_slot_size;
+  _new_SP = OptoReg::Name(align_up(_in_arg_limit, MAX2((int)RegMask::SlotsPerLong, vector_aligment)));
 
   // Compute highest outgoing stack argument as
   //   _new_SP + out_preserve_stack_slots + max(outgoing argument size).

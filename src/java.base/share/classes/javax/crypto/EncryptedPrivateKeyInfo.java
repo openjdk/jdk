@@ -365,7 +365,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *         not supported by any provider, or if an error occurs during
      *         encryption.
      *
-     * @since 25
+     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encrypt(DEREncodable de,
@@ -404,7 +404,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}
      * defaults are determined by the provider.
      *
-     * @since 25
+     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encrypt(DEREncodable de,
@@ -442,7 +442,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *         {@code algorithm} or {@code params} are not supported by any
      *         provider, or if an error occurs during encryption
      *
-     * @since 25
+     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encrypt(DEREncodable de,
