@@ -203,9 +203,7 @@ uint G1NUMA::index_for_region(G1HeapRegion* hr) const {
 //      * G1HeapRegion #: |-#0-||-#1-||-#2-||-#3-||-#4-||-#5-||-#6-||-#7-||-#8-||-#9-||#10-||#11-||#12-||#13-||#14-||#15-|
 //      * NUMA node #:    |----#0----||----#1----||----#2----||----#3----||----#0----||----#1----||----#2----||----#3----|
 void G1NUMA::request_memory_on_node(void* aligned_address, size_t size_in_bytes, uint region_index) {
-  if (!is_enabled()) {
-    return;
-  }
+  assert(is_enabled(), "must be, check before");
 
   if (size_in_bytes == 0) {
     return;

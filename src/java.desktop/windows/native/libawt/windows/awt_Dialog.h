@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,8 +128,7 @@ public:
     static LRESULT CALLBACK MouseHookProc(int code,
                                           WPARAM wParam, LPARAM lParam);
     // WM_MOUSE hook procedure used in modality, similar to
-    // MouseHookProc but installed on non-toolkit threads, for
-    // example on browser's thread when running in Java Plugin
+    // MouseHookProc but installed on non-toolkit threads
     static LRESULT CALLBACK MouseHookProc_NonTT(int code,
                                                 WPARAM wParam, LPARAM lParam);
 

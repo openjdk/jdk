@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary guarantee(loc != NULL) failed: missing saved register with native invoke
  *
  * @requires vm.flavor == "server"
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64le"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64" | os.arch == "ppc64le"
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm --enable-native-access=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions

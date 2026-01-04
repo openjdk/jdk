@@ -27,15 +27,14 @@
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.debug
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build MethodHandleTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar mh.jar
  *             MethodHandleTestApp MethodHandleTestApp$A MethodHandleTestApp$B
  *             UnsupportedBSMs UnsupportedBSMs$MyEnum
  *             ObjectMethodsTest ObjectMethodsTest$C
- * @run driver MethodHandleTest AOT
+ *             InterfaceWithEnum EnumWithClinit
+ * @run driver MethodHandleTest AOT --two-step-training
  */
 
 import java.io.Serializable;
@@ -75,7 +74,6 @@ public class MethodHandleTest {
                 return new String[] {
                     "-Xlog:gc,cds+class=debug",
                     "-XX:AOTInitTestClass=MethodHandleTestApp",
-                    "-Xlog:cds+map,cds+map+oops=trace:file=cds.oops.txt:none:filesize=0",
                 };
             } else {
                 return new String[] {};
@@ -103,6 +101,11 @@ public class MethodHandleTest {
                 // Make sure MethodHandleTestApp is aot-initialized in the production run.
                 out.shouldNotContain("MethodHandleTestApp.<clinit>");
                 out.shouldContain("intElm = 777");
+            }
+
+            // For MethodHandleTestApp.testLambdaWithEnums()
+            if (runMode == RunMode.ASSEMBLY) {
+                out.shouldNotContain("EnumWithClinit.<clinit>");
             }
         }
     }
@@ -209,6 +212,8 @@ class MethodHandleTestApp {
 
         ObjectMethodsTest.testEqualsC(ObjectMethodsTest_handle);
 
+        testLambdaWithEnums();
+
         UnsupportedBSMs.invokeUnsupportedBSMs();
     }
 
@@ -278,6 +283,29 @@ class MethodHandleTestApp {
             }
         }
     }
+
+
+    static boolean InterfaceWithEnum_inited = false;
+
+    // Enum types used in lambdas shouldn't be initialized during the assembly phase.
+    static void testLambdaWithEnums() {
+        if (InterfaceWithEnum_inited) {
+            throw new RuntimeException("InterfaceWithEnum should not be inited");
+        }
+
+        InterfaceWithEnum iwe = (x) -> {
+            System.out.println("Hello from testLambdaWithEnums");
+        };
+
+        System.out.println(iwe);
+        if (InterfaceWithEnum_inited) {
+            throw new RuntimeException("InterfaceWithEnum should not be inited");
+        }
+        iwe.func(EnumWithClinit.Dummy);
+        if (!InterfaceWithEnum_inited) {
+            throw new RuntimeException("InterfaceWithEnum should be inited");
+        }
+    }
 }
 
 // Excerpt from test/jdk/java/lang/runtime/ObjectMethodsTest.java
@@ -332,6 +360,18 @@ class ObjectMethodsTest {
 
     private static void assertFalse(boolean b) {
         assertTrue(!b);
+    }
+}
+
+interface InterfaceWithEnum {
+    void func(EnumWithClinit e);
+}
+
+enum EnumWithClinit {
+    Dummy;
+    static {
+        MethodHandleTestApp.InterfaceWithEnum_inited = true;
+        System.out.println("EnumWithClinit.<clinit>");
     }
 }
 

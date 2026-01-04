@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.applet.AudioClip;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +28,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
+import javax.sound.SoundClip;
 import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -66,7 +66,7 @@ public final class AutoCloseTimeCheck {
      * and the "Direct Clip" thread will stop.
      */
     private static void testBigDelay(final File file) throws Exception {
-        AudioClip clip = (AudioClip) file.toURL().getContent();
+        SoundClip clip = SoundClip.createSoundClip(file);
         clip.loop();
         clip.stop();
         sleep(20000); // 20 sec for slow systems
@@ -80,7 +80,7 @@ public final class AutoCloseTimeCheck {
      * closed and the "Direct Clip" thread will alive.
      */
     private static void testSmallDelay(final File file) throws IOException {
-        AudioClip clip = (AudioClip) file.toURL().getContent();
+        SoundClip clip = SoundClip.createSoundClip(file);
         long threadID = 0;
         // Will run the test no more than 15 seconds
         long endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);

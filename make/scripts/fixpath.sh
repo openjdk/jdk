@@ -157,12 +157,12 @@ function import_path() {
     if [[ $? -eq 0 && -e "$unixpath" ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
         # If it is not in envroot, it's a generic windows path
-        if [[ ! $winpath =~ ^[-_.:~\\a-zA-Z0-9]*$ ]] ; then
+        if [[ ! $winpath =~ ^[-_.:~+\\a-zA-Z0-9]*$ ]] ; then
           # Path has forbidden characters, rewrite as short name
           # This monster of a command uses the %~s support from cmd.exe to
           # reliably convert to short paths on all winenvs.
           shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
-          if [[ ! $shortpath =~ ^[-_.:~\\a-zA-Z0-9]*$ ]] ; then
+          if [[ ! $shortpath =~ ^[-_.:~+\\a-zA-Z0-9]*$ ]] ; then
             if [[ $QUIET != true ]]; then
               echo fixpath: failure: Path "'"$path"'" could not be converted to short path >&2
             fi

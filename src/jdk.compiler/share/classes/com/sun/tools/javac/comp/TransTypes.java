@@ -810,9 +810,6 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitSwitch(JCSwitch tree) {
-        Type selsuper = types.supertype(tree.selector.type);
-        boolean enumSwitch = selsuper != null &&
-            selsuper.tsym == syms.enumSym;
         tree.selector = translate(tree.selector, erasure(tree.selector.type));
         tree.cases = translateCases(tree.cases);
         result = tree;
@@ -848,11 +845,8 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        Type selsuper = types.supertype(tree.selector.type);
-        boolean enumSwitch = selsuper != null &&
-            selsuper.tsym == syms.enumSym;
         tree.selector = translate(tree.selector, erasure(tree.selector.type));
-        tree.cases = translate(tree.cases, tree.type);
+        tree.cases = translate(tree.cases, erasure(tree.type));
         tree.type = erasure(tree.type);
         result = retype(tree, tree.type, pt);
     }
@@ -1148,9 +1142,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitTypeIntersection(JCTypeIntersection tree) {
-        tree.bounds = translate(tree.bounds, null);
-        tree.type = erasure(tree.type);
-        result = tree;
+        result = translate(tree.bounds.head, null);
     }
 
 /* ************************************************************************

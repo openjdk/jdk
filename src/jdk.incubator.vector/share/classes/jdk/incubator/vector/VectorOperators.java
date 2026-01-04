@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,7 +577,7 @@ public abstract class VectorOperators {
     /** Produce saturating unsigned {@code a+b}.  Integral only.
      * @see VectorMath#addSaturatingUnsigned(int, int)
      */
-    public static final Binary SUADD = binary("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP);
+    public static final Associative SUADD = assoc("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP+VO_ASSOC);
     /** Produce saturating {@code a-b}.  Integral only.
      * @see VectorMath#subSaturating(int, int)
      */

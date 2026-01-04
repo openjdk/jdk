@@ -278,7 +278,6 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       DISABLED_WARNINGS_gcc_X11TextRenderer_md.c := unused-but-set-variable, \
       DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
       DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
-      DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
       DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
       DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
       DISABLED_WARNINGS_clang_gtk3_interface.c := unused-function parentheses, \

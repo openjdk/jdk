@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1441,7 +1441,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
                 comp = AWTAccessor.getComponentAccessor().getParent(comp);
             }
 
-            // applets, embedded, etc - translate directly
+            // embedded, etc - translate directly
             // XXX: override in subclass?
             if (comp == null || comp instanceof sun.awt.EmbeddedFrame) {
                 return toGlobal(0, 0);

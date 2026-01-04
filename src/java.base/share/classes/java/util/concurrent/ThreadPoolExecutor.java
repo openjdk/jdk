@@ -1251,13 +1251,19 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                               BlockingQueue<Runnable> workQueue,
                               ThreadFactory threadFactory,
                               RejectedExecutionHandler handler) {
-        if (corePoolSize < 0 ||
-            maximumPoolSize <= 0 ||
-            maximumPoolSize < corePoolSize ||
-            keepAliveTime < 0)
-            throw new IllegalArgumentException();
-        if (workQueue == null || threadFactory == null || handler == null)
-            throw new NullPointerException();
+        if (corePoolSize < 0) {
+            throw new IllegalArgumentException("corePoolSize must be non-negative");
+        } else if (maximumPoolSize <= 0) {
+            throw new IllegalArgumentException("maximumPoolSize must be positive");
+        } else if (maximumPoolSize < corePoolSize) {
+            throw new IllegalArgumentException("maximumPoolSize must be greater than or equal to corePoolSize");
+        } else if (keepAliveTime < 0) {
+            throw new IllegalArgumentException("keepAliveTime must be non-negative");
+        }
+        Objects.requireNonNull(unit, "unit");
+        Objects.requireNonNull(workQueue, "workQueue");
+        Objects.requireNonNull(threadFactory, "threadFactory");
+        Objects.requireNonNull(handler, "handler");
         this.corePoolSize = corePoolSize;
         this.maximumPoolSize = maximumPoolSize;
         this.workQueue = workQueue;
@@ -1284,8 +1290,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @throws NullPointerException if {@code command} is null
      */
     public void execute(Runnable command) {
-        if (command == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(command, "command");
         /*
          * Proceed in 3 steps:
          *
@@ -1421,23 +1426,6 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         }
     }
 
-    // Override without "throws Throwable" for compatibility with subclasses
-    // whose finalize method invokes super.finalize() (as is recommended).
-    // Before JDK 11, finalize() had a non-empty method body.
-
-    /**
-     * @implNote Previous versions of this class had a finalize method
-     * that shut down this executor, but in this version, finalize
-     * does nothing.
-     *
-     * @deprecated Finalization has been deprecated for removal.  See
-     * {@link java.lang.Object#finalize} for background information and details
-     * about migration options.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("removal")
-    protected void finalize() {}
-
     /**
      * Sets the thread factory used to create new threads.
      *
@@ -1446,8 +1434,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getThreadFactory
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
-        if (threadFactory == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(threadFactory, "threadFactory");
         this.threadFactory = threadFactory;
     }
 
@@ -1469,8 +1456,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getRejectedExecutionHandler
      */
     public void setRejectedExecutionHandler(RejectedExecutionHandler handler) {
-        if (handler == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(handler, "handler");
         this.handler = handler;
     }
 
@@ -1498,8 +1484,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getCorePoolSize
      */
     public void setCorePoolSize(int corePoolSize) {
-        if (corePoolSize < 0 || maximumPoolSize < corePoolSize)
-            throw new IllegalArgumentException();
+        if (corePoolSize < 0) {
+            throw new IllegalArgumentException("corePoolSize must be non-negative");
+        } else if (corePoolSize > maximumPoolSize) {
+            throw new IllegalArgumentException("corePoolSize must be less than or equal to maximumPoolSize");
+        }
         int delta = corePoolSize - this.corePoolSize;
         this.corePoolSize = corePoolSize;
         if (workerCountOf(ctl.get()) > corePoolSize)
@@ -1623,8 +1612,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getMaximumPoolSize
      */
     public void setMaximumPoolSize(int maximumPoolSize) {
-        if (maximumPoolSize <= 0 || maximumPoolSize < corePoolSize)
-            throw new IllegalArgumentException();
+        if (maximumPoolSize <= 0) {
+            throw new IllegalArgumentException("maximumPoolSize must be positive");
+        } else if (maximumPoolSize < corePoolSize) {
+            throw new IllegalArgumentException("maximumPoolSize must be greater than or equal to corePoolSize");
+        }
         this.maximumPoolSize = maximumPoolSize;
         if (workerCountOf(ctl.get()) > maximumPoolSize)
             interruptIdleWorkers();
@@ -1658,9 +1650,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     public void setKeepAliveTime(long time, TimeUnit unit) {
         if (time < 0)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("time must be non-negative");
         if (time == 0 && allowsCoreThreadTimeOut())
             throw new IllegalArgumentException("Core threads must have nonzero keep alive times");
+        Objects.requireNonNull(unit, "unit");
         long keepAliveTime = unit.toNanos(time);
         long delta = keepAliveTime - this.keepAliveTime;
         this.keepAliveTime = keepAliveTime;

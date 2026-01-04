@@ -34,7 +34,6 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --runtime-image
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror RuntimeImageTest.java
  * @run main/othervm/timeout=1400 jdk.jpackage.test.Main
@@ -82,11 +81,20 @@ public class RuntimeImageTest {
         Files.createFile(runtimePath.resolve("lib/src.zip"));
         Files.createFile(runtimePath.resolve("src.zip"));
 
+        Files.createDirectories(runtimePath.resolve("foo/bar/src.zip"));
+        Files.createFile(runtimePath.resolve("foo/jmods"));
+        Files.createFile(runtimePath.resolve("foo/src.zip"));
+        Files.createDirectories(runtimePath.resolve("custom/jmods"));
+
         (new JPackageCommand()).addArguments(cmd.getAllArguments()).executeAndAssertHelloAppImageCreated();
 
         final var appRuntimeDir = cmd.appLayout().runtimeHomeDirectory();
         TKit.assertPathExists(appRuntimeDir.resolve("jmods"), false);
         TKit.assertPathExists(appRuntimeDir.resolve("lib/src.zip"), false);
         TKit.assertPathExists(appRuntimeDir.resolve("src.zip"), false);
+        TKit.assertDirectoryExists(appRuntimeDir.resolve("foo/bar/src.zip"));
+        TKit.assertDirectoryExists(appRuntimeDir.resolve("custom/jmods"));
+        TKit.assertFileExists(appRuntimeDir.resolve("foo/jmods"));
+        TKit.assertFileExists(appRuntimeDir.resolve("foo/src.zip"));
     }
 }

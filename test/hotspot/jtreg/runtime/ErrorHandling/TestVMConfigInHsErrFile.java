@@ -23,14 +23,26 @@
 
 
 /*
- * @test
+ * @test id=coh-off
  * @summary Test that we see VM configs reported correctly in hs_err file
  * @library /test/lib
  * @requires vm.flagless
  * @requires vm.debug
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestVMConfigInHsErrFile
+ * @run driver TestVMConfigInHsErrFile coh-off
+ */
+
+/*
+ * @test id=coh-on
+ * @summary Test that we see VM configs reported correctly in hs_err file
+ * @library /test/lib
+ * @requires vm.bits == "64"
+ * @requires vm.flagless
+ * @requires vm.debug
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver TestVMConfigInHsErrFile coh-on
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -42,8 +54,10 @@ import java.util.regex.Pattern;
 public class TestVMConfigInHsErrFile {
 
   public static void main(String[] args) throws Exception {
-    testCompactObjectHeaders();
-    testCompressedClassPointers();
+    switch (args[0]) {
+      case "coh-on" -> testCompactObjectHeaders();
+      case "coh-off" -> testCompressedClassPointers();
+    }
   }
 
   private static void testCompactObjectHeaders() throws Exception {

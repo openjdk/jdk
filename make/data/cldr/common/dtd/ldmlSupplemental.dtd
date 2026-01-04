@@ -12,7 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "47" >
+<!ATTLIST version cldrVersion CDATA #FIXED "48" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 <!ATTLIST version unicodeVersion CDATA #FIXED "16.0.0" >
@@ -147,6 +147,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST language territories NMTOKENS #IMPLIED >
     <!--@MATCH:set/validity/region-->
     <!--@VALUE-->
+    <!--@DEPRECATED-->
 <!ATTLIST language variants NMTOKENS #IMPLIED >
     <!--@VALUE-->
 <!ATTLIST language draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -274,7 +275,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:time/yyyy-MM-dd-->
     <!--@VALUE-->
 <!ATTLIST era code NMTOKEN #IMPLIED >
-    <!--@MATCH:regex/[a-z0-9]{3,8}(\-[a-z0-9]{3,8})*-->
+    <!--@MATCH:regex/[a-z0-9]{2,8}(\-[a-z0-9]{3,8})*-->
     <!--@VALUE-->
 <!ATTLIST era aliases NMTOKENS #IMPLIED >
     <!--@MATCH:set/regex/[a-z0-9]{2,8}(\-[a-z0-9]{3,8})*-->
@@ -770,7 +771,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST unitAlias type NMTOKEN #REQUIRED >
     <!--@MATCH:validity/short-unit/deprecated-->
 <!ATTLIST unitAlias replacement NMTOKEN #REQUIRED >
-    <!--@MATCH:regex/[A-Za-z][-A-Za-z0-9]*-->
+    <!--@MATCH:regex/[A-Za-z0-9][-A-Za-z0-9]*-->
     <!--@VALUE-->
 <!ATTLIST unitAlias reason (deprecated) #IMPLIED >
     <!--@VALUE-->
@@ -996,6 +997,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST usesMetazone mzone NMTOKEN #REQUIRED >
     <!--@MATCH:metazone-->
     <!--@VALUE-->
+<!ATTLIST usesMetazone stdOffset CDATA #IMPLIED >
+    <!--@MATCH:regex/[+-][0-9]{2}(:[0-9]{2})?-->
+    <!--@VALUE-->
+<!ATTLIST usesMetazone dstOffset CDATA #IMPLIED >
+    <!--@MATCH:regex/[+-][0-9]{2}(:[0-9]{2})?-->
+    <!--@VALUE-->
 
 <!ELEMENT plurals ( pluralRules*, pluralRanges* ) >
 <!ATTLIST plurals type (ordinal | cardinal) #IMPLIED >
@@ -1090,7 +1097,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST numberingSystem radix NMTOKEN #IMPLIED >
     <!--@VALUE-->
 <!ATTLIST numberingSystem digits CDATA #IMPLIED >
-    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00010D40-\U00010D49\U000116D0-\U000116E3\U00011BF0-\U00011BF9\U00016130-\U00016139\U00016D70-\U00016D79\U0001CCF0-\U0001CCF9\U0001E5F1-\U0001E5FA]]-->
+    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00011DE0-\U00011DE9]]-->
     <!--@VALUE-->
 <!ATTLIST numberingSystem rules CDATA #IMPLIED >
     <!--@MATCH:any-->

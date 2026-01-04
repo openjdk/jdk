@@ -44,6 +44,7 @@ class ciInstanceKlass : public ciKlass {
   friend class ciMethod;
   friend class ciField;
   friend class ciReplay;
+  friend class CompileTrainingData;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };
@@ -80,6 +81,8 @@ private:
   void compute_injected_fields();
   bool compute_injected_fields_helper();
   void compute_transitive_interfaces();
+
+  ciField* get_non_static_field_by_offset(int field_offset);
 
 protected:
   ciInstanceKlass(Klass* k);
@@ -146,6 +149,10 @@ public:
     assert(is_loaded(), "must be loaded");
     return _flags;
   }
+
+  // Fetch Klass::access_flags.
+  jint                   access_flags() { return flags().as_int(); }
+
   bool                   has_finalizer()  {
     assert(is_loaded(), "must be loaded");
     return _has_finalizer; }
@@ -203,6 +210,7 @@ public:
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
   ciField* get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static);
+  BasicType get_field_type_by_offset(int field_offset, bool is_static);
 
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
@@ -230,6 +238,8 @@ public:
   ciInstanceKlass* unique_concrete_subklass();
   bool has_finalizable_subclass();
 
+  bool has_class_initializer();
+
   bool contains_field_offset(int offset);
 
   // Get the instance of java.lang.Class corresponding to
@@ -253,6 +263,7 @@ public:
 
   ciInstanceKlass* unique_implementor() {
     assert(is_loaded(), "must be loaded");
+    assert(is_interface(), "must be");
     ciInstanceKlass* impl = implementor();
     return (impl != this ? impl : nullptr);
   }

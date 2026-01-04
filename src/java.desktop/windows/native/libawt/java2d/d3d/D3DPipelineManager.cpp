@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,9 @@ D3DPipelineManager * D3DPipelineManager::CreateInstance(void)
         // this should never happen so to be on the safe side do not
         // use this unexpected pointer, do not try to release it, just null
         // it out and fail safely
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                       "D3DPPLM::CreateInstance: unexpected instance: 0x%x,"\
-                       " abort.", pMgr);
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "D3DPPLM::CreateInstance: unexpected instance: 0x%x,"\
+                      " abort.", pMgr);
         pMgr = NULL;
     }
     return pMgr;
@@ -201,7 +201,7 @@ HRESULT D3DPipelineManager::HandleAdaptersChange(HMONITOR *pHMONITORs, UINT monN
     J2dTraceLn(J2D_TRACE_INFO, "D3DPPLM::HandleAdaptersChange");
 
     if (monNum != pMgr->adapterCount) {
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
+        J2dTraceLn(J2D_TRACE_VERBOSE,
                    "  number of adapters changed (old=%d, new=%d)",
                    pMgr->adapterCount, monNum);
         bResetD3D = TRUE;
@@ -209,23 +209,23 @@ HRESULT D3DPipelineManager::HandleAdaptersChange(HMONITOR *pHMONITORs, UINT monN
         for (UINT i = 0; i < pMgr->adapterCount; i++) {
             HMONITOR hMon = pMgr->pd3d9->GetAdapterMonitor(i);
             if (hMon == (HMONITOR)0x0) {
-                J2dTraceLn1(J2D_TRACE_VERBOSE, "  adapter %d: removed", i);
+                J2dTraceLn(J2D_TRACE_VERBOSE, "  adapter %d: removed", i);
                 bResetD3D = TRUE;
                 break;
             }
             bFound = FALSE;
             for (UINT mon = 0; mon < monNum; mon++) {
                 if (pHMONITORs[mon] == hMon) {
-                    J2dTraceLn3(J2D_TRACE_VERBOSE,
-                            "  adapter %d: found hmnd[%d]=0x%x", i, mon, hMon);
+                    J2dTraceLn(J2D_TRACE_VERBOSE,
+                               "  adapter %d: found hmnd[%d]=0x%x", i, mon, hMon);
                     bFound = TRUE;
                     break;
                 }
             }
             if (!bFound) {
-                J2dTraceLn2(J2D_TRACE_VERBOSE,
-                            "  adapter %d: could not find hmnd=0x%x "\
-                            "in the list of new hmnds", i, hMon);
+                J2dTraceLn(J2D_TRACE_VERBOSE,
+                           "  adapter %d: could not find hmnd=0x%x "\
+                           "in the list of new hmnds", i, hMon);
                 bResetD3D = TRUE;
                 break;
             }
@@ -276,8 +276,8 @@ HRESULT D3DPipelineManager::HandleLostDevices()
     if (pAdapters != NULL) {
         for (UINT i = 0; i < adapterCount; i++) {
             if (pAdapters[i].pd3dContext != NULL) {
-                J2dTraceLn1(J2D_TRACE_VERBOSE,
-                            "  HandleLostDevices: checking adapter %d", i);
+                J2dTraceLn(J2D_TRACE_VERBOSE,
+                           "  HandleLostDevices: checking adapter %d", i);
                 D3DContext *d3dc = pAdapters[i].pd3dContext;
                 if (FAILED(d3dc->CheckAndResetDevice())) {
                     bAllClear = FALSE;
@@ -374,9 +374,9 @@ D3DPipelineManager::GDICheckForBadHardware()
                 int args2 = swscanf(deviceId, L"%X", &dwDId);
 
                 if (args1 == 1 && args2 == 1) {
-                    J2dTraceLn2(J2D_TRACE_VERBOSE,
-                                "  device: vendorID=0x%04x, deviceId=0x%04x",
-                                dwVId, dwDId);
+                    J2dTraceLn(J2D_TRACE_VERBOSE,
+                               "  device: vendorID=0x%04x, deviceId=0x%04x",
+                               dwVId, dwDId);
                     // since we don't have a driver version here we will
                     // just ask to ignore the version for now; bad hw
                     // entries with specific drivers information will be
@@ -450,16 +450,16 @@ BOOL D3DPPLM_OsVersionMatches(USHORT osInfo) {
                     J2dRlsTrace(J2D_TRACE_INFO, "Pro\n");
                 }
             } else {
-                J2dRlsTrace2(J2D_TRACE_INFO,
+                J2dRlsTrace(J2D_TRACE_INFO,
                             "OS_UNKNOWN: dwMajorVersion=%d dwMinorVersion=%d\n",
-                             osvi.dwMajorVersion, osvi.dwMinorVersion);
+                            osvi.dwMajorVersion, osvi.dwMinorVersion);
                 currentOS = OS_UNKNOWN;
             }
         } else {
             if (bVersOk) {
-                J2dRlsTrace2(J2D_TRACE_INFO,
-                             "OS_UNKNOWN: dwPlatformId=%d dwMajorVersion=%d\n",
-                             osvi.dwPlatformId, osvi.dwMajorVersion);
+                J2dRlsTrace(J2D_TRACE_INFO,
+                            "OS_UNKNOWN: dwPlatformId=%d dwMajorVersion=%d\n",
+                            osvi.dwPlatformId, osvi.dwMajorVersion);
             } else {
                 J2dRlsTrace(J2D_TRACE_INFO,"OS_UNKNOWN: GetVersionEx failed\n");
             }
@@ -492,21 +492,21 @@ D3DPipelineManager::CheckForBadHardware(DWORD vId, DWORD dId, LONGLONG version)
             if (D3DPPLM_OsVersionMatches(osInfo) &&
                 (goodVersion == NO_VERSION || version < goodVersion))
             {
-                J2dRlsTraceLn2(J2D_TRACE_ERROR,
-                    "D3DPPLM::CheckForBadHardware: found matching "\
-                    "hardware: VendorId=0x%04x DeviceId=0x%04x",
-                    vendorId, deviceId);
+                J2dRlsTraceLn(J2D_TRACE_ERROR,
+                              "D3DPPLM::CheckForBadHardware: found matching "\
+                              "hardware: VendorId=0x%04x DeviceId=0x%04x",
+                              vendorId, deviceId);
                 if (goodVersion != NO_VERSION) {
                     // this was a match by the driver version
                     LARGE_INTEGER li;
                     li.QuadPart = goodVersion;
                     J2dRlsTraceLn(J2D_TRACE_ERROR,
                                   "  bad driver found, device disabled");
-                    J2dRlsTraceLn4(J2D_TRACE_ERROR,
-                                   "  update your driver to at "\
-                                   "least version %d.%d.%d.%d",
-                                   HIWORD(li.HighPart), LOWORD(li.HighPart),
-                                   HIWORD(li.LowPart),  LOWORD(li.LowPart));
+                    J2dRlsTraceLn(J2D_TRACE_ERROR,
+                                  "  update your driver to at "\
+                                  "least version %d.%d.%d.%d",
+                                  HIWORD(li.HighPart), LOWORD(li.HighPart),
+                                  HIWORD(li.LowPart),  LOWORD(li.LowPart));
                 } else {
                     // this was a match by the device (no good driver for this
                     // device)
@@ -542,39 +542,39 @@ HRESULT D3DPipelineManager::CheckAdaptersInfo()
             continue;
         }
 
-        J2dRlsTraceLn1(J2D_TRACE_INFO, "Adapter Ordinal  : %d", Adapter);
-        J2dRlsTraceLn1(J2D_TRACE_INFO, "Adapter Handle   : 0x%x",
-                       pd3d9->GetAdapterMonitor(Adapter));
-        J2dRlsTraceLn1(J2D_TRACE_INFO, "Description      : %s",
-                       aid.Description);
-        J2dRlsTraceLn2(J2D_TRACE_INFO, "GDI Name, Driver : %s, %s",
-                       aid.DeviceName, aid.Driver);
-        J2dRlsTraceLn1(J2D_TRACE_INFO, "Vendor Id        : 0x%04x",
-                       aid.VendorId);
-        J2dRlsTraceLn1(J2D_TRACE_INFO, "Device Id        : 0x%04x",
-                       aid.DeviceId);
-        J2dRlsTraceLn1(J2D_TRACE_INFO, "SubSys Id        : 0x%x",
-                       aid.SubSysId);
-        J2dRlsTraceLn4(J2D_TRACE_INFO, "Driver Version   : %d.%d.%d.%d",
-                       HIWORD(aid.DriverVersion.HighPart),
-                       LOWORD(aid.DriverVersion.HighPart),
-                       HIWORD(aid.DriverVersion.LowPart),
-                       LOWORD(aid.DriverVersion.LowPart));
-        J2dRlsTrace3(J2D_TRACE_INFO,
-                     "[I] GUID             : {%08X-%04X-%04X-",
-                       aid.DeviceIdentifier.Data1,
-                       aid.DeviceIdentifier.Data2,
-                       aid.DeviceIdentifier.Data3);
-        J2dRlsTrace4(J2D_TRACE_INFO, "%02X%02X-%02X%02X",
-                       aid.DeviceIdentifier.Data4[0],
-                       aid.DeviceIdentifier.Data4[1],
-                       aid.DeviceIdentifier.Data4[2],
-                       aid.DeviceIdentifier.Data4[3]);
-        J2dRlsTrace4(J2D_TRACE_INFO, "%02X%02X%02X%02X}\n",
-                       aid.DeviceIdentifier.Data4[4],
-                       aid.DeviceIdentifier.Data4[5],
-                       aid.DeviceIdentifier.Data4[6],
-                       aid.DeviceIdentifier.Data4[7]);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "Adapter Ordinal  : %d", Adapter);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "Adapter Handle   : 0x%x",
+                      pd3d9->GetAdapterMonitor(Adapter));
+        J2dRlsTraceLn(J2D_TRACE_INFO, "Description      : %s",
+                      aid.Description);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "GDI Name, Driver : %s, %s",
+                      aid.DeviceName, aid.Driver);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "Vendor Id        : 0x%04x",
+                      aid.VendorId);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "Device Id        : 0x%04x",
+                      aid.DeviceId);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "SubSys Id        : 0x%x",
+                      aid.SubSysId);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "Driver Version   : %d.%d.%d.%d",
+                      HIWORD(aid.DriverVersion.HighPart),
+                      LOWORD(aid.DriverVersion.HighPart),
+                      HIWORD(aid.DriverVersion.LowPart),
+                      LOWORD(aid.DriverVersion.LowPart));
+        J2dRlsTrace(J2D_TRACE_INFO,
+                    "[I] GUID             : {%08X-%04X-%04X-",
+                    aid.DeviceIdentifier.Data1,
+                    aid.DeviceIdentifier.Data2,
+                    aid.DeviceIdentifier.Data3);
+        J2dRlsTrace(J2D_TRACE_INFO, "%02X%02X-%02X%02X",
+                    aid.DeviceIdentifier.Data4[0],
+                    aid.DeviceIdentifier.Data4[1],
+                    aid.DeviceIdentifier.Data4[2],
+                    aid.DeviceIdentifier.Data4[3]);
+        J2dRlsTrace(J2D_TRACE_INFO, "%02X%02X%02X%02X}\n",
+                    aid.DeviceIdentifier.Data4[4],
+                    aid.DeviceIdentifier.Data4[5],
+                    aid.DeviceIdentifier.Data4[6],
+                    aid.DeviceIdentifier.Data4[7]);
 
         if (FAILED(CheckForBadHardware(aid.VendorId, aid.DeviceId,
                                        aid.DriverVersion.QuadPart)) ||
@@ -612,9 +612,9 @@ D3DDEVTYPE D3DPipelineManager::SelectDeviceType()
             J2dRlsTrace(J2D_TRACE_WARNING, "nullref rasterizer selected");
             dtype = D3DDEVTYPE_NULLREF;
         } else {
-            J2dRlsTrace1(J2D_TRACE_WARNING,
-                "unknown rasterizer: %s, only (ref|hal|nul) "\
-                "supported, hal selected instead", pRas);
+            J2dRlsTrace(J2D_TRACE_WARNING,
+                        "unknown rasterizer: %s, only (ref|hal|nul) "\
+                        "supported, hal selected instead", pRas);
         }
         J2dRlsTrace(J2D_TRACE_WARNING, "\n");
     }
@@ -624,10 +624,10 @@ D3DDEVTYPE D3DPipelineManager::SelectDeviceType()
 #define CHECK_CAP(FLAG, CAP) \
     do {    \
         if (!((FLAG)&CAP)) { \
-            J2dRlsTraceLn2(J2D_TRACE_ERROR, \
-                           "D3DPPLM::CheckDeviceCaps: adapter %d: Failed "\
-                           "(cap %s not supported)", \
-                           adapter, #CAP); \
+            J2dRlsTraceLn(J2D_TRACE_ERROR, \
+                          "D3DPPLM::CheckDeviceCaps: adapter %d: Failed "\
+                          "(cap %s not supported)", \
+                          adapter, #CAP); \
             return E_FAIL; \
         } \
     } while (0)
@@ -684,14 +684,14 @@ HRESULT D3DPipelineManager::CheckDeviceCaps(UINT adapter)
     CHECK_CAP(d3dCaps.TextureOpCaps, D3DTEXOPCAPS_MODULATE);
 
     if (d3dCaps.PixelShaderVersion < D3DPS_VERSION(2,0) && !IsD3DForced()) {
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                       "D3DPPLM::CheckDeviceCaps: adapter %d: Failed "\
-                       "(pixel shaders 2.0 required)", adapter);
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "D3DPPLM::CheckDeviceCaps: adapter %d: Failed "\
+                      "(pixel shaders 2.0 required)", adapter);
         return E_FAIL;
     }
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
-                   "D3DPPLM::CheckDeviceCaps: adapter %d: Passed", adapter);
+    J2dRlsTraceLn(J2D_TRACE_INFO,
+                  "D3DPPLM::CheckDeviceCaps: adapter %d: Passed", adapter);
     return S_OK;
 }
 
@@ -706,9 +706,9 @@ HRESULT D3DPipelineManager::D3DEnabledOnAdapter(UINT adapter)
 
     res = pd3d9->CheckDeviceType(adapter, devType, dm.Format, dm.Format, TRUE);
     if (FAILED(res)) {
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                "D3DPPLM::D3DEnabledOnAdapter: no " \
-                "suitable d3d device on adapter %d", adapter);
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "D3DPPLM::D3DEnabledOnAdapter: no " \
+                      "suitable d3d device on adapter %d", adapter);
     }
 
     return res;
@@ -759,9 +759,9 @@ HWND D3DPipelineManager::CreateDefaultFocusWindow()
 {
     UINT adapterOrdinal = D3DADAPTER_DEFAULT;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DPPLM::CreateDefaultFocusWindow: adapter=%d",
-                adapterOrdinal);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DPPLM::CreateDefaultFocusWindow: adapter=%d",
+               adapterOrdinal);
 
     if (defaultFocusWindow != 0) {
         J2dRlsTraceLn(J2D_TRACE_WARNING,
@@ -787,9 +787,10 @@ HWND D3DPipelineManager::CreateDefaultFocusWindow()
     mi.cbSize = sizeof(MONITORINFO);
     HMONITOR hMon = pd3d9->GetAdapterMonitor(adapterOrdinal);
     if (hMon == 0 || !GetMonitorInfo(hMon, (LPMONITORINFO)&mi)) {
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-            "D3DPPLM::CreateDefaultFocusWindow: "\
-            "error getting monitor info for adapter=%d", adapterOrdinal);
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "D3DPPLM::CreateDefaultFocusWindow: "\
+                      "error getting monitor info for adapter=%d",
+                      adapterOrdinal);
         return 0;
     }
 
@@ -800,9 +801,9 @@ HWND D3DPipelineManager::CreateDefaultFocusWindow()
         J2dRlsTraceLn(J2D_TRACE_ERROR,
             "D3DPPLM::CreateDefaultFocusWindow: CreateWindow failed");
     } else {
-        J2dTraceLn2(J2D_TRACE_INFO,
-            "  Created default focus window %x for adapter %d",
-            hWnd, adapterOrdinal);
+        J2dTraceLn(J2D_TRACE_INFO,
+                   "  Created default focus window %x for adapter %d",
+                   hWnd, adapterOrdinal);
         defaultFocusWindow = hWnd;
     }
     return hWnd;
@@ -812,20 +813,20 @@ HWND D3DPipelineManager::GetCurrentFocusWindow()
 {
     J2dTraceLn(J2D_TRACE_INFO, "D3DPPLM::GetCurrentFocusWindow");
     if (currentFSFocusAdapter < 0) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE,
-                    "  no fs windows, using default focus window=0x%x",
-                    defaultFocusWindow);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  no fs windows, using default focus window=0x%x",
+                   defaultFocusWindow);
         return defaultFocusWindow;
     }
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  using fs window=0x%x",
-                pAdapters[currentFSFocusAdapter].fsFocusWindow);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  using fs window=0x%x",
+               pAdapters[currentFSFocusAdapter].fsFocusWindow);
     return pAdapters[currentFSFocusAdapter].fsFocusWindow;
 }
 
 HWND D3DPipelineManager::SetFSFocusWindow(UINT adapterOrdinal, HWND hWnd)
 {
-    J2dTraceLn2(J2D_TRACE_INFO,"D3DPPLM::SetFSFocusWindow hwnd=0x%x adapter=%d",
-                hWnd, adapterOrdinal);
+    J2dTraceLn(J2D_TRACE_INFO,"D3DPPLM::SetFSFocusWindow hwnd=0x%x adapter=%d",
+               hWnd, adapterOrdinal);
 
     HWND prev = pAdapters[adapterOrdinal].fsFocusWindow;
     pAdapters[adapterOrdinal].fsFocusWindow = hWnd;
@@ -846,8 +847,8 @@ HWND D3DPipelineManager::SetFSFocusWindow(UINT adapterOrdinal, HWND hWnd)
                 currentFSFocusAdapter = -1;
                 for (i = 0; i < adapterCount; i++) {
                     if (pAdapters[i].fsFocusWindow != 0) {
-                        J2dTraceLn1(J2D_TRACE_VERBOSE,
-                                    "  adapter %d is still in fs mode", i);
+                        J2dTraceLn(J2D_TRACE_VERBOSE,
+                                   "  adapter %d is still in fs mode", i);
                         currentFSFocusAdapter = i;
                         break;
                     }
@@ -868,9 +869,9 @@ HWND D3DPipelineManager::SetFSFocusWindow(UINT adapterOrdinal, HWND hWnd)
                     }
                 }
             } else {
-                J2dTraceLn1(J2D_TRACE_WARNING,
-                            "D3DPM::SetFSFocusWindow: setting the fs "\
-                            "window again for adapter %d", adapterOrdinal);
+                J2dTraceLn(J2D_TRACE_WARNING,
+                           "D3DPM::SetFSFocusWindow: setting the fs "\
+                           "window again for adapter %d", adapterOrdinal);
             }
         }
     }
@@ -887,9 +888,9 @@ HRESULT D3DPipelineManager::GetD3DContext(UINT adapterOrdinal,
         pAdapters == NULL ||
         pAdapters[adapterOrdinal].state == CONTEXT_INIT_FAILED)
     {
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-            "D3DPPLM::GetD3DContext: invalid parameters or "\
-            "failed init for adapter %d", adapterOrdinal);
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "D3DPPLM::GetD3DContext: invalid parameters or "\
+                      "failed init for adapter %d", adapterOrdinal);
         *ppd3dContext = NULL;
         return E_FAIL;
     }
@@ -898,23 +899,24 @@ HRESULT D3DPipelineManager::GetD3DContext(UINT adapterOrdinal,
         D3DContext *pCtx = NULL;
 
         if (pAdapters[adapterOrdinal].pd3dContext != NULL) {
-            J2dTraceLn1(J2D_TRACE_ERROR, "  non-null context in "\
-                        "uninitialized adapter %d", adapterOrdinal);
+            J2dTraceLn(J2D_TRACE_ERROR, "  non-null context in "\
+                       "uninitialized adapter %d", adapterOrdinal);
             res = E_FAIL;
         } else {
-            J2dTraceLn1(J2D_TRACE_VERBOSE,
-                        "  initializing context for adapter %d",adapterOrdinal);
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  initializing context for adapter %d",adapterOrdinal);
 
             if (SUCCEEDED(res = D3DEnabledOnAdapter(adapterOrdinal))) {
                 res = D3DContext::CreateInstance(pd3d9, adapterOrdinal, &pCtx);
                 if (FAILED(res)) {
-                    J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                        "D3DPPLM::GetD3DContext: failed to create context "\
-                        "for adapter=%d", adapterOrdinal);
+                    J2dRlsTraceLn(J2D_TRACE_ERROR, "D3DPPLM::GetD3DContext: "\
+                                  "failed to create context "\
+                                  "for adapter=%d", adapterOrdinal);
                 }
             } else {
-                J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                    "D3DPPLM::GetContext: no d3d on adapter %d",adapterOrdinal);
+                J2dRlsTraceLn(J2D_TRACE_ERROR,
+                              "D3DPPLM::GetContext: no d3d on adapter %d",
+                              adapterOrdinal);
             }
         }
         pAdapters[adapterOrdinal].state =
@@ -967,8 +969,8 @@ void D3DInitializer::InitImpl()
 
 void D3DInitializer::CleanImpl(bool reInit)
 {
-    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DInitializer::CleanImpl (%s)",
-                                    reInit ? "RELAUNCH" : "normal");
+    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DInitializer::CleanImpl (%s)",
+                  reInit ? "RELAUNCH" : "normal");
     D3DPipelineManager::DeleteInstance();
     if (bComInitialized) {
         CoUninitialize();
@@ -978,7 +980,7 @@ void D3DInitializer::CleanImpl(bool reInit)
 
 void D3DInitializer::D3DAdapterInitializer::InitImpl()
 {
-    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DAdapterInitializer::InitImpl(%d) started", adapter);
+    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DAdapterInitializer::InitImpl(%d) started", adapter);
 
     D3DPipelineManager *pMgr = D3DPipelineManager::GetInstance();
     if (pMgr == NULL) {
@@ -988,7 +990,7 @@ void D3DInitializer::D3DAdapterInitializer::InitImpl()
     D3DContext *pd3dContext;
     pMgr->GetD3DContext(adapter, &pd3dContext);
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DAdapterInitializer::InitImpl(%d) finished", adapter);
+    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DAdapterInitializer::InitImpl(%d) finished", adapter);
 }
 
 void D3DInitializer::D3DAdapterInitializer::CleanImpl(bool reInit)

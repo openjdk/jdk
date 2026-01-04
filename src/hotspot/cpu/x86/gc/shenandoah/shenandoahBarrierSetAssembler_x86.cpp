@@ -276,9 +276,9 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
       __ mov(c_rarg1, thread);
     }
     // Already moved pre_val into c_rarg0 above
-    __ MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), 2);
+    __ MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), 1);
   } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), c_rarg0, thread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), c_rarg0);
   }
 
   // save the live input values
@@ -353,7 +353,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // The rest is saved with the optimized path
 
-  uint num_saved_regs = 4 + (dst != rax ? 1 : 0) + 4;
+  uint num_saved_regs = 4 + (dst != rax ? 1 : 0) + 4 + (UseAPX ? 16 : 0);
   __ subptr(rsp, num_saved_regs * wordSize);
   uint slot = num_saved_regs;
   if (dst != rax) {
@@ -367,6 +367,25 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ movptr(Address(rsp, (--slot) * wordSize), r9);
   __ movptr(Address(rsp, (--slot) * wordSize), r10);
   __ movptr(Address(rsp, (--slot) * wordSize), r11);
+  // Save APX extended registers r16–r31 if enabled
+  if (UseAPX) {
+    __ movptr(Address(rsp, (--slot) * wordSize), r16);
+    __ movptr(Address(rsp, (--slot) * wordSize), r17);
+    __ movptr(Address(rsp, (--slot) * wordSize), r18);
+    __ movptr(Address(rsp, (--slot) * wordSize), r19);
+    __ movptr(Address(rsp, (--slot) * wordSize), r20);
+    __ movptr(Address(rsp, (--slot) * wordSize), r21);
+    __ movptr(Address(rsp, (--slot) * wordSize), r22);
+    __ movptr(Address(rsp, (--slot) * wordSize), r23);
+    __ movptr(Address(rsp, (--slot) * wordSize), r24);
+    __ movptr(Address(rsp, (--slot) * wordSize), r25);
+    __ movptr(Address(rsp, (--slot) * wordSize), r26);
+    __ movptr(Address(rsp, (--slot) * wordSize), r27);
+    __ movptr(Address(rsp, (--slot) * wordSize), r28);
+    __ movptr(Address(rsp, (--slot) * wordSize), r29);
+    __ movptr(Address(rsp, (--slot) * wordSize), r30);
+    __ movptr(Address(rsp, (--slot) * wordSize), r31);
+  }
   // r12-r15 are callee saved in all calling conventions
   assert(slot == 0, "must use all slots");
 
@@ -398,6 +417,25 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
   }
 
+  // Restore APX extended registers r31–r16 if previously saved
+  if (UseAPX) {
+    __ movptr(r31, Address(rsp, (slot++) * wordSize));
+    __ movptr(r30, Address(rsp, (slot++) * wordSize));
+    __ movptr(r29, Address(rsp, (slot++) * wordSize));
+    __ movptr(r28, Address(rsp, (slot++) * wordSize));
+    __ movptr(r27, Address(rsp, (slot++) * wordSize));
+    __ movptr(r26, Address(rsp, (slot++) * wordSize));
+    __ movptr(r25, Address(rsp, (slot++) * wordSize));
+    __ movptr(r24, Address(rsp, (slot++) * wordSize));
+    __ movptr(r23, Address(rsp, (slot++) * wordSize));
+    __ movptr(r22, Address(rsp, (slot++) * wordSize));
+    __ movptr(r21, Address(rsp, (slot++) * wordSize));
+    __ movptr(r20, Address(rsp, (slot++) * wordSize));
+    __ movptr(r19, Address(rsp, (slot++) * wordSize));
+    __ movptr(r18, Address(rsp, (slot++) * wordSize));
+    __ movptr(r17, Address(rsp, (slot++) * wordSize));
+    __ movptr(r16, Address(rsp, (slot++) * wordSize));
+  }
   __ movptr(r11, Address(rsp, (slot++) * wordSize));
   __ movptr(r10, Address(rsp, (slot++) * wordSize));
   __ movptr(r9,  Address(rsp, (slot++) * wordSize));
@@ -908,7 +946,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
 
   // load the pre-value
   __ load_parameter(0, rcx);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), rcx, thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), rcx);
 
   __ restore_live_registers(true);
 

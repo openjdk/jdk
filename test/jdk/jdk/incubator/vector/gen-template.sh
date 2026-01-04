@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,12 @@ ternary_double_broadcast_masked="Ternary-Double-Broadcast-Masked-op"
 ternary_scalar="Ternary-Scalar-op"
 binary="Binary-op"
 binary_masked="Binary-Masked-op"
+binary_memop="Binary-mem-op"
+binary_masked_memop="Binary-Masked-mem-op"
 saturating_binary="SaturatingBinary-op"
 saturating_binary_masked="SaturatingBinary-Masked-op"
+saturating_binary_assocative="SaturatingBinary-op-associative"
+saturating_binary_assocative_masked="SaturatingBinary-Masked-op-associative"
 binary_broadcast="Binary-Broadcast-op"
 binary_broadcast_masked="Binary-Broadcast-Masked-op"
 binary_broadcast_long="Binary-Broadcast-Long-op"
@@ -62,11 +66,16 @@ reduction_op="Reduction-op"
 reduction_op_func="Reduction-op-func"
 reduction_op_masked="Reduction-Masked-op"
 reduction_op_masked_func="Reduction-Masked-op-func"
+reduction_saturating_op="SaturatingReduction-op"
+reduction_saturating_op_masked="SaturatingReduction-Masked-op"
 unary_math_template="Unary-op-math"
 binary_math_template="Binary-op-math"
 binary_math_broadcast_template="Binary-Broadcast-op-math"
 bool_reduction_scalar="BoolReduction-Scalar-op"
 bool_reduction_template="BoolReduction-op"
+bool_binary_template="BoolBinary-op"
+bool_unary_template="BoolUnary-op"
+mask_fromtolong_template="Mask-FromToLong"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
@@ -224,7 +233,8 @@ function gen_op_tmpl {
 
   local gen_perf_tests=$generate_perf_tests
   if [[ $template == *"-Broadcast-"* ]] || [[ $template == "Miscellaneous" ]] ||
-     [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]]; then
+     [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]] ||
+     [[ $template == *"Mask-Binary"* ]]; then
     gen_perf_tests=false
   fi
   if [ $gen_perf_tests == true ]; then
@@ -253,6 +263,12 @@ function gen_binary_alu_op {
   echo "Generating binary op $1 ($2)..."
   gen_op_tmpl $binary "$@"
   gen_op_tmpl $binary_masked "$@"
+}
+
+function gen_binary_alu_mem_op {
+  echo "Generating binary op $1 ($2)..."
+  gen_op_tmpl $binary_memop "$@"
+  gen_op_tmpl $binary_masked_memop "$@"
 }
 
 function gen_binary_alu_bcst_op {
@@ -318,6 +334,12 @@ function gen_saturating_binary_op {
   gen_op_tmpl $saturating_binary_masked "$@"
 }
 
+function gen_saturating_binary_op_associative {
+  echo "Generating saturating binary associative op $1 ($2)..."
+  gen_op_tmpl $saturating_binary_assocative "$@"
+  gen_op_tmpl $saturating_binary_assocative_masked "$@"
+}
+
 function gen_binary_op_no_masked {
   echo "Generating binary op $1 ($2)..."
 #  gen_op_tmpl $binary_scalar "$@"
@@ -360,6 +382,13 @@ function gen_bool_reduction_op {
   echo "Generating boolean reduction op $1 ($2)..."
   gen_op_tmpl $bool_reduction_scalar "$@"
   gen_op_tmpl $bool_reduction_template "$@"
+}
+function gen_saturating_reduction_op {
+  echo "Generating saturating reduction op $1 ($2)..."
+  gen_op_tmpl $reduction_scalar_func "$@"
+  gen_op_tmpl $reduction_saturating_op "$@"
+  gen_op_tmpl $reduction_scalar_masked_func "$@"
+  gen_op_tmpl $reduction_saturating_op_masked "$@"
 }
 
 function gen_with_op {
@@ -464,6 +493,10 @@ gen_shift_cst_op  "ASHR" "(a >> CONST_SHIFT)" "BITWISE"
 gen_shift_cst_op  "ROR" "ROR_scalar(a, CONST_SHIFT)" "BITWISE"
 gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 
+# Binary operation with one memory operand
+gen_binary_alu_mem_op "MIN+min+withMask", "Math.min(a, b)"
+gen_binary_alu_mem_op "MAX+max+withMask", "Math.max(a, b)"
+
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_op_no_masked "MAX+max" "Math.max(a, b)"
@@ -475,6 +508,7 @@ gen_saturating_binary_op "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWI
 gen_saturating_binary_op "SUSUB" "VectorMath.subSaturatingUnsigned(a, b)" "BITWISE"
 gen_binary_bcst_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_bcst_op_no_masked "MAX+max" "Math.max(a, b)"
+gen_saturating_binary_op_associative "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWISE"
 
 # Reductions.
 gen_reduction_op "AND" "\&" "BITWISE" "-1"
@@ -491,6 +525,9 @@ gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
 # Boolean reductions.
 gen_bool_reduction_op "anyTrue" "|" "BITWISE" "false"
 gen_bool_reduction_op "allTrue" "\&" "BITWISE" "true"
+
+# Saturating reductions.
+gen_saturating_reduction_op "SUADD" "(\$type\$) VectorMath.addSaturatingUnsigned" "BITWISE" "0"
 
 #Insert
 gen_with_op "withLane" "" "" ""
@@ -591,6 +628,15 @@ gen_unary_alu_op "REVERSE" "REVERSE_scalar(a)" "BITWISE"
 gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "intOrLong"
 gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "short"
 gen_unary_alu_op "REVERSE_BYTES" "a" "byte"
+
+# Mask operations
+gen_op_tmpl $bool_binary_template "and" "a \& b"
+gen_op_tmpl $bool_binary_template "or" "a | b"
+gen_op_tmpl $bool_binary_template "xor" "a != b"
+gen_op_tmpl $bool_binary_template "andNot" "a \& !b"
+gen_op_tmpl $bool_binary_template "eq" "a == b"
+gen_op_tmpl $bool_unary_template "not" "!a"
+gen_op_tmpl $mask_fromtolong_template "FromToLong" ""
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""

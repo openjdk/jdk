@@ -167,27 +167,6 @@ bool NativeInstruction::is_illegal() {
   return halfword_at(-2) == illegal_instruction();
 }
 
-// We use an illtrap for marking a method as not_entrant.
-bool NativeInstruction::is_sigill_not_entrant() {
-  if (!is_illegal()) return false; // Just a quick path.
-
-  // One-sided error of is_illegal tolerable here
-  // (see implementation of is_illegal() for details).
-
-  CodeBlob* cb = CodeCache::find_blob(addr_at(0));
-  if (cb == nullptr || !cb->is_nmethod()) {
-    return false;
-  }
-
-  nmethod *nm = (nmethod *)cb;
-  // This method is not_entrant if the illtrap instruction
-  // is located at the verified entry point.
-  // BE AWARE: the current pc (this) points to the instruction after the
-  // "illtrap" location.
-  address sig_addr = ((address) this) - 2;
-  return nm->verified_entry_point() == sig_addr;
-}
-
 bool NativeInstruction::is_jump() {
   unsigned long inst;
   Assembler::get_instruction((address)this, &inst);
@@ -618,19 +597,6 @@ void NativeMovRegMem::verify() {
 void NativeJump::verify() {
   if (NativeJump::is_jump_at(addr_at(0))) return;
   fatal("this is not a `NativeJump' site");
-}
-
-// Patch atomically with an illtrap.
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  ResourceMark rm;
-  int code_size = 2;
-  CodeBuffer cb(verified_entry, code_size + 1);
-  MacroAssembler* a = new MacroAssembler(&cb);
-#ifdef COMPILER2
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-#endif
-  a->z_illtrap();
-  ICache::invalidate_range(verified_entry, code_size);
 }
 
 #undef LUCY_DBG

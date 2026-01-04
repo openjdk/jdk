@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8361615
  * @summary Testing ClassFile builder parameters.
  * @run junit BuilderParamTest
  */
@@ -46,19 +47,26 @@ class BuilderParamTest {
         cc.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), 0,
                           mb -> mb.withCode(xb -> {
+                assertThrows(IndexOutOfBoundsException.class, () -> xb.parameterSlot(-1));
                 assertEquals(xb.receiverSlot(), 0);
                 assertEquals(xb.parameterSlot(0), 1);
                 assertEquals(xb.parameterSlot(1), 2);
                 assertEquals(xb.parameterSlot(2), 4);
+                assertThrows(IndexOutOfBoundsException.class, () -> xb.parameterSlot(3));
+                assertThrows(IndexOutOfBoundsException.class, () -> xb.parameterSlot(Integer.MAX_VALUE));
                 xb.return_();
             }));
         });
         cc.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), ACC_STATIC,
                           mb -> mb.withCode(xb -> {
+                              assertThrows(IndexOutOfBoundsException.class, () -> xb.parameterSlot(Integer.MIN_VALUE));
+                              assertThrows(IndexOutOfBoundsException.class, () -> xb.parameterSlot(-1));
+                              assertThrows(IllegalStateException.class, () -> xb.receiverSlot());
                               assertEquals(xb.parameterSlot(0), 0);
                               assertEquals(xb.parameterSlot(1), 1);
                               assertEquals(xb.parameterSlot(2), 3);
+                              assertThrows(IndexOutOfBoundsException.class, () -> xb.parameterSlot(3));
                               xb.return_();
                           }));
         });

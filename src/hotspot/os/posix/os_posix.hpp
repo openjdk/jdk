@@ -76,6 +76,9 @@ public:
   // Returns true if given uid is root.
   static bool is_root(uid_t uid);
 
+  // Returns true if the current user is root.
+  static bool is_current_user_root();
+
   // Returns true if given uid is effective or root uid.
   static bool matches_effective_uid_or_root(uid_t uid);
 
@@ -88,6 +91,8 @@ public:
   // Set PC into context. Needed for continuation after signal.
   static address ucontext_get_pc(const ucontext_t* ctx);
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
+
+  DEBUG_ONLY(static bool ucontext_is_interpreter(const ucontext_t* ctx);)
 
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
 

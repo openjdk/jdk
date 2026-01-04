@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.lang.reflect.Array;
 import java.util.Objects;
+
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * <p>Methods to facilitate the creation of simple "function objects" that
@@ -247,6 +249,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@AOTSafeClassInitializer
 public final class LambdaMetafactory {
 
     private LambdaMetafactory() {}

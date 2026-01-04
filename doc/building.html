@@ -282,6 +282,11 @@ possible, use an SSD. The build process is very disk intensive, and
 having slow disk access will significantly increase build times. If you
 need to use a network share for the source code, see below for
 suggestions on how to keep the build artifacts on a local disk.</p></li>
+<li><p>UTF-8 support is needed to compile the JDK. On Unix systems, this
+typically means that the <code>C.UTF-8</code> or
+<code>en_US.UTF-8</code> locale needs to be available. For Windows
+users, please see the section on <a href="#locale-requirements">Locale
+Requirements</a> below.</p></li>
 <li><p>On Windows, extra care must be taken to have a smooth building
 experience:</p>
 <ul>
@@ -305,14 +310,6 @@ using
 <li><p>If using <a href="#cygwin">Cygwin</a>, you must make sure the
 file permissions and attributes between Windows and Cygwin are
 consistent. It is recommended that you follow this procedure:</p>
-<li><p>UTF-8 support is needed to compile the JDK. On Unix systems, this
-typically means that the <code>C.UTF-8</code> or
-<code>en_US.UTF-8</code> locale needs to be available. For Windows
-users, please see the section on <a href="#locale-requirements">Locale
-Requirements</a> below.</p></li>
-<li><p>On Windows, if using <a href="#cygwin">Cygwin</a>, extra care
-must be taken to make sure the environment is consistent. It is
-recommended that you follow this procedure:</p>
 <ul>
 <li><p>Create the directory that is going to contain the top directory
 of the JDK clone by using the <code>mkdir</code> command in the Cygwin
@@ -544,6 +541,11 @@ href="#apple-xcode">Apple Xcode</a> on some strategies to deal with
 this.</p>
 <p>It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.</p>
+<p>Starting with Xcode 26, introduced in macOS 26, the Metal toolchain
+no longer comes bundled with Xcode, so it needs to be installed
+separately. This can either be done via the Xcode's Settings/Components
+UI, or in the command line calling
+<code>xcodebuild -downloadComponent metalToolchain</code>.</p>
 <p>The standard macOS environment contains the basic tooling needed to
 build, but for external libraries a package manager is recommended. The
 JDK uses <a href="https://brew.sh/">homebrew</a> in the examples, but
@@ -671,7 +673,7 @@ update.</p>
 (Note that this version is often presented as "MSVC 14.28", and reported
 by cl.exe as 19.28.) Older versions will not be accepted by
 <code>configure</code> and will not work. The maximum accepted version
-of Visual Studio is 2022.</p>
+of Visual Studio is 2026.</p>
 <p>If you have multiple versions of Visual Studio installed,
 <code>configure</code> will by default pick the latest. You can request
 a specific version to be used by setting
@@ -1454,10 +1456,10 @@ of a cross-compiling toolchain and a sysroot environment which can
 easily be used together with the <code>--with-devkit</code> configure
 option to cross compile the JDK. On Linux/x86_64, the following
 command:</p>
-<pre><code>bash configure --with-devkit=&lt;devkit-path&gt; --openjdk-target=ppc64-linux-gnu &amp;&amp; make</code></pre>
-<p>will configure and build the JDK for Linux/ppc64 assuming that
-<code>&lt;devkit-path&gt;</code> points to a Linux/x86_64 to Linux/ppc64
-devkit.</p>
+<pre><code>bash configure --with-devkit=&lt;devkit-path&gt; --openjdk-target=ppc64le-linux-gnu &amp;&amp; make</code></pre>
+<p>will configure and build the JDK for Linux/ppc64le assuming that
+<code>&lt;devkit-path&gt;</code> points to a Linux/x86_64 to
+Linux/ppc64le devkit.</p>
 <p>Devkits can be created from the <code>make/devkit</code> directory by
 executing:</p>
 <pre><code>make [ TARGETS=&quot;&lt;TARGET_TRIPLET&gt;+&quot; ] [ BASE_OS=&lt;OS&gt; ] [ BASE_OS_VERSION=&lt;VER&gt; ]</code></pre>
@@ -1484,22 +1486,22 @@ following targets are known to work:</p>
 <td>arm-linux-gnueabihf</td>
 </tr>
 <tr class="even">
-<td>ppc64-linux-gnu</td>
+<td>ppc64le-linux-gnu</td>
 </tr>
 <tr class="odd">
-<td>ppc64le-linux-gnu</td>
+<td>riscv64-linux-gnu</td>
 </tr>
 <tr class="even">
 <td>s390x-linux-gnu</td>
 </tr>
 </tbody>
 </table>
-<p><code>BASE_OS</code> must be one of "OEL6" for Oracle Enterprise
-Linux 6 or "Fedora" (if not specified "OEL6" will be the default). If
-the base OS is "Fedora" the corresponding Fedora release can be
-specified with the help of the <code>BASE_OS_VERSION</code> option (with
-"27" as default version). If the build is successful, the new devkits
-can be found in the <code>build/devkit/result</code> subdirectory:</p>
+<p><code>BASE_OS</code> must be one of <code>OL</code> for Oracle
+Enterprise Linux or <code>Fedora</code>. If the base OS is
+<code>Fedora</code> the corresponding Fedora release can be specified
+with the help of the <code>BASE_OS_VERSION</code> option. If the build
+is successful, the new devkits can be found in the
+<code>build/devkit/result</code> subdirectory:</p>
 <pre><code>cd make/devkit
 make TARGETS=&quot;ppc64le-linux-gnu aarch64-linux-gnu&quot; BASE_OS=Fedora BASE_OS_VERSION=21
 ls -1 ../../build/devkit/result/

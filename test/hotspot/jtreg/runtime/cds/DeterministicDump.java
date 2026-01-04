@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI DeterministicDump
  */
 
@@ -100,7 +100,7 @@ public class DeterministicDump {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-Xint") // Override any -Xmixed/-Xcomp flags from jtreg -vmoptions
             .addPrefix("-Xlog:cds=debug,gc=debug")
-            .addPrefix("-Xlog:cds+map*=trace:file=" + mapName + ":none:filesize=0")
+            .addPrefix("-Xlog:aot+map*=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
             .addSuffix(args)
             .addSuffix(more);

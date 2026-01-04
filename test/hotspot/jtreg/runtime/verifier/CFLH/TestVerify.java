@@ -39,7 +39,6 @@
  */
 
 import java.lang.invoke.MethodHandles;
-import java.time.Duration;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.MethodTransform;
@@ -61,7 +60,7 @@ import java.io.FileNotFoundException;
 
 public class TestVerify {
 
-    private static final String CLASS_TO_BREAK = "java.time.Duration";
+    private static final String CLASS_TO_BREAK = "java.util.Date";
     private static final String INTERNAL_CLASS_TO_BREAK = CLASS_TO_BREAK.replace('.', '/');
     private static final boolean DEBUG = false;
 
@@ -91,7 +90,7 @@ public class TestVerify {
                     }
                     builder.with(element);
                 });
-                var classTransform = ClassTransform.transformingMethods(mm -> mm.methodName().stringValue().equals("getSeconds"), methodTransform);
+                var classTransform = ClassTransform.transformingMethods(mm -> mm.methodName().equalsString("parse"), methodTransform);
 
                 byte[] bytes;
                 try {
@@ -164,7 +163,7 @@ public class TestVerify {
             } else {
                 // Load the class instrumented with CFLH for the VerifyError.
                 inst.addTransformer(new BadTransformer());
-                System.out.println("1 hour is " + Duration.ofHours(1).getSeconds() + " seconds");
+                Class<?> cls = Class.forName(CLASS_TO_BREAK);
             }
             throw new RuntimeException("Failed: Did not throw VerifyError");
         } catch (VerifyError e) {

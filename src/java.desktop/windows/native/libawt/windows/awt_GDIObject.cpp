@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@
  * Set our limit much lower than that to allow a buffer for objects
  * created beyond the per-thread HDC/Brush/Pen objects we are
  * counting here, including objects created by the overall process
- * (which could include the browser, in the case of applets)
  */
 #define MAX_GDI_OBJECTS 9000
 

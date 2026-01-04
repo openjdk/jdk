@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,15 @@
  * @key headful
  * @summary Verifies that Myanmar script is rendered correctly:
  *          two characters combined into one glyph
+ * @library /test/lib
+ * @build jtreg.SkippedException
  * @run main MyanmarTextTest
  */
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.util.Arrays;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
@@ -45,12 +48,16 @@ import javax.swing.plaf.TextUI;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Position;
 
+import jtreg.SkippedException;
+
 public class MyanmarTextTest {
     private static final String TEXT = "\u1000\u103C";
 
-    private static final String FONT_WINDOWS = "Myanmar Text";
-    private static final String FONT_LINUX = "Padauk";
-    private static final String FONT_MACOS = "Myanmar MN";
+    private static final List<String> FONT_CANDIDATES =
+            List.of("Myanmar MN",
+                    "Padauk",
+                    "Myanmar Text",
+                    "Noto Sans Myanmar");
 
     private static final String FONT_NAME = selectFontName();
 
@@ -61,12 +68,8 @@ public class MyanmarTextTest {
 
     public static void main(String[] args) throws Exception {
         if (FONT_NAME == null) {
-            System.err.println("Unsupported OS: exiting");
-            return;
-        }
-        if (!fontExists()) {
-            System.err.println("Required font is not installed: " + FONT_NAME);
-            return;
+            throw new SkippedException("No suitable font found out of the list: "
+                    + String.join(", ", FONT_CANDIDATES));
         }
 
         try {
@@ -130,22 +133,12 @@ public class MyanmarTextTest {
     }
 
     private static String selectFontName() {
-        String osName = System.getProperty("os.name").toLowerCase();
-        if (osName.contains("windows")) {
-            return FONT_WINDOWS;
-        } else if (osName.contains("linux")) {
-            return FONT_LINUX;
-        } else if (osName.contains("mac")) {
-            return FONT_MACOS;
-        } else {
-            return null;
-        }
+        return Arrays.stream(GraphicsEnvironment
+                             .getLocalGraphicsEnvironment()
+                             .getAvailableFontFamilyNames())
+                     .filter(FONT_CANDIDATES::contains)
+                     .findFirst()
+                     .orElse(null);
     }
 
-    private static boolean fontExists() {
-        String[] fontFamilyNames = GraphicsEnvironment
-                                   .getLocalGraphicsEnvironment()
-                                   .getAvailableFontFamilyNames();
-        return Arrays.asList(fontFamilyNames).contains(FONT_NAME);
-    }
 }

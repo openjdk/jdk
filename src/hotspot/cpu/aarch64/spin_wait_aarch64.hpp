@@ -19,7 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
@@ -31,18 +30,24 @@ public:
     NONE = -1,
     NOP,
     ISB,
-    YIELD
+    YIELD,
+    SB
   };
 
 private:
   Inst _inst;
   int _count;
 
+  Inst from_name(const char *name);
+
 public:
-  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(count) {}
+  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(inst == NONE ? 0 : count) {}
+  SpinWait(const char *name, int count) : SpinWait(from_name(name), count) {}
 
   Inst inst() const { return _inst; }
   int inst_count() const { return _count; }
+
+  static bool supports(const char *name);
 };
 
 #endif // CPU_AARCH64_SPIN_WAIT_AARCH64_HPP

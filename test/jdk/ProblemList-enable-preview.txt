@@ -27,6 +27,4 @@
 #
 #############################################################################
 
-java/lang/System/SecurityManagerWarnings.java                                        8351188 generic-all
-java/lang/System/LoggerFinder/SignedLoggerFinderTest/SignedLoggerFinderTest.java     8351188 generic-all
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,18 +81,24 @@ class ZipFileSystem extends FileSystem {
     private static final boolean isWindows = System.getProperty("os.name")
                                              .startsWith("Windows");
     private static final byte[] ROOTPATH = new byte[] { '/' };
+
+    // Global access mode for "mounted" file system ("readOnly" or "readWrite").
+    private static final String PROPERTY_ACCESS_MODE = "accessMode";
+
+    // Posix file permissions allow per-file access control in a posix-like fashion.
+    // Using a "readOnly" access mode will change the posix permissions of any
+    // underlying entries (they may still show as "writable", but will not be).
     private static final String PROPERTY_POSIX = "enablePosixFileAttributes";
     private static final String PROPERTY_DEFAULT_OWNER = "defaultOwner";
     private static final String PROPERTY_DEFAULT_GROUP = "defaultGroup";
     private static final String PROPERTY_DEFAULT_PERMISSIONS = "defaultPermissions";
     // Property used to specify the entry version to use for a multi-release JAR
     private static final String PROPERTY_RELEASE_VERSION = "releaseVersion";
+
     // Original property used to specify the entry version to use for a
     // multi-release JAR which is kept for backwards compatibility.
     private static final String PROPERTY_MULTI_RELEASE = "multi-release";
 
-    private static final Set<PosixFilePermission> DEFAULT_PERMISSIONS =
-        PosixFilePermissions.fromString("rwxrwxrwx");
     // Property used to specify the compression mode to use
     private static final String PROPERTY_COMPRESSION_METHOD = "compressionMethod";
     // Value specified for compressionMethod property to compress Zip entries
@@ -104,7 +110,8 @@ class ZipFileSystem extends FileSystem {
     private final Path zfpath;
     final ZipCoder zc;
     private final ZipPath rootdir;
-    private boolean readOnly; // readonly file system, false by default
+    // Starts in readOnly (safe mode), but might be reset at the end of initialization.
+    private boolean readOnly = true;
 
     // default time stamp for pseudo entries
     private final long zfsDefaultTimeStamp = System.currentTimeMillis();
@@ -129,9 +136,36 @@ class ZipFileSystem extends FileSystem {
     final boolean supportPosix;
     private final UserPrincipal defaultOwner;
     private final GroupPrincipal defaultGroup;
+    // Unmodifiable set.
     private final Set<PosixFilePermission> defaultPermissions;
 
     private final Set<String> supportedFileAttributeViews;
+
+    private enum ZipAccessMode {
+        // Creates a file system for read-write access.
+        READ_WRITE("readWrite"),
+        // Creates a file system for read-only access.
+        READ_ONLY("readOnly");
+
+        private final String label;
+
+        ZipAccessMode(String label) {
+            this.label = label;
+        }
+
+        // Parses the access mode from an environmental parameter.
+        // Returns null for missing value to indicate default behavior.
+        static ZipAccessMode from(Object value) {
+            if (value == null) {
+                return null;
+            } else if (READ_WRITE.label.equals(value)) {
+                return ZipAccessMode.READ_WRITE;
+            } else if (READ_ONLY.label.equals(value)) {
+                return ZipAccessMode.READ_ONLY;
+            }
+            throw new IllegalArgumentException("Unknown file system access mode: " + value);
+        }
+    }
 
     ZipFileSystem(ZipFileSystemProvider provider,
                   Path zfpath,
@@ -144,15 +178,28 @@ class ZipFileSystem extends FileSystem {
         this.useTempFile  = isTrue(env, "useTempFile");
         this.forceEnd64 = isTrue(env, "forceZIP64End");
         this.defaultCompressionMethod = getDefaultCompressionMethod(env);
+
+        ZipAccessMode accessMode = ZipAccessMode.from(env.get(PROPERTY_ACCESS_MODE));
+        boolean forceReadOnly = (accessMode == ZipAccessMode.READ_ONLY);
+
         this.supportPosix = isTrue(env, PROPERTY_POSIX);
         this.defaultOwner = supportPosix ? initOwner(zfpath, env) : null;
         this.defaultGroup = supportPosix ? initGroup(zfpath, env) : null;
-        this.defaultPermissions = supportPosix ? initPermissions(env) : null;
+        this.defaultPermissions = supportPosix ? Collections.unmodifiableSet(initPermissions(env)) : null;
         this.supportedFileAttributeViews = supportPosix ?
-            Set.of("basic", "posix", "zip") : Set.of("basic", "zip");
+                Set.of("basic", "posix", "zip") : Set.of("basic", "zip");
+
+        // 'create=true' is semantically the same as StandardOpenOption.CREATE,
+        // and can only be used to create a writable file system (whether the
+        // underlying ZIP file exists or not), and is always incompatible with
+        // 'accessMode=readOnly').
+        boolean shouldCreate = isTrue(env, "create");
+        if (shouldCreate && forceReadOnly) {
+            throw new IllegalArgumentException(
+                    "Specifying 'accessMode=readOnly' is incompatible with 'create=true'");
+        }
         if (Files.notExists(zfpath)) {
-            // create a new zip if it doesn't exist
-            if (isTrue(env, "create")) {
+            if (shouldCreate) {
                 try (OutputStream os = Files.newOutputStream(zfpath, CREATE_NEW, WRITE)) {
                     new END().write(os, 0, forceEnd64);
                 }
@@ -160,12 +207,9 @@ class ZipFileSystem extends FileSystem {
                 throw new NoSuchFileException(zfpath.toString());
             }
         }
-        // sm and existence check
+        // Existence check
         zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
-        boolean writeable = Files.isWritable(zfpath);
-        this.readOnly = !writeable;
         this.zc = ZipCoder.get(nameEncoding);
-        this.rootdir = new ZipPath(this, new byte[]{'/'});
         this.ch = Files.newByteChannel(zfpath, READ);
         try {
             this.cen = initCEN();
@@ -179,13 +223,29 @@ class ZipFileSystem extends FileSystem {
         }
         this.provider = provider;
         this.zfpath = zfpath;
+        this.rootdir = new ZipPath(this, new byte[]{'/'});
 
-        initializeReleaseVersion(env);
+        // Determining a release version uses 'this' instance to read paths etc.
+        Optional<Integer> multiReleaseVersion = determineReleaseVersion(env);
+
+        // Set the version-based lookup function for multi-release JARs.
+        this.entryLookup =
+                multiReleaseVersion.map(this::createVersionedLinks).orElse(Function.identity());
+
+        // We only allow read-write zip/jar files if they are not multi-release
+        // JARs and the underlying file is writable.
+        this.readOnly = forceReadOnly || multiReleaseVersion.isPresent() || !Files.isWritable(zfpath);
+        if (readOnly && accessMode == ZipAccessMode.READ_WRITE) {
+            String reason = multiReleaseVersion.isPresent()
+                    ? "the multi-release JAR file is not writable"
+                    : "the ZIP file is not writable";
+            throw new IOException(reason);
+        }
     }
 
     /**
      * Return the compression method to use (STORED or DEFLATED).  If the
-     * property {@code commpressionMethod} is set use its value to determine
+     * property {@code compressionMethod} is set use its value to determine
      * the compression method to use.  If the property is not set, then the
      * default compression is DEFLATED unless the property {@code noCompression}
      * is set which is supported for backwards compatibility.
@@ -293,12 +353,12 @@ class ZipFileSystem extends FileSystem {
             " or " + GroupPrincipal.class);
     }
 
-    // Initialize the default permissions for files inside the zip archive.
+    // Return the default permissions for files inside the zip archive.
     // If not specified in env, it will return 777.
     private Set<PosixFilePermission> initPermissions(Map<String, ?> env) {
         Object o = env.get(PROPERTY_DEFAULT_PERMISSIONS);
         if (o == null) {
-            return DEFAULT_PERMISSIONS;
+            return PosixFilePermissions.fromString("rwxrwxrwx");
         }
         if (o instanceof String) {
             return PosixFilePermissions.fromString((String)o);
@@ -344,10 +404,6 @@ class ZipFileSystem extends FileSystem {
         if (readOnly) {
             throw new ReadOnlyFileSystemException();
         }
-    }
-
-    void setReadOnly() {
-        this.readOnly = true;
     }
 
     @Override
@@ -1383,33 +1439,24 @@ class ZipFileSystem extends FileSystem {
      * Checks if the Zip File System property "releaseVersion" has been specified. If it has,
      * use its value to determine the requested version. If not use the value of the "multi-release" property.
      */
-    private void initializeReleaseVersion(Map<String, ?> env) throws IOException {
+    private Optional<Integer> determineReleaseVersion(Map<String, ?> env) throws IOException {
         Object o = env.containsKey(PROPERTY_RELEASE_VERSION) ?
             env.get(PROPERTY_RELEASE_VERSION) :
             env.get(PROPERTY_MULTI_RELEASE);
 
-        if (o != null && isMultiReleaseJar()) {
-            int version;
-            if (o instanceof String) {
-                String s = (String)o;
-                if (s.equals("runtime")) {
-                    version = Runtime.version().feature();
-                } else if (s.matches("^[1-9][0-9]*$")) {
-                    version = Version.parse(s).feature();
-                } else {
-                    throw new IllegalArgumentException("Invalid runtime version");
-                }
-            } else if (o instanceof Integer) {
-                version = Version.parse(((Integer)o).toString()).feature();
-            } else if (o instanceof Version) {
-                version = ((Version)o).feature();
-            } else {
-                throw new IllegalArgumentException("env parameter must be String, " +
-                    "Integer, or Version");
-            }
-            createVersionedLinks(version < 0 ? 0 : version);
-            setReadOnly();
+        if (o == null || !isMultiReleaseJar()) {
+            return Optional.empty();
         }
+        int version = switch (o) {
+            case String s when s.equals("runtime") -> Runtime.version().feature();
+            case String s when s.matches("^[1-9][0-9]*$") -> Version.parse(s).feature();
+            case Integer i -> Version.parse(i.toString()).feature();
+            case Version v -> v.feature();
+            case String s -> throw new IllegalArgumentException("Invalid runtime version: " + s);
+            default -> throw new IllegalArgumentException("env parameter must be String, " +
+                    "Integer, or Version");
+        };
+        return Optional.of(Math.max(version, 0));
     }
 
     /**
@@ -1435,11 +1482,11 @@ class ZipFileSystem extends FileSystem {
      * Then wrap the map in a function that getEntry can use to override root
      * entry lookup for entries that have corresponding versioned entries.
      */
-    private void createVersionedLinks(int version) {
+    private Function<byte[], byte[]> createVersionedLinks(int version) {
         IndexNode verdir = getInode(getBytes("/META-INF/versions"));
         // nothing to do, if no /META-INF/versions
         if (verdir == null) {
-            return;
+            return Function.identity();
         }
         // otherwise, create a map and for each META-INF/versions/{n} directory
         // put all the leaf inodes, i.e. entries, into the alias map
@@ -1451,10 +1498,7 @@ class ZipFileSystem extends FileSystem {
                     getOrCreateInode(getRootName(entryNode, versionNode), entryNode.isdir),
                     entryNode.name))
         );
-        entryLookup = path -> {
-            byte[] entry = aliasMap.get(IndexNode.keyOf(path));
-            return entry == null ? path : entry;
-        };
+        return path -> aliasMap.getOrDefault(IndexNode.keyOf(path), path);
     }
 
     /**
@@ -3551,7 +3595,8 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public Set<PosixFilePermission> permissions() {
-            return storedPermissions().orElse(Set.copyOf(defaultPermissions));
+            // supportPosix ==> (defaultPermissions != null)
+            return storedPermissions().orElse(defaultPermissions);
         }
     }
 

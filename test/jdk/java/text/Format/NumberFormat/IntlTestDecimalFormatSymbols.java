@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8282625
+ * @bug 8282625 8366517
  * @summary test International Decimal Format Symbols
  * @run junit IntlTestDecimalFormatSymbols
  */
@@ -44,6 +44,7 @@ import java.util.*;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class IntlTestDecimalFormatSymbols
@@ -145,5 +146,11 @@ public class IntlTestDecimalFormatSymbols
         if(! en.equals(fr)) {
             fail("ERROR: Clone failed");
         }
+    }
+
+    @Test
+    void nullLocaleTest() {
+        assertThrows(NullPointerException.class, () -> new DecimalFormatSymbols(null));
+        assertThrows(NullPointerException.class, () -> DecimalFormatSymbols.getInstance(null));
     }
 }

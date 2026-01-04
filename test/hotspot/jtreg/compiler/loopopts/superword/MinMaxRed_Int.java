@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8302673
+ * @key randomness
  * @summary [SuperWord] MaxReduction and MinReduction should vectorize for int
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.MinMaxRed_Int
@@ -96,6 +97,9 @@ public class MinMaxRed_Int {
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MIN_REDUCTION_V, " > 0"})
+    @IR(applyIfPlatform = {"ppc", "true"},
+        applyIf = {"SuperwordUseVSX", "true"},
+        counts = {IRNode.MIN_REDUCTION_V, " > 0"})
     public static int minReductionImplement(int[] a, int[] b, int res) {
         for (int i = 0; i < a.length; i++) {
             res = Math.min(res, a[i] * b[i]);
@@ -109,6 +113,9 @@ public class MinMaxRed_Int {
         counts = {IRNode.MAX_REDUCTION_V, " > 0"})
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeature = {"rvv", "true"},
+        counts = {IRNode.MAX_REDUCTION_V, " > 0"})
+    @IR(applyIfPlatform = {"ppc", "true"},
+        applyIf = {"SuperwordUseVSX", "true"},
         counts = {IRNode.MAX_REDUCTION_V, " > 0"})
     public static int maxReductionImplement(int[] a, int[] b, int res) {
         for (int i = 0; i < a.length; i++) {

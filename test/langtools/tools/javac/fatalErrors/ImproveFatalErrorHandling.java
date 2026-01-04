@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,9 @@ public class ImproveFatalErrorHandling extends TestRunner {
                 .getSystemJavaCompiler()
                 .getTask(null, null, null, null, null, files);
         Context context = task.getContext();
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         JavaCompiler compiler = context.get(compilerKey);
         compiler.closeables = com.sun.tools.javac.util.List.of(
                 new CloseException1(), new CloseException2(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -948,11 +948,7 @@ class LinearScanTimers : public StackObj {
 
  public:
   LinearScanTimers();
-
-  void begin_method();                     // called for each method when register allocation starts
-  void end_method(LinearScan* allocator);  // called for each method when register allocation completed
   void print(double total_time);           // called before termination of VM to print global summary
-
   elapsedTimer* timer(int idx) { return &(_timers[idx]); }
 };
 

@@ -30,25 +30,14 @@
 #include "utilities/align.hpp"
 #include "utilities/ostream.hpp"
 
-static size_t address_space_limit() {
-  size_t limit = 0;
-
-  if (os::has_allocatable_memory_limit(&limit)) {
-    return limit;
-  }
-
-  // No limit
-  return SIZE_MAX;
-}
-
 size_t ZAddressSpaceLimit::heap() {
   // Allow the heap to occupy 50% of the address space
-  const size_t limit = address_space_limit() / MaxVirtMemFraction;
+  const size_t limit = os::reserve_memory_limit() / MaxVirtMemFraction;
   return align_up(limit, ZGranuleSize);
 }
 
 void ZAddressSpaceLimit::print_limits() {
-  const size_t limit = address_space_limit();
+  const size_t limit = os::reserve_memory_limit();
 
   if (limit == SIZE_MAX) {
     log_info_p(gc, init)("Address Space Size: unlimited");

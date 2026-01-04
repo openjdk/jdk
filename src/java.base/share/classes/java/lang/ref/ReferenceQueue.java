@@ -46,7 +46,7 @@ import jdk.internal.vm.ContinuationSupport;
  * @since    1.2
  */
 
-public class ReferenceQueue<T> {
+public class ReferenceQueue<@jdk.internal.RequiresIdentity T> {
     private static class Null extends ReferenceQueue<Object> {
         @Override
         boolean enqueue(Reference<?> r) {

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8190312
+ * @key intermittent
  * @summary test redirected URLs for -link
  * @library /tools/lib ../../lib /test/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,7 +34,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask javadoc.tester.*
  * @build jtreg.SkippedException
  * @build jdk.test.lib.Platform jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
- * @run main TestRedirectLinks
+ * @run main/timeout=480 TestRedirectLinks
  */
 
 import java.io.File;
@@ -161,11 +162,12 @@ public class TestRedirectLinks extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg/B.html", true,
                 "<a href=\"" + apiURL + """
-                    /java.base/java/lang/String.html" title="class or interface in java.lang" class=\
+                    /java.base/java/lang/String.html" title="class in java.lang" class=\
                     "external-link">Link-Plain to String Class</a>""");
         checkOutput("pkg/C.html", true,
                 "<a href=\"" + apiURL + """
-                    /java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>""");
+                    /java.base/java/lang/Object.html" title="class in java.lang" class=\
+                    "external-link">Object</a>""");
     }
 
     private Path libApi = Path.of("libApi");
@@ -271,10 +273,10 @@ public class TestRedirectLinks extends JavadocTester {
                     "warning: URL " + oldURL + "/element-list was redirected to " + newURL + "/element-list");
             checkOutput("mC/p5/C5.html", true,
                     "extends <a href=\"" + oldURL + """
-                        /mA/p1/C1.html" title="class or interface in p1" class="external-link">C1</a>""");
+                        /mA/p1/C1.html" title="class in p1" class="external-link">C1</a>""");
             checkOutput("mC/p6/C6.html", true,
                     "<a href=\"" + oldURL + """
-                        /mB/p4/C4.html" title="class or interface in p4" class="external-link">C4</a>""");
+                        /mB/p4/C4.html" title="class in p4" class="external-link">C4</a>""");
         } finally {
             if (oldServer != null) {
                 out.println("Stopping old server on " + oldServer.getAddress());

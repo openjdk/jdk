@@ -140,7 +140,7 @@ public class RedTest_long {
         counts = {IRNode.ADD_REDUCTION_VL, ">= 1", IRNode.ADD_REDUCTION_VL, "<= 2"}) // one for main-loop, one for vector-post-loop
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeature = {"rvv", "true"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8", "MaxVectorSize", ">=32"},
         counts = {IRNode.ADD_REDUCTION_VL, ">= 1", IRNode.ADD_REDUCTION_VL, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static long sumReductionImplement(
             long[] a,
@@ -162,7 +162,7 @@ public class RedTest_long {
         counts = {IRNode.OR_REDUCTION_V, ">= 1", IRNode.OR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeature = {"rvv", "true"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8", "MaxVectorSize", ">=32"},
         counts = {IRNode.OR_REDUCTION_V, ">= 1", IRNode.OR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static long orReductionImplement(
             long[] a,
@@ -184,7 +184,7 @@ public class RedTest_long {
         counts = {IRNode.AND_REDUCTION_V, ">= 1", IRNode.AND_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeature = {"rvv", "true"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8", "MaxVectorSize", ">=32"},
         counts = {IRNode.AND_REDUCTION_V, ">= 1", IRNode.AND_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static long andReductionImplement(
             long[] a,
@@ -206,7 +206,7 @@ public class RedTest_long {
         counts = {IRNode.XOR_REDUCTION_V, ">= 1", IRNode.XOR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeature = {"rvv", "true"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8", "MaxVectorSize", ">=32"},
         counts = {IRNode.XOR_REDUCTION_V, ">= 1", IRNode.XOR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static long xorReductionImplement(
             long[] a,
@@ -228,7 +228,7 @@ public class RedTest_long {
         counts = {IRNode.MUL_REDUCTION_VL, ">= 1", IRNode.MUL_REDUCTION_VL, "<= 2"}) // one for main-loop, one for vector-post-loop
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeature = {"rvv", "true"},
-        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8", "MaxVectorSize", ">=32"},
         counts = {IRNode.MUL_REDUCTION_VL, ">= 1", IRNode.MUL_REDUCTION_VL, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static long mulReductionImplement(
             long[] a,

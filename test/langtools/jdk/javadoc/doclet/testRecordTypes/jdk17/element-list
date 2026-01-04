@@ -251,8 +251,6 @@ jdk.jshell
 jdk.jshell.execution
 jdk.jshell.spi
 jdk.jshell.tool
-module:jdk.jsobject
-netscape.javascript
 module:jdk.jstatd
 module:jdk.localedata
 module:jdk.management

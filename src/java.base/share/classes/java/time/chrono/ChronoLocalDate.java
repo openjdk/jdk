@@ -455,6 +455,7 @@ public interface ChronoLocalDate
     /**
      * {@inheritDoc}
      * @throws DateTimeException {@inheritDoc}
+     * @throws UnsupportedTemporalTypeException {@inheritDoc}
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override

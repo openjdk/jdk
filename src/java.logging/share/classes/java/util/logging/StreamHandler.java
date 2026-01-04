@@ -214,13 +214,16 @@ public class StreamHandler extends Handler {
 
         try {
             synchronized (this) {
+                // Re-check writer between isLoggable() and here.
                 Writer writer = this.writer;
-                if (!doneHeader) {
-                    writer.write(formatter.getHead(this));
-                    doneHeader = true;
+                if (writer != null) {
+                    if (!doneHeader) {
+                        writer.write(formatter.getHead(this));
+                        doneHeader = true;
+                    }
+                    writer.write(msg);
+                    synchronousPostWriteHook();
                 }
-                writer.write(msg);
-                synchronousPostWriteHook();
             }
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we

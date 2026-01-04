@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8143955 8080843 8163816 8143006 8169828 8171130 8162989 8210808
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ReplToolTesting CustomEditor EditorTestBase
- * @run testng ExternalEditorTest
+ * @run junit ExternalEditorTest
  * @key intermittent
  */
 
@@ -47,15 +47,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ExternalEditorTest extends EditorTestBase {
 
     private static Path executionScript;
@@ -133,21 +135,19 @@ public class ExternalEditorTest extends EditorTestBase {
 
     @Test
     public void testStatementSemicolonAddition() {
-        testEditor(
-                a -> assertCommand(a, "if (true) {}", ""),
+        testEditor(a -> assertCommand(a, "if (true) {}", ""),
                 a -> assertCommand(a, "if (true) {} else {}", ""),
                 a -> assertCommand(a, "Object o", "o ==> null"),
                 a -> assertCommand(a, "if (true) o = new Object() { int x; }", ""),
                 a -> assertCommand(a, "if (true) o = new Object() { int y; }", ""),
                 a -> assertCommand(a, "System.err.flush()", ""), // test still ; for expression statement
                 a -> assertEditOutput(a, "/ed", "", () -> {
-                    assertEquals(getSource(),
-                            "if (true) {}\n" +
+                    assertEquals(                            "if (true) {}\n" +
                             "if (true) {} else {}\n" +
                             "Object o;\n" +
                             "if (true) o = new Object() { int x; };\n" +
                             "if (true) o = new Object() { int y; };\n" +
-                            "System.err.flush();\n");
+                            "System.err.flush();\n", getSource());
                     exit();
                 })
         );
@@ -173,7 +173,7 @@ public class ExternalEditorTest extends EditorTestBase {
         return System.getProperty("os.name").startsWith("Windows");
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpExternalEditorTest() throws IOException {
         listener = new ServerSocket(0);
         listener.setSoTimeout(30000);
@@ -250,7 +250,8 @@ public class ExternalEditorTest extends EditorTestBase {
         );
     }
 
-    @Test(enabled = false) // TODO 8159229
+    @Test // TODO 8159229
+    @Disabled
     public void testRemoveTempFile() {
         test(new String[]{"--no-startup"},
                 a -> assertCommandCheckOutput(a, "/set editor " + executionScript,
@@ -264,7 +265,7 @@ public class ExternalEditorTest extends EditorTestBase {
         );
     }
 
-    @AfterClass
+    @AfterAll
     public static void shutdown() throws IOException {
         executorShutdown();
         if (listener != null) {

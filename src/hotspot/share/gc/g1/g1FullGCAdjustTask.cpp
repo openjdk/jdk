@@ -37,7 +37,7 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class G1AdjustLiveClosure : public StackObj {
   G1AdjustClosure* _adjust_closure;

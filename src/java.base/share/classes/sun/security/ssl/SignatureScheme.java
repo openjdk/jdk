@@ -34,7 +34,6 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -146,12 +145,12 @@ enum SignatureScheme {
                                     "RSA", 511,
                                     ProtocolVersion.PROTOCOLS_TO_12);
 
-    final int id;                       // hash + signature
-    final String name;                  // literal name
-    private final String algorithm;     // signature algorithm
-    final String keyAlgorithm;          // signature key algorithm
-    private final SigAlgParamSpec signAlgParams;    // signature parameters
-    private final NamedGroup namedGroup;    // associated named group
+    final int id;                         // hash + signature
+    final String name;                    // literal name
+    final String algorithm;               // signature algorithm
+    final String keyAlgorithm;            // signature key algorithm
+    final SigAlgParamSpec signAlgParams;  // signature parameters
+    private final NamedGroup namedGroup;  // associated named group
 
     // The minimal required key size in bits.
     //
@@ -185,7 +184,7 @@ enum SignatureScheme {
         RSA_PSS_SHA384 ("SHA-384", 48),
         RSA_PSS_SHA512 ("SHA-512", 64);
 
-        private final AlgorithmParameterSpec parameterSpec;
+        final AlgorithmParameterSpec parameterSpec;
         private final AlgorithmParameters parameters;
         private final boolean isAvailable;
 
@@ -205,7 +204,7 @@ enum SignatureScheme {
                     NoSuchAlgorithmException | RuntimeException exp) {
                 // Signature.getParameters() may throw RuntimeException.
                 mediator = false;
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                         "RSASSA-PSS signature with " + hash +
                         " is not supported by the underlying providers", exp);
@@ -298,7 +297,7 @@ enum SignatureScheme {
                     Signature.getInstance(algorithm);
                 } catch (Exception e) {
                     mediator = false;
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
                             "Signature algorithm, " + algorithm +
                             ", is not supported by the underlying providers");
@@ -413,15 +412,27 @@ enum SignatureScheme {
             List<ProtocolVersion> activeProtocols,
             Set<SSLScope> scopes) {
         List<SignatureScheme> supported = new LinkedList<>();
+        List<SignatureScheme> schemesToCheck;
 
-        List<SignatureScheme> schemesToCheck =
-                config.signatureSchemes == null ?
-                    Arrays.asList(SignatureScheme.values()) :
-                    namesOfAvailable(config.signatureSchemes);
+        // No need to look up the names of the default signature schemes.
+        if (config.signatureSchemes == SupportedSigSchemes.DEFAULT) {
+            schemesToCheck = Arrays.asList(SignatureScheme.values());
+        } else {
+            schemesToCheck = new ArrayList<>();
+            for (String name : config.signatureSchemes) {
+                var ss = SignatureScheme.nameOf(name);
+                if (ss != null) {
+                    schemesToCheck.add(ss);
+                } else {
+                    SSLLogger.logWarning("ssl,handshake", "Unavailable "
+                            + "configured signature scheme: " + name);
+                }
+            }
+        }
 
         for (SignatureScheme ss: schemesToCheck) {
             if (!ss.isAvailable) {
-                if (SSLLogger.isOn &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.finest(
                         "Ignore unsupported signature scheme: " + ss.name);
@@ -440,12 +451,12 @@ enum SignatureScheme {
             if (isMatch) {
                 if (ss.isPermitted(constraints, scopes)) {
                     supported.add(ss);
-                } else if (SSLLogger.isOn &&
+                } else if (SSLLogger.isOn() &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.finest(
                         "Ignore disabled signature scheme: " + ss.name);
                 }
-            } else if (SSLLogger.isOn &&
+            } else if (SSLLogger.isOn() &&
                     SSLLogger.isOn("ssl,handshake,verbose")) {
                 SSLLogger.finest(
                     "Ignore inactive signature scheme: " + ss.name);
@@ -465,17 +476,17 @@ enum SignatureScheme {
         for (int ssid : algorithmIds) {
             SignatureScheme ss = SignatureScheme.valueOf(ssid);
             if (ss == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "Unsupported signature scheme: " +
                             SignatureScheme.nameOf(ssid));
                 }
-            } else if ((config.signatureSchemes == null
-                        || Utilities.contains(config.signatureSchemes, ss.name))
+            } else if ((config.signatureSchemes == SupportedSigSchemes.DEFAULT
+                    || Utilities.contains(config.signatureSchemes, ss.name))
                     && ss.isAllowed(constraints, protocolVersion, scopes)) {
                 supported.add(ss);
             } else {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "Unsupported signature scheme: " + ss.name);
                 }
@@ -534,7 +545,7 @@ enum SignatureScheme {
                         }
                     }
 
-                    if (SSLLogger.isOn &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.finest(
                             "Ignore the signature algorithm (" + ss +
@@ -563,7 +574,7 @@ enum SignatureScheme {
                         }
                     }
 
-                    if (SSLLogger.isOn &&
+                    if (SSLLogger.isOn() &&
                             SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.finest(
                             "Ignore the legacy signature algorithm (" + ss +
@@ -614,33 +625,6 @@ enum SignatureScheme {
         return new String[0];
     }
 
-    private static List<SignatureScheme> namesOfAvailable(
-                String[] signatureSchemes) {
-
-        if (signatureSchemes == null || signatureSchemes.length == 0) {
-            return Collections.emptyList();
-        }
-
-        List<SignatureScheme> sss = new ArrayList<>(signatureSchemes.length);
-        for (String ss : signatureSchemes) {
-            SignatureScheme scheme = SignatureScheme.nameOf(ss);
-            if (scheme == null || !scheme.isAvailable) {
-                if (SSLLogger.isOn &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
-                    SSLLogger.finest(
-                            "Ignore the signature algorithm (" + ss
-                          + "), unsupported or unavailable");
-                }
-
-                continue;
-            }
-
-            sss.add(scheme);
-        }
-
-        return sss;
-    }
-
     // This method is used to get the signature instance of this signature
     // scheme for the specific public key.  Unlike getSigner(), the exception
     // is bubbled up.  If the public key does not support this signature
@@ -676,7 +660,7 @@ enum SignatureScheme {
             return signer;
         } catch (NoSuchAlgorithmException | InvalidKeyException |
                 InvalidAlgorithmParameterException nsae) {
-            if (SSLLogger.isOn &&
+            if (SSLLogger.isOn() &&
                     SSLLogger.isOn("ssl,handshake,verbose")) {
                 SSLLogger.finest(
                     "Ignore unsupported signature algorithm (" +
@@ -685,5 +669,16 @@ enum SignatureScheme {
         }
 
         return null;
+    }
+
+    // Default signature schemes for SSLConfiguration.
+    static final class SupportedSigSchemes {
+
+        static final String[] DEFAULT = Arrays.stream(
+                        SignatureScheme.values())
+                .filter(ss -> ss.isAvailable
+                        && ss.isPermitted(
+                        SSLAlgorithmConstraints.DEFAULT, null))
+                .map(ss -> ss.name).toArray(String[]::new);
     }
 }

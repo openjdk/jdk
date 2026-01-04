@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @modules java.net.http
+ * @modules java.net.http/jdk.internal.net.http.common
  *          java.logging
  *          jdk.httpserver
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
@@ -65,6 +65,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
@@ -81,6 +82,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -112,7 +114,7 @@ public class ManyRequestsLegacy {
             });
         InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         HttpsServer server = HttpsServer.create(addr, 0);
-        server.setHttpsConfigurator(new Configurator(ctx));
+        server.setHttpsConfigurator(new Configurator(addr.getAddress(), ctx));
 
         LegacyHttpClient client = new LegacyHttpClient();
 
@@ -431,12 +433,18 @@ public class ManyRequestsLegacy {
     }
 
     static class Configurator extends HttpsConfigurator {
-        public Configurator(SSLContext ctx) {
+        private final InetAddress serverAddr;
+
+        public Configurator(InetAddress serverAddr, SSLContext ctx) {
             super(ctx);
+            this.serverAddr = serverAddr;
         }
 
+        @Override
         public void configure(HttpsParameters params) {
-            params.setSSLParameters(getSSLContext().getSupportedSSLParameters());
+            final SSLParameters parameters = getSSLContext().getSupportedSSLParameters();
+            TestServerConfigurator.addSNIMatcher(this.serverAddr, parameters);
+            params.setSSLParameters(parameters);
         }
     }
 }

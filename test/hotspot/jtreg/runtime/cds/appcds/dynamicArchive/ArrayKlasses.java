@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         final String appJar = ClassFileInstaller.getJarPath("ArrayKlasses.jar");
         final String mainClass = "ArrayKlassesApp";
         final String runtimeLogOptions =
-            "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug,cds+unshareable=trace";
+            "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug,aot+unshareable=trace";
 
         // Case 1
         // Create a dynamic archive with the ArrayKlassesApp app class and its

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,7 @@ public abstract class JMXConnectorServer
      * one new connection to this connector server.</p>
      *
      * <p>A given connector need not support the generation of client
-     * stubs.  However, the connectors specified by the JMX Remote API do
-     * (JMXMP Connector and RMI Connector).</p>
+     * stubs.  The RMI Connector does so.</p>
      *
      * <p>The default implementation of this method uses {@link
      * #getAddress} and {@link JMXConnectorFactory} to generate the

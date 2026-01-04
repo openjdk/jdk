@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class AttributeClass {
+public final class AttributeClass {
     private String myName;
     private int myType;
     private int nameLen;
@@ -266,6 +266,7 @@ public class AttributeClass {
         return Objects.hash(myType, myName, myValue);
     }
 
+    @Override
     public String toString() {
         return myName;
     }

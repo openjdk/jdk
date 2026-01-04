@@ -481,7 +481,3 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
   *legal_text = legal_start;
   return (int) (legal_end - legal_start);
 }
-
-void *operator new( size_t size, int, const char *, int ) throw() {
-  return ::operator new( size );
-}

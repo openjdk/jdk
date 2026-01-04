@@ -2810,7 +2810,12 @@ public class Resolve {
     Symbol resolveQualifiedMethod(DiagnosticPosition pos, Env<AttrContext> env,
                                   Symbol location, Type site, Name name, List<Type> argtypes,
                                   List<Type> typeargtypes) {
-        return resolveQualifiedMethod(new MethodResolutionContext(), pos, env, location, site, name, argtypes, typeargtypes);
+        try {
+            return resolveQualifiedMethod(new MethodResolutionContext(), pos, env, location, site, name, argtypes, typeargtypes);
+        } catch (CompletionFailure cf) {
+            chk.completionError(pos, cf);
+            return methodNotFound.access(name, site.tsym);
+        }
     }
     private Symbol resolveQualifiedMethod(MethodResolutionContext resolveContext,
                                   DiagnosticPosition pos, Env<AttrContext> env,
@@ -3838,12 +3843,15 @@ public class Resolve {
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
         while (env1.outer != null) {
+            // If the local class is defined inside a static method, and the instance creation expression
+            // occurs in that same method, the creation occurs (technically) inside a static context, but that's ok.
             if (env1.info.scope.owner == owner) {
                 return (staticOnly) ?
                     new BadLocalClassCreation(c) :
                     owner;
+            } else if (isStatic(env1) || env1.enclClass.sym.isStatic()) {
+                staticOnly = true;
             }
-            if (isStatic(env1)) staticOnly = true;
             env1 = env1.outer;
         }
         return owner.kind == MTH ?
@@ -4008,11 +4016,19 @@ public class Resolve {
      * @param v      The variable
      */
     public boolean isEarlyReference(Env<AttrContext> env, JCTree base, VarSymbol v) {
-        return env.info.ctorPrologue &&
-            (v.flags() & STATIC) == 0 &&
-            v.owner.kind == TYP &&
-            types.isSubtype(env.enclClass.type, v.owner.type) &&
-            (base == null || TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base));
+        if (env.info.ctorPrologue &&
+                (v.flags() & STATIC) == 0 &&
+                v.isMemberOf(env.enclClass.sym, types)) {
+
+            // Allow "Foo.this.x" when "Foo" is (also) an outer class, as this refers to the outer instance
+            if (base != null) {
+                return TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base);
+            }
+
+            // It's an early reference to an instance field member of the current instance
+            return true;
+        }
+        return false;
     }
 
 /* ***************************************************************************

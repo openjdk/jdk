@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,8 @@ import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
+
+import static sun.font.FontUtilities.isIgnorableWhitespace;
 
 /**
  * A class which rasterizes a printer job.
@@ -2468,13 +2470,16 @@ public abstract class RasterPrinterJob extends PrinterJob {
         g.setPaint(Color.black);
     }
 
-    /* On-screen drawString renders most control chars as the missing glyph
-     * and have the non-zero advance of that glyph.
-     * Exceptions are \t, \n and \r which are considered zero-width.
-     * This is a utility method used by subclasses to remove them so we
-     * don't have to worry about platform or font specific handling of them.
+    /**
+     * Removes ignorable whitespace from the specified text, so that there
+     * is no need for platform-specific or font-specific custom whitespace
+     * handling, and so that these characters are not treated like control
+     * characters which are printed as the missing glyph.
+     *
+     * @param s the text to process
+     * @return the input text, with ignorable whitespace (if any) removed
      */
-    protected String removeControlChars(String s) {
+    public static String removeControlChars(String s) {
         char[] in_chars = s.toCharArray();
         int len = in_chars.length;
         char[] out_chars = new char[len];
@@ -2482,7 +2487,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
         for (int i = 0; i < len; i++) {
             char c = in_chars[i];
-            if (c > '\r' || c < '\t' || c == '\u000b' || c == '\u000c')  {
+            if (!isIgnorableWhitespace(c)) {
                out_chars[pos++] = c;
             }
         }

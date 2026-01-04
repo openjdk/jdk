@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
 /**
  * @test id=custom-cl-zgc
  * @requires vm.cds.custom.loaders
+ * @requires vm.cds.nocoops.archive.available
  * @requires vm.gc.Z
  * @summary Test dumptime_table entries are removed with zgc eager class unloading
  * @bug 8274935

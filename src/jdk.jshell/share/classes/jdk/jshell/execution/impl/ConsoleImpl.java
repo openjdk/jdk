@@ -64,7 +64,7 @@ public class ConsoleImpl {
         private static RemoteConsole console;
 
         @Override
-        public JdkConsole console(boolean isTTY, Charset charset) {
+        public JdkConsole console(boolean isTTY, Charset inCharset, Charset outCharset) {
             synchronized (ConsoleProviderImpl.class) {
                 if (remoteOutput != null && remoteInput != null) {
                     return console = new RemoteConsole(remoteOutput, remoteInput);
@@ -182,9 +182,18 @@ public class ConsoleImpl {
                 reader = new Reader() {
                     @Override
                     public int read(char[] cbuf, int off, int len) throws IOException {
+                        if (len == 0) {
+                            return 0;
+                        }
                         return sendAndReceive(() -> {
                             remoteInput.write(Task.READ_CHARS.ordinal());
-                            return readChars(cbuf, off, len);
+                            int r = readInt();
+                            if (r == (-1)) {
+                                return -1;
+                            } else {
+                                cbuf[off] = (char) r;
+                                return 1;
+                            }
                         });
                     }
 
@@ -374,13 +383,9 @@ public class ConsoleImpl {
                     bp = 0;
                 }
                 case READ_CHARS -> {
-                    if (bp >= 5) {
-                        int len = readInt(1);
-                        int c = console.reader().read();
-                        //XXX: EOF handling!
-                        sendChars(sinkOutput, new char[] {(char) c}, 0, 1);
-                        bp = 0;
-                    }
+                    int c = console.reader().read();
+                    sendInt(sinkOutput, c);
+                    bp = 0;
                 }
                 case READ_LINE -> {
                     char[] data = readCharsOrNull(1);

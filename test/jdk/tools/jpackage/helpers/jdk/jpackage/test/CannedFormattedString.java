@@ -23,26 +23,23 @@
 package jdk.jpackage.test;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, Object[] args) {
+public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, Object[] args) implements CannedArgument {
 
-    @FunctionalInterface
-    public interface CannedArgument {
-        public String value();
-    }
-
-    public static Object cannedArgument(Supplier<Object> supplier, String label) {
+    public static CannedArgument cannedArgument(Supplier<Object> supplier, String label) {
         Objects.requireNonNull(supplier);
         Objects.requireNonNull(label);
         return new CannedArgument() {
 
             @Override
-            public String value() {
+            public String getValue() {
                 return supplier.get().toString();
             }
 
@@ -61,6 +58,10 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
         return cannedAbsolutePath(Path.of(v));
     }
 
+    public CannedFormattedString mapArgs(UnaryOperator<Object> mapper) {
+        return new CannedFormattedString(formatter, key, Stream.of(args).map(mapper).toArray());
+    }
+
     public CannedFormattedString {
         Objects.requireNonNull(formatter);
         Objects.requireNonNull(key);
@@ -71,11 +72,19 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
     public String getValue() {
         return formatter.apply(key, Stream.of(args).map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
-                return cannedArg.value();
+                return cannedArg.getValue();
             } else {
                 return arg;
             }
         }).toArray());
+    }
+
+    public CannedFormattedString addPrefix(String prefixKey) {
+        Objects.requireNonNull(prefixKey);
+        return new CannedFormattedString((theKey, theArgs) -> {
+            var str = formatter.apply((String)theArgs[0], Arrays.copyOfRange(theArgs, 1, theArgs.length));
+            return formatter.apply(theKey, new Object[] {str});
+        }, prefixKey, Stream.concat(Stream.of(key), Stream.of(args)).toArray());
     }
 
     @Override

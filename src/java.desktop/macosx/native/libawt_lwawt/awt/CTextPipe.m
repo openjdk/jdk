@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,14 +457,16 @@ static inline void doDrawGlyphsPipe_fillGlyphAndAdvanceBuffers
         }
     }
     if (positions != NULL) {
+
+        CGAffineTransform invTx = CGAffineTransformInvert(strike->fFontTx);
+
         CGPoint prev;
         prev.x = positions[0];
         prev.y = positions[1];
+        prev = CGPointApplyAffineTransform(prev, invTx);
 
         // <rdar://problem/4294061> take the first point, and move the context to that location
         CGContextTranslateCTM(qsdo->cgRef, prev.x, prev.y);
-
-        CGAffineTransform invTx = CGAffineTransformInvert(strike->fFontTx);
 
         // for each position, figure out the advance (since CG won't take positions directly)
         size_t i;
@@ -476,7 +478,7 @@ static inline void doDrawGlyphsPipe_fillGlyphAndAdvanceBuffers
             pt.y = positions[i2+1];
             pt = CGPointApplyAffineTransform(pt, invTx);
             advances[i].width = pt.x - prev.x;
-            advances[i].height = -(pt.y - prev.y); // negative to translate to device space
+            advances[i].height = pt.y - prev.y;
             prev.x = pt.x;
             prev.y = pt.y;
         }

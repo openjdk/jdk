@@ -68,6 +68,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     DISABLED_WARNINGS_clang_threadControl.c := unused-but-set-variable \
         unused-variable, \
     DISABLED_WARNINGS_clang_utf_util.c := unused-but-set-variable, \
+    DISABLED_WARNINGS_microsoft_debugInit.c := 5287, \
     LDFLAGS := $(ICONV_LDFLAGS), \
     EXTRA_HEADER_DIRS := \
         include \

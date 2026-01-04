@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public final class DataPusher implements Runnable {
     private boolean looping;
 
     private Thread pushThread = null;
+    boolean daemonThread = false;
     private int wantedState;
     private int threadState;
 
@@ -70,26 +71,37 @@ public final class DataPusher implements Runnable {
     private final int BUFFER_SIZE = 16384;
 
     public DataPusher(SourceDataLine sourceLine, AudioFormat format, byte[] audioData, int byteLength) {
-        this(sourceLine, format, null, audioData, byteLength);
+        this(sourceLine, format, null, audioData, byteLength, false);
+    }
+
+    public DataPusher(SourceDataLine sourceLine, AudioFormat format,
+                      byte[] audioData, int byteLength, boolean daemon) {
+        this(sourceLine, format, null, audioData, byteLength, daemon);
     }
 
     public DataPusher(SourceDataLine sourceLine, AudioInputStream ais) {
-        this(sourceLine, ais.getFormat(), ais, null, 0);
+        this(sourceLine, ais.getFormat(), ais, null, 0, false);
     }
 
     private DataPusher(final SourceDataLine source, final AudioFormat format,
                        final AudioInputStream ais, final byte[] audioData,
-                       final int audioDataByteLength) {
+                       final int audioDataByteLength,
+                       final boolean daemon) {
         this.source = source;
         this.format = format;
         this.ais = ais;
         this.audioDataByteLength = audioDataByteLength;
         this.audioData = audioData == null ? null : Arrays.copyOf(audioData,
                                                                   audioData.length);
+        this.daemonThread = daemon;
     }
 
     public synchronized void start() {
         start(false);
+    }
+
+    public synchronized boolean isPlaying() {
+        return threadState == STATE_PLAYING;
     }
 
     public synchronized void start(boolean loop) {
@@ -109,7 +121,7 @@ public final class DataPusher implements Runnable {
             if (pushThread == null) {
                 pushThread = JSSecurityManager.createThread(this,
                                                             "DataPusher", // name
-                                                            false,  // daemon
+                                                            daemonThread,  // daemon
                                                             -1,    // priority
                                                             true); // doStart
             }

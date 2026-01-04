@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ private:
 public:
   G1EdenRegions() : _length(0), _used_bytes(0), _regions_on_node() { }
 
-  uint add(G1HeapRegion* hr) {
-    assert(!hr->is_eden(), "should not already be set");
+  void add(G1HeapRegion* hr) {
+    assert(hr->is_eden(), "must be");
     _length++;
-    return _regions_on_node.add(hr);
+    _regions_on_node.add(hr);
   }
 
   void clear() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8259530
+ * @bug 8259530 8357458
  * @summary Generated docs contain MIT/GPL-licenced works without reproducing the licence
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -61,6 +61,10 @@ public class TestLegalNotices extends JavadocTester {
         INDEX, NO_INDEX
     }
 
+    enum HighlightKind {
+        HIGHLIGHT, NO_HIGHLIGHT
+    }
+
 
     @Test
     public void testCombo(Path base) throws IOException {
@@ -71,20 +75,27 @@ public class TestLegalNotices extends JavadocTester {
 
         for (var optionKind : OptionKind.values()) {
             for (var indexKind : IndexKind.values()) {
-                test(base, src, legal, optionKind, indexKind);
+                for (var highlightKind : HighlightKind.values()) {
+                    test(base, src, legal, optionKind, indexKind, highlightKind);
+                }
             }
         }
     }
 
-    void test(Path base, Path src, Path legal, OptionKind optionKind, IndexKind indexKind) throws IOException {
-        System.out.println("testing " + optionKind + " " + indexKind);
-        Path out = base.resolve(optionKind + "-" + indexKind).resolve("out");
+    void test(Path base, Path src, Path legal, OptionKind optionKind, IndexKind indexKind,
+              HighlightKind highlightKind) throws IOException {
+        System.out.println("testing " + optionKind + " " + indexKind + " " + highlightKind);
+        Path out = base.resolve(optionKind + "-" + indexKind + "-" + highlightKind).resolve("out");
         List<String> args = new ArrayList<>();
         args.addAll(List.of(
                 "-d", out.toString()));
 
         if (indexKind == IndexKind.NO_INDEX) {
             args.add("-noindex");
+        }
+
+        if (highlightKind == HighlightKind.HIGHLIGHT) {
+            args.add("--syntax-highlight");
         }
 
         args.addAll(List.of(
@@ -103,7 +114,7 @@ public class TestLegalNotices extends JavadocTester {
         }
         javadoc(args.toArray(new String[0]));
 
-        Set<Path> expectFiles = getExpectFiles(optionKind, indexKind, legal);
+        Set<Path> expectFiles = getExpectFiles(optionKind, indexKind, highlightKind, legal);
         Set<Path> foundFiles = listFiles(out.resolve("legal"));
 
         checking("Checking legal notice files");
@@ -128,16 +139,18 @@ public class TestLegalNotices extends JavadocTester {
 
     }
 
-    Set<Path> getExpectFiles(OptionKind optionKind, IndexKind indexKind, Path legal) throws IOException {
+    Set<Path> getExpectFiles(OptionKind optionKind, IndexKind indexKind, HighlightKind highlightKind,
+                             Path legal) throws IOException {
         switch (optionKind) {
             case UNSET, DEFAULT -> {
                 Path javaHome = Path.of(System.getProperty("java.home"));
                 Path legal_javadoc = javaHome.resolve("legal").resolve("jdk.javadoc");
                 return listFiles(legal_javadoc, p ->
-                        switch (indexKind) {
-                            case INDEX -> true;
-                            case NO_INDEX -> !p.getFileName().toString().contains("jquery");
-                        });
+                        !(indexKind == IndexKind.NO_INDEX
+                                && p.getFileName().toString().contains("jquery"))
+                     && !(highlightKind == HighlightKind.NO_HIGHLIGHT
+                                && p.getFileName().toString().equals("highlightjs.md"))
+                );
             }
 
             case NONE -> {

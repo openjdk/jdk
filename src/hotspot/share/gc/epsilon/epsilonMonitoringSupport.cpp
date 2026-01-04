@@ -32,8 +32,6 @@
 #include "services/memoryService.hpp"
 
 class EpsilonSpaceCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
 private:
   PerfVariable* _capacity;
   PerfVariable* _used;
@@ -91,7 +89,7 @@ public:
   {};
 
   void update_all() {
-    GenerationCounters::update_all(_heap->capacity());
+    GenerationCounters::update_capacity(_heap->capacity());
   }
 };
 

@@ -40,6 +40,11 @@ public class Helper {
     }
 
     @jdk.internal.vm.annotation.ForceInline
+    public static int StringCodingEncodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len) {
+        return StringCoding.encodeAsciiArray0(sa, sp, da, dp, len);
+    }
+
+    @jdk.internal.vm.annotation.ForceInline
     public static byte[] compressByte(byte[] src, int srcOff, int dstSize, int dstOff, int len) {
         byte[] dst = new byte[dstSize];
         StringUTF16.compress(src, srcOff, dst, dstOff, len);
@@ -120,14 +125,14 @@ public class Helper {
 
     public static int getChars(int i, int begin, int end, byte[] value) {
         StringUTF16.checkBoundsBeginEnd(begin, end, value);
-        int pos = DecimalDigits.getCharsUTF16(i, end, value);
+        int pos = DecimalDigits.uncheckedGetCharsUTF16(i, end, value);
         assert begin == pos;
         return pos;
     }
 
     public static int getChars(long l, int begin, int end, byte[] value) {
         StringUTF16.checkBoundsBeginEnd(begin, end, value);
-        int pos = DecimalDigits.getCharsUTF16(l, end, value);
+        int pos = DecimalDigits.uncheckedGetCharsUTF16(l, end, value);
         assert begin == pos;
         return pos;
     }

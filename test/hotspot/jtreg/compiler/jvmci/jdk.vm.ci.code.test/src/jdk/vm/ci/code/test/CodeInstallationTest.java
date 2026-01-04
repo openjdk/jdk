@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class CodeInstallationTest {
             asm.emitEpilogue();
 
             HotSpotCompiledCode code = asm.finish(resolvedMethod);
-            InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null);
+            InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null, true);
 
             if (DEBUG) {
                 String str = ((HotSpotCodeCacheProvider) codeCache).disassemble(installed);

@@ -57,7 +57,7 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaThread.hpp"
@@ -388,7 +388,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   // Decode flags
   const bool finalizable = entry.finalizable();
@@ -532,13 +531,13 @@ bool ZMark::try_steal(ZMarkContext* context) {
   return try_steal_local(context) || try_steal_global(context);
 }
 
-class ZMarkFlushStacksClosure : public HandshakeClosure {
+class ZMarkFlushStacksHandshakeClosure : public HandshakeClosure {
 private:
   ZMark* const _mark;
   bool         _flushed;
 
 public:
-  ZMarkFlushStacksClosure(ZMark* mark)
+  ZMarkFlushStacksHandshakeClosure(ZMark* mark)
     : HandshakeClosure("ZMarkFlushStacks"),
       _mark(mark),
       _flushed(false) {}
@@ -578,10 +577,14 @@ public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkFlushOperation;
   }
+
+  virtual bool is_gc_operation() const {
+    return true;
+  }
 };
 
 bool ZMark::flush() {
-  ZMarkFlushStacksClosure cl(this);
+  ZMarkFlushStacksHandshakeClosure cl(this);
   VM_ZMarkFlushOperation vm_cl(&cl);
   Handshake::execute(&cl);
   VMThread::execute(&vm_cl);
@@ -591,7 +594,7 @@ bool ZMark::flush() {
 }
 
 bool ZMark::try_terminate_flush() {
-  Atomic::inc(&_work_nterminateflush);
+  AtomicAccess::inc(&_work_nterminateflush);
   _terminate.set_resurrected(false);
 
   if (ZVerifyMarking) {
@@ -607,12 +610,12 @@ bool ZMark::try_proactive_flush() {
     return false;
   }
 
-  if (Atomic::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax) {
+  if (AtomicAccess::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax) {
     // Limit reached or we're trying to terminate
     return false;
   }
 
-  Atomic::inc(&_work_nproactiveflush);
+  AtomicAccess::inc(&_work_nproactiveflush);
 
   SuspendibleThreadSetLeaver sts_leaver;
   return flush();
@@ -769,7 +772,7 @@ public:
         ZNMethod::nmethod_patch_barriers(nm);
       }
 
-      _bs_nm->set_guard_value(nm, (int)untype(new_disarm_value_ptr));
+      _bs_nm->guard_with(nm, (int)untype(new_disarm_value_ptr));
 
       if (complete_disarm) {
         log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by young (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
@@ -786,7 +789,6 @@ typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkOldCLDClosu
 
 class ZMarkOldRootsTask : public ZTask {
 private:
-  ZMark* const                  _mark;
   ZRootsIteratorStrongColored   _roots_colored;
   ZRootsIteratorStrongUncolored _roots_uncolored;
 
@@ -797,9 +799,8 @@ private:
   ZMarkNMethodClosure           _nm_cl;
 
 public:
-  ZMarkOldRootsTask(ZMark* mark)
+  ZMarkOldRootsTask()
     : ZTask("ZMarkOldRootsTask"),
-      _mark(mark),
       _roots_colored(ZGenerationIdOptional::old),
       _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
@@ -844,7 +845,6 @@ public:
 
 class ZMarkYoungRootsTask : public ZTask {
 private:
-  ZMark* const               _mark;
   ZRootsIteratorAllColored   _roots_colored;
   ZRootsIteratorAllUncolored _roots_uncolored;
 
@@ -855,9 +855,8 @@ private:
   ZMarkYoungNMethodClosure   _nm_cl;
 
 public:
-  ZMarkYoungRootsTask(ZMark* mark)
+  ZMarkYoungRootsTask()
     : ZTask("ZMarkYoungRootsTask"),
-      _mark(mark),
       _roots_colored(ZGenerationIdOptional::young),
       _roots_uncolored(ZGenerationIdOptional::young),
       _cl_colored(),
@@ -925,13 +924,13 @@ void ZMark::resize_workers(uint nworkers) {
 
 void ZMark::mark_young_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
-  ZMarkYoungRootsTask task(this);
+  ZMarkYoungRootsTask task;
   workers()->run(&task);
 }
 
 void ZMark::mark_old_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
-  ZMarkOldRootsTask task(this);
+  ZMarkOldRootsTask task;
   workers()->run(&task);
 }
 
@@ -952,7 +951,7 @@ bool ZMark::try_end() {
   }
 
   // Try end marking
-  ZMarkFlushStacksClosure cl(this);
+  ZMarkFlushStacksHandshakeClosure cl(this);
   Threads::non_java_threads_do(&cl);
 
   // Check if non-java threads have any pending marking

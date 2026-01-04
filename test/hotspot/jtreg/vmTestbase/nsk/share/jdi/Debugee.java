@@ -290,6 +290,24 @@ public class Debugee extends DebugeeProcess {
     /**
      * Return a debuggee thread by fetching it from a static field in the debuggee.
      */
+
+    public ThreadReference threadByFieldName(ReferenceType debuggeeClass,
+                                             String threadFieldName) {
+        return threadByFieldName(debuggeeClass, threadFieldName, threadFieldName);
+    }
+
+    public ThreadReference threadByFieldName(ReferenceType debuggeeClass,
+                                             String threadFieldName,
+                                             String threadName) {
+        try {
+            return threadByFieldNameOrThrow(debuggeeClass, threadFieldName, threadName);
+        } catch (JDITestRuntimeException e) {
+            log.display("** Unexpected exception trying to find thread \"" + threadName + "\"");
+            e.printStackTrace(log.getOutStream());
+            return null;
+        }
+    }
+
     public ThreadReference threadByFieldNameOrThrow(ReferenceType debuggeeClass,
                                                     String threadFieldName)
             throws JDITestRuntimeException {

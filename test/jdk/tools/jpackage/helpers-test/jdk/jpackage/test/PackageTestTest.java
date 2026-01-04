@@ -168,7 +168,7 @@ public class PackageTestTest extends JUnitAdapter {
         protected final int expectedTicks;
     }
 
-    private static class CountingConsumer extends TickCounter implements ThrowingConsumer<JPackageCommand> {
+    private static class CountingConsumer extends TickCounter implements ThrowingConsumer<JPackageCommand, RuntimeException> {
 
         @Override
         public void accept(JPackageCommand cmd) {
@@ -188,7 +188,7 @@ public class PackageTestTest extends JUnitAdapter {
         private final String label;
     }
 
-    private static class CountingRunnable extends TickCounter implements ThrowingRunnable {
+    private static class CountingRunnable extends TickCounter implements ThrowingRunnable<RuntimeException> {
 
         @Override
         public void run() {
@@ -208,7 +208,7 @@ public class PackageTestTest extends JUnitAdapter {
         private final String label;
     }
 
-    private static class CountingBundleVerifier extends TickCounter implements ThrowingBiConsumer<JPackageCommand, Executor.Result> {
+    private static class CountingBundleVerifier extends TickCounter implements ThrowingBiConsumer<JPackageCommand, Executor.Result, RuntimeException> {
 
         @Override
         public void accept(JPackageCommand cmd, Executor.Result result) {
@@ -341,7 +341,7 @@ public class PackageTestTest extends JUnitAdapter {
                     }
 
                     @Override
-                    JPackageCommand assertAppLayout() {
+                    JPackageCommand runStandardAsserts() {
                         return this;
                     }
 
@@ -351,7 +351,8 @@ public class PackageTestTest extends JUnitAdapter {
                     }
 
                     @Override
-                    public void verifyIsOfType(PackageType ... types) {
+                    public JPackageCommand verifyIsOfType(Set<PackageType> types) {
+                        return this;
                     }
 
                     @Override

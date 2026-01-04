@@ -55,6 +55,7 @@ public class TestStylesheet extends JavadocTester {
 
     @Test
     public void test(Path base) {
+        setUseDefaultOptions(false);
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", testSrc,
                 "pkg");
@@ -86,13 +87,14 @@ public class TestStylesheet extends JavadocTester {
                     .summary-table > div, .details-table > div {
                         font-size: var(--nav-font-size);
                         line-height: 1.6;
-                        padding: 8px 3px 3px 7px;
+                        padding: 8px 5px 3px 7px;
                         overflow: auto hidden;
                     }""",
                 "@import url('fonts/dejavu.css');",
                 """
                     .search-tag-result:target {
-                        background-color:var(--search-tag-highlight-color);
+                        background-color:var(--search-tag-background-color);
+                        color:var(--search-tag-text-color);
                     }""",
                 """
                     a[href]:hover, a[href]:active {
@@ -119,7 +121,7 @@ public class TestStylesheet extends JavadocTester {
                 """
                     input#reset-search, input.reset-filter, input#page-search-reset {
                         background-color: transparent;
-                        background-image:url('x.svg');
+                        background-image:var(--x-svg);
                         background-repeat:no-repeat;
                         background-size:contain;
                         border:0;

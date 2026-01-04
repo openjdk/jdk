@@ -26,7 +26,7 @@
  * @bug 8350830
  * @summary TLS 1.2 Client session resumption having ServerNameIndication
  * @modules java.base/sun.security.tools.keytool
- * @run main/othervm -Djavax.net.debug=all ResumeClientTLS12withSNI
+ * @run main/othervm ResumeClientTLS12withSNI
  */
 
 import javax.net.ssl.*;
@@ -40,6 +40,17 @@ import java.security.KeyStore;
 import java.util.*;
 
 public class ResumeClientTLS12withSNI {
+
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=all
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
 
     /*
      * Enables logging of the SSLEngine operations.
@@ -65,15 +76,9 @@ public class ResumeClientTLS12withSNI {
     /*
      * The following is to set up the keystores.
      */
-    private static final String pathToStores = System.getProperty("test.src", ".");
-    private static final String keyStoreFile = "ks_san.p12";
-    private static final String trustStoreFile = "ks_san.p12";
+    private static final String keyFilename = "ks_san.p12";
+    private static final String trustFilename = "ks_san.p12";
     private static final char[] passphrase = "123456".toCharArray();
-
-    private static final String keyFilename =
-            pathToStores + "/" + keyStoreFile;
-    private static final String trustFilename =
-            pathToStores + "/" + trustStoreFile;
 
     private static final String HOST_NAME = "arf.yak.foo.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456."
             + "localhost123456.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456";
@@ -83,6 +88,11 @@ public class ResumeClientTLS12withSNI {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
+
+        if (debug) {
+            System.setProperty("javax.net.debug", "all");
+        }
+
         Files.deleteIfExists(Path.of(keyFilename));
 
         sun.security.tools.keytool.Main.main(
@@ -118,7 +128,7 @@ public class ResumeClientTLS12withSNI {
     private static KeyManagerFactory makeKeyManagerFactory(String ksPath,
                                                            char[] pass) throws GeneralSecurityException, IOException {
         KeyManagerFactory kmf;
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
 
         try (FileInputStream fsIn = new FileInputStream(ksPath)) {
             ks.load(fsIn, pass);

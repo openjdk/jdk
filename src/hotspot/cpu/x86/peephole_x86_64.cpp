@@ -24,6 +24,7 @@
 
 #ifdef COMPILER2
 
+#include "opto/addnode.hpp"
 #include "peephole_x86_64.hpp"
 #include "adfiles/ad_x86.hpp"
 
@@ -233,6 +234,143 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
     }
   }
   return false;
+}
+
+// This function removes redundant lea instructions that result from chained dereferences that
+// match to leaPCompressedOopOffset, leaP8Narrow, or leaP32Narrow. This happens for ideal graphs
+// of the form LoadN -> DecodeN -> AddP. Matching with any leaP* rule consumes both the AddP and
+// the DecodeN. However, after matching the DecodeN is added back as the base for the leaP*,
+// which is necessary if the oop derived by the leaP* gets added to an OopMap, because OopMaps
+// cannot contain derived oops with narrow oops as a base.
+// This results in the following graph after matching:
+//  LoadN
+//  |   \
+//  | decodeHeapOop_not_null
+//  |   /       \
+//  leaP*    MachProj (leaf)
+// The decode_heap_oop_not_null will emit a lea with an unused result if the derived oop does
+// not end up in an OopMap.
+// This peephole recognizes graphs of the shape as shown above, ensures that the result of the
+// decode is only used by the derived oop and removes that decode if this is the case. Further,
+// multiple leaP*s can have the same decode as their base. This peephole will remove the decode
+// if all leaP*s and the decode share the same parent.
+// Additionally, if the register allocator spills the result of the LoadN we can get such a graph:
+//               LoadN
+//                 |
+//        DefinitionSpillCopy
+//           /           \
+// MemToRegSpillCopy   MemToRegSpillCopy
+//           |           /
+//           | decodeHeapOop_not_null
+//           |   /              \
+//           leaP*          MachProj (leaf)
+// In this case where the common parent of the leaP* and the decode is one MemToRegSpillCopy
+// away, this peephole can also recognize the decode as redundant and also remove the spill copy
+// if that is only used by the decode.
+bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                    MachNode* (*new_root)(), uint inst0_rule) {
+  MachNode* lea_derived_oop = block->get_node(block_index)->as_Mach();
+  assert(lea_derived_oop->rule() == inst0_rule, "sanity");
+  assert(lea_derived_oop->ideal_Opcode() == Op_AddP, "sanity");
+
+  MachNode* decode = lea_derived_oop->in(AddPNode::Base)->isa_Mach();
+  if (decode == nullptr || decode->ideal_Opcode() != Op_DecodeN) {
+    return false;
+  }
+
+  // Check that the lea and the decode live in the same block.
+  if (!block->contains(decode)) {
+    return false;
+  }
+
+  Node* lea_address = lea_derived_oop->in(AddPNode::Address);
+  Node* decode_address = decode->in(1);
+
+  bool is_spill = lea_address != decode_address &&
+                  lea_address->is_SpillCopy() &&
+                  decode_address->is_SpillCopy();
+
+  // If this is a spill, move lea_address and decode_address one node further up to the
+  // grandparents of lea_derived_oop and decode respectively. This lets us look through
+  // the indirection of the spill.
+  if (is_spill) {
+    decode_address = decode_address->in(1);
+    lea_address = lea_address->in(1);
+  }
+
+  // The leaP* and the decode must have the same parent. If we have a spill, they must have
+  // the same grandparent.
+  if (lea_address != decode_address) {
+    return false;
+  }
+
+  // Ensure the decode only has the leaP*s (with the same (grand)parent) and a MachProj leaf as children.
+  MachProjNode* proj = nullptr;
+  for (DUIterator_Fast imax, i = decode->fast_outs(imax); i < imax; i++) {
+    Node* out = decode->fast_out(i);
+    if (out == lea_derived_oop) {
+      continue;
+    }
+    if (out->is_MachProj() && out->outcnt() == 0) {
+      proj = out->as_MachProj();
+      continue;
+    }
+    if (out->is_Mach()) {
+      MachNode* other_lea = out->as_Mach();
+      if ((other_lea->rule() == leaP32Narrow_rule ||
+           other_lea->rule() == leaP8Narrow_rule ||
+           other_lea->rule() == leaPCompressedOopOffset_rule) &&
+           other_lea->in(AddPNode::Base) == decode &&
+          (is_spill ? other_lea->in(AddPNode::Address)->in(1)
+                    : other_lea->in(AddPNode::Address)) == decode_address) {
+        continue;
+      }
+    }
+    // There is other stuff we do not expect...
+    return false;
+  }
+
+  // Ensure the MachProj is in the same block as the decode and the lea.
+  if (proj == nullptr || !block->contains(proj)) {
+    // This should only fail if we are stressing scheduling.
+    assert(StressGCM, "should be scheduled contiguously otherwise");
+    return false;
+  }
+
+  // We now have verified that the decode is redundant and can be removed with a peephole.
+  // Remove the projection
+  block->find_remove(proj);
+  cfg_->map_node_to_block(proj, nullptr);
+
+  // Rewire the base of all leas currently depending on the decode we are removing.
+  for (DUIterator_Fast imax, i = decode->fast_outs(imax); i < imax; i++) {
+    Node* dependant_lea = decode->fast_out(i);
+    if (dependant_lea->is_Mach() && dependant_lea->as_Mach()->ideal_Opcode() == Op_AddP) {
+      dependant_lea->set_req(AddPNode::Base, lea_derived_oop->in(AddPNode::Address));
+      // This deleted something in the out array, hence adjust i, imax.
+      --i;
+      --imax;
+    }
+  }
+
+  // Remove spill for the decode if the spill node does not have any other uses.
+  if (is_spill) {
+    MachNode* decode_spill = decode->in(1)->as_Mach();
+    if (decode_spill->outcnt() == 1 && block->contains(decode_spill)) {
+      decode_spill->set_removed();
+      block->find_remove(decode_spill);
+      cfg_->map_node_to_block(decode_spill, nullptr);
+      decode_spill->del_req(1);
+    }
+  }
+
+  // Remove the decode
+  decode->set_removed();
+  block->find_remove(decode);
+  cfg_->map_node_to_block(decode, nullptr);
+  decode->del_req(1);
+
+  return true;
 }
 
 bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,

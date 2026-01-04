@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,28 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocketFactory;
+import java.nio.channels.DatagramChannel;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import static java.lang.System.out;
+import static java.net.StandardSocketOptions.SO_REUSEADDR;
+import static java.net.StandardSocketOptions.SO_REUSEPORT;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /**
  * @test
@@ -67,7 +78,7 @@ public class TimeoutBasic {
                           null);
 
     static final List<HttpClient.Version> VERSIONS =
-            Arrays.asList(HttpClient.Version.HTTP_2, HttpClient.Version.HTTP_1_1, null);
+            Arrays.asList(HTTP_2, HTTP_1_1, HTTP_3,  null);
 
     static final List<String> SCHEMES = List.of("https", "http");
 
@@ -81,7 +92,7 @@ public class TimeoutBasic {
 
     public static void main(String[] args) throws Exception {
         for (Function<HttpRequest.Builder, HttpRequest.Builder> m : METHODS) {
-            for (HttpClient.Version version : List.of(HttpClient.Version.HTTP_1_1)) {
+            for (HttpClient.Version version : List.of(HTTP_1_1)) {
                 for (HttpClient.Version reqVersion : VERSIONS) {
                     for (String scheme : SCHEMES) {
                         ServerSocketFactory ssf;
@@ -129,6 +140,31 @@ public class TimeoutBasic {
         return request;
     }
 
+    private static void assertTimeout(Throwable e) {
+        Throwable x = e;
+        while (x != null) {
+            if (x instanceof HttpTimeoutException) {
+                out.println("Caught expected timeout: " + x);
+                return;
+            } else {
+                x = x.getCause();
+            }
+        }
+        assert x == null;
+
+        // print not matching exception stack trace
+        e.printStackTrace(out);
+
+        // eliminate leading CompletionException / ExecutionException and
+        // throws assertion error
+        x = e;
+        while (x instanceof CompletionException || x instanceof ExecutionException) {
+            x = x.getCause();
+        }
+        if (x == null) x = e; // should not happen, but ensure we have a stack trace to report
+        throw new AssertionError("Unexpected exception (no timeout in cause chain): " + x, x);
+    }
+
     public static void test(HttpClient.Version version,
                             HttpClient.Version reqVersion,
                             String scheme,
@@ -141,11 +177,46 @@ public class TimeoutBasic {
         if (version != null) builder.version(version);
         HttpClient client = builder.build();
         out.printf("%ntest(version=%s, reqVersion=%s, scheme=%s)%n", version, reqVersion, scheme);
+        DatagramChannel dc = null;
         try (ServerSocket ss = ssf.createServerSocket()) {
             ss.setReuseAddress(false);
             ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = ss.getLocalPort();
-            URI uri = new URI(scheme +"://localhost:" + port + "/");
+            boolean useAltSvc = false;
+            if (reqVersion == HTTP_3 && "https".equalsIgnoreCase(scheme)) {
+                // Prevent the client to connecting to any random server
+                // opened by other tests on the machine, by opening a
+                // datagram channel on the same port than the server socket
+                dc = DatagramChannel.open();
+                try {
+                    if (dc.supportedOptions().contains(SO_REUSEADDR)) {
+                        dc.setOption(SO_REUSEADDR, false);
+                    }
+                    if (dc.supportedOptions().contains(SO_REUSEPORT)) {
+                        dc.setOption(SO_REUSEPORT, false);
+                    }
+                    dc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
+                } catch (IOException io) {
+                    // failed to bind - presumably the port was already taken
+                    // we will configure the request to use ALT_SVC instead, which
+                    // means no HTTP/3 connection will be attempted
+                    useAltSvc = true;
+                    // cleanup channel
+                    dc.close();
+                    dc = null;
+                    out.println("HTTP/3 direct connection cannot be tested: " + io);
+                }
+            }
+
+            // can only reach here if dc port == port
+            assert dc == null || ((InetSocketAddress)dc.getLocalAddress()).getPort() == port;
+
+            URI uri = URIBuilder.newBuilder()
+                    .scheme(scheme)
+                    .loopback()
+                    .port(port)
+                    .path("/")
+                    .build();
 
             out.println("--- TESTING Async");
             int count = 0;
@@ -153,6 +224,13 @@ public class TimeoutBasic {
                 out.println("  with duration of " + duration);
                 HttpRequest request = newRequest(uri, duration, reqVersion, method);
                 if (request == null) continue;
+                if (useAltSvc) {
+                    // make sure request will be downgraded to HTTP/2 if we
+                    // have not been able to create `dc`.
+                    request = HttpRequest.newBuilder(request, (n,v) -> true)
+                            .setOption(H3_DISCOVERY, ALT_SVC)
+                            .build();
+                }
                 count++;
                 try {
                     HttpResponse<?> resp = client.sendAsync(request, BodyHandlers.discarding()).join();
@@ -163,12 +241,7 @@ public class TimeoutBasic {
                     out.println("Body (should be null): " + resp.body());
                     throw new RuntimeException("Unexpected response: " + resp.statusCode());
                 } catch (CompletionException e) {
-                    if (!(e.getCause() instanceof HttpTimeoutException)) {
-                        e.printStackTrace(out);
-                        throw new RuntimeException("Unexpected exception: " + e.getCause());
-                    } else {
-                        out.println("Caught expected timeout: " + e.getCause());
-                    }
+                    assertTimeout(e);
                 }
             }
             assert count >= TIMEOUTS.size() -1;
@@ -179,15 +252,25 @@ public class TimeoutBasic {
                 out.println("  with duration of " + duration);
                 HttpRequest request = newRequest(uri, duration, reqVersion, method);
                 if (request == null) continue;
+                if (useAltSvc) {
+                    // make sure request will be downgraded to HTTP/2 if we
+                    // have not been able to create `dc`.
+                    request = HttpRequest.newBuilder(request, (n,v) -> true)
+                            .setOption(H3_DISCOVERY, ALT_SVC)
+                            .build();
+                }
                 count++;
                 try {
-                    client.send(request, BodyHandlers.discarding());
-                } catch (HttpTimeoutException e) {
-                    out.println("Caught expected timeout: " + e);
+                    HttpResponse<?> resp = client.send(request, BodyHandlers.discarding());
+                    throw new RuntimeException("Unexpected response: " + resp.statusCode());
+                } catch (Throwable e) {
+                    assertTimeout(e);
                 }
             }
             assert count >= TIMEOUTS.size() -1;
 
+        } finally {
+            if (dc != null) dc.close();
         }
     }
 }
