@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -707,12 +707,6 @@ public final class ErrorTest {
         final List<CannedFormattedString> errorMessages = new ArrayList<>();
         errorMessages.add(makeError(JPackageStringBundle.MAIN.cannedFormattedString(
                 "error.cert.not.found", "Developer ID Application: " + signingId, "")));
-        errorMessages.addAll(Stream.of(
-                Map.<String, UnaryOperator<CannedFormattedString>>entry("error.explicit-sign-no-cert", JPackageCommand::makeError),
-                Map.<String, UnaryOperator<CannedFormattedString>>entry("error.explicit-sign-no-cert.advice", JPackageCommand::makeAdvice)
-        ).map(e -> {
-            return e.getValue().apply(JPackageStringBundle.MAIN.cannedFormattedString(e.getKey()));
-        }).toList());
 
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
