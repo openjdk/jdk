@@ -46,7 +46,8 @@ public class Chunghwa {
 
     private static final String CERT_PATH = "chains" + File.separator + "chunghwa";
 
-    // The ePKI root has a test named "chunghwaepkirootca-chain.pem".
+    // The ePKI root has a test certificate chain stored in a file
+    // named "<root>-chain.pem".
     private static final String ROOT_TO_TEST = "chunghwaepkirootca";
 
     // Date after the restrictions take effect
