@@ -2600,7 +2600,6 @@ void VM_Version::resolve_cpu_information_details(void) {
 
 const char* VM_Version::cpu_family_description(void) {
   int cpu_family_id = extended_cpu_family();
-  int cpu_model_id = extended_cpu_model();
   if (is_amd()) {
     if (cpu_family_id < ExtendedFamilyIdLength_AMD) {
       return _family_id_amd[cpu_family_id];
@@ -2615,6 +2614,7 @@ const char* VM_Version::cpu_family_description(void) {
     }
   }
   if (is_zx()) {
+    int cpu_model_id = extended_cpu_model();
     if (cpu_family_id == 7) {
       switch (cpu_model_id) {
         case 0x1B:
