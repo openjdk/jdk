@@ -196,9 +196,9 @@ public class MacSignTest {
                     .setFakeRuntime()
                     .addArguments("--mac-signing-key-user-name", signingKeyUserName);
 
-            cmd.executeAndAssertHelloAppImageCreated();
+            cmd.executeAndAssertImageCreated();
 
-            MacSignVerify.assertSigned(cmd.outputBundle(), certRequest);
+            MacSignVerify.verifyAppImageSigned(cmd, certRequest);
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
     }
 

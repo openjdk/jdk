@@ -41,12 +41,10 @@ import jdk.jpackage.test.MacSign.CertificateRequest;
  */
 public final class MacSignVerify {
 
-    public static void verifyAppImageSigned(
-            JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+    public static void verifyAppImageSigned(JPackageCommand cmd, CertificateRequest certRequest) {
 
-        cmd.verifyIsOfType(PackageType.MAC);
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
         Objects.requireNonNull(certRequest);
-        Objects.requireNonNull(keychain);
 
         final Path bundleRoot;
         if (cmd.isImagePackageType()) {

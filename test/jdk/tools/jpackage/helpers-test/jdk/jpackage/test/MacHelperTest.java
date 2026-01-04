@@ -29,16 +29,23 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class MacHelperTest {
+public class MacHelperTest extends JUnitAdapter {
 
     @Test
     public void test_flatMapPList() {
@@ -105,6 +112,18 @@ public class MacHelperTest {
         ), props);
     }
 
+    @ParameterizedTest
+    @MethodSource
+    public void test_appImageSigned(SignedTestSpec spec) {
+        spec.test(MacHelper::appImageSigned);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void test_nativePackageSigned(SignedTestSpec spec) {
+        spec.test(MacHelper::nativePackageSigned);
+    }
+
     private static String createPListXml(String ...xml) {
         final List<String> content = new ArrayList<>();
         content.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -123,6 +142,128 @@ public class MacHelperTest {
             throw new UncheckedIOException(ex);
         } catch (SAXException ex) {
             throw new RuntimeException(ex);
+        }
+    }
+
+    private static Stream<SignedTestSpec> test_appImageSigned() {
+
+        List<SignedTestSpec.Builder> data = new ArrayList<>();
+
+        for (var signingIdentityOption : List.of(
+                List.<String>of(),
+                List.of("--mac-signing-key-user-name", "foo"),
+                List.of("--mac-app-image-sign-identity", "foo"),
+                List.of("--mac-installer-sign-identity", "foo"),
+                List.of("--mac-installer-sign-identity", "foo", "--mac-app-image-sign-identity", "bar")
+        )) {
+            for (var type : List.of(PackageType.IMAGE, PackageType.MAC_DMG, PackageType.MAC_PKG)) {
+                for (var withMacSign : List.of(true, false)) {
+                    if (signingIdentityOption.contains("--mac-installer-sign-identity") && type != PackageType.MAC_PKG) {
+                        continue;
+                    }
+
+                    var builder = SignedTestSpec.build().type(type).cmdline(signingIdentityOption);
+                    if (withMacSign) {
+                        builder.cmdline("--mac-sign");
+                        if (Stream.of(
+                                "--mac-signing-key-user-name",
+                                "--mac-app-image-sign-identity"
+                        ).anyMatch(signingIdentityOption::contains) || signingIdentityOption.isEmpty()) {
+                            builder.signed();
+                        }
+                    }
+
+                    data.add(builder);
+                }
+            }
+        }
+
+        return data.stream().map(SignedTestSpec.Builder::create);
+    }
+
+    private static Stream<SignedTestSpec> test_nativePackageSigned() {
+
+        List<SignedTestSpec.Builder> data = new ArrayList<>();
+
+        for (var signingIdentityOption : List.of(
+                List.<String>of(),
+                List.of("--mac-signing-key-user-name", "foo"),
+                List.of("--mac-app-image-sign-identity", "foo"),
+                List.of("--mac-installer-sign-identity", "foo"),
+                List.of("--mac-installer-sign-identity", "foo", "--mac-app-image-sign-identity", "bar")
+        )) {
+            for (var type : List.of(PackageType.MAC_DMG, PackageType.MAC_PKG)) {
+                for (var withMacSign : List.of(true, false)) {
+                    if (signingIdentityOption.contains("--mac-installer-sign-identity") && type != PackageType.MAC_PKG) {
+                        continue;
+                    }
+
+                    var builder = SignedTestSpec.build().type(type).cmdline(signingIdentityOption);
+                    if (withMacSign) {
+                        builder.cmdline("--mac-sign");
+                        if (type == PackageType.MAC_PKG && (Stream.of(
+                                "--mac-signing-key-user-name",
+                                "--mac-installer-sign-identity"
+                        ).anyMatch(signingIdentityOption::contains) || signingIdentityOption.isEmpty())) {
+                            builder.signed();
+                        }
+                    }
+
+                    data.add(builder);
+                }
+            }
+        }
+
+        return data.stream().map(SignedTestSpec.Builder::create);
+    }
+
+    private record SignedTestSpec(boolean expectedSigned, PackageType type, List<String> cmdline) {
+
+        SignedTestSpec {
+            Objects.requireNonNull(type);
+            cmdline.forEach(Objects::requireNonNull);
+        }
+
+        void test(Function<JPackageCommand, Boolean> func) {
+            var actualSigned = func.apply((new JPackageCommand().addArguments(cmdline).setPackageType(type)));
+            assertEquals(expectedSigned, actualSigned);
+        }
+
+        static Builder build() {
+            return new Builder();
+        }
+
+        static final class Builder {
+
+            SignedTestSpec create() {
+                return new SignedTestSpec(
+                        expectedSigned,
+                        Optional.ofNullable(type).orElse(PackageType.IMAGE),
+                        cmdline);
+            }
+
+            Builder signed() {
+                expectedSigned = true;
+                return this;
+            }
+
+            Builder type(PackageType v) {
+                type = v;
+                return this;
+            }
+
+            Builder cmdline(String... args) {
+                return cmdline(List.of(args));
+            }
+
+            Builder cmdline(List<String> v) {
+                cmdline.addAll(v);
+                return this;
+            }
+
+            private boolean expectedSigned;
+            private PackageType type;
+            private List<String> cmdline = new ArrayList<>();
         }
     }
 }

@@ -119,7 +119,14 @@ public class SigningBase {
                 StandardCertificateRequest.CODESIGN,
                 StandardCertificateRequest.PKG,
                 StandardCertificateRequest.CODESIGN_COPY,
-                StandardCertificateRequest.PKG_COPY);
+                StandardCertificateRequest.PKG_COPY),
+        /**
+         * A keychain with a single certificate for each role.
+         */
+        SINGLE("jpackagerTest-single.keychain",
+                StandardCertificateRequest.CODESIGN,
+                StandardCertificateRequest.PKG),
+        ;
 
         StandardKeychain(String keychainName, StandardCertificateRequest... certs) {
             this(keychainName, certs[0].spec(), Stream.of(certs).skip(1).map(StandardCertificateRequest::spec).toArray(CertificateRequest[]::new));

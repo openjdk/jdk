@@ -125,17 +125,28 @@ final class MacFromOptions {
 
         if (sign) {
             final var signingIdentityBuilder = createSigningIdentityBuilder(options);
-            MAC_INSTALLER_SIGN_IDENTITY.ifPresentIn(options, signingIdentityBuilder::signingIdentity);
-            MAC_SIGNING_KEY_NAME.findIn(options).ifPresent(userName -> {
-                final StandardCertificateSelector domain;
-                if (appStore) {
-                    domain = StandardCertificateSelector.APP_STORE_PKG_INSTALLER;
-                } else {
-                    domain = StandardCertificateSelector.PKG_INSTALLER;
-                }
 
-                signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
-            });
+            MAC_INSTALLER_SIGN_IDENTITY.findIn(options).ifPresentOrElse(
+                    signingIdentityBuilder::signingIdentity,
+                    () -> {
+                        MAC_SIGNING_KEY_NAME.findIn(options).or(() -> {
+                            if (MAC_APP_IMAGE_SIGN_IDENTITY.findIn(options).isPresent()) {
+                                return Optional.empty();
+                            } else {
+                                return Optional.of("");
+                            }
+                        }).ifPresent(userName -> {
+                            final StandardCertificateSelector domain;
+                            if (appStore) {
+                                domain = StandardCertificateSelector.APP_STORE_PKG_INSTALLER;
+                            } else {
+                                domain = StandardCertificateSelector.PKG_INSTALLER;
+                            }
+
+                            signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
+                        });
+                    }
+            );
 
             if (pkgBuilder.isPresent()) {
                 pkgBuilder.orElseThrow().signingBuilder(signingIdentityBuilder);
@@ -240,17 +251,28 @@ final class MacFromOptions {
 
         if (sign) {
             final var signingIdentityBuilder = createSigningIdentityBuilder(options);
-            MAC_APP_IMAGE_SIGN_IDENTITY.ifPresentIn(options, signingIdentityBuilder::signingIdentity);
-            MAC_SIGNING_KEY_NAME.findIn(options).ifPresent(userName -> {
-                final StandardCertificateSelector domain;
-                if (appStore) {
-                    domain = StandardCertificateSelector.APP_STORE_APP_IMAGE;
-                } else {
-                    domain = StandardCertificateSelector.APP_IMAGE;
-                }
 
-                signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
-            });
+            MAC_APP_IMAGE_SIGN_IDENTITY.findIn(options).ifPresentOrElse(
+                    signingIdentityBuilder::signingIdentity,
+                    () -> {
+                        MAC_SIGNING_KEY_NAME.findIn(options).or(() -> {
+                            if (MAC_INSTALLER_SIGN_IDENTITY.containsIn(options)) {
+                                return Optional.empty();
+                            } else {
+                                return Optional.of("");
+                            }
+                        }).ifPresent(userName -> {
+                            final StandardCertificateSelector domain;
+                            if (appStore) {
+                                domain = StandardCertificateSelector.APP_STORE_APP_IMAGE;
+                            } else {
+                                domain = StandardCertificateSelector.APP_IMAGE;
+                            }
+
+                            signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
+                        });
+                    }
+            );
 
             final var signingBuilder = new AppImageSigningConfigBuilder(signingIdentityBuilder);
             if (appStore) {

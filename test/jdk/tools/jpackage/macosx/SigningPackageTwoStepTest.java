@@ -21,8 +21,6 @@
  * questions.
  */
 
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
@@ -52,8 +51,9 @@ import jdk.jpackage.test.TKit;
  * signed/unsigned .pkg or .dmg package.
  *
  * <p>
- * Prerequisites: A keychain with self-signed certificates as specified in
- * {@link SigningBase.StandardKeychain#MAIN}.
+ * Prerequisites: Keychains with self-signed certificates as specified in
+ * {@link SigningBase.StandardKeychain#MAIN} and
+ * {@link SigningBase.StandardKeychain#SINGLE}.
  */
 
 /*
@@ -76,9 +76,19 @@ public class SigningPackageTwoStepTest {
     @Test
     @ParameterSupplier
     public static void test(TestSpec spec) {
-        MacSign.withKeychain(toConsumer(keychain -> {
-            spec.test(keychain);
-        }), SigningBase.StandardKeychain.MAIN.keychain());
+
+        SigningBase.StandardKeychain keychain;
+
+        if (Stream.of(
+                spec.signAppImage().stream(),
+                spec.signPackage.values().stream()
+        ).flatMap(x -> x).map(SignKeyOption::type).anyMatch(Predicate.isEqual(SignKeyOption.Type.SIGN_KEY_IMPLICIT))) {
+            keychain = SigningBase.StandardKeychain.SINGLE;
+        } else {
+            keychain = SigningBase.StandardKeychain.MAIN;
+        }
+
+        MacSign.withKeychain(spec::test, keychain.keychain());
     }
 
     public record TestSpec(Optional<SignKeyOption> signAppImage, Map<PackageType, SignKeyOption> signPackage) {
@@ -175,8 +185,8 @@ public class SigningPackageTwoStepTest {
         void test(MacSign.ResolvedKeychain keychain) {
 
             var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
-            MacHelper.useKeychain(appImageCmd, keychain);
             signAppImage.ifPresent(signOption -> {
+                MacHelper.useKeychain(appImageCmd, keychain);
                 signOption.setTo(appImageCmd);
             });
 
@@ -185,7 +195,7 @@ public class SigningPackageTwoStepTest {
             signAppImage.map(SignKeyOption::certRequest).ifPresent(certRequest -> {
                 // The predefined app image is signed, verify bundled app image is signed too.
                 test.addInstallVerifier(cmd -> {
-                    MacSignVerify.verifyAppImageSigned(cmd, certRequest, keychain);
+                    MacSignVerify.verifyAppImageSigned(cmd, certRequest);
                 });
             });
 
@@ -200,8 +210,8 @@ public class SigningPackageTwoStepTest {
             test.forTypes(signPackage.keySet()).addRunOnceInitializer(() -> {
                 appImageCmd.setArgumentValue("--dest", TKit.createTempDirectory("appimage")).execute(0);
             }).usePredefinedAppImage(appImageCmd).addInitializer(cmd -> {
-                MacHelper.useKeychain(cmd, keychain);
                 Optional.ofNullable(signPackage.get(cmd.packageType())).ifPresent(signOption -> {
+                    MacHelper.useKeychain(cmd, keychain);
                     signOption.setTo(cmd);
                 });
 
