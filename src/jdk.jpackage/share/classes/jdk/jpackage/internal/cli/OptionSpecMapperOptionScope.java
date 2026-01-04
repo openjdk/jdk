@@ -111,7 +111,7 @@ interface OptionSpecMapperOptionScope<T, U> extends OptionScope {
             if (contextOptionScope.isEmpty()) {
                 var mutators = new AccumulatingContextOptionScope<T, U>(optionSpecBuilder, contextType);
                 mutators.addMutator(optionSpecBuilderMutator);
-                scope = SetBuilder.build(OptionScope.class).add(scope).add(mutators).create();
+                scope = SetBuilder.<OptionScope>build().add(scope).add(mutators).create();
             }
 
             return scope;
