@@ -139,6 +139,10 @@ public class SigningBase {
             return Objects.requireNonNull(keychain.mapCertificateRequests().get(certRequest));
         }
 
+        public boolean contains(StandardCertificateRequest certRequest) {
+            return keychain.spec().certificateRequests().contains(certRequest.spec);
+        }
+
         private static KeychainWithCertsSpec.Builder keychain(String name) {
             return new KeychainWithCertsSpec.Builder().name(name);
         }
