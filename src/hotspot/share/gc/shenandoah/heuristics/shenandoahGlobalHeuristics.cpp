@@ -94,17 +94,6 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     shared_reserve_regions += delta_regions;
   }
   old_evac_reserve = 0;
-
-  // KELVIN note to self:
-  //  i'm seeing an assertion failure because _partitions.get_empty_region_counts(Collector) < unaffiliated_young_regions when
-  //    we eventually get to the point of moving regions from young to old collector below
-  //  if there was any immediate garbage, have i accounted for that already, or is it lost to me?
-  //  If that happens, the immediate garbage was not part of the "reserve", so we might just count it as additional
-  //   mutator runway.
-  //  Is the problem that the unaffiliated young regions include some unaffiliated young that were in the mutator partition
-  //   rather than the Collector partition?
-  //  This is probably the problem.
-
   assert(shared_reserve_regions <=
          (heap->young_generation()->free_unaffiliated_regions() + heap->old_generation()->free_unaffiliated_regions()),
          "simple math");
