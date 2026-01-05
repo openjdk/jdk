@@ -61,6 +61,8 @@ class CodeStub: public CompilationResourceObj {
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const = 0;
 #endif
+  Address as_Address(LIR_Assembler* ce, LIR_Address* addr, Register tmp);
+  Address as_Address(LIR_Assembler* ce, LIR_Address* addr);
 
   // label access
   Label* entry()                                 { return &_entry; }
@@ -126,6 +128,74 @@ public:
 #endif // PRODUCT
 
 };
+
+
+class AbstractLambdaWrapper : public CompilationResourceObj {
+public:
+  virtual void operator() (LIR_Assembler* ce) = 0;
+};
+
+template<typename T>
+struct LambdaWrapper : public AbstractLambdaWrapper {
+  T _lambda;
+  LIR_Op* _op;
+
+  LambdaWrapper(T lambda, LIR_Op* op) : _lambda(lambda), _op(op) { }
+  virtual void operator() (LIR_Assembler* ce) {
+    _lambda(ce, _op);
+  }
+};
+
+class ProfileStub: public CodeStub {
+private:
+  AbstractLambdaWrapper *_action;
+  const char* _name;
+
+public:
+  ProfileStub() {
+    _name = "ProfileStub";
+  }
+  template<typename U>
+  void set_action(U action, LIR_Op *op) { _action = new LambdaWrapper(action, op); }
+  void set_name(const char* name) { _name = name; }
+  virtual void emit_code(LIR_Assembler* ce) {
+    (*_action)(ce);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("%s", _name); }
+#endif // PRODUCT
+  virtual void visit(LIR_OpVisitState* visitor) { }
+};
+
+
+class ConversionStub: public CodeStub {
+ private:
+  Bytecodes::Code _bytecode;
+  LIR_Opr         _input;
+  LIR_Opr         _result;
+
+  static float float_zero;
+  static double double_zero;
+ public:
+  ConversionStub(Bytecodes::Code bytecode, LIR_Opr input, LIR_Opr result)
+    : _bytecode(bytecode), _input(input), _result(result) {
+  }
+
+  Bytecodes::Code bytecode() { return _bytecode; }
+  LIR_Opr         input()    { return _input; }
+  LIR_Opr         result()   { return _result; }
+
+  virtual void emit_code(LIR_Assembler* e);
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case();
+    visitor->do_input(_input);
+    visitor->do_output(_result);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("ConversionStub"); }
+#endif // PRODUCT
+};
+
 
 // Throws ArrayIndexOutOfBoundsException by default but can be
 // configured to throw IndexOutOfBoundsException in constructor

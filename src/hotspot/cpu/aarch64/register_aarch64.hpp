@@ -400,6 +400,13 @@ inline Register AbstractRegSet<Register>::first() {
 }
 
 template <>
+inline Register AbstractRegSet<Register>::last() {
+  if (_bitset == 0) { return noreg; }
+  int last = max_size() - 1 - count_leading_zeros(_bitset);
+  return as_Register(last);
+}
+
+template <>
 inline FloatRegister AbstractRegSet<FloatRegister>::first() {
   if (_bitset == 0) { return fnoreg; }
   return as_FloatRegister(count_trailing_zeros(_bitset));

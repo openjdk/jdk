@@ -147,6 +147,11 @@
       range -= 1;
     }
 
+    // Use r26 for randomized profile captures.
+    if (ProfileCaptureRatio > 1) {
+      range -= 1;
+    }
+
     // r29 is not allocatable when PreserveFramePointer is on,
     // but fp saving is handled in MacroAssembler::build_frame()/remove_frame()
     if (exclude_fp) {
