@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -132,10 +132,10 @@ VStatus VLoop::check_preconditions_helper() {
       tty->print_cr(" Infrastructure for speculative runtime-checks:");
       if (_auto_vectorization_parse_predicate_proj != nullptr) {
         tty->print_cr("  auto_vectorization_parse_predicate_proj: speculate and trap");
-        _auto_vectorization_parse_predicate_proj->dump_bfs(5,0,"");
+        _auto_vectorization_parse_predicate_proj->dump_bfs(5, nullptr, "");
       } else if (_multiversioning_fast_proj != nullptr) {
         tty->print_cr("  multiversioning_fast_proj: speculate and multiversion");
-        _multiversioning_fast_proj->dump_bfs(5,0,"");
+        _multiversioning_fast_proj->dump_bfs(5, nullptr, "");
       } else {
         tty->print_cr("  Not found.");
       }
@@ -1060,6 +1060,29 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
     return false;
   }
 
+  // The speculative check also needs to create the pointer expressions for both
+  // VPointers. We must check that we can do that, i.e. that all variables of the
+  // VPointers are available at the speculative check (and not just pre-loop invariant).
+  if (!this->can_make_pointer_expression_at_speculative_check()) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: not all variables of VPointer are avaialbe at speculative check!");
+      this->print_on(tty);
+    }
+#endif
+    return false;
+  }
+
+  if (!other.can_make_pointer_expression_at_speculative_check()) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: not all variables of VPointer are avaialbe at speculative check!");
+      other.print_on(tty);
+    }
+#endif
+    return false;
+  }
+
   return true;
 }
 
@@ -1147,6 +1170,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, 
   Node* main_init = new ConvL2INode(main_initL);
   phase->register_new_node_with_ctrl_of(main_init, pre_init);
 
+  assert(vp1.can_make_pointer_expression_at_speculative_check(), "variables must be available early enough to avoid cycles");
+  assert(vp2.can_make_pointer_expression_at_speculative_check(), "variables must be available early enough to avoid cycles");
   Node* p1_init = vp1.make_pointer_expression(main_init, ctrl);
   Node* p2_init = vp2.make_pointer_expression(main_init, ctrl);
   Node* size1 = igvn.longcon(vp1.size());
