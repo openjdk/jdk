@@ -256,7 +256,7 @@
   product(uint, G1ConcRefinementThreads, 0,                                 \
           "The number of parallel remembered set update threads. "          \
           "Will be set ergonomically by default.")                          \
-          range(0, CollectedHeap::WorkerThreadLimit)                        \
+          range(0, (max_jint-1)/wordSize)                                   \
                                                                             \
   product(uint, G1MaxNewSizePercent, 60, EXPERIMENTAL,                     \
           "Percentage (0-100) of the heap size to use as default "          \

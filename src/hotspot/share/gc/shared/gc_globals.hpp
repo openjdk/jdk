@@ -121,9 +121,11 @@
   product(bool, UseShenandoahGC, false,                                     \
           "Use the Shenandoah garbage collector")                           \
                                                                             \
+  /* notice: the max range value here is INT_MAX not UINT_MAX  */           \
+  /* to protect from overflows                                 */           \
   product(uint, ParallelGCThreads, 0,                                       \
           "Number of parallel threads parallel gc will use")                \
-          range(0, CollectedHeap::WorkerThreadLimit)                        \
+          range(0, INT_MAX)                                                 \
                                                                             \
   product(bool, UseDynamicNumberOfGCThreads, true,                          \
           "Dynamically choose the number of threads up to a maximum of "    \
