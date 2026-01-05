@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@
  * @summary converted from VM Testbase nsk/monitoring/GarbageCollectorMXBean/CollectionCounters/CollectionCounters002.
  * VM Testbase keywords: [monitoring]
  *
+ * @requires vm.opt.DisableExplicitGC != "true"
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm
+ * @run main/othervm -XX:-UseGCOverheadLimit
  *      nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001.CollectionCounters001
  *      -testMode=server
  *      -MBeanServer=default
+ *      -iterations=5
  */
 

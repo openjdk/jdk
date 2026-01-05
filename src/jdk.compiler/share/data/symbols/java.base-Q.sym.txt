@@ -83,6 +83,11 @@ method name close descriptor ()V thrownTypes java/io/IOException flags 1
 
 -class name java/lang/StableValue
 
+class name java/lang/String
+field name UNICODE_CASEFOLD_ORDER descriptor Ljava/util/Comparator; flags 19 signature Ljava/util/Comparator<Ljava/lang/String;>;
+method name equalsFoldCase descriptor (Ljava/lang/String;)Z flags 1
+method name compareToFoldCase descriptor (Ljava/lang/String;)I flags 1
+
 class name java/lang/Thread
 -method name stop descriptor ()V
 
@@ -464,6 +469,16 @@ innerclass innerClass java/lang/Thread$State outerClass java/lang/Thread innerCl
 innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask outerClass java/util/concurrent/StructuredTaskScope innerClassName Subtask flags 609
 innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask$State outerClass java/util/concurrent/StructuredTaskScope$Subtask innerClassName State flags 4019
 
+class name java/util/concurrent/ThreadLocalRandom
+method name nextGaussian descriptor ()D flags 1
+
+class name java/util/jar/JarFile
+header extends java/util/zip/ZipFile flags 21
+innerclass innerClass java/lang/Runtime$Version outerClass java/lang/Runtime innerClassName Version flags 19
+innerclass innerClass java/util/jar/Attributes$Name outerClass java/util/jar/Attributes innerClassName Name flags 9
+innerclass innerClass java/lang/ScopedValue$Carrier outerClass java/lang/ScopedValue innerClassName Carrier flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name java/util/stream/Collectors
 header extends java/lang/Object flags 31 runtimeAnnotations @Ljdk/internal/vm/annotation/AOTSafeClassInitializer;
 innerclass innerClass java/util/stream/Collector$Characteristics outerClass java/util/stream/Collector innerClassName Characteristics flags 4019
@@ -485,6 +500,35 @@ method name getKey descriptor ([C)Ljava/security/PrivateKey; thrownTypes java/se
 method name getKey descriptor (Ljava/security/Key;Ljava/security/Provider;)Ljava/security/PrivateKey; thrownTypes java/security/NoSuchAlgorithmException,java/security/InvalidKeyException flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
 method name getKeyPair descriptor ([C)Ljava/security/KeyPair; thrownTypes java/security/NoSuchAlgorithmException,java/security/InvalidKeyException flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
 method name getKeyPair descriptor (Ljava/security/Key;Ljava/security/Provider;)Ljava/security/KeyPair; thrownTypes java/security/NoSuchAlgorithmException,java/security/InvalidKeyException flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+
+class name javax/crypto/spec/HPKEParameterSpec
+header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 31
+field name KEM_DHKEM_P_256_HKDF_SHA256 descriptor I constantValue 16 flags 19
+field name KEM_DHKEM_P_384_HKDF_SHA384 descriptor I constantValue 17 flags 19
+field name KEM_DHKEM_P_521_HKDF_SHA512 descriptor I constantValue 18 flags 19
+field name KEM_DHKEM_X25519_HKDF_SHA256 descriptor I constantValue 32 flags 19
+field name KEM_DHKEM_X448_HKDF_SHA512 descriptor I constantValue 33 flags 19
+field name KDF_HKDF_SHA256 descriptor I constantValue 1 flags 19
+field name KDF_HKDF_SHA384 descriptor I constantValue 2 flags 19
+field name KDF_HKDF_SHA512 descriptor I constantValue 3 flags 19
+field name AEAD_AES_128_GCM descriptor I constantValue 1 flags 19
+field name AEAD_AES_256_GCM descriptor I constantValue 2 flags 19
+field name AEAD_CHACHA20_POLY1305 descriptor I constantValue 3 flags 19
+field name EXPORT_ONLY descriptor I constantValue 65535 flags 19
+method name of descriptor (III)Ljavax/crypto/spec/HPKEParameterSpec; flags 9
+method name withInfo descriptor ([B)Ljavax/crypto/spec/HPKEParameterSpec; flags 1
+method name withPsk descriptor (Ljavax/crypto/SecretKey;[B)Ljavax/crypto/spec/HPKEParameterSpec; flags 1
+method name withEncapsulation descriptor ([B)Ljavax/crypto/spec/HPKEParameterSpec; flags 1
+method name withAuthKey descriptor (Ljava/security/AsymmetricKey;)Ljavax/crypto/spec/HPKEParameterSpec; flags 1
+method name kem_id descriptor ()I flags 1
+method name kdf_id descriptor ()I flags 1
+method name aead_id descriptor ()I flags 1
+method name info descriptor ()[B flags 1
+method name psk descriptor ()Ljavax/crypto/SecretKey; flags 1
+method name psk_id descriptor ()[B flags 1
+method name authKey descriptor ()Ljava/security/AsymmetricKey; flags 1
+method name encapsulation descriptor ()[B flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
 
 class name jdk/internal/classfile/impl/DirectCodeBuilder
 header extends jdk/internal/classfile/impl/AbstractDirectBuilder implements jdk/internal/classfile/impl/TerminalCodeBuilder flags 31 signature Ljdk/internal/classfile/impl/AbstractDirectBuilder<Ljava/lang/classfile/CodeModel;>;Ljdk/internal/classfile/impl/TerminalCodeBuilder;
