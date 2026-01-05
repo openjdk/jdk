@@ -193,9 +193,6 @@ public abstract class VectorType implements CodeGenerationDataNameType {
 
         @Override
         public final Object con() {
-            // TODO: more options?
-            // fromOp
-            // makeZip / makeUnzip
             int r = RANDOM.nextInt(64);
             if (r <= 8) {
                 return List.of(
@@ -214,10 +211,16 @@ public abstract class VectorType implements CodeGenerationDataNameType {
                     ).limit(vectorType.length).toList(),
                     ")"
                 );
+            } else if (r <= 24) {
+                return List.of("VectorShuffle.makeZip(", vectorType.speciesName, ", ", RANDOM.nextInt(2), ")");
+            } else if (r <= 32) {
+                return List.of("VectorShuffle.makeUnzip(", vectorType.speciesName, ", ", RANDOM.nextInt(2), ")");
+            } else if (r <= 40) {
+                return List.of("VectorShuffle.fromOp(", vectorType.speciesName, ", i -> ",
+                               INTS.con(), " + i * ", INTS.con(), " + i * i * ", INTS.con(), ")");
             } else {
                 return List.of("VectorShuffle.iota(", vectorType.speciesName, ", ",
                                INTS.con(), ", ", INTS.con(), ", true)");
-
             }
         }
     }
