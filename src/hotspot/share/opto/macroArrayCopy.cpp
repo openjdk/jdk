@@ -915,12 +915,12 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
   if (start_con >= 0 && end_con >= 0) {
     // Constant start and end.  Simple.
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end_con, &_igvn);
+                                       start_con, end_con, false, &_igvn);
   } else if (start_con >= 0 && dest_size != top()) {
     // Constant start, pre-rounded end after the tail of the array.
     Node* end = dest_size;
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end, &_igvn);
+                                       start_con, end, false, &_igvn);
   } else if (start_con >= 0 && slice_len != top()) {
     // Constant start, non-constant end.  End needs rounding up.
     // End offset = round_up(abase + ((slice_idx_con + slice_len) << scale), 8)
@@ -933,7 +933,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
     end = transform_later(new AddXNode(end, MakeConX(end_base)) );
     end = transform_later(new AndXNode(end, MakeConX(~end_round)) );
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end, &_igvn);
+                                       start_con, end, false,&_igvn);
   } else if (start_con < 0 && dest_size != top()) {
     // Non-constant start, pre-rounded end after the tail of the array.
     // This is almost certainly a "round-to-end" operation.
@@ -967,7 +967,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
     }
     Node* end = dest_size; // pre-rounded
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start, end, &_igvn);
+                                       start, end, false, &_igvn);
   } else {
     // Non-constant start, unrounded non-constant end.
     // (Nobody zeroes a random midsection of an array using this routine.)

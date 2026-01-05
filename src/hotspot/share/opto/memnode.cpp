@@ -4113,9 +4113,9 @@ bool ClearArrayNode::step_through(Node** np, uint instance_id, PhaseValues* phas
   return true;
 }
 
-Node* ClearArrayNode::make_address(Node* dest, Node* offset, PhaseGVN* phase) {
+Node* ClearArrayNode::make_address(Node* dest, Node* offset, bool raw_base, PhaseGVN* phase) {
   Node* base = dest;
-  if (phase->type(dest)->isa_oopptr() == nullptr) {
+  if (raw_base) {
     // May be called as part of the initialization of a just allocated object
     base = phase->C->top();
   }
@@ -4127,12 +4127,13 @@ Node* ClearArrayNode::make_address(Node* dest, Node* offset, PhaseGVN* phase) {
 Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                                    intptr_t start_offset,
                                    Node* end_offset,
+                                   bool raw_base,
                                    PhaseGVN* phase) {
   intptr_t offset = start_offset;
 
   int unit = BytesPerLong;
   if ((offset % unit) != 0) {
-    Node* adr = make_address(dest, phase->MakeConX(offset), phase);
+    Node* adr = make_address(dest, phase->MakeConX(offset), raw_base, phase);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
@@ -4141,12 +4142,13 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   assert((offset % unit) == 0, "");
 
   // Initialize the remaining stuff, if any, with a ClearArray.
-  return clear_memory(ctl, mem, dest, phase->MakeConX(offset), end_offset, phase);
+  return clear_memory(ctl, mem, dest, phase->MakeConX(offset), end_offset, raw_base, phase);
 }
 
 Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                                    Node* start_offset,
                                    Node* end_offset,
+                                   bool raw_base,
                                    PhaseGVN* phase) {
   if (start_offset == end_offset) {
     // nothing to do
@@ -4166,7 +4168,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   // Bulk clear double-words
   Node* zsize = phase->transform(new SubXNode(zend, zbase) );
-  Node* adr = make_address(dest, start_offset, phase);
+  Node* adr = make_address(dest, start_offset, raw_base, phase);
   mem = new ClearArrayNode(ctl, mem, zsize, adr, false);
   return phase->transform(mem);
 }
@@ -4174,6 +4176,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                                    intptr_t start_offset,
                                    intptr_t end_offset,
+                                   bool raw_base,
                                    PhaseGVN* phase) {
   if (start_offset == end_offset) {
     // nothing to do
@@ -4187,10 +4190,10 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   }
   if (done_offset > start_offset) {
     mem = clear_memory(ctl, mem, dest,
-                       start_offset, phase->MakeConX(done_offset), phase);
+                       start_offset, phase->MakeConX(done_offset), raw_base, phase);
   }
   if (done_offset < end_offset) { // emit the final 32-bit store
-    Node* adr = make_address(dest, phase->MakeConX(done_offset), phase);
+    Node* adr = make_address(dest, phase->MakeConX(done_offset), raw_base, phase);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
@@ -5397,6 +5400,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
         zeroes_done = align_down(zeroes_done, BytesPerInt);
         rawmem = ClearArrayNode::clear_memory(rawctl, rawmem, rawptr,
                                               zeroes_done, zeroes_needed,
+                                              true,
                                               phase);
         zeroes_done = zeroes_needed;
         if (zsize > InitArrayShortSize && ++big_init_gaps > 2)
@@ -5455,7 +5459,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
     }
     if (zeroes_done < size_limit) {
       rawmem = ClearArrayNode::clear_memory(rawctl, rawmem, rawptr,
-                                            zeroes_done, size_in_bytes, phase);
+                                            zeroes_done, size_in_bytes, true, phase);
     }
   }
 

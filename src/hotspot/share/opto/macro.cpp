@@ -1792,6 +1792,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     if (!(UseTLAB && ZeroTLAB)) {
       rawmem = ClearArrayNode::clear_memory(control, rawmem, object,
                                             header_size, size_in_bytes,
+                                            false,
                                             &_igvn);
     }
   } else {
