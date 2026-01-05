@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.rmi.server.Unreferenced;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.CountDownLatch;
 
 public class LeaseCheckInterval implements Remote, Unreferenced {
 
@@ -63,16 +64,13 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
     // the Unreferenced.unreferenced() callback method to be invoked
     private static final Duration EXPECTED_MAX_DURATION = Duration.ofMinutes(1);
 
-    private final Object lock = new Object();
-    private boolean unreferencedInvoked = false;
+    // will be counted down when Unreferenced.unreferenced() is invoked
+    private static final CountDownLatch callbackInvocationLatch = new CountDownLatch(1);
 
     @Override
     public void unreferenced() {
         System.err.println("[" + Instant.now() + "] unreferenced() method invoked");
-        synchronized (lock) {
-            unreferencedInvoked = true;
-            lock.notify();
-        }
+        callbackInvocationLatch.countDown();
     }
 
     public static void main(String[] args) throws Exception {
@@ -99,41 +97,33 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
             System.err.println("bound remote object in local registry");
 
             Path outputFile = Files.createTempFile(Path.of("."), "4285878-", ".txt");
-            synchronized (obj.lock) {
-                System.err.println("starting remote client VM...");
-                jvm = new JavaVM("SelfTerminator", "-Drmi.registry.port=" +
-                            registryPort, outputFile.toAbsolutePath().toString());
-                // launch the self terminating java application which will lookup
-                // the bound object and then terminate itself. before terminating
-                // it will write the time at which it is terminating, into the
-                // output file
-                jvm.start();
+            System.err.println("starting remote client VM...");
+            jvm = new JavaVM("SelfTerminator", "-Drmi.registry.port=" +
+                        registryPort, outputFile.toAbsolutePath().toString());
+            // launch the self terminating java application which will lookup
+            // the bound object and then terminate itself. before terminating
+            // it will write the time at which it is terminating, into the
+            // output file
+            jvm.start();
 
-                do {
-                    System.err.println("waiting for unreferenced() callback...");
-                    obj.lock.wait();
-                } while (!obj.unreferencedInvoked); // repeat the loop to take into account
-                                                    // spurious wakeups
-                Instant waitEndedAt = Instant.now();
-                // should never happen
-                assert obj.unreferencedInvoked : "unreference() not invoked";
-
-                final String content = Files.readString(outputFile);
-                System.err.println("content in " + outputFile + ": " + content);
-                // parse the time, representing the time at which the SelfTerminator
-                // application termination started
-                final Instant terminationStartedAt = Instant.parse(content);
-                final Duration waitDuration = Duration.between(terminationStartedAt,
-                        waitEndedAt);
-                System.out.println("wait completed in " + waitDuration);
-                if (waitDuration.compareTo(EXPECTED_MAX_DURATION) > 0) {
-                    throw new RuntimeException("Took unexpectedly long (duration=" +
-                            waitDuration + ") to invoke Unreferenced.unreferenced()," +
-                            " expected max duration=" + EXPECTED_MAX_DURATION);
-                } else {
-                    System.err.println("TEST PASSED: unreferenced() invoked in timely" +
-                            " fashion (duration=" + waitDuration + ")");
-                }
+            System.err.println("waiting for unreferenced() callback...");
+            callbackInvocationLatch.await();
+            Instant waitEndedAt = Instant.now();
+            final String content = Files.readString(outputFile);
+            System.err.println("content in " + outputFile + ": " + content);
+            // parse the time, representing the time at which the SelfTerminator
+            // application termination started
+            final Instant terminationStartedAt = Instant.parse(content);
+            final Duration waitDuration = Duration.between(terminationStartedAt,
+                    waitEndedAt);
+            System.out.println("wait completed in " + waitDuration);
+            if (waitDuration.compareTo(EXPECTED_MAX_DURATION) > 0) {
+                throw new RuntimeException("Took unexpectedly long (duration=" +
+                        waitDuration + ") to invoke Unreferenced.unreferenced()," +
+                        " expected max duration=" + EXPECTED_MAX_DURATION);
+            } else {
+                System.err.println("TEST PASSED: unreferenced() invoked in timely" +
+                        " fashion (duration=" + waitDuration + ")");
             }
         } finally {
             if (jvm != null) {
