@@ -1359,6 +1359,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
         // Only called by the selector manager thread
         private void shutdown() {
+            // first stop the client to avoid seeing exceptions
+            // about "selector manager closed"
+            Log.logTrace("{0}: stopping", owner.dbgTag);
+            try {
+                owner.stop();
+            } catch (Throwable ignored) {
+            }
             try {
                 lock.lock();
                 try {
@@ -1371,6 +1378,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 }
             } catch (IOException ignored) {
             } finally {
+                // cleanup anything that might have been left behind
                 owner.stop();
             }
         }
@@ -1869,6 +1877,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         Log.logTrace("Canceling timer {0}", event);
         synchronized (this) {
             timeouts.remove(event);
+        }
+    }
+
+    // Visible for tests
+    List<TimeoutEvent> timers() {
+        synchronized (this) {
+            return new ArrayList<>(timeouts);
         }
     }
 
