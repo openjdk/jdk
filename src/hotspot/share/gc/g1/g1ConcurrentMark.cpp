@@ -1894,7 +1894,8 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // nothing, but this situation should be extremely rare (a full gc after shutdown
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
-  if (!is_fully_initialized() || (!cm_thread()->in_progress() && !_g1h->is_shutting_down())) {
+
+  if (!is_fully_initialized() || (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating())) {
     return false;
   }
 
