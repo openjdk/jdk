@@ -21,19 +21,15 @@
  * questions.
  */
 
-import java.nio.file.Path;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
-import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
 import jdk.jpackage.test.MacSign.ResolvedKeychain;
-import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.TKit;
 
 
@@ -66,13 +62,13 @@ import jdk.jpackage.test.TKit;
 public class SigningBase {
 
     public enum StandardCertificateRequest {
-        CODESIGN(cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
-        CODESIGN_COPY(cert().days(100).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        CODESIGN(cert().userName(NAME_ASCII)),
+        CODESIGN_COPY(cert().days(100).userName(NAME_ASCII)),
         CODESIGN_ACME_TECH_LTD(cert().days(100).userName("ACME Technologies Limited (ABC12345)")),
-        PKG(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
-        PKG_COPY(cert().type(CertificateType.INSTALLER).days(100).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
-        CODESIGN_UNICODE(cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
-        PKG_UNICODE(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
+        PKG(cert().type(CertificateType.INSTALLER).userName(NAME_ASCII)),
+        PKG_COPY(cert().type(CertificateType.INSTALLER).days(100).userName(NAME_ASCII)),
+        CODESIGN_UNICODE(cert().userName(NAME_UNICODE)),
+        PKG_UNICODE(cert().type(CertificateType.INSTALLER).userName(NAME_UNICODE)),
         CODESIGN_EXPIRED(cert().expired().userName("expired jpackage test")),
         PKG_EXPIRED(cert().expired().type(CertificateType.INSTALLER).userName("expired jpackage test"));
 
@@ -179,149 +175,6 @@ public class SigningBase {
         private static final boolean SIGN_ENV_READY = MacSign.isDeployed(StandardKeychain.signingEnv());
     }
 
-    enum CertIndex {
-        ASCII_INDEX(0),
-        UNICODE_INDEX(1),
-        INVALID_INDEX(-1);
-
-        CertIndex(int value) {
-            this.value = value;
-        }
-
-        int value() {
-            return value;
-        }
-
-        private final int value;
-    }
-
-    public static int DEFAULT_INDEX = 0;
-    private static String [] DEV_NAMES = {
-        "jpackage.openjdk.java.net",
-        "jpackage.openjdk.java.net (ö)",
-    };
-
-    public static String getDevName(int certIndex) {
-        // Always use values from system properties if set
-        String value = System.getProperty("jpackage.mac.signing.key.user.name");
-        if (value != null) {
-            return value;
-        }
-
-        return DEV_NAMES[certIndex];
-    }
-
-    public static int getDevNameIndex(String devName) {
-        return Arrays.binarySearch(DEV_NAMES, devName);
-    }
-
-    public static String getAppCert(int certIndex) {
-        return "Developer ID Application: " + getDevName(certIndex);
-    }
-
-    public static String getInstallerCert(int certIndex) {
-        return "Developer ID Installer: " + getDevName(certIndex);
-    }
-
-    public static void verifyCodesign(Path target, boolean signed, int certIndex) {
-        if (signed) {
-            final var certRequest = getCertRequest(certIndex);
-            MacSignVerify.assertSigned(target, certRequest);
-        } else {
-            MacSignVerify.assertAdhocSigned(target);
-        }
-    }
-
-    // Since we no longer have unsigned app image, but we need to check
-    // DMG which is not adhoc or certificate signed and we cannot use verifyCodesign
-    // for this. verifyDMG() is introduced to check that DMG is unsigned.
-    // Should not be used to validated anything else.
-    public static void verifyDMG(Path target) {
-        if (!target.toString().toLowerCase().endsWith(".dmg")) {
-            throw new IllegalArgumentException("Unexpected target: " + target);
-        }
-
-        MacSignVerify.assertUnsigned(target);
-    }
-
-    public static void verifySpctl(Path target, String type, int certIndex) {
-        final var standardCertIndex = Stream.of(CertIndex.values()).filter(v -> {
-            return v.value() == certIndex;
-        }).findFirst().orElseThrow();
-
-        final var standardType = Stream.of(MacSignVerify.SpctlType.values()).filter(v -> {
-            return v.value().equals(type);
-        }).findFirst().orElseThrow();
-
-        final String expectedSignOrigin;
-        if (standardCertIndex == CertIndex.INVALID_INDEX) {
-            expectedSignOrigin = null;
-        } else if (standardType == MacSignVerify.SpctlType.EXEC) {
-            expectedSignOrigin = getCertRequest(certIndex).name();
-        } else if (standardType == MacSignVerify.SpctlType.INSTALL) {
-            expectedSignOrigin = getPkgCertRequest(certIndex).name();
-        } else {
-            throw new IllegalArgumentException();
-        }
-
-        final var signOrigin = MacSignVerify.findSpctlSignOrigin(standardType, target).orElse(null);
-
-        TKit.assertEquals(signOrigin, expectedSignOrigin,
-                String.format("Check [%s] has sign origin as expected", target));
-    }
-
-    public static void verifyPkgutil(Path target, boolean signed, int certIndex) {
-        if (signed) {
-            final var certRequest = getPkgCertRequest(certIndex);
-            MacSignVerify.assertPkgSigned(target, certRequest, StandardKeychain.MAIN.mapCertificateRequest(certRequest));
-        } else {
-            MacSignVerify.assertUnsigned(target);
-        }
-    }
-
-    public static void verifyAppImageSignature(JPackageCommand appImageCmd,
-            boolean isSigned, String... launchers) throws Exception {
-        Path launcherPath = appImageCmd.appLauncherPath();
-        SigningBase.verifyCodesign(launcherPath, isSigned, SigningBase.DEFAULT_INDEX);
-
-        final List<String> launchersList = List.of(launchers);
-        launchersList.forEach(launcher -> {
-            Path testALPath = launcherPath.getParent().resolve(launcher);
-            SigningBase.verifyCodesign(testALPath, isSigned, SigningBase.DEFAULT_INDEX);
-        });
-
-        Path appImage = appImageCmd.outputBundle();
-        SigningBase.verifyCodesign(appImage, isSigned, SigningBase.DEFAULT_INDEX);
-        if (isSigned) {
-            SigningBase.verifySpctl(appImage, "exec", SigningBase.DEFAULT_INDEX);
-        }
-    }
-
-    private static CertificateRequest getCertRequest(int certIndex) {
-        switch (CertIndex.values()[certIndex]) {
-            case ASCII_INDEX -> {
-                return StandardCertificateRequest.CODESIGN.spec();
-            }
-            case UNICODE_INDEX -> {
-                return StandardCertificateRequest.CODESIGN_UNICODE.spec();
-            }
-            default -> {
-                throw new IllegalArgumentException();
-            }
-        }
-    }
-
-    private static CertificateRequest getPkgCertRequest(int certIndex) {
-        switch (CertIndex.values()[certIndex]) {
-            case ASCII_INDEX -> {
-                return StandardCertificateRequest.PKG.spec();
-            }
-            case UNICODE_INDEX -> {
-                return StandardCertificateRequest.PKG_UNICODE.spec();
-            }
-            default -> {
-                throw new IllegalArgumentException();
-            }
-        }
-    }
+    private static final String NAME_ASCII = "jpackage.openjdk.java.net";
+    private static final String NAME_UNICODE = "jpackage.openjdk.java.net (ö)";
 }

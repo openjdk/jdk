@@ -24,15 +24,10 @@
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -42,7 +37,6 @@ import jdk.jpackage.test.MacHelper.SignKeyOption;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.PackageFile;
-import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -60,14 +54,14 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --type pkg,dmg --app-image
  * @library /test/jdk/tools/jpackage/helpers
- * @library base
  * @key jpackagePlatformPackage
- * @build SigningBase
  * @build jdk.jpackage.test.*
- * @build SigningPackageTwoStepTest
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @compile -Xlint:all -Werror SigningPackageTest.java
+ * @compile -Xlint:all -Werror SigningPackageTwoStepTest.java
  * @requires (jpackage.test.MacSignTests == "run")
  * @requires (jpackage.test.SQETest == null)
- * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTwoStepTest
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
@@ -75,186 +69,95 @@ public class SigningPackageTwoStepTest {
 
     @Test
     @ParameterSupplier
-    public static void test(TestSpec spec) {
-
-        SigningBase.StandardKeychain keychain;
-
-        if (Stream.of(
-                spec.signAppImage().stream(),
-                spec.signPackage.values().stream()
-        ).flatMap(x -> x).map(SignKeyOption::type).anyMatch(Predicate.isEqual(SignKeyOption.Type.SIGN_KEY_IMPLICIT))) {
-            keychain = SigningBase.StandardKeychain.SINGLE;
-        } else {
-            keychain = SigningBase.StandardKeychain.MAIN;
-        }
-
-        MacSign.withKeychain(spec::test, keychain.keychain());
+    public static void test(TwoStepsTestSpec spec) {
+        spec.test();
     }
 
-    public record TestSpec(Optional<SignKeyOption> signAppImage, Map<PackageType, SignKeyOption> signPackage) {
+    public static Collection<Object[]> test() {
 
-        public TestSpec {
+        List<TwoStepsTestSpec> data = new ArrayList<>();
+
+        for (var signAppImage : List.of(true, false)) {
+            Optional<SignKeyOption> appImageSignOption;
+            if (signAppImage) {
+                // Sign the predefined app image bundle with the key not used in the jpackage command line being tested.
+                // This way we can test if jpackage keeps or replaces the signature of
+                // the predefined app image bundle when backing it in the pkg or dmg installer.
+                appImageSignOption = Optional.of(new SignKeyOption(
+                        SignKeyOption.Type.SIGN_KEY_USER_NAME,
+                        SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.spec()));
+            } else {
+                appImageSignOption = Optional.empty();
+            }
+
+            for (var signPackage : SigningPackageTest.TestSpec.testCases(false)) {
+                data.add(new TwoStepsTestSpec(appImageSignOption, signPackage));
+            }
+        }
+
+        return data.stream().map(v -> {
+            return new Object[] {v};
+        }).toList();
+    }
+
+    record TwoStepsTestSpec(Optional<SignKeyOption> signAppImage, SigningPackageTest.TestSpec signPackage) {
+
+        TwoStepsTestSpec {
             Objects.requireNonNull(signAppImage);
             Objects.requireNonNull(signPackage);
-
-            if ((signAppImage.isEmpty() && signPackage.isEmpty()) || !PackageType.MAC.containsAll(signPackage.keySet())) {
-                // Unexpected package types.
-                throw new IllegalArgumentException();
-            }
-
-            // Ensure stable result of toString() call.
-            if (!SortedMap.class.isInstance(signPackage)) {
-                signPackage = new TreeMap<>(signPackage);
-            }
         }
 
         @Override
         public String toString() {
-            var sb = new StringBuilder();
-
-            signAppImage.ifPresent(signOption -> {
-                sb.append(String.format("app-image=%s", signOption));
+            var tokens = new ArrayList<>();
+            signAppImage.ifPresent(v -> {
+                tokens.add(String.format("app-image=%s", v));
             });
-
-            if (!sb.isEmpty() && !signPackage.isEmpty()) {
-                sb.append("; ");
-            }
-
-            if (!signPackage.isEmpty()) {
-                sb.append(signPackage);
-            }
-
-            return sb.toString();
+            tokens.add(signPackage);
+            return tokens.stream().map(Objects::toString).collect(Collectors.joining("; "));
         }
 
-        boolean signNativeBundle() {
-            return signPackage.isEmpty();
+        Optional<MacSign.CertificateRequest> packagedAppImageSignIdentity() {
+            return signAppImage.map(SignKeyOption::certRequest);
         }
 
-        static Builder build() {
-            return new Builder();
-        }
-
-        static class Builder {
-
-            TestSpec create() {
-                return new TestSpec(Optional.ofNullable(signAppImage), signPackage);
-            }
-
-            Builder certRequest(SigningBase.StandardCertificateRequest v) {
-                return certRequest(v.spec());
-            }
-
-            Builder certRequest(MacSign.CertificateRequest v) {
-                certRequest = Objects.requireNonNull(v);
-                return this;
-            }
-
-            Builder signIdentityType(SignKeyOption.Type v) {
-                signIdentityType = Objects.requireNonNull(v);
-                return this;
-            }
-
-            Builder signAppImage() {
-                signAppImage = createSignKeyOption();
-                return this;
-            }
-
-            Builder signPackage(PackageType type) {
-                Objects.requireNonNull(type);
-                signPackage.put(type, createSignKeyOption());
-                return this;
-            }
-
-            Builder signPackage() {
-                PackageType.MAC.forEach(this::signPackage);
-                return this;
-            }
-
-            private SignKeyOption createSignKeyOption() {
-                return new SignKeyOption(signIdentityType, certRequest);
-            }
-
-            private MacSign.CertificateRequest certRequest = SigningBase.StandardCertificateRequest.CODESIGN.spec();
-            private SignKeyOption.Type signIdentityType = SignKeyOption.Type.SIGN_KEY_IDENTITY;
-
-            private SignKeyOption signAppImage;
-            private Map<PackageType, SignKeyOption> signPackage = new HashMap<>();
-        }
-
-        void test(MacSign.ResolvedKeychain keychain) {
+        void test() {
 
             var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
             signAppImage.ifPresent(signOption -> {
-                MacHelper.useKeychain(appImageCmd, keychain);
-                signOption.setTo(appImageCmd);
+                MacSign.withKeychain(keychain -> {
+                    MacHelper.useKeychain(appImageCmd, keychain);
+                    signOption.setTo(appImageCmd);
+                }, SigningPackageTest.chooseKeychain(signAppImage.stream()).keychain());
             });
 
-            var test = new PackageTest();
+            var keychain = SigningPackageTest.chooseKeychain(signPackage.signKeyOptions()).keychain();
 
-            signAppImage.map(SignKeyOption::certRequest).ifPresent(certRequest -> {
-                // The predefined app image is signed, verify bundled app image is signed too.
-                test.addInstallVerifier(cmd -> {
-                    MacSignVerify.verifyAppImageSigned(cmd, certRequest);
-                });
-            });
-
-            Optional.ofNullable(signPackage.get(PackageType.MAC_PKG)).map(SignKeyOption::certRequest).ifPresent(certRequest -> {
-                test.forTypes(PackageType.MAC_PKG, () -> {
-                    test.addBundleVerifier(cmd -> {
-                        MacSignVerify.verifyPkgSigned(cmd, certRequest, keychain);
-                    });
-                });
-            });
-
-            test.forTypes(signPackage.keySet()).addRunOnceInitializer(() -> {
+            var test = signPackage.initTest(keychain).addRunOnceInitializer(() -> {
                 appImageCmd.setArgumentValue("--dest", TKit.createTempDirectory("appimage")).execute(0);
-            }).usePredefinedAppImage(appImageCmd).addInitializer(cmd -> {
-                Optional.ofNullable(signPackage.get(cmd.packageType())).ifPresent(signOption -> {
-                    MacHelper.useKeychain(cmd, keychain);
-                    signOption.setTo(cmd);
+                signAppImage.map(SignKeyOption::certRequest).ifPresent(certRequest -> {
+                    // The predefined app image is signed, verify that.
+                    MacSignVerify.verifyAppImageSigned(appImageCmd, certRequest);
                 });
-
+            }).usePredefinedAppImage(appImageCmd).addInitializer(cmd -> {
                 if (signAppImage.isPresent()) {
                     // Predefined app image is signed. Expect a warning.
                     cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
                             "warning.per.user.app.image.signed",
                             PackageFile.getPathInAppImage(Path.of(""))));
-                } else if (cmd.packageType() == PackageType.MAC_PKG && signPackage.containsKey(cmd.packageType())) {
+                } else if (cmd.packageType() == PackageType.MAC_PKG && signPackage.packageSignOption().isPresent()) {
                     // Create signed ".pkg" bundle from the unsigned predefined app image. Expect a warning.
                     cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString("warning.unsigned.app.image", "pkg"));
                 }
-            })
-            .run();
+            }).addInstallVerifier(cmd -> {
+                packagedAppImageSignIdentity().ifPresent(certRequest -> {
+                    MacSignVerify.verifyAppImageSigned(cmd, certRequest);
+                });
+            });
+
+            MacSign.withKeychain(_ -> {
+                test.run();
+            }, keychain);
         }
-    }
-
-    public static Collection<Object[]> test() {
-
-        List<TestSpec.Builder> data = new ArrayList<>();
-
-        Stream.of(SignKeyOption.Type.values()).flatMap(signIdentityType -> {
-            return Stream.of(
-                    // Sign both predefined app image and native package.
-                    TestSpec.build().signIdentityType(signIdentityType)
-                            .signAppImage()
-                            .signPackage()
-                            .certRequest(SigningBase.StandardCertificateRequest.PKG)
-                            .signPackage(PackageType.MAC_PKG),
-
-                    // Don't sign predefined app image, sign native package.
-                    TestSpec.build().signIdentityType(signIdentityType)
-                            .signPackage()
-                            .certRequest(SigningBase.StandardCertificateRequest.PKG)
-                            .signPackage(PackageType.MAC_PKG),
-
-                    // Sign predefined app image, don't sign native package.
-                    TestSpec.build().signIdentityType(signIdentityType).signAppImage()
-            );
-        }).forEach(data::add);
-
-        return data.stream().map(TestSpec.Builder::create).map(v -> {
-            return new Object[] {v};
-        }).toList();
     }
 }

@@ -21,180 +21,263 @@
  * questions.
  */
 
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-
-import java.nio.file.Path;
-import jdk.jpackage.test.Annotations.Parameter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.SequencedSet;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.ApplicationLayout;
-import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacHelper.SignKeyOption;
 import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 
 /**
- * Tests generation of dmg and pkg with --mac-sign and related arguments.
- * Test will generate pkg and verifies its signature. It verifies that dmg
- * is not signed, but app image inside dmg is signed. This test requires that
- * the machine is configured with test certificate for
- * "Developer ID Installer: jpackage.openjdk.java.net" in
- * jpackagerTest keychain with
- * always allowed access to this keychain for user which runs test.
- * note:
- * "jpackage.openjdk.java.net" can be over-ridden by system property
- * "jpackage.mac.signing.key.user.name", and
- * "jpackagerTest" can be over-ridden by system property
- * "jpackage.mac.signing.keychain"
+ * Tests bundling of .pkg and .dmg packages with various signing options.
+ *
+ * <p>
+ * Prerequisites: Keychains with self-signed certificates as specified in
+ * {@link SigningBase.StandardKeychain#MAIN} and
+ * {@link SigningBase.StandardKeychain#SINGLE}.
  */
+
 
 /*
  * @test
  * @summary jpackage with --type pkg,dmg --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library base
  * @key jpackagePlatformPackage
- * @build SigningBase
  * @build jdk.jpackage.test.*
- * @build SigningPackageTest
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @compile -Xlint:all -Werror SigningPackageTest.java
  * @requires (jpackage.test.MacSignTests == "run")
  * @requires (jpackage.test.SQETest != null)
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
- * --jpt-run=SigningPackageTest
- * --jpt-space-subst=*
- * --jpt-include=SigningPackageTest.test(true,*true,*true,*ASCII_INDEX)
- * --jpt-before-run=SigningBase.verifySignTestEnvReady
+ *  --jpt-run=SigningPackageTest.test
+ *  --jpt-before-run=SigningPackageTest.testSQE
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 
 /*
  * @test
  * @summary jpackage with --type pkg,dmg --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library base
  * @key jpackagePlatformPackage
- * @build SigningBase
  * @build jdk.jpackage.test.*
- * @build SigningPackageTest
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @compile -Xlint:all -Werror SigningPackageTest.java
  * @requires (jpackage.test.MacSignTests == "run")
  * @requires (jpackage.test.SQETest == null)
- * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=SigningPackageTest
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningPackageTest.test
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningPackageTest {
 
-    private static boolean isAppImageSigned(JPackageCommand cmd) {
-        return cmd.hasArgument("--mac-signing-key-user-name") ||
-               cmd.hasArgument("--mac-app-image-sign-identity");
+    @Test
+    @ParameterSupplier("allTestCases")
+    @ParameterSupplier("sqeTestCases")
+    public static void test(TestSpec spec) {
+        MacSign.withKeychain(spec::test, chooseKeychain(spec.signKeyOptions()).keychain());
     }
 
-    private static boolean isPKGSigned(JPackageCommand cmd) {
-        return cmd.hasArgument("--mac-signing-key-user-name") ||
-               cmd.hasArgument("--mac-installer-sign-identity");
+    public static void testSQE() {
+        testSQE = true;
     }
 
-    private static void verifyPKG(JPackageCommand cmd) {
-        Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle, isPKGSigned(cmd), getCertIndex(cmd));
-        if (isPKGSigned(cmd)) {
-            SigningBase.verifySpctl(outputBundle, "install", getCertIndex(cmd));
+    public static Collection<Object[]> allTestCases() {
+
+        if (testSQE) {
+            return List.of();
+        } else {
+            return TestSpec.testCases(true).stream().map(v -> {
+                return new Object[] {v};
+            }).toList();
         }
     }
 
-    private static void verifyDMG(JPackageCommand cmd) {
-        Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyDMG(outputBundle);
+    public static Collection<Object[]> sqeTestCases() {
+
+        if (!testSQE) {
+            return List.of();
+        }
+
+        var signIdentityType = SignKeyOption.Type.SIGN_KEY_USER_NAME;
+        var appImageSignKeyOption = new SignKeyOption(signIdentityType, SigningBase.StandardCertificateRequest.CODESIGN.spec());
+        var pkgSignKeyOption = new SignKeyOption(signIdentityType, SigningBase.StandardCertificateRequest.PKG.spec());
+
+        return Stream.of(new TestSpec(Optional.of(appImageSignKeyOption), Optional.of(pkgSignKeyOption))).map(v -> {
+            return new Object[] {v};
+        }).toList();
     }
 
-    private static void verifyAppImageInDMG(JPackageCommand cmd) {
-        MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            Path launcherPath = ApplicationLayout.platformAppImage()
-                    .resolveAt(dmgImage).launchersDirectory().resolve(cmd.name());
-            // We will be called with all folders in DMG since JDK-8263155, but
-            // we only need to verify app.
-            if (dmgImage.endsWith(cmd.name() + ".app")) {
-                SigningBase.verifyCodesign(launcherPath, isAppImageSigned(cmd),
-                                           getCertIndex(cmd));
-                SigningBase.verifyCodesign(dmgImage, isAppImageSigned(cmd),
-                                           getCertIndex(cmd));
-                if (isAppImageSigned(cmd)) {
-                    SigningBase.verifySpctl(dmgImage, "exec", getCertIndex(cmd));
+    record TestSpec(
+            Optional<SignKeyOption> appImageSignOption,
+            Optional<SignKeyOption> packageSignOption,
+            Set<PackageType> packageTypes) {
+
+        TestSpec {
+            Objects.requireNonNull(appImageSignOption);
+            Objects.requireNonNull(packageSignOption);
+            Objects.requireNonNull(packageTypes);
+
+            if (appImageSignOption.isEmpty() && packageSignOption.isEmpty()) {
+                // No signing.
+                throw new IllegalArgumentException();
+            }
+
+            if (packageTypes.isEmpty() || !PackageType.MAC.containsAll(packageTypes)) {
+                // Invalid package types.
+                throw new IllegalArgumentException();
+            }
+
+            if (packageSignOption.isPresent()) {
+                if (!packageTypes.contains(PackageType.MAC_PKG)) {
+                    // .pkg installer should be signed, but .pkg type is missing.
+                    throw new IllegalArgumentException();
+                }
+
+                if (appImageSignOption.isEmpty()) {
+                    if (packageSignOption.get().type() != SignKeyOption.Type.SIGN_KEY_IDENTITY) {
+                        // They request to sign the .pkg installer without
+                        // the "--mac-installer-sign-identity" option,
+                        // but didn't specify a signing option for the packaged app image.
+                        // This is wrong because only the "--mac-installer-sign-identity" option
+                        // allows signing a .pkg installer without signing its packaged app image.
+                        throw new IllegalArgumentException();
+                    }
+                } else if (appImageSignOption.get().type() != packageSignOption.get().type()) {
+                    // Signing option types should be the same.
+                    throw new IllegalArgumentException();
                 }
             }
-        });
-    }
 
-    private static int getCertIndex(JPackageCommand cmd) {
-        if (cmd.hasArgument("--mac-signing-key-user-name")) {
-            String devName = cmd.getArgumentValue("--mac-signing-key-user-name");
-            return SigningBase.getDevNameIndex(devName);
-        } else {
-            // Signing-indentity
-            return SigningBase.CertIndex.UNICODE_INDEX.value();
+            if (!(packageTypes instanceof SequencedSet)) {
+                packageTypes = new TreeSet<>(packageTypes);
+            }
+        }
+
+        TestSpec(Optional<SignKeyOption> appImageSignOption, Optional<SignKeyOption> packageSignOption, PackageType... packageTypes) {
+            this(appImageSignOption, packageSignOption, Set.of(packageTypes));
+        }
+
+        @Override
+        public String toString() {
+            return Stream.of(
+                    signKeyOptions(),
+                    Stream.of(packageTypes.stream().map(Object::toString).collect(Collectors.joining("+")))
+            ).flatMap(x -> x).map(Object::toString).collect(Collectors.joining(", "));
+        }
+
+        Stream<SignKeyOption> signKeyOptions() {
+            return Stream.concat(appImageSignOption.stream(), packageSignOption.stream());
+        }
+
+        Optional<MacSign.CertificateRequest> bundleSignIdentity(PackageType type) {
+            switch (type) {
+                case MAC_DMG -> {
+                    return Optional.empty();
+                }
+                case MAC_PKG -> {
+                    return packageSignOption.map(SignKeyOption::certRequest);
+                }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
+            }
+        }
+
+        void test(MacSign.ResolvedKeychain keychain) {
+            initTest(keychain).configureHelloApp().addInstallVerifier(cmd -> {
+                appImageSignOption.map(SignKeyOption::certRequest).ifPresent(signIdentity -> {
+                    MacSignVerify.verifyAppImageSigned(cmd, signIdentity);
+                });
+            }).run();
+        }
+
+        PackageTest initTest(MacSign.ResolvedKeychain keychain) {
+            return new PackageTest().forTypes(packageTypes).mutate(test -> {
+                appImageSignOption.ifPresent(signOption -> {
+                    test.addInitializer(signOption::setTo);
+                });
+                packageSignOption.ifPresent(signOption -> {
+                    test.forTypes(PackageType.MAC_PKG, () -> {
+                        test.addInitializer(signOption::setTo);
+                    });
+                });
+            }).addBundleVerifier(cmd -> {
+                bundleSignIdentity(cmd.packageType()).ifPresent(signIdentity -> {
+                    MacSignVerify.verifyPkgSigned(cmd, signIdentity, keychain);
+                });
+            }).addInitializer(MacHelper.useKeychain(keychain)::accept);
+        }
+
+        static List<TestSpec> testCases(boolean withUnicode) {
+
+            List<TestSpec> data = new ArrayList<>();
+
+            List<List<SigningBase.StandardCertificateRequest>> certRequestGroups;
+            if (withUnicode) {
+                certRequestGroups = List.of(
+                        List.of(SigningBase.StandardCertificateRequest.CODESIGN, SigningBase.StandardCertificateRequest.PKG),
+                        List.of(SigningBase.StandardCertificateRequest.CODESIGN_UNICODE, SigningBase.StandardCertificateRequest.PKG_UNICODE)
+                );
+            } else {
+                certRequestGroups = List.of(
+                        List.of(SigningBase.StandardCertificateRequest.CODESIGN, SigningBase.StandardCertificateRequest.PKG)
+                );
+            }
+
+            for (var certRequests : certRequestGroups) {
+                for (var signIdentityType : SignKeyOption.Type.values()) {
+                    if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT
+                            && !SigningBase.StandardKeychain.SINGLE.contains(certRequests.getFirst())) {
+                        // Skip invalid test case: the keychain for testing signing without
+                        // an explicitly specified signing key option doesn't have this signing key.
+                        break;
+                    }
+
+                    var appImageSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getFirst().spec());
+                    var pkgSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getLast().spec());
+
+                    switch (signIdentityType) {
+                        case SIGN_KEY_IDENTITY -> {
+                            // Use "--mac-installer-sign-identity" and "--mac-app-image-sign-identity" signing options.
+                            // They allows to sign the packaged app image and the installer (.pkg) separately.
+                            data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.empty(), PackageType.MAC));
+                            data.add(new TestSpec(Optional.empty(), Optional.of(pkgSignKeyOption), PackageType.MAC_PKG));
+                        }
+                        case SIGN_KEY_USER_NAME, SIGN_KEY_IMPLICIT -> {
+                            // Use "--mac-signing-key-user-name" signing option or implicit signing option.
+                            // It signs both the packaged app image and the installer (.pkg).
+                            // Thus, if the installer is not signed, it can be used only with .dmg packaging.
+                            data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.empty(), PackageType.MAC_DMG));
+                        }
+                    }
+                    data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.of(pkgSignKeyOption), PackageType.MAC));
+                }
+            }
+
+            return data;
         }
     }
 
-    @Test
-    // ("signing-key or sign-identity", "sign app-image", "sign pkg", "certificate index"})
-    // Signing-key and ASCII certificate
-    @Parameter({"true", "true", "true", "ASCII_INDEX"})
-    // Signing-key and UNICODE certificate
-    @Parameter({"true", "true", "true", "UNICODE_INDEX"})
-    // Signing-indentity and UNICODE certificate
-    @Parameter({"false", "true", "true", "UNICODE_INDEX"})
-    // Signing-indentity, but sign app-image only and UNICODE certificate
-    @Parameter({"false", "true", "false", "UNICODE_INDEX"})
-    // Signing-indentity, but sign pkg only and UNICODE certificate
-    @Parameter({"false", "false", "true", "UNICODE_INDEX"})
-    public static void test(boolean signingKey, boolean signAppImage, boolean signPKG, SigningBase.CertIndex certEnum) throws Exception {
-        MacSign.withKeychain(toConsumer(keychain -> {
-            test(keychain, signingKey, signAppImage, signPKG, certEnum);
-        }), SigningBase.StandardKeychain.MAIN.keychain());
+    static SigningBase.StandardKeychain chooseKeychain(Stream<SignKeyOption> certRequests) {
+        if (certRequests.map(SignKeyOption::type).anyMatch(Predicate.isEqual(SignKeyOption.Type.SIGN_KEY_IMPLICIT))) {
+            return SigningBase.StandardKeychain.SINGLE;
+        } else {
+            return SigningBase.StandardKeychain.MAIN;
+        }
     }
 
-    private static void test(MacSign.ResolvedKeychain keychain, boolean signingKey, boolean signAppImage, boolean signPKG, SigningBase.CertIndex certEnum) throws Exception {
-        final var certIndex = certEnum.value();
-
-        new PackageTest()
-                .configureHelloApp()
-                .forTypes(PackageType.MAC)
-                .addInitializer(cmd -> {
-                    cmd.addArguments("--mac-sign",
-                            "--mac-signing-keychain", keychain.name());
-                    if (signingKey) {
-                        cmd.addArguments("--mac-signing-key-user-name",
-                                         SigningBase.getDevName(certIndex));
-                    } else {
-                        if (signAppImage) {
-                            cmd.addArguments("--mac-app-image-sign-identity",
-                                             SigningBase.getAppCert(certIndex));
-                        }
-                        if (signPKG) {
-                            cmd.addArguments("--mac-installer-sign-identity",
-                                             SigningBase.getInstallerCert(certIndex));
-                        }
-                    }
-                })
-                .forTypes(PackageType.MAC_PKG)
-                .addBundleVerifier(SigningPackageTest::verifyPKG)
-                .forTypes(PackageType.MAC_DMG)
-                .addInitializer(cmd -> {
-                    if (!signingKey) {
-                        // jpackage throws expected error with
-                        // --mac-installer-sign-identity and DMG type
-                        cmd.removeArgumentWithValue("--mac-installer-sign-identity");
-                        // In case of not signing app image and DMG we need to
-                        // remove signing completely, otherwise we will default
-                        // to --mac-signing-key-user-name once
-                        // --mac-installer-sign-identity is removed.
-                        if (!signAppImage) {
-                            cmd.removeArgumentWithValue("--mac-signing-keychain");
-                            cmd.removeArgument("--mac-sign");
-                        }
-                    }
-                })
-                .addBundleVerifier(SigningPackageTest::verifyDMG)
-                .addBundleVerifier(SigningPackageTest::verifyAppImageInDMG)
-                .run();
-    }
+    private static boolean testSQE;
 }

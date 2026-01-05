@@ -48,10 +48,9 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library base
- * @build SigningBase
  * @build jdk.jpackage.test.*
- * @build MacSignTest
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @compile -Xlint:all -Werror MacSignTest.java
  * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacSignTest
