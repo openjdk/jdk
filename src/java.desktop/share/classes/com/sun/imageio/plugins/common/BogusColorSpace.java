@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ public class BogusColorSpace extends ColorSpace {
     // specified behavior of the methods vis-a-vis exceptions.
     //
 
+    @Override
     public float[] toRGB(float[] colorvalue) {
         if(colorvalue.length < getNumComponents()) {
             throw new ArrayIndexOutOfBoundsException
@@ -93,6 +94,7 @@ public class BogusColorSpace extends ColorSpace {
         return rgbvalue;
     }
 
+    @Override
     public float[] fromRGB(float[] rgbvalue) {
         if(rgbvalue.length < 3) {
             throw new ArrayIndexOutOfBoundsException
@@ -107,6 +109,7 @@ public class BogusColorSpace extends ColorSpace {
         return colorvalue;
     }
 
+    @Override
     public float[] toCIEXYZ(float[] colorvalue) {
         if(colorvalue.length < getNumComponents()) {
             throw new ArrayIndexOutOfBoundsException
@@ -121,6 +124,7 @@ public class BogusColorSpace extends ColorSpace {
         return xyzvalue;
     }
 
+    @Override
     public float[] fromCIEXYZ(float[] xyzvalue) {
         if(xyzvalue.length < 3) {
             throw new ArrayIndexOutOfBoundsException

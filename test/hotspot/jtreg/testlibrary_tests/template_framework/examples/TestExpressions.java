@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8359412
+ * @bug 8359412 8370922
  * @summary Demonstrate the use of Expressions from the Template Library.
  * @modules java.base/jdk.internal.misc
+ * @modules jdk.incubator.vector
  * @library /test/lib /
  * @compile ../../../compiler/lib/verify/Verify.java
- * @run main template_framework.examples.TestExpressions
+ * @run main ${test.main.class}
  */
 
 package template_framework.examples;
@@ -55,10 +56,14 @@ public class TestExpressions {
         comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
 
         // Compile the source file.
-        comp.compile();
+        comp.compile("--add-modules=jdk.incubator.vector");
 
         // p.xyz.InnterTest.main(new String[] {});
-        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {}});
+        comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {
+            "--add-modules=jdk.incubator.vector",
+            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+        }});
     }
 
     // Generate a Java source file as String
@@ -121,7 +126,7 @@ public class TestExpressions {
             );
         });
 
-        for (Expression operation : Operations.PRIMITIVE_OPERATIONS) {
+        for (Expression operation : Operations.SCALAR_NUMERIC_OPERATIONS) {
             tests.add(withConstantsTemplate.asToken(operation));
         }
 
@@ -130,7 +135,7 @@ public class TestExpressions {
             // package and class name.
             "p.xyz", "InnerTest",
             // Set of imports.
-            Set.of("compiler.lib.verify.*"),
+            Set.of("compiler.lib.verify.*", "jdk.incubator.vector.Float16"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
