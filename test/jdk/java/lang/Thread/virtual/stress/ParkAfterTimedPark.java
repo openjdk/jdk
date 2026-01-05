@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,20 @@
  */
 
 /*
- * @test
+ * @test id=parked
  * @bug 8369227
  * @summary Stress test untimed park after a timed park when a thread is unparked around the
- *     same time that timeout expires.
- * @run main ParkAfterTimedPark 200
+ *     same time that the timeout expires.
+ * @library /test/lib
+ * @run main/othervm --enable-native-access=ALL-UNNAMED ParkAfterTimedPark 200 false
+ */
+
+/*
+ * @test id=pinned
+ * @summary Stress test untimed park, while pinned, and after a timed park when a thread is
+ *     unparked around the same time that the timeout expires.
+ * @library /test/lib
+ * @run main/othervm --enable-native-access=ALL-UNNAMED ParkAfterTimedPark 200 true
  */
 
 import java.time.Instant;
@@ -34,15 +43,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import jdk.test.lib.thread.VThreadPinner;
 
 public class ParkAfterTimedPark {
     public static void main(String[] args) throws Exception {
         int iterations = (args.length > 0) ? Integer.parseInt(args[0]) : 100;
+        boolean pinned = (args.length > 1) ? Boolean.parseBoolean(args[1]) : false;
 
         for (int i = 1; i <= iterations; i++) {
             System.out.println(Instant.now() + " => " + i + " of " + iterations);
             for (int timeout = 1; timeout <= 10; timeout++) {
-                test(timeout);
+                test(timeout, true);
             }
         }
     }
@@ -52,7 +63,7 @@ public class ParkAfterTimedPark {
      * then parks in CountDownLatch.await. A second virtual thread unparks the first
      * around the same time that the timeout for the first expires.
      */
-    private static void test(int millis) throws Exception {
+    private static void test(int millis, boolean pinned) throws Exception {
         long nanos = TimeUnit.MILLISECONDS.toNanos(millis);
 
         var finish = new CountDownLatch(1);
@@ -62,7 +73,13 @@ public class ParkAfterTimedPark {
             boolean done = false;
             while (!done) {
                 try {
-                    finish.await();
+                    if (pinned) {
+                        VThreadPinner.runPinned(() -> {
+                            finish.await();
+                        });
+                    } else {
+                        finish.await();
+                    }
                     done = true;
                 } catch (InterruptedException e) { }
             }

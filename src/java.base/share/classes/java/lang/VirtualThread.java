@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -860,16 +860,20 @@ final class VirtualThread extends BaseVirtualThread {
      * Re-enables this virtual thread for scheduling. If this virtual thread is parked
      * then its task is scheduled to continue, otherwise its next call to {@code park} or
      * {@linkplain #parkNanos(long) parkNanos} is guaranteed not to block.
+     * @param lazySubmit to use lazySubmit if possible
      * @throws RejectedExecutionException if the scheduler cannot accept a task
      */
-    @Override
-    void unpark() {
+    private void unpark(boolean lazySubmit) {
         if (!getAndSetParkPermit(true) && currentThread() != this) {
             int s = state();
 
             // unparked while parked
             if ((s == PARKED || s == TIMED_PARKED) && compareAndSetState(s, UNPARKED)) {
-                submitRunContinuation();
+                if (lazySubmit) {
+                    lazySubmitRunContinuation();
+                } else {
+                    submitRunContinuation();
+                }
                 return;
             }
 
@@ -892,6 +896,11 @@ final class VirtualThread extends BaseVirtualThread {
         }
     }
 
+    @Override
+    void unpark() {
+        unpark(false);
+    }
+
     /**
      * Invoked by unblocker thread to unblock this virtual thread.
      */
@@ -908,12 +917,7 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private void parkTimeoutExpired() {
         assert !VirtualThread.currentThread().isVirtual();
-        if (!getAndSetParkPermit(true)) {
-            int s = state();
-            if ((s == PARKED || s == TIMED_PARKED) && compareAndSetState(s, UNPARKED)) {
-                lazySubmitRunContinuation();
-            }
-        }
+        unpark(true);
     }
 
     /**
