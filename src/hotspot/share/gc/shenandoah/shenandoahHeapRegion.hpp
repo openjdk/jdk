@@ -43,6 +43,7 @@ class ShenandoahHeapRegion {
   friend class VMStructs;
   friend class ShenandoahHeapRegionStateConstant;
 private:
+
   /*
     Region state is described by a state machine. Transitions are guarded by
     heap lock, which allows changing the state of several regions atomically.
