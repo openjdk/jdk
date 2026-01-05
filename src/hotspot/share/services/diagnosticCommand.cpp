@@ -397,6 +397,7 @@ void PrintPropertiesDCmd::execute(DCmdSource source, TRAPS) {
     Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
     Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
     InstanceKlass* ik = InstanceKlass::cast(k);
+    Symbol* method_name = nullptr;
     if (ik->should_be_initialized()) {
         ik->initialize(THREAD);
     }
@@ -411,9 +412,12 @@ void PrintPropertiesDCmd::execute(DCmdSource source, TRAPS) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     if (_system.value()) {
-      method_name = vmSymbols::serializePropertiesToByteArray_name()();
+      method_name = vmSymbols::serializePropertiesToByteArray_name();
     } else if (_security.value()) {
       method_name = vmSymbols::serializeSecurityPropertiesToByteArray_name();
+    } else {
+      output()->print_cr("Invalid argument to VM.properties, (-system, -security)");
+      return;
     }
     Symbol* signature = vmSymbols::void_byte_array_signature();
 

@@ -49,7 +49,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.List;
 
-
 /*
  * Support class used by JVMCI, JVMTI and VM attach mechanism.
  */
