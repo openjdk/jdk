@@ -426,10 +426,6 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions);
 
     size_t mutator_free = heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
-#undef KELVIN_VISIBLE
-#ifdef KELVIN_VISIBLE
-    log_info(gc)("resuming idle span with mutator_free: " SIZE_FORMAT, mutator_free);
-#endif
     ((ShenandoahAdaptiveHeuristics *) (heap->young_generation()->heuristics()))->resume_idle_span();
   }
 }

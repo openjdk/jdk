@@ -92,11 +92,6 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   // The desired interval of time between consecutive samples of the allocation rate.
   double _interval_sec;
 
-#undef KELVIN_VERBOSE
-#ifdef KELVIN_VERBOSE
-public:
-#endif
-
   // Holds a sequence of the most recently sampled instantaneous allocation rates
   TruncatedSeq _rate;
 

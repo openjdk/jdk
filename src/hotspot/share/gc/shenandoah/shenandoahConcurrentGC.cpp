@@ -1211,11 +1211,6 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
-#undef KELVIN_IDLE_SPAN
-#ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("start_idle_span() at end of concurrent gc");
-#endif
-#undef KELVIN_IDLE_SPAN
   if (heap->mode()->is_generational()) {
     heap->young_generation()->heuristics()->start_idle_span();
   } else {

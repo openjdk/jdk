@@ -506,10 +506,6 @@ jint ShenandoahHeap::initialize() {
 
 void ShenandoahHeap::initialize_controller() {
   _control_thread = new ShenandoahControlThread();
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("initialize_controller set _control_thread: " PTR_FORMAT, p2i(_control_thread));
-#endif
 }
 
 void ShenandoahHeap::print_init_logger() const {
@@ -844,10 +840,6 @@ void ShenandoahHeap::notify_heap_changed() {
 }
 
 void ShenandoahHeap::start_idle_span() {
-#undef KELVIN_IDLE
-#ifdef KELVIN_IDLE
-  log_info(gc)("Doing ShenandoahHeap::start_idle_span()");
-#endif
   heuristics()->start_idle_span();
 }
 

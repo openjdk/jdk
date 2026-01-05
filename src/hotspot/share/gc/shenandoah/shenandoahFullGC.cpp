@@ -252,11 +252,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     phase5_epilog();
   }
-#undef KELVIN_IDLE_SPAN
-#ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("start_idle_span() at end of full gc");
-#endif
-#undef KELVIN_IDLE_SPAN
   heap->start_idle_span();
 
   // Resize metaspace

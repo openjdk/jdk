@@ -315,11 +315,6 @@ void ShenandoahDegenGC::op_degenerated() {
     heap->notify_gc_progress();
     heap->shenandoah_policy()->record_success_degenerated(_generation->is_young(), _abbreviated);
     _generation->heuristics()->record_success_degenerated();
-#undef KELVIN_IDLE_SPAN
-#ifdef KELVIN_IDLE_SPAN
-    log_info(gc)("start_idle_span() at end of degen gc");
-#endif
-#undef KELVIN_IDLE_SPAN
     heap->start_idle_span();
   } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
     op_degenerated_futile();

@@ -160,10 +160,6 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
 void ShenandoahHeuristics::start_idle_span() {
   // do nothing
-#undef KELVIN_VERBOSE
-#ifdef KELVIN_VERBOSE
-  log_info(gc)("Made it to do-nothing implementation of start_idle_span()");
-#endif
 }
 
 void ShenandoahHeuristics::start_evac_span() {
@@ -177,18 +173,9 @@ void ShenandoahHeuristics::resume_idle_span() {
 void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {
   if (out_of_cycle) {
     _precursor_cycle_start = _cycle_start = os::elapsedTime();
-#undef KELVIN_VERBOSITY
-#ifdef KELVIN_VERBOSITY
-    log_info(gc)("record_degen_cycle_start(true), _precursor_cycle_start (aka cycle_start): %0.3f",
-                 _precursor_cycle_start);
-#endif
   } else {
     _precursor_cycle_start = _cycle_start;
     _cycle_start = os::elapsedTime();
-#ifdef KELVIN_VERBOSITY
-    log_info(gc)("record_degen_cycle_start(false), _precursor_cycle_start: %0.3f, cycle_start: %0.3f",
-                 _precursor_cycle_start, _cycle_start);
-#endif
   }
 }
 
@@ -233,12 +220,6 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
-
-#ifdef KELVIN_DEGEN_TRACE
-  log_info(gc)("adjust_penalty(), _most_recent_declined_trigger_count %zu, Penalty_Free_Declinations: %zu, step: %zd",
-               _most_recent_declined_trigger_count, Penalty_Free_Declinations, step);
-#endif
-
   if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
     // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
     // previous GC for self calibration without penalty.
@@ -285,11 +266,6 @@ void ShenandoahHeuristics::record_success_concurrent() {
 
 void ShenandoahHeuristics::record_success_degenerated() {
   adjust_penalty(Degenerated_Penalty);
-#undef KELVIN_DEGEN_TRACE
-#ifdef KELVIN_DEGEN_TRACE
-  log_info(gc)("record_success_degenerated(), adjusts penalty by %zd, new penalty: %zd",
-               Degenerated_Penalty, _gc_time_penalties);
-#endif
 }
 
 void ShenandoahHeuristics::record_success_full() {
@@ -332,8 +308,5 @@ double ShenandoahHeuristics::elapsed_cycle_time() const {
 // Includes the time spent in abandoned concurrent GC cycle that may have triggered this degenerated cycle.
 double ShenandoahHeuristics::elapsed_degenerated_cycle_time() const {
   double now = os::elapsedTime();
-#ifdef KELVIN_VERBOSITY
-  log_info(gc)("degen elapsed cycle time: %0.3f", now - _precursor_cycle_start);
-#endif
   return now - _precursor_cycle_start;
 }
