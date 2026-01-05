@@ -333,6 +333,72 @@ public class Expression {
     }
 
     /**
+     * Creates a new Expression with 4 arguments.
+     *
+     * @param returnType The return type of the {@link Expression}.
+     * @param s0 The first string, to be placed before {@code t0}.
+     * @param t0 The type of the first argument.
+     * @param s1 The second string, to be placed before {@code t1}.
+     * @param t1 The type of the second argument.
+     * @param s2 The third string, to be placed before {@code t2}.
+     * @param t2 The type of the third argument.
+     * @param s3 The fourth string, to be placed before {@code t3}.
+     * @param t3 The type of the fourth argument.
+     * @param s4 The fifth string, to be placed before {@code t4}.
+     * @param t4 The type of the fifth argument.
+     * @param s5 The last string, finishing the {@link Expression}.
+     * @return the new {@link Expression}.
+     */
+    public static Expression make(CodeGenerationDataNameType returnType,
+                                  String s0,
+                                  CodeGenerationDataNameType t0,
+                                  String s1,
+                                  CodeGenerationDataNameType t1,
+                                  String s2,
+                                  CodeGenerationDataNameType t2,
+                                  String s3,
+                                  CodeGenerationDataNameType t3,
+                                  String s4,
+                                  CodeGenerationDataNameType t4,
+                                  String s5) {
+        return make(returnType, s0, t0, s1, t1, s2, t2, s3, t3, s4, t4, s5, new Info());
+    }
+
+    /**
+     * Creates a new Expression with 4 arguments.
+     *
+     * @param returnType The return type of the {@link Expression}.
+     * @param s0 The first string, to be placed before {@code t0}.
+     * @param t0 The type of the first argument.
+     * @param s1 The second string, to be placed before {@code t1}.
+     * @param t1 The type of the second argument.
+     * @param s2 The third string, to be placed before {@code t2}.
+     * @param t2 The type of the third argument.
+     * @param s3 The fourth string, to be placed before {@code t3}.
+     * @param t3 The type of the fourth argument.
+     * @param s4 The fifth string, to be placed before {@code t4}.
+     * @param t4 The type of the fifth argument.
+     * @param s5 The last string, finishing the {@link Expression}.
+     * @param info Additional information about the {@link Expression}.
+     * @return the new {@link Expression}.
+     */
+    public static Expression make(CodeGenerationDataNameType returnType,
+                                  String s0,
+                                  CodeGenerationDataNameType t0,
+                                  String s1,
+                                  CodeGenerationDataNameType t1,
+                                  String s2,
+                                  CodeGenerationDataNameType t2,
+                                  String s3,
+                                  CodeGenerationDataNameType t3,
+                                  String s4,
+                                  CodeGenerationDataNameType t4,
+                                  String s5,
+                                  Info info) {
+        return new Expression(returnType, List.of(t0, t1, t2, t3, t4), List.of(s0, s1, s2, s3, s4, s5), info);
+    }
+
+    /**
      * Creates a {@link TemplateToken} for the use in a {@link Template} by applying the
      * {@code arguments} to the {@link Expression}. It is the users responsibility to
      * ensure that the argument tokens match the required {@link #argumentTypes}.
