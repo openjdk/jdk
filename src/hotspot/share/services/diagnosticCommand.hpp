@@ -101,7 +101,7 @@ protected:
 public:
     PrintPropertiesDCmd(outputStream* output, bool heap);
     static const char* name() { return "VM.properties"; }
-    static const char* description() { return "Print -system or -security properties. (VM.properties -arg"; }
+    static const char* description() { return "Print -system or -security properties. (VM.properties -arg)"; }
     static const char* impact() { return "Low"; }
     virtual void execute(DCmdSource source, TRAPS);
 };
