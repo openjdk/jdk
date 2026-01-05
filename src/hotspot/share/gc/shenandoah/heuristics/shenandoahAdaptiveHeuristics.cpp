@@ -578,7 +578,7 @@ static void dumpTriggerInfo(size_t first_trigger, size_t rejected_triggers, Trig
     "Future Planned GC Time (seconds), "
     "Average Time to Deplete Available (seconds), "
     "Is Spiking, Spike Rate (MB/s), "
-    "Spike Time to Deplete Available (s)",                             
+    "Spike Time to Deplete Available (s)",
     "                                                Min         Learned      Allocatable        Predicted                     Current                              Planned                   Spike",
     "TimeStamp Capacity     Available    Allocated   Threshold   Steps        (bytes)            Accelerated                   Rate by                              GC     Avg                Time",
     "|         (Bytes)      (Bytes)      (Bytes)     (Bytes)     |  Avg       |           Avg    GC     Allocated              Accel      Accelerated               Time   Time               to",
@@ -839,7 +839,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     allocated_bytes_since_last_sample = _free_set->get_bytes_allocated_since_previous_sample();
     instantaneous_rate_words_per_second =
       (allocated_bytes_since_last_sample / HeapWordSize) / (now - _previous_allocation_timestamp);
-    
+
     _previous_allocation_timestamp = now;
 
 #ifdef KELVIN_TRACE_START
