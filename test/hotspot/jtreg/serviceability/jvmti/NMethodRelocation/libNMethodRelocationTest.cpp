@@ -33,6 +33,44 @@ static const void* second_load_addr     = nullptr;
 static const void* first_unload_addr    = nullptr;
 static const void* second_unload_addr   = nullptr;
 
+// Store JavaVM reference for JNI communication
+static JavaVM* javaVM = nullptr;
+
+/**
+ * Helper function to update the shouldExit field in the Java test class.
+ */
+static void updateShouldExit() {
+    if (javaVM == nullptr) {
+        printf("ERROR: JavaVM not available\n");
+        return;
+    }
+
+    JNIEnv* env = nullptr;
+    jint result = javaVM->AttachCurrentThread((void**)&env, nullptr);
+    if (result != JNI_OK || env == nullptr) {
+        printf("ERROR: Failed to attach to current thread\n");
+        return;
+    }
+
+    // Find the NMethodRelocationTest class
+    jclass testClass = env->FindClass("NMethodRelocationTest");
+    if (testClass == nullptr) {
+        printf("ERROR: Could not find NMethodRelocationTest class\n");
+        return;
+    }
+
+    // Get the shouldExit field ID
+    jfieldID shouldExitField = env->GetStaticFieldID(testClass, "shouldExit", "Z");
+    if (shouldExitField == nullptr) {
+        printf("ERROR: Could not find shouldExit field\n");
+        return;
+    }
+
+    // Set shouldExit to true
+    env->SetStaticBooleanField(testClass, shouldExitField, JNI_TRUE);
+    printf("Test completion signaled via shouldExit field\n");
+}
+
 /**
  * Callback for COMPILED_METHOD_LOAD event.
  */
@@ -112,7 +150,9 @@ callbackCompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
         // the UNLOADs is not guaranteed, since the GC may unload either nmethod first.
         if ((first_load_addr == first_unload_addr  && second_load_addr == second_unload_addr) ||
             (first_load_addr == second_unload_addr && second_load_addr == first_unload_addr)) {
-            exit(0);
+
+            // Update shouldExit to signal test completion
+            updateShouldExit();
         } else {
             printf("ERROR: Address mismatch for 'compiledMethod' events\n");
             exit(1);
@@ -123,6 +163,9 @@ callbackCompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     jvmtiEnv* jvmti = nullptr;
     jvmtiError error;
+
+    // Store JavaVM reference for later use
+    javaVM = jvm;
 
     if (jvm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_0) != JNI_OK) {
         printf("Unable to access JVMTI!\n");

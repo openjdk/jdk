@@ -33,7 +33,17 @@
  * @library /test/lib /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native NMethodRelocationTest
+ * @run main/othervm/native -agentlib:NMethodRelocationTest
+ *                          --enable-native-access=ALL-UNNAMED
+ *                          -Xbootclasspath/a:.
+ *                          -Xbatch
+ *                          -XX:+UnlockDiagnosticVMOptions
+ *                          -XX:+WhiteBoxAPI
+ *                          -XX:+SegmentedCodeCache
+ *                          -XX:-TieredCompilation
+ *                          -XX:+UnlockExperimentalVMOptions
+ *                          -XX:+NMethodRelocation
+ *                          NMethodRelocationTest
  */
 
 import java.lang.reflect.Executable;
@@ -48,32 +58,10 @@ import jdk.test.whitebox.code.NMethod;
 import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
 
 public class NMethodRelocationTest {
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-agentlib:NMethodRelocationTest",
-                "--enable-native-access=ALL-UNNAMED",
-                "-Xbootclasspath/a:.",
-                "-Xbatch",
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
-                "-XX:+SegmentedCodeCache",
-                "-XX:-TieredCompilation",
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+NMethodRelocation",
-                "DoWork");
-
-        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
-        String output = oa.getOutput();
-        if (oa.getExitValue() != 0) {
-            System.err.println(oa.getOutput());
-            throw new RuntimeException("Non-zero exit code returned from the test");
-        }
-    }
-}
-
-class DoWork {
 
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+
+    static volatile boolean shouldExit = false;
 
     /** Load native library if required. */
     static {
@@ -88,7 +76,7 @@ class DoWork {
     }
 
     public static void main(String argv[]) throws Exception {
-        Executable method = DoWork.class.getDeclaredMethod("compiledMethod");
+        Executable method = NMethodRelocationTest.class.getDeclaredMethod("compiledMethod");
         WHITE_BOX.testSetDontInlineMethod(method, true);
 
         WHITE_BOX.enqueueMethodForCompilation(method, COMP_LEVEL_FULL_OPTIMIZATION);
@@ -115,7 +103,7 @@ class DoWork {
 
         WHITE_BOX.deoptimizeAll();
 
-        while (true) {
+        while (!shouldExit) {
             WHITE_BOX.fullGC();
         }
     }
