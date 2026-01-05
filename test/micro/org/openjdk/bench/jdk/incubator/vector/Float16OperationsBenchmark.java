@@ -316,7 +316,7 @@ public class Float16OperationsBenchmark {
     }
 
     @Benchmark
-    public short ReductionMinFP16() {
+    public short reductionMinFP16() {
         short minRes = float16ToRawShortBits(Float16.POSITIVE_INFINITY);
         for (int i = 0; i < vectorDim; i++) {
             minRes = float16ToRawShortBits(min(shortBitsToFloat16(vector1[i]), shortBitsToFloat16(minRes)));
@@ -325,7 +325,7 @@ public class Float16OperationsBenchmark {
     }
 
     @Benchmark
-    public short ReductionMaxFP16() {
+    public short reductionMaxFP16() {
         short maxRes = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
         for (int i = 0; i < vectorDim; i++) {
             maxRes = float16ToRawShortBits(max(shortBitsToFloat16(vector1[i]), shortBitsToFloat16(maxRes)));

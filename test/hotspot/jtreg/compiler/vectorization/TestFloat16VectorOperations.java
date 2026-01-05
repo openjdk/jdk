@@ -483,7 +483,7 @@ public class TestFloat16VectorOperations {
     // When SVE is present, it should pick the SVE masked implementation
     @Test
     @Warmup(500)
-    @IR(counts = {"reduce_minHF_masked", " >0 "},
+    @IR(counts = {IRNode.REDUCE_MIN_HF_MASKED, " >0 "},
         phase = {CompilePhase.FINAL_CODE},
         applyIfCPUFeature = {"sve", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -516,7 +516,7 @@ public class TestFloat16VectorOperations {
     // When SVE is present, it should pick the SVE masked implementation
     @Test
     @Warmup(500)
-    @IR(counts = {"reduce_maxHF_masked", " >0 "},
+    @IR(counts = {IRNode.REDUCE_MAX_HF_MASKED, " >0 "},
         phase = {CompilePhase.FINAL_CODE},
         applyIfCPUFeature = {"sve", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
