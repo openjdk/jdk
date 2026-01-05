@@ -71,10 +71,6 @@ public class UnixSystem {
      */
     protected long[] groups;
 
-    // Record the reason why getpwuid_r failed. UnixLoginModule
-    // will display the message when debug is on.
-    String getpwuid_r_error = null;
-
     private static final Linker LINKER = Linker.nativeLinker();
     private static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup()
             .or(LINKER.defaultLookup());
@@ -103,9 +99,6 @@ public class UnixSystem {
                     Linker.Option.captureCallState("errno"));
     private static final MethodHandle getuid = LINKER
             .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getuid"),
-                    FunctionDescriptor.of(C_INT));
-    private static final MethodHandle getgid = LINKER
-            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getgid"),
                     FunctionDescriptor.of(C_INT));
 
     // getpwuid_r does not work on AIX, instead we use another similar function
@@ -155,6 +148,11 @@ public class UnixSystem {
      * the native library to access the underlying system information.
      */
     public UnixSystem() {
+        // The FFM code has only been tested on multiple platforms
+        // (including macOS, Linux, AIX, etc) and might fail on other
+        // *nix systems. Especially, the `passwd` struct could be defined
+        // differently. I've checked several and an extra 100 chars at the
+        // end seems enough.
         try (Arena scope = Arena.ofConfined()) {
             MemorySegment capturedState = scope.allocate(capturedStateLayout);
             int groupnum = (int) getgroups.invokeExact(capturedState, 0, MemorySegment.NULL);
@@ -184,18 +182,13 @@ public class UnixSystem {
             // always long in the underlying system.
             int out = (int) getpwuid_r.invoke(
                     tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
-            if (out != 0 || result.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
-                if (out != 0) {
-                    // If ERANGE (Result too large) is detected in a new platform,
-                    // consider adjusting GETPW_R_SIZE_MAX.
-                    var err = (MemorySegment) strerror.invokeExact(out);
-                    getpwuid_r_error = err.reinterpret(Long.MAX_VALUE).getString(0);
-                } else {
-                    getpwuid_r_error = "the requested entry is not found";
-                }
-                uid = Integer.toUnsignedLong(tmpUid);
-                gid = Integer.toUnsignedLong((int)getgid.invokeExact());
-                username = null;
+            if (out != 0) {
+                // If ERANGE (Result too large) is detected in a new platform,
+                // consider adjusting GETPW_R_SIZE_MAX.
+                var err = (MemorySegment) strerror.invokeExact(out);
+                throw new RuntimeException(err.reinterpret(Long.MAX_VALUE).getString(0));
+            } else if (result.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
+                throw new RuntimeException("the requested entry is not found");
             } else {
                 // uid_t and gid_t were defined unsigned.
                 uid = Integer.toUnsignedLong(pwd.get(pw_uid_layout, pw_uid_offset));

@@ -121,8 +121,8 @@ public class UnixLoginModule implements LoginModule {
      */
     public boolean login() throws LoginException {
 
-        // Fail immediately on Windows to avoid cygwin-like functions being
-        // loaded, which are not supported and could have a different `size_t`.
+        // Fail immediately on Windows to avoid cygwin-like functions
+        // being loaded, which are not supported.
         if (OperatingSystem.isWindows()) {
             throw new FailedLoginException
                     ("Failed in attempt to import " +
@@ -131,10 +131,6 @@ public class UnixLoginModule implements LoginModule {
         }
 
         try {
-            // The FFM code has only been tested on macOS and Linux and
-            // might fail on other *nix systems. Especially, the `passwd`
-            // struct could be defined differently. I've checked several
-            // and an extra 100 chars at the end seems enough.
             ss = new UnixSystem();
         } catch (ExceptionInInitializerError | UnsatisfiedLinkError ule) {
             // Errors could happen in either static blocks or the constructor,
@@ -149,10 +145,7 @@ public class UnixLoginModule implements LoginModule {
             }
             throw error;
         }
-        if (ss.getUsername() != null) {
-            // When getpwuid_r fails, username will not be available.
-            userPrincipal = new UnixPrincipal(ss.getUsername());
-        }
+        userPrincipal = new UnixPrincipal(ss.getUsername());
         UIDPrincipal = new UnixNumericUserPrincipal(ss.getUid());
         GIDPrincipal = new UnixNumericGroupPrincipal(ss.getGid(), true);
         long[] unixGroups = null;
@@ -172,9 +165,6 @@ public class UnixLoginModule implements LoginModule {
             System.out.println("\t\t\tuid = " + ss.getUid());
             System.out.println("\t\t\tgid = " + ss.getGid());
             System.out.println("\t\t\tusername = " + ss.getUsername());
-            if (ss.getpwuid_r_error != null) {
-                System.out.println("\t\t\t\t[Reason: " + ss.getpwuid_r_error + "]");
-            }
             if (unixGroups != null) {
                 for (int i = 0; i < unixGroups.length; i++) {
                     System.out.println("\t\t\tsupp gid = " + unixGroups[i]);
@@ -219,15 +209,12 @@ public class UnixLoginModule implements LoginModule {
                 throw new LoginException
                     ("commit Failed: Subject is Readonly");
             }
-            if (userPrincipal != null && !subject.getPrincipals().contains(userPrincipal)) {
+            if (!subject.getPrincipals().contains(userPrincipal))
                 subject.getPrincipals().add(userPrincipal);
-            }
-            if (!subject.getPrincipals().contains(UIDPrincipal)) {
+            if (!subject.getPrincipals().contains(UIDPrincipal))
                 subject.getPrincipals().add(UIDPrincipal);
-            }
-            if (!subject.getPrincipals().contains(GIDPrincipal)) {
+            if (!subject.getPrincipals().contains(GIDPrincipal))
                 subject.getPrincipals().add(GIDPrincipal);
-            }
             for (int i = 0; i < supplementaryGroups.size(); i++) {
                 if (!subject.getPrincipals().contains
                     (supplementaryGroups.get(i)))
