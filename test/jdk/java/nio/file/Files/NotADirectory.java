@@ -22,9 +22,10 @@
  */
 
 /* @test
- * @bug 8356678
+ * @bug 8356678 8374441
  * @requires (os.family != "windows")
- * @summary Test Files operations when a path component is not a directory
+ * @summary Test Files and FileSystemProvider operations when a path component
+ *          is not a directory
  * @run junit NotADirectory
  */
 
@@ -32,10 +33,12 @@ import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.FileSystemException;
+import java.nio.file.FileSystems;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -56,6 +59,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NotADirectory {
+    private static final FileSystemProvider PROVIDER =
+        FileSystems.getDefault().provider();
+
     private static final Path ROOT      = Path.of(".");
     private static final Path NOT_EXIST = ROOT.resolve("notExist");
     private static final Path DIR       = ROOT.resolve("dir");
@@ -147,15 +153,13 @@ public class NotADirectory {
     @Test
     public void readBasicIfExists() throws IOException {
         assertNull(
-            BOGUS.getFileSystem().provider().readAttributesIfExists(
-                BOGUS, BasicFileAttributes.class));
+            PROVIDER.readAttributesIfExists(BOGUS, BasicFileAttributes.class));
     }
 
     @Test
     public void readPosixIfExists() throws IOException {
         assertNull(
-            BOGUS.getFileSystem().provider().readAttributesIfExists(
-                BOGUS, PosixFileAttributes.class));
+            PROVIDER.readAttributesIfExists(BOGUS, PosixFileAttributes.class));
     }
 
     @Test
