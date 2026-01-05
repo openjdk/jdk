@@ -468,12 +468,6 @@ public final class SystemModuleFinders {
         }
 
         @Override
-        public void release(ByteBuffer bb) {
-            Objects.requireNonNull(bb);
-            ImageReader.releaseByteBuffer(bb);
-        }
-
-        @Override
         public Stream<String> list() throws IOException {
             if (closed)
                 throw new IOException("ModuleReader is closed");

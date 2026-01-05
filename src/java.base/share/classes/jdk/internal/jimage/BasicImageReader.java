@@ -220,14 +220,6 @@ public class BasicImageReader implements AutoCloseable {
         return slice(buffer, offset, size).order(byteOrder).asIntBuffer();
     }
 
-    public static void releaseByteBuffer(ByteBuffer buffer) {
-        Objects.requireNonNull(buffer);
-
-        if (!MAP_ALL) {
-            ImageBufferCache.releaseBuffer(buffer);
-        }
-    }
-
     public String getName() {
         return name;
     }
@@ -377,24 +369,31 @@ public class BasicImageReader implements AutoCloseable {
                 throw new InternalError("Image file channel not open");
             }
 
-            ByteBuffer buffer = ImageBufferCache.getBuffer(size);
+            ByteBuffer buffer = allocateBuffer(size);
             int read;
             try {
                 read = channel.read(buffer, offset);
                 buffer.rewind();
             } catch (IOException ex) {
-                ImageBufferCache.releaseBuffer(buffer);
                 throw new RuntimeException(ex);
             }
 
             if (read != size) {
-                ImageBufferCache.releaseBuffer(buffer);
                 throw new RuntimeException("Short read: " + read +
                                            " instead of " + size + " bytes");
             }
 
             return buffer;
         }
+    }
+
+    private static ByteBuffer allocateBuffer(long size) {
+        if (size < 0 || Integer.MAX_VALUE < size) {
+            throw new IndexOutOfBoundsException("size");
+        }
+        ByteBuffer result = ByteBuffer.allocateDirect((int) ((size + 0xFFF) & ~0xFFF));
+        result.limit((int) size);
+        return result;
     }
 
     public byte[] getResource(String name) {
@@ -406,17 +405,12 @@ public class BasicImageReader implements AutoCloseable {
 
     public byte[] getResource(ImageLocation loc) {
         ByteBuffer buffer = getResourceBuffer(loc);
-
-        if (buffer != null) {
-            byte[] bytes = getBufferBytes(buffer);
-            ImageBufferCache.releaseBuffer(buffer);
-
-            return bytes;
-        }
-
-        return null;
+        return buffer != null ? getBufferBytes(buffer) : null;
     }
 
+    /**
+     * Returns the content of jimage location in a newly allocated byte buffer.
+     */
     public ByteBuffer getResourceBuffer(ImageLocation loc) {
         Objects.requireNonNull(loc);
         long offset = loc.getContentOffset() + indexSize;
@@ -437,10 +431,8 @@ public class BasicImageReader implements AutoCloseable {
             return readBuffer(offset, uncompressedSize);
         } else {
             ByteBuffer buffer = readBuffer(offset, compressedSize);
-
             if (buffer != null) {
                 byte[] bytesIn = getBufferBytes(buffer);
-                ImageBufferCache.releaseBuffer(buffer);
                 byte[] bytesOut;
 
                 try {
