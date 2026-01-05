@@ -76,15 +76,14 @@ FD
 handleOpen(const char *path, int oflag, int mode) {
     FD fd;
     RESTARTABLE(open(path, oflag, mode), fd);
-    // Fast-path, either it is an error or if it's
-    // not a read access mode then the Unix standard
-    // guarantees to have failed with EISDIR
+    // No further checking is needed if the file is not a
+    // directory or open returned an error
     if (fd == -1 || ((oflag & O_ACCMODE) != O_RDONLY) != 0) {
         return fd;
     }
 
-    // Slow-path, while Unix allow for directories
-    // to be read, Java don't
+    // FileInputStream is specified to throw if the
+    // file is a directory
     struct stat buf;
     int result;
     RESTARTABLE(fstat(fd, &buf), result);
