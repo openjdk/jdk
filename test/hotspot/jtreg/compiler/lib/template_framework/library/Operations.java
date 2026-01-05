@@ -434,9 +434,9 @@ public final class Operations {
             ops.add(Expression.make(type, type.name() + ".broadcast(" + type.speciesName + ", ", type.elementType, ")"));
             ops.add(Expression.make(type, type.name() + ".broadcast(" + type.speciesName + ", ", LONGS, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
 
-            // TODO: non zero parts
             for (var type2 : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
                 ops.add(Expression.make(type, "((" + type.name() + ")", type2 , ".castShape(" + type.speciesName + ", 0))"));
+                ops.add(Expression.make(type, "((" + type.name() + ")", type2 , ".castShape(" + type.speciesName + ", ", INTS, "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
             }
 
             // Note: check works on class / species, leaving them out.
@@ -453,24 +453,39 @@ public final class Operations {
 
             ops.add(Expression.make(type, "", type, ".compress(", type.maskType, ")"));
 
-            // TODO: non zero parts
             for (var type2 : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
                 // "convert" keeps the same shape, i.e. length of the vector in bits.
                 if (type.byteSize() == type2.byteSize()) {
                     ops.add(Expression.make(type,
                                                 "((" + type.name() + ")",
-                                                type2 ,
+                                                type2,
                                                 ".convert(VectorOperators.Conversion.ofCast("
                                                     + type2.elementType.name() +  ".class, "
                                                     + type.elementType.name() + ".class), 0))"));
+                    ops.add(Expression.make(type,
+                                                "((" + type.name() + ")",
+                                                type2,
+                                                ".convert(VectorOperators.Conversion.ofCast("
+                                                    + type2.elementType.name() +  ".class, "
+                                                    + type.elementType.name() + ".class),",
+                                                INTS, // part
+                                                "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
                     // Reinterpretation FROM floating is not safe, because of different NaN encodings.
                     if (!type2.elementType.isFloating()) {
                         ops.add(Expression.make(type,
                                                     "((" + type.name() + ")",
-                                                    type2 ,
+                                                    type2,
                                                     ".convert(VectorOperators.Conversion.ofReinterpret("
                                                         + type2.elementType.name() +  ".class, "
                                                         + type.elementType.name() + ".class), 0))"));
+                        ops.add(Expression.make(type,
+                                                    "((" + type.name() + ")",
+                                                    type2,
+                                                    ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                        + type2.elementType.name() +  ".class, "
+                                                        + type.elementType.name() + ".class),",
+                                                    INTS, // part
+                                                    "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
                         if (type.elementType == BYTES) {
                             ops.add(Expression.make(type, "", type2, ".reinterpretAsBytes()"));
                         }
@@ -513,8 +528,8 @@ public final class Operations {
 
             // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment. Also: toArray and type variants.
 
-            // TODO: lane case that is allowed to throw java.lang.IllegalArgumentException for out of bonds.
             ops.add(Expression.make(type.elementType, "", type, ".lane(", INTS, " & " + (type.length-1) + ")"));
+            ops.add(Expression.make(type.elementType, "", type, ".lane(", INTS, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
 
             for (VOP vop : VECTOR_OPS) {
                 if (vop.elementTypes().contains(type.elementType)) {
