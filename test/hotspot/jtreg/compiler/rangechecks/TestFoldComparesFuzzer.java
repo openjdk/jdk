@@ -107,6 +107,36 @@ public class TestFoldComparesFuzzer {
             testTemplateTokens);
     }
 
+    enum Comparator {
+        LT(" < "),
+        LE(" <= "),
+        GT(" > "),
+        GE(" >= "),
+        EQ(" == "),
+        NE(" != ");
+
+        private final String token;
+
+        Comparator(String token) {
+            this.token = token;
+        }
+
+        public String getToken() {
+            return token;
+        }
+
+        public Comparator negate() {
+            return switch(this) {
+                case LT -> GE;
+                case LE -> GT;
+                case GT -> LE;
+                case GE -> GT;
+                case EQ -> NE;
+                case NE -> EQ;
+            };
+        }
+    }
+
     public static TemplateToken generateTest() {
         RestrictableGenerator<Integer> gen = Generators.G.ints();
         final int N_HI = gen.next();
