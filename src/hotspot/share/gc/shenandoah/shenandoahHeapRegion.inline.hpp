@@ -152,6 +152,7 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
 
 inline void ShenandoahHeapRegion::clear_live_data() {
   AtomicAccess::store(&_live_data, (size_t)0);
+  _promoted_in_place = false;
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_words() const {
