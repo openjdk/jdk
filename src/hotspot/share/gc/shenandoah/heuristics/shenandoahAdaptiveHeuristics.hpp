@@ -130,7 +130,7 @@ public:
                                                      RegionData* data, size_t size,
                                                      size_t actual_free) override;
 
-  virtual void adjust_penalty(intx step);
+  virtual void adjust_penalty(intx step) override;
 
   // At the end of GC(N), we idle GC until necessary to start the next GC.  Compute the threshold of memory that can be allocated
   // before we need to start the next GC.
