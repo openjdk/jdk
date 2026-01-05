@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zMarkStackEntry.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZMarkingSMR;
@@ -72,8 +73,8 @@ public:
 
 class ZCACHE_ALIGNED ZMarkStackList {
 private:
-  ZMarkStackListNode* volatile _head;
-  ssize_t volatile             _length;
+  Atomic<ZMarkStackListNode*> _head;
+  Atomic<ssize_t>             _length;
 
 public:
   ZMarkStackList();
@@ -103,8 +104,8 @@ public:
 
 class ZMarkStripeSet {
 private:
-  size_t      _nstripes_mask;
-  ZMarkStripe _stripes[ZMarkStripesMax];
+  Atomic<size_t> _nstripes_mask;
+  ZMarkStripe    _stripes[ZMarkStripesMax];
 
 public:
   explicit ZMarkStripeSet();

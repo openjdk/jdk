@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -72,12 +71,12 @@ ZMarkStackList::ZMarkStackList()
     _length() {}
 
 bool ZMarkStackList::is_empty() const {
-  return AtomicAccess::load(&_head) == nullptr;
+  return _head.load_relaxed() == nullptr;
 }
 
 void ZMarkStackList::push(ZMarkStack* stack) {
   ZMarkStackListNode* const node = new ZMarkStackListNode(stack);
-  ZMarkStackListNode* head = AtomicAccess::load(&_head);
+  ZMarkStackListNode* head = _head.load_relaxed();
   for (;;) {
     node->set_next(head);
     // Between reading the head and the linearizing CAS that pushes
@@ -87,13 +86,13 @@ void ZMarkStackList::push(ZMarkStack* stack) {
     // situation and run this loop one more time, we would end up
     // having the same side effects: set the next pointer to the same
     // head again, and CAS the head link.
-    ZMarkStackListNode* prev = AtomicAccess::cmpxchg(&_head, head, node, memory_order_release);
+    ZMarkStackListNode* const prev = _head.compare_exchange(head, node, memory_order_release);
 
     if (prev == head) {
       // Success
 
       // Bookkeep the population count
-      AtomicAccess::inc(&_length, memory_order_relaxed);
+      _length.add_then_fetch(1, memory_order_relaxed);
       return;
     }
 
@@ -103,9 +102,9 @@ void ZMarkStackList::push(ZMarkStack* stack) {
 }
 
 ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
-  ZMarkStackListNode* volatile* const hazard_ptr = marking_smr->hazard_ptr();
+  Atomic<ZMarkStackListNode*>& hazard_ptr = marking_smr->hazard_ptr();
 
-  ZMarkStackListNode* head = AtomicAccess::load(&_head);
+  ZMarkStackListNode* head = _head.load_relaxed();
   for (;;) {
     if (head == nullptr) {
       // Stack is empty
@@ -115,7 +114,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
     // Establish what the head is and publish a hazard pointer denoting
     // that the head is not safe to concurrently free while we are in the
     // middle of popping it and finding out that we lost the race.
-    AtomicAccess::store(hazard_ptr, head);
+    hazard_ptr.store_relaxed(head);
 
     // A full fence is needed to ensure the store and subsequent load do
     // not reorder. If they did reorder, the second head load could happen
@@ -127,7 +126,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
     // the next pointer load below observes the next pointer published
     // with the releasing CAS for the push operation that published the
     // marking stack.
-    ZMarkStackListNode* const head_after_publish = AtomicAccess::load_acquire(&_head);
+    ZMarkStackListNode* const head_after_publish = _head.load_acquire();
     if (head_after_publish != head) {
       // Race during hazard pointer publishing
       head = head_after_publish;
@@ -141,7 +140,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
 
     // Popping entries from the list does not require any particular memory
     // ordering.
-    ZMarkStackListNode* const prev = AtomicAccess::cmpxchg(&_head, head, next, memory_order_relaxed);
+    ZMarkStackListNode* const prev = _head.compare_exchange(head, next, memory_order_relaxed);
 
     if (prev == head) {
       // Success
@@ -149,10 +148,10 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
       // The ABA hazard is gone after the CAS. We use release_store to ensure
       // that the relinquishing of the hazard pointer becomes observable after
       // the unlinking CAS.
-      AtomicAccess::release_store(hazard_ptr, (ZMarkStackListNode*)nullptr);
+      hazard_ptr.release_store(nullptr);
 
       // Perform bookkeeping of the population count.
-      AtomicAccess::dec(&_length, memory_order_relaxed);
+      _length.sub_then_fetch(1, memory_order_relaxed);
 
       ZMarkStack* result = head->stack();
 
@@ -167,7 +166,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
 }
 
 size_t ZMarkStackList::length() const {
-  const ssize_t result = AtomicAccess::load(&_length);
+  const ssize_t result = _length.load_relaxed();
 
   if (result < 0) {
     return 0;
@@ -205,7 +204,7 @@ void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   assert(nstripes <= ZMarkStripesMax, "Invalid number of stripes");
 
   const size_t new_nstripes_mask = nstripes - 1;
-  _nstripes_mask = new_nstripes_mask;
+  _nstripes_mask.store_relaxed(new_nstripes_mask);
 
   log_debug(gc, marking)("Using %zu mark stripes", nstripes);
 }
@@ -221,7 +220,7 @@ bool ZMarkStripeSet::try_set_nstripes(size_t old_nstripes, size_t new_nstripes) 
 
   // Mutators may read these values concurrently. It doesn't matter
   // if they see the old or new values.
-  if (AtomicAccess::cmpxchg(&_nstripes_mask, old_nstripes_mask, new_nstripes_mask) == old_nstripes_mask) {
+  if (_nstripes_mask.compare_exchange(old_nstripes_mask, new_nstripes_mask) == old_nstripes_mask) {
     log_debug(gc, marking)("Using %zu mark stripes", new_nstripes);
     return true;
   }
@@ -230,7 +229,7 @@ bool ZMarkStripeSet::try_set_nstripes(size_t old_nstripes, size_t new_nstripes) 
 }
 
 size_t ZMarkStripeSet::nstripes() const {
-  return AtomicAccess::load(&_nstripes_mask) + 1;
+  return _nstripes_mask.load_relaxed() + 1;
 }
 
 bool ZMarkStripeSet::is_empty() const {
@@ -258,7 +257,7 @@ bool ZMarkStripeSet::is_crowded() const {
 }
 
 ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
-  const size_t mask = AtomicAccess::load(&_nstripes_mask);
+  const size_t mask = _nstripes_mask.load_relaxed();
   const size_t nstripes = mask + 1;
 
   const size_t spillover_limit = (nworkers / nstripes) * nstripes;
