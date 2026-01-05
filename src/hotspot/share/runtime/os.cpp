@@ -2207,13 +2207,7 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
 bool os::used_memory(physical_memory_size_type& value) {
 #ifdef LINUX
   if (OSContainer::is_containerized()) {
-    jlong mem_usage = OSContainer::memory_usage_in_bytes();
-    if (mem_usage > 0) {
-      value = static_cast<physical_memory_size_type>(mem_usage);
-      return true;
-    } else {
-      return false;
-    }
+    return OSContainer::memory_usage_in_bytes(value);
   }
 #endif
   physical_memory_size_type avail_mem = 0;
@@ -2581,6 +2575,10 @@ jint os::set_minimum_stack_sizes() {
     return JNI_ERR;
   }
   return JNI_OK;
+}
+
+jlong os::get_minimum_java_stack_size() {
+  return static_cast<jlong>(_java_thread_min_stack_allowed);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name

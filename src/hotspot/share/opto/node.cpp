@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -999,18 +999,22 @@ bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p, bool keep_deps) {
 #ifdef ASSERT
+  // If we end up traversing more nodes than we actually have,
+  // it is definitely an infinite loop.
+  uint max_depth = Compile::current()->unique();
   uint depth_count = 0;
   const Node* orig_p = p;
 #endif
 
   while (true) {
 #ifdef ASSERT
-    if (depth_count >= K) {
+    if (depth_count++ >= max_depth) {
       orig_p->dump(4);
-      if (p != orig_p)
+      if (p != orig_p) {
         p->dump(1);
+      }
+      fatal("infinite loop in Node::uncast_helper");
     }
-    assert(depth_count++ < K, "infinite loop in Node::uncast_helper");
 #endif
     if (p == nullptr || p->req() != 2) {
       break;
@@ -1209,9 +1213,12 @@ bool Node::has_special_unique_user() const {
   if (this->is_Store()) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
-  } else if (this->is_Load() || this->is_DecodeN() || this->is_Phi()) {
+  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi() || this->is_Con()) && n->Opcode() == Op_MemBarAcquire) {
     // Condition for removing an unused LoadNode or DecodeNNode from the MemBarAcquire precedence input
-    return n->Opcode() == Op_MemBarAcquire;
+    return true;
+  } else if (this->is_Load() && n->is_Move()) {
+    // Condition for MoveX2Y (LoadX mem) => LoadY mem
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -2872,21 +2879,24 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req()) {
-          uint j;
-          for (j = 0; j < use->req(); j++) {
-            if (use->in(j) != in(j)) {
-              break;
-            }
-          }
-          if (j == use->req()) {
-            return use;
-          }
+            use->req() == req() &&
+            has_same_inputs_as(use)) {
+          return use;
         }
       }
     }
   }
   return nullptr;
+}
+
+bool Node::has_same_inputs_as(const Node* other) const {
+  assert(req() == other->req(), "should have same number of inputs");
+  for (uint j = 0; j < other->req(); j++) {
+    if (in(j) != other->in(j)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 Node* Node::unique_multiple_edges_out_or_null() const {

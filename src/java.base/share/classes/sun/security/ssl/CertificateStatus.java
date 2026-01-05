@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ final class CertificateStatus {
                     new CertificateStatusMessage(chc, message);
 
             // Log the message
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming server CertificateStatus handshake message",
                         cst);
@@ -325,7 +325,7 @@ final class CertificateStatus {
 
             // Create the CertificateStatus message from info in the
             CertificateStatusMessage csm = new CertificateStatusMessage(shc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced server CertificateStatus handshake message", csm);
             }
@@ -358,7 +358,7 @@ final class CertificateStatus {
                 // status_request[_v2] extension.  2) The CertificateStatus
                 // message was not sent.  This means that cert path checking
                 // was deferred, but must happen immediately.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Server did not send CertificateStatus, " +
                             "checking cert chain without status info.");
                 }

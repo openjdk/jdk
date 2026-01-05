@@ -449,7 +449,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
+  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument(arg_i);
   if (!cp->tag_at(mt_index).is_method_type()) {
     // malformed class?
     return false;
@@ -465,7 +465,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPo
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
+  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument(arg_i);
   if (!cp->tag_at(mh_index).is_method_handle()) {
     // malformed class?
     return false;
