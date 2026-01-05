@@ -411,12 +411,15 @@ void PrintPropertiesDCmd::execute(DCmdSource source, TRAPS) {
     // Invoke the serializeSecurityPropertiesToByteArray method
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
-    if (_system.value()) {
+    if (_system.value() && _security.value()) {
+      output()->print_cr("Enter one argument for VM.properties");
+      return;
+    } else if (_system.value()) {
       method_name = vmSymbols::serializePropertiesToByteArray_name();
     } else if (_security.value()) {
       method_name = vmSymbols::serializeSecurityPropertiesToByteArray_name();
     } else {
-      output()->print_cr("Invalid argument to VM.properties, (-system, -security)");
+      output()->print_cr("Invalid argument to VM.properties");
       return;
     }
     Symbol* signature = vmSymbols::void_byte_array_signature();
