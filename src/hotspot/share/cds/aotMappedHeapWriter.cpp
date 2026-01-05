@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,9 +86,9 @@ void AOTMappedHeapWriter::init() {
   if (CDSConfig::is_dumping_heap()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
-    _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
+    _buffer_offset_to_source_obj_table = new (mtClassShared) BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
     _dumped_interned_strings = new (mtClass)DumpedInternedStrings(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
-    _fillers = new FillersTable();
+    _fillers = new (mtClassShared) FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
 
@@ -124,7 +124,7 @@ CompressedOops::Mode AOTMappedHeapWriter::narrow_oop_mode() {
 
 address AOTMappedHeapWriter::narrow_oop_base() {
   if (is_writing_deterministic_heap()) {
-    return (address)0;
+    return nullptr;
   } else {
     return CompressedOops::base();
   }

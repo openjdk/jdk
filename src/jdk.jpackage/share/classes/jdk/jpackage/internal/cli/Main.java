@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.cli.StandardOption.VERSION;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
@@ -47,6 +48,7 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Log;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 /**
@@ -65,6 +67,21 @@ public final class Main {
         public int run(PrintWriter out, PrintWriter err, String... args) {
             return Main.run(out, err, args);
         }
+
+        @Override
+        public int run(PrintStream out, PrintStream err, String... args) {
+            PrintWriter outWriter = new PrintWriter(out, true);
+            PrintWriter errWriter = new PrintWriter(err, true);
+            try {
+                try {
+                    return run(outWriter, errWriter, args);
+                } finally {
+                    outWriter.flush();
+                }
+            } finally {
+                errWriter.flush();
+            }
+        }
     }
 
 
@@ -78,27 +95,45 @@ public final class Main {
     }
 
     public static int run(PrintWriter out, PrintWriter err, String... args) {
+        Objects.requireNonNull(args);
+        for (String arg : args) {
+            Objects.requireNonNull(arg);
+        }
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
 
         Log.setPrintWriter(out, err);
 
+        final var runner = new Runner(t -> {
+            new ErrorReporter(_ -> {
+                t.printStackTrace(err);
+            }, Log::fatalError, Log.isVerbose()).reportError(t);
+        });
+
         try {
-            try {
-                args = CommandLine.parse(args);
-            } catch (FileNotFoundException|NoSuchFileException ex) {
-                Log.fatalError(I18N.format("ERR_CannotParseOptions", ex.getMessage()));
-                return 1;
-            } catch (IOException ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+            var mappedArgs = Slot.<String[]>createEmpty();
+
+            int preprocessStatus = runner.run(() -> {
+                try {
+                    mappedArgs.set(CommandLine.parse(args));
+                    return List.of();
+                } catch (FileNotFoundException | NoSuchFileException ex) {
+                    return List.of(new JPackageException(I18N.format("ERR_CannotParseOptions", ex.getMessage()), ex));
+                } catch (IOException ex) {
+                    return List.of(ex);
+                }
+            });
+
+            if (preprocessStatus != 0) {
+                return preprocessStatus;
             }
 
             final var bundlingEnv = ServiceLoader.load(CliBundlingEnvironment.class,
                     CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();
 
-            final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(args);
+            final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(mappedArgs.get());
 
-            return new Runner().run(() -> {
+            return runner.run(() -> {
                 final var parsedOptionsBuilder = parseResult.orElseThrow();
 
                 final var options = parsedOptionsBuilder.create();
@@ -144,11 +179,33 @@ public final class Main {
         }
     }
 
+    /*
+     * Exception (error) reporting:
+     *
+     * There are two types of exceptions to handle:
+     *
+     * 1. Exceptions explicitly thrown by jpackage code with localized,
+     *    jpackage-specific error messages. These are usually instances of
+     *    JPackageException.
+     *
+     * 2. Exceptions thrown by JDK code (for example, an NPE from Optional.of(...)).
+     *    These should normally not occur or should be handled at the point
+     *    where they arise. If they reach this level of exception handling,
+     *    it indicates a flaw in jpackage’s internal logic.
+     *
+     * Always print stack traces for exceptions of type #2.
+     * Print stack traces for exceptions of type #1 only in verbose mode.
+     * Always print the messages for exceptions of any type.
+     */
 
-    record ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
+    record ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter, boolean verbose) {
         ErrorReporter {
             Objects.requireNonNull(stackTracePrinter);
             Objects.requireNonNull(messagePrinter);
+        }
+
+        ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
+            this(stackTracePrinter, messagePrinter, true);
         }
 
         void reportError(Throwable t) {
@@ -164,10 +221,14 @@ public final class Main {
         }
 
         private void printError(Throwable t, Optional<String> advice) {
-            stackTracePrinter.accept(t);
+            var isAlienException = isAlienExceptionType(t);
+
+            if (isAlienException || verbose) {
+                stackTracePrinter.accept(t);
+            }
 
             String msg;
-            if (isAlienExceptionType(t)) {
+            if (isAlienException) {
                 msg = t.toString();
             } else {
                 msg = t.getMessage();
@@ -196,15 +257,18 @@ public final class Main {
     }
 
 
-    static final class Runner {
+    record Runner(Consumer<Throwable> errorReporter) {
+
+        Runner {
+            Objects.requireNonNull(errorReporter);
+        }
 
         int run(Supplier<? extends Collection<? extends Exception>> r) {
             final var exceptions = runIt(r);
             if (exceptions.isEmpty()) {
                 return 0;
             } else {
-                var errorReporter = new ErrorReporter(Log::verbose, Log::fatalError);
-                exceptions.forEach(errorReporter::reportError);
+                exceptions.forEach(errorReporter);
                 return 1;
             }
         }
