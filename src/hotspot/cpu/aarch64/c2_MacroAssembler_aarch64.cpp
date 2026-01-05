@@ -2547,26 +2547,22 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   if (t == TypeInt::INT) {
     return;
   }
+
   BLOCK_COMMENT("verify_int_in_range {");
   Label L_success, L_failure;
 
   jint lo = t->_lo;
   jint hi = t->_hi;
 
-  if (lo != min_jint && hi != max_jint) {
+  if (lo != min_jint) {
     subsw(rtmp, rval, lo);
     br(Assembler::LT, L_failure);
-    subsw(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else if (lo != min_jint) {
-    subsw(rtmp, rval, lo);
-    br(Assembler::GE, L_success);
-  } else if (hi != max_jint) {
-    subsw(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else {
-    ShouldNotReachHere();
   }
+  if (hi != max_jint) {
+    subsw(rtmp, rval, hi);
+    br(Assembler::GT, L_failure);
+  }
+  b(L_success);
 
   bind(L_failure);
   movw(c_rarg0, idx);
@@ -2590,26 +2586,22 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
   if (t == TypeLong::LONG) {
     return;
   }
+
   BLOCK_COMMENT("verify_long_in_range {");
   Label L_success, L_failure;
 
   jlong lo = t->_lo;
   jlong hi = t->_hi;
 
-  if (lo != min_jlong && hi != max_jlong) {
+  if (lo != min_jlong) {
     subs(rtmp, rval, lo);
     br(Assembler::LT, L_failure);
-    subs(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else if (lo != min_jlong) {
-    subs(rtmp, rval, lo);
-    br(Assembler::GE, L_success);
-  } else if (hi != max_jlong) {
-    subs(rtmp, rval, hi);
-    br(Assembler::LE, L_success);
-  } else {
-    ShouldNotReachHere();
   }
+  if (hi != max_jlong) {
+    subs(rtmp, rval, hi);
+    br(Assembler::GT, L_failure);
+  }
+  b(L_success);
 
   bind(L_failure);
   movw(c_rarg0, idx);

@@ -144,28 +144,26 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
     }
 
     static <T extends Package> void createNativePackage(Options options,
-            Function<Options, T> createPackage,
+            T pkg,
             BiFunction<Options, T, BuildEnv> createBuildEnv,
             PackagingPipeline.Builder pipelineBuilder,
             Packager.PipelineBuilderMutatorFactory<T> pipelineBuilderMutatorFactory) {
 
         Objects.requireNonNull(pipelineBuilder);
-        createNativePackage(options, createPackage, createBuildEnv, _ -> pipelineBuilder, pipelineBuilderMutatorFactory);
+        createNativePackage(options, pkg, createBuildEnv, _ -> pipelineBuilder, pipelineBuilderMutatorFactory);
     }
 
     static <T extends Package> void createNativePackage(Options options,
-            Function<Options, T> createPackage,
+            T pkg,
             BiFunction<Options, T, BuildEnv> createBuildEnv,
             Function<T, PackagingPipeline.Builder> createPipelineBuilder,
             Packager.PipelineBuilderMutatorFactory<T> pipelineBuilderMutatorFactory) {
 
         Objects.requireNonNull(options);
-        Objects.requireNonNull(createPackage);
+        Objects.requireNonNull(pkg);
         Objects.requireNonNull(createBuildEnv);
         Objects.requireNonNull(createPipelineBuilder);
         Objects.requireNonNull(pipelineBuilderMutatorFactory);
-
-        var pkg = Objects.requireNonNull(createPackage.apply(options));
 
         Packager.<T>build().pkg(pkg)
             .outputDir(OptionUtils.outputDir(options))
@@ -207,7 +205,9 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
     }
 
     private Supplier<Result<Consumer<Options>>> getBundlerSupplier(BundlingOperationDescriptor op) {
-        return Optional.ofNullable(bundlers.get(op)).orElseThrow(NoSuchElementException::new);
+        return Optional.ofNullable(bundlers.get(op)).orElseThrow(() -> {
+            throw new NoSuchElementException(String.format("Unsupported bundling operation: %s", op));
+        });
     }
 
     private String bundleTypeDescription(PackageType type, OperatingSystem os) {
