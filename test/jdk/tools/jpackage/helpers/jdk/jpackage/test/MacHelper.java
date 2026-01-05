@@ -75,6 +75,7 @@ import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.ResolvedKeychain;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import org.xml.sax.SAXException;
@@ -556,6 +557,50 @@ public final class MacHelper {
             }
 
             throw new AssertionError();
+        }
+    }
+
+    public record SignKeyOptionWithKeychain(SignKeyOption signKeyOption, ResolvedKeychain keychain) {
+
+        public SignKeyOptionWithKeychain {
+            Objects.requireNonNull(signKeyOption);
+            Objects.requireNonNull(keychain);
+        }
+
+        public SignKeyOptionWithKeychain(SignKeyOption.Type type, CertificateRequest certRequest, ResolvedKeychain keychain) {
+            this(new SignKeyOption(type, certRequest), keychain);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s@%s", signKeyOption, keychain.name());
+        }
+
+        public SignKeyOption.Type type() {
+            return signKeyOption.type();
+        }
+
+        public CertificateRequest certRequest() {
+            return signKeyOption.certRequest();
+        }
+
+        public JPackageCommand addTo(JPackageCommand cmd) {
+            Optional.ofNullable(cmd.getArgumentValue("--mac-signing-keychain")).ifPresentOrElse(configuredKeychain -> {
+                if (!configuredKeychain.equals(keychain.name())) {
+                    throw new IllegalStateException(String.format(
+                            "Command line [%s] already has the '--mac-signing-keychain' option, not adding another one with [%s] value",
+                            cmd, keychain.name()));
+                }
+            }, () -> {
+                useKeychain(cmd, keychain);
+            });
+            return signKeyOption.addTo(cmd);
+        }
+
+        public JPackageCommand setTo(JPackageCommand cmd) {
+            cmd.removeArgumentWithValue("--mac-signing-keychain");
+            useKeychain(cmd, keychain);
+            return signKeyOption.setTo(cmd);
         }
     }
 
