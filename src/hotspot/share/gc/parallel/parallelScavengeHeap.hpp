@@ -69,8 +69,8 @@ class ReservedSpace;
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
  private:
-  static PSYoungGen* _young_gen;
-  static PSOldGen*   _old_gen;
+  PSYoungGen* _young_gen;
+  PSOldGen*   _old_gen;
 
   // Sizing policy for entire heap
   static PSAdaptiveSizePolicy*       _size_policy;
@@ -160,8 +160,8 @@ public:
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
-  static PSYoungGen* young_gen() { return _young_gen; }
-  static PSOldGen* old_gen()     { return _old_gen; }
+  PSYoungGen* young_gen() const { return _young_gen; }
+  PSOldGen*   old_gen()   const { return _old_gen; }
 
   PSAdaptiveSizePolicy* size_policy() { return _size_policy; }
 
@@ -202,7 +202,6 @@ public:
   bool requires_barriers(stackChunkOop obj) const override;
 
   MemRegion reserved_region() const { return _reserved; }
-  HeapWord* base() const { return _reserved.start(); }
 
   // Memory allocation.
   HeapWord* mem_allocate(size_t size) override;

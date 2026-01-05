@@ -621,7 +621,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       if (cb != nullptr && cb->is_nmethod()) {
         nmethod* nm = cb->as_nmethod();
         assert(nm->insts_contains_inclusive(pc), "");
-        address deopt = nm->deopt_handler_begin();
+        address deopt = nm->deopt_handler_entry();
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);
@@ -1645,7 +1645,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
 
   // Save and restore errno to avoid confusing native code with EINTR
   // after sigsuspend.
-  int old_errno = errno;
+  ErrnoPreserver ep;
 
   PosixSignals::unblock_error_signals();
 
@@ -1727,7 +1727,6 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
     // ignore
   }
 
-  errno = old_errno;
 }
 
 static int SR_initialize() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @requires container.support
  * @requires !vm.asan
  * @library /test/lib
+ * @modules java.base/jdk.internal.platform
  * @build WaitForFlagFile
  * @run driver ShareTmpDir
  */
@@ -50,18 +51,13 @@ public class ShareTmpDir {
     private static final String imageName = Common.imageName("sharetmpdir");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             test();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 

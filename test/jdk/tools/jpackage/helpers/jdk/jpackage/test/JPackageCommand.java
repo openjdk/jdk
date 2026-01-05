@@ -25,10 +25,10 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.util.stream.Collectors.toCollection;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 
 import java.io.FileOutputStream;
@@ -291,7 +291,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
 
-        ThrowingConsumer<Path> createBulkFile = path -> {
+        ThrowingConsumer<Path, IOException> createBulkFile = path -> {
             Files.createDirectories(path.getParent());
             try (FileOutputStream out = new FileOutputStream(path.toFile())) {
                 byte[] bytes = new byte[4 * 1024];
@@ -328,12 +328,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .removeArgumentWithValue("--input");
     }
 
-    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         prerequisiteActions.add(action);
         return this;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         return addVerifyAction(action, ActionRole.DEFAULT);
     }
 
@@ -343,12 +343,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         ;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action, ActionRole actionRole) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole actionRole) {
         verifyActions.add(action, actionRole);
         return this;
     }
 
-    Stream<ThrowingConsumer<JPackageCommand>> getVerifyActionsWithRole(ActionRole actionRole) {
+    Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> getVerifyActionsWithRole(ActionRole actionRole) {
         return verifyActions.actionsWithRole(actionRole);
     }
 
@@ -864,6 +864,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         };
     }
 
+    public static CannedFormattedString makeError(CannedFormattedString v) {
+        return v.addPrefix("message.error-header");
+    }
+
+    public static CannedFormattedString makeAdvice(CannedFormattedString v) {
+        return v.addPrefix("message.advice-header");
+    }
+
     public String getValue(CannedFormattedString str) {
         return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
@@ -1240,6 +1248,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
                 return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+            }).filter(_ -> {
+                // Don't examine the contents of the output app image if this is Linux package installing in the "/usr" subtree.
+                return Optional.<Boolean>ofNullable(cmd.onLinuxPackageInstallDir(null, _ -> false)).orElse(true);
             }).map(Path::of).ifPresent(predefinedAppImage -> {
 
                 TKit.trace(String.format(
@@ -1282,7 +1293,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
                 TKit.trace("Done");
             });
-        })
+        }),
+        LINUX_APPLAUNCHER_LIB(cmd -> {
+            if (TKit.isLinux() && !cmd.isRuntime()) {
+                TKit.assertFileExists(cmd.appLayout().libapplauncher());
+            }
+        }),
         ;
 
         StandardAssert(Consumer<JPackageCommand> action) {
@@ -1632,16 +1648,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             actions.addAll(other.actions);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
             add(action, ActionRole.DEFAULT);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action, ActionRole role) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole role) {
             verifyMutable();
             actions.add(new Action(action, role));
         }
 
-        Stream<ThrowingConsumer<JPackageCommand>> actionsWithRole(ActionRole role) {
+        Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> actionsWithRole(ActionRole role) {
             Objects.requireNonNull(role);
             return actions.stream().filter(action -> {
                 return Objects.equals(action.role(), role);
@@ -1650,7 +1666,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         private static final class Action implements Consumer<JPackageCommand> {
 
-            Action(ThrowingConsumer<JPackageCommand> impl, ActionRole role) {
+            Action(ThrowingConsumer<JPackageCommand, ? extends Exception> impl, ActionRole role) {
                 this.impl = Objects.requireNonNull(impl);
                 this.role = Objects.requireNonNull(role);
             }
@@ -1659,7 +1675,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return role;
             }
 
-            ThrowingConsumer<JPackageCommand> impl() {
+            ThrowingConsumer<JPackageCommand, ? extends Exception> impl() {
                 return impl;
             }
 
@@ -1672,7 +1688,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
 
             private final ActionRole role;
-            private final ThrowingConsumer<JPackageCommand> impl;
+            private final ThrowingConsumer<JPackageCommand, ? extends Exception> impl;
             private boolean executed;
         }
 

@@ -46,7 +46,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @test
  * @summary Basic test to verify that simple GET/POST/HEAD
  *          requests work as expected with HTTP/3, using IPv4
- *          or IPv6
+ *          or IPv6, using CUBIC or Reno
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
@@ -63,6 +63,11 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djava.net.preferIPv4Stack=true
+ *              H3SimpleTest
+ * @run testng/othervm
+ *              -Djdk.internal.httpclient.debug=true
+ *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
+ *              -Djdk.internal.httpclient.quic.congestionController=reno
  *              H3SimpleTest
  */
 // -Djava.security.debug=all
