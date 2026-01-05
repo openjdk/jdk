@@ -66,26 +66,19 @@ public class SleepyCat {
      * @param pids the processes to dump status for
      */
     static void dumpState(Process... pids) {
-        if (!System.getProperty("os.name").contains("SunOS")) {
-            return;
-        }
         try {
             String[] psArgs = {"ps", "-elf"};
-            Process ps = new ProcessBuilder(psArgs).inheritIO().start();
-            ps.waitFor();
-            String[] sfiles = {"pfiles", "self"};
-            Process fds = new ProcessBuilder(sfiles).inheritIO().start();
-            fds.waitFor();
+            try (Process ps = new ProcessBuilder(psArgs).inheritIO().start()) {
+                ps.waitFor();
+            }
 
             for (Process p : pids) {
                 if (p == null)
                     continue;
-                String[] pfiles = {"pfiles", Long.toString(p.pid())};
-                fds = new ProcessBuilder(pfiles).inheritIO().start();
-                fds.waitFor();
-                String[] pstack = {"pstack", Long.toString(p.pid())};
-                fds = new ProcessBuilder(pstack).inheritIO().start();
-                fds.waitFor();
+                String[] pfiles = {"lsof", "-p", Long.toString(p.pid())};
+                try (Process fds = new ProcessBuilder(pfiles).inheritIO().start()) {
+                    fds.waitFor();
+                }
             }
         } catch (IOException | InterruptedException i) {
             i.printStackTrace();
