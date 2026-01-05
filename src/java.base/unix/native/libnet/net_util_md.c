@@ -279,7 +279,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     } else {
         jint address;
         if (family != java_net_InetAddress_IPv4) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "IPv6 protocol family unavailable");
             return -1;
         }
         address = getInetAddress_addr(env, iaObj);
