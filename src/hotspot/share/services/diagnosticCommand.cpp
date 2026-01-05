@@ -339,49 +339,41 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
+// helper method for printing system and security properties
+static void print_properties(Symbol* method_name, outputStream* out, TRAPS) {
+    Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
+    Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->should_be_initialized()) {
+        ik->initialize(THREAD);
+    }
+    if (HAS_PENDING_EXCEPTION) {
+        java_lang_Throwable::print(PENDING_EXCEPTION, out);
+        out->cr();
+        CLEAR_PENDING_EXCEPTION;
+        return;
+    }
+    JavaValue result(T_OBJECT);
+    JavaCallArguments args;
+    Symbol* signature = vmSymbols::void_byte_array_signature();
+    JavaCalls::call_static(&result, ik, method_name, signature, &args, THREAD);
+
+    if (HAS_PENDING_EXCEPTION) {
+        java_lang_Throwable::print(PENDING_EXCEPTION, out);
+        out->cr();
+        CLEAR_PENDING_EXCEPTION;
+        return;
+    }
+    oop res = result.get_oop();
+    assert(res->is_typeArray(), "should be a byte array");
+    assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "should be a byte array");
+    typeArrayOop ba = typeArrayOop(res);
+    jbyte* addr = ba->byte_at_addr(0);
+    out->print_raw((const char*)addr, ba->length());
+}
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
-  // load VMSupport
-  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
-  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (ik->should_be_initialized()) {
-    ik->initialize(THREAD);
-  }
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
-
-  // invoke the serializePropertiesToByteArray method
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args;
-
-  Symbol* signature = vmSymbols::void_byte_array_signature();
-  JavaCalls::call_static(&result,
-                         ik,
-                         vmSymbols::serializePropertiesToByteArray_name(),
-                         signature,
-                         &args,
-                         THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
-
-  // The result should be a [B
-  oop res = result.get_oop();
-  assert(res->is_typeArray(), "just checking");
-  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
-
-  // copy the bytes to the output stream
-  typeArrayOop ba = typeArrayOop(res);
-  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
-  output()->print_raw((const char*)addr, ba->length());
+    print_properties(vmSymbols::serializePropertiesToByteArray_name(), output(), THREAD);
 }
 
 PrintPropertiesDCmd::PrintPropertiesDCmd(outputStream* output, bool heap) :
@@ -393,57 +385,16 @@ PrintPropertiesDCmd::PrintPropertiesDCmd(outputStream* output, bool heap) :
 }
 
 void PrintPropertiesDCmd::execute(DCmdSource source, TRAPS) {
-    // Load jdk.internal.vm.VMSupport
-    Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
-    Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    Symbol* method_name = nullptr;
-    if (ik->should_be_initialized()) {
-        ik->initialize(THREAD);
-    }
-    if (HAS_PENDING_EXCEPTION) {
-        java_lang_Throwable::print(PENDING_EXCEPTION, output());
-        output()->cr();
-        CLEAR_PENDING_EXCEPTION;
-        return;
-    }
-
-    // Invoke the serializeSecurityPropertiesToByteArray method
-    JavaValue result(T_OBJECT);
-    JavaCallArguments args;
     if (_system.value() && _security.value()) {
       output()->print_cr("Enter one argument for VM.properties");
       return;
     } else if (_system.value()) {
-      method_name = vmSymbols::serializePropertiesToByteArray_name();
-    } else if (_security.value()) {
-      method_name = vmSymbols::serializeSecurityPropertiesToByteArray_name();
+      print_properties(vmSymbols::serializePropertiesToByteArray_name(), output(), THREAD);
+    } else if (_security.value()){
+      print_properties(vmSymbols::serializeSecurityPropertiesToByteArray_name(), output(), THREAD);
     } else {
-      output()->print_cr("Invalid argument to VM.properties");
-      return;
+      output()->print_cr("Invalid argument to VM.properties, (-system, -security)");
     }
-    Symbol* signature = vmSymbols::void_byte_array_signature();
-
-    JavaCalls::call_static(&result,
-                           ik,
-                           method_name,
-                           signature,
-                           &args,
-                           THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-        java_lang_Throwable::print(PENDING_EXCEPTION, output());
-        output()->cr();
-        CLEAR_PENDING_EXCEPTION;
-        return;
-    }
-
-    oop res = result.get_oop();
-    assert(res->is_typeArray(), "should be a byte array");
-    assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "should be a byte array");
-
-    typeArrayOop ba = typeArrayOop(res);
-    jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
-    output()->print_raw((const char*)addr, ba->length());
 }
 
 VMUptimeDCmd::VMUptimeDCmd(outputStream* output, bool heap) :
