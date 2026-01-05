@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -30,7 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 
 void PreservedMarks::restore() {
@@ -61,16 +60,16 @@ void PreservedMarks::restore_and_increment(volatile size_t* const total_size_add
   restore();
   // Only do the atomic add if the size is > 0.
   if (stack_size > 0) {
-    Atomic::add(total_size_addr, stack_size);
+    AtomicAccess::add(total_size_addr, stack_size);
   }
 }
 
 #ifndef PRODUCT
 void PreservedMarks::assert_empty() {
-  assert(_stack.is_empty(), "stack expected to be empty, size = " SIZE_FORMAT,
+  assert(_stack.is_empty(), "stack expected to be empty, size = %zu",
          _stack.size());
   assert(_stack.cache_size() == 0,
-         "stack expected to have no cached segments, cache size = " SIZE_FORMAT,
+         "stack expected to have no cached segments, cache size = %zu",
          _stack.cache_size());
 }
 #endif // ndef PRODUCT

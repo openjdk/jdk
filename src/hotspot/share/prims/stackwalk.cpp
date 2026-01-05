@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -32,8 +31,8 @@
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/stackwalk.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/globals.hpp"

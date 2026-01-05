@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,6 @@ class CodeCache : AllStatic {
   friend class JVMCIVMStructs;
   template <class T, class Filter, bool is_relaxed> friend class CodeBlobIterator;
   friend class WhiteBox;
-  friend class CodeCacheLoader;
   friend class ShenandoahParallelCodeHeapIterator;
  private:
   // CodeHeaps of the cache
@@ -260,7 +259,7 @@ class CodeCache : AllStatic {
   static bool heap_available(CodeBlobType code_blob_type);
 
   // Returns the CodeBlobType for the given nmethod
-  static CodeBlobType get_code_blob_type(nmethod* nm) {
+  static CodeBlobType get_code_blob_type(const nmethod* nm) {
     return get_code_heap(nm)->code_blob_type();
   }
 

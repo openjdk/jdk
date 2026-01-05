@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.text.MessageFormat;
 import java.util.*;
+import javax.crypto.KDF;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.ClientAuthType.CLIENT_AUTH_REQUIRED;
@@ -40,6 +42,7 @@ import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SessionTicketExtension.SessionTicketSpec;
 import sun.security.util.HexDumpEncoder;
+import sun.security.util.KeyUtil;
 
 import static sun.security.ssl.SSLExtension.*;
 
@@ -55,7 +58,7 @@ final class PreSharedKeyExtension {
             new CHPreSharedKeyOnLoadAbsence();
     static final HandshakeConsumer chOnTradeConsumer =
             new CHPreSharedKeyUpdate();
-    static final HandshakeAbsence chOnTradAbsence =
+    static final HandshakeAbsence chOnTradeAbsence =
             new CHPreSharedKeyOnTradeAbsence();
     static final SSLStringizer chStringizer =
             new CHPreSharedKeyStringizer();
@@ -338,7 +341,7 @@ final class PreSharedKeyExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.CH_PRE_SHARED_KEY)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable pre_shared_key extension");
                 }
@@ -390,7 +393,7 @@ final class PreSharedKeyExtension {
                             }
                         }
                         if (b == null || s == null) {
-                            if (SSLLogger.isOn &&
+                            if (SSLLogger.isOn() &&
                                     SSLLogger.isOn("ssl,handshake")) {
                                 SSLLogger.fine(
                                         "Stateless session ticket invalid");
@@ -399,7 +402,7 @@ final class PreSharedKeyExtension {
                     }
 
                     if (s != null && canRejoin(clientHello, shc, s)) {
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.fine("Resuming session: ", s);
                         }
 
@@ -432,23 +435,12 @@ final class PreSharedKeyExtension {
 
         // Check protocol version
         if (result && s.getProtocolVersion() != shc.negotiatedProtocol) {
-            if (SSLLogger.isOn &&
+            if (SSLLogger.isOn() &&
                 SSLLogger.isOn("ssl,handshake,verbose")) {
 
                 SSLLogger.finest("Can't resume, incorrect protocol version");
             }
             result = false;
-        }
-
-        // Make sure that the server handshake context's localSupportedSignAlgs
-        // field is populated.  This is particularly important when
-        // client authentication was used in an initial session, and it is
-        // now being resumed.
-        if (shc.localSupportedSignAlgs == null) {
-            shc.localSupportedSignAlgs =
-                    SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints, shc.activeProtocols);
         }
 
         // Validate the required client authentication.
@@ -457,7 +449,7 @@ final class PreSharedKeyExtension {
             try {
                 s.getPeerPrincipal();
             } catch (SSLPeerUnverifiedException e) {
-                if (SSLLogger.isOn &&
+                if (SSLLogger.isOn() &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.finest(
                         "Can't resume, " +
@@ -466,13 +458,15 @@ final class PreSharedKeyExtension {
                 result = false;
             }
 
-            // Make sure the list of supported signature algorithms matches
+            // Make sure the list of supported signature algorithms matches.
+            // HandshakeContext's localSupportedCertSignAlgs has been already
+            // updated when we set the negotiated protocol.
             Collection<SignatureScheme> sessionSigAlgs =
                 s.getLocalSupportedSignatureSchemes();
             if (result &&
-                !shc.localSupportedSignAlgs.containsAll(sessionSigAlgs)) {
+                !shc.localSupportedCertSignAlgs.containsAll(sessionSigAlgs)) {
 
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Can't resume. Session uses different " +
                         "signature algorithms");
                 }
@@ -486,7 +480,7 @@ final class PreSharedKeyExtension {
         if (result && identityAlg != null) {
             String sessionIdentityAlg = s.getIdentificationProtocol();
             if (!identityAlg.equalsIgnoreCase(sessionIdentityAlg)) {
-                if (SSLLogger.isOn &&
+                if (SSLLogger.isOn() &&
                     SSLLogger.isOn("ssl,handshake,verbose")) {
 
                     SSLLogger.finest("Can't resume, endpoint id" +
@@ -500,7 +494,7 @@ final class PreSharedKeyExtension {
         // Ensure cipher suite can be negotiated
         if (result && (!shc.isNegotiable(s.getSuite()) ||
             !clientHello.cipherSuites.contains(s.getSuite()))) {
-            if (SSLLogger.isOn &&
+            if (SSLLogger.isOn() &&
                     SSLLogger.isOn("ssl,handshake,verbose")) {
                 SSLLogger.finest(
                     "Can't resume, unavailable session cipher suite");
@@ -564,11 +558,15 @@ final class PreSharedKeyExtension {
         }
 
         SecretKey binderKey = deriveBinderKey(shc, psk, session);
-        byte[] computedBinder =
-                computeBinder(shc, binderKey, session, pskBinderHash);
-        if (!MessageDigest.isEqual(binder, computedBinder)) {
-            throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Incorrect PSK binder value");
+        try {
+            byte[] computedBinder =
+                    computeBinder(shc, binderKey, session, pskBinderHash);
+            if (!MessageDigest.isEqual(binder, computedBinder)) {
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        "Incorrect PSK binder value");
+            }
+        } finally {
+            KeyUtil.destroySecretKeys(binderKey);
         }
     }
 
@@ -655,7 +653,7 @@ final class PreSharedKeyExtension {
             // The producing happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
             if (!chc.isResumption || chc.resumingSession == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("No session to resume.");
                 }
                 return null;
@@ -664,8 +662,8 @@ final class PreSharedKeyExtension {
             // Make sure the list of supported signature algorithms matches
             Collection<SignatureScheme> sessionSigAlgs =
                 chc.resumingSession.getLocalSupportedSignatureSchemes();
-            if (!chc.localSupportedSignAlgs.containsAll(sessionSigAlgs)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (!chc.localSupportedCertSignAlgs.containsAll(sessionSigAlgs)) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Existing session uses different " +
                         "signature algorithms");
                 }
@@ -675,7 +673,7 @@ final class PreSharedKeyExtension {
             // The session must have a pre-shared key
             SecretKey psk = chc.resumingSession.getPreSharedKey();
             if (psk == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Existing session has no PSK.");
                 }
                 return null;
@@ -689,7 +687,7 @@ final class PreSharedKeyExtension {
             }
 
             if (chc.pskIdentity == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "PSK has no identity, or identity was already used");
                 }
@@ -701,7 +699,7 @@ final class PreSharedKeyExtension {
                 chc.sslContext.engineGetClientSessionContext();
             sessionCache.remove(chc.resumingSession.getSessionId(), true);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Found resumable session. Preparing PSK message.");
                 SSLLogger.fine(
@@ -717,21 +715,25 @@ final class PreSharedKeyExtension {
 
             SecretKey binderKey =
                     deriveBinderKey(chc, psk, chc.resumingSession);
-            ClientHelloMessage clientHello = (ClientHelloMessage)message;
-            CHPreSharedKeySpec pskPrototype = createPskPrototype(
-                chc.resumingSession.getSuite().hashAlg.hashLength, identities);
-            HandshakeHash pskBinderHash = chc.handshakeHash.copy();
+            try {
+                ClientHelloMessage clientHello = (ClientHelloMessage)message;
+                CHPreSharedKeySpec pskPrototype = createPskPrototype(
+                    chc.resumingSession.getSuite().hashAlg.hashLength, identities);
+                HandshakeHash pskBinderHash = chc.handshakeHash.copy();
 
-            byte[] binder = computeBinder(chc, binderKey, pskBinderHash,
-                    chc.resumingSession, chc, clientHello, pskPrototype);
+                byte[] binder = computeBinder(chc, binderKey, pskBinderHash,
+                        chc.resumingSession, chc, clientHello, pskPrototype);
 
-            List<byte[]> binders = new ArrayList<>();
-            binders.add(binder);
+                List<byte[]> binders = new ArrayList<>();
+                binders.add(binder);
 
-            CHPreSharedKeySpec pskMessage =
-                    new CHPreSharedKeySpec(identities, binders);
-            chc.handshakeExtensions.put(CH_PRE_SHARED_KEY, pskMessage);
-            return pskMessage.getEncoded();
+                CHPreSharedKeySpec pskMessage =
+                        new CHPreSharedKeySpec(identities, binders);
+                chc.handshakeExtensions.put(CH_PRE_SHARED_KEY, pskMessage);
+                return pskMessage.getEncoded();
+            } finally {
+                KeyUtil.destroySecretKeys(binderKey);
+            }
         }
 
         private CHPreSharedKeySpec createPskPrototype(
@@ -785,12 +787,13 @@ final class PreSharedKeyExtension {
             SSLSessionImpl session, byte[] digest) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             byte[] label = ("tls13 finished").getBytes();
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     label, new byte[0], hashAlg.hashLength);
-            SecretKey finishedKey = hkdf.expand(
-                    binderKey, hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
+            SecretKey finishedKey = hkdf.deriveKey("TlsBinderKey",
+                    HKDFParameterSpec.expandOnly(binderKey, hkdfInfo,
+                    hashAlg.hashLength));
 
             String hmacAlg =
                 "Hmac" + hashAlg.name.replace("-", "");
@@ -800,6 +803,8 @@ final class PreSharedKeyExtension {
                 return hmac.doFinal(digest);
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
                 throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
+            } finally {
+                KeyUtil.destroySecretKeys(finishedKey);
             }
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
@@ -810,16 +815,16 @@ final class PreSharedKeyExtension {
             SecretKey psk, SSLSessionImpl session) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
             byte[] zeros = new byte[hashAlg.hashLength];
-            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
-
             byte[] label = ("tls13 res binder").getBytes();
             MessageDigest md = MessageDigest.getInstance(hashAlg.name);
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     label, md.digest(new byte[0]), hashAlg.hashLength);
-            return hkdf.expand(earlySecret,
-                    hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+            HKDFParameterSpec spec = HKDFParameterSpec.ofExtract()
+                    .addSalt(zeros).addIKM(psk)
+                    .thenExpand(hkdfInfo, hashAlg.hashLength);
+            return hkdf.deriveKey("TlsBinderKey", spec);
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
         }
@@ -831,7 +836,7 @@ final class PreSharedKeyExtension {
         public void absent(ConnectionContext context,
                            HandshakeMessage message) throws IOException {
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                 "Handling pre_shared_key absence.");
             }
@@ -896,7 +901,7 @@ final class PreSharedKeyExtension {
             }
 
             SHPreSharedKeySpec shPsk = new SHPreSharedKeySpec(chc, buffer);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Received pre_shared_key extension: ", shPsk);
             }
@@ -906,7 +911,7 @@ final class PreSharedKeyExtension {
                     "Selected identity index is not in correct range.");
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Resuming session: ", chc.resumingSession);
             }
@@ -920,7 +925,7 @@ final class PreSharedKeyExtension {
                 HandshakeMessage message) throws IOException {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Handling pre_shared_key absence.");
             }
 

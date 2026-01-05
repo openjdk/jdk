@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -140,7 +140,7 @@ class RelAddr {
       return 0;  // Yet unknown branch destination.
     } else {
       guarantee(is_in_range_of_RelAddr(target, pc, shortForm),
-                "target not within reach at " INTPTR_FORMAT ", distance = " INTX_FORMAT, p2i(pc), (target - pc) );
+                "target not within reach at " INTPTR_FORMAT ", distance = %zd", p2i(pc), (target - pc) );
       return (int)((target - pc)>>1);
     }
   }

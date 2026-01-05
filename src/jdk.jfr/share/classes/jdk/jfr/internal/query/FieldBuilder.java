@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,9 +353,10 @@ final class FieldBuilder {
                 var subFields = we.field().getFields().reversed();
                 if (!subFields.isEmpty() && !KNOWN_TYPES.contains(we.field().getTypeName())) {
                     for (ValueDescriptor subField : subFields) {
-                        String n = we.name + "." + subField.getName();
-                        String l = we.label + " : " + makeLabel(subField, false);
-                        if (stack.size() < 2) { // Limit depth to 2
+                        // Limit depth to 2
+                        if (!we.name.contains(".")) {
+                            String n = we.name + "." + subField.getName();
+                            String l = we.label + " : " + makeLabel(subField, false);
                             stack.push(new WildcardElement(n, l, subField));
                         }
                     }
@@ -369,7 +370,6 @@ final class FieldBuilder {
             FieldBuilder fb = new FieldBuilder(eventTypes, type, we.name());
             Field field = fb.build().getFirst();
             field.label = we.label;
-            field.index = result.size();
             field.visible = true;
             field.sourceFields.add(field);
             result.add(field);

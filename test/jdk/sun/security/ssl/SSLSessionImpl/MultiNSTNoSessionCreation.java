@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  * @run main/othervm MultiNSTNoSessionCreation -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.newSessionTicketCount=0
  */
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -51,8 +50,8 @@ public class MultiNSTNoSessionCreation {
             StringBuilder sb = new StringBuilder();
             Arrays.stream(args).forEach(a -> sb.append(a).append(" "));
             String params = sb.toString();
-            System.setProperty("test.java.opts",
-                "-Dtest.src=" + System.getProperty("test.src") +
+            System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
+                " -Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
                     " -Djavax.net.debug=ssl,handshake " + params);
@@ -61,7 +60,7 @@ public class MultiNSTNoSessionCreation {
                 System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTNoSessionCreation", "p"));
+                    "MultiNSTNoSessionCreation", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {
@@ -76,8 +75,8 @@ public class MultiNSTNoSessionCreation {
         }
 
         TLSBase.Server server = new TLSBase.Server();
-
-        System.out.println("------  Initial connection");
+        server.serverLatch.await();
+        System.out.println("------  Server ready, starting initial client.");
         TLSBase.Client initial = new TLSBase.Client();
         initial.connect();
         System.out.println(

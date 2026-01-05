@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,21 @@
  */
 
 
-import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import java.math.*;
+import jtreg.SkippedException;
 
-import java.util.*;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Provider;
+import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import java.util.Arrays;
 
 public class TestGCMKeyAndIvCheck extends PKCS11Test {
 
@@ -77,9 +85,8 @@ public class TestGCMKeyAndIvCheck extends PKCS11Test {
             String transformation = "AES/" + mode + "/NoPadding";
             c = Cipher.getInstance(transformation, p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Skip testing " + p.getName() +
-                    ", no support for " + mode);
-            return;
+            throw new SkippedException("Skip testing " + p.getName() +
+                                       ", no support for " + mode);
         }
         System.out.println("Testing against " + p.getName());
         SecretKey key = new SecretKeySpec(new byte[16], "AES");

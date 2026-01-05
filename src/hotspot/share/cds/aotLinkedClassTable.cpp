@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotLinkedClassTable.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "oops/array.hpp"
 
-AOTLinkedClassTable AOTLinkedClassTable::_for_static_archive;
-AOTLinkedClassTable AOTLinkedClassTable::_for_dynamic_archive;
+AOTLinkedClassTable AOTLinkedClassTable::_instance;
 
 void AOTLinkedClassTable::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_boot);
+  soc->do_ptr((void**)&_boot1);
   soc->do_ptr((void**)&_boot2);
   soc->do_ptr((void**)&_platform);
   soc->do_ptr((void**)&_app);

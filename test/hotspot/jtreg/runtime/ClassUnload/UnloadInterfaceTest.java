@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import jdk.test.whitebox.WhiteBox;
 import test.Interface;
 import java.lang.ClassLoader;
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Test that verifies that class unloaded removes the implementor from its the interface that it implements
@@ -86,8 +88,11 @@ public class UnloadInterfaceTest {
         ClassUnloadCommon.failIf(!wb.isClassAlive(interfaceName), "should be live here");
 
         cl = null; c = null; o = null;
-        ClassUnloadCommon.triggerUnloading();
-        ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
+
+        // Now unload className. This calls triggerUnloading but we only pass the class we expect to be unloaded
+        // otherwise the test will take too long.
+        Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
+        ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should be unloaded: " + aliveClasses);
         ClassUnloadCommon.failIf(!wb.isClassAlive(interfaceName), "should be live here");
         System.out.println("We still have Interface referenced" + ic);
     }

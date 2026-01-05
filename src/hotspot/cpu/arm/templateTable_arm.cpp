@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -539,7 +538,7 @@ void TemplateTable::condy_helper(Label& Done)
 
   __ mov(rtmp, (int) bytecode());
   __ call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rtmp);
-  __ get_vm_result_2(flags, rtmp);
+  __ get_vm_result_metadata(flags, rtmp);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -4144,8 +4143,7 @@ void TemplateTable::checkcast() {
 
   __ push(atos);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(Rsuper, Robj);
+  __ get_vm_result_metadata(Rsuper, Robj);
   __ pop_ptr(Robj);
   __ b(resolved);
 
@@ -4215,8 +4213,7 @@ void TemplateTable::instanceof() {
 
   __ push(atos);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(Rsuper, Robj);
+  __ get_vm_result_metadata(Rsuper, Robj);
   __ pop_ptr(Robj);
   __ b(resolved);
 

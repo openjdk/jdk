@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,22 +346,6 @@ public class Method extends Metadata {
     new SignatureConverter(getSignature(), buf).iterateParameters();
     buf.append(")");
     return buf.toString().replace('/', '.');
-  }
-
-  public void dumpReplayData(PrintStream out) {
-      NMethod nm = getNativeMethod();
-      int code_size = 0;
-      if (nm != null) {
-        code_size = (int)nm.codeEnd().minus(nm.getVerifiedEntryPoint());
-      }
-      Klass holder = getMethodHolder();
-      out.println("ciMethod " +
-                  nameAsAscii() + " " +
-                  getInvocationCount() + " " +
-                  getBackedgeCount() + " " +
-                  interpreterInvocationCount() + " " +
-                  interpreterThrowoutCount() + " " +
-                  code_size);
   }
 
   public int interpreterThrowoutCount() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,12 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 
-public class AquaPopupMenuUI extends BasicPopupMenuUI {
+public final class AquaPopupMenuUI extends BasicPopupMenuUI {
     public static ComponentUI createUI(final JComponent x) {
         return new AquaPopupMenuUI();
     }
 
+    @Override
     public boolean isPopupTrigger(final MouseEvent e) {
         // Use the awt popup trigger code since this only runs on our OS!
         return e.isPopupTrigger();

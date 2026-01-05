@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -34,6 +33,28 @@
 
 #define __ masm->
 
+void CardTableBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                      Register src, Register dst, Register count, RegSet saved_regs) {
+  if (is_oop) {
+    gen_write_ref_array_pre_barrier(masm, decorators, dst, count, saved_regs);
+  }
+}
+
+void CardTableBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                      Register start, Register count, Register tmp) {
+  if (is_oop) {
+    gen_write_ref_array_post_barrier(masm, decorators, start, count, tmp);
+  }
+}
+
+void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                            Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  if (is_reference_type(type)) {
+    oop_store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  }
+}
 
 void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register tmp) {
   assert_different_registers(obj, tmp);
@@ -59,7 +80,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 }
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                                                    Register start, Register count, Register tmp, RegSet saved_regs) {
+                                                                    Register start, Register count, Register tmp) {
   assert_different_registers(start, tmp);
   assert_different_registers(count, tmp);
 
@@ -69,7 +90,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ beqz(count, L_done); // zero count - nothing to do
   // end = start + count << LogBytesPerHeapOop
   __ shadd(end, count, start, count, LogBytesPerHeapOop);
-  __ sub(end, end, BytesPerHeapOop); // last element address to make inclusive
+  __ subi(end, end, BytesPerHeapOop); // last element address to make inclusive
 
   __ srli(start, start, CardTable::card_shift());
   __ srli(end, end, CardTable::card_shift());
@@ -81,7 +102,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ bind(L_loop);
   __ add(tmp, start, count);
   __ sb(zr, Address(tmp));
-  __ sub(count, count, 1);
+  __ subi(count, count, 1);
   __ bgez(count, L_loop);
   __ bind(L_done);
 }

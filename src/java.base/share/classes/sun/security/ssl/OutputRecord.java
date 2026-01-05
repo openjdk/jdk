@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
+
+import jdk.internal.net.quic.QuicTLSEngine;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 
 /**
@@ -154,6 +156,16 @@ abstract class OutputRecord
         throw new UnsupportedOperationException();
     }
 
+    // apply to QuicEngine only
+    byte[] getHandshakeMessage() {
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to QuicEngine only
+    QuicTLSEngine.KeySpace getHandshakeMessageKeySpace() {
+        throw new UnsupportedOperationException();
+    }
+
     // apply to SSLEngine only
     void encodeV2NoCipher() throws IOException {
         throw new UnsupportedOperationException();
@@ -176,7 +188,7 @@ abstract class OutputRecord
         recordLock.lock();
         try {
             if (isClosed()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                     SSLLogger.warning("outbound has closed, ignore outbound " +
                         "change_cipher_spec message");
                 }
@@ -210,7 +222,7 @@ abstract class OutputRecord
         recordLock.lock();
         try {
             if (isClosed()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                     SSLLogger.warning("outbound has closed, ignore outbound " +
                         "key_update handshake message");
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,14 +51,16 @@ final class PlainTunnelingConnection extends HttpConnection {
     final InetSocketAddress proxyAddr;
     private volatile boolean connected;
 
-    protected PlainTunnelingConnection(InetSocketAddress addr,
+    protected PlainTunnelingConnection(Origin originServer,
+                                       InetSocketAddress addr,
                                        InetSocketAddress proxy,
                                        HttpClientImpl client,
-                                       ProxyHeaders proxyHeaders) {
-        super(addr, client);
+                                       ProxyHeaders proxyHeaders,
+                                       String label) {
+        super(originServer, addr, client, label);
         this.proxyAddr = proxy;
         this.proxyHeaders = proxyHeaders;
-        delegate = new PlainHttpConnection(proxy, client);
+        delegate = new PlainHttpConnection(originServer, proxy, client, label);
     }
 
     @Override

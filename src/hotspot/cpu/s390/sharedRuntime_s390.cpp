@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/vtableStubs.hpp"
@@ -1765,13 +1764,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for locking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Fast_lock kills r_temp_1, r_temp_2.
-      __ compiler_fast_lock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
-    } else {
-      // Fast_lock kills r_temp_1, r_temp_2.
-      __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
-    }
+    // Fast_lock kills r_temp_1, r_temp_2.
+    __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     //-------------------------------------------------------------------------
@@ -1966,13 +1960,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for unlocking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Fast_unlock kills r_tmp1, r_tmp2.
-      __ compiler_fast_unlock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
-    } else {
-      // Fast_unlock kills r_tmp1, r_tmp2.
-      __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
-    }
+    // Fast_unlock kills r_tmp1, r_tmp2.
+    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     // Slow path for unlocking.
@@ -2140,7 +2129,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   Register  value       = Z_R12;
 
   // Remember the senderSP so we can pop the interpreter arguments off of the stack.
-  // In addition, frame manager expects initial_caller_sp in Z_R10.
+  // In addition, template interpreter expects initial_caller_sp in Z_R10.
   __ z_lgr(sender_SP, Z_SP);
 
   // This should always fit in 14 bit immediate.
@@ -2353,17 +2342,15 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   __ z_br(Z_R1_scratch);
 }
 
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                                            int total_args_passed,
-                                                            int comp_args_on_stack,
-                                                            const BasicType *sig_bt,
-                                                            const VMRegPair *regs,
-                                                            AdapterFingerPrint* fingerprint) {
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
   __ align(CodeEntryAlignment);
-  address i2c_entry = __ pc();
+  entry_address[AdapterBlob::I2C] = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
-
-  address c2i_unverified_entry;
 
   Label skip_fixup;
   {
@@ -2374,7 +2361,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
     // Unverified Entry Point UEP
     __ align(CodeEntryAlignment);
-    c2i_unverified_entry = __ pc();
+    entry_address[AdapterBlob::C2I_Unverified] = __ pc();
 
     __ ic_check(2);
     __ z_lg(Z_method, Address(Z_inline_cache, CompiledICData::speculated_method_offset()));
@@ -2387,15 +2374,15 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // Fallthru to VEP. Duplicate LTG, but saved taken branch.
   }
 
-  address c2i_entry = __ pc();
+  entry_address[AdapterBlob::C2I] = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = nullptr;
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
   if (VM_Version::supports_fast_class_init_checks()) {
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ testbit(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
+      __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
       __ z_bfalse(L_skip_barrier); // non-static
     }
 
@@ -2407,12 +2394,11 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     __ z_br(klass);
 
     __ bind(L_skip_barrier);
-    c2i_no_clinit_check_entry = __ pc();
+    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
   }
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
-
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  return;
 }
 
 // This function returns the adjust size (in number of words) to a c2i adapter
@@ -2544,7 +2530,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -2558,14 +2544,10 @@ void SharedRuntime::generate_deopt_blob() {
   // Normal entry (non-exception case)
   //
   // We have been called from the deopt handler of the deoptee.
-  // Z_R14 points behind the call in the deopt handler. We adjust
-  // it such that it points to the start of the deopt handler.
+  // Z_R14 points to the entry point of the deopt handler.
   // The return_pc has been stored in the frame of the deoptee and
   // will replace the address of the deopt_handler in the call
   // to Deoptimization::fetch_unroll_info below.
-  // The (int) cast is necessary, because -((unsigned int)14)
-  // is an unsigned int.
-  __ add2reg(Z_R14, -(int)NativeCall::max_instruction_size());
 
   const Register   exec_mode_reg = Z_tmp_1;
 
@@ -2763,11 +2745,15 @@ void SharedRuntime::generate_deopt_blob() {
 
 #ifdef COMPILER2
 //------------------------------generate_uncommon_trap_blob--------------------
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
+  CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
 
   Register unroll_block_reg = Z_tmp_1;
@@ -2882,7 +2868,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   __ z_br(Z_R14);
 
   masm->flush();
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
+  return UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
 }
 #endif // COMPILER2
 
@@ -2891,7 +2877,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 //
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
   assert(is_polling_page_id(id), "expected a polling page stub id");
@@ -2909,13 +2895,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   address call_pc = nullptr;
   int frame_size_in_bytes;
 
-  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == StubId::shared_polling_page_return_handler_id);
   // Make room for return address (or push it again)
   if (!cause_return) {
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
   }
 
-  bool save_vectors = (id == SharedStubId::polling_page_vectors_safepoint_handler_id);
+  bool save_vectors = (id == StubId::shared_polling_page_vectors_safepoint_handler_id);
   // Save registers, fpu state, and flags
   map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, save_vectors);
 
@@ -2995,7 +2981,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_resolve_id(id), "expected a resolve stub id");
 
@@ -3043,7 +3029,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
 
   // get the returned method
-  __ get_vm_result_2(Z_method);
+  __ get_vm_result_metadata(Z_method);
 
   // We are back to the original state on entry and ready to go.
   __ z_br(Z_R1_scratch);
@@ -3057,7 +3043,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // exception pending => remove activation and forward to exception handler
 
   __ z_lgr(Z_R2, Z_R0); // pending_exception
-  __ clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(jlong));
+  __ clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(jlong));
   __ load_const_optimized(Z_R1_scratch, StubRoutines::forward_exception_entry());
   __ z_br(Z_R1_scratch);
 
@@ -3094,7 +3080,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
   const char* name = SharedRuntime::stub_name(id);

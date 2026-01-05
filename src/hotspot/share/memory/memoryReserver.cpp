@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/memoryReserver.hpp"
 #include "oops/compressedOops.hpp"
@@ -66,11 +64,9 @@ static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
     // Compressed oops logging.
     log_debug(gc, heap, coops)("Reserve regular memory without large pages");
     // JVM style warning that we did not succeed in using large pages.
-    char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory using large pages. "
-                                   "req_addr: " PTR_FORMAT " bytes: " SIZE_FORMAT,
-                                   req_addr, bytes);
-    warning("%s", msg);
+    warning("Failed to reserve and commit memory using large pages. "
+            "req_addr: " PTR_FORMAT " bytes: %zu",
+            p2i(req_addr), bytes);
   }
 }
 
@@ -89,15 +85,15 @@ static char* reserve_memory_inner(char* requested_address,
   // important.  If the reservation fails, return null.
   if (requested_address != nullptr) {
     assert(is_aligned(requested_address, alignment),
-           "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
+           "Requested address " PTR_FORMAT " must be aligned to %zu",
            p2i(requested_address), alignment);
-    return os::attempt_reserve_memory_at(requested_address, size, exec, mem_tag);
+    return os::attempt_reserve_memory_at(requested_address, size, mem_tag, exec);
   }
 
   // Optimistically assume that the OS returns an aligned base pointer.
   // When reserving a large address range, most OSes seem to align to at
   // least 64K.
-  char* base = os::reserve_memory(size, exec, mem_tag);
+  char* base = os::reserve_memory(size, mem_tag, exec);
   if (is_aligned(base, alignment)) {
     return base;
   }
@@ -108,18 +104,19 @@ static char* reserve_memory_inner(char* requested_address,
   }
 
   // Map using the requested alignment.
-  return os::reserve_memory_aligned(size, alignment, exec);
+  return os::reserve_memory_aligned(size, alignment, mem_tag, exec);
 }
 
 ReservedSpace MemoryReserver::reserve_memory(char* requested_address,
                                              size_t size,
                                              size_t alignment,
+                                             size_t page_size,
                                              bool exec,
                                              MemTag mem_tag) {
   char* base = reserve_memory_inner(requested_address, size, alignment, exec, mem_tag);
 
   if (base != nullptr) {
-    return ReservedSpace(base, size, alignment, os::vm_page_size(), exec, false /* special */);
+    return ReservedSpace(base, size, alignment, page_size, exec, false /* special */);
   }
 
   // Failed
@@ -131,17 +128,16 @@ ReservedSpace MemoryReserver::reserve_memory_special(char* requested_address,
                                                      size_t alignment,
                                                      size_t page_size,
                                                      bool exec) {
-  log_trace(pagesize)("Attempt special mapping: size: " SIZE_FORMAT "%s, "
-                      "alignment: " SIZE_FORMAT "%s",
-                      byte_size_in_exact_unit(size), exact_unit_for_byte_size(size),
-                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+  log_trace(pagesize)("Attempt special mapping: size: " EXACTFMT ", alignment: " EXACTFMT,
+                      EXACTFMTARGS(size),
+                      EXACTFMTARGS(alignment));
 
   char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, exec);
 
   if (base != nullptr) {
     assert(is_aligned(base, alignment),
            "reserve_memory_special() returned an unaligned address, "
-           "base: " PTR_FORMAT " alignment: " SIZE_FORMAT_X,
+           "base: " PTR_FORMAT " alignment: 0x%zx",
            p2i(base), alignment);
 
     return ReservedSpace(base, size, alignment, page_size, exec, true /* special */);
@@ -193,7 +189,7 @@ ReservedSpace MemoryReserver::reserve(char* requested_address,
   }
 
   // == Case 3 ==
-  return reserve_memory(requested_address, size, alignment, executable, mem_tag);
+  return reserve_memory(requested_address, size, alignment, page_size, executable, mem_tag);
 }
 
 ReservedSpace MemoryReserver::reserve(char* requested_address,
@@ -255,7 +251,7 @@ static char* map_memory_to_file(char* requested_address,
   // important.  If the reservation fails, return null.
   if (requested_address != nullptr) {
     assert(is_aligned(requested_address, alignment),
-           "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
+           "Requested address " PTR_FORMAT " must be aligned to %zu",
            p2i(requested_address), alignment);
     return os::attempt_map_memory_to_file_at(requested_address, size, fd, mem_tag);
   }
@@ -263,7 +259,7 @@ static char* map_memory_to_file(char* requested_address,
   // Optimistically assume that the OS returns an aligned base pointer.
   // When reserving a large address range, most OSes seem to align to at
   // least 64K.
-  char* base = os::map_memory_to_file(size, fd);
+  char* base = os::map_memory_to_file(size, fd, mem_tag);
   if (is_aligned(base, alignment)) {
     return base;
   }
@@ -401,7 +397,7 @@ ReservedSpace HeapReserver::Instance::try_reserve_memory(size_t size,
                                                          char* requested_address) {
   // Try to reserve the memory for the heap.
   log_trace(gc, heap, coops)("Trying to allocate at address " PTR_FORMAT
-                             " heap of size " SIZE_FORMAT_X,
+                             " heap of size 0x%zx",
                              p2i(requested_address),
                              size);
 
@@ -426,24 +422,22 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
                                                         size_t size,
                                                         size_t alignment,
                                                         size_t page_size) {
-  const size_t attach_range = highest_start - lowest_start;
-  // Cap num_attempts at possible number.
-  // At least one is possible even for 0 sized attach range.
-  const uint64_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
-  const uint64_t num_attempts_to_try   = MIN2((uint64_t)HeapSearchSteps, num_attempts_possible);
+  assert(is_aligned(highest_start, attach_point_alignment), "precondition");
+  assert(is_aligned(lowest_start, attach_point_alignment), "precondition");
 
-  const size_t stepsize = (attach_range == 0) ? // Only one try.
-    (size_t) highest_start : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
+  const size_t attach_range = pointer_delta(highest_start, lowest_start, sizeof(char));
+  const size_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
+  const size_t num_attempts_to_try   = MIN2((size_t)HeapSearchSteps, num_attempts_possible);
+  const size_t num_intervals = num_attempts_to_try - 1;
+  const size_t stepsize = num_intervals == 0 ? 0 : align_down(attach_range / num_intervals, attach_point_alignment);
 
-  // Try attach points from top to bottom.
-  for (char* attach_point = highest_start;
-       attach_point >= lowest_start && attach_point <= highest_start;  // Avoid wrap around.
-       attach_point -= stepsize) {
+  for (size_t i = 0; i < num_attempts_to_try; ++i) {
+    char* const attach_point = highest_start - stepsize * i;
     ReservedSpace reserved = try_reserve_memory(size, alignment, page_size, attach_point);
 
     if (reserved.is_reserved()) {
       if (reserved.base() >= aligned_heap_base_min_address &&
-          size <= (uintptr_t)(upper_bound - reserved.base())) {
+          size <= (size_t)(upper_bound - reserved.base())) {
         // Got a successful reservation.
         return reserved;
       }
@@ -516,7 +510,7 @@ static ReservedSpace establish_noaccess_prefix(const ReservedSpace& reserved, si
         fatal("cannot protect protection page");
       }
       log_debug(gc, heap, coops)("Protected page at the reserved heap base: "
-                                 PTR_FORMAT " / " INTX_FORMAT " bytes",
+                                 PTR_FORMAT " / %zd bytes",
                                  p2i(reserved.base()),
                                  noaccess_prefix);
       assert(CompressedOops::use_implicit_null_checks() == true, "not initialized?");
@@ -552,16 +546,16 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
 
   const size_t attach_point_alignment = lcm(alignment, os_attach_point_alignment);
 
-  char* aligned_heap_base_min_address = align_up((char*)HeapBaseMinAddress, alignment);
-  size_t noaccess_prefix = ((aligned_heap_base_min_address + size) > (char*)OopEncodingHeapMax) ?
+  uintptr_t aligned_heap_base_min_address = align_up(MAX2(HeapBaseMinAddress, alignment), alignment);
+  size_t noaccess_prefix = ((aligned_heap_base_min_address + size) > OopEncodingHeapMax) ?
     noaccess_prefix_size : 0;
 
   ReservedSpace reserved{};
 
   // Attempt to alloc at user-given address.
   if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
-    reserved = try_reserve_memory(size + noaccess_prefix, alignment, page_size, aligned_heap_base_min_address);
-    if (reserved.base() != aligned_heap_base_min_address) { // Enforce this exact address.
+    reserved = try_reserve_memory(size + noaccess_prefix, alignment, page_size, (char*)aligned_heap_base_min_address);
+    if (reserved.base() != (char*)aligned_heap_base_min_address) { // Enforce this exact address.
       release(reserved);
       reserved = {};
     }
@@ -581,38 +575,41 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
 
     // Attempt to allocate so that we can run without base and scale (32-Bit unscaled compressed oops).
     // Give it several tries from top of range to bottom.
-    if (aligned_heap_base_min_address + size <= (char *)UnscaledOopHeapMax) {
+    if (aligned_heap_base_min_address + size <= UnscaledOopHeapMax) {
 
       // Calc address range within we try to attach (range of possible start addresses).
-      char* const highest_start = align_down((char *)UnscaledOopHeapMax - size, attach_point_alignment);
-      char* const lowest_start  = align_up(aligned_heap_base_min_address, attach_point_alignment);
-      reserved = try_reserve_range(highest_start, lowest_start, attach_point_alignment,
-                                   aligned_heap_base_min_address, (char *)UnscaledOopHeapMax, size, alignment, page_size);
+      uintptr_t const highest_start = align_down(UnscaledOopHeapMax - size, attach_point_alignment);
+      uintptr_t const lowest_start  = align_up(aligned_heap_base_min_address, attach_point_alignment);
+      assert(lowest_start <= highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT ,
+                                          lowest_start, highest_start);
+      reserved = try_reserve_range((char*)highest_start, (char*)lowest_start, attach_point_alignment,
+                                   (char*)aligned_heap_base_min_address, (char*)UnscaledOopHeapMax, size, alignment, page_size);
     }
 
     // zerobased: Attempt to allocate in the lower 32G.
-    char *zerobased_max = (char *)OopEncodingHeapMax;
+    const uintptr_t zerobased_max = OopEncodingHeapMax;
 
     // Give it several tries from top of range to bottom.
     if (aligned_heap_base_min_address + size <= zerobased_max && // Zerobased theoretical possible.
         ((!reserved.is_reserved()) ||                            // No previous try succeeded.
-         (reserved.end() > zerobased_max))) {                    // Unscaled delivered an arbitrary address.
+         (reserved.end() > (char*)zerobased_max))) {             // Unscaled delivered an arbitrary address.
 
       // Release previous reservation
       release(reserved);
 
       // Calc address range within we try to attach (range of possible start addresses).
-      char *const highest_start = align_down(zerobased_max - size, attach_point_alignment);
+      uintptr_t const highest_start = align_down(zerobased_max - size, attach_point_alignment);
       // Need to be careful about size being guaranteed to be less
       // than UnscaledOopHeapMax due to type constraints.
-      char *lowest_start = aligned_heap_base_min_address;
-      uint64_t unscaled_end = UnscaledOopHeapMax - size;
-      if (unscaled_end < UnscaledOopHeapMax) { // unscaled_end wrapped if size is large
-        lowest_start = MAX2(lowest_start, (char*)unscaled_end);
+      uintptr_t lowest_start = aligned_heap_base_min_address;
+      if (size < UnscaledOopHeapMax) {
+        lowest_start = MAX2<uintptr_t>(lowest_start, UnscaledOopHeapMax - size);
       }
       lowest_start = align_up(lowest_start, attach_point_alignment);
-      reserved = try_reserve_range(highest_start, lowest_start, attach_point_alignment,
-                                   aligned_heap_base_min_address, zerobased_max, size, alignment, page_size);
+      assert(lowest_start <= highest_start, "lowest: " INTPTR_FORMAT " highest: " INTPTR_FORMAT,
+                                          lowest_start, highest_start);
+      reserved = try_reserve_range((char*)highest_start, (char*)lowest_start, attach_point_alignment,
+                                   (char*)aligned_heap_base_min_address, (char*)zerobased_max, size, alignment, page_size);
     }
 
     // Now we go for heaps with base != 0.  We need a noaccess prefix to efficiently
@@ -622,24 +619,24 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
     // Try to attach at addresses that are aligned to OopEncodingHeapMax. Disjointbase mode.
     char** addresses = get_attach_addresses_for_disjoint_mode();
     int i = 0;
-    while ((addresses[i] != nullptr) &&       // End of array not yet reached.
-           ((!reserved.is_reserved()) ||      // No previous try succeeded.
-           (reserved.end() > zerobased_max && // Not zerobased or unscaled address.
-                                              // Not disjoint address.
+    while ((addresses[i] != nullptr) &&              // End of array not yet reached.
+           ((!reserved.is_reserved()) ||             // No previous try succeeded.
+           (reserved.end() > (char*)zerobased_max && // Not zerobased or unscaled address.
+                                                     // Not disjoint address.
             !CompressedOops::is_disjoint_heap_base_address((address)reserved.base())))) {
 
       // Release previous reservation
       release(reserved);
 
       char* const attach_point = addresses[i];
-      assert(attach_point >= aligned_heap_base_min_address, "Flag support broken");
+      assert((uintptr_t)attach_point >= aligned_heap_base_min_address, "Flag support broken");
       reserved = try_reserve_memory(size + noaccess_prefix, alignment, page_size, attach_point);
       i++;
     }
 
     // Last, desperate try without any placement.
     if (!reserved.is_reserved()) {
-      log_trace(gc, heap, coops)("Trying to allocate at address null heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
+      log_trace(gc, heap, coops)("Trying to allocate at address null heap of size 0x%zx", size + noaccess_prefix);
       assert(alignment >= os::vm_page_size(), "Unexpected");
       reserved = reserve_memory(size + noaccess_prefix, alignment, page_size);
     }

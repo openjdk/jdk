@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,10 @@
 
 package jdk.test.lib;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Objects;
@@ -608,6 +612,28 @@ public class Asserts {
     }
 
     /**
+     * Asserts that contents of two files are equal.
+     *
+     * @param f1 The path of the first file to compare
+     * @param f2 The path of the second file to compare
+     * @throws RuntimeException on mismatch or I/O failure
+     */
+    public static void assertFileContentsEqual(Path f1, Path f2) {
+        long mismatchIndex = 0;
+        try {
+            mismatchIndex = Files.mismatch(f1, f2);
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+        if (mismatchIndex >= 0) {
+            String message = String.format(
+                    "Contents of files '%s' and '%s' mismatch at index %d",
+                    f1, f2, mismatchIndex);
+            fail(message);
+        }
+    }
+
+    /**
      * A functional interface for executing tests in assertThrownException
      */
     @FunctionalInterface
@@ -638,7 +664,7 @@ public class Asserts {
             testMethod.execute();
         } catch (Throwable exc) {
             if (expected.isInstance(exc)) {
-                return (T) exc;
+                return expected.cast(exc);
             } else {
                 fail(Objects.toString(msg, "An unexpected exception was thrown.")
                         + " Expected " + expected.getName(), exc);

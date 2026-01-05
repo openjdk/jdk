@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @key headful
  * @bug 4865918
+ * @key headful
  * @summary REGRESSION:JCK1.4a-runtime api/javax_swing/interactive/JScrollBarTests.html#JScrollBar
  * @run main bug4865918
  */
@@ -43,8 +43,8 @@ import java.util.Date;
 
 public class bug4865918 {
 
-    private static TestScrollBar sbar;
     private static JFrame frame;
+    private static TestScrollBar sbar;
     private static final CountDownLatch mousePressLatch = new CountDownLatch(1);
 
     public static void main(String[] argv) throws Exception {
@@ -60,14 +60,16 @@ public class bug4865918 {
                 throw new RuntimeException("Timed out waiting for mouse press");
             }
 
-            robot.waitForIdle();
-            robot.delay(200);
-
             if (getValue() != 9) {
-                throw new RuntimeException("The scrollbar block increment is incorrect");
+                throw new RuntimeException("The scrollbar block increment " +
+                                            getValue() + " is incorrect");
             }
         } finally {
-            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -78,13 +80,12 @@ public class bug4865918 {
             result[0] = sbar.getValue();
         });
 
+        System.out.println("value " + result[0]);
         return result[0];
     }
 
     private static void createAndShowGUI() {
         frame = new JFrame("bug4865918");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
         sbar = new TestScrollBar(JScrollBar.HORIZONTAL, -1, 10, -100, 100);
         sbar.setPreferredSize(new Dimension(200, 20));
         sbar.setBlockIncrement(10);
@@ -93,7 +94,6 @@ public class bug4865918 {
                 mousePressLatch.countDown();
             }
         });
-
         frame.getContentPane().add(sbar);
         frame.pack();
         frame.setLocationRelativeTo(null);

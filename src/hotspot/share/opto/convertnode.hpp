@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,6 @@ class ConvD2INode : public ConvertNode {
   virtual const Type* in_type() const { return Type::DOUBLE; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvD2LNode------------------------------------
@@ -91,7 +90,6 @@ class ConvD2LNode : public ConvertNode {
   virtual const Type* in_type() const { return Type::DOUBLE; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvF2DNode------------------------------------
@@ -112,6 +110,7 @@ class ConvF2HFNode : public ConvertNode {
   virtual int Opcode() const;
   virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvF2INode------------------------------------
@@ -123,7 +122,6 @@ public:
   virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvF2LNode------------------------------------
@@ -135,7 +133,6 @@ public:
   virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvHF2FNode------------------------------------
@@ -213,6 +210,30 @@ class ConvL2INode : public ConvertNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+
+//-----------------------------ReinterpretS2HFNode ---------------------------
+// Reinterpret Short to Half Float
+class ReinterpretS2HFNode : public Node {
+  public:
+  ReinterpretS2HFNode(Node* in1) : Node(nullptr, in1) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual uint  ideal_reg() const { return Op_RegF; }
+};
+
+//-----------------------------ReinterpretS2HFNode ---------------------------
+// Reinterpret Half Float to Short
+class ReinterpretHF2SNode : public Node {
+  public:
+  ReinterpretHF2SNode(Node* in1) : Node(nullptr, in1) {}
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::SHORT; }
+  virtual uint  ideal_reg() const { return Op_RegI; }
+};
+
 class RoundDNode : public Node {
 public:
   RoundDNode(Node* in1) : Node(nullptr, in1) {}
@@ -229,28 +250,6 @@ public:
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
-//-----------------------------RoundFloatNode----------------------------------
-class RoundFloatNode: public Node {
-  public:
-  RoundFloatNode(Node* c, Node *in1): Node(c, in1) {}
-  virtual int   Opcode() const;
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
-  virtual uint  ideal_reg() const { return Op_RegF; }
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual const Type* Value(PhaseGVN* phase) const;
-};
-
-
-//-----------------------------RoundDoubleNode---------------------------------
-class RoundDoubleNode: public Node {
-  public:
-  RoundDoubleNode(Node* c, Node *in1): Node(c, in1) {}
-  virtual int   Opcode() const;
-  virtual const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint  ideal_reg() const { return Op_RegD; }
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual const Type* Value(PhaseGVN* phase) const;
-};
 
 //-----------------------------RoundDoubleModeNode-----------------------------
 class RoundDoubleModeNode: public Node {
@@ -269,5 +268,11 @@ class RoundDoubleModeNode: public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
+class Float16NodeFactory {
+  public:
+  static bool is_float32_binary_oper(int opc);
+  static int get_float16_binary_oper(int opc);
+  static Node* make(int opc, Node* c, Node* in1, Node* in2);
+};
 
 #endif // SHARE_OPTO_CONVERTNODE_HPP

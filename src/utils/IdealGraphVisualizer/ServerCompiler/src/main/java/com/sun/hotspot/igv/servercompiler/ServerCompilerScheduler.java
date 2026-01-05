@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,8 @@ public class ServerCompilerScheduler implements Scheduler {
         public boolean isBlockProjection;
         public boolean isBlockStart;
         public boolean isCFG;
+        public boolean isParm;
+        public boolean isProj;
         public int rank; // Rank for local scheduling priority.
 
         // Empty constructor for creating dummy CFG nodes without associated
@@ -79,6 +81,8 @@ public class ServerCompilerScheduler implements Scheduler {
             isBlockProjection = (p != null && p.equals("true"));
             p = n.getProperties().get("is_block_start");
             isBlockStart = (p != null && p.equals("true"));
+            isParm = isParm(this);
+            isProj = isProj(this);
             computeRank();
         }
 
@@ -292,10 +296,25 @@ public class ServerCompilerScheduler implements Scheduler {
         return n.getProperties().get("block");
     }
 
+    private boolean initialize(InputGraph graph) {
+        nodes = new ArrayList<>();
+        inputNodeToNode = new HashMap<>(graph.getNodes().size());
+        this.graph = graph;
+        if (!hasCategoryInformation()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                "Cannot find node category information in the input graph. " +
+                "The control-flow graph will not be approximated.");
+            return false;
+        }
+        buildUpGraph();
+        markCFGNodes();
+        return true;
+    }
+
     @Override
-    public Collection<InputBlock> schedule(InputGraph graph) {
+    public void schedule(InputGraph graph) {
         if (graph.getNodes().isEmpty()) {
-            return Collections.emptyList();
+            return;
         }
 
         if (graph.getBlocks().size() > 0) {
@@ -307,20 +326,11 @@ public class ServerCompilerScheduler implements Scheduler {
                     assert graph.getBlock(n) != null;
                 }
             }
-            return graph.getBlocks();
+            return;
         } else {
-            nodes = new ArrayList<>();
-            inputNodeToNode = new HashMap<>(graph.getNodes().size());
-
-            this.graph = graph;
-            if (!hasCategoryInformation()) {
-                ErrorManager.getDefault().log(ErrorManager.WARNING,
-                    "Cannot find node category information in the input graph. " +
-                    "The control-flow graph will not be approximated.");
-                return null;
+            if (!initialize(graph)) {
+                return;
             }
-            buildUpGraph();
-            markCFGNodes();
             buildBlocks();
             schedulePinned();
             buildDominators();
@@ -329,8 +339,24 @@ public class ServerCompilerScheduler implements Scheduler {
             check();
             reportWarnings();
 
-            return blocks;
+            return;
         }
+    }
+
+    @Override
+    public void scheduleLocally(InputGraph graph) {
+        if (!initialize(graph)) {
+            return;
+        }
+        // Import global schedule from the given graph.
+        blocks = new Vector<>();
+        for (InputBlock block : graph.getBlocks()) {
+            blocks.add(block);
+            for (InputNode in : block.getNodes()) {
+                inputNodeToNode.get(in).block = block;
+            }
+        }
+        scheduleLocal();
     }
 
     private void scheduleLocal() {
@@ -464,7 +490,20 @@ public class ServerCompilerScheduler implements Scheduler {
         Set<Node> unscheduled = new HashSet<>();
         for (Node n : this.nodes) {
             if (n.block == null && reachable.contains(n) && !n.isCFG) {
-                unscheduled.add(n);
+                if (!n.isParm && !n.isProj) {
+                    unscheduled.add(n);
+                } else {
+                    // Schedule Parm and Proj nodes in same block as parent
+                    Node prev = n.preds.get(0);
+                    InputBlock blk = prev.block;
+                    if (blk != null) {
+                        n.block = blk;
+                        blk.addNode(n.inputNode.getId());
+                    } else {
+                        // Fallback in the case parent has no block
+                        unscheduled.add(n);
+                    }
+                }
             }
         }
 
@@ -636,7 +675,9 @@ public class ServerCompilerScheduler implements Scheduler {
     }
 
     private static boolean isProj(Node n) {
-        return hasName(n, "Proj") || hasName(n, "MachProj");
+        return hasName(n, "Proj") ||
+               hasName(n, "MachProj") ||
+               hasName(n, "NarrowMemProj");
     }
 
     private static boolean isParm(Node n) {
@@ -779,12 +820,15 @@ public class ServerCompilerScheduler implements Scheduler {
             if (category.equals("control") || category.equals("mixed")) {
                 // Example: If, IfTrue, CallStaticJava.
                 n.isCFG = true;
-            } else if (n.inputNode.getProperties().get("type").equals("bottom")
-                       && n.preds.size() > 0 &&
+            } else if (n.inputNode.getProperties().get("type").equals("bottom") &&
+                       n.preds.size() > 0 &&
+                       n.succs.size() > 0 &&
+                       n.succs.stream().findFirst().get().inputNode.getProperties().get("name") == "Root" &&
                        n.preds.get(0) != null &&
                        n.preds.get(0).inputNode.getProperties()
                        .get("category").equals("control")) {
                 // Example: Halt, Return, Rethrow.
+                // The root-as-successor check disallows machine nodes such as prefetchAlloc and rep_stos.
                 n.isCFG = true;
             } else if (n.isBlockStart || n.isBlockProjection) {
                 // Example: Root.

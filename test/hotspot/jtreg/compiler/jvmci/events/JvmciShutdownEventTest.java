@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,11 @@ import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
 
 public class JvmciShutdownEventTest {
-    private final static String[] MESSAGE = new String[]{
+    private final static String[] MESSAGE = {
         JvmciShutdownEventListener.MESSAGE
     };
 
-    private final static String[] ERROR_MESSAGE = new String[]{
+    private final static String[] ERROR_MESSAGE = {
         JvmciShutdownEventListener.GOT_INTERNAL_ERROR
     };
 
@@ -68,7 +68,7 @@ public class JvmciShutdownEventTest {
                 "Unexpected output with +EnableJVMCI", ExitCode.OK,
                 addTestVMOptions, "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+EnableJVMCI", "-XX:-UseJVMCICompiler", "-Xbootclasspath/a:.",
-                JvmciShutdownEventListener.class.getName()
+                JvmciShutdownEventListener.Main.class.getName()
         );
 
         CommandLineOptionTest.verifyJVMStartup(ERROR_MESSAGE, MESSAGE,
@@ -76,7 +76,7 @@ public class JvmciShutdownEventTest {
                 "Unexpected output with -EnableJVMCI", ExitCode.OK,
                 addTestVMOptions, "-XX:+UnlockExperimentalVMOptions",
                 "-XX:-EnableJVMCI", "-XX:-UseJVMCICompiler", "-Xbootclasspath/a:.",
-                JvmciShutdownEventListener.class.getName()
+                JvmciShutdownEventListener.Main.class.getName()
         );
     }
 }

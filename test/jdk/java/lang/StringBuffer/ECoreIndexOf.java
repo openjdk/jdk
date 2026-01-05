@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  * @summary Test indexOf and lastIndexOf
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @requires vm.compiler2.enabled
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts -XX:-CheckJNICalls -XX:UseAVX=2 -Xbatch -XX:-TieredCompilation -XX:CompileCommand=dontinline,ECoreIndexOf.indexOfKernel ECoreIndexOf
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts -XX:UseAVX=2 -Xbatch -XX:-TieredCompilation -XX:CompileCommand=dontinline,ECoreIndexOf.indexOfKernel ECoreIndexOf
  * @key randomness
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,10 +194,7 @@ public abstract class OpenType<T> implements Serializable {
         if (this.getClass().getClassLoader() == null)
             return;  // We trust bootstrap classes.
         if (overridesGetClassName(this.getClass())) {
-            if (System.getProperty("jmx.extend.open.types") == null) {
-                throw new SecurityException("Cannot override getClassName() " +
-                        "unless -Djmx.extend.open.types");
-            }
+            throw new SecurityException("Cannot override getClassName()");
         }
     }
 

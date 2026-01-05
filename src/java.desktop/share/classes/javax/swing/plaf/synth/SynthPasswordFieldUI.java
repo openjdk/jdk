@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,20 +107,5 @@ public class SynthPasswordFieldUI extends SynthTextFieldUI {
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintPasswordFieldBorder(context, g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void installKeyboardActions() {
-        super.installKeyboardActions();
-        ActionMap map = SwingUtilities.getUIActionMap(getComponent());
-        if (map != null && map.get(DefaultEditorKit.selectWordAction) != null) {
-            Action a = map.get(DefaultEditorKit.selectLineAction);
-            if (a != null) {
-                map.put(DefaultEditorKit.selectWordAction, a);
-            }
-        }
     }
 }

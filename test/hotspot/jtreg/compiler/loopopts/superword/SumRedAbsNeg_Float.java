@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8138583
  * @summary Add C2 AArch64 Superword support for scalar sum reduction optimizations : float abs & neg test
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.SumRedAbsNeg_Float
+ * @run driver/timeout=480 compiler.loopopts.superword.SumRedAbsNeg_Float
  */
 
 package compiler.loopopts.superword;
@@ -92,6 +92,12 @@ public class SumRedAbsNeg_Float {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VF, IRNode.ABS_VF, IRNode.NEG_VF})
     @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VF, ">= 1",
+                  IRNode.ABS_VF, IRNode.VECTOR_SIZE + "min(LoopMaxUnroll, max_float)", ">= 1",
+                  IRNode.NEG_VF, IRNode.VECTOR_SIZE + "min(LoopMaxUnroll, max_float)", ">= 1"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VF, ">= 1",
                   IRNode.ABS_VF, IRNode.VECTOR_SIZE + "min(LoopMaxUnroll, max_float)", ">= 1",

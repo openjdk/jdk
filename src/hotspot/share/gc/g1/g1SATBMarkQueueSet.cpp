@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
@@ -90,7 +89,7 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
     return false;
   }
 
-  assert(oopDesc::is_oop(cast_to_oop(entry), true /* ignore mark word */),
+  assert(oopDesc::is_oop(cast_to_oop(entry)),
          "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   return true;

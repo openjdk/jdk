@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,9 @@ class ZRelocationSetSelectorStats {
   friend class ZRelocationSetSelector;
 
 private:
-  ZRelocationSetSelectorGroupStats _small[ZPageAgeMax + 1];
-  ZRelocationSetSelectorGroupStats _medium[ZPageAgeMax + 1];
-  ZRelocationSetSelectorGroupStats _large[ZPageAgeMax + 1];
+  ZRelocationSetSelectorGroupStats _small[ZPageAgeCount];
+  ZRelocationSetSelectorGroupStats _medium[ZPageAgeCount];
+  ZRelocationSetSelectorGroupStats _large[ZPageAgeCount];
 
   size_t _has_relocatable_pages;
 
@@ -78,26 +78,33 @@ public:
 
 class ZRelocationSetSelectorGroup {
 private:
+  static constexpr int NumPartitionsShift = 11;
+  static constexpr int NumPartitions = int(1) << NumPartitionsShift;
+
   const char* const                _name;
   const ZPageType                  _page_type;
-  const size_t                     _page_size;
+  const size_t                     _max_page_size;
   const size_t                     _object_size_limit;
   const double                     _fragmentation_limit;
   const size_t                     _page_fragmentation_limit;
   ZArray<ZPage*>                   _live_pages;
   ZArray<ZPage*>                   _not_selected_pages;
   size_t                           _forwarding_entries;
-  ZRelocationSetSelectorGroupStats _stats[ZPageAgeMax + 1];
+  ZRelocationSetSelectorGroupStats _stats[ZPageAgeCount];
 
   bool is_disabled();
   bool is_selectable();
+
+  size_t partition_index(const ZPage* page) const;
   void semi_sort();
   void select_inner();
+
+  bool pre_filter_page(const ZPage* page, size_t live_bytes) const;
 
 public:
   ZRelocationSetSelectorGroup(const char* name,
                               ZPageType page_type,
-                              size_t page_size,
+                              size_t max_page_size,
                               size_t object_size_limit,
                               double fragmentation_limit);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,22 @@
  * @test id=default
  * @summary Test virtual threads doing selection operations
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED SelectorOps
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED SelectorOps
  */
 
 /*
  * @test id=poller-modes
  * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
- * @run junit/othervm -Djdk.pollerMode=1 --enable-native-access=ALL-UNNAMED SelectorOps
- * @run junit/othervm -Djdk.pollerMode=2 --enable-native-access=ALL-UNNAMED SelectorOps
+ * @run junit/othervm/native -Djdk.pollerMode=1 --enable-native-access=ALL-UNNAMED SelectorOps
+ * @run junit/othervm/native -Djdk.pollerMode=2 --enable-native-access=ALL-UNNAMED SelectorOps
  */
 
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @library /test/lib
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
+ * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *     --enable-native-access=ALL-UNNAMED SelectorOps
  */
 
@@ -253,7 +253,7 @@ class SelectorOps {
     }
 
     /**
-     * Test calling select with interrupt status set.
+     * Test calling select with interrupted status set.
      */
     @Test
     public void testInterruptBeforeSelect() throws Exception {
@@ -270,7 +270,7 @@ class SelectorOps {
     }
 
     /**
-     * Test calling select with interrupt status set and thread is pinned.
+     * Test calling select with interrupted status set and thread is pinned.
      */
     @Test
     public void testInterruptBeforeSelectWhenPinned() throws Exception {

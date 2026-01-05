@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -47,7 +46,6 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
 
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
-  // Avoid stack bang as first instruction. It may get overwritten by patch_verified_entry.
   const Register return_pc = R20;
   mflr(return_pc);
 
@@ -84,58 +82,13 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   std(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(Rscratch, Roop);
-    lbz(Rscratch, in_bytes(Klass::misc_flags_offset()), Rscratch);
-    testbitdi(CCR0, R0, Rscratch, exact_log2(KlassFlags::_misc_is_value_based_class));
-    bne(CCR0, slow_int);
-  }
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
-  } else if (LockingMode == LM_LEGACY) {
-    // ... and mark it unlocked.
-    ori(Rmark, Rmark, markWord::unlocked_value);
-
-    // Save unlocked object header into the displaced header location on the stack.
-    std(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
-
-    // Compare object markWord with Rmark and if equal exchange Rscratch with object markWord.
-    assert(oopDesc::mark_offset_in_bytes() == 0, "cas must take a zero displacement");
-    cmpxchgd(/*flag=*/CCR0,
-             /*current_value=*/Rscratch,
-             /*compare_value=*/Rmark,
-             /*exchange_value=*/Rbox,
-             /*where=*/Roop/*+0==mark_offset_in_bytes*/,
-             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-             MacroAssembler::cmpxchgx_hint_acquire_lock(),
-             noreg,
-             &cas_failed,
-             /*check without membar and ldarx first*/true);
-    // If compare/exchange succeeded we found an unlocked object and we now have locked it
-    // hence we are done.
-  } else {
-    assert(false, "Unhandled LockingMode:%d", LockingMode);
-  }
+  fast_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
   b(done);
 
   bind(slow_int);
   b(slow_case); // far
 
-  if (LockingMode == LM_LEGACY) {
-    bind(cas_failed);
-    // We did not find an unlocked object so see if this is a recursive case.
-    sub(Rscratch, Rscratch, R1_SP);
-    load_const_optimized(R0, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-    and_(R0/*==0?*/, Rscratch, R0);
-    std(R0/*==0, perhaps*/, BasicLock::displaced_header_offset_in_bytes(), Rbox);
-    bne(CCR0, slow_int);
-  }
-
   bind(done);
-  if (LockingMode == LM_LEGACY) {
-    inc_held_monitor_count(Rmark /*tmp*/);
-  }
 }
 
 
@@ -147,43 +100,17 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   Address mark_addr(Roop, oopDesc::mark_offset_in_bytes());
   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
 
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // Test first if it is a fast recursive unlock.
-    ld(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
-    cmpdi(CCR0, Rmark, 0);
-    beq(CCR0, done);
-  }
-
   // Load object.
   ld(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
   verify_oop(Roop, FILE_AND_LINE);
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_unlock(Roop, Rmark, slow_int);
-  } else if (LockingMode == LM_LEGACY) {
-    // Check if it is still a light weight lock, this is is true if we see
-    // the stack address of the basicLock in the markWord of the object.
-    cmpxchgd(/*flag=*/CCR0,
-             /*current_value=*/R0,
-             /*compare_value=*/Rbox,
-             /*exchange_value=*/Rmark,
-             /*where=*/Roop,
-             MacroAssembler::MemBarRel,
-             MacroAssembler::cmpxchgx_hint_release_lock(),
-             noreg,
-             &slow_int);
-  } else {
-    assert(false, "Unhandled LockingMode:%d", LockingMode);
-  }
+  fast_unlock(Roop, Rmark, slow_int);
   b(done);
   bind(slow_int);
   b(slow_case); // far
 
   // Done
   bind(done);
-  if (LockingMode == LM_LEGACY) {
-    dec_held_monitor_count(Rmark /*tmp*/);
-  }
 }
 
 
@@ -286,9 +213,9 @@ void C1_MacroAssembler::initialize_object(
   {
     lwz(t1, in_bytes(Klass::layout_helper_offset()), klass);
     if (var_size_in_bytes != noreg) {
-      cmpw(CCR0, t1, var_size_in_bytes);
+      cmpw(CR0, t1, var_size_in_bytes);
     } else {
-      cmpwi(CCR0, t1, con_size_in_bytes);
+      cmpwi(CR0, t1, con_size_in_bytes);
     }
     asm_assert_eq("bad size in initialize_object");
   }
@@ -308,7 +235,7 @@ void C1_MacroAssembler::initialize_object(
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
 //    assert(obj == O0, "must be");
-//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
+//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)),
 //         relocInfo::runtime_call_type);
   }
 
@@ -341,8 +268,8 @@ void C1_MacroAssembler::allocate_array(
     if (max_tlab < max_length) { max_length = max_tlab; }
   }
   load_const_optimized(t1, max_length);
-  cmpld(CCR0, len, t1);
-  bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::greater), slow_case);
+  cmpld(CR0, len, t1);
+  bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CR0, Assembler::greater), slow_case);
 
   // compute array size
   // note: If 0 <= len <= max_length, len*elt_size + header + alignment is
@@ -384,7 +311,7 @@ void C1_MacroAssembler::allocate_array(
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
     //assert(obj == O0, "must be");
-    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
+    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)),
     //     relocInfo::runtime_call_type);
   }
 
@@ -400,8 +327,8 @@ void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
 
 void C1_MacroAssembler::verify_not_null_oop(Register r) {
   Label not_null;
-  cmpdi(CCR0, r, 0);
-  bne(CCR0, not_null);
+  cmpdi(CR0, r, 0);
+  bne(CR0, not_null);
   stop("non-null oop required");
   bind(not_null);
   verify_oop(r, FILE_AND_LINE);
@@ -413,9 +340,9 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
   if (TrapBasedNullChecks) { // SIGTRAP based
     trap_null_check(r);
   } else { // explicit
-    //const address exception_entry = Runtime1::entry_for(C1StubId::throw_null_pointer_exception_id);
+    //const address exception_entry = Runtime1::entry_for(StubId::c1_throw_null_pointer_exception_id);
     assert(Lnull != nullptr, "must have Label for explicit check");
-    cmpdi(CCR0, r, 0);
-    bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::equal), *Lnull);
+    cmpdi(CR0, r, 0);
+    bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CR0, Assembler::equal), *Lnull);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@
 #define SHARE_SERVICES_DIAGNOSTICFRAMEWORK_HPP
 
 #include "classfile/vmSymbols.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ostream.hpp"
-#include <type_traits>
-
 
 enum DCmdSource {
   DCmd_Source_Internal  = 0x01U,  // invocation from the JVM
@@ -118,21 +117,18 @@ protected:
   const char* const _description;    /* Short description */
   const char* const _impact;         /* Impact on the JVM */
   const int         _num_arguments;  /* Number of supported options or arguments */
-  const bool        _is_enabled;     /* True if the diagnostic command can be invoked, false otherwise */
 public:
   DCmdInfo(const char* name,
           const char* description,
           const char* impact,
-          int num_arguments,
-          bool enabled)
+          int num_arguments)
   : _name(name), _description(description), _impact(impact),
-    _num_arguments(num_arguments), _is_enabled(enabled) {}
+    _num_arguments(num_arguments) {}
   const char* name() const          { return _name; }
   bool name_equals(const char* cmd_name) const;
   const char* description() const   { return _description; }
   const char* impact() const        { return _impact; }
   int num_arguments() const         { return _num_arguments; }
-  bool is_enabled() const           { return _is_enabled; }
 };
 
 // A DCmdArgumentInfo instance provides a description of a diagnostic command
@@ -234,8 +230,6 @@ public:
   //  static const char* name()             { return "<command name>";}
   //  static const char* description()      { return "<command help>";}
 
-  static const char* disabled_message() { return "Diagnostic command currently disabled"; }
-
   // The impact() method returns a description of the intrusiveness of the diagnostic
   // command on the Java Virtual Machine behavior. The rational for this method is that some
   // diagnostic commands can seriously disrupt the behavior of the Java Virtual Machine
@@ -277,6 +271,19 @@ public:
     GrowableArray<DCmdArgumentInfo*>* array = new GrowableArray<DCmdArgumentInfo*>(0);
     return array;
   }
+
+  // helper class to invoke the framework
+  class Executor : public StackObj {
+    DCmdSource _source;
+    outputStream* _out;
+  public:
+    Executor(DCmdSource source, outputStream* out): _source(source), _out(out) {}
+
+    void parse_and_execute(const char* cmdline, char delim, TRAPS);
+
+  protected:
+    virtual void execute(DCmd* command, TRAPS);
+  };
 
   // main method to invoke the framework
   static void parse_and_execute(DCmdSource source, outputStream* out, const char* cmdline,
@@ -325,8 +332,7 @@ public:
 };
 
 // Diagnostic commands are not directly instantiated but created with a factory.
-// Each diagnostic command class has its own factory. The DCmdFactory class also
-// manages the status of the diagnostic command (hidden, enabled). A DCmdFactory
+// Each diagnostic command class has its own factory. A DCmdFactory
 // has to be registered to make the diagnostic command available (see
 // management.cpp)
 class DCmdFactory: public CHeapObj<mtInternal> {
@@ -338,10 +344,6 @@ private:
   // Pointer to the next factory in the singly-linked list of registered
   // diagnostic commands
   DCmdFactory*        _next;
-  // When disabled, a diagnostic command cannot be executed. Any attempt to
-  // execute it will result in the printing of the disabled message without
-  // instantiating the command.
-  const bool          _enabled;
   // When hidden, a diagnostic command doesn't appear in the list of commands
   // provided by the 'help' command.
   const bool          _hidden;
@@ -349,10 +351,9 @@ private:
   const int           _num_arguments;
 
 public:
-  DCmdFactory(int num_arguments, uint32_t flags, bool enabled, bool hidden)
-    : _next(nullptr), _enabled(enabled), _hidden(hidden),
+  DCmdFactory(int num_arguments, uint32_t flags, bool hidden)
+    : _next(nullptr), _hidden(hidden),
       _export_flags(flags), _num_arguments(num_arguments) {}
-  bool is_enabled() const       { return _enabled; }
   bool is_hidden() const        { return _hidden; }
   uint32_t export_flags() const { return _export_flags; }
   int num_arguments() const     { return _num_arguments; }
@@ -361,11 +362,8 @@ public:
   virtual const char* name() const = 0;
   virtual const char* description() const = 0;
   virtual const char* impact() const = 0;
-  virtual const char* disabled_message() const = 0;
   // Register a DCmdFactory to make a diagnostic command available.
   // Once registered, a diagnostic command must not be unregistered.
-  // To prevent a diagnostic command from being executed, just set the
-  // enabled flag to false.
   static int register_DCmdFactory(DCmdFactory* factory);
   static DCmdFactory* factory(DCmdSource source, const char* cmd, size_t len);
   // Returns a resourceArea allocated diagnostic command for the given command line
@@ -389,8 +387,8 @@ private:
 // where this template is used to create and register factories.
 template <class DCmdClass> class DCmdFactoryImpl : public DCmdFactory {
 public:
-  DCmdFactoryImpl(uint32_t flags, bool enabled, bool hidden) :
-    DCmdFactory(get_num_arguments<DCmdClass>(), flags, enabled, hidden) { }
+  DCmdFactoryImpl(uint32_t flags, bool hidden = false) :
+    DCmdFactory(get_num_arguments<DCmdClass>(), flags, hidden) { }
   // Returns a resourceArea allocated instance
   DCmd* create_resource_instance(outputStream* output) const {
     return new DCmdClass(output, false);
@@ -403,9 +401,6 @@ public:
   }
   const char* impact() const {
     return DCmdClass::impact();
-  }
-  const char* disabled_message() const {
-     return DCmdClass::disabled_message();
   }
 
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,10 +99,6 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_currentThread();
-  address generate_Float_intBitsToFloat_entry();
-  address generate_Float_floatToRawIntBits_entry();
-  address generate_Double_longBitsToDouble_entry();
-  address generate_Double_doubleToRawLongBits_entry();
   address generate_Float_float16ToFloat_entry();
   address generate_Float_floatToFloat16_entry();
 

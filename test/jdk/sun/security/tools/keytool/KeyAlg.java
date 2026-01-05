@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@ public class KeyAlg {
                 .shouldMatch("Signature algorithm name:.*SHA1withECDSA")
                 .shouldMatch("Subject Public Key Algorithm:.*1024.*RSA");
         keytool("-genkeypair -alias g -dname CN=g -keyalg EC -keysize 256")
-                .shouldContain("Generating 256 bit EC (secp256r1) key pair");
+                .shouldContain("Generating 256-bit EC (secp256r1) key pair");
         keytool("-genkeypair -alias f -dname CN=f -keyalg EC")
-                .shouldContain("Generating 384 bit EC (secp384r1) key pair");
+                .shouldContain("Generating 384-bit EC (secp384r1) key pair");
     }
 
     static OutputAnalyzer keytool(String s) throws Exception {

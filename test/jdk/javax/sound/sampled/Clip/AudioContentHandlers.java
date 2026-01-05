@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.applet.AudioClip;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +30,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.sound.SoundClip;
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -44,8 +44,8 @@ import static javax.sound.sampled.AudioFileFormat.Type.WAVE;
 
 /**
  * @test
- * @bug 8204454
- * @summary URL.getContent() should return AudioClip for supported formats
+ * @bug 8204454 8359053
+ * @summary URL.getContent() should return SoundClip for supported formats
  * @run main/othervm -Xmx128m AudioContentHandlers
  */
 public final class AudioContentHandlers {
@@ -77,10 +77,10 @@ public final class AudioContentHandlers {
                 } catch (IOException | IllegalArgumentException ignored) {
                     continue;
                 }
-                AudioClip content;
+                SoundClip content;
                 try {
-                    content = (AudioClip) file.toURL().getContent();
-                    // We need to generate OOM because the stream in AudioClip
+                    content = (SoundClip) file.toURL().getContent();
+                    // We need to generate OOM because the stream in SoundClip
                     // will be closed in finalize().
                     generateOOME();
                 } finally {

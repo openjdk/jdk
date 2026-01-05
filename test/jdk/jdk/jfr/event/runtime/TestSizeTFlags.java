@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.test.lib.jfr.Events;
  * @bug 8058552
  * @requires vm.hasJFR
  * @requires vm.gc == "G1" | vm.gc == null
- * @key jfr
+ * @requires vm.flagless
  * @summary Test checks that flags of type size_t are being sent to the jfr
  * @library /test/lib
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseG1GC -XX:+UseTLAB -XX:MinTLABSize=3k -XX:YoungPLABSize=3k -XX:MaxDirectMemorySize=5M  jdk.jfr.event.runtime.TestSizeTFlags

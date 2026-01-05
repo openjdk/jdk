@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,13 @@
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
   *                   -XX:CompileThreshold=10000
-  *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=020
+  *                   -XX:-TieredCompilation -XX:TypeProfileLevel=020
   *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
   *                    compiler.profiling.TestTypeProfiling
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
   *                   -XX:CompileThreshold=10000
-  *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=200
+  *                   -XX:-TieredCompilation -XX:TypeProfileLevel=200
   *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
   *                    compiler.profiling.TestTypeProfiling
   */

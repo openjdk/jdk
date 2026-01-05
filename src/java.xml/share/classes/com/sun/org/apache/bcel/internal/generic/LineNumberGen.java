@@ -54,7 +54,7 @@ public class LineNumberGen implements InstructionTargeter, Cloneable {
         try {
             return super.clone();
         } catch (final CloneNotSupportedException e) {
-            throw new Error("Clone Not Supported"); // never happens
+            throw new UnsupportedOperationException("Clone Not Supported", e); // never happens
         }
     }
 
@@ -71,7 +71,7 @@ public class LineNumberGen implements InstructionTargeter, Cloneable {
     }
 
     /**
-     * Get LineNumber attribute.
+     * Gets LineNumber attribute.
      *
      * This relies on that the instruction list has already been dumped to byte code or that the 'setPositions' methods
      * has been called for the instruction list.

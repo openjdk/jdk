@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "logging/log.hpp"
@@ -63,24 +62,6 @@ void GCArguments::initialize_heap_sizes() {
   initialize_size_info();
 }
 
-size_t GCArguments::compute_heap_alignment() {
-  // The card marking array and the offset arrays for old generations are
-  // committed in os pages as well. Make sure they are entirely full (to
-  // avoid partial page problems), e.g. if 512 bytes heap corresponds to 1
-  // byte entry and the os page size is 4096, the maximum heap size should
-  // be 512*4096 = 2MB aligned.
-
-  size_t alignment = CardTable::ct_max_alignment_constraint();
-
-  if (UseLargePages) {
-      // In presence of large pages we have to make sure that our
-      // alignment is large page aware.
-      alignment = lcm(os::large_page_size(), alignment);
-  }
-
-  return alignment;
-}
-
 #ifdef ASSERT
 void GCArguments::assert_flags() {
   assert(InitialHeapSize <= MaxHeapSize, "Ergonomics decided on incompatible initial and maximum heap sizes");
@@ -99,7 +80,7 @@ void GCArguments::assert_size_info() {
 #endif // ASSERT
 
 void GCArguments::initialize_size_info() {
-  log_debug(gc, heap)("Minimum heap " SIZE_FORMAT "  Initial heap " SIZE_FORMAT "  Maximum heap " SIZE_FORMAT,
+  log_debug(gc, heap)("Minimum heap %zu  Initial heap %zu  Maximum heap %zu",
                       MinHeapSize, InitialHeapSize, MaxHeapSize);
 
   DEBUG_ONLY(assert_size_info();)
@@ -109,10 +90,10 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   assert(SpaceAlignment != 0, "Space alignment not set up properly");
   assert(HeapAlignment != 0, "Heap alignment not set up properly");
   assert(HeapAlignment >= SpaceAlignment,
-         "HeapAlignment: " SIZE_FORMAT " less than SpaceAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu less than SpaceAlignment: %zu",
          HeapAlignment, SpaceAlignment);
   assert(HeapAlignment % SpaceAlignment == 0,
-         "HeapAlignment: " SIZE_FORMAT " not aligned by SpaceAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu not aligned by SpaceAlignment: %zu",
          HeapAlignment, SpaceAlignment);
 
   if (FLAG_IS_CMDLINE(MaxHeapSize)) {

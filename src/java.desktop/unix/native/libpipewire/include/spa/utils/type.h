@@ -10,6 +10,15 @@ extern "C" {
 #endif
 
 #include <spa/utils/defs.h>
+#include <spa/utils/string.h>
+
+#ifndef SPA_API_TYPE
+ #ifdef SPA_API_IMPL
+  #define SPA_API_TYPE SPA_API_IMPL
+ #else
+  #define SPA_API_TYPE static inline
+ #endif
+#endif
 
 /** \defgroup spa_types Types
  * Data type information enumerations
@@ -78,6 +87,7 @@ enum {
     SPA_TYPE_OBJECT_Profiler,
     SPA_TYPE_OBJECT_ParamLatency,
     SPA_TYPE_OBJECT_ParamProcessLatency,
+    SPA_TYPE_OBJECT_ParamTag,
     _SPA_TYPE_OBJECT_LAST,            /**< not part of ABI */
 
     /* vendor extensions */
@@ -121,6 +131,47 @@ struct spa_type_info {
     const char *name;
     const struct spa_type_info *values;
 };
+
+SPA_API_TYPE bool spa_type_is_a(const char *type, const char *parent)
+{
+    return type != NULL && parent != NULL && strncmp(type, parent, strlen(parent)) == 0;
+}
+
+SPA_API_TYPE const char *spa_type_short_name(const char *name)
+{
+    const char *h;
+    if ((h = strrchr(name, ':')) != NULL)
+        name = h + 1;
+    return name;
+}
+
+SPA_API_TYPE uint32_t spa_type_from_short_name(const char *name,
+        const struct spa_type_info *info, uint32_t unknown)
+{
+    int i;
+    for (i = 0; info[i].name; i++) {
+        if (spa_streq(name, spa_type_short_name(info[i].name)))
+            return info[i].type;
+    }
+    return unknown;
+}
+SPA_API_TYPE const char * spa_type_to_name(uint32_t type,
+        const struct spa_type_info *info, const char *unknown)
+{
+    int i;
+    for (i = 0; info[i].name; i++) {
+        if (info[i].type == type)
+            return info[i].name;
+    }
+    return unknown;
+}
+
+SPA_API_TYPE const char * spa_type_to_short_name(uint32_t type,
+        const struct spa_type_info *info, const char *unknown)
+{
+    const char *n = spa_type_to_name(type, info, unknown);
+    return n ? spa_type_short_name(n) : NULL;
+}
 
 /**
  * \}

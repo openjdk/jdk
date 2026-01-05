@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,31 +46,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-import org.testng.annotations.BeforeMethod;
 
 import jdk.jshell.tool.JavaShellToolBuilder;
 import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeEach;
 
 public class ReplToolTesting {
 
     private final static String DEFAULT_STARTUP_MESSAGE = "|  Welcome to";
-    final static List<ImportInfo> START_UP_IMPORTS = Stream.of(
-                    "java.io.*",
-                    "java.math.*",
-                    "java.net.*",
-                    "java.nio.file.*",
-                    "java.util.*",
-                    "java.util.concurrent.*",
-                    "java.util.function.*",
-                    "java.util.prefs.*",
-                    "java.util.regex.*",
-                    "java.util.stream.*")
-                    .map(s -> new ImportInfo("import " + s + ";", "", s))
-                    .collect(toList());
+    final static List<ImportInfo> START_UP_IMPORTS = List.of(
+            new ImportInfo("import module java.base;", "", "java.base"));
     final static List<MethodInfo> START_UP_METHODS = Stream.<MethodInfo>of()
                     .collect(toList());
     final static List<String> START_UP_CMD_METHOD = Stream.<String>of()
@@ -142,7 +132,7 @@ public class ReplToolTesting {
                     .filter(l -> !l.isEmpty())
                     .collect(Collectors.toList());
             int previousId = Integer.MIN_VALUE;
-            assertEquals(lines.size(), keys.size(), "Number of keys");
+            assertEquals(keys.size(), lines.size(), "Number of keys");
             for (int i = 0; i < lines.size(); ++i) {
                 String line = lines.get(i);
                 Matcher matcher = idPattern.matcher(line);
@@ -165,7 +155,7 @@ public class ReplToolTesting {
                     .filter(l -> !l.isEmpty())
                     .filter(l -> !l.startsWith("|     ")) // error/unresolved info
                     .collect(Collectors.toList());
-            assertEquals(lines.size(), set.size(), message + " : expected: " + set.keySet() + "\ngot:\n" + lines);
+            assertEquals(set.size(), lines.size(), message + " : expected: " + set.keySet() + "\ngot:\n" + lines);
             for (String line : lines) {
                 Matcher matcher = extractPattern.matcher(line);
                 assertTrue(matcher.find(), line);
@@ -281,7 +271,7 @@ public class ReplToolTesting {
         }
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         prefsMap = new HashMap<>();
         prefsMap.put("INDENT", "0");
@@ -341,8 +331,7 @@ public class ReplToolTesting {
         String ueos = getUserErrorOutput();
         assertTrue((cos.isEmpty() || cos.startsWith("|  Goodbye") || !locale.equals(Locale.ROOT)),
                 "Expected a goodbye, but got: " + cos);
-        assertEquals(ceos,
-                     expectedErrorOutput,
+        assertEquals(                     expectedErrorOutput, ceos,
                      "Expected \"" + expectedErrorOutput +
                      "\" command error output, got: \"" + ceos + "\"");
         assertTrue(uos.isEmpty(), "Expected empty user output, got: " + uos);
@@ -573,7 +562,37 @@ public class ReplToolTesting {
 
     public void assertOutput(String got, String expected, String display) {
         if (expected != null) {
-            assertEquals(got, expected, display + ".\n");
+            assertEquals(expected, got, display + ".\n");
+        }
+    }
+
+    public void assertCompletions(boolean after, String input, String expectedCompletionsPattern) {
+        if (!after) {
+            try {
+                Class<?> sourceCodeAnalysisImpl = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
+                Method waitBackgroundTaskFinished = sourceCodeAnalysisImpl.getDeclaredMethod("waitCurrentBackgroundTasksFinished");
+
+                waitBackgroundTaskFinished.setAccessible(true);
+                waitBackgroundTaskFinished.invoke(null);
+            } catch (ReflectiveOperationException ex) {
+                throw new AssertionError(ex.getMessage(), ex);
+            }
+
+            setCommandInput(input + "\t");
+        } else {
+            assertOutput(getCommandOutput().trim(), "", "command output: " + input);
+            assertOutput(getCommandErrorOutput(), "", "command error: " + input);
+            assertOutput(getUserOutput(), "", "user output: " + input);
+            assertOutput(getUserErrorOutput(), "", "user error: " + input);
+            String actualOutput = getTerminalOutput();
+            Pattern compiledPattern =
+                    Pattern.compile(expectedCompletionsPattern, Pattern.DOTALL);
+            if (!compiledPattern.asMatchPredicate().test(actualOutput)) {
+                throw new AssertionError("Actual output:\n" +
+                                         actualOutput + "\n" +
+                                         "does not match expected pattern: " +
+                                         expectedCompletionsPattern);
+            }
         }
     }
 

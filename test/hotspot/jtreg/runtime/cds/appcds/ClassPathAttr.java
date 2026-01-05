@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,18 +72,12 @@ public class ClassPathAttr {
       TestCommon.testDump(cp, classlist);
 
       TestCommon.run(
-          "-cp", cp,
-          "CpAttr1")
-        .assertNormalExit();
-
-      // Logging test for class+path.
-      TestCommon.run(
           "-Xlog:class+path",
           "-cp", cp,
           "CpAttr1")
         .assertNormalExit(output -> {
-            output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
-            output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
+            output.shouldMatch("Checking .*cpattr2.jar.*from JAR manifest ClassPath attribute");
+            output.shouldMatch("Checking .*cpattr3.jar.*from JAR manifest ClassPath attribute");
           });
 
       // Test handling of forward slash ('/') file separator when locating entries
@@ -117,8 +111,8 @@ public class ClassPathAttr {
               "-cp", newCp,
               "CpAttr1")
             .assertNormalExit(output -> {
-                output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
-                output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
+                output.shouldMatch("Checking .*cpattr2.jar.*from JAR manifest ClassPath attribute");
+                output.shouldMatch("Checking .*cpattr3.jar.*from JAR manifest ClassPath attribute");
               });
 
           // Go one directory up.
@@ -150,8 +144,8 @@ public class ClassPathAttr {
                   "-cp", newCp,
                   "CpAttr1")
                 .assertNormalExit(output -> {
-                    output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
-                    output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
+                    output.shouldMatch("Checking .*cpattr2.jar.*from JAR manifest ClassPath attribute");
+                    output.shouldMatch("Checking .*cpattr3.jar.*from JAR manifest ClassPath attribute");
                   });
           }
       }
@@ -163,6 +157,7 @@ public class ClassPathAttr {
     TestCommon.testDump(cp, classlist);
 
     TestCommon.run(
+        "-Xlog:class+path",
         "-cp", cp,
         "CpAttr1")
       .assertNormalExit();
@@ -183,7 +178,7 @@ public class ClassPathAttr {
         "-cp", cp,
         "CpAttr6")
       .assertNormalExit(output -> {
-          output.shouldMatch("should be non-existent: .*cpattrX.jar");
+          output.shouldMatch("Checking .*cpattrX.jar.* not-exist");
         });
 
     // Now make nonExistPath exist. CDS still loads, but archived non-system classes will not be used.
@@ -198,11 +193,10 @@ public class ClassPathAttr {
         result.assertAbnormalExit(output -> {
                 output.shouldMatch("CDS archive has aot-linked classes. It cannot be used because the file .*cpattrX.jar exists");
             });
-
     } else {
-        result.assertNormalExit(output -> {
-                output.shouldMatch("Archived non-system classes are disabled because the file .*cpattrX.jar exists");
-            });
+        result.assertAbnormalExit(output -> {
+                output.shouldMatch("cpattrX.jar.* must not exist");
+        });
     }
   }
 
@@ -233,8 +227,8 @@ public class ClassPathAttr {
                    "-cp", cp,
                    "Hello")
               .assertAbnormalExit(output -> {
-                  output.shouldMatch(".*APP classpath mismatch, actual: -Djava.class.path=.*cpattr1.jar.*cpattr2.jar.*hello.jar")
-              .shouldContain("Unable to use shared archive.");
+                  output.shouldMatch("app classpath .* does not match: expected .*hello.jar.* got .*cpattr2.jar")
+                        .shouldContain("Unable to use shared archive.");
                 });
 
     // Run with different -cp cpattr2.jar:hello.jar. App classpath mismatch should be detected.
@@ -243,8 +237,8 @@ public class ClassPathAttr {
                    "-cp", cp,
                    "Hello")
               .assertAbnormalExit(output -> {
-                  output.shouldMatch(".*APP classpath mismatch, actual: -Djava.class.path=.*cpattr2.jar.*hello.jar")
-              .shouldContain("Unable to use shared archive.");
+                  output.shouldMatch("app classpath .* does not match: expected .*cpattr1.jar.* got .*cpattr2.jar")
+                        .shouldContain("Unable to use shared archive.");
                 });
 
     // Dumping with -cp cpattr1.jar:cpattr2.jar:hello.jar

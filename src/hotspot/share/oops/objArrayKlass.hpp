@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,10 @@ class ClassLoaderData;
 // ObjArrayKlass is the klass for objArrays
 
 class ObjArrayKlass : public ArrayKlass {
-  friend class VMStructs;
+  friend class Deoptimization;
   friend class JVMCIVMStructs;
+  friend class oopFactory;
+  friend class VMStructs;
 
  public:
   static const KlassKind Kind = ObjArrayKlassKind;
@@ -47,7 +49,14 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Constructor
   ObjArrayKlass(int n, Klass* element_klass, Symbol* name);
-  static ObjArrayKlass* allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
+  static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
+
+  objArrayOop allocate_instance(int length, TRAPS);
+
+ protected:
+  // Create array_name for element klass
+  static Symbol* create_element_klass_array_name(JavaThread* current, Klass* element_klass);
+
  public:
   // For dummy objects
   ObjArrayKlass() {}
@@ -55,39 +64,37 @@ class ObjArrayKlass : public ArrayKlass {
   // Instance variables
   Klass* element_klass() const      { return _element_klass; }
   void set_element_klass(Klass* k)  { _element_klass = k; }
-  Klass** element_klass_addr()      { return &_element_klass; }
+
+  // Compiler/Interpreter offset
+  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
 
   Klass* bottom_klass() const       { return _bottom_klass; }
   void set_bottom_klass(Klass* k)   { _bottom_klass = k; }
   Klass** bottom_klass_addr()       { return &_bottom_klass; }
 
-  ModuleEntry* module() const;
-  PackageEntry* package() const;
-
-  // Compiler/Interpreter offset
-  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
+  ModuleEntry* module() const override;
+  PackageEntry* package() const override;
 
   // Dispatched operation
-  bool can_be_primary_super_slow() const;
+  bool can_be_primary_super_slow() const override;
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
-                                                  Array<InstanceKlass*>* transitive_interfaces);
-  DEBUG_ONLY(bool is_objArray_klass_slow()  const  { return true; })
-  size_t oop_size(oop obj) const;
+                                                  Array<InstanceKlass*>* transitive_interfaces) override;
+  DEBUG_ONLY(bool is_objArray_klass_slow() const override { return true; })
+  size_t oop_size(oop obj) const override;
 
   // Allocation
   static ObjArrayKlass* allocate_objArray_klass(ClassLoaderData* loader_data,
                                                 int n, Klass* element_klass, TRAPS);
 
-  objArrayOop allocate(int length, TRAPS);
-  oop multi_allocate(int rank, jint* sizes, TRAPS);
+  oop multi_allocate(int rank, jint* sizes, TRAPS) override;
 
   // Copying
-  void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
+  void copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) override;
 
   // Compute protection domain
-  oop protection_domain() const { return bottom_klass()->protection_domain(); }
+  oop protection_domain() const override { return bottom_klass()->protection_domain(); }
 
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter) override;
 
  private:
   // Either oop or narrowOop depending on UseCompressedOops.
@@ -107,10 +114,10 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Sizing
   static int header_size()                { return sizeof(ObjArrayKlass)/wordSize; }
-  int size() const                        { return ArrayKlass::static_size(header_size()); }
+  int size() const override               { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)
-  void initialize(TRAPS);
+  void initialize(TRAPS) override;
 
   // Oop fields (and metadata) iterators
   //
@@ -143,24 +150,24 @@ class ObjArrayKlass : public ArrayKlass {
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
  public:
-  jint compute_modifier_flags() const;
+  u2 compute_modifier_flags() const override;
 
  public:
   // Printing
-  void print_on(outputStream* st) const;
-  void print_value_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
+  void print_value_on(outputStream* st) const override;
 
-  void oop_print_value_on(oop obj, outputStream* st);
+  void oop_print_value_on(oop obj, outputStream* st) override;
 #ifndef PRODUCT
-  void oop_print_on      (oop obj, outputStream* st);
+  void oop_print_on      (oop obj, outputStream* st) override;
 #endif //PRODUCT
 
-  const char* internal_name() const;
+  const char* internal_name() const override;
 
   // Verification
-  void verify_on(outputStream* st);
+  void verify_on(outputStream* st) override;
 
-  void oop_verify_on(oop obj, outputStream* st);
+  void oop_verify_on(oop obj, outputStream* st) override;
 };
 
 #endif // SHARE_OOPS_OBJARRAYKLASS_HPP

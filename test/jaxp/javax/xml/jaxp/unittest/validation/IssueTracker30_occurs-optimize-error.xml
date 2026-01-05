@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <persons>
     <person>
         <child_name>Hege</child_name>
@@ -7,4 +7,3 @@
         <child_name>Borge</child_name>
     </person>
 </persons>
-

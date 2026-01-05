@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import java.util.stream.IntStream;
 @Fork(3)
 @State(Scope.Thread)
 public class TreeMapUpdate {
-    @Param({"TreeMap", "descendingMap", "tailMap"})
+    @Param({"TreeMap", "descendingMap", "subMap"})
     public String mode;
 
     @Param({"10", "1000", "100000"})
@@ -86,8 +86,8 @@ public class TreeMapUpdate {
             case "descendingMap":
                 transformer = map -> map.descendingMap();
                 break;
-            case "tailMap":
-                transformer = map -> map.tailMap(0, true);
+            case "subMap":
+                transformer = comparator ? map -> map.headMap(0, true) : map -> map.tailMap(0, true);
                 break;
             default:
                 throw new IllegalStateException(mode);

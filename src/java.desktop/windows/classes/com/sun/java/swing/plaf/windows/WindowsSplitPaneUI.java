@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 /**
  * Windows rendition of the component.
  */
-public class WindowsSplitPaneUI extends BasicSplitPaneUI
+public final class WindowsSplitPaneUI extends BasicSplitPaneUI
 {
 
     public WindowsSplitPaneUI() {
@@ -50,6 +50,7 @@ public class WindowsSplitPaneUI extends BasicSplitPaneUI
     /**
       * Creates the default divider.
       */
+    @Override
     public BasicSplitPaneDivider createDefaultDivider() {
         return new WindowsSplitPaneDivider(this);
     }

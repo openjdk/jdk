@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -87,6 +87,11 @@ inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t*
 
 inline frame::frame(intptr_t* sp) : frame(sp, nullptr) {}
 
+inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map)
+  :_sp(sp), _pc(pc), _cb(cb), _oop_map(oop_map), _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
+  setup();
+}
+
 // Generic constructor. Used by pns() in debug.cpp only
 #ifndef PRODUCT
 inline frame::frame(void* sp, void* pc, void* unextended_sp)
@@ -109,16 +114,19 @@ inline frame::z_ijava_state* frame::ijava_state() const {
   return state;
 }
 
-inline BasicObjectLock** frame::interpreter_frame_monitors_addr() const {
-  return (BasicObjectLock**) &(ijava_state()->monitors);
-}
-
 // The next two functions read and write z_ijava_state.monitors.
 inline BasicObjectLock* frame::interpreter_frame_monitors() const {
-  return *interpreter_frame_monitors_addr();
+  BasicObjectLock* result = (BasicObjectLock*) at_relative(_z_ijava_idx(monitors));
+  // make sure the pointer points inside the frame
+  assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
+  assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer: result: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(result), p2i(fp()));
+  return result;
 }
+
 inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
-  *interpreter_frame_monitors_addr() = monitors;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized monitors
+  ijava_state()->monitors = (intptr_t) ((intptr_t*)monitors - fp());
 }
 
 // Accessors
@@ -180,7 +188,8 @@ inline intptr_t* frame::link_or_null() const {
 }
 
 inline intptr_t* frame::interpreter_frame_locals() const {
-  return (intptr_t*) (ijava_state()->locals);
+  intptr_t n = *addr_at(_z_ijava_idx(locals));
+  return &fp()[n]; // return relativized locals
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {
@@ -202,11 +211,14 @@ inline intptr_t* frame::interpreter_frame_expression_stack() const {
 // Also begin is one past last monitor.
 
 inline intptr_t* frame::interpreter_frame_top_frame_sp() {
-  return (intptr_t*)ijava_state()->top_frame_sp;
+  intptr_t n = *addr_at(_z_ijava_idx(top_frame_sp));
+  return &fp()[n]; // return relativized locals
 }
 
 inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) {
-  ijava_state()->top_frame_sp = (intptr_t) top_frame_sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized top_frame_sp
+  ijava_state()->top_frame_sp = (intptr_t) (top_frame_sp - fp());
 }
 
 inline void frame::interpreter_frame_set_sender_sp(intptr_t* sender_sp) {
@@ -219,18 +231,20 @@ inline void frame::interpreter_frame_set_magic() {
 }
 #endif
 
+inline intptr_t* frame::interpreter_frame_esp() const {
+  return (intptr_t*) at_relative(_z_ijava_idx(esp));
+}
+
 // Where z_ijava_state.esp is saved.
-inline intptr_t** frame::interpreter_frame_esp_addr() const {
-  return (intptr_t**) &(ijava_state()->esp);
+inline void frame::interpreter_frame_set_esp(intptr_t* esp) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized esp
+  ijava_state()->esp = (intptr_t) (esp - fp());
 }
 
 // top of expression stack (lowest address)
 inline intptr_t* frame::interpreter_frame_tos_address() const {
-  return *interpreter_frame_esp_addr() + 1;
-}
-
-inline void frame::interpreter_frame_set_tos_address(intptr_t* x) {
-  *interpreter_frame_esp_addr() = x - 1;
+  return interpreter_frame_esp() + Interpreter::stackElementWords;
 }
 
 // Stack slot needed for native calls and GC.
@@ -361,5 +375,43 @@ template <typename RegisterMapT>
 void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) {
   Unimplemented();
 }
+
+#if INCLUDE_JFR
+
+// Static helper routines
+inline intptr_t* frame::sender_sp(intptr_t* fp) { return fp; }
+
+// Extract common_abi parts.
+inline intptr_t* frame::fp(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(((z_common_abi*)sp)->callers_sp);
+}
+
+inline intptr_t* frame::link(const intptr_t* fp) { return frame::fp(fp); }
+
+inline address frame::return_address(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<address>(((z_common_abi*)sp)->return_pc);
+}
+
+inline address frame::interpreter_return_address(const intptr_t* fp) { return frame::return_address(fp); }
+
+inline address frame::interpreter_bcp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(*(fp + _z_ijava_idx(bcp)));
+}
+
+inline intptr_t* frame::interpreter_sender_sp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(*(fp + _z_ijava_idx(sender_sp)));
+}
+
+inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp) {
+  assert(fp != nullptr, "invariant");
+  assert(sp != nullptr, "invariant");
+  return sp <= fp - ((frame::z_ijava_state_size + frame::z_top_ijava_frame_abi_size) >> LogBytesPerWord);
+}
+
+#endif // INCLUDE_JFR
 
 #endif // CPU_S390_FRAME_S390_INLINE_HPP

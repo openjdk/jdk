@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,44 +25,74 @@
 package java.lang.classfile;
 
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * A transformation on streams of elements. Transforms are used during
- * transformation of classfile entities; a transform is provided to a method like
- * {@link ClassFile#transformClass(ClassModel, ClassTransform)}, and the elements of the class,
- * along with a builder, are presented to the transform.
- *
- * <p>The subtypes of {@linkplain
- * ClassFileTransform} (e.g., {@link ClassTransform}) are functional interfaces
- * that accept an element and a corresponding builder.  Since any element can be
- * reproduced on the builder via {@link ClassBuilder#with(ClassFileElement)}, a
- * transform can easily leave elements in place, remove them, replace them, or
- * augment them with other elements.  This enables localized transforms to be
- * represented concisely.
- *
- * <p>Transforms also have an {@link #atEnd(ClassFileBuilder)} method, for
- * which the default implementation does nothing, so that a transform can
- * perform additional building after the stream of elements is exhausted.
- *
- * <p>Transforms can be chained together via the {@link
- * #andThen(ClassFileTransform)} method, so that the output of one becomes the
- * input to another.  This allows smaller units of transformation to be captured
- * and reused.
- *
- * <p>Some transforms are stateful; for example, a transform that injects an
- * annotation on a class may watch for the {@link RuntimeVisibleAnnotationsAttribute}
- * element and transform it if found, but if it is not found, will generate a
- * {@linkplain RuntimeVisibleAnnotationsAttribute} element containing the
- * injected annotation from the {@linkplain #atEnd(ClassFileBuilder)} handler.
- * To do this, the transform must accumulate some state during the traversal so
- * that the end handler knows what to do.  If such a transform is to be reused,
- * its state must be reset for each traversal; this will happen automatically if
- * the transform is created with {@link ClassTransform#ofStateful(Supplier)} (or
- * corresponding methods for other classfile locations.)
+ * A transformation on a {@link CompoundElement} by processing its individual
+ * member elements and sending the results to a {@link ClassFileBuilder},
+ * through {@link ClassFileBuilder#transform}.  A subtype of {@code
+ * ClassFileTransform} is defined for each subtype of {@link CompoundElement}
+ * and {@link ClassFileBuilder}, as shown in the sealed class hierarchy below.
+ * <p>
+ * For example, this is a basic transformation of a {@link CodeModel} that
+ * redirects all calls to static methods in the {@code Foo} class to the {@code
+ * Bar} class, preserving all other elements:
+ * {@snippet file="PackageSnippets.java" region=fooToBarTransform}
+ * Note that if no transformation of a member element is desired, the element
+ * should be presented to {@link ClassFileBuilder#with builder::with}.  If no
+ * action is taken, that member element is dropped.
+ * <p>
+ * More advanced usages of transforms include {@linkplain ##start-end start or
+ * end handling}, {@linkplain ##stateful stateful transformation} that makes a
+ * decision based on previously encountered member elements, and {@linkplain
+ * ##composition composition} of transforms, where one transform processes the
+ * results of a previous transform on the input compound structure.  All these
+ * capabilities are supported by this interface and accessible to user transform
+ * implementations.
+ * <p id="start-end">
+ * Users can define custom start and end handling for a transform by overriding
+ * {@link #atStart} and {@link #atEnd}.  The start handler is called before any
+ * member element is processed, and the end handler is called after all member
+ * elements are processed.  For example, the start handler can be used to inject
+ * extra code elements to the beginning of a code array, and the end handler,
+ * combined with stateful transformation, can perform cleanup actions, such as
+ * determining if an attribute has been merged, or if a new attribute should be
+ * defined.  Each subtype of {@code ClassFileTransform} defines a utility method
+ * {@code endHandler} that returns a transform that only has end handling.
+ * <p id="stateful">
+ * Transforms can have states that persist across processing of individual
+ * member elements.  For example, if a transform injects an annotation, the
+ * transform may keep track if it has encountered and presented an updated
+ * {@link RuntimeVisibleAnnotationsAttribute} to the builder; if it has not yet,
+ * it can present a new attribute containing only the injected annotation in its
+ * end handler.  If such a transform is to be shared or reused, each returned
+ * transform should have its own state.  Each subtype of {@code ClassFileTransform}
+ * defines a utility method {@code ofStateful} where a supplier creates the
+ * transform at its initial state each time the transform is reused.
+ * <p id="composition">
+ * Transforms can be composed via {@link #andThen}.  When this transform is
+ * composed with another transform, it means the output member elements received
+ * by the {@link ClassFileBuilder} become the input elements to that other
+ * transform.  Composition avoids building intermediate structures for multiple
+ * transforms to run on.  Each subtype of {@code ClassFileTransform} implements
+ * {@link #andThen}, which generally should not be implemented by users.
+ * <p>
+ * Transforms that run on smaller structures can be lifted to its enclosing
+ * structures to selectively run on all enclosed smaller structures of the same
+ * kind.  For example, a {@link CodeTransform} can be lifted via {@link
+ * ClassTransform#transformingMethodBodies(Predicate, CodeTransform)} to
+ * transform the method body of select methods in the class it runs on.  This
+ * allows users to write small transforms and apply to larger scales.
+ * <p>
+ * Besides {@link ClassFileBuilder#transform}, there are other methods that
+ * accepts a transform conveniently, such as {@link ClassFile#transformClass},
+ * {@link ClassBuilder#transformField}, {@link ClassBuilder#transformMethod}, or
+ * {@link MethodBuilder#transformCode}.  They are convenience methods that suit
+ * the majority of transformation scenarios.
  *
  * @param <C> the transform type
- * @param <E> the element type
+ * @param <E> the member element type
  * @param <B> the builder type
  *
  * @sealedGraph
@@ -79,6 +109,9 @@ public sealed interface ClassFileTransform<
      * body.) If no transformation is desired, the element can be presented to
      * {@link B#with(ClassFileElement)}.  If the element is to be dropped, no
      * action is required.
+     * <p>
+     * This method is called by the Class-File API.  Users should never call
+     * this method.
      *
      * @param builder the builder for the new entity
      * @param element the element
@@ -89,6 +122,9 @@ public sealed interface ClassFileTransform<
      * Take any final action during transformation of a classfile entity.  Called
      * after all elements of the class are presented to {@link
      * #accept(ClassFileBuilder, ClassFileElement)}.
+     * <p>
+     * This method is called by the Class-File API.  Users should never call
+     * this method.
      *
      * @param builder the builder for the new entity
      * @implSpec The default implementation does nothing.
@@ -100,6 +136,9 @@ public sealed interface ClassFileTransform<
      * Take any preliminary action during transformation of a classfile entity.
      * Called before any elements of the class are presented to {@link
      * #accept(ClassFileBuilder, ClassFileElement)}.
+     * <p>
+     * This method is called by the Class-File API.  Users should never call
+     * this method.
      *
      * @param builder the builder for the new entity
      * @implSpec The default implementation does nothing.
@@ -110,6 +149,10 @@ public sealed interface ClassFileTransform<
     /**
      * Chain this transform with another; elements presented to the builder of
      * this transform will become the input to the next transform.
+     * <p>
+     * This method is implemented by the Class-File API.  Users usually don't
+     * have sufficient access to Class-File API functionalities to override this
+     * method correctly for generic downstream transforms.
      *
      * @param next the downstream transform
      * @return the chained transform

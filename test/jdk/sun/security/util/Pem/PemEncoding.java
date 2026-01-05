@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,49 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8158633
+ * @summary BASE64 encoded cert not correctly parsed with UTF-16
+ * @library /test/lib
+ */
+
+import jdk.test.lib.process.ProcessTools;
+
 import java.io.FileInputStream;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.security.cert.CertificateFactory;
 
 public class PemEncoding {
     public static void main(String[] args) throws Exception {
-        try (FileInputStream fis = new FileInputStream(args[0])) {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            System.out.println(cf.generateCertificate(fis));
+
+        final var certPath = Path.of(System.getProperty("test.src", "."))
+                .getParent()
+                .resolve("HostnameChecker")
+                .resolve("cert5.crt")
+                .toString();
+
+        final var testCommand = new String[]{"-Dfile.encoding=UTF-16",
+                PemEncoding.PemEncodingTest.class.getName(),
+                certPath};
+
+        final var result = ProcessTools.executeTestJava(testCommand);
+        result.shouldHaveExitValue(0);
+
+    }
+
+    static class PemEncodingTest {
+        public static void main(String[] args) throws Exception {
+
+            try (FileInputStream fis = new FileInputStream(args[0])) {
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                System.out.println(cf.generateCertificate(fis));
+            }
+
+            if (!"UTF-16".equals(Charset.defaultCharset().displayName())) {
+                throw new RuntimeException("File encoding is not UTF-16");
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ final class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
 
     private native void createMenu(WComponentPeer parent);
 
+    @Override
     @SuppressWarnings("deprecation")
     public void show(Event e) {
         Component origin = (Component)e.target;

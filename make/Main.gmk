@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,44 +24,41 @@
 #
 
 ################################################################################
-# This is the main makefile containing most actual top level targets. It needs
-# to be called with a SPEC file defined.
+# This is the main makefile containing most actual top level targets.
 ################################################################################
 
-# Declare default target
-default:
+# Declare ALL_TARGETS as an immediate variable. This variable is a list of all
+# valid top level targets. It's used to declare them all as PHONY and to
+# generate the -only targets.
 
-ifeq ($(wildcard $(SPEC)), )
-  $(error Main.gmk needs SPEC set to a proper spec.gmk)
-endif
+ALL_TARGETS :=
 
-# Now load the spec
-include $(SPEC)
+DEFAULT_TARGET := default-target
 
-# Load the vital tools for all the makefiles.
-include $(TOPDIR)/make/common/MakeBase.gmk
-include $(TOPDIR)/make/common/Modules.gmk
-include $(TOPDIR)/make/common/FindTests.gmk
+include MakeFileStart.gmk
+
+################################################################################
 
 include $(TOPDIR)/make/MainSupport.gmk
+
+include FindTests.gmk
+
+ifeq ($(UPDATE_MODULE_DEPS), true)
+  # Update module-deps.gmk if requested. This is read in Modules.gmk.
+  GENERATE_MODULE_DEPS_FILE := true
+endif
+
+include Modules.gmk
 
 # Are we requested to ignore dependencies?
 ifneq ($(findstring -only, $(MAKECMDGOALS)), )
   DEPS := none
 endif
 
-# Declare ALL_TARGETS as an immediate variable. This variable is a list of all
-# valid top level targets. It's used to declare them all as PHONY and to
-# generate the -only targets.
-ALL_TARGETS :=
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Main.gmk))
 
 # All modules for the current target platform.
 ALL_MODULES := $(call FindAllModules)
 
-################################################################################
 ################################################################################
 #
 # Recipes for all targets. Only recipes, dependencies are declared later.
@@ -357,6 +354,14 @@ $(eval $(call SetupTarget, vscode-project-ccls, \
 ))
 
 ################################################################################
+# IDEA IntelliJ projects
+
+$(eval $(call SetupTarget, idea-gen-config, \
+    MAKEFILE := ide/idea/jdk/IdeaGenConfig, \
+    ARGS := IDEA_OUTPUT="$(IDEA_OUTPUT)" MODULES="$(MODULES)", \
+))
+
+################################################################################
 # Build demos targets
 
 # The demos are currently linking to libjvm and libjava, just like all other
@@ -412,12 +417,14 @@ $(eval $(call SetupTarget, create-source-revision-tracker, \
 ))
 
 BOOTCYCLE_TARGET := product-images
+BOOTCYCLE_SPEC := $(dir $(SPEC))bootcycle-spec.gmk
+
 bootcycle-images:
         ifneq ($(COMPILE_TYPE), cross)
 	  $(call LogWarn, Boot cycle build step 2: Building a new JDK image using previously built image)
 	  $(call MakeDir, $(OUTPUTDIR)/bootcycle-build)
 	  +$(MAKE) $(MAKE_ARGS) -f $(TOPDIR)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
-	      LOG_PREFIX="[bootcycle] " JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
+	      LOG_PREFIX="[bootcycle] " JOBS= SPEC=$(BOOTCYCLE_SPEC) main
         else
 	  $(call LogWarn, Boot cycle build disabled when cross compiling)
         endif
@@ -454,9 +461,9 @@ $(eval $(call SetupTarget, symbols-image, \
     TARGET := symbols, \
 ))
 
-$(eval $(call SetupTarget, static-launcher, \
+$(eval $(call SetupTarget, static-launchers, \
     MAKEFILE := StaticLibs, \
-    TARGET := static-launcher, \
+    TARGET := static-launchers, \
     DEPS := hotspot-static-libs static-libs, \
 ))
 
@@ -754,6 +761,17 @@ $(eval $(call SetupTarget, test-image-lib, \
     DEPS := build-test-lib, \
 ))
 
+$(eval $(call SetupTarget, build-test-setup-aot, \
+    MAKEFILE := test/BuildTestSetupAOT, \
+    DEPS := interim-langtools exploded-image, \
+))
+
+$(eval $(call SetupTarget, test-image-setup-aot, \
+    MAKEFILE := test/BuildTestSetupAOT, \
+    TARGET := images, \
+    DEPS :=  build-test-setup-aot, \
+))
+
 ifeq ($(BUILD_FAILURE_HANDLER), true)
   # Builds the failure handler jtreg extension
   $(eval $(call SetupTarget, build-test-failure-handler, \
@@ -863,6 +881,12 @@ $(eval $(call SetupTarget, static-libs-graal-bundles, \
     MAKEFILE := Bundles, \
     TARGET := static-libs-graal-bundles, \
     DEPS := static-libs-graal-image, \
+))
+
+$(eval $(call SetupTarget, static-jdk-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-jdk-bundles, \
+    DEPS := static-jdk-image, \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -990,7 +1014,7 @@ else
   else ifeq ($(EXTERNAL_BUILDJDK), false)
     # When not cross compiling, the BUILD_JDK is the interim jdk image, and
     # the javac launcher is needed.
-    jdk.compiler-gendata: jdk.compiler-launchers
+    jdk.compiler-gendata: jdk.compiler-launchers java.base-launchers
     jdk.javadoc-gendata: jdk.compiler-launchers
   endif
 
@@ -1266,7 +1290,7 @@ ifeq ($(call isTargetOs, macosx), true)
   legacy-images: mac-legacy-jre-bundle
 endif
 
-static-exploded-image: static-launcher exploded-image
+static-exploded-image: static-launchers exploded-image
 
 # These targets build the various documentation images
 docs-jdk-image: docs-jdk
@@ -1282,7 +1306,8 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 # This target builds the test image
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
-    test-image-lib test-image-lib-native
+    test-image-lib test-image-lib-native \
+    test-image-setup-aot
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
@@ -1310,10 +1335,7 @@ endif
 ################################################################################
 
 # all-images builds all our deliverables as images.
-all-images: product-images test-image all-docs-images
-ifeq ($(call isTargetOs, linux macosx windows), true)
-  all-images: static-jdk-image
-endif
+all-images: product-images static-jdk-image test-image all-docs-images
 
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
@@ -1334,7 +1356,7 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-static-libs \
 # Traditional targets typically run by users.
 # These can be considered aliases for the targets now named by a more
 # "modern" naming scheme.
-default: $(DEFAULT_MAKE_TARGET)
+default-target: $(DEFAULT_MAKE_TARGET)
 jdk: exploded-image
 images: product-images
 docs: docs-image
@@ -1370,7 +1392,6 @@ ALL_TARGETS += $(RUN_TEST_TARGETS) run-test exploded-run-test check \
     test-jdk-jtreg-native test-docs
 
 ################################################################################
-################################################################################
 #
 # Clean targets
 #
@@ -1386,7 +1407,7 @@ CLEAN_SUPPORT_DIRS += demos
 CLEAN_SUPPORT_DIR_TARGETS := $(addprefix clean-, $(CLEAN_SUPPORT_DIRS))
 CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native lib
 CLEAN_TEST_TARGETS += $(addprefix clean-test-, $(CLEAN_TESTS))
-CLEAN_PHASES := gensrc java native include
+CLEAN_PHASES += gensrc java native include
 CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))
 CLEAN_MODULE_TARGETS := $(addprefix clean-, $(ALL_MODULES))
 # Construct targets of the form clean-$module-$phase
@@ -1475,13 +1496,12 @@ print-tests:
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)
+	  $(call MakeDir, $(MAKESUPPORT_OUTPUTDIR))
 	  @$(ECHO) ALL_MAIN_TARGETS := $(sort $(ALL_TARGETS)) > \
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
-
-################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Main-post.gmk))
 
 .PHONY: $(ALL_TARGETS)
 
 FRC: # Force target
+
+include MakeFileEnd.gmk

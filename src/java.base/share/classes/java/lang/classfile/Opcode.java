@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import jdk.internal.classfile.impl.RawBytecodeHelper;
  * instead of wide pseudo-opcodes.
  *
  * @see Instruction
- *
+ * @jvms 6.5 Instructions
  * @since 24
  */
 public enum Opcode {
@@ -1143,7 +1143,7 @@ public enum Opcode {
     LXOR(RawBytecodeHelper.LXOR, 1, Kind.OPERATOR),
 
     /**
-     * Increment local variable by constant.
+     * Increment {@link TypeKind#INT int} local variable by constant.
      *
      * @jvms 6.5.iinc <em>iinc</em>
      * @see Kind#INCREMENT

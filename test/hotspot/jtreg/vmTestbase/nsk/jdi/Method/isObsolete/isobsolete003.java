@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class isobsolete003 {
 
     private static void execTest() {
 
-        ThreadReference mainThread = debuggee.threadByName("main");
+        ThreadReference mainThread = debuggee.mainThread();
 
         // Set first breakpoint to have isobsolete003b class loaded.
         BreakpointRequest bpRequest = debuggee.makeBreakpoint(debuggeeClass, "main", brkpMainLineNumber);
@@ -456,6 +456,7 @@ public class isobsolete003 {
         ClassPrepareEvent event = (ClassPrepareEvent) waitForEvent(cpRequest);
         cpRequest.disable();
 
+        debuggee.setMainThread(event.thread());
         debuggeeClass = event.referenceType();
         if (!debuggeeClass.name().equals(debuggeeName))
            throw new Failure("Unexpected class name for ClassPrepareEvent : " + debuggeeClass.name());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,6 @@ protected:
 
   oop     loader()        { return _base_element_klass->loader(); }
   jobject loader_handle() { return _base_element_klass->loader_handle(); }
-
-  oop     protection_domain()        { return _base_element_klass->protection_domain(); }
-  jobject protection_domain_handle() { return _base_element_klass->protection_domain_handle(); }
-
 
 public:
   // The one-level type of the array elements.

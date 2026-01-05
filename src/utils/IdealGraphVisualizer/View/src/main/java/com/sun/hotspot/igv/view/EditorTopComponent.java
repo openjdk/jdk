@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputLiveRange;
 import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.util.StringUtils;
@@ -36,8 +39,14 @@ import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.*;
+import java.util.Set;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import org.openide.actions.RedoAction;
@@ -131,7 +140,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         }
 
         diagramViewModel.addTitleCallback(changedGraph -> {
-            setDisplayName(changedGraph.getDisplayName());
+            setDisplayName(getGraphDisplayName(changedGraph));
             setToolTipText(diagramViewModel.getGroup().getDisplayName());
         });
 
@@ -176,6 +185,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
 
+        JToggleButton freeInteractiveLayoutButton = new JToggleButton(new EnableFreeLayoutAction(this));
+        freeInteractiveLayoutButton.setSelected(diagramViewModel.getShowFreeInteractive());
+        layoutButtons.add(freeInteractiveLayoutButton);
+        toolBar.add(freeInteractiveLayoutButton);
+
         JToggleButton stableSeaLayoutButton = new JToggleButton(new EnableStableSeaLayoutAction(this));
         stableSeaLayoutButton.setSelected(diagramViewModel.getShowStableSea());
         layoutButtons.add(stableSeaLayoutButton);
@@ -200,6 +214,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
         toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, diagramViewModel.getShowEmptyBlocks())));
+        toolBar.add(new JToggleButton(new ShowLiveRangesAction(cfgLayoutAction, diagramViewModel.getShowLiveRanges())));
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
@@ -245,9 +260,23 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     }
 
     private void graphChanged(DiagramViewModel model) {
-        setDisplayName(model.getGraph().getDisplayName());
+        setDisplayName(getGraphDisplayName(model.getGraph()));
         setToolTipText(model.getGroup().getDisplayName());
         graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
+    }
+
+    public static String getGraphDisplayName(InputGraph graph) {
+        if (graph.isDiffGraph()) {
+            return getGraphDisplayName(graph.getFirstGraph()) + " Δ " +
+                   getGraphDisplayName(graph.getSecondGraph());
+        } else {
+            String suffixTemplate = Settings.get().get(Settings.GRAPH_NAME_SUFFIX,
+                                                       Settings.GRAPH_NAME_SUFFIX_DEFAULT);
+            String suffix = graph.getProperties().resolveString(suffixTemplate);
+            String emptySuffix = new Properties().resolveString(suffixTemplate);
+            String graphNameSuffix = suffix.equals(emptySuffix) ? "" : " " + suffix;
+            return graph.getIndex() + 1 + ". " + graph.getName() + graphNameSuffix;
+        }
     }
 
     public DiagramViewModel getModel() {
@@ -348,12 +377,26 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         scene.colorSelectedFigures(color);
     }
 
+    public void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden) {
+        scene.addSelectedLiveRanges(liveRanges, showIfHidden);
+    }
+
+    public void addSelectedElements(Collection<InputNode> nodes,
+                                    Collection<InputLiveRange> liveRanges,
+                                    boolean showIfHidden) {
+        scene.addSelectedElements(nodes, liveRanges, showIfHidden);
+    }
+
     public void centerSelectedNodes() {
         scene.centerSelectedFigures();
     }
 
-    public void clearSelectedNodes() {
-        scene.clearSelectedNodes();
+    public void centerSelectedLiveRanges() {
+        scene.centerSelectedLiveRanges();
+    }
+
+    public void clearSelectedElements() {
+        scene.clearSelectedElements();
     }
 
     public Rectangle getSceneBounds() {
@@ -445,7 +488,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         for (Figure figure : getModel().getSelectedFigures()) {
             selectedNodes.add(figure.getInputNode());
         }
-        etc.addSelectedNodes(selectedNodes, false);
+        Set<InputLiveRange> selectedLiveRanges = new HashSet<>();
+        for (int liveRangeId : getModel().getSelectedLiveRanges()) {
+            selectedLiveRanges.add(getModel().getGraph().getLiveRange(liveRangeId));
+        }
+        etc.addSelectedElements(selectedNodes, selectedLiveRanges, false);
         model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
         model.setCutEdges(CutEdgesAction.get(CutEdgesAction.class).isSelected(), false);
         etc.resetUndoRedo();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ public class BasicJStackTest {
         launcher.addVMArg("-XX:+UsePerfData");
         launcher.addVMArg("-Dfile.encoding=" + cs);
         launcher.addVMArg("-Dsun.stdout.encoding=" + cs);
+        // jstack output may be lengthy, disable output streaming to avoid deadlocks
+        launcher.addVMArg("-Djdk.attach.allowStreamingOutput=false");
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {
                 launcher.addToolArg(toolArg);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.beans.PropertyDescriptor;
 
 import java.lang.reflect.Method;
 
-import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -70,7 +69,6 @@ public class Test4682386 {
     private static final boolean DEBUG = true;
 
     private static final Class[] TYPES = {
-            JApplet.class,
             JButton.class,
             JCheckBox.class,
             JComboBox.class,

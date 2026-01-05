@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,16 @@ public class InstanceKlass extends Klass {
   private static int CLASS_STATE_FULLY_INITIALIZED;
   private static int CLASS_STATE_INITIALIZATION_ERROR;
 
+  public long     getAccessFlags()          { return            accessFlags.getValue(this); }
+  // Convenience routine
+  public AccessFlags getAccessFlagsObj()    { return new AccessFlags(getAccessFlags()); }
+
+  public boolean isPublic()                 { return getAccessFlagsObj().isPublic(); }
+  public boolean isFinal()                  { return getAccessFlagsObj().isFinal(); }
+  public boolean isInterface()              { return getAccessFlagsObj().isInterface(); }
+  public boolean isAbstract()               { return getAccessFlagsObj().isAbstract(); }
+  public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
+  public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("InstanceKlass");
@@ -88,6 +98,7 @@ public class InstanceKlass extends Klass {
       breakpoints        = type.getAddressField("_breakpoints");
     }
     headerSize           = type.getSize();
+    accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
 
     // read internal field flags constants
     FIELD_FLAG_IS_INITIALIZED      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_initialized");
@@ -150,6 +161,7 @@ public class InstanceKlass extends Klass {
   private static CIntField initState;
   private static CIntField itableLen;
   private static CIntField nestHostIndex;
+  private static CIntField accessFlags;
   private static AddressField breakpoints;
 
   // type safe enum for ClassState from instanceKlass.hpp
@@ -499,7 +511,7 @@ public class InstanceKlass extends Klass {
     }
   }
 
-  public boolean implementsInterface(Klass k) {
+  public boolean implementsInterface(InstanceKlass k) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(k.isInterface(), "should not reach here");
     }
@@ -511,7 +523,7 @@ public class InstanceKlass extends Klass {
     return false;
   }
 
-  boolean computeSubtypeOf(Klass k) {
+  boolean computeSubtypeOf(InstanceKlass k) {
     if (k.isInterface()) {
       return implementsInterface(k);
     } else {
@@ -535,6 +547,7 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(nonstaticOopMapSize, true);
       visitor.doCInt(initState, true);
       visitor.doCInt(itableLen, true);
+      visitor.doCInt(accessFlags, true);
     }
 
   /*
@@ -964,85 +977,5 @@ public class InstanceKlass extends Klass {
       }
     }
     return -1;
-  }
-
-  public void dumpReplayData(PrintStream out) {
-    ConstantPool cp = getConstants();
-
-    // Try to record related loaded classes
-    Klass sub = getSubklassKlass();
-    while (sub != null) {
-        if (sub instanceof InstanceKlass) {
-            out.println("instanceKlass " + sub.getName().asString());
-        }
-        sub = sub.getNextSiblingKlass();
-    }
-
-    final int length = cp.getLength();
-    out.print("ciInstanceKlass " + getName().asString() + " " + (isLinked() ? 1 : 0) + " " + (isInitialized() ? 1 : 0) + " " + length);
-    for (int index = 1; index < length; index++) {
-      out.print(" " + cp.getTags().at(index));
-    }
-    out.println();
-    if (isInitialized()) {
-      Field[] staticFields = getStaticFields();
-      for (int i = 0; i < staticFields.length; i++) {
-        Field f = staticFields[i];
-        Oop mirror = getJavaMirror();
-        if (f.isFinal() && !f.hasInitialValue()) {
-          out.print("staticfield " + getName().asString() + " " +
-                    OopUtilities.escapeString(f.getID().getName()) + " " +
-                    f.getFieldType().getSignature().asString() + " ");
-          if (f instanceof ByteField) {
-            ByteField bf = (ByteField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof BooleanField) {
-            BooleanField bf = (BooleanField)f;
-            out.println(bf.getValue(mirror) ? 1 : 0);
-          } else if (f instanceof ShortField) {
-            ShortField bf = (ShortField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof CharField) {
-            CharField bf = (CharField)f;
-            out.println(bf.getValue(mirror) & 0xffff);
-          } else if (f instanceof IntField) {
-            IntField bf = (IntField)f;
-            out.println(bf.getValue(mirror));
-          } else  if (f instanceof LongField) {
-            LongField bf = (LongField)f;
-            out.println(bf.getValue(mirror));
-          } else if (f instanceof FloatField) {
-            FloatField bf = (FloatField)f;
-            out.println(Float.floatToRawIntBits(bf.getValue(mirror)));
-          } else if (f instanceof DoubleField) {
-            DoubleField bf = (DoubleField)f;
-            out.println(Double.doubleToRawLongBits(bf.getValue(mirror)));
-          } else if (f instanceof OopField) {
-            OopField bf = (OopField)f;
-
-            Oop value = bf.getValue(mirror);
-            if (value == null) {
-              out.println("null");
-            } else if (value.isInstance()) {
-              Instance inst = (Instance)value;
-              if (inst.isA(SystemDictionary.getStringKlass())) {
-                out.println("\"" + OopUtilities.stringOopToEscapedString(inst) + "\"");
-              } else {
-                out.println(inst.getKlass().getName().asString());
-              }
-            } else if (value.isObjArray()) {
-              ObjArray oa = (ObjArray)value;
-              Klass ek = (ObjArrayKlass)oa.getKlass();
-              out.println(oa.getLength() + " " + ek.getName().asString());
-            } else if (value.isTypeArray()) {
-              TypeArray ta = (TypeArray)value;
-              out.println(ta.getLength());
-            } else {
-              out.println(value);
-            }
-          }
-        }
-      }
-    }
   }
 }

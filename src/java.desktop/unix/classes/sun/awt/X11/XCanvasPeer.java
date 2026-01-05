@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ class XCanvasPeer extends XComponentPeer implements CanvasPeer {
         super(target);
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         if (SunToolkit.getSunAwtNoerasebackground()) {
@@ -56,6 +57,7 @@ class XCanvasPeer extends XComponentPeer implements CanvasPeer {
     /* Get a GraphicsConfig with the same visual on the new
      * screen, which should be easy in Xinerama mode.
      */
+    @Override
     public GraphicsConfiguration getAppropriateGraphicsConfiguration(
                                     GraphicsConfiguration gc)
     {
@@ -97,6 +99,7 @@ class XCanvasPeer extends XComponentPeer implements CanvasPeer {
     public void disableBackgroundErase() {
         eraseBackgroundDisabled = true;
     }
+    @Override
     protected boolean doEraseBackground() {
         return !eraseBackgroundDisabled;
     }

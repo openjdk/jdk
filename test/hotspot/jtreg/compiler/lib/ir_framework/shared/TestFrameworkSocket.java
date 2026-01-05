@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ public class TestFrameworkSocket implements AutoCloseable {
     public static final String STDOUT_PREFIX = "[STDOUT]";
     public static final String TESTLIST_TAG = "[TESTLIST]";
     public static final String DEFAULT_REGEX_TAG = "[DEFAULT_REGEX]";
+    public static final String PRINT_TIMES_TAG = "[PRINT_TIMES]";
+    public static final String NOT_COMPILABLE_TAG = "[NOT_COMPILABLE]";
 
     // Static fields used for test VM only.
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
@@ -123,6 +125,12 @@ public class TestFrameworkSocket implements AutoCloseable {
 
     /**
      * Only called by test VM to write to server socket.
+     * <p>
+     * The test VM is spawned by the main jtreg VM. The stdout of the test VM is hidden
+     * unless the Verbose or ReportStdout flag is used. TestFrameworkSocket is used by the parent jtreg
+     * VM and the test VM to communicate. By sending the prints through the TestFrameworkSocket with the
+     * parameter stdout set to true, the parent VM will print the received messages to its stdout, making it
+     * visible to the user.
      */
     public static void write(String msg, String tag, boolean stdout) {
         if (REPRODUCE) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1124,8 +1124,8 @@ class BadIRAnnotationsAfterTestVM {
 
     @Test
     @FailCount(8)
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"})
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}) // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"}, applyIf = {"MaxVectorSize", "> 0"}) // valid, but only if MaxVectorSize > 0, otherwise, a violation is reported
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}, applyIf = {"MaxVectorSize", "> 0"}) // valid, but only if MaxVectorSize > 0, otherwise, a violation is reported
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0"}) // valid
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "", "> 0"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "xxx", "> 0"})
@@ -1163,15 +1163,17 @@ class BadIRNodeForPhase {
     public void duplicatedPhase() {}
 
     @Test
-    @FailCount(4)
-    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
+    @FailCount(6)
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})  // FINAL_CODE not available
+    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)  // PRINT_IDEAL not available
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING})  // works
     @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY})  // PRINT_OPTO_ASSEMBLY not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.AFTER_MACRO_EXPANSION})  // FINAL_CODE not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)  // PRINT_IDEAL not available
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING})  // works
     @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY})  // PRINT_OPTO_ASSEMBLY not available
     public void alloc() {}
 
     @Test

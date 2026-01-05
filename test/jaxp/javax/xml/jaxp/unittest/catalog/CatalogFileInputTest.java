@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
@@ -49,6 +51,9 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.SimpleFileServer;
+import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.util.JarUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -56,13 +61,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
-import jdk.test.lib.net.SimpleHttpServer;
 
 /*
  * @test
  * @bug 8151154 8171243
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest /test/lib
- * @build jdk.test.lib.net.SimpleHttpServer
  * @run testng/othervm catalog.CatalogFileInputTest
  * @summary Verifies that the Catalog API accepts valid URIs only;
  *          Verifies that the CatalogFeatures' builder throws
@@ -81,9 +84,9 @@ public class CatalogFileInputTest extends CatalogSupportBase {
     final static String SCHEME_JARFILE = "jar:";
     static final String REMOTE_FILE_LOCATION = "/jar/META-INF";
     static final String DOCROOT = SRC_DIR;
-    static final String TESTCONTEXT = REMOTE_FILE_LOCATION;  //mapped to local file path
-    private SimpleHttpServer httpserver;
+    private HttpServer httpserver;
     private String remoteFilePath;
+    private ExecutorService executor;
 
     /*
      * Initializing fields
@@ -92,15 +95,23 @@ public class CatalogFileInputTest extends CatalogSupportBase {
     public void setUpClass() throws Exception {
         super.setUp();
         // set up HttpServer
-        httpserver = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT, DOCROOT);
+        httpserver = SimpleFileServer.createFileServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
+                Path.of(DOCROOT), SimpleFileServer.OutputLevel.INFO);
+        executor = Executors.newCachedThreadPool();
+        httpserver.setExecutor(executor);
         httpserver.start();
-        remoteFilePath = httpserver.getAddress() + REMOTE_FILE_LOCATION;
+        remoteFilePath = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(httpserver.getAddress().getAddress())
+                .port(httpserver.getAddress().getPort())
+                .build().toString() + REMOTE_FILE_LOCATION;
     }
 
     @AfterClass
     protected void tearDown() {
         if (httpserver != null) {
-            httpserver.stop();
+            httpserver.stop(0);
+            executor.shutdown();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 /**
  * @test
  * @summary Basic test for JFR jdk.VirtualThreadXXX events
- * @requires vm.continuations
+ * @requires vm.continuations & vm.hasJFR
  * @modules jdk.jfr java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED JfrEvents
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED JfrEvents
  */
 
 import java.io.IOException;
@@ -42,6 +42,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import jdk.jfr.EventType;
@@ -77,12 +78,13 @@ class JfrEvents {
 
             // execute 100 tasks, each in their own virtual thread
             recording.start();
-            ThreadFactory factory = Thread.ofVirtual().factory();
-            try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-                for (int i = 0; i < 100; i++) {
-                    executor.submit(() -> { });
+            try {
+                List<Thread> threads = IntStream.range(0, 100)
+                        .mapToObj(_ -> Thread.startVirtualThread(() -> { }))
+                        .toList();
+                for (Thread t : threads) {
+                    t.join();
                 }
-                Thread.sleep(1000); // give time for thread end events to be recorded
             } finally {
                 recording.stop();
             }
@@ -300,10 +302,10 @@ class JfrEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned event when waiting for a class initializer.
+     * Test jdk.VirtualThreadPinned event when waiting for a class initializer while pinned.
      */
     @Test
-    void testWaitingForClassInitializer() throws Exception {
+    void testWaitingForClassInitializerWhenPinned() throws Exception {
         class TestClass {
             static {
                 LockSupport.park();
@@ -326,7 +328,9 @@ class JfrEvents {
             });
             Thread vthread2 = Thread.ofVirtual().unstarted(() -> {
                 started2.set(true);
-                TestClass.m();
+                VThreadPinner.runPinned(() -> {
+                    TestClass.m();
+                });
             });
 
             try {
@@ -339,7 +343,7 @@ class JfrEvents {
                 vthread2.start();
                 awaitTrue(started2);
 
-                // give time for second virtual thread to wait on the MutexLocker
+                // give time for second virtual thread to wait in VM
                 Thread.sleep(3000);
 
             } finally {

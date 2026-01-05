@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
 
 /*
  *@test
- *@bug 4848242
- *@summary Make sure that MET time zone is not misinterpreted in euro locales.
- *         Display the MET and MEST TZ human-readable name in all euro locales.
+ *@bug 4848242 8342886
+ *@summary Verifies that sampled European locales use consistent short time zone names.
+ *         Originally assumed all European locales had the same short names,
+ *         but due to changes in time zone data and locale handling, that is no longer guaranteed.
+ *         This test now verifies that a representative sample of locales (e.g., fr, it)
+ *         still use the same short names (CET/CEST).
  */
 
 import java.util.Locale;

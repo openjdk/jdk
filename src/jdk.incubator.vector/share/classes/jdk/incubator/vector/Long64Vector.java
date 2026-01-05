@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -511,6 +513,7 @@ final class Long64Vector extends LongVector {
         }
     }
 
+    @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -530,6 +533,7 @@ final class Long64Vector extends LongVector {
         }
     }
 
+    @ForceInline
     public Long64Vector withLaneHelper(int i, long e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
@@ -861,8 +865,39 @@ final class Long64Vector extends LongVector {
                         a[offset + i] = laneSource(i);
                     }
                 }
-            }
+           }
+
         }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            switch (length()) {
+                case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT_UNALIGNED, offset, laneSource(0));
+                case 2 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 4 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 8 -> toBitsVector()
+                       .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
+                       .reinterpretAsInts()
+                       .intoMemorySegment(ms, offset, bo);
+                case 16 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
+                        .reinterpretAsInts()
+                        .intoMemorySegment(ms, offset, bo);
+                default -> {
+                    VectorIntrinsics.checkFromIndexSize(offset, length(), ms.byteSize() / 4);
+                    for (int i = 0; i < length(); i++) {
+                        ms.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, offset + (i << 2), laneSource(i));
+                    }
+                }
+            }
+         }
 
         @Override
         @ForceInline

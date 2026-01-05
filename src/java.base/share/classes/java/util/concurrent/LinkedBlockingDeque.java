@@ -61,8 +61,8 @@ import java.util.function.Predicate;
  * blocking).  Exceptions include {@link #remove(Object) remove},
  * {@link #removeFirstOccurrence removeFirstOccurrence}, {@link
  * #removeLastOccurrence removeLastOccurrence}, {@link #contains
- * contains}, {@link #iterator iterator.remove()}, and the bulk
- * operations, all of which run in linear time.
+ * contains}, and the bulk operations, all of which run in linear
+ * time.
  *
  * <p>This class and its iterator implement all of the <em>optional</em>
  * methods of the {@link Collection} and {@link Iterator} interfaces.
@@ -150,19 +150,19 @@ public class LinkedBlockingDeque<E>
     transient Node<E> last;
 
     /** Number of items in the deque */
-    private transient int count;
+    private transient volatile int count;
 
-    /** Maximum number of items in the deque */
+    /** @serial Maximum number of items in the deque */
     private final int capacity;
 
-    /** Main lock guarding all access */
+    /** @serial Main lock guarding all access */
     final ReentrantLock lock = new ReentrantLock();
 
-    /** Condition for waiting takes */
+    /** @serial Condition for waiting takes */
     @SuppressWarnings("serial") // Classes implementing Condition may be serializable.
     private final Condition notEmpty = lock.newCondition();
 
-    /** Condition for waiting puts */
+    /** @serial Condition for waiting puts */
     @SuppressWarnings("serial") // Classes implementing Condition may be serializable.
     private final Condition notFull = lock.newCondition();
 
@@ -206,10 +206,13 @@ public class LinkedBlockingDeque<E>
 
     /**
      * Links node as first element, or returns false if full.
+     *
+     * @return true if the node was added; false otherwise
      */
     private boolean linkFirst(Node<E> node) {
         // assert lock.isHeldByCurrentThread();
-        if (count >= capacity)
+        int c;
+        if ((c = count) >= capacity)
             return false;
         Node<E> f = first;
         node.next = f;
@@ -218,17 +221,20 @@ public class LinkedBlockingDeque<E>
             last = node;
         else
             f.prev = node;
-        ++count;
+        count = c + 1;
         notEmpty.signal();
         return true;
     }
 
     /**
      * Links node as last element, or returns false if full.
+     *
+     * @return true if the node was added; false otherwise
      */
     private boolean linkLast(Node<E> node) {
         // assert lock.isHeldByCurrentThread();
-        if (count >= capacity)
+        int c;
+        if ((c = count) >= capacity)
             return false;
         Node<E> l = last;
         node.prev = l;
@@ -237,7 +243,7 @@ public class LinkedBlockingDeque<E>
             first = node;
         else
             l.next = node;
-        ++count;
+        count = c + 1;
         notEmpty.signal();
         return true;
     }
@@ -334,6 +340,8 @@ public class LinkedBlockingDeque<E>
      */
     public boolean offerFirst(E e) {
         if (e == null) throw new NullPointerException();
+        if (count >= capacity)
+            return false;
         Node<E> node = new Node<E>(e);
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -349,6 +357,8 @@ public class LinkedBlockingDeque<E>
      */
     public boolean offerLast(E e) {
         if (e == null) throw new NullPointerException();
+        if (count >= capacity)
+            return false;
         Node<E> node = new Node<E>(e);
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -367,7 +377,7 @@ public class LinkedBlockingDeque<E>
         if (e == null) throw new NullPointerException();
         Node<E> node = new Node<E>(e);
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lockInterruptibly();
         try {
             while (!linkFirst(node))
                 notFull.await();
@@ -384,7 +394,7 @@ public class LinkedBlockingDeque<E>
         if (e == null) throw new NullPointerException();
         Node<E> node = new Node<E>(e);
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lockInterruptibly();
         try {
             while (!linkLast(node))
                 notFull.await();
@@ -458,6 +468,7 @@ public class LinkedBlockingDeque<E>
     }
 
     public E pollFirst() {
+        if (count == 0) return null;
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -468,6 +479,7 @@ public class LinkedBlockingDeque<E>
     }
 
     public E pollLast() {
+        if (count == 0) return null;
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -479,7 +491,7 @@ public class LinkedBlockingDeque<E>
 
     public E takeFirst() throws InterruptedException {
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lockInterruptibly();
         try {
             E x;
             while ( (x = unlinkFirst()) == null)
@@ -492,7 +504,7 @@ public class LinkedBlockingDeque<E>
 
     public E takeLast() throws InterruptedException {
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lockInterruptibly();
         try {
             E x;
             while ( (x = unlinkLast()) == null)
@@ -558,6 +570,7 @@ public class LinkedBlockingDeque<E>
     }
 
     public E peekFirst() {
+        if (count == 0) return null;
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -568,6 +581,7 @@ public class LinkedBlockingDeque<E>
     }
 
     public E peekLast() {
+        if (count == 0) return null;
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -718,13 +732,7 @@ public class LinkedBlockingDeque<E>
      * insert or remove an element.
      */
     public int remainingCapacity() {
-        final ReentrantLock lock = this.lock;
-        lock.lock();
-        try {
-            return capacity - count;
-        } finally {
-            lock.unlock();
-        }
+        return capacity - count;
     }
 
     /**
@@ -806,13 +814,7 @@ public class LinkedBlockingDeque<E>
      * @return the number of elements in this deque
      */
     public int size() {
-        final ReentrantLock lock = this.lock;
-        lock.lock();
-        try {
-            return count;
-        } finally {
-            lock.unlock();
-        }
+        return count;
     }
 
     /**
@@ -858,7 +860,7 @@ public class LinkedBlockingDeque<E>
 
         // Copy c into a private chain of Nodes
         Node<E> beg = null, end = null;
-        int n = 0;
+        long n = 0;
         for (E e : c) {
             Objects.requireNonNull(e);
             n++;
@@ -878,14 +880,15 @@ public class LinkedBlockingDeque<E>
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (count + n <= capacity) {
+            long cnt;
+            if ((cnt = count + n) <= capacity) {
                 beg.prev = last;
                 if (first == null)
                     first = beg;
                 else
                     last.next = beg;
                 last = end;
-                count += n;
+                count = (int)cnt;
                 notEmpty.signalAll();
                 return true;
             }
@@ -894,6 +897,7 @@ public class LinkedBlockingDeque<E>
         }
         // Fall back to historic non-atomic implementation, failing
         // with IllegalStateException when the capacity is exceeded.
+        beg = end = null; // help GC
         return super.addAll(c);
     }
 
@@ -910,7 +914,6 @@ public class LinkedBlockingDeque<E>
      *
      * @return an array containing all of the elements in this deque
      */
-    @SuppressWarnings("unchecked")
     public Object[] toArray() {
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -995,8 +998,8 @@ public class LinkedBlockingDeque<E>
             for (Node<E> f = first; f != null; ) {
                 f.item = null;
                 Node<E> n = f.next;
-                f.prev = null;
-                f.next = null;
+                f.prev = f;
+                f.next = f;
                 f = n;
             }
             first = last = null;

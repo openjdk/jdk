@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,10 @@
 
 package jdk.jpackage.test;
 
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.test.TestBuilder.CMDLINE_ARG_PREFIX;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -32,16 +36,20 @@ import java.util.Deque;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import static java.util.stream.Collectors.toCollection;
 import java.util.stream.Stream;
-import static jdk.jpackage.test.TestBuilder.CMDLINE_ARG_PREFIX;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
 public final class Main {
-    public static void main(String args[]) throws Throwable {
+
+    public static void main(String... args) throws Exception {
+        main(TestBuilder.build(), args);
+    }
+
+    public static void main(TestBuilder.Builder builder, String... args) throws Exception {
         boolean listTests = false;
         List<TestInstance> tests = new ArrayList<>();
-        try (TestBuilder testBuilder = new TestBuilder(tests::add)) {
+        try (TestBuilder testBuilder = builder.testConsumer(tests::add).create()) {
             Deque<String> argsAsList = new ArrayDeque<>(List.of(args));
             while (!argsAsList.isEmpty()) {
                 var arg = argsAsList.pop();
@@ -79,13 +87,11 @@ public final class Main {
                 try {
                     testBuilder.processCmdLineArg(arg);
                     success = true;
-                } catch (Throwable throwable) {
-                    TKit.unbox(throwable);
+                } catch (Exception ex) {
+                    throw ExceptionBox.unbox(ex);
                 } finally {
                     if (!success) {
-                        TKit.log(
-                                String.format("Error processing parameter=[%s]",
-                                        arg));
+                        TKit.log(String.format("Error processing parameter=[%s]", arg));
                     }
                 }
             }
@@ -99,6 +105,13 @@ public final class Main {
             // Just list the tests
             orderedTests.forEach(test -> System.out.println(String.format(
                     "%s; workDir=[%s]", test.fullName(), test.workDir())));
+        }
+
+        orderedTests.stream().collect(toMap(TestInstance::fullName, x -> x, (x, y) -> {
+            throw new IllegalArgumentException(String.format("Multiple tests with the same description: [%s]", x.fullName()));
+        }));
+
+        if (listTests) {
             return;
         }
 

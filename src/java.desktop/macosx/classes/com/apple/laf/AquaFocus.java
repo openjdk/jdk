@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import apple.laf.JRSUIFocus;
 
 import com.apple.laf.AquaUtils.Painter;
 
-public class AquaFocus {
+public final class AquaFocus {
     interface Drawable {
         public void draw(final Graphics2D sg2d);
     }
@@ -109,7 +109,7 @@ public class AquaFocus {
     }
  */
 
-    static class FocusedIcon extends AquaUtils.ShadowBorder implements Icon {
+    static final class FocusedIcon extends AquaUtils.ShadowBorder implements Icon {
         final Icon icon;
         final int slack;
 

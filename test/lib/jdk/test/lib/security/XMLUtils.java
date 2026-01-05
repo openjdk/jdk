@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,6 +559,7 @@ public class XMLUtils {
     /**
      * Adds a new rule to "jdk.xml.dsig.secureValidationPolicy"
      */
+    @SuppressWarnings("dangling-doc-comments")
     public static void addPolicy(String rule) {
         String value = Security.getProperty("jdk.xml.dsig.secureValidationPolicy");
         value = rule + "," + value;

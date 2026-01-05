@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +23,11 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/heuristics/shenandoahGlobalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-
 #include "utilities/quickSort.hpp"
 
 ShenandoahGlobalHeuristics::ShenandoahGlobalHeuristics(ShenandoahGlobalGeneration* generation)
@@ -44,8 +42,6 @@ void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(Shenandoa
   QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage);
 
   choose_global_collection_set(cset, data, size, actual_free, 0 /* cur_young_garbage */);
-
-  log_cset_composition(cset);
 }
 
 
@@ -55,10 +51,9 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
                                                               size_t cur_young_garbage) const {
   auto heap = ShenandoahGenerationalHeap::heap();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t capacity = heap->young_generation()->max_capacity();
+  size_t capacity = heap->soft_max_capacity();
   size_t garbage_threshold = region_size_bytes * ShenandoahGarbageThreshold / 100;
   size_t ignore_threshold = region_size_bytes * ShenandoahIgnoreGarbageThreshold / 100;
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
 
   size_t young_evac_reserve = heap->young_generation()->get_evacuation_reserve();
   size_t old_evac_reserve = heap->old_generation()->get_evacuation_reserve();
@@ -92,17 +87,18 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_young_cset;
   size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
-  log_info(gc, ergo)("Adaptive CSet Selection for GLOBAL. Max Young Evacuation: " SIZE_FORMAT
-                     "%s, Max Old Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
+  log_info(gc, ergo)("Adaptive CSet Selection for GLOBAL. Max Young Evacuation: %zu"
+                     "%s, Max Old Evacuation: %zu%s, Max Either Evacuation: %zu%s, Actual Free: %zu%s.",
                      byte_size_in_proper_unit(max_young_cset), proper_unit_for_byte_size(max_young_cset),
                      byte_size_in_proper_unit(max_old_cset), proper_unit_for_byte_size(max_old_cset),
+                     byte_size_in_proper_unit(unaffiliated_young_memory), proper_unit_for_byte_size(unaffiliated_young_memory),
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
     assert(!cset->is_preselected(r->index()), "There should be no preselected regions during GLOBAL GC");
     bool add_region = false;
-    if (r->is_old() || (r->age() >= tenuring_threshold)) {
+    if (r->is_old() || heap->is_tenurable(r)) {
       size_t new_cset = old_cur_cset + r->get_live_data_bytes();
       if ((r->garbage() > garbage_threshold)) {
         while ((new_cset > max_old_cset) && (unaffiliated_young_regions > 0)) {
@@ -116,7 +112,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
         old_cur_cset = new_cset;
       }
     } else {
-      assert(r->is_young() && (r->age() < tenuring_threshold), "DeMorgan's law (assuming r->is_affiliated)");
+      assert(r->is_young() && !heap->is_tenurable(r), "DeMorgan's law (assuming r->is_affiliated)");
       size_t new_cset = young_cur_cset + r->get_live_data_bytes();
       size_t region_garbage = r->garbage();
       size_t new_garbage = cur_young_garbage + region_garbage;
@@ -138,9 +134,8 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
       cset->add_region(r);
     }
   }
-
   if (regions_transferred_to_old > 0) {
-    heap->generation_sizer()->force_transfer_to_old(regions_transferred_to_old);
+    assert(young_evac_reserve > regions_transferred_to_old * region_size_bytes, "young reserve cannot be negative");
     heap->young_generation()->set_evacuation_reserve(young_evac_reserve - regions_transferred_to_old * region_size_bytes);
     heap->old_generation()->set_evacuation_reserve(old_evac_reserve + regions_transferred_to_old * region_size_bytes);
   }

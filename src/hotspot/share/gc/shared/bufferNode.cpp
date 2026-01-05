@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "utilities/debug.hpp"
 #include "memory/allocation.inline.hpp"
-
-#include <new>
+#include "utilities/debug.hpp"
 
 BufferNode::AllocatorConfig::AllocatorConfig(size_t size)
   : _buffer_capacity(size)
@@ -68,4 +66,3 @@ void BufferNode::Allocator::release(BufferNode* node) {
   node->~BufferNode();
   _free_list.release(node);
 }
-

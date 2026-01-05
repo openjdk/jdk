@@ -1447,7 +1447,7 @@ _DATA   SEGMENT      'DATA'
 ione    DD      1065353216
         DD      -1082130432
 _DATA   ENDS
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
 vscbrt_ha_cout_data     DD      3212578753
         DD      3212085645

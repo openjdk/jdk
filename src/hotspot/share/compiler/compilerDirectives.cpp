@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -558,6 +557,20 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   }
   if (!CompilerDirectivesIgnoreCompileCommandsOption) {
     return CompilerOracle::should_not_inline(mh);
+  }
+  return false;
+}
+
+bool DirectiveSet::should_delay_inline(ciMethod* inlinee) {
+  inlinee->check_is_loaded();
+  VM_ENTRY_MARK;
+  methodHandle mh(THREAD, inlinee->get_Method());
+
+  if (_inlinematchers != nullptr) {
+    return matches_inline(mh, InlineMatcher::delay_inline);
+  }
+  if (!CompilerDirectivesIgnoreCompileCommandsOption) {
+    return CompilerOracle::should_delay_inline(mh);
   }
   return false;
 }

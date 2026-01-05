@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "memory/resourceArea.hpp"
@@ -281,16 +280,6 @@ void NativeMovConstReg::set_pc_relative_offset(address addr, address pc) {
     //    ldr Rd, Rt, #delta_lo (or -#delta_lo)
     next->set_encoding((next->encoding() & 0xff7ff000) | (delta & 0xfff) | sign);
   }
-}
-
-void RawNativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
-}
-
-void RawNativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
-  int *a = (int *)verified_entry;
-  a[0] = not_entrant_illegal_instruction; // always illegal
-  ICache::invalidate_range((address)&a[0], sizeof a[0]);
 }
 
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {

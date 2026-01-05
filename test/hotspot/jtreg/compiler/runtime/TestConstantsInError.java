@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
  * @bug 8279822
  * @requires vm.flagless
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  *
  * @run main compiler.runtime.TestConstantsInError
  */
 package compiler.runtime;
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -46,8 +46,8 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.ClassWriter.*;
+import static org.objectweb.asm.Opcodes.*;
 
 interface OutputProcessor {
     default void process(OutputAnalyzer output, boolean isC1) {}
@@ -248,7 +248,6 @@ public abstract class TestConstantsInError implements OutputProcessor {
 
     static void run(TestConstantsInError test) throws Exception {
         List<String> commonArgs = List.of(
-                "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-Xbatch", "-XX:CompileThreshold=100",
                 "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,*::test",
                 "-XX:+PrintCompilation",

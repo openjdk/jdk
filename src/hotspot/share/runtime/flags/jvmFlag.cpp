@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.inline.hpp"
@@ -163,7 +162,7 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     //      uintx ThresholdTolerance                       = 10                                        {product} {default}
     //     size_t TLABSize                                 = 0                                         {product} {default}
     //      uintx SurvivorRatio                            = 8                                         {product} {default}
-    //     double InitialRAMPercentage                     = 1.562500                                  {product} {default}
+    //     double InitialRAMPercentage                     = 0.000000                                  {product} {default}
     //      ccstr CompileCommandFile                       = MyFile.cmd                                {product} {command line}
     //  ccstrlist CompileOnly                              = Method1
     //            CompileOnly                             += Method2                                   {product} {command line}
@@ -209,13 +208,13 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     } else if (is_uint()) {
       st->print("%u", get_uint());
     } else if (is_intx()) {
-      st->print(INTX_FORMAT, get_intx());
+      st->print("%zd", get_intx());
     } else if (is_uintx()) {
-      st->print(UINTX_FORMAT, get_uintx());
+      st->print("%zu", get_uintx());
     } else if (is_uint64_t()) {
       st->print(UINT64_FORMAT, get_uint64_t());
     } else if (is_size_t()) {
-      st->print(SIZE_FORMAT, get_size_t());
+      st->print("%zu", get_size_t());
     } else if (is_double()) {
       st->print("%f", get_double());
     } else if (is_ccstr()) {
@@ -411,13 +410,13 @@ void JVMFlag::print_as_flag(outputStream* st) const {
   } else if (is_uint()) {
     st->print("-XX:%s=%u", _name, get_uint());
   } else if (is_intx()) {
-    st->print("-XX:%s=" INTX_FORMAT, _name, get_intx());
+    st->print("-XX:%s=%zd", _name, get_intx());
   } else if (is_uintx()) {
-    st->print("-XX:%s=" UINTX_FORMAT, _name, get_uintx());
+    st->print("-XX:%s=%zu", _name, get_uintx());
   } else if (is_uint64_t()) {
     st->print("-XX:%s=" UINT64_FORMAT, _name, get_uint64_t());
   } else if (is_size_t()) {
-    st->print("-XX:%s=" SIZE_FORMAT, _name, get_size_t());
+    st->print("-XX:%s=%zu", _name, get_size_t());
   } else if (is_double()) {
     st->print("-XX:%s=%f", _name, get_double());
   } else if (is_ccstr()) {
@@ -712,7 +711,7 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
     for (size_t i = 0; i < length; i++) {
       const bool skip = (skipDefaults && flagTable[i].is_default());
       const bool visited = iteratorMarkers.at(i);
-      if (!visited && flagTable[i].is_unlocked() && !skip) {
+      if (!visited && !skip) {
         if ((bestFlag == nullptr) || (strcmp(bestFlag->name(), flagTable[i].name()) > 0)) {
           bestFlag = &flagTable[i];
           bestFlagIndex = i;

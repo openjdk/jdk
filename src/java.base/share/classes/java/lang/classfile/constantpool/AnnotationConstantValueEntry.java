@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@ import java.lang.classfile.AnnotationValue;
 import java.lang.constant.ConstantDesc;
 
 /**
- * A constant pool entry that may be used by annotation constant values,
- * which includes the four kinds of primitive constants and UTF8 constants.
- * These entries are also the only entries that do not refer to other
- * constant pool entries.
+ * Marker interface for constant pool entries that can represent constant values
+ * associated with elements of annotations.  They are also the only entries that
+ * do not refer to other constant pool entries.
  *
  * @apiNote
  * An annotation constant value entry alone is not sufficient to determine
@@ -40,6 +39,7 @@ import java.lang.constant.ConstantDesc;
  * in {@link AnnotationValue.OfInt}.
  *
  * @see AnnotationValue.OfConstant
+ * @jvms 4.7.16.1 The {@code element_value} structure
  * @sealedGraph
  * @since 24
  */
@@ -47,9 +47,9 @@ public sealed interface AnnotationConstantValueEntry extends PoolEntry
         permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, Utf8Entry {
 
     /**
-     * {@return the constant value}  The constant value will be an {@link Integer},
-     * {@link Long}, {@link Float}, {@link Double} for the primitive constants,
-     * or {@link String} for UTF8 constants.
+     * {@return the constant value}  The constant value will be an {@link
+     * Integer}, {@link Long}, {@link Float}, {@link Double} for the primitive
+     * constants, or {@link String} for UTF8 constants.
      */
     ConstantDesc constantValue();
 }

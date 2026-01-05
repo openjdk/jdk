@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/vmreg.inline.hpp"
 #include "gc/g1/c2/g1BarrierSetC2.hpp"
@@ -30,8 +29,8 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/block.hpp"
 #include "opto/compile.hpp"
@@ -288,18 +287,24 @@ bool G1BarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
 }
 
 uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
-  // These Ideal node counts are extracted from the pre-matching Ideal graph
-  // generated when compiling the following method with early barrier expansion:
-  //   static void write(MyObject obj1, Object o) {
-  //     obj1.o1 = o;
-  //   }
   uint8_t barrier_data = MemNode::barrier_data(node);
   uint nodes = 0;
   if ((barrier_data & G1C2BarrierPre) != 0) {
-    nodes += 50;
+    // Only consider the fast path for the barrier that is
+    // actually inlined into the main code stream.
+    // The slow path is laid out separately and does not
+    // directly affect performance.
+    // It has a cost of 6 (AddP, LoadB, Cmp, Bool, If, IfProj).
+    nodes += 6;
   }
   if ((barrier_data & G1C2BarrierPost) != 0) {
-    nodes += 60;
+    // Approximate the number of nodes needed; an if costs 4 nodes (Cmp, Bool,
+    // If, If projection), any other (Assembly) instruction is approximated with
+    // a cost of 1.
+    nodes +=   4  // base cost for the card write containing getting base offset, address calculation and the card write;
+             + 6  // same region check: Uncompress (new_val) oop, xor, shr, (cmp), jmp
+             + 4  // new_val is null check
+             + (UseCondCardMark ? 4 : 0); // card not clean check.
   }
   return nodes;
 }
@@ -387,8 +392,9 @@ public:
   }
 
   bool needs_liveness_data(const MachNode* mach) const {
-    return G1PreBarrierStubC2::needs_barrier(mach) ||
-           G1PostBarrierStubC2::needs_barrier(mach);
+    // Liveness data is only required to compute registers that must be preserved
+    // across the runtime call in the pre-barrier stub.
+    return G1BarrierStubC2::needs_pre_barrier(mach);
   }
 
   bool needs_livein_data() const {
@@ -402,10 +408,22 @@ static G1BarrierSetC2State* barrier_set_state() {
 
 G1BarrierStubC2::G1BarrierStubC2(const MachNode* node) : BarrierStubC2(node) {}
 
+bool G1BarrierStubC2::needs_pre_barrier(const MachNode* node) {
+  return (node->barrier_data() & G1C2BarrierPre) != 0;
+}
+
+bool G1BarrierStubC2::needs_post_barrier(const MachNode* node) {
+  return (node->barrier_data() & G1C2BarrierPost) != 0;
+}
+
+bool G1BarrierStubC2::post_new_val_may_be_null(const MachNode* node) {
+  return (node->barrier_data() & G1C2BarrierPostNotNull) == 0;
+}
+
 G1PreBarrierStubC2::G1PreBarrierStubC2(const MachNode* node) : G1BarrierStubC2(node) {}
 
 bool G1PreBarrierStubC2::needs_barrier(const MachNode* node) {
-  return (node->barrier_data() & G1C2BarrierPre) != 0;
+  return needs_pre_barrier(node);
 }
 
 G1PreBarrierStubC2* G1PreBarrierStubC2::create(const MachNode* node) {
@@ -449,48 +467,6 @@ void G1PreBarrierStubC2::emit_code(MacroAssembler& masm) {
   bs->generate_c2_pre_barrier_stub(&masm, this);
 }
 
-G1PostBarrierStubC2::G1PostBarrierStubC2(const MachNode* node) : G1BarrierStubC2(node) {}
-
-bool G1PostBarrierStubC2::needs_barrier(const MachNode* node) {
-  return (node->barrier_data() & G1C2BarrierPost) != 0;
-}
-
-G1PostBarrierStubC2* G1PostBarrierStubC2::create(const MachNode* node) {
-  G1PostBarrierStubC2* const stub = new (Compile::current()->comp_arena()) G1PostBarrierStubC2(node);
-  if (!Compile::current()->output()->in_scratch_emit_size()) {
-    barrier_set_state()->stubs()->append(stub);
-  }
-  return stub;
-}
-
-void G1PostBarrierStubC2::initialize_registers(Register thread, Register tmp1, Register tmp2, Register tmp3) {
-  _thread = thread;
-  _tmp1 = tmp1;
-  _tmp2 = tmp2;
-  _tmp3 = tmp3;
-}
-
-Register G1PostBarrierStubC2::thread() const {
-  return _thread;
-}
-
-Register G1PostBarrierStubC2::tmp1() const {
-  return _tmp1;
-}
-
-Register G1PostBarrierStubC2::tmp2() const {
-  return _tmp2;
-}
-
-Register G1PostBarrierStubC2::tmp3() const {
-  return _tmp3;
-}
-
-void G1PostBarrierStubC2::emit_code(MacroAssembler& masm) {
-  G1BarrierSetAssembler* bs = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
-  bs->generate_c2_post_barrier_stub(&masm, this);
-}
-
 void* G1BarrierSetC2::create_barrier_state(Arena* comp_arena) const {
   return new (comp_arena) G1BarrierSetC2State(comp_arena);
 }
@@ -530,8 +506,65 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
   return barriers;
 }
 
+void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
+  uint8_t barrier_data = mach->barrier_data();
+  barrier_data &= ~G1C2BarrierPre;
+  if (CardTableBarrierSetC2::use_ReduceInitialCardMarks()) {
+    barrier_data &= ~G1C2BarrierPost;
+    barrier_data &= ~G1C2BarrierPostNotNull;
+  }
+  mach->set_barrier_data(barrier_data);
+}
+
+void G1BarrierSetC2::analyze_dominating_barriers() const {
+  ResourceMark rm;
+  PhaseCFG* const cfg = Compile::current()->cfg();
+
+  // Find allocations and memory accesses (stores and atomic operations), and
+  // track them in lists.
+  Node_List accesses;
+  Node_List allocations;
+  for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
+    const Block* const block = cfg->get_block(i);
+    for (uint j = 0; j < block->number_of_nodes(); ++j) {
+      Node* const node = block->get_node(j);
+      if (node->is_Phi()) {
+        if (BarrierSetC2::is_allocation(node)) {
+          allocations.push(node);
+        }
+        continue;
+      } else if (!node->is_Mach()) {
+        continue;
+      }
+
+      MachNode* const mach = node->as_Mach();
+      switch (mach->ideal_Opcode()) {
+      case Op_StoreP:
+      case Op_StoreN:
+      case Op_CompareAndExchangeP:
+      case Op_CompareAndSwapP:
+      case Op_GetAndSetP:
+      case Op_CompareAndExchangeN:
+      case Op_CompareAndSwapN:
+      case Op_GetAndSetN:
+        if (mach->barrier_data() != 0) {
+          accesses.push(mach);
+        }
+        break;
+      default:
+        break;
+      }
+    }
+  }
+
+  // Find dominating allocations for each memory access (store or atomic
+  // operation) and elide barriers if there is no safepoint poll in between.
+  elide_dominated_barriers(accesses, allocations);
+}
+
 void G1BarrierSetC2::late_barrier_analysis() const {
   compute_liveness_at_stubs();
+  analyze_dominating_barriers();
 }
 
 void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {

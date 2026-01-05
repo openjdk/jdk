@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,7 @@
 # questions.
 #
 
-# This must be the first rule
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
+include MakeFileStart.gmk
 
 ################################################################################
 # SedEscape
@@ -88,6 +84,8 @@ define CreateFromTemplate
 	$(SED) -e 's!{{TOPDIR}}!$(call SedEscape,$(call FixPath,$(TOPDIR)))!g' \
 	    -e 's!{{TOPDIR_RELATIVE}}!$(call SedEscape,$(call FixPath,$(strip \
 	        $(call RelativePath,$(OUTPUTDIR),$(TOPDIR)))))!g' \
+	    -e 's!{{TOPDIR_BASE}}!$(notdir $(TOPDIR))!g' \
+	    -e 's!{{OUTPUT_BASE}}!$(notdir $(OUTPUTDIR))!g' \
 	    -e 's!{{WORKSPACE_ROOT}}!$(call SedEscape,$(call FixPath,$(WORKSPACE_ROOT)))!g' \
 	    -e 's!{{OUTPUTDIR}}!$(call SedEscape,$(call FixPath,$(OUTPUTDIR)))!g' \
 	    -e 's!{{CONF_NAME}}!$(CONF_NAME)!g' \
@@ -115,6 +113,8 @@ $(OUTPUTDIR)/.vscode/launch.json:
 TARGETS := $(OUTPUTDIR)/jdk.code-workspace $(OUTPUTDIR)/.vscode/tasks.json \
     $(OUTPUTDIR)/.vscode/launch.json
 
-all: $(TARGETS)
+.PHONY: $(TARGETS)
 
-.PHONY: all $(TARGETS)
+################################################################################
+
+include MakeFileEnd.gmk

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,19 @@
   <xsl:template match="wix3loc:WixLocalization/wix3loc:String">
     <xsl:element name="{local-name()}" namespace="http://wixtoolset.org/schemas/v4/wxl">
       <xsl:attribute name="Value">
+        <xsl:value-of select="text()"/>
+      </xsl:attribute>
+      <xsl:apply-templates select="@*"/>
+    </xsl:element>
+  </xsl:template>
+
+
+  <!--
+    From <Condition Message="foo">Bar</Condition> to <Launch Message="foo" Condition="Bar"/>
+  -->
+  <xsl:template match="wix3:Condition">
+    <xsl:element name="Launch" namespace="http://wixtoolset.org/schemas/v4/wxs">
+      <xsl:attribute name="Condition">
         <xsl:value-of select="text()"/>
       </xsl:attribute>
       <xsl:apply-templates select="@*"/>

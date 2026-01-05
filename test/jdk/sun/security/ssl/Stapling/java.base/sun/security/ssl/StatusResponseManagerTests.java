@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import java.security.KeyStore;
 import java.security.PublicKey;
 import java.util.concurrent.TimeUnit;
 
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.SimpleOCSPServer;
+import jdk.test.lib.security.CertificateBuilder;
 
 import static sun.security.ssl.CertStatusExtension.*;
 
@@ -47,7 +47,17 @@ import static sun.security.ssl.CertStatusExtension.*;
  */
 public class StatusResponseManagerTests {
 
-    private static final boolean debug = true;
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl:respmgr
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
     private static final boolean ocspDebug = false;
 
     private static Field responseCacheField;
@@ -72,6 +82,11 @@ public class StatusResponseManagerTests {
     static X509Certificate[] chain;
 
     public static void main(String[] args) throws Exception {
+
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl:respmgr");
+        }
+
         responseCacheField =
                 StatusResponseManager.class.getDeclaredField("responseCache");
         responseCacheField.setAccessible(true);
@@ -272,7 +287,7 @@ public class StatusResponseManagerTests {
             CertStatusRequest oReq = OCSPStatusRequest.EMPTY_OCSP;
 
             try {
-                // Force the interrupt flag to be set on the thread that
+                // Force the interrupted flag to be set on the thread that
                 // performs the invokeAll in the SRM.
                 Thread.currentThread().interrupt();
 

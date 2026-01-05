@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -73,23 +72,10 @@ CompactHashtableWriter::~CompactHashtableWriter() {
   FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
 }
 
-size_t CompactHashtableWriter::estimate_size(int num_entries) {
-  int num_buckets = calculate_num_buckets(num_entries);
-  size_t bucket_bytes = ArchiveBuilder::ro_array_bytesize<u4>(num_buckets + 1);
-
-  // In worst case, we have no VALUE_ONLY_BUCKET_TYPE, so each entry takes 2 slots
-  int entries_space = 2 * num_entries;
-  size_t entry_bytes = ArchiveBuilder::ro_array_bytesize<u4>(entries_space);
-
-  return bucket_bytes
-       + entry_bytes
-       + SimpleCompactHashtable::calculate_header_size();
-}
-
-// Add a symbol entry to the temporary hash table
-void CompactHashtableWriter::add(unsigned int hash, u4 value) {
+// Add an entry to the temporary hash table
+void CompactHashtableWriter::add(unsigned int hash, u4 encoded_value) {
   int index = hash % _num_buckets;
-  _buckets[index]->append_if_missing(Entry(hash, value));
+  _buckets[index]->append_if_missing(Entry(hash, encoded_value));
   _num_entries_written++;
 }
 
@@ -121,27 +107,28 @@ void CompactHashtableWriter::allocate_table() {
                                      SharedSpaceObjectAlignment);
 }
 
-// Write the compact table's buckets
+// Write the compact table's buckets and entries
 void CompactHashtableWriter::dump_table(NumberSeq* summary) {
   u4 offset = 0;
   for (int index = 0; index < _num_buckets; index++) {
     GrowableArray<Entry>* bucket = _buckets[index];
     int bucket_size = bucket->length();
     if (bucket_size == 1) {
-      // bucket with one entry is compacted and only has the symbol offset
       _compact_buckets->at_put(index, BUCKET_INFO(offset, VALUE_ONLY_BUCKET_TYPE));
 
       Entry ent = bucket->at(0);
-      _compact_entries->at_put(offset++, ent.value());
+      // bucket with one entry is value_only and only has the encoded_value
+      _compact_entries->at_put(offset++, ent.encoded_value());
       _num_value_only_buckets++;
     } else {
-      // regular bucket, each entry is a symbol (hash, offset) pair
+      // regular bucket, it could contain zero or more than one entry,
+      // each entry is a <hash, encoded_value> pair
       _compact_buckets->at_put(index, BUCKET_INFO(offset, REGULAR_BUCKET_TYPE));
 
       for (int i=0; i<bucket_size; i++) {
         Entry ent = bucket->at(i);
-        _compact_entries->at_put(offset++, u4(ent.hash())); // write entry hash
-        _compact_entries->at_put(offset++, ent.value());
+        _compact_entries->at_put(offset++, u4(ent.hash()));      // write entry hash
+        _compact_entries->at_put(offset++, ent.encoded_value()); // write entry encoded_value
       }
       if (bucket_size == 0) {
         _num_empty_buckets++;
@@ -169,7 +156,7 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   cht->init(base_address,  _num_entries_written, _num_buckets,
             _compact_buckets->data(), _compact_entries->data());
 
-  LogMessage(cds, hashtables) msg;
+  LogMessage(aot, hashtables) msg;
   if (msg.is_info()) {
     double avg_cost = 0.0;
     if (_num_entries_written > 0) {
@@ -203,15 +190,7 @@ void SimpleCompactHashtable::init(address base_address, u4 entry_count, u4 bucke
   _entries = entries;
 }
 
-size_t SimpleCompactHashtable::calculate_header_size() {
-  // We have 5 fields. Each takes up sizeof(intptr_t). See WriteClosure::do_u4
-  size_t bytes = sizeof(intptr_t) * 5;
-  return bytes;
-}
-
 void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
-  // NOTE: if you change this function, you MUST change the number 5 in
-  // calculate_header_size() accordingly.
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);
   soc->do_ptr(&_buckets);
@@ -240,7 +219,7 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   if (_fd < 0) {
     quit("Unable to open hashtable dump file", filename);
   }
-  _base = os::map_memory(_fd, filename, 0, nullptr, _size, true, false);
+  _base = os::map_memory(_fd, filename, 0, nullptr, _size, mtNone, true, false);
   if (_base == nullptr) {
     quit("Unable to map hashtable dump file", filename);
   }

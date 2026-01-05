@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.lang.classfile.instruction;
 
 import java.lang.classfile.*;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
@@ -71,7 +72,13 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * astore} series of instructions can then store this value to a local
      * variable slot.
      *
+     * @apiNote
+     * Jump subroutine instructions are discontinued to enforce verification by
+     * type checking (JVMS {@jvms 4.10.1}) using the {@link StackMapTableAttribute
+     * StackMapTable} attribute.
+     *
      * @see Opcode.Kind#DISCONTINUED_JSR
+     * @see StackMapTableAttribute
      * @since 24
      */
     sealed interface JsrInstruction extends DiscontinuedInstruction
@@ -124,14 +131,20 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * // @link substring="RetInstruction" target="#of(int)" :
      * RetInstruction(int slot) // @link substring="slot" target="#slot()"
      * }
-     * where {@code slot} must be within {@code [0, 65535]}.
+     * where {@code slot} must be {@link java.lang.classfile##u2 u2}.
      * <p>
      * {@link StoreInstruction astore} series of instructions store a {@link
      * TypeKind##returnAddress returnAddress} value to a local variable slot,
      * making the slot usable by a return from subroutine instruction.
      *
+     * @apiNote
+     * Return from subroutine instructions are discontinued to enforce
+     * verification by type checking (JVMS {@jvms 4.10.1}) using the {@link
+     * StackMapTableAttribute StackMapTable} attribute.
+     *
      * @jvms 6.5.ret <em>ret</em>
      * @see Opcode.Kind#DISCONTINUED_RET
+     * @see StackMapTableAttribute
      * @since 24
      */
     sealed interface RetInstruction extends DiscontinuedInstruction
@@ -140,16 +153,16 @@ public sealed interface DiscontinuedInstruction extends Instruction {
 
         /**
          * {@return the local variable slot with return address}
-         * The value is within {@code [0, 65535]}.
+         * It is a {@link java.lang.classfile##u2 u2} value.
          */
         int slot();
 
         /**
          * {@return a return from subroutine instruction}
          * <p>
-         * {@code slot} must be in the closed range of {@code [0, 255]} for
-         * {@link Opcode#RET ret}, or within {@code [0, 65535]} for {@link
-         * Opcode#RET_W wide ret}.
+         * {@code slot} must be {@link java.lang.classfile##u1 u1} for
+         * {@link Opcode#RET ret}, or {@link java.lang.classfile##u2 u2} for
+         * {@link Opcode#RET_W wide ret}.
          *
          * @apiNote
          * The explicit {@code op} argument allows creating {@code wide ret}
@@ -170,10 +183,11 @@ public sealed interface DiscontinuedInstruction extends Instruction {
         /**
          * {@return a return from subroutine instruction}
          * <p>
-         * {@code slot} must be within {@code [0, 65535]}.
+         * {@code slot} must be {@link java.lang.classfile##u2 u2}.
          *
          * @param slot the local variable slot to load return address from
-         * @throws IllegalArgumentException if {@code slot} is out of range
+         * @throws IllegalArgumentException if {@code slot} is not {@link
+         *         java.lang.classfile##u2 u2}
          */
         static RetInstruction of(int slot) {
             return of(slot < 256 ? Opcode.RET : Opcode.RET_W, slot);

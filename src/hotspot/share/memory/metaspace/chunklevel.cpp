@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -36,7 +35,7 @@ using namespace chunklevel;
 
 chunklevel_t chunklevel::level_fitting_word_size(size_t word_size) {
   assert(MAX_CHUNK_WORD_SIZE >= word_size,
-         SIZE_FORMAT " - too large allocation size.", word_size * BytesPerWord);
+         "%zu - too large allocation size.", word_size * BytesPerWord);
   if (word_size <= MIN_CHUNK_WORD_SIZE) {
     return HIGHEST_CHUNK_LEVEL;
   }

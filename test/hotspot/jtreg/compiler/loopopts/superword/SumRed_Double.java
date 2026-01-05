@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8074981
  * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : double test
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.SumRed_Double
+ * @run driver/timeout=480 compiler.loopopts.superword.SumRed_Double
  */
 
 package compiler.loopopts.superword;
@@ -107,6 +107,10 @@ public class SumRed_Double {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VD})
     @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VD, ">= 1"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VD, ">= 1"})
     public static double sumReductionWithStoreImplement(

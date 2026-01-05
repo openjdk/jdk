@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import com.sun.net.httpserver.*;
 
 /**
  * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
@@ -101,6 +103,22 @@
  * socket option on all incoming connections.
  * </li></ul>
  *
+ * @apiNote The API and SPI in this module are designed and implemented to support a minimal
+ * HTTP server and simple HTTP semantics primarily.
+ *
+ * @implNote The default implementation of the HTTP server provided in this module is intended
+ * for simple usages like local testing, development, and debugging. Accordingly, the design
+ * and implementation of the server does not intend to be a full-featured, high performance
+ * HTTP server.
+ *
+ * @implNote
+ * Prior to JDK 26, in the JDK default implementation, the {@link HttpExchange} attribute map was
+ * shared with the enclosing {@link HttpContext}.
+ * Since JDK 26, by default, exchange attributes are per-exchange and the context attributes must
+ * be accessed by calling {@link HttpExchange#getHttpContext() getHttpContext()}{@link
+ * HttpContext#getAttributes() .getAttributes()}. <br>
+ * A new system property, <b>{@systemProperty jdk.httpserver.attributes}</b> (default value: {@code ""})
+ * allows to revert this new behavior. Set this property to "context" to restore the pre JDK 26 behavior.
  * @toolGuide jwebserver
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,27 +30,13 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
-#include "gc/z/zNUMA.hpp"
-#include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zRememberedSet.inline.hpp"
-#include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
-
-inline ZPageType ZPage::type_from_size(size_t size) const {
-  if (size == ZPageSizeSmall) {
-    return ZPageType::small;
-  } else if (size == ZPageSizeMedium) {
-    return ZPageType::medium;
-  } else {
-    return ZPageType::large;
-  }
-}
 
 inline const char* ZPage::type_to_string() const {
   switch (type()) {
@@ -76,7 +62,7 @@ inline uint32_t ZPage::object_max_count() const {
     return 1;
 
   default:
-    return (uint32_t)(size() >> object_alignment_shift());
+    return checked_cast<uint32_t>(size() >> object_alignment_shift());
   }
 }
 
@@ -170,20 +156,17 @@ inline const ZVirtualMemory& ZPage::virtual_memory() const {
   return _virtual;
 }
 
-inline const ZPhysicalMemory& ZPage::physical_memory() const {
-  return _physical;
+inline uint32_t ZPage::single_partition_id() const {
+  assert(!is_multi_partition(), "Don't fetch single partition id if page is multi-partition");
+  return _single_partition_id;
 }
 
-inline ZPhysicalMemory& ZPage::physical_memory() {
-  return _physical;
+inline bool ZPage::is_multi_partition() const {
+  return _multi_partition_tracker != nullptr;
 }
 
-inline uint8_t ZPage::numa_id() {
-  if (_numa_id == (uint8_t)-1) {
-    _numa_id = checked_cast<uint8_t>(ZNUMA::memory_id(untype(ZOffset::address(start()))));
-  }
-
-  return _numa_id;
+inline ZMultiPartitionTracker* ZPage::multi_partition_tracker() const {
+  return _multi_partition_tracker;
 }
 
 inline ZPageAge ZPage::age() const {
@@ -200,14 +183,6 @@ inline bool ZPage::is_allocating() const {
 
 inline bool ZPage::is_relocatable() const {
   return _seqnum < generation()->seqnum();
-}
-
-inline uint64_t ZPage::last_used() const {
-  return _last_used;
-}
-
-inline void ZPage::set_last_used() {
-  _last_used = (uint64_t)ceil(os::elapsedTime());
 }
 
 inline bool ZPage::is_in(zoffset offset) const {
@@ -393,7 +368,6 @@ inline bool ZPage::was_remembered(volatile zpointer* p) {
   return _remembered_set.at_previous(l_offset);
 }
 
-
 inline zaddress_unsafe ZPage::find_base_unsafe(volatile zpointer* p) {
   if (is_large()) {
     return ZOffset::address_unsafe(start());
@@ -493,7 +467,7 @@ inline zaddress ZPage::alloc_object_atomic(size_t size) {
       return zaddress::null;
     }
 
-    const zoffset_end prev_top = Atomic::cmpxchg(&_top, addr, new_top);
+    const zoffset_end prev_top = AtomicAccess::cmpxchg(&_top, addr, new_top);
     if (prev_top == addr) {
       // Success
       return ZOffset::address(to_zoffset(addr));
@@ -537,7 +511,7 @@ inline bool ZPage::undo_alloc_object_atomic(zaddress addr, size_t size) {
       return false;
     }
 
-    const zoffset_end prev_top = Atomic::cmpxchg(&_top, old_top, new_top);
+    const zoffset_end prev_top = AtomicAccess::cmpxchg(&_top, old_top, new_top);
     if (prev_top == old_top) {
       // Success
       return true;

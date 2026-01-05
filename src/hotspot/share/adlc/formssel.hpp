@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -973,8 +973,8 @@ public:
   int         _commutative_id;     // id of commutative operation
 
   // Public Methods
-  MatchNode(ArchDesc &ad, const char *result = 0, const char *expr = 0,
-            const char *opType=0, MatchNode *lChild=nullptr,
+  MatchNode(ArchDesc &ad, const char *result = nullptr, const char *expr = nullptr,
+            const char *opType=nullptr, MatchNode *lChild=nullptr,
             MatchNode *rChild=nullptr);
   MatchNode(ArchDesc &ad, MatchNode& mNode); // Shallow copy constructor;
   MatchNode(ArchDesc &ad, MatchNode& mNode, int clone); // Construct clone

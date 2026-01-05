@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 
@@ -71,6 +70,6 @@ public:
 
 bool ClosureIsUnloadingBehaviour::has_dead_oop(nmethod* nm) const {
   IsCompiledMethodUnloadingOopClosure cl(_cl);
-  nm->oops_do(&cl, true /* allow_dead */);
+  nm->oops_do(&cl);
   return cl.is_unloading();
 }

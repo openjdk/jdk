@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
 import java.io.IOException;
+import java.nio.file.*;
 import java.util.*;
+import jdk.internal.misc.InnocuousThread;
 
 /**
  * Base implementation of background poller thread used in watch service
@@ -53,11 +54,7 @@ abstract class AbstractPoller implements Runnable {
      * Starts the poller thread
      */
     public void start() {
-        Thread thr = new Thread(null,
-                                this,
-                                "FileSystemWatchService",
-                                0,
-                                false);
+        Thread thr = InnocuousThread.newThread("FileSystemWatchService", this);
         thr.setDaemon(true);
         thr.start();
     }

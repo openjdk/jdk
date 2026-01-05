@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,10 @@ import java.util.List;
  * @test
  * @summary jpackage with --type dmg --mac-dmg-content
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build DmgContentTest
  * @requires (os.family == "mac")
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=DmgContentTest
  */
 public class DmgContentTest {
@@ -57,7 +56,7 @@ public class DmgContentTest {
             "non-existant").toString();
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
         data.addAll(List.of(new Object[][] {
             {"0", PackageType.MAC_DMG, new String[] {TEST_JAVA, TEST_DUKE}},

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,10 @@ package test.java.time;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
+import java.io.ObjectStreamClass;
+import java.io.ObjectStreamField;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.MonthDay;
@@ -144,4 +147,17 @@ public class TestMonthDay extends AbstractTest {
         }
     }
 
+
+    // Verify serialized fields types are backward compatible
+    @Test
+    public void verifySerialFields() {
+        var osc = ObjectStreamClass.lookup(MonthDay.class);
+        for (ObjectStreamField f : osc.getFields()) {
+            switch (f.getName()) {
+                case "month",
+                     "day" -> assertEquals(f.getType(), int.class, f.getName());
+                default -> fail("unknown field in MonthDay: " + f.getName());
+            }
+        }
+    }
 }

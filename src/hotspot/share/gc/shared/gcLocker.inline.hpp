@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,30 +29,39 @@
 
 #include "runtime/javaThread.inline.hpp"
 
-void GCLocker::lock_critical(JavaThread* thread) {
-  if (!thread->in_critical()) {
-    if (needs_gc()) {
-      // jni_lock call calls enter_critical under the lock so that the
-      // global lock count and per thread count are in agreement.
-      jni_lock(thread);
-      return;
+void GCLocker::enter(JavaThread* current_thread) {
+  assert(current_thread == JavaThread::current(), "Must be this thread");
+
+  if (!current_thread->in_critical()) {
+    current_thread->enter_critical();
+
+    // Matching the fence in GCLocker::block.
+    OrderAccess::fence();
+
+    if (AtomicAccess::load(&_is_gc_request_pending)) {
+      current_thread->exit_critical();
+      // slow-path
+      enter_slow(current_thread);
     }
-    increment_debug_jni_lock_count();
+
+    DEBUG_ONLY(AtomicAccess::add(&_verify_in_cr_count, (uint64_t)1);)
+  } else {
+    current_thread->enter_critical();
   }
-  thread->enter_critical();
 }
 
-void GCLocker::unlock_critical(JavaThread* thread) {
-  if (thread->in_last_critical()) {
-    if (needs_gc()) {
-      // jni_unlock call calls exit_critical under the lock so that
-      // the global lock count and per thread count are in agreement.
-      jni_unlock(thread);
-      return;
-    }
-    decrement_debug_jni_lock_count();
+void GCLocker::exit(JavaThread* current_thread) {
+  assert(current_thread == JavaThread::current(), "Must be this thread");
+
+#ifdef ASSERT
+  if (current_thread->in_last_critical()) {
+    AtomicAccess::add(&_verify_in_cr_count, (uint64_t)-1);
+    // Matching the loadload in GCLocker::block.
+    OrderAccess::storestore();
   }
-  thread->exit_critical();
+#endif
+
+  current_thread->exit_critical();
 }
 
 #endif // SHARE_GC_SHARED_GCLOCKER_INLINE_HPP

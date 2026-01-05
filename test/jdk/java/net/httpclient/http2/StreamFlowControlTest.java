@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.ProtocolException;
 import java.net.URI;
@@ -81,6 +82,9 @@ public class StreamFlowControlTest {
     String http2URI;
     String https2URI;
     final AtomicInteger reqid = new AtomicInteger();
+    final static int WINDOW =
+            Integer.getInteger("jdk.httpclient.windowsize", 2 * 16 * 1024);
+
 
 
     @DataProvider(name = "variants")
@@ -144,9 +148,13 @@ public class StreamFlowControlTest {
                     // we have to pull to get the exception, but slow enough
                     // so that DataFrames are buffered up to the point that
                     // the window is exceeded...
-                    long wait = uri.startsWith("https://") ? 800 : 350;
+                    long wait = uri.startsWith("https://") ? 800 : 500;
                     try (InputStream is = response.body()) {
-                        sleep(wait);
+                        byte[] discard = new byte[WINDOW/4];
+                        for (int j=0; j<2; j++) {
+                            sleep(wait);
+                            if (is.read(discard) < 0) break;
+                        }
                         is.readAllBytes();
                     }
                     // we could fail here if we haven't waited long enough
@@ -204,7 +212,11 @@ public class StreamFlowControlTest {
                     sent.join();
                     long wait = uri.startsWith("https://") ? 800 : 350;
                     try (InputStream is = response.body()) {
-                        sleep(wait);
+                        byte[] discard = new byte[WINDOW/4];
+                        for (int j=0; j<2; j++) {
+                            sleep(wait);
+                            if (is.read(discard) < 0) break;
+                        }
                         is.readAllBytes();
                     }
                     // we could fail here if we haven't waited long enough
@@ -315,17 +327,16 @@ public class StreamFlowControlTest {
                     bytes = "no request body!"
                             .repeat(100).getBytes(StandardCharsets.UTF_8);
                 }
-                int window = Integer.getInteger("jdk.httpclient.windowsize", 2 * 16 * 1024);
                 final int maxChunkSize;
                 if (t instanceof FCHttp2TestExchange fct) {
-                    maxChunkSize = Math.min(window, fct.conn.getMaxFrameSize());
+                    maxChunkSize = Math.min(WINDOW, fct.conn.getMaxFrameSize());
                 } else {
-                    maxChunkSize = Math.min(window, SettingsFrame.MAX_FRAME_SIZE);
+                    maxChunkSize = Math.min(WINDOW, SettingsFrame.MAX_FRAME_SIZE);
                 }
                 byte[] resp = bytes.length <= maxChunkSize
                         ? bytes
                         : Arrays.copyOfRange(bytes, 0, maxChunkSize);
-                int max = (window / resp.length) + 2;
+                int max = (WINDOW / resp.length) + 2;
                 // send in chunks
                 t.sendResponseHeaders(200, 0);
                 for (int i = 0; i <= max; i++) {
@@ -335,7 +346,9 @@ public class StreamFlowControlTest {
                             // to wait for the connection window
                             fct.conn.obtainConnectionWindow(resp.length);
                         } catch (InterruptedException ie) {
-                            // ignore and continue...
+                            var ioe = new InterruptedIOException(ie.toString());
+                            ioe.initCause(ie);
+                            throw ioe;
                         }
                     }
                     try {
@@ -344,6 +357,7 @@ public class StreamFlowControlTest {
                         if (t instanceof FCHttp2TestExchange fct) {
                             fct.conn.updateConnectionWindow(resp.length);
                         }
+                        throw x;
                     }
                 }
             } finally {

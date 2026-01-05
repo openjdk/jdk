@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@
 #include "gc/z/zForwarding.hpp"
 #include "gc/z/zGranuleMap.hpp"
 #include "gc/z/zHeap.hpp"
+#include "gc/z/zNUMA.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageType.hpp"
+#include "gc/z/zValue.hpp"
+#include "gc/z/zVirtualMemory.hpp"
 #include "utilities/macros.hpp"
 
 // Expose some ZGC globals to the SA agent.
@@ -61,6 +64,7 @@ public:
 typedef ZGranuleMap<ZPage*> ZGranuleMapForPageTable;
 typedef ZGranuleMap<ZForwarding*> ZGranuleMapForForwarding;
 typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwarding;
+typedef ZValue<ZPerNUMAStorage, ZPartition> ZPerNUMAZPartition;
 
 #define VM_STRUCTS_Z(nonstatic_field, volatile_nonstatic_field, static_field)                        \
   static_field(ZGlobalsForVMStructs,            _instance_p,          ZGlobalsForVMStructs*)         \
@@ -87,8 +91,13 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   volatile_nonstatic_field(ZPage,               _top,                 zoffset_end)                   \
                                                                                                      \
   nonstatic_field(ZPageAllocator,               _max_capacity,        const size_t)                  \
-  volatile_nonstatic_field(ZPageAllocator,      _capacity,            size_t)                        \
-  volatile_nonstatic_field(ZPageAllocator,      _used,                size_t)                        \
+  nonstatic_field(ZPageAllocator,               _partitions,          ZPerNUMAZPartition)            \
+                                                                                                     \
+  static_field(ZNUMA,                           _count,               uint32_t)                      \
+  nonstatic_field(ZPerNUMAZPartition,           _addr,                const uintptr_t)               \
+                                                                                                     \
+  volatile_nonstatic_field(ZPartition,          _capacity,            size_t)                        \
+  nonstatic_field(ZPartition,                   _used,                size_t)                        \
                                                                                                      \
   nonstatic_field(ZPageTable,                   _map,                 ZGranuleMapForPageTable)       \
                                                                                                      \
@@ -97,8 +106,8 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
                                                                                                      \
   nonstatic_field(ZForwardingTable,             _map,                 ZGranuleMapForForwarding)      \
                                                                                                      \
-  nonstatic_field(ZVirtualMemory,               _start,               const zoffset)                 \
-  nonstatic_field(ZVirtualMemory,               _end,                 const zoffset_end)             \
+  nonstatic_field(ZVirtualMemory,               _start,               const zoffset_end)             \
+  nonstatic_field(ZVirtualMemory,               _size,                const size_t)                  \
                                                                                                      \
   nonstatic_field(ZForwarding,                  _virtual,             const ZVirtualMemory)          \
   nonstatic_field(ZForwarding,                  _object_alignment_shift, const size_t)               \
@@ -111,13 +120,13 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   declare_constant(ZPageType::small)                                                                 \
   declare_constant(ZPageType::medium)                                                                \
   declare_constant(ZPageType::large)                                                                 \
+  declare_constant(ZPageSizeSmallShift)                                                              \
+  declare_constant(ZPageSizeMediumMaxShift)                                                          \
   declare_constant(ZObjectAlignmentMediumShift)                                                      \
   declare_constant(ZObjectAlignmentLargeShift)
 
 #define VM_LONG_CONSTANTS_Z(declare_constant)                                                        \
   declare_constant(ZGranuleSizeShift)                                                                \
-  declare_constant(ZPageSizeSmallShift)                                                              \
-  declare_constant(ZPageSizeMediumShift)                                                             \
   declare_constant(ZAddressOffsetShift)                                                              \
   declare_constant(ZAddressOffsetBits)                                                               \
   declare_constant(ZAddressOffsetMask)                                                               \
@@ -134,6 +143,9 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   declare_toplevel_type(ZPageType)                                                                   \
   declare_toplevel_type(ZPageAllocator)                                                              \
   declare_toplevel_type(ZPageTable)                                                                  \
+  declare_toplevel_type(ZPartition)                                                                  \
+  declare_toplevel_type(ZNUMA)                                                                       \
+  declare_toplevel_type(ZPerNUMAZPartition)                                                          \
   declare_toplevel_type(ZAttachedArrayForForwarding)                                                 \
   declare_toplevel_type(ZGranuleMapForPageTable)                                                     \
   declare_toplevel_type(ZGranuleMapForForwarding)                                                    \

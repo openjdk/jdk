@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,6 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.*;
-import java.lang.reflect.Array;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
@@ -47,8 +33,31 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
+
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.ValueLayout;
+import java.lang.reflect.Array;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -60,7 +69,7 @@ import sun.nio.ch.DirectBuffer;
  * {@link MappedMemorySegmentImpl}.
  */
 public abstract sealed class AbstractMemorySegmentImpl
-        implements MemorySegment, SegmentAllocator, BiFunction<String, List<Number>, RuntimeException>
+        implements MemorySegment, SegmentAllocator
         permits HeapMemorySegmentImpl, NativeMemorySegmentImpl {
 
     static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
@@ -92,19 +101,19 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public AbstractMemorySegmentImpl asSlice(long offset, long newSize) {
-        checkBounds(offset, newSize);
+        checkSliceBounds(offset, newSize);
         return asSliceNoCheck(offset, newSize);
     }
 
     @Override
     public AbstractMemorySegmentImpl asSlice(long offset) {
-        checkBounds(offset, 0);
+        checkSliceBounds(offset, 0);
         return asSliceNoCheck(offset, length - offset);
     }
 
     @Override
     public MemorySegment asSlice(long offset, long newSize, long byteAlignment) {
-        checkBounds(offset, newSize);
+        checkSliceBounds(offset, newSize);
         Utils.checkAlign(byteAlignment);
 
         if (!isAlignedForElement(offset, byteAlignment)) {
@@ -121,6 +130,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
@@ -129,12 +139,14 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(long newSize) {
         return reinterpretInternal(Reflection.getCallerClass(), newSize, scope, null);
     }
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), byteSize(),
@@ -145,10 +157,25 @@ public abstract sealed class AbstractMemorySegmentImpl
         Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret", false);
         Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
-        Runnable action = cleanup != null ?
-                () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
-                null;
+        Runnable action = cleanupAction(address(), newSize, cleanup);
         return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize, scope, readOnly, action);
+    }
+
+    // Using a static helper method ensures there is no unintended lambda capturing of `this`
+    private static Runnable cleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) {
+
+        record CleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) implements Runnable {
+            @Override
+            public void run() {
+                cleanup().accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize()));
+            }
+        }
+
+        return cleanup != null
+                // Use a record (which is always static) instead of a lambda to avoid
+                // capturing and to enable early use in the init sequence.
+                ? new CleanupAction(address, newSize, cleanup)
+                : null;
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
@@ -328,7 +355,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     public void checkAccess(long offset, long length, boolean readOnly) {
         checkReadOnly(readOnly);
-        checkBounds(offset, length);
+        checkAccessBounds(offset, length);
     }
 
     @ForceInline
@@ -372,20 +399,40 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    void checkBounds(long offset, long length) {
-        if (length > 0) {
-            Preconditions.checkIndex(offset, this.length - length + 1, this);
-        } else if (length < 0 || offset < 0 ||
-                offset > this.length - length) {
-            throw outOfBoundException(offset, length);
+    void checkSliceBounds(long offset, long length) {
+        try {
+            checkBounds(offset, length);
+        } catch (IndexOutOfBoundsException e) {
+            throwOutOfBounds(offset, length, /* isSlice = */ true);
         }
     }
 
-    @Override
-    public RuntimeException apply(String s, List<Number> numbers) {
-        long offset = numbers.get(0).longValue();
-        long length = byteSize() - numbers.get(1).longValue() + 1;
-        return outOfBoundException(offset, length);
+    @ForceInline
+    void checkAccessBounds(long offset, long length) {
+        try {
+            checkBounds(offset, length);
+        } catch (IndexOutOfBoundsException e) {
+            throwOutOfBounds(offset, length, /* isSlice = */ false);
+        }
+    }
+
+    @ForceInline
+    private void checkBounds(long offset, long length) {
+        if (length > 0) {
+            Preconditions.checkIndex(offset, this.length - length + 1, null);
+        } else if (length < 0 || offset < 0 ||
+                offset > this.length - length) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    @DontInline
+    private void throwOutOfBounds(long offset, long length, boolean isSlice) {
+        String action = isSlice ? "get slice" : "access an element";
+        String msg = String.format("Out of bound access on segment %s; attempting to %s of length %d at offset %d " +
+                        "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
+                this, action, length, offset, this.length);
+        throw new IndexOutOfBoundsException(msg);
     }
 
     @Override
@@ -401,11 +448,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     public final MemorySessionImpl sessionImpl() {
         return scope;
-    }
-
-    private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
-        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; new offset = %d; new length = %d",
-                        this, offset, length));
     }
 
     static class SegmentSplitter implements Spliterator<MemorySegment> {
@@ -486,9 +528,18 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String toString() {
-        return "MemorySegment{ " +
-                heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
-                "address: " + Utils.toHexString(address()) +
+        final String kind;
+        if (this instanceof HeapMemorySegmentImpl) {
+            kind = "heap";
+        } else if (this instanceof MappedMemorySegmentImpl) {
+            kind = "mapped";
+        } else {
+            kind = "native";
+        }
+        return "MemorySegment{ kind: " +
+                kind +
+                heapBase().map(hb -> ", heapBase: " + hb).orElse("") +
+                ", address: " + Utils.toHexString(address()) +
                 ", byteSize: " + length +
                 " }";
     }

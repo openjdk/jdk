@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,19 @@
 
 #include "gc/z/zPageTable.hpp"
 
+#include "cppstdlib/limits.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAllocator.inline.hpp"
+
+inline int ZPageTable::count() const {
+  const size_t size = _map._size;
+  assert(size <= std::numeric_limits<int>::max(), "Invalid page table size");
+
+  return static_cast<int>(size);
+}
 
 inline ZPage* ZPageTable::get(zaddress addr) const {
   assert(!is_null(addr), "Invalid address");
@@ -64,7 +72,7 @@ inline bool ZPageTableIterator::next(ZPage** page) {
 
 inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table)
   : _table(table),
-    _index_distributor(int(ZAddressOffsetMax >> ZGranuleSizeShift)) {}
+    _index_distributor(table->count()) {}
 
 template <typename Function>
 inline void ZPageTableParallelIterator::do_pages(Function function) {
@@ -94,11 +102,9 @@ inline bool ZGenerationPagesIterator::next(ZPage** page) {
 template <typename Function>
 inline void ZGenerationPagesIterator::yield(Function function) {
   _page_allocator->disable_safe_destroy();
-  _page_allocator->disable_safe_recycle();
 
   function();
 
-  _page_allocator->enable_safe_recycle();
   _page_allocator->enable_safe_destroy();
 }
 

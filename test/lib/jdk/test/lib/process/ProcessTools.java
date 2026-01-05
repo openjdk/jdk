@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -252,7 +249,7 @@ public final class ProcessTools {
                                        TimeUnit unit)
             throws IOException, InterruptedException, TimeoutException {
         System.out.println("[" + name + "]:" + String.join(" ", processBuilder.command()));
-        Process p = privilegedStart(processBuilder);
+        Process p = processBuilder.start();
         StreamPumper stdout = new StreamPumper(p.getInputStream());
         StreamPumper stderr = new StreamPumper(p.getErrorStream());
 
@@ -716,7 +713,7 @@ public final class ProcessTools {
         Process p = null;
         boolean failed = false;
         try {
-            p = privilegedStart(pb);
+            p = pb.start();
             if (input != null) {
                 try (PrintStream ps = new PrintStream(p.getOutputStream())) {
                     ps.print(input);
@@ -732,10 +729,7 @@ public final class ProcessTools {
             {   // Dumping the process output to a separate file
                 var fileName = String.format("pid-%d-output.log", p.pid());
                 var processOutput = getProcessLog(pb, output);
-                AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                    Files.writeString(Path.of(fileName), processOutput);
-                    return null;
-                });
+                Files.writeString(Path.of(fileName), processOutput);
                 System.out.printf(
                         "Output and diagnostic info for process %d " +
                                 "was saved into '%s'%n", p.pid(), fileName);
@@ -883,16 +877,6 @@ public final class ProcessTools {
         return pb;
     }
 
-    @SuppressWarnings("removal")
-    private static Process privilegedStart(ProcessBuilder pb) throws IOException {
-        try {
-            return AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<Process>) pb::start);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getException();
-        }
-    }
-
     private static class ProcessImpl extends Process {
 
         private final InputStream stdOut;
@@ -997,7 +981,7 @@ public final class ProcessTools {
         String[] classArgs = new String[args.length - 2];
         System.arraycopy(args, 2, classArgs, 0, args.length - 2);
         Class<?> c = Class.forName(className);
-        Method mainMethod = c.getMethod("main", new Class[] { String[].class });
+        Method mainMethod = c.getMethod("main", new Class<?>[] { String[].class });
         mainMethod.setAccessible(true);
 
         if (testThreadFactoryName.equals("Virtual")) {

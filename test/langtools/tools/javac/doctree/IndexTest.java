@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144287 8273244 8284908 8305620
+ * @bug 8144287 8273244 8284908 8305620 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,15 +39,15 @@ class IndexTest {
      */
     void simple_term() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, xyz]
+        Text[TEXT, pos:12, xyz]
       description: empty
     ]
-    Text[TEXT, pos:17, _def]
+    Text[TEXT, pos:16, _def]
   body: empty
   block tags: empty
 ]
@@ -58,16 +58,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void simple_term_with_description() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, lmn]
+        Text[TEXT, pos:12, lmn]
       description: 1
-        Text[TEXT, pos:17, pqr_stu]
+        Text[TEXT, pos:16, pqr_stu]
     ]
-    Text[TEXT, pos:25, _def]
+    Text[TEXT, pos:24, _def]
   body: empty
   block tags: empty
 ]
@@ -78,16 +78,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void phrase_with_curly_description() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, ijk]
+        Text[TEXT, pos:12, ijk]
       description: 1
-        Text[TEXT, pos:17, {lmn_opq}_]
+        Text[TEXT, pos:16, {lmn_opq}_]
     ]
-    Text[TEXT, pos:28, _def]
+    Text[TEXT, pos:27, _def]
   body: empty
   block tags: empty
 ]
@@ -100,16 +100,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void phrase_with_nl_description() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, ijk]
+        Text[TEXT, pos:12, ijk]
       description: 1
-        Text[TEXT, pos:17, lmn|_opq|_rst|_]
+        Text[TEXT, pos:16, lmn|opq|rst|]
     ]
-    Text[TEXT, pos:33, _def]
+    Text[TEXT, pos:29, _def]
   body: empty
   block tags: empty
 ]
@@ -120,15 +120,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void phrase_no_description() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, "lmn_pqr"]
+        Text[TEXT, pos:12, "lmn_pqr"]
       description: empty
     ]
-    Text[TEXT, pos:23, _def]
+    Text[TEXT, pos:22, _def]
   body: empty
   block tags: empty
 ]
@@ -139,16 +139,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void phrase_with_description() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, "ijk_lmn"]
+        Text[TEXT, pos:12, "ijk_lmn"]
       description: 1
-        Text[TEXT, pos:23, pqr_xyz]
+        Text[TEXT, pos:22, pqr_xyz]
     ]
-    Text[TEXT, pos:31, _def]
+    Text[TEXT, pos:30, _def]
   body: empty
   block tags: empty
 ]
@@ -159,22 +159,22 @@ DocComment[DOC_COMMENT, pos:1
      */
     void term_and_description_with_nested_tag() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, {@xyz}]
+        Text[TEXT, pos:12, {@xyz}]
       description: 3
-        Text[TEXT, pos:20, "]
-        UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:21
+        Text[TEXT, pos:19, "]
+        UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:20
           tag:see
           content: 1
-            Text[TEXT, pos:27, xyz]
+            Text[TEXT, pos:26, xyz]
         ]
-        Text[TEXT, pos:31, "]
+        Text[TEXT, pos:30, "]
     ]
-    Text[TEXT, pos:33, _def]
+    Text[TEXT, pos:32, _def]
   body: empty
   block tags: empty
 ]
@@ -184,16 +184,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void term_with_at() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, @def]
+        Text[TEXT, pos:12, @def]
       description: 1
-        Text[TEXT, pos:18, lmn_]
+        Text[TEXT, pos:17, lmn_]
     ]
-    Text[TEXT, pos:23, _xyz]
+    Text[TEXT, pos:22, _xyz]
   body: empty
   block tags: empty
 ]
@@ -204,16 +204,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void term_with_text_at() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, ijk@lmn]
+        Text[TEXT, pos:12, ijk@lmn]
       description: 1
-        Text[TEXT, pos:21, pqr_]
+        Text[TEXT, pos:20, pqr_]
     ]
-    Text[TEXT, pos:26, _xyz]
+    Text[TEXT, pos:25, _xyz]
   body: empty
   block tags: empty
 ]
@@ -224,15 +224,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void empty_index_in_quotes() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Index[INDEX, pos:5
+    Text[TEXT, pos:0, abc_]
+    Index[INDEX, pos:4
       term:
-        Text[TEXT, pos:13, ""]
+        Text[TEXT, pos:12, ""]
       description: empty
     ]
-    Text[TEXT, pos:16, _def]
+    Text[TEXT, pos:15, _def]
   body: empty
   block tags: empty
 ]
@@ -242,21 +242,20 @@ DocComment[DOC_COMMENT, pos:1
      * abc {@index
      * @return def} xyz
      */
-    @NormalizeTags(false) // see DocCommentTester.PrettyChecker
     void bad_nl_at_in_term() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5, prefPos:11
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:10
       code: compiler.err.dc.no.content
       body: {@index
     ]
   body: empty
   block tags: 1
-    Return[RETURN, pos:14
+    Return[RETURN, pos:12
       description: 1
-        Text[TEXT, pos:22, def}_xyz]
+        Text[TEXT, pos:20, def}_xyz]
     ]
 ]
 */
@@ -265,10 +264,10 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_unbalanced_quote() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5, prefPos:22
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:21
       code: compiler.err.dc.no.content
       body: {@index_"xyz_}_def
     ]
@@ -281,14 +280,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_no_index() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5, prefPos:11
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:10
       code: compiler.err.dc.no.content
       body: {@index
     ]
-    Text[TEXT, pos:12, }_def]
+    Text[TEXT, pos:11, }_def]
   body: empty
   block tags: empty
 ]

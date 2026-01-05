@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 #ifndef EXECUTOR_H
 #define EXECUTOR_H
+
+#include <functional>
 
 #include "tstrings.h"
 #include "UniqueHandle.h"
@@ -97,6 +99,14 @@ public:
      */
     int execAndWaitForExit() const;
 
+    /**
+     * Call provided function after the process hass been created.
+     */
+    Executor& afterProcessCreated(const std::function<void(HANDLE)>& v) {
+        afterProcessCreatedCallback = v;
+        return *this;
+    }
+
 private:
     UniqueHandle startProcess(UniqueHandle* threadHandle=0) const;
 
@@ -106,6 +116,7 @@ private:
     HANDLE jobHandle;
     tstring_array argsArray;
     std::wstring appPath;
+    std::function<void(HANDLE)> afterProcessCreatedCallback;
 };
 
 #endif // #ifndef EXECUTOR_H

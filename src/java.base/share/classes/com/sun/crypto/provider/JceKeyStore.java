@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -661,6 +661,10 @@ public final class JceKeyStore extends KeyStoreSpi {
                     dos.close();
                 }
             }
+
+            if (debug != null) {
+                emitWeakKeyStoreWarning();
+            }
         }
     }
 
@@ -820,7 +824,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                         // Add the entry to the list
                         entries.put(alias, entry);
 
-                    } else if (tag == 3) { // secret-key entry
+                    } else if (tag == 3) { // secret key entry
                         secretKeyCount++;
                         SecretKeyEntry entry = new SecretKeyEntry();
 
@@ -860,6 +864,10 @@ public final class JceKeyStore extends KeyStoreSpi {
                         privateKeyCount + ". trusted key count: " +
                         trustedKeyCount + ". secret key count: " +
                         secretKeyCount);
+                }
+
+                if (debug != null) {
+                    emitWeakKeyStoreWarning();
                 }
 
                 /*
@@ -977,5 +985,13 @@ public final class JceKeyStore extends KeyStoreSpi {
 
             return Status.UNDECIDED;
         }
+    }
+
+    private void emitWeakKeyStoreWarning() {
+        debug.println("WARNING: JCEKS uses outdated cryptographic "
+                + "algorithms and will be removed in a future "
+                + "release. Migrate to PKCS12 using:");
+        debug.println("keytool -importkeystore -srckeystore <keystore> "
+                + "-destkeystore <keystore> -deststoretype pkcs12");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,13 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
             if (totalSize >= Integer.MAX_VALUE - 2) {
                 throw new InvalidMidiDataException(
                         "Can not allocate enough memory to read audio data.");
+            }
+
+            long maximumHeapSize = (long) ((Runtime.getRuntime().maxMemory() -
+                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())) * 0.9);
+            if (totalSize > maximumHeapSize) {
+                throw new InvalidMidiDataException(
+                        "Insufficient heap size to render audio data.");
             }
 
             if (ais.getFrameLength() == -1 || totalSize > MEGABYTE) {

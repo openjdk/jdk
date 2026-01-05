@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jdkroot[], jint so_jdkroot,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
+    /* Compute/set the name of the executable */
+    SetExecname(*pargv);
+
     if (JLI_IsStaticallyLinked()) {
         // With static builds, all JDK and VM natives are statically linked
         // with the launcher executable. No need to manipulate LD_LIBRARY_PATH
@@ -296,9 +299,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     char** newenvp = NULL; /* current environment */
     size_t new_runpath_size;
 #endif  /* SETENV_REQUIRED */
-
-    /* Compute/set the name of the executable */
-    SetExecname(*pargv);
 
     /* Check to see if the jvmpath exists */
     /* Find out where the JDK is that we will be using. */
@@ -348,7 +348,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          *
          *     o          $JVMPATH (directory portion only)
          *     o          $JDK/lib
-         *     o          $JDK/../lib
          *
          * followed by the user's previous effective LD_LIBRARY_PATH, if
          * any.
@@ -377,10 +376,8 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
                 snprintf(new_runpath, new_runpath_size, LD_LIBRARY_PATH "="
                         "%s:"
-                        "%s/lib:"
-                        "%s/../lib",
+                        "%s/lib",
                         new_jvmpath,
-                        jdkroot,
                         jdkroot
                         );
 

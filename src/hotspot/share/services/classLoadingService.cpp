@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,19 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "logging/log.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/defaultStream.hpp"
-#include "logging/log.hpp"
-#include "logging/logConfiguration.hpp"
 
 #ifdef DTRACE_ENABLED
 

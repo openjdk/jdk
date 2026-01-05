@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ import sun.security.jca.JCAUtil;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  *
  *
@@ -161,6 +162,7 @@ public class AlgorithmParameterGenerator {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code AlgorithmParameterGenerator} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports an
@@ -208,6 +210,7 @@ public class AlgorithmParameterGenerator {
      *
      * @param provider the string name of the {@code Provider}.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code AlgorithmParameterGenerator} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -258,6 +261,7 @@ public class AlgorithmParameterGenerator {
      *
      * @param provider the {@code Provider} object.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code AlgorithmParameterGenerator} object
      *
      * @throws IllegalArgumentException if the specified provider is

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,19 @@ import sun.security.jca.GetInstance;
  * secure random bytes.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code SSLContext} protocol:
+ * following standard {@code SSLContext} protocols:
  * <ul>
  * <li>{@code TLSv1.2}</li>
+ * <li>{@code TLSv1.3}</li>
  * </ul>
- * This protocol is described in the <a href=
+ * These protocols are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
  * SSLContext section</a> of the
  * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other protocols are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since 1.4
  */
 public class SSLContext {
@@ -160,6 +162,7 @@ public class SSLContext {
      *          Java Security Standard Algorithm Names Specification</a>
      *          for information about standard protocol names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SSLContext} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -199,6 +202,7 @@ public class SSLContext {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SSLContext} object
      *
      * @throws IllegalArgumentException if the provider name is
@@ -241,6 +245,7 @@ public class SSLContext {
      *
      * @param provider an instance of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code SSLContext} object
      *
      * @throws IllegalArgumentException if the provider is {@code null}

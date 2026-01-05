@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/javaThread.hpp"
@@ -34,7 +33,6 @@ CheckOopFunctionPointer check_oop_function = nullptr;
 
 void oop::register_oop() {
   assert (CheckUnhandledOops, "should only call when CheckUnhandledOops");
-  if (!Universe::is_fully_initialized()) return;
   // This gets expensive, which is why checking unhandled oops is on a switch.
   Thread* t = Thread::current_or_null();
   if (t != nullptr && t->is_Java_thread()) {
@@ -44,7 +42,6 @@ void oop::register_oop() {
 
 void oop::unregister_oop() {
   assert (CheckUnhandledOops, "should only call when CheckUnhandledOops");
-  if (!Universe::is_fully_initialized()) return;
   // This gets expensive, which is why checking unhandled oops is on a switch.
   Thread* t = Thread::current_or_null();
   if (t != nullptr && t->is_Java_thread()) {

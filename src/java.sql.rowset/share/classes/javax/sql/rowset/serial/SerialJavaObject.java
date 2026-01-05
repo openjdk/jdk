@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import javax.sql.rowset.RowSetWarning;
 public class SerialJavaObject implements Serializable, Cloneable {
 
     /**
-     * Placeholder for object to be serialized.
+     * @serial Placeholder for object to be serialized.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object obj;
@@ -139,7 +139,7 @@ public class SerialJavaObject implements Serializable, Cloneable {
     static final long serialVersionUID = -1465795139032831023L;
 
     /**
-     * A container for the warnings issued on this <code>SerialJavaObject</code>
+     * @serial A container for the warnings issued on this <code>SerialJavaObject</code>
      * object. When there are multiple warnings, each warning is chained to the
      * previous warning.
      */

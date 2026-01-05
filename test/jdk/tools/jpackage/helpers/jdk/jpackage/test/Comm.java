@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,19 @@ package jdk.jpackage.test;
 import java.util.HashSet;
 import java.util.Set;
 
-record Comm<T>(Set<T> common, Set<T> unique1, Set<T> unique2) {
+public record Comm<T>(Set<T> common, Set<T> unique1, Set<T> unique2) {
 
-    static <T> Comm<T> compare(Set<T> a, Set<T> b) {
+    public static <T> Comm<T> compare(Set<T> a, Set<T> b) {
         Set<T> common = new HashSet<>(a);
         common.retainAll(b);
         Set<T> unique1 = new HashSet<>(a);
         unique1.removeAll(common);
         Set<T> unique2 = new HashSet<>(b);
         unique2.removeAll(common);
-        return new Comm(common, unique1, unique2);
+        return new Comm<>(common, unique1, unique2);
+    }
+
+    public boolean uniqueEmpty() {
+        return unique1.isEmpty() && unique2.isEmpty();
     }
 }

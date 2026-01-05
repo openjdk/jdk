@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @compile -XDstringConcat=inline TestReduceAllocationAndNullableLoads.java
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndNullableLoads*::*
  *                   -XX:CompileCommand=dontinline,*TestReduceAllocationAndNullableLoads*::*
- *                   -XX:-TieredCompilation -Xcomp -server
+ *                   -XX:-TieredCompilation -Xcomp
  *                   compiler.c2.TestReduceAllocationAndNullableLoads
  */
 

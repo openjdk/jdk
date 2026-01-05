@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,7 +46,7 @@ import java.util.Arrays;
 @Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3)
 public class ArrayFill {
-    @Param("65536") private int size;
+    @Param({"7", "15", "65536"}) private int size;
 
     private byte[] ba;
     private short[] sa;

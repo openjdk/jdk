@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -418,7 +417,7 @@ void ConstMethod::copy_annotations_from(ClassLoaderData* loader_data, ConstMetho
 }
 
 void ConstMethod::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstMethod): %p", this);
+  log_trace(aot)("Iter(ConstMethod): %p", this);
 
   if (!method()->method_holder()->is_rewritten()) {
     it->push(&_constants, MetaspaceClosure::_writable);

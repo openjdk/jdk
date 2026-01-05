@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @requires vm.continuations
  * @library /test/lib
  * @bug 8345294
- * @run main/othervm --enable-native-access=ALL-UNNAMED Starvation 100000
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED Starvation
  */
 
 import java.time.Duration;
@@ -37,9 +37,16 @@ import jdk.test.lib.thread.VThreadPinner;
 
 public class Starvation {
     public static void main(String[] args) throws Exception {
-        int iterations = Integer.parseInt(args[0]);
+        int iterations;
+        if (args.length > 0) {
+            iterations = Integer.parseInt(args[0]);
+        } else {
+            int nprocs = Runtime.getRuntime().availableProcessors();
+            iterations = 40_000 / nprocs;
+        }
 
-        for (int i = 0; i < iterations; i++) {
+        for (int i = 1; i <= iterations; i++) {
+            System.out.format("%s iteration %d of %d ...%n", Instant.now(), i, iterations);
             var exRef = new AtomicReference<Exception>();
             Thread thread =  Thread.startVirtualThread(() -> {
                 try {

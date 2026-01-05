@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,4 +62,10 @@ Java_jdk_internal_misc_CDS_dumpClassList(JNIEnv *env, jclass jcls, jstring fileN
 JNIEXPORT void JNICALL
 Java_jdk_internal_misc_CDS_dumpDynamicArchive(JNIEnv *env, jclass jcls, jstring archiveName) {
     JVM_DumpDynamicArchive(env, archiveName);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_CDS_needsClassInitBarrier0(JNIEnv *env, jclass ignore,
+                                                jclass c) {
+    return JVM_NeedsClassInitBarrierForCDS(env, c);
 }

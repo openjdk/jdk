@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,7 @@ public final class JarSigner {
          *      "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
          *      Java Cryptography Architecture Standard Algorithm Name
          *      Documentation</a> for information about standard algorithm names.
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @return the {@code JarSigner.Builder} itself.
          * @throws NoSuchAlgorithmException if {@code algorithm} is not available.
          */
@@ -202,6 +203,7 @@ public final class JarSigner {
          *      Java Cryptography Architecture Standard Algorithm Name
          *      Documentation</a> for information about standard algorithm names.
          * @param provider the provider.
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @return the {@code JarSigner.Builder} itself.
          * @throws NoSuchAlgorithmException if {@code algorithm} is not
          *      available in the specified provider.
@@ -227,6 +229,7 @@ public final class JarSigner {
          *      "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
          *      Java Cryptography Architecture Standard Algorithm Name
          *      Documentation</a> for information about standard algorithm names.
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @return the {@code JarSigner.Builder} itself.
          * @throws NoSuchAlgorithmException if {@code algorithm} is not available.
          * @throws IllegalArgumentException if {@code algorithm} is not
@@ -254,6 +257,7 @@ public final class JarSigner {
          *      Java Cryptography Architecture Standard Algorithm Name
          *      Documentation</a> for information about standard algorithm names.
          * @param provider  the provider.
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @return the {@code JarSigner.Builder} itself.
          * @throws NoSuchAlgorithmException if {@code algorithm} is not
          *      available in the specified provider.

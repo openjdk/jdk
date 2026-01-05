@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ public class Window extends Container implements Accessible {
     static boolean systemSyncLWRequests = false;
 
     /**
-     * Focus transfers should be synchronous for lightweight component requests.
+     * @serial Focus transfers should be synchronous for lightweight component requests.
      */
     boolean syncLWRequests = false;
     transient boolean beforeFirstShow = true;
@@ -1520,8 +1520,6 @@ public class Window extends Container implements Accessible {
     /**
      * Returns an array of all {@code Window}s, both owned and ownerless,
      * created by this application.
-     * If called from an applet, the array includes only the {@code Window}s
-     * accessible by that applet.
      * <p>
      * <b>Warning:</b> this method may return system created windows, such
      * as a print dialog. Applications should not assume the existence of
@@ -1543,8 +1541,6 @@ public class Window extends Container implements Accessible {
      * Returns an array of all {@code Window}s created by this application
      * that have no owner. They include {@code Frame}s and ownerless
      * {@code Dialog}s and {@code Window}s.
-     * If called from an applet, the array includes only the {@code Window}s
-     * accessible by that applet.
      * <p>
      * <b>Warning:</b> this method may return system created windows, such
      * as a print dialog. Applications should not assume the existence of
@@ -2777,7 +2773,7 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Window type.
+     * @serial Window type.
      *
      * Synchronization: ObjectLock
      */
@@ -3337,7 +3333,7 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * {@code true} if this Window should appear at the default location,
+     * @serial {@code true} if this Window should appear at the default location,
      * {@code false} if at the current location.
      */
     private volatile boolean locationByPlatform = locationByPlatformProp;
@@ -3865,7 +3861,7 @@ public class Window extends Container implements Accessible {
             if (content != null) {
                 content.setOpaque(isOpaque);
 
-                // Iterate down one level to see whether we have a JApplet
+                // Iterate down one level to see whether we have (eg) a JInternalFrame
                 // (which is also a RootPaneContainer) which requires processing
                 int numChildren = content.getComponentCount();
                 if (numChildren > 0) {

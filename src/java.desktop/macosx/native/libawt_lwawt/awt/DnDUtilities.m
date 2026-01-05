@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ There are several problems with Drag and Drop - notably, the mismatch between Ja
 @implementation DnDUtilities
 
 // Make sure we don't let other apps see local drags by using a process unique pasteboard type.
-// This may not work in the Applet case, since they are all running in the same VM
 + (NSString *) javaPboardType {
     static NSString *customJavaPboardType = nil;
     if (customJavaPboardType == nil)

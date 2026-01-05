@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,10 @@
         <system systemId="http://java.sun.com/dtd/preferences.dtd" uri="preferences.dtd"/>
         <system systemId="http://java.sun.com/dtd/properties.dtd" uri="properties.dtd"/>
     </group>
-    
+
     <!-- W3C DTDs -->
     <group id="xhtml11" prefer = "system" xml:base = "w3c/dtd/xhtml11/">
+        <public publicId="-//W3C//DTD XHTML 1.1//EN" uri="xhtml11.dtd"/>
         <system systemId="http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd" uri="xhtml11.dtd"/>
         <systemSuffix systemIdSuffix="xhtml-attribs-1.mod" uri="xhtml-attribs-1.mod"/>
         <systemSuffix systemIdSuffix="xhtml-base-1.mod" uri="xhtml-base-1.mod"/>
@@ -81,8 +82,11 @@
         <systemSuffix systemIdSuffix="xhtml-text-1.mod" uri="xhtml-text-1.mod"/>
         <systemSuffix systemIdSuffix="xhtml11-model-1.mod" uri="xhtml11-model-1.mod"/>
     </group>
-    
+
     <group id="xhtml1" prefer = "system" xml:base = "w3c/dtd/xhtml10/">
+        <public publicId="-//W3C//DTD XHTML 1.0 Strict//EN" uri="xhtml1-strict.dtd"/>
+        <public publicId="-//W3C//DTD XHTML 1.0 Transitional//EN" uri="xhtml1-transitional.dtd"/>
+        <public publicId="-//W3C//DTD XHTML 1.0 Frameset//EN" uri="xhtml1-frameset.dtd"/>
         <systemSuffix systemIdSuffix="xhtml1-strict.dtd" uri="xhtml1-strict.dtd"/>
         <systemSuffix systemIdSuffix="xhtml1-transitional.dtd" uri="xhtml1-transitional.dtd"/>
         <systemSuffix systemIdSuffix="xhtml1-frameset.dtd" uri="xhtml1-frameset.dtd"/>
@@ -97,11 +101,12 @@
         <public publicId="datatypes" uri="datatypes.dtd"/>
         <public publicId="-//W3C//DTD XMLSCHEMA 200102//EN" uri="XMLSchema.dtd"/>
     </group>
-    
+
     <group id="xmlspec" prefer = "system" xml:base = "w3c/dtd/">
+        <public publicId="-//W3C//DTD Specification V2.10//EN" uri="xmlspec2_10/xmlspec.dtd"/>
         <system systemId="http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd" uri="xmlspec2_10/xmlspec.dtd"/>
     </group>
-    
+
     <!-- W3C XSDs -->
     <group id="w3cxsd" prefer = "system" xml:base = "w3c/xsd/">
         <systemSuffix systemIdSuffix="XMLSchema.xsd" uri="schema10/XMLSchema.xsd"/>

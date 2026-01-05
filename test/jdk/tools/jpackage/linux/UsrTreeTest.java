@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,18 @@
  * questions.
  */
 
+import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.test.ApplicationLayout.linuxAppImage;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import jdk.jpackage.test.TKit;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.LinuxHelper;
-import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.TKit;
 
 
 /**
@@ -45,7 +48,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @requires jpackage.test.SQETest == null
  * @requires (os.family == "linux")
  * @build jdk.jpackage.test.*
- * @compile UsrTreeTest.java
+ * @compile -Xlint:all -Werror UsrTreeTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=UsrTreeTest
  */
@@ -90,20 +93,13 @@ public class UsrTreeTest {
                             "Check there is%spackage name [%s] in common path [%s] between [%s] and [%s]",
                             expectedImageSplit ? " no " : " ", packageName,
                             commonPath, launcherPath, launcherCfgPath));
-
-            List<Path> packageFiles = LinuxHelper.getPackageFiles(cmd).collect(
-                    Collectors.toList());
-
-            Consumer<Path> packageFileVerifier = file -> {
-                TKit.assertTrue(packageFiles.stream().filter(
-                        path -> path.equals(file)).findFirst().orElse(
-                                null) != null, String.format(
-                                "Check file [%s] is in [%s] package", file,
-                                packageName));
-            };
-
-            packageFileVerifier.accept(launcherPath);
-            packageFileVerifier.accept(launcherCfgPath);
+        })
+        .addInstallVerifier(cmd -> {
+            Stream.of(
+                    cmd.appLauncherPath(),
+                    cmd.appLauncherCfgPath(null),
+                    cmd.appLayout().libapplauncher()
+            ).map(cmd::pathToPackageFile).map(cmd.appInstallationDirectory()::relativize).forEachOrdered(cmd::assertFileInAppImage);
         })
         .run();
     }

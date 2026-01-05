@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2007, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -243,11 +242,9 @@ void frame::zero_print_on_error(int           frame_index,
     int offset = fp() - addr;
 
     // Fill in default values, then try and improve them
-    snprintf(fieldbuf, buflen, "word[%d]", offset);
-    snprintf(valuebuf, buflen, PTR_FORMAT, *addr);
+    os::snprintf_checked(fieldbuf, buflen, "word[%d]", offset);
+    os::snprintf_checked(valuebuf, buflen, PTR_FORMAT, *addr);
     zeroframe()->identify_word(frame_index, offset, fieldbuf, valuebuf, buflen);
-    fieldbuf[buflen - 1] = '\0';
-    valuebuf[buflen - 1] = '\0';
 
     // Print the result
     st->print_cr(" " PTR_FORMAT ": %-21s = %s", p2i(addr), fieldbuf, valuebuf);
@@ -301,7 +298,7 @@ void EntryFrame::identify_word(int   frame_index,
     break;
 
   default:
-    snprintf(fieldbuf, buflen, "local[%d]", offset - 3);
+    os::snprintf_checked(fieldbuf, buflen, "local[%d]", offset - 3);
   }
 }
 
@@ -322,12 +319,12 @@ void InterpreterFrame::identify_word(int   frame_index,
         istate->method()->name_and_sig_as_C_string(valuebuf, buflen);
       }
       else if (is_valid && !strcmp(field, "_bcp") && istate->bcp()) {
-        snprintf(valuebuf, buflen, PTR_FORMAT " (bci %d)",
-                 (intptr_t) istate->bcp(),
-                 istate->method()->bci_from(istate->bcp()));
+        os::snprintf_checked(valuebuf, buflen, PTR_FORMAT " (bci %d)",
+                             (intptr_t) istate->bcp(),
+                             istate->method()->bci_from(istate->bcp()));
       }
-      snprintf(fieldbuf, buflen, "%sistate->%s",
-               field[strlen(field) - 1] == ')' ? "(": "", field);
+      os::snprintf_checked(fieldbuf, buflen, "%sistate->%s",
+                           field[strlen(field) - 1] == ')' ? "(": "", field);
     }
     else if (addr == (intptr_t *) istate) {
       strncpy(fieldbuf, "(vtable for istate)", buflen);
@@ -359,13 +356,13 @@ void InterpreterFrame::identify_word(int   frame_index,
             else
               desc = " (this)";
           }
-          snprintf(fieldbuf, buflen, "parameter[%d]%s", param, desc);
+          os::snprintf_checked(fieldbuf, buflen, "parameter[%d]%s", param, desc);
           return;
         }
 
         for (int i = 0; i < handler->argument_count(); i++) {
           if (params[i] == (intptr_t) addr) {
-            snprintf(fieldbuf, buflen, "unboxed parameter[%d]", i);
+            os::snprintf_checked(fieldbuf, buflen, "unboxed parameter[%d]", i);
             return;
           }
         }
@@ -397,18 +394,18 @@ void ZeroFrame::identify_vp_word(int       frame_index,
     intptr_t offset = (intptr_t) addr - monitor;
 
     if (offset == in_bytes(BasicObjectLock::obj_offset()))
-      snprintf(fieldbuf, buflen, "monitor[%d]->_obj", index);
+      os::snprintf_checked(fieldbuf, buflen, "monitor[%d]->_obj", index);
     else if (offset == in_bytes(BasicObjectLock::lock_offset()))
-      snprintf(fieldbuf, buflen, "monitor[%d]->_lock", index);
+      os::snprintf_checked(fieldbuf, buflen, "monitor[%d]->_lock", index);
 
     return;
   }
 
   // Expression stack
   if (addr < stack_base) {
-    snprintf(fieldbuf, buflen, "%s[%d]",
-             frame_index == 0 ? "stack_word" : "local",
-             (int) (stack_base - addr - 1));
+    os::snprintf_checked(fieldbuf, buflen, "%s[%d]",
+                         frame_index == 0 ? "stack_word" : "local",
+                         (int) (stack_base - addr - 1));
     return;
   }
 }

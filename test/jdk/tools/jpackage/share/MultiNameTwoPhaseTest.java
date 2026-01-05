@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  */
 
 import java.nio.file.Path;
-import java.io.IOException;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.JPackageCommand;
 
 /**
  * Test creation of packages in tho phases with different names.
@@ -45,8 +44,8 @@ import jdk.jpackage.test.JPackageCommand;
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
- * @compile MultiNameTwoPhaseTest.java
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ * @compile -Xlint:all -Werror MultiNameTwoPhaseTest.java
+ * @run main/othervm/timeout=2160 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MultiNameTwoPhaseTest
  */
 
@@ -58,9 +57,7 @@ public class MultiNameTwoPhaseTest {
     @Parameter({"MultiNameTest", ""})
     @Parameter({"", "MultiNameTestInstaller"})
     @Parameter({"", ""})
-    public static void test(String... testArgs) throws IOException {
-        String appName = testArgs[0];
-        String installName = testArgs[1];
+    public static void test(String appName, String installName) {
 
         Path appimageOutput = TKit.createTempDirectory("appimage");
 
@@ -74,9 +71,8 @@ public class MultiNameTwoPhaseTest {
         PackageTest packageTest = new PackageTest()
                 .addRunOnceInitializer(() -> appImageCmd.execute())
                 .addBundleDesktopIntegrationVerifier(true)
+                .usePredefinedAppImage(appImageCmd)
                 .addInitializer(cmd -> {
-                    cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                    cmd.removeArgumentWithValue("--input");
                     cmd.removeArgumentWithValue("--name");
                     if (!installName.isEmpty()) {
                         cmd.addArguments("--name", installName);

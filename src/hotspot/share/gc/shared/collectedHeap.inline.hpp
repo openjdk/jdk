@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@ inline oop CollectedHeap::array_allocate(Klass* klass, size_t size, int length, 
 inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
   ClassAllocator allocator(klass, size, THREAD);
   return allocator.allocate();
+}
+
+inline void CollectedHeap::add_vmthread_cpu_time(jlong time) {
+  _vmthread_cpu_time += time;
 }
 
 #endif // SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP

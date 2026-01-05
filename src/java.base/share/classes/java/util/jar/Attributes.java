@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import sun.nio.cs.UTF_8;
@@ -60,6 +61,7 @@ import sun.util.logging.PlatformLogger;
  * @see     Manifest
  * @since   1.2
  */
+@AOTSafeClassInitializer
 public class Attributes implements Map<Object,Object>, Cloneable {
     /**
      * The attribute name-value mappings.
@@ -450,6 +452,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      *
      * @spec jar/jar.html JAR File Specification
      */
+    @AOTSafeClassInitializer
     public static class Name {
         private final String name;
         private final int hashCode;
@@ -669,6 +672,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
 
         static {
 
+            // Legacy CDS archive support (to be deprecated)
             CDS.initializeFromArchive(Attributes.Name.class);
 
             if (KNOWN_NAMES == null) {
@@ -727,6 +731,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                 addName(names, new Name("Created-By"));
                 addName(names, new Name("SHA1-Digest"));
                 addName(names, new Name("SHA-256-Digest"));
+                addName(names, new Name("SHA-384-Digest"));
                 KNOWN_NAMES = Map.copyOf(names);
             } else {
                 // Even if KNOWN_NAMES was read from archive, we still need

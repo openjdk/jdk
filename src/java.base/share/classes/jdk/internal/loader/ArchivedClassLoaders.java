@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@ package jdk.internal.loader;
 import java.util.Map;
 import jdk.internal.misc.CDS;
 import jdk.internal.module.ServicesCatalog;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * Used to archive the built-in class loaders, their services catalogs, and the
  * package-to-module map used by the built-in class loaders.
  */
+@AOTSafeClassInitializer
 class ArchivedClassLoaders {
     private static ArchivedClassLoaders archivedClassLoaders;
 
@@ -40,6 +42,7 @@ class ArchivedClassLoaders {
     private final ClassLoader appLoader;
     private final ServicesCatalog[] servicesCatalogs;
     private final Map<String, ?> packageToModule;
+    private final Module unnamedModuleForBootLoader;
 
     private ArchivedClassLoaders() {
         bootLoader = ClassLoaders.bootLoader();
@@ -52,6 +55,7 @@ class ArchivedClassLoaders {
         servicesCatalogs[2] = ServicesCatalog.getServicesCatalog(appLoader);
 
         packageToModule = BuiltinClassLoader.packageToModule();
+        unnamedModuleForBootLoader = BootLoader.getUnnamedModule();
     }
 
     ClassLoader bootLoader() {
@@ -80,6 +84,10 @@ class ArchivedClassLoaders {
 
     Map<String, ?> packageToModule() {
         return packageToModule;
+    }
+
+    Module unnamedModuleForBootLoader() {
+        return unnamedModuleForBootLoader;
     }
 
     static void archive() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
@@ -33,13 +32,13 @@
 #define BLOCK_COMMENT(str) block_comment(str)
 #define BIND(label)        bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register temp1, Register temp2) {
-  compiler_fast_lock_lightweight_object(obj, box, temp1, temp2);
+void C2_MacroAssembler::fast_lock(Register obj, Register box, Register temp1, Register temp2) {
+  compiler_fast_lock_object(obj, box, temp1, temp2);
 }
 
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register temp1, Register temp2) {
-  compiler_fast_unlock_lightweight_object(obj, box, temp1, temp2);
+void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register temp1, Register temp2) {
+  compiler_fast_unlock_object(obj, box, temp1, temp2);
 }
 
 void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {

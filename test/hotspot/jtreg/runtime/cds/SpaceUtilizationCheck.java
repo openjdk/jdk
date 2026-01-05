@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class SpaceUtilizationCheck {
     // [2] There must be no gap between two consecutive regions.
 
     public static void main(String[] args) throws Exception {
-        test("-Xlog:cds=debug");
+        test("-Xlog:aot=debug,cds=debug");
     }
 
     static void test(String... extra_options) throws Exception {
@@ -59,7 +59,7 @@ public class SpaceUtilizationCheck {
         Pattern pattern = Pattern.compile("(..) space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
         WhiteBox wb = WhiteBox.getWhiteBox();
         long reserve_alignment = wb.metaspaceSharedRegionAlignment();
-        System.out.println("MetaspaceShared::core_region_alignment() = " + reserve_alignment);
+        System.out.println("AOTMetaspace::core_region_alignment() = " + reserve_alignment);
 
         // Look for output like this. The pattern will only match the first 2 regions, which is what we need to check
         //
@@ -90,7 +90,7 @@ public class SpaceUtilizationCheck {
                     }
                     if (unused > reserve_alignment) {
                         // [1] Check for unused space
-                        throw new RuntimeException("Unused space (" + unused + ") must be smaller than MetaspaceShared::core_region_alignment() (" +
+                        throw new RuntimeException("Unused space (" + unused + ") must be smaller than AOTMetaspace::core_region_alignment() (" +
                                                    reserve_alignment + ")");
                     }
                     if (last_region >= 0 && address != last_region) {

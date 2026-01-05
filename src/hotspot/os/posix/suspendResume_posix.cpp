@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "suspendResume_posix.hpp"
 
 /* try to switch state from state "from" to state "to"
@@ -32,7 +31,7 @@
 SuspendResume::State SuspendResume::switch_state(SuspendResume::State from,
                                                  SuspendResume::State to)
 {
-  SuspendResume::State result = Atomic::cmpxchg(&_state, from, to);
+  SuspendResume::State result = AtomicAccess::cmpxchg(&_state, from, to);
   if (result == from) {
     // success
     return to;

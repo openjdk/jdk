@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package sun.font;
 
 import java.nio.ByteBuffer;
 import java.util.Locale;
+
+import static sun.font.FontUtilities.isDefaultIgnorable;
+import static sun.font.FontUtilities.isIgnorableWhitespace;
 
 public class TrueTypeGlyphMapper extends CharToGlyphMapper {
 
@@ -57,7 +60,10 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         return numGlyphs;
     }
 
-    private char getGlyphFromCMAP(int charCode) {
+    private char getGlyphFromCMAP(int charCode, boolean raw) {
+        if (isIgnorableWhitespace(charCode) || (isDefaultIgnorable(charCode) && !raw)) {
+            return INVISIBLE_GLYPH_ID;
+        }
         try {
             char glyphCode = cmap.getGlyph(charCode);
             if (glyphCode < numGlyphs ||
@@ -77,9 +83,12 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         }
     }
 
-    private char getGlyphFromCMAP(int charCode, int variationSelector) {
+    private char getGlyphFromCMAP(int charCode, int variationSelector, boolean raw) {
         if (variationSelector == 0) {
-            return getGlyphFromCMAP(charCode);
+            return getGlyphFromCMAP(charCode, raw);
+        }
+        if (isIgnorableWhitespace(charCode) || (isDefaultIgnorable(charCode) && !raw)) {
+            return INVISIBLE_GLYPH_ID;
         }
         try {
             char glyphCode = cmap.getVariationGlyph(charCode,
@@ -116,25 +125,36 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         cmap = CMap.theNullCmap;
     }
 
+    public int charToGlyphRaw(int unicode) {
+        int glyph = getGlyphFromCMAP(unicode, true);
+        return glyph;
+    }
+
+    @Override
+    public int charToVariationGlyphRaw(int unicode, int variationSelector) {
+        int glyph = getGlyphFromCMAP(unicode, variationSelector, true);
+        return glyph;
+    }
+
     public int charToGlyph(char unicode) {
-        int glyph = getGlyphFromCMAP(unicode);
+        int glyph = getGlyphFromCMAP(unicode, false);
         return glyph;
     }
 
     public int charToGlyph(int unicode) {
-        int glyph = getGlyphFromCMAP(unicode);
+        int glyph = getGlyphFromCMAP(unicode, false);
         return glyph;
     }
 
     @Override
     public int charToVariationGlyph(int unicode, int variationSelector) {
-        int glyph = getGlyphFromCMAP(unicode, variationSelector);
+        int glyph = getGlyphFromCMAP(unicode, variationSelector, false);
         return glyph;
     }
 
     public void charsToGlyphs(int count, int[] unicodes, int[] glyphs) {
         for (int i=0;i<count;i++) {
-            glyphs[i] = getGlyphFromCMAP(unicodes[i]);
+            glyphs[i] = getGlyphFromCMAP(unicodes[i], false);
         }
     }
 
@@ -152,13 +172,13 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
                     code = (code - HI_SURROGATE_START) *
                         0x400 + low - LO_SURROGATE_START + 0x10000;
 
-                    glyphs[i] = getGlyphFromCMAP(code);
+                    glyphs[i] = getGlyphFromCMAP(code, false);
                     i += 1; // Empty glyph slot after surrogate
                     glyphs[i] = INVISIBLE_GLYPH_ID;
                     continue;
                 }
             }
-            glyphs[i] = getGlyphFromCMAP(code);
+            glyphs[i] = getGlyphFromCMAP(code, false);
 
         }
     }
@@ -185,7 +205,7 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
                 }
             }
 
-            glyphs[i] = getGlyphFromCMAP(code);
+            glyphs[i] = getGlyphFromCMAP(code, false);
 
             if (code < FontUtilities.MIN_LAYOUT_CHARCODE) {
                 continue;

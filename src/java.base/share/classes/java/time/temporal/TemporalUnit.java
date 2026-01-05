@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,9 +239,15 @@ public interface TemporalUnit {
      * calculated using {@code HOURS.between(startTime, endTime)}.
      * <p>
      * The calculation returns a whole number, representing the number of
-     * complete units between the two temporals.
+     * complete units between the two temporals. If there are smaller unit
+     * fields, their values are considered when determining the final
+     * whole number.
+     *
      * For example, the amount in hours between the times 11:30 and 13:29
-     * will only be one hour as it is one minute short of two hours.
+     * will only be one hour as it is one minute short of two hours, or
+     * the amount in months between the dates 2024-09-29 and 2025-02-28
+     * (the last day in February) will be 4 months as it is one day short
+     * of 5 months.
      * <p>
      * There are two equivalent ways of using this method.
      * The first is to invoke this method directly.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,12 +151,12 @@ public class VM {
     // aligned. The "-XX:+PageAlignDirectMemory" option can be used to force
     // buffers, allocated by ByteBuffer.allocateDirect, to be page aligned.
     @Stable
-    private static boolean pageAlignDirectMemory;
+    private static Boolean pageAlignDirectMemory;
 
     // Returns {@code true} if the direct buffers should be page aligned. This
     // variable is initialized by saveAndRemoveProperties.
     public static boolean isDirectMemoryPageAligned() {
-        return pageAlignDirectMemory;
+        return pageAlignDirectMemory != null && pageAlignDirectMemory;
     }
 
     /**
@@ -261,9 +261,7 @@ public class VM {
         }
 
         // Check if direct buffers should be page aligned
-        s = props.get("sun.nio.PageAlignDirectMemory");
-        if ("true".equals(s))
-            pageAlignDirectMemory = true;
+        pageAlignDirectMemory = "true".equals(props.get("sun.nio.PageAlignDirectMemory"));
     }
 
     // Initialize any miscellaneous operating system settings that need to be

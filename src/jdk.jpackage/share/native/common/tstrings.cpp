@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,13 @@ tstring unsafe_format(tstring::const_pointer format, ...) {
 #ifdef _MSC_VER
         ret = _vsntprintf_s(&*fmtout.begin(), fmtout.size(), _TRUNCATE, format, args);
 #else
-#if defined(__GNUC__) && __GNUC__ >= 5
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
         // With g++ this compiles only with '-std=gnu++0x' option
         ret = vsnprintf(&*fmtout.begin(), fmtout.size(), format, args);
-#if defined(__GNUC__) && __GNUC__ >= 5
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
 #endif

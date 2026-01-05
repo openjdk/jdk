@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package java.lang;
 
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -38,7 +37,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 import jdk.internal.event.VirtualThreadEndEvent;
 import jdk.internal.event.VirtualThreadStartEvent;
 import jdk.internal.event.VirtualThreadSubmitFailedEvent;
@@ -66,7 +64,6 @@ final class VirtualThread extends BaseVirtualThread {
     private static final Unsafe U = Unsafe.getUnsafe();
     private static final ContinuationScope VTHREAD_SCOPE = new ContinuationScope("VirtualThreads");
     private static final ForkJoinPool DEFAULT_SCHEDULER = createDefaultScheduler();
-    private static final ScheduledExecutorService[] DELAYED_TASK_SCHEDULERS = createDelayedTaskSchedulers();
 
     private static final long STATE = U.objectFieldOffset(VirtualThread.class, "state");
     private static final long PARK_PERMIT = U.objectFieldOffset(VirtualThread.class, "parkPermit");
@@ -171,6 +168,9 @@ final class VirtualThread extends BaseVirtualThread {
     // notified by Object.notify/notifyAll while waiting in Object.wait
     private volatile boolean notified;
 
+    // true when waiting in Object.wait, false for VM internal uninterruptible Object.wait
+    private volatile boolean interruptibleWait;
+
     // timed-wait support
     private byte timedWaitSeqNo;
 
@@ -191,13 +191,6 @@ final class VirtualThread extends BaseVirtualThread {
      */
     static Executor defaultScheduler() {
         return DEFAULT_SCHEDULER;
-    }
-
-    /**
-     * Returns a stream of the delayed task schedulers used to support timed operations.
-     */
-    static Stream<ScheduledExecutorService> delayedTaskSchedulers() {
-        return Arrays.stream(DELAYED_TASK_SCHEDULERS);
     }
 
     /**
@@ -253,11 +246,11 @@ final class VirtualThread extends BaseVirtualThread {
                 @Hidden
                 @JvmtiHideEvents
                 public void run() {
-                    vthread.notifyJvmtiStart(); // notify JVMTI
+                    vthread.endFirstTransition();
                     try {
                         vthread.run(task);
                     } finally {
-                        vthread.notifyJvmtiEnd(); // notify JVMTI
+                        vthread.startFinalTransition();
                     }
                 }
             };
@@ -323,6 +316,18 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
+     * Submits the given task to the given executor. If the scheduler is a
+     * ForkJoinPool then the task is first adapted to a ForkJoinTask.
+     */
+    private void submit(Executor executor, Runnable task) {
+        if (executor instanceof ForkJoinPool pool) {
+            pool.submit(ForkJoinTask.adapt(task));
+        } else {
+            executor.execute(task);
+        }
+    }
+
+    /**
      * Submits the runContinuation task to the scheduler. For the default scheduler,
      * and calling it on a worker thread, the task will be pushed to the local queue,
      * otherwise it will be pushed to an external submission queue.
@@ -342,12 +347,12 @@ final class VirtualThread extends BaseVirtualThread {
                 if (currentThread().isVirtual()) {
                     Continuation.pin();
                     try {
-                        scheduler.execute(runContinuation);
+                        submit(scheduler, runContinuation);
                     } finally {
                         Continuation.unpin();
                     }
                 } else {
-                    scheduler.execute(runContinuation);
+                    submit(scheduler, runContinuation);
                 }
                 done = true;
             } catch (RejectedExecutionException ree) {
@@ -486,19 +491,20 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     @ReservedStackAccess
     private void mount() {
-        // notify JVMTI before mount
-        notifyJvmtiMount(/*hide*/true);
+        startTransition(/*is_mount*/true);
+        // We assume following volatile accesses provide equivalent
+        // of acquire ordering, otherwise we need U.loadFence() here.
 
         // sets the carrier thread
         Thread carrier = Thread.currentCarrierThread();
         setCarrierThread(carrier);
 
-        // sync up carrier thread interrupt status if needed
+        // sync up carrier thread interrupted status if needed
         if (interrupted) {
             carrier.setInterrupt();
         } else if (carrier.isInterrupted()) {
             synchronized (interruptLock) {
-                // need to recheck interrupt status
+                // need to recheck interrupted status
                 if (!interrupted) {
                     carrier.clearInterrupt();
                 }
@@ -528,8 +534,9 @@ final class VirtualThread extends BaseVirtualThread {
         }
         carrier.clearInterrupt();
 
-        // notify JVMTI after unmount
-        notifyJvmtiUnmount(/*hide*/false);
+        // We assume previous volatile accesses provide equivalent
+        // of release ordering, otherwise we need U.storeFence() here.
+        endTransition(/*is_mount*/false);
     }
 
     /**
@@ -538,11 +545,11 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @Hidden
     private boolean yieldContinuation() {
-        notifyJvmtiUnmount(/*hide*/true);
+        startTransition(/*is_mount*/false);
         try {
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
-            notifyJvmtiMount(/*hide*/false);
+            endTransition(/*is_mount*/true);
         }
     }
 
@@ -567,8 +574,9 @@ final class VirtualThread extends BaseVirtualThread {
                 setState(newState = PARKED);
             } else {
                 // schedule unpark
+                long timeout = this.timeout;
                 assert timeout > 0;
-                timeoutTask = schedule(this::unpark, timeout, NANOSECONDS);
+                timeoutTask = schedule(this::parkTimeoutExpired, timeout, NANOSECONDS);
                 setState(newState = TIMED_PARKED);
             }
 
@@ -608,6 +616,7 @@ final class VirtualThread extends BaseVirtualThread {
         // Object.wait
         if (s == WAITING || s == TIMED_WAITING) {
             int newState;
+            boolean interruptible = interruptibleWait;
             if (s == WAITING) {
                 setState(newState = WAIT);
             } else {
@@ -618,6 +627,7 @@ final class VirtualThread extends BaseVirtualThread {
                 // the timeout task to coordinate access to the sequence number and to
                 // ensure the timeout task doesn't execute until the thread has got to
                 // the TIMED_WAIT state.
+                long timeout = this.timeout;
                 assert timeout > 0;
                 synchronized (timedWaitLock()) {
                     byte seqNo = ++timedWaitSeqNo;
@@ -636,7 +646,7 @@ final class VirtualThread extends BaseVirtualThread {
             }
 
             // may have been interrupted while in transition to wait state
-            if (interrupted && compareAndSetState(newState, UNBLOCKED)) {
+            if (interruptible && interrupted && compareAndSetState(newState, UNBLOCKED)) {
                 submitRunContinuation();
                 return;
             }
@@ -672,7 +682,7 @@ final class VirtualThread extends BaseVirtualThread {
 
         // notify container
         if (notifyContainer) {
-            threadContainer().onExit(this);
+            threadContainer().remove(this);
         }
 
         // clear references to thread locals
@@ -700,7 +710,7 @@ final class VirtualThread extends BaseVirtualThread {
         boolean addedToContainer = false;
         boolean started = false;
         try {
-            container.onStart(this);  // may throw
+            container.add(this);  // may throw
             addedToContainer = true;
 
             // scoped values may be inherited
@@ -729,7 +739,7 @@ final class VirtualThread extends BaseVirtualThread {
     /**
      * Parks until unparked or interrupted. If already unparked then the parking
      * permit is consumed and this method completes immediately (meaning it doesn't
-     * yield). It also completes immediately if the interrupt status is set.
+     * yield). It also completes immediately if the interrupted status is set.
      */
     @Override
     void park() {
@@ -764,7 +774,7 @@ final class VirtualThread extends BaseVirtualThread {
      * Parks up to the given waiting time or until unparked or interrupted.
      * If already unparked then the parking permit is consumed and this method
      * completes immediately (meaning it doesn't yield). It also completes immediately
-     * if the interrupt status is set or the waiting time is {@code <= 0}.
+     * if the interrupted status is set or the waiting time is {@code <= 0}.
      *
      * @param nanos the maximum number of nanoseconds to wait.
      */
@@ -807,7 +817,7 @@ final class VirtualThread extends BaseVirtualThread {
     /**
      * Parks the current carrier thread up to the given waiting time or until
      * unparked or interrupted. If the virtual thread is interrupted then the
-     * interrupt status will be propagated to the carrier thread.
+     * interrupted status will be propagated to the carrier thread.
      * @param timed true for a timed park, false for untimed
      * @param nanos the waiting time in nanoseconds
      */
@@ -890,7 +900,19 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Invoked by timer thread when wait timeout for virtual thread has expired.
+     * Invoked by FJP worker thread or STPE thread when park timeout expires.
+     */
+    private void parkTimeoutExpired() {
+        assert !VirtualThread.currentThread().isVirtual();
+        if (!getAndSetParkPermit(true)
+                && (state() == TIMED_PARKED)
+                && compareAndSetState(TIMED_PARKED, UNPARKED)) {
+            lazySubmitRunContinuation();
+        }
+    }
+
+    /**
+     * Invoked by FJP worker thread or STPE thread when wait timeout expires.
      * If the virtual thread is in timed-wait then this method will unblock the thread
      * and submit its task so that it continues and attempts to reenter the monitor.
      * This method does nothing if the thread has been woken by notify or interrupt.
@@ -913,7 +935,7 @@ final class VirtualThread extends BaseVirtualThread {
                 }
             }
             if (unblocked) {
-                submitRunContinuation();
+                lazySubmitRunContinuation();
                 return;
             }
             // need to retry when thread is suspended in time-wait
@@ -1381,23 +1403,34 @@ final class VirtualThread extends BaseVirtualThread {
         this.carrierThread = carrier;
     }
 
-    // -- JVM TI support --
+    // The following four methods notify the VM when a "transition" starts and ends.
+    // A "mount transition" embodies the steps to transfer control from a platform
+    // thread to a virtual thread, changing the thread identity, and starting or
+    // resuming the virtual thread's continuation on the carrier.
+    // An "unmount transition" embodies the steps to transfer control from a virtual
+    // thread to its carrier, suspending the virtual thread's continuation, and
+    // restoring the thread identity to the platform thread.
+    // The notifications to the VM are necessary in order to coordinate with functions
+    // (JVMTI mostly) that disable transitions for one or all virtual threads. Starting
+    // a transition may block if transitions are disabled. Ending a transition may
+    // notify a thread that is waiting to disable transitions. The notifications are
+    // also used to post JVMTI events for virtual thread start and end.
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiStart();
+    private native void endFirstTransition();
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiEnd();
+    private native void startFinalTransition();
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiMount(boolean hide);
+    private native void startTransition(boolean is_mount);
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiUnmount(boolean hide);
+    private native void endTransition(boolean is_mount);
 
     @IntrinsicCandidate
     private static native void notifyJvmtiDisableSuspend(boolean enter);
@@ -1444,40 +1477,54 @@ final class VirtualThread extends BaseVirtualThread {
     /**
      * Schedule a runnable task to run after a delay.
      */
-    private static Future<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        long tid = Thread.currentThread().threadId();
-        int index = (int) tid & (DELAYED_TASK_SCHEDULERS.length - 1);
-        return DELAYED_TASK_SCHEDULERS[index].schedule(command, delay, unit);
+    private Future<?> schedule(Runnable command, long delay, TimeUnit unit) {
+        if (scheduler instanceof ForkJoinPool pool) {
+            return pool.schedule(command, delay, unit);
+        } else {
+            return DelayedTaskSchedulers.schedule(command, delay, unit);
+        }
     }
 
     /**
-     * Creates the ScheduledThreadPoolExecutors used to execute delayed tasks.
+     * Supports scheduling a runnable task to run after a delay. It uses a number
+     * of ScheduledThreadPoolExecutor instances to reduce contention on the delayed
+     * work queue used. This class is used when using a custom scheduler.
      */
-    private static ScheduledExecutorService[] createDelayedTaskSchedulers() {
-        String propName = "jdk.virtualThreadScheduler.timerQueues";
-        String propValue = System.getProperty(propName);
-        int queueCount;
-        if (propValue != null) {
-            queueCount = Integer.parseInt(propValue);
-            if (queueCount != Integer.highestOneBit(queueCount)) {
-                throw new RuntimeException("Value of " + propName + " must be power of 2");
+    private static class DelayedTaskSchedulers {
+        private static final ScheduledExecutorService[] INSTANCE = createDelayedTaskSchedulers();
+
+        static Future<?> schedule(Runnable command, long delay, TimeUnit unit) {
+            long tid = Thread.currentThread().threadId();
+            int index = (int) tid & (INSTANCE.length - 1);
+            return INSTANCE[index].schedule(command, delay, unit);
+        }
+
+        private static ScheduledExecutorService[] createDelayedTaskSchedulers() {
+            String propName = "jdk.virtualThreadScheduler.timerQueues";
+            String propValue = System.getProperty(propName);
+            int queueCount;
+            if (propValue != null) {
+                queueCount = Integer.parseInt(propValue);
+                if (queueCount != Integer.highestOneBit(queueCount)) {
+                    throw new RuntimeException("Value of " + propName + " must be power of 2");
+                }
+            } else {
+                int ncpus = Runtime.getRuntime().availableProcessors();
+                queueCount = Math.max(Integer.highestOneBit(ncpus / 4), 1);
             }
-        } else {
-            int ncpus = Runtime.getRuntime().availableProcessors();
-            queueCount = Math.max(Integer.highestOneBit(ncpus / 4), 1);
+            var schedulers = new ScheduledExecutorService[queueCount];
+            for (int i = 0; i < queueCount; i++) {
+                ScheduledThreadPoolExecutor stpe = (ScheduledThreadPoolExecutor)
+                    Executors.newScheduledThreadPool(1, task -> {
+                        Thread t = InnocuousThread.newThread("VirtualThread-unparker", task);
+                        t.setDaemon(true);
+                        return t;
+                    });
+                stpe.setRemoveOnCancelPolicy(true);
+                schedulers[i] = stpe;
+            }
+            return schedulers;
         }
-        var schedulers = new ScheduledExecutorService[queueCount];
-        for (int i = 0; i < queueCount; i++) {
-            ScheduledThreadPoolExecutor stpe = (ScheduledThreadPoolExecutor)
-                Executors.newScheduledThreadPool(1, task -> {
-                    Thread t = InnocuousThread.newThread("VirtualThread-unparker", task);
-                    t.setDaemon(true);
-                    return t;
-                });
-            stpe.setRemoveOnCancelPolicy(true);
-            schedulers[i] = stpe;
-        }
-        return schedulers;
     }
 
     /**

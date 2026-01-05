@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,13 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledIRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompilableIRMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethods;
@@ -41,10 +44,12 @@ import java.util.TreeSet;
 class IRMethodBuilder {
     private final Map<String, LoggedMethod> loggedMethods;
     private final TestMethods testMethods;
+    private final boolean allowNotCompilable;
 
-    public IRMethodBuilder(TestMethods testMethods, LoggedMethods loggedMethods) {
+    public IRMethodBuilder(TestMethods testMethods, LoggedMethods loggedMethods, boolean allowNotCompilable) {
         this.testMethods = testMethods;
         this.loggedMethods = loggedMethods.loggedMethods();
+        this.allowNotCompilable = allowNotCompilable;
     }
 
     /**
@@ -64,7 +69,13 @@ class IRMethodBuilder {
             return new IRMethod(testMethod.method(), testMethod.irRuleIds(), testMethod.irAnnos(),
                                 new Compilation(loggedMethod.compilationOutput()), vmInfo);
         } else {
-            return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+            Test[] testAnnos = testMethod.method().getAnnotationsByType(Test.class);
+            boolean allowMethodNotCompilable = allowNotCompilable || testAnnos[0].allowNotCompilable();
+            if (allowMethodNotCompilable) {
+                return new NotCompilableIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+            } else {
+                return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
@@ -98,7 +97,6 @@ struct Config : public AllStatic {
 };
 
 typedef ConcurrentHashTable<Pointer, mtInternal> SimpleTestTable;
-typedef ConcurrentHashTable<Pointer, mtInternal>::MultiGetHandle SimpleTestGetHandle;
 typedef ConcurrentHashTable<Config, mtInternal> CustomTestTable;
 
 struct SimpleTestLookup {
@@ -346,10 +344,6 @@ static void cht_scope(Thread* thr) {
   SimpleTestLookup stl(val);
   SimpleTestTable* cht = new SimpleTestTable();
   EXPECT_TRUE(cht->insert(thr, stl, val)) << "Insert unique value failed.";
-  {
-    SimpleTestGetHandle get_handle(thr, cht);
-    EXPECT_EQ(*get_handle.get(stl), val) << "Getting a pre-existing value failed.";
-  }
   // We do remove here to make sure the value-handle 'unlocked' the table when leaving the scope.
   EXPECT_TRUE(cht->remove(thr, stl)) << "Removing a pre-existing value failed.";
   EXPECT_FALSE(cht_get_copy(cht, thr, stl) == val) << "Got a removed value.";
@@ -557,7 +551,6 @@ public:
 };
 
 typedef ConcurrentHashTable<TestInterface, mtInternal> TestTable;
-typedef ConcurrentHashTable<TestInterface, mtInternal>::MultiGetHandle TestGetHandle;
 
 struct TestLookup {
   uintptr_t _val;
@@ -789,15 +782,8 @@ public:
   bool test_loop() {
     for (uintptr_t v = 0x1; v < 0xFFF; v++ ) {
       uintptr_t tv;
-      if (v & 0x1) {
-        TestLookup tl(v);
-        tv = cht_get_copy(_cht, this, tl);
-      } else {
-        TestLookup tl(v);
-        TestGetHandle value_handle(this, _cht);
-        uintptr_t* tmp = value_handle.get(tl);
-        tv = tmp != nullptr ? *tmp : 0;
-      }
+      TestLookup tl(v);
+      tv = cht_get_copy(_cht, this, tl);
       EXPECT_TRUE(tv == 0 || tv == v) << "Got unknown value.";
     }
     return true;
@@ -1198,7 +1184,7 @@ public:
   void work(uint worker_id) {
     ChtCountScan par_scan;
     _scan_task->do_safepoint_scan(par_scan);
-    Atomic::add(_total_scanned, par_scan._count);
+    AtomicAccess::add(_total_scanned, par_scan._count);
   }
 };
 

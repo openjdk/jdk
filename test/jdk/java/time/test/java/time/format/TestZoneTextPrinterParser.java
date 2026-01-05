@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434
+ * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434 8346948
  *      8174269
  * @key randomness
  */
@@ -162,7 +162,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 //          {"CET",              "Central European Time", preferred, Locale.ENGLISH, TextStyle.FULL}, no three-letter ID in CLDR
             {"Asia/Shanghai",    "China Standard Time",   none,      Locale.ENGLISH, TextStyle.FULL},
             {"Asia/Macau",       "China Standard Time",   preferred, Locale.ENGLISH, TextStyle.FULL},
-            {"Asia/Taipei",      "Taipei Standard Time",  preferred, Locale.ENGLISH, TextStyle.FULL},
+            {"Asia/Taipei",      "Taiwan Standard Time",  preferred, Locale.ENGLISH, TextStyle.FULL},
             {"America/Chicago",  "CST",                   none,      Locale.ENGLISH, TextStyle.SHORT},
             {"Asia/Taipei",      "CST",                   preferred, Locale.ENGLISH, TextStyle.SHORT},
             {"Australia/South",  "ACST",                  preferred_s, Locale.ENGLISH, TextStyle.SHORT},

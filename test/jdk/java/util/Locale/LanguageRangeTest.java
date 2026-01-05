@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,62 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
+
+/*
  * @test
- * @bug 8253321
- * @summary test LanguageRange class
- * @run testng LanguageRangeTest
+ * @bug 8026766 8253321 8349883
+ * @summary LanguageRange tests: toString(), hashCode()/equals(), checking
+ *          for IAE on ill-formed ranges
+ * @run junit LanguageRangeTest
  */
 
 import static java.util.Locale.LanguageRange;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class LanguageRangeTest {
 
+    // 8349883: Test endpoints w/ ill-formed language range fail with IAE
+    @ParameterizedTest
+    @MethodSource("illegalRanges")
+    public void illformedRangeTest(String range) {
+        // static parses
+        assertThrows(IllegalArgumentException.class,
+                () -> Locale.LanguageRange.parse(range));
+        assertThrows(IllegalArgumentException.class,
+                () -> Locale.LanguageRange.parse(range, new HashMap<>()));
+        // ctors
+        assertThrows(IllegalArgumentException.class,
+                () -> new Locale.LanguageRange(range));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Locale.LanguageRange(range, Locale.LanguageRange.MIN_WEIGHT));
+    }
+
+    private static Stream<String> illegalRanges() {
+        return Stream.of(
+                // 8349883 offending range
+                "-",
+                // Other general ill-formed test cases
+                "-foo",
+                "foo-",
+                "foo1",
+                "foo-123456789",
+                "*-*-",
+                ""
+        );
+    }
+
+    // 8253321: Ensure invoking hashCode does not affect equals result
     @Test
     public void hashCodeTest() {
         var range1 = new LanguageRange("en-GB", 0);
@@ -44,5 +85,24 @@ public class LanguageRangeTest {
         assertEquals(range1, range2);
         range2.hashCode();
         assertEquals(range1, range2);
+    }
+
+    // 8026766: toString() should hide weight if equal to MAX_WEIGHT (1.0)
+    @ParameterizedTest
+    @MethodSource("ranges")
+    public void toStringTest(String range, double weight) {
+        LanguageRange lr = new LanguageRange(range, weight);
+        String expected = weight == 1.0
+                ? range
+                : range+";q="+weight;
+        assertEquals(lr.toString(), expected);
+    }
+
+    private static Stream<Arguments> ranges() {
+        return Stream.of(
+                Arguments.of("ja", 1.0),
+                Arguments.of("de", 0.5),
+                Arguments.of("fr", 0.0)
+        );
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Unverfiable app classes should not be archived.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @compile test-classes/Greet.java
  * @compile test-classes/Hi.java
  * @compile test-classes/VerifierTest0.java

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
@@ -642,7 +641,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // for exiting control flow still refers to the inlined method.
   C->set_default_node_notes(caller_nn);
 
-  if (log)  log->done("parse nodes='%d' live='%d' memory='" SIZE_FORMAT "'",
+  if (log)  log->done("parse nodes='%d' live='%d' memory='%zu'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
@@ -1066,7 +1065,7 @@ void Parse::do_exits() {
   // This is done late so that we can common up equivalent exceptions
   // (e.g., null checks) arising from multiple points within this method.
   // See GraphKit::add_exception_state, which performs the commoning.
-  bool do_synch = method()->is_synchronized() && GenerateSynchronizationCode;
+  bool do_synch = method()->is_synchronized();
 
   // record exit from a method if compiled while Dtrace is turned on.
   if (do_synch || C->env()->dtrace_method_probes() || _replaced_nodes_for_exceptions) {
@@ -1150,6 +1149,13 @@ SafePointNode* Parse::create_entry_map() {
   // Create an initial safepoint to hold JVM state during parsing
   JVMState* jvms = new (C) JVMState(method(), _caller->has_method() ? _caller : nullptr);
   set_map(new SafePointNode(len, jvms));
+
+  // Capture receiver info for compiled lambda forms.
+  if (method()->is_compiled_lambda_form()) {
+    ciInstance* recv_info = _caller->compute_receiver_info(method());
+    jvms->set_receiver_info(recv_info);
+  }
+
   jvms->set_map(map());
   record_for_igvn(map());
   assert(jvms->endoff() == len, "correct jvms sizing");
@@ -1836,10 +1842,10 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           // Now _gvn will join that with the meet of current inputs.
           // BOTTOM is never permissible here, 'cause pessimistically
           // Phis of pointers cannot lose the basic pointer type.
-          debug_only(const Type* bt1 = phi->bottom_type());
+          DEBUG_ONLY(const Type* bt1 = phi->bottom_type());
           assert(bt1 != Type::BOTTOM, "should not be building conflict phis");
           map()->set_req(j, _gvn.transform(phi));
-          debug_only(const Type* bt2 = phi->bottom_type());
+          DEBUG_ONLY(const Type* bt2 = phi->bottom_type());
           assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
         }
@@ -1937,7 +1943,7 @@ void Parse::ensure_phis_everywhere() {
   // Ensure a phi on all currently known memories.
   for (MergeMemStream mms(merged_memory()); mms.next_non_empty(); ) {
     ensure_memory_phi(mms.alias_idx());
-    debug_only(mms.set_memory());  // keep the iterator happy
+    DEBUG_ONLY(mms.set_memory());  // keep the iterator happy
   }
 
   // Note:  This is our only chance to create phis for memory slices.
@@ -2121,7 +2127,7 @@ void Parse::call_register_finalizer() {
   // finalization.  In general this will fold up since the concrete
   // class is often visible so the access flags are constant.
   Node* klass_addr = basic_plus_adr( receiver, receiver, oopDesc::klass_offset_in_bytes() );
-  Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
+  Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
 
   Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::misc_flags_offset()));
   Node* access_flags = make_load(nullptr, access_flags_addr, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
@@ -2190,7 +2196,7 @@ void Parse::return_current(Node* value) {
 
   // Do not set_parse_bci, so that return goo is credited to the return insn.
   set_bci(InvocationEntryBci);
-  if (method()->is_synchronized() && GenerateSynchronizationCode) {
+  if (method()->is_synchronized()) {
     shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
   }
   if (C->env()->dtrace_method_probes()) {

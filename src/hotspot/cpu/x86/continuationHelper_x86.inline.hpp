@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,23 +50,19 @@ static inline void patch_return_pc_with_preempt_stub(frame& f) {
     // The target will check for preemption once it returns to the interpreter
     // or the native wrapper code and will manually jump to the preempt stub.
     JavaThread *thread = JavaThread::current();
+    DEBUG_ONLY(Method* m = f.is_interpreted_frame() ? f.interpreter_frame_method() : f.cb()->as_nmethod()->method();)
+    assert(m->is_object_wait0() || thread->interp_at_preemptable_vmcall_cnt() > 0,
+           "preemptable VM call not using call_VM_preemptable");
     thread->set_preempt_alternate_return(StubRoutines::cont_preempt_stub());
   }
 }
 
 inline int ContinuationHelper::frame_align_words(int size) {
-#ifdef _LP64
   return size & 1;
-#else
-  return 0;
-#endif
 }
 
 inline intptr_t* ContinuationHelper::frame_align_pointer(intptr_t* sp) {
-#ifdef _LP64
-  sp = align_down(sp, frame::frame_alignment);
-#endif
-  return sp;
+  return align_down(sp, frame::frame_alignment);
 }
 
 template<typename FKind>

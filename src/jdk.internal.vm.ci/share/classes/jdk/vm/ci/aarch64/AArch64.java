@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@ package jdk.vm.ci.aarch64;
 
 import java.nio.ByteOrder;
 import java.util.EnumSet;
+import java.util.List;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CPUFeatureName;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 
@@ -92,7 +92,7 @@ public class AArch64 extends Architecture {
     public static final Register rscratch2 = r9;
 
     // @formatter:off
-    public static final RegisterArray cpuRegisters = new RegisterArray(
+    public static final List<Register> cpuRegisters = List.of(
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
@@ -138,7 +138,7 @@ public class AArch64 extends Architecture {
     public static final Register v31 = new Register(65, 31, "v31", SIMD);
 
     // @formatter:off
-    public static final RegisterArray simdRegisters = new RegisterArray(
+    public static final List<Register> simdRegisters = List.of(
         v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7,
         v8,  v9,  v10, v11, v12, v13, v14, v15,
         v16, v17, v18, v19, v20, v21, v22, v23,
@@ -147,7 +147,7 @@ public class AArch64 extends Architecture {
     // @formatter:on
 
     // @formatter:off
-    public static final RegisterArray allRegisters = new RegisterArray(
+    public static final List<Register> allRegisters = List.of(
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
@@ -179,40 +179,25 @@ public class AArch64 extends Architecture {
         SHA3,
         SHA512,
         SVE,
+        SB,
         PACA,
         SVEBITPERM,
         SVE2,
         A53MAC,
+        FPHP,
+        ASIMDHP,
     }
 
     private final EnumSet<CPUFeature> features;
 
-    /**
-     * Set of flags to control code emission.
-     */
-    public enum Flag {
-        UseCRC32,
-        UseSIMDForMemoryOps,
-        AvoidUnalignedAccesses,
-        UseLSE,
-        UseBlockZeroing
-    }
-
-    private final EnumSet<Flag> flags;
-
-    public AArch64(EnumSet<CPUFeature> features, EnumSet<Flag> flags) {
+    public AArch64(EnumSet<CPUFeature> features) {
         super("aarch64", AArch64Kind.QWORD, ByteOrder.LITTLE_ENDIAN, true, allRegisters, 0, 0, 0);
         this.features = features;
-        this.flags = flags;
     }
 
     @Override
     public EnumSet<CPUFeature> getFeatures() {
         return features;
-    }
-
-    public EnumSet<Flag> getFlags() {
-        return flags;
     }
 
     @Override

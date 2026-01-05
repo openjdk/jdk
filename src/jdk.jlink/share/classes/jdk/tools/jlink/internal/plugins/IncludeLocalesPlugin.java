@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             available = Stream.concat(module.entries()
                                         .map(md -> p.matcher(md.path()))
                                         .filter(Matcher::matches)
-                                        .map(m -> m.group("tag").replaceAll("_", "-")),
+                                        .map(m -> m.group("tag").replace('_', '-')),
                                     Stream.of(jaJPJPTag, thTHTHTag, "und"))
                 .distinct()
                 .sorted()
@@ -250,7 +250,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             return List.of();
         }
 
-        List<String> files = new ArrayList<>(includeLocaleFiles(tag.replaceAll("-", "_")));
+        List<String> files = new ArrayList<>(includeLocaleFiles(tag.replace('-', '_')));
 
         // Add Thai BreakIterator related data files
         if (tag.equals("th")) {

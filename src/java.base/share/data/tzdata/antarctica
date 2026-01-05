@@ -197,6 +197,8 @@ Zone Antarctica/Mawson	0	-	-00	1954 Feb 13
 
 # France & Italy - year-round base
 # Concordia, -750600+1232000, since 2005
+# https://en.wikipedia.org/wiki/Concordia_Station
+# Can use Asia/Singapore, which it has agreed with since inception.
 
 # Germany - year-round base
 # Neumayer III, -704080-0081602, since 2009

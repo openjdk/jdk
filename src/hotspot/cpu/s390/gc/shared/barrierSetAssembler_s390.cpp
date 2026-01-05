@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -172,10 +171,7 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == nullptr) {
-    return;
-  }
-
+  __ align(4, __ offset() + OFFSET_TO_PATCHABLE_DATA); // must align the following block which requires atomic updates
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
     // Load jump addr:
@@ -185,7 +181,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     __ z_lg(Z_R0_scratch, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), Z_thread); // 6 bytes
 
     // Compare to current patched value:
-    __ z_cfi(Z_R0_scratch, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)
+    __ z_cfi(Z_R0_scratch, /* to be patched */ 0); // 6 bytes (2 + 4 byte imm val)
 
     // Conditional Jump
     __ z_larl(Z_R14, (Assembler::instr_len((unsigned long)LARL_ZOPC) + Assembler::instr_len((unsigned long)BCR_ZOPC)) / 2); // 6 bytes

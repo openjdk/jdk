@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.Function;
 import javax.lang.model.SourceVersion;
 import javax.tools.Tool;
 import jdk.jshell.tool.JavaShellToolBuilder;
@@ -39,6 +40,10 @@ import jdk.jshell.tool.JavaShellToolBuilder;
  * Provider for launching the jshell tool.
  */
 public class JShellToolProvider implements Tool {
+
+    //for tests, so that they can tweak the builder (typically set persistence):
+    private static Function<JavaShellToolBuilder, JavaShellToolBuilder> augmentToolBuilder =
+            builder -> builder;
 
     /**
      * Returns the name of this Java shell tool provider.
@@ -86,11 +91,12 @@ public class JShellToolProvider implements Tool {
                                 ? (PrintStream) err
                                 : new PrintStream(err);
         try {
-            return JavaShellToolBuilder
-                    .builder()
-                    .in(xin, null)
-                    .out(xout)
-                    .err(xerr)
+            return augmentToolBuilder.apply(
+                    JavaShellToolBuilder
+                        .builder()
+                        .in(xin, null)
+                        .out(xout)
+                        .err(xerr))
                     .start(arguments);
         } catch (Throwable ex) {
             xerr.println(ex.getMessage());

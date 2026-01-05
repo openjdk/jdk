@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -79,7 +79,7 @@ import org.xml.sax.helpers.LocatorImpl;
  * @author Arnaud Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @LastModified: Jan 2024
+ * @LastModified: May 2025
  */
 @SuppressWarnings("deprecation")
 public abstract class AbstractSAXParser
@@ -1665,7 +1665,7 @@ public abstract class AbstractSAXParser
             else if (featureId.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
                 if (state) {
                     if (fConfiguration.getProperty(SECURITY_MANAGER )==null) {
-                        fConfiguration.setProperty(SECURITY_MANAGER, new XMLSecurityManager());
+                        fConfiguration.setProperty(SECURITY_MANAGER, config.getXMLSecurityManager(true));
                     }
                 }
             }

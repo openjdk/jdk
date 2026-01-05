@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package jdk.jfr.jvm;
 // Class used by TestGetEventWriter
 public class NonEvent implements Runnable {
     public void commit() {
-        PlaceholderEventWriter ew = PlaceholderEventWriterFactory.getEventWriter(4711L);
+        PlaceholderEventWriter ew = PlaceholderEventWriter.getEventWriter();;
         throw new RuntimeException("Should not reach here " + ew);
     }
 

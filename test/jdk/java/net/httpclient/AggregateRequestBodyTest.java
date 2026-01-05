@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,11 @@
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  *       ReferenceTracker AggregateRequestBodyTest
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
- *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
+ *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,headers,frames
  *                     AggregateRequestBodyTest
  * @summary Tests HttpRequest.BodyPublishers::concat
  */
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -57,6 +55,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,13 +66,10 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import javax.net.ssl.SSLContext;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
 import org.testng.Assert;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
@@ -88,6 +84,8 @@ import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -100,14 +98,15 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    String http1URI;
-    String https1URI;
-    String http2URI;
-    String https2URI;
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3 )
+    URI http1URI;
+    URI https1URI;
+    URI http2URI;
+    URI https2URI;
+    URI http3URI;
 
     static final int RESPONSE_CODE = 200;
     static final int ITERATION_COUNT = 4;
-    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     static final Class<CompletionException> CE = CompletionException.class;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
@@ -202,12 +201,13 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         }
     }
 
-    private String[] uris() {
-        return new String[] {
+    private URI[] uris() {
+        return new URI[] {
                 http1URI,
                 https1URI,
                 http2URI,
                 https2URI,
+                http3URI,
         };
     }
 
@@ -218,12 +218,18 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
             return new Object[0][];
         }
-        String[] uris = uris();
+        URI[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
         int i = 0;
         for (boolean sameClient : List.of(false, true)) {
-            for (String uri : uris()) {
-                result[i++] = new Object[]{uri, sameClient};
+            for (URI uri : uris()) {
+                HttpClient.Version version = null;
+                if (uri.equals(http1URI) || uri.equals(https1URI)) version = HttpClient.Version.HTTP_1_1;
+                else if (uri.equals(http2URI) || uri.equals(https2URI)) version = HttpClient.Version.HTTP_2;
+                else if (uri.equals(http3URI)) version = HTTP_3;
+                else throw new AssertionError("Unexpected URI: " + uri);
+
+                result[i++] = new Object[]{uri, version, sameClient};
             }
         }
         assert i == uris.length * 2;
@@ -232,7 +238,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     private HttpClient makeNewClient() {
         clientCount.incrementAndGet();
-        HttpClient client =  HttpClient.newBuilder()
+        HttpClient client =  newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
@@ -419,9 +425,11 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     }
 
     static class RequestSubscriber implements Flow.Subscriber<ByteBuffer> {
-        CompletableFuture<Subscription> subscriptionCF = new CompletableFuture<>();
-        ConcurrentLinkedDeque<ByteBuffer> items = new ConcurrentLinkedDeque<>();
-        CompletableFuture<List<ByteBuffer>> resultCF = new CompletableFuture<>();
+        final CompletableFuture<Subscription> subscriptionCF = new CompletableFuture<>();
+        final ConcurrentLinkedDeque<ByteBuffer> items = new ConcurrentLinkedDeque<>();
+        final CompletableFuture<List<ByteBuffer>> resultCF = new CompletableFuture<>();
+
+        final Semaphore semaphore = new Semaphore(0);
 
         @Override
         public void onSubscribe(Subscription subscription) {
@@ -431,6 +439,11 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         @Override
         public void onNext(ByteBuffer item) {
             items.addLast(item);
+            int available = semaphore.availablePermits();
+            if (available > Integer.MAX_VALUE - 8) {
+                onError(new IllegalStateException("too many buffers in queue: " + available));
+            }
+            semaphore.release();
         }
 
         @Override
@@ -441,6 +454,18 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         @Override
         public void onComplete() {
             resultCF.complete(items.stream().collect(Collectors.toUnmodifiableList()));
+        }
+
+        public ByteBuffer take() {
+            // it is not guaranteed that the buffer will be added to
+            // the queue in the same thread that calls request(1).
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException x) {
+                Thread.currentThread().interrupt();
+                throw new CompletionException(x);
+            }
+            return items.pop();
         }
 
         CompletableFuture<List<ByteBuffer>> resultCF() { return resultCF; }
@@ -628,8 +653,9 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         publisher.subscribe(requestSubscriber1);
         Subscription subscription1 = requestSubscriber1.subscriptionCF.join();
         subscription1.request(16);
-        assertTrue(requestSubscriber1.resultCF().isDone());
+        // onNext() may not be called in the same thread than request()
         List<ByteBuffer> list1 = requestSubscriber1.resultCF().join();
+        assertTrue(requestSubscriber1.resultCF().isDone());
         String result1 = stringFromBytes(list1.stream());
         assertEquals(result1, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
         System.out.println("Got expected sentence with one request: \"%s\"".formatted(result1));
@@ -646,8 +672,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         subscription2.request(4);
         assertFalse(requestSubscriber2.resultCF().isDone());
         subscription2.request(1);
-        assertTrue(requestSubscriber2.resultCF().isDone());
         List<ByteBuffer> list2 = requestSubscriber2.resultCF().join();
+        assertTrue(requestSubscriber2.resultCF().isDone());
         String result2 = stringFromBytes(list2.stream());
         assertEquals(result2, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
         System.out.println("Got expected sentence with 4 requests: \"%s\"".formatted(result1));
@@ -689,7 +715,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
             // receive half the data
             for (int i = 0; i < n; i++) {
                 subscription.request(1);
-                ByteBuffer buffer = subscriber.items.pop();
+                ByteBuffer buffer = subscriber.take();
             }
 
             // cancel subscription
@@ -787,9 +813,10 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "variants")
-    public void test(String uri, boolean sameClient) throws Exception {
+    public void test(URI uri, HttpClient.Version version, boolean sameClient) throws Exception {
         checkSkip();
-        System.out.println("Request to " + uri);
+        System.out.printf("Request to %s (sameClient: %s)%n", uri, sameClient);
+        System.err.printf("Request to %s (sameClient: %s)%n", uri, sameClient);
 
         HttpClient client = newHttpClient(sameClient);
 
@@ -798,18 +825,32 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                         .map(BodyPublishers::ofString)
                         .toArray(HttpRequest.BodyPublisher[]::new)
                 );
-        HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                .version(version)
                 .POST(publisher)
                 .build();
+
         for (int i = 0; i < ITERATION_COUNT; i++) {
-            System.out.println("Iteration: " + i);
+            System.out.println(uri + ": Iteration: " + i);
+            System.err.println(uri + ": Iteration: " + i);
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
             int expectedResponse =  RESPONSE_CODE;
             if (response.statusCode() != expectedResponse)
                 throw new RuntimeException("wrong response code " + Integer.toString(response.statusCode()));
             assertEquals(response.body(), BODIES.stream().collect(Collectors.joining()));
         }
+        if (!sameClient) client.close();
         System.out.println("test: DONE");
+    }
+
+    private URI buildURI(String scheme, String path, int port) {
+        return URIBuilder.newBuilder()
+                .scheme(scheme)
+                .loopback()
+                .port(port)
+                .path(path)
+                .buildUnchecked();
     }
 
     @BeforeTest
@@ -821,32 +862,37 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         HttpTestHandler handler = new HttpTestEchoHandler();
         http1TestServer = HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(handler, "/http1/echo/");
-        http1URI = "http://" + http1TestServer.serverAuthority() + "/http1/echo/x";
+        http1URI = buildURI("http", "/http1/echo/x", http1TestServer.getAddress().getPort());
 
         https1TestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         https1TestServer.addHandler(handler, "/https1/echo/");
-        https1URI = "https://" + https1TestServer.serverAuthority() + "/https1/echo/x";
+        https1URI = buildURI("https", "/https1/echo/x", https1TestServer.getAddress().getPort());
 
-        // HTTP/2
         http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(handler, "/http2/echo/");
-        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo/x";
+        http2URI = buildURI("http", "/http2/echo/x", http2TestServer.getAddress().getPort());
 
         https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(handler, "/https2/echo/");
-        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo/x";
+        https2URI = buildURI("https", "/https2/echo/x", https2TestServer.getAddress().getPort());
 
-        serverCount.addAndGet(4);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(handler, "/http3/echo/");
+        http3URI = buildURI("https", "/http3/echo/x", http3TestServer.getAddress().getPort());
+
+        serverCount.addAndGet(5);
         http1TestServer.start();
         https1TestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
     public void teardown() throws Exception {
         String sharedClientName =
                 sharedClient == null ? null : sharedClient.toString();
+        sharedClient.close();
         sharedClient = null;
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(500);
@@ -855,6 +901,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
             https1TestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            http3TestServer.stop();
         } finally {
             if (fail != null) {
                 if (sharedClientName != null) {

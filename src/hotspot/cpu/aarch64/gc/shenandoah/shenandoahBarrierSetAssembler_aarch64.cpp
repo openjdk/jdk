@@ -23,7 +23,8 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
@@ -31,10 +32,8 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
-#include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/interpreter.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef COMPILER1
@@ -80,9 +79,9 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 }
 
 void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                                       Register start, Register count, Register tmp, RegSet saved_regs) {
+                                                       Register start, Register count, Register tmp) {
   if (ShenandoahCardBarrier && is_oop) {
-    gen_write_ref_array_post_barrier(masm, decorators, start, count, tmp, saved_regs);
+    gen_write_ref_array_post_barrier(masm, decorators, start, count, tmp);
   }
 }
 
@@ -173,9 +172,9 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
 
   if (expand_call) {
     assert(pre_val != c_rarg1, "smashed arg");
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), pre_val, thread);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), pre_val);
   } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), pre_val, thread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), pre_val);
   }
 
   __ pop(saved, sp);
@@ -293,7 +292,8 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom));
+    // AOT saved adapters need relocation for this call.
+    __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom)));
   }
   __ blr(lr);
   __ mov(rscratch1, r0);
@@ -378,7 +378,8 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
 
   assert(CardTable::dirty_card_val() == 0, "must be");
 
-  __ load_byte_map_base(rscratch1);
+  Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ ldr(rscratch1, curr_ct_holder_addr);
 
   if (UseCondCardMark) {
     Label L_already_dirty;
@@ -606,7 +607,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
 }
 
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                                                     Register start, Register count, Register scratch, RegSet saved_regs) {
+                                                                     Register start, Register count, Register scratch) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
 
   Label L_loop, L_done;
@@ -625,7 +626,8 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   // number of bytes to copy
   __ sub(count, end, start);
 
-  __ load_byte_map_base(scratch);
+  Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ ldr(scratch, curr_ct_holder_addr);
   __ add(start, start, scratch);
   __ bind(L_loop);
   __ strb(zr, Address(start, count));
@@ -751,7 +753,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ bind(runtime);
   __ push_call_clobbered_registers();
   __ load_parameter(0, pre_val);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), pre_val, thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), pre_val);
   __ pop_call_clobbered_registers();
   __ bind(done);
 

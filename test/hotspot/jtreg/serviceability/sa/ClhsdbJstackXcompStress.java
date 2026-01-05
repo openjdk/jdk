@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,9 +36,10 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8196969
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
- * @run driver/timeout=300 ClhsdbJstackXcompStress
+ * @run driver/timeout=1200 ClhsdbJstackXcompStress
  */
 public class ClhsdbJstackXcompStress {
 
@@ -74,7 +75,7 @@ public class ClhsdbJstackXcompStress {
                 System.err.println(out.getStderr());
             }
 
-            out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+            out.stderrShouldBeEmptyIgnoreVMWarnings();
             out.stdoutShouldNotContain("Error occurred during stack walking:");
             out.stdoutShouldContain(LingeredAppWithRecComputation.THREAD_NAME);
             List<String> stdoutList = Arrays.asList(out.getStdout().split("\\R"));

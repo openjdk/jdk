@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,6 @@
 // should consider placing frequently accessed fields first in
 // T, so that field offsets relative to Thread are small, which
 // often allows for a more compact instruction encoding.
-typedef uint64_t GCThreadLocalData[43]; // 344 bytes
+typedef uint64_t GCThreadLocalData[40]; // 320 bytes
 
 #endif // SHARE_GC_SHARED_GCTHREADLOCALDATA_HPP

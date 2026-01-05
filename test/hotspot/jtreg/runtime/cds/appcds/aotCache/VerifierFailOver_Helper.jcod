@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+// This class should be rejected by the new verifier, but will be accepted by the old verifier.
+
+class VerifierFailOver_Helper {
+  0xCAFEBABE;
+  0;
+  50;
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #3 #5; // #1    
+    Utf8 "StackMapTable"; // #2    
+    class #4; // #3    
+    Utf8 "java/lang/Object"; // #4    
+    NameAndType #12 #7; // #5    
+    Utf8 "SourceFile"; // #6    
+    Utf8 "()V"; // #7    
+    class #9; // #8    
+    Utf8 "VerifierFailOver_Helper"; // #9    
+    Utf8 "Code"; // #10    
+    Utf8 "VerifierFailOver_Helper.jasm"; // #11    
+    Utf8 "<init>"; // #12    
+    Utf8 "stackmap"; // #13
+  } // Constant Pool
+
+  0x0000; // access
+  #8;// this_cpx
+  #3;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // fields
+  } // fields
+
+  [] { // methods
+    { // Member
+      0x0001; // access
+      #12; // name_cpx
+      #7; // sig_cpx
+      [] { // Attributes
+        Attr(#10) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B100B1;
+          };
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+/* right:
+            Attr(#2) { // StackMap
+end right */
+// wrong:
+            Attr(#13) { // stackmap
+// end wrong
+              [] { // 
+                255b,  5, []{I}, []{};
+              }
+            } // end StackMap
+          } // Attributes
+        } // end Code
+      } // Attributes
+    } // Member
+  } // methods
+
+  [] { // Attributes
+    Attr(#6) { // SourceFile
+      #11;
+    } // end SourceFile
+  } // Attributes
+} // end class stackmap00303m1n
+
+

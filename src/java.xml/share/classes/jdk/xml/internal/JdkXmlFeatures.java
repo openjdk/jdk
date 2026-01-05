@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import static jdk.xml.internal.JdkXmlUtils.SP_USE_CATALOG;
  * This class manages JDK's XML Features. Previously added features and properties
  * may be gradually moved to this class.
  */
-public class JdkXmlFeatures {
+public class JdkXmlFeatures implements Cloneable {
     public static final String ORACLE_JAXP_PROPERTY_PREFIX =
         "http://www.oracle.com/xml/jaxp/properties/";
 
@@ -217,12 +217,12 @@ public class JdkXmlFeatures {
     /**
      * Values of the features
      */
-    private final boolean[] featureValues;
+    private boolean[] featureValues;
 
     /**
      * States of the settings for each property
      */
-    private final State[] states;
+    private State[] states;
 
     /**
      * Flag indicating if secure processing is set
@@ -246,8 +246,33 @@ public class JdkXmlFeatures {
                 states[f.ordinal()] = State.DEFAULT;
             }
         }
-        //read system properties or jaxp.properties
-        readSystemProperties();
+    }
+
+    /**
+     * Returns a copy of the JdkXmlFeatures.
+     * @return a copy of the JdkXmlFeatures
+     */
+    public JdkXmlFeatures clone() {
+        try {
+            JdkXmlFeatures copy = (JdkXmlFeatures) super.clone();
+            copy.featureValues = this.featureValues.clone();
+            copy.states = this.states.clone();
+            return copy;
+        } catch (CloneNotSupportedException e) {
+            // shouldn't happen as this class is Cloneable
+            throw new InternalError(e);
+        }
+    }
+
+    /**
+     * Returns a copy of the JdkXmlFeatures that is updated with the
+     * current System Properties.
+     * @return a copy of the JdkXmlFeatures
+     */
+    public JdkXmlFeatures cloneAndUpdate() {
+        JdkXmlFeatures copy = clone();
+        copy.readSystemProperties();
+        return copy;
     }
 
     /**
@@ -387,33 +412,29 @@ public class JdkXmlFeatures {
     }
 
     /**
-     * Read from system properties, or those in jaxp.properties
+     * Read the system property, or the setting in the Jaxp Configuration File
+     * corresponding to the XmlFeature.
      *
-     * @param property the type of the property
-     * @param sysPropertyName the name of system property
+     * @param feature the XmlFeature
+     * @param sysPropertyName the corresponding system property
      * @return true if the system property is found, false otherwise
      */
     private boolean getSystemProperty(XmlFeature feature, String sysPropertyName) {
-        try {
-            String value = System.getProperty(sysPropertyName);
-            if (value == null && feature.systemPropertyOld() != null) {
-                // legacy system property
-                value = System.getProperty(feature.systemPropertyOld());
-            }
+        String value = System.getProperty(sysPropertyName);
+        if (value == null && feature.systemPropertyOld() != null) {
+            // legacy system property
+            value = System.getProperty(feature.systemPropertyOld());
+        }
 
-            if (value != null && !value.isEmpty()) {
-                setFeature(feature, State.SYSTEMPROPERTY, Boolean.parseBoolean(value));
-                return true;
-            }
+        if (value != null && !value.isEmpty()) {
+            setFeature(feature, State.SYSTEMPROPERTY, Boolean.parseBoolean(value));
+            return true;
+        }
 
-            value = SecuritySupport.readConfig(sysPropertyName);
-            if (value != null && !value.isEmpty()) {
-                setFeature(feature, State.JAXPDOTPROPERTIES, Boolean.parseBoolean(value));
-                return true;
-            }
-        } catch (NumberFormatException e) {
-            //invalid setting
-            throw new NumberFormatException("Invalid setting for system property: " + feature.systemProperty());
+        value = SecuritySupport.readConfig(sysPropertyName);
+        if (value != null && !value.isEmpty()) {
+            setFeature(feature, State.JAXPDOTPROPERTIES, Boolean.parseBoolean(value));
+            return true;
         }
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jfr.internal.jfc.model;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.jfc.JFC;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -65,7 +65,7 @@ public final class JFCModel {
         this.logger = logger;
     }
 
-    public void parse(SafePath file) throws IOException, JFCModelException, ParseException {
+    public void parse(Path file) throws IOException, JFCModelException, ParseException {
         JFCModel model = JFCModel.create(file, logger);
         for (var entry : model.controls.entrySet()) {
             String name = entry.getKey();
@@ -80,7 +80,7 @@ public final class JFCModel {
         }
     }
 
-    public static JFCModel create(SafePath file, Consumer<String> logger) throws IOException, JFCModelException, ParseException{
+    public static JFCModel create(Path file, Consumer<String> logger) throws IOException, JFCModelException, ParseException{
         if (file.toString().equals("none")) {
             XmlConfiguration configuration = new XmlConfiguration();
             configuration.setAttribute("version", "2.0");
@@ -154,7 +154,7 @@ public final class JFCModel {
         return result;
     }
 
-    public void saveToFile(SafePath path) throws IOException {
+    public void saveToFile(Path path) throws IOException {
         try (PrintWriter p = new PrintWriter(path.toFile(), UTF_8)) {
             PrettyPrinter pp = new PrettyPrinter(p);
             pp.print(configuration);

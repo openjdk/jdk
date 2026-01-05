@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 // This test performs mocking of certain JVM functionality. This works by
 // including the source file under test inside an anonymous namespace (which
@@ -35,13 +34,12 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrRandom.inline.hpp"
-#include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinCriticalSection.hpp"
 #include "unittest.hpp"
 
 #include <cmath>
@@ -83,12 +81,6 @@ namespace {
   };
 
   jlong MockJfrTicks::tick = 0;
-
-  // Reincluding source files in the anonymous namespace unfortunately seems to
-  // behave strangely with precompiled headers (only when using gcc though)
-#ifndef DONT_USE_PRECOMPILED_HEADER
-#define DONT_USE_PRECOMPILED_HEADER
-#endif
 
 #define JfrTicks MockJfrTicks
 #define JfrTimeConverter MockJfrTimeConverter

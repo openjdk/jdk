@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public class JavaBaseTest {
             case "current":
                 options.add("--release");
                 options.add(CURRENT_VERSION);
-                expectOK = false;
+                expectOK = true;
                 break;
             case "current-preview":
                 options.add("--enable-preview");
@@ -166,7 +166,7 @@ public class JavaBaseTest {
             for (String mod : mods) {
                 String key = mod.equals("static")
                     ? "compiler.err.mod.not.allowed.here: " + mod
-                    : "compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.java.base.transitive)";
+                    : "compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.java.base.transitive), $(VERSION), 25".replace("$(VERSION)", target);
                 String message = "module-info.java:1:12: " + key;
                 if (log.contains(message)) {
                     foundErrorMessage = true;
@@ -179,30 +179,26 @@ public class JavaBaseTest {
     }
 
     void testClass(Path base, List<String> mods, String target) throws Exception {
-        boolean expectOK;
+        boolean expectOK = true;
         List<String> options = new ArrayList<>();
 
         switch (target) {
             case "current":
                 options.add("--release");
                 options.add(CURRENT_VERSION);
-                expectOK = false;
                 break;
             case "current-preview":
                 options.add("--enable-preview");
                 options.add("--release");
                 options.add(CURRENT_VERSION);
-                expectOK = true;
                 break;
             case "9":
                 options.add("--release");
                 options.add(target);
-                expectOK = true;
                 break;
             default:
                 options.add("--release");
                 options.add(target);
-                expectOK = false;
                 break;
         }
 

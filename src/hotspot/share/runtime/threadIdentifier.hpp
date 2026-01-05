@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ class ThreadIdentifier : AllStatic {
   static int64_t current();
   static int64_t unsafe_offset();
   static int64_t initial();
+  static void verify_id(int64_t id) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_RUNTIME_THREADIDENTIFIER_HPP

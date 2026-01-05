@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,25 +32,21 @@ enum {
   pd_hi_word_offset_in_bytes = BytesPerWord
 };
 
-// explicit rounding operations are required to implement the strictFP mode
-enum {
-  pd_strict_fp_requires_explicit_rounding = false
-};
-
 // FIXME: There are no callee-saved
 
 // registers
 enum {
+  pd_nof_available_regs = 32,
   pd_nof_cpu_regs_frame_map = Register::number_of_registers,       // number of GP registers used during code emission
   pd_nof_fpu_regs_frame_map = FloatRegister::number_of_registers,  // number of FP registers used during code emission
 
-  pd_nof_caller_save_cpu_regs_frame_map = 19 - 2 /* rscratch1 and rscratch2 */ R18_RESERVED_ONLY(- 1),  // number of registers killed by calls
+  pd_nof_caller_save_cpu_regs_frame_map = pd_nof_available_regs,  // number of registers killed by calls
   pd_nof_caller_save_fpu_regs_frame_map = 32,  // number of registers killed by calls
 
-  pd_first_callee_saved_reg = 19 - 2 /* rscratch1 and rscratch2 */ R18_RESERVED_ONLY(- 1),
-  pd_last_callee_saved_reg = 26 - 2 /* rscratch1 and rscratch2 */ R18_RESERVED_ONLY(- 1),
+  pd_first_callee_saved_reg = pd_nof_available_regs - 1,
+  pd_last_callee_saved_reg = pd_first_callee_saved_reg - 1, // in fact, no callee saved regs
 
-  pd_last_allocatable_cpu_reg = 16 R18_RESERVED_ONLY(- 1),
+  pd_last_allocatable_cpu_reg = pd_nof_available_regs - 1,
 
   pd_nof_cpu_regs_reg_alloc
     = pd_last_allocatable_cpu_reg + 1,  // number of registers that are visible to register allocator
@@ -60,9 +56,9 @@ enum {
   pd_nof_fpu_regs_linearscan = pd_nof_fpu_regs_frame_map, // number of registers visible to linear scan
   pd_nof_xmm_regs_linearscan = 0,  // don't have vector registers
   pd_first_cpu_reg = 0,
-  pd_last_cpu_reg = 16 R18_RESERVED_ONLY(- 1),
+  pd_last_cpu_reg = pd_nof_available_regs - 1,
   pd_first_byte_reg = 0,
-  pd_last_byte_reg = 16 R18_RESERVED_ONLY(- 1),
+  pd_last_byte_reg = pd_last_cpu_reg,
   pd_first_fpu_reg = pd_nof_cpu_regs_frame_map,
   pd_last_fpu_reg =  pd_first_fpu_reg + 31,
 

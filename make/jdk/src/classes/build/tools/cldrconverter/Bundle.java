@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ class Bundle {
         "NumberElements/nan",
         "NumberElements/currencyDecimal",
         "NumberElements/currencyGroup",
+        "NumberElements/lenientMinusSigns",
     };
 
     private static final String[] TIME_PATTERN_KEYS = {
@@ -198,7 +199,6 @@ class Bundle {
         String[] cldrBundles = getCLDRPath().split(",");
 
         // myMap contains resources for id.
-        @SuppressWarnings("unchecked")
         Map<String, Object> myMap = new HashMap<>();
         int index;
         for (index = 0; index < cldrBundles.length; index++) {
@@ -541,12 +541,15 @@ class Bundle {
                         pattern = (String) parentsMap.remove(key);
                     }
                     if (pattern != null) {
+                        // escape reserved chars, excluding date/time patterns, eg, "{1} {0}"
+                        String transPattern = key.endsWith("-dateTime") ? pattern : escapeReservedChars(pattern);
+
                         // Perform date-time format pattern conversion which is
                         // applicable to both SimpleDateFormat and j.t.f.DateTimeFormatter.
-                        String transPattern = translateDateFormatLetters(calendarType, pattern, this::convertDateTimePatternLetter);
+                        transPattern = translateDateFormatLetters(calendarType, key, transPattern, this::convertDateTimePatternLetter);
                         dateTimePatterns.add(i, transPattern);
                         // Additionally, perform SDF specific date-time format pattern conversion
-                        sdfPatterns.add(i, translateDateFormatLetters(calendarType, transPattern, this::convertSDFLetter));
+                        sdfPatterns.add(i, translateDateFormatLetters(calendarType, key, transPattern, this::convertSDFLetter));
                     } else {
                         dateTimePatterns.add(i, null);
                         sdfPatterns.add(i, null);
@@ -569,7 +572,7 @@ class Bundle {
         }
     }
 
-    private String translateDateFormatLetters(CalendarType calendarType, String cldrFormat, ConvertDateTimeLetters converter) {
+    private String translateDateFormatLetters(CalendarType calendarType, String patternKey, String cldrFormat, ConvertDateTimeLetters converter) {
         String pattern = cldrFormat;
         int length = pattern.length();
         boolean inQuote = false;
@@ -588,7 +591,7 @@ class Bundle {
                     if (nextc == '\'') {
                         i++;
                         if (count != 0) {
-                            converter.convert(calendarType, lastLetter, count, jrePattern);
+                            converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
                             lastLetter = 0;
                             count = 0;
                         }
@@ -598,7 +601,7 @@ class Bundle {
                 }
                 if (!inQuote) {
                     if (count != 0) {
-                        converter.convert(calendarType, lastLetter, count, jrePattern);
+                        converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
                         lastLetter = 0;
                         count = 0;
                     }
@@ -615,7 +618,7 @@ class Bundle {
             }
             if (!(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')) {
                 if (count != 0) {
-                    converter.convert(calendarType, lastLetter, count, jrePattern);
+                    converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
                     lastLetter = 0;
                     count = 0;
                 }
@@ -628,7 +631,7 @@ class Bundle {
                 count++;
                 continue;
             }
-            converter.convert(calendarType, lastLetter, count, jrePattern);
+            converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
             lastLetter = c;
             count = 1;
         }
@@ -638,7 +641,7 @@ class Bundle {
         }
 
         if (count != 0) {
-            converter.convert(calendarType, lastLetter, count, jrePattern);
+            converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
         }
         if (cldrFormat.contentEquals(jrePattern)) {
             return cldrFormat;
@@ -662,7 +665,7 @@ class Bundle {
      * on the support given by the SimpleDateFormat and the j.t.f.DateTimeFormatter
      * for date-time formatting.
      */
-    private void convertDateTimePatternLetter(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
+    private void convertDateTimePatternLetter(CalendarType calendarType, String patternKey, char cldrLetter, int count, StringBuilder sb) {
         switch (cldrLetter) {
             case 'u':
             case 'U':
@@ -684,7 +687,7 @@ class Bundle {
      * Perform a conversion of CLDR date-time format pattern letter which is
      * specific to the SimpleDateFormat.
      */
-    private void convertSDFLetter(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
+    private void convertSDFLetter(CalendarType calendarType, String patternKey, char cldrLetter, int count, StringBuilder sb) {
         switch (cldrLetter) {
             case 'G':
                 if (calendarType != CalendarType.GREGORIAN) {
@@ -721,6 +724,17 @@ class Bundle {
             case 'v':
             case 'V':
                 appendN('z', count, sb);
+                break;
+
+            case 'y':
+                // If the style is FULL/LONG for a Japanese Calendar, make the
+                // count == 4 for Gan-nen
+                if (calendarType == CalendarType.JAPANESE &&
+                        (patternKey.contains("full-") ||
+                         patternKey.contains("long-"))) {
+                    count = 4;
+                }
+                appendN(cldrLetter, count, sb);
                 break;
 
             case 'Z':
@@ -768,7 +782,8 @@ class Bundle {
             .collect(Collectors.toMap(
                 e -> calendarPrefix + e.getKey(),
                 e -> translateDateFormatLetters(calendarType,
-                        (String)e.getValue(),
+                        e.getKey(),
+                        escapeReservedChars((String)e.getValue()),
                         this::convertDateTimePatternLetter)
             ))
         );
@@ -776,7 +791,7 @@ class Bundle {
 
     @FunctionalInterface
     private interface ConvertDateTimeLetters {
-        void convert(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb);
+        void convert(CalendarType calendarType, String patternKey, char cldrLetter, int count, StringBuilder sb);
     }
 
     /**
@@ -831,5 +846,40 @@ class Bundle {
                         e -> ((String)e.getValue()).trim()
                 ))
         );
+    }
+
+    /**
+     * Escape reserved pattern characters or optional start/ends,
+     * '#', '{', '}', '[', and ']' in the pattern string.
+     *
+     * @param pattern original pattern string
+     * @return escaped pattern string
+     * @see DateTimeFormatterBuilder#appendPattern
+     */
+    private static String escapeReservedChars(String pattern) {
+        StringBuilder out = new StringBuilder();
+        boolean inQuote = false;
+
+        for (int i = 0; i < pattern.length(); i++) {
+            char c = pattern.charAt(i);
+            if (c == '\'') {
+                if (i + 1 < pattern.length() && pattern.charAt(i + 1) == '\'') {
+                    // single quote literal
+                    out.append("''");
+                    i++;
+                } else {
+                    inQuote = !inQuote;
+                    out.append(c);
+                }
+            } else if (!inQuote &&
+                (c == '#' || c == '{' || c == '}' || c == '[' || c == ']')) {
+                // escape the reserved char
+                out.append('\'').append(c).append('\'');
+            } else {
+                out.append(c);
+            }
+        }
+
+        return out.toString();
     }
 }

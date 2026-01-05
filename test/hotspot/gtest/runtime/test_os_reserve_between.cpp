@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
-#define LOG_PLEASE
+// #define LOG_PLEASE
 #include "testutils.hpp"
 #include "unittest.hpp"
 
@@ -158,7 +157,7 @@ public:
       // the hole.
       const uintptr_t candidate = nth_bit(i);
       if ((candidate + _len) <= ARMB_constants::absolute_max) {
-        _base = os::attempt_reserve_memory_at((char*)candidate, _len);
+        _base = os::attempt_reserve_memory_at((char*)candidate, _len, mtTest);
       }
     }
     if (_base == nullptr) {
@@ -166,8 +165,8 @@ public:
     }
     // Release total mapping, remap the individual non-holy parts
     os::release_memory(_base, _len);
-    _p1 = os::attempt_reserve_memory_at(_base + _p1_offset, _p1_size);
-    _p2 = os::attempt_reserve_memory_at(_base + _p2_offset, _p2_size);
+    _p1 = os::attempt_reserve_memory_at(_base + _p1_offset, _p1_size, mtTest);
+    _p2 = os::attempt_reserve_memory_at(_base + _p2_offset, _p2_size, mtTest);
     if (_p1 == nullptr || _p2 == nullptr) {
       return false;
     }
@@ -207,7 +206,7 @@ static void test_attempt_reserve_memory_between_random_distribution(unsigned num
   // Allocate n times within that hole (with subsequent deletions) and remember unique addresses returned.
   constexpr unsigned num_tries_per_attach_point = 100;
   ResourceMark rm;
-  ResourceHashtable<char*, unsigned> ht;
+  HashTable<char*, unsigned> ht;
   const unsigned num_tries = expect_failure ? 3 : (num_possible_attach_points * num_tries_per_attach_point);
   unsigned num_uniq = 0; // Number of uniq addresses returned
 
@@ -285,7 +284,7 @@ TEST_VM(os, attempt_reserve_memory_between_combos) {
   for (size_t range_size = allocation_granularity(); range_size <= large_end; range_size *= 2) {
     for (size_t start_offset = 0; start_offset <= large_end; start_offset += (large_end / 2)) {
       char* const min = (char*)(uintptr_t)start_offset;
-      char* const max = min + range_size;
+      char* const max = (char*)(p2u(min) + range_size);
       for (size_t bytes = os::vm_page_size(); bytes < large_end; bytes *= 2) {
         for (size_t alignment = allocation_granularity(); alignment < large_end; alignment *= 2) {
           test_attempt_reserve_memory_between(min, max, bytes, alignment, true, Expect::dontcare(), __LINE__);

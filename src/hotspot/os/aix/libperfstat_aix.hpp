@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -332,7 +332,7 @@ typedef struct { /* component perfstat_cpu_t from AIX 7.2 documentation */
   u_longlong_t busy_stolen_purr;            /* Number of busy cycles stolen by the hypervisor from a dedicated partition. */
   u_longlong_t busy_stolen_spurr;           /* Number of busy spurr cycles stolen by the hypervisor from a dedicated partition.*/
   u_longlong_t shcpus_in_sys;               /* Number of physical processors allocated for shared processor use, across all shared processors pools. */
-  u_longlong_t entitled_pool_capacity;      /* Entitled processor capacity of partition’s pool. */
+  u_longlong_t entitled_pool_capacity;      /* Entitled processor capacity of partition's pool. */
   u_longlong_t pool_max_time;               /* Summation of maximum time that can be consumed by the pool (nanoseconds). */
   u_longlong_t pool_busy_time;              /* Summation of busy (nonidle) time accumulated across all partitions in the pool (nanoseconds). */
   u_longlong_t pool_scaled_busy_time;       /* Scaled summation of busy (nonidle) time accumulated across all partitions in the pool (nanoseconds). */

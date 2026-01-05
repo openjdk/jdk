@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import java.util.zip.CRC32;
 
 import jdk.internal.util.StaticProperty;
@@ -59,7 +60,7 @@ public final class ZoneInfoFile {
     /**
      * Gets all available IDs supported in the Java run-time.
      *
-     * @return a set of time zone IDs.
+     * @return an array of time zone IDs.
      */
     public static String[] getZoneIds() {
         var shortIDs = ZoneId.SHORT_IDS.keySet();
@@ -92,9 +93,33 @@ public final class ZoneInfoFile {
         // sorted list, though the specification does not
         // specify it. Keep the same behavior for better
         // compatibility.
-        String[] list = ids.toArray(new String[ids.size()]);
+        String[] list = ids.toArray(new String[0]);
         Arrays.sort(list);
         return list;
+    }
+
+    /**
+     * Gets all available IDs supported in the Java run-time.
+     *
+     * @return a stream of time zone IDs.
+     */
+    public static Stream<String> zoneIds() {
+        return Stream.concat(Arrays.stream(regions),
+                ZoneId.SHORT_IDS.keySet().stream());
+    }
+
+    /**
+     * Gets all available IDs that have the same value as the
+     * specified raw GMT offset.
+     *
+     * @param rawOffset  the GMT offset in milliseconds. This
+     *                   value should not include any daylight saving time.
+     * @return a stream of time zone IDs.
+     */
+    public static Stream<String> zoneIds(int rawOffset) {
+        return zoneIds()
+                .filter(id -> getZoneInfo(id).getRawOffset() == rawOffset)
+                .sorted(); // Sort the IDs, see getZoneIds(int)
     }
 
     public static ZoneInfo getZoneInfo(String zoneId) {

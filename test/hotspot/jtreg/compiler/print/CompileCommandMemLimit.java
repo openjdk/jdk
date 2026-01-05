@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,33 @@
 /*
  * @test id=c1_crash
  * @requires vm.compiler1.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,crash causes C1 to crash
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,xx~crash causes C1 to crash
  * @library /test/lib
- * @run driver compiler.print.CompileCommandMemLimit crash false
+ * @run driver compiler.print.CompileCommandMemLimit c1 crash
  */
 
 /*
  * @test id=c2_crash
  * @requires vm.compiler2.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,crash causes C2 to crash
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,xx~crash causes C2 to crash
  * @library /test/lib
- * @run driver compiler.print.CompileCommandMemLimit crash true
+ * @run driver compiler.print.CompileCommandMemLimit c2 crash
  */
 
 /*
  * @test id=c1_stop
  * @requires vm.compiler1.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,stop causes C1 to stop
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,xx causes C1 to bail out from the compilation
  * @library /test/lib
- * @run driver compiler.print.CompileCommandMemLimit stop false
+ * @run driver compiler.print.CompileCommandMemLimit c1 stop
  */
 
 /*
  * @test id=c2_stop
  * @requires vm.compiler2.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,stop causes C2 to stop
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,xx causes C2 to bail out from the compilation
  * @library /test/lib
- * @run driver compiler.print.CompileCommandMemLimit stop true
+ * @run driver compiler.print.CompileCommandMemLimit c2 stop
  */
 
 package compiler.print;
@@ -73,16 +73,12 @@ public class CompileCommandMemLimit {
     // Method for which we explicitly disable a limit on the command line.
     final static String METHOD3 = "method3";
 
-    static boolean c2;
-    static boolean test_crash;
+    enum TestMode { crash, stop };
+    enum CompilerType { c1, c2 };
 
     public static void main(String[] args) throws Exception {
-        switch (args[0]) {
-            case "crash" : test_crash = true; break;
-            case "stop" : test_crash = false; break;
-            default: throw new RuntimeException("invalid argument");
-        }
-        c2 = Boolean.parseBoolean(args[1]);
+        CompilerType ctyp = CompilerType.valueOf(args[0]);
+        TestMode mode = TestMode.valueOf(args[1]);
 
         List<String> options = new ArrayList<String>();
         options.add("-Xcomp");
@@ -92,19 +88,40 @@ public class CompileCommandMemLimit {
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::*");
 
         // We want a final report
-        options.add("-XX:CompileCommand=MemStat,*.*,print");
+        options.add("-XX:CompileCommand=MemStat," + getTestMethod(METHOD2) + ",print");
 
-        // We limit method 2 to a very small limit that is guaranteed to trigger
-        options.add("-XX:CompileCommand=MemLimit," + getTestMethod(METHOD2) + ",4k" + (test_crash ? "~crash" : ""));
+        String suffix = mode == TestMode.crash ? "~crash" : "";
 
-        // We disable any limit set on method 3
-        options.add("-XX:CompileCommand=MemLimit," + getTestMethod(METHOD3) + ",0");
+        // About the limit:
+        //
+        // In the debug JVM, for this test class, compilers will allocate (near the very end of the compilation)
+        // 32MB of arena memory.
+        //
+        // C1 will allocate them in a single step from RA, leaked until end of compilation.
+        //
+        // C2 will allocate them in two steps: first 2MB inside phase "testPhase1" in a temporary arena
+        // that will be gone by phase end. So, in the phase timeline these 2MB must show up as
+        // "significant temporary peak".
+        // In a second phase "testPhase2", we allocate 32MB from resource area, which is leaked until
+        // the end of the compilation. This means that these 32MB will show up as permanent memory
+        // increase in the per-phase-timeline.
+        //
+        // We then set the limit to 31MB (just shy of the 32MB we allocate), which should reliably trigger the mem limit.
+        // The 32MB are deliberately chosen to be large, because this will harden the test against normal allocation fluctuations
+        // (the methods are tiny, so compiling them should accrue normally only a few dozen KB).
+        //
+        // In the release JVM, we just use a very tiny memlimit that we are sure to hit every time.
 
-        if (c2) {
+        long limit = Platform.isDebugBuild() ? (1024 * 1024 * 31) : 4096;
+
+        options.add("-XX:CompileCommand=MemLimit," + getTestMethod(METHOD2) + "," + limit + suffix);
+
+        if (ctyp == CompilerType.c2) {
             options.add("-XX:-TieredCompilation");
         } else {
             options.add("-XX:TieredStopAtLevel=1");
         }
+
         options.add(getTestClass());
 
         OutputAnalyzer oa = ProcessTools.executeTestJava(options);
@@ -114,14 +131,14 @@ public class CompileCommandMemLimit {
         String method1regex = testMethodNameForRegex(getTestMethod(METHOD1));
         String method2regex = testMethodNameForRegex(getTestMethod(METHOD2));
         String method3regex = testMethodNameForRegex(getTestMethod(METHOD3));
-        String ct = c2 ? "c2" : "c1";
+        String limitHitRegex = ctyp + " \\(\\d+\\) compiler/print/CompileCommandMemLimit\\$TestMain::method2.*: Hit MemLimit - limit: " + limit + " now: \\d+";
 
-        if (test_crash) {
+        if (mode == TestMode.crash) {
             oa.shouldNotHaveExitValue(0);
             oa.shouldMatch("# *Internal Error.*");
 
             // method 2 should have hit its tiny limit
-            oa.shouldMatch("# *fatal error: " + ct + " *" + method2regex + ".*: Hit MemLimit .*limit: 4096.*");
+            oa.shouldMatch("# *fatal error: " + limitHitRegex);
 
             // none of the other ones should have hit a limit
             oa.shouldNotMatch(method1regex + ".*Hit MemLimit");
@@ -143,36 +160,28 @@ public class CompileCommandMemLimit {
         } else {
             oa.shouldHaveExitValue(0);
 
-            // In debug builds we have an inbuilt MemLimit. It is very high, so we don't expect it to fire in this test.
-            // But it will still show up in the final report.
-            String implicitMemoryLimit = Platform.isDebugBuild() ? "1024M" : "-";
-
-            // With C2, we print number of nodes, with C1 we don't
-            String numberNodesRegex = c2 ? "\\d+" : "-";
-
             // method 2 should have hit its tiny limit
-            oa.shouldMatch(ct + " " + method2regex + ".*: Hit MemLimit \\(limit: 4096 now: \\d+\\)");
+            oa.shouldMatch(limitHitRegex);
+
+            // Compilation should have been aborted and marked as oom
+            oa.shouldMatch(ctyp + " \\(\\d+\\) \\(oom\\) Arena usage " + method2regex + ".*\\d+.*");
 
             // neither of the other ones should have hit a limit
             oa.shouldNotMatch(method1regex + ".*Hit MemLimit");
             oa.shouldNotMatch(method3regex + ".*Hit MemLimit");
-
-            // Final report:
-            // Method 1 should show up as "ok" and with the default limit, e.g.
-            // total     NA        RA        result  #nodes  limit   time    type  #rc thread              method
-            // 32728     0         32728     ok     -       1024M   0.045   c1    1   0x000000011b019c10  compiler/print/CompileCommandMemLimit$TestMain::method1(()J)
-            oa.shouldMatch("\\d+ +\\d+ +\\d+ +ok +" + numberNodesRegex + " +" + implicitMemoryLimit + " +.* +" + method1regex);
-
-            // Method 2 should show up as "oom" and with its tiny limit, e.g.
-            // total     NA        RA        result  #nodes  limit   time    type  #rc thread              method
-            // 32728     0         32728     oom     -       4096B   0.045   c1    1   0x000000011b019c10  compiler/print/CompileCommandMemLimit$TestMain::method1(()J)
-            oa.shouldMatch("\\d+ +\\d+ +\\d+ +oom +" + numberNodesRegex + " +4096B +.* +" + method2regex);
-
-            // Method 3 should show up as "ok", and with no limit, even in debug builds, e.g.
-            // total     NA        RA        result  #nodes  limit   time    type  #rc thread              method
-            // 32728     0         32728     ok     -       -        0.045   c1    1   0x000000011b019c10  compiler/print/CompileCommandMemLimit$TestMain::method1(()J)
-            oa.shouldMatch("\\d+ +\\d+ +\\d+ +ok +" + numberNodesRegex + " +- +.* +" + method3regex);
         }
+
+        // In C2, analyze phase timeline and per-phase accumulation
+        if (ctyp == CompilerType.c2) {
+            oa.shouldMatch("--- Arena Usage by Arena Type and compilation phase, at arena usage peak of \\d+ ---");
+            oa.shouldContain("--- Allocation timelime by phase ---");
+            if (Platform.isDebugBuild()) {
+                oa.shouldMatch(".*testPhase2 +33554432 +33554432 +0 +0 +0 +0 +0.*");
+                oa.shouldMatch(" +>\\d+ +testPhase1.*significant temporary peak: \\d+ \\(\\+2098136\\)");
+                oa.shouldMatch(" +>\\d+ +testPhase2 +\\d+ +\\(\\+33554432\\).*");
+            }
+        }
+
     }
 
     // Test class that is invoked by the sub process

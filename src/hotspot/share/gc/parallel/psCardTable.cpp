@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "utilities/spinYield.hpp"
 #include "utilities/align.hpp"
+#include "utilities/spinYield.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
@@ -122,13 +120,38 @@ class PSStripeShadowCardTable {
   const uint _card_shift;
   const uint _card_size;
   CardValue _table[PSCardTable::num_cards_in_stripe];
-  const CardValue* _table_base;
+  uintptr_t _table_base;
+
+  // Avoid UB pointer operations by using integers internally.
+
+  static_assert(sizeof(uintptr_t) == sizeof(CardValue*), "simplifying assumption");
+  static_assert(sizeof(CardValue) == 1, "simplifying assumption");
+
+  static uintptr_t iaddr(const void* p) {
+    return reinterpret_cast<uintptr_t>(p);
+  }
+
+  uintptr_t compute_table_base(HeapWord* start) const {
+    uintptr_t offset = iaddr(start) >> _card_shift;
+    return iaddr(_table) - offset;
+  }
+
+  void verify_card_inclusive(const CardValue* card) const {
+    assert(iaddr(card) >= iaddr(_table), "out of bounds");
+    assert(iaddr(card) <= (iaddr(_table) + sizeof(_table)), "out of bounds");
+  }
+
+  void verify_card_exclusive(const CardValue* card) const {
+    assert(iaddr(card) >= iaddr(_table), "out of bounds");
+    assert(iaddr(card) < (iaddr(_table) + sizeof(_table)), "out of bounds");
+  }
 
 public:
   PSStripeShadowCardTable(PSCardTable* pst, HeapWord* const start, HeapWord* const end) :
     _card_shift(CardTable::card_shift()),
     _card_size(CardTable::card_size()),
-    _table_base(_table - (uintptr_t(start) >> _card_shift)) {
+    _table_base(compute_table_base(start))
+  {
     size_t stripe_byte_size = pointer_delta(end, start) * HeapWordSize;
     size_t copy_length = align_up(stripe_byte_size, _card_size) >> _card_shift;
     // The end of the last stripe may not be card aligned as it is equal to old
@@ -143,12 +166,16 @@ public:
   }
 
   HeapWord* addr_for(const CardValue* const card) {
-    assert(card >= _table && card <=  &_table[PSCardTable::num_cards_in_stripe], "out of bounds");
-    return (HeapWord*) ((card - _table_base) << _card_shift);
+    verify_card_inclusive(card);
+    uintptr_t addr = (iaddr(card) - _table_base) << _card_shift;
+    return reinterpret_cast<HeapWord*>(addr);
   }
 
   const CardValue* card_for(HeapWord* addr) {
-    return &_table_base[uintptr_t(addr) >> _card_shift];
+    uintptr_t icard = _table_base + (iaddr(addr) >> _card_shift);
+    const CardValue* card = reinterpret_cast<const CardValue*>(icard);
+    verify_card_inclusive(card);
+    return card;
   }
 
   bool is_dirty(const CardValue* const card) {
@@ -156,7 +183,7 @@ public:
   }
 
   bool is_clean(const CardValue* const card) {
-    assert(card >= _table && card <  &_table[PSCardTable::num_cards_in_stripe], "out of bounds");
+    verify_card_exclusive(card);
     return *card == PSCardTable::clean_card_val();
   }
 
@@ -355,9 +382,9 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
   // Sync with other workers.
-  Atomic::dec(&_preprocessing_active_workers);
+  AtomicAccess::dec(&_preprocessing_active_workers);
   SpinYield spin_yield;
-  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
+  while (AtomicAccess::load_acquire(&_preprocessing_active_workers) > 0) {
     spin_yield.wait();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 /*
  * @test
- * @enablePreview
- * @bug 8304400
+ * @bug 8304400 8344706
  * @summary Test basic features of javac's source-code launcher
  * @modules jdk.compiler/com.sun.tools.javac.launcher
  * @run junit BasicSourceLauncherTests
@@ -98,7 +97,7 @@ class BasicSourceLauncherTests {
                 }
                 """);
 
-        var run = Run.of(hi, List.of("--enable-preview"), List.of());
+        var run = Run.of(hi, List.of(), List.of());
         assertAll("# " + run,
                 () -> assertLinesMatch(
                         """

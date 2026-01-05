@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,19 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -49,6 +55,7 @@ import jdk.internal.vm.annotation.Stable;
  * classes use a serial proxy and thus have no need to declare serialVersionUID.
  */
 @SuppressWarnings("serial")
+@AOTSafeClassInitializer
 class ImmutableCollections {
     /**
      * A "salt" value used for randomizing iteration order. This is initialized once
@@ -56,14 +63,20 @@ class ImmutableCollections {
      * it needs to vary sufficiently from one run to the next so that iteration order
      * will vary between JVM runs.
      */
-    private static final long SALT32L;
+    @Stable private static long SALT32L;
 
     /**
      * For set and map iteration, we will iterate in "reverse" stochastically,
      * decided at bootstrap time.
      */
-    private static final boolean REVERSE;
+    @Stable private static boolean REVERSE;
+
     static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
         // to generate a reasonably random and well-mixed SALT, use an arbitrary
         // value (a slice of pi), multiply with a random seed, then pick
         // the mid 32-bits from the product. By picking a SALT value in the
@@ -99,6 +112,7 @@ class ImmutableCollections {
     static final MapN<?,?> EMPTY_MAP;
 
     static {
+        // Legacy CDS archive support (to be deprecated)
         CDS.initializeFromArchive(ImmutableCollections.class);
         if (archivedObjects == null) {
             EMPTY = new Object();
@@ -437,16 +451,18 @@ class ImmutableCollections {
             implements RandomAccess {
 
         @Stable
-        private final AbstractImmutableList<E> root;
+        final AbstractImmutableList<E> root;
 
         @Stable
-        private final int offset;
+        final int offset;
 
         @Stable
-        private final int size;
+        final int size;
 
-        private SubList(AbstractImmutableList<E> root, int offset, int size) {
-            assert root instanceof List12 || root instanceof ListN;
+        SubList(AbstractImmutableList<E> root, int offset, int size) {
+            assert root instanceof List12
+                    || root instanceof ListN
+                    || root instanceof LazyCollections.LazyList;
             this.root = root;
             this.offset = offset;
             this.size = size;
@@ -496,8 +512,8 @@ class ImmutableCollections {
             }
         }
 
-        private boolean allowNulls() {
-            return root instanceof ListN && ((ListN<?>)root).allowNulls;
+        boolean allowNulls() {
+            return root instanceof ListN<?> listN && listN.allowNulls;
         }
 
         @Override
@@ -549,6 +565,7 @@ class ImmutableCollections {
             }
             return array;
         }
+
     }
 
     @jdk.internal.ValueBased
@@ -592,6 +609,17 @@ class ImmutableCollections {
                 return (E)e1;
             }
             throw outOfBounds(index);
+        }
+
+        @Override
+        public E getFirst() {
+            return e0;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public E getLast() {
+            return e1 == EMPTY ? e0 : (E)e1;
         }
 
         @Override
@@ -655,6 +683,24 @@ class ImmutableCollections {
                 array[size] = null; // null-terminate
             }
             return array;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEach(Consumer<? super E> action) {
+            action.accept(e0); // implicit null check
+            if (e1 != EMPTY) {
+                action.accept((E) e1);
+            }
+        }
+
+        @Override
+        public Spliterator<E> spliterator() {
+            if (e1 == EMPTY) {
+                return Collections.singletonSpliterator(e0);
+            } else {
+                return super.spliterator();
+            }
         }
     }
 
@@ -895,6 +941,26 @@ class ImmutableCollections {
             }
             return array;
         }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEach(Consumer<? super E> action) {
+            if (e1 == EMPTY) {
+                action.accept(e0); // implicit null check
+            } else {
+                action.accept(REVERSE ? (E)e1 : e0); // implicit null check
+                action.accept(REVERSE ? e0 : (E)e1);
+            }
+        }
+
+        @Override
+        public Spliterator<E> spliterator() {
+            if (e1 == EMPTY) {
+                return Collections.singletonSpliterator(e0);
+            } else {
+                return super.spliterator();
+            }
+        }
     }
 
 
@@ -1072,7 +1138,7 @@ class ImmutableCollections {
     // ---------- Map Implementations ----------
 
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
-    abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
+    abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
         @Override public V computeIfAbsent(K key, Function<? super K,? extends V> mf) { throw uoe(); }
@@ -1103,7 +1169,7 @@ class ImmutableCollections {
     }
 
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
-    static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
+    static final class Map1<K,V> extends AbstractImmutableMap<K,V> implements Serializable {
         @Stable
         private final K k0;
         @Stable
@@ -1158,6 +1224,11 @@ class ImmutableCollections {
         public int hashCode() {
             return k0.hashCode() ^ v0.hashCode();
         }
+
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            action.accept(k0, v0); // implicit null check
+        }
     }
 
     /**
@@ -1170,7 +1241,7 @@ class ImmutableCollections {
      * @param <V> the value type
      */
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
-    static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
+    static final class MapN<K,V> extends AbstractImmutableMap<K,V> implements Serializable {
 
         @Stable
         final Object[] table; // pairs of key, value
@@ -1360,6 +1431,7 @@ class ImmutableCollections {
             return new CollSer(CollSer.IMM_MAP, array);
         }
     }
+
 }
 
 // ---------- Serialization Proxy ----------

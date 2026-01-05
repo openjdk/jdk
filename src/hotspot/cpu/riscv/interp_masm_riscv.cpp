@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -270,18 +269,18 @@ void InterpreterMacroAssembler::pop_l(Register r) {
 }
 
 void InterpreterMacroAssembler::push_ptr(Register r) {
-  addi(esp, esp, -wordSize);
+  subi(esp, esp, wordSize);
   sd(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_i(Register r) {
-  addi(esp, esp, -wordSize);
+  subi(esp, esp, wordSize);
   sext(r, r, 32);
   sd(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_l(Register r) {
-  addi(esp, esp, -2 * wordSize);
+  subi(esp, esp, 2 * wordSize);
   sd(zr, Address(esp, wordSize));
   sd(r, Address(esp));
 }
@@ -297,12 +296,12 @@ void InterpreterMacroAssembler::pop_d(FloatRegister r) {
 }
 
 void InterpreterMacroAssembler::push_f(FloatRegister r) {
-  addi(esp, esp, -wordSize);
+  subi(esp, esp, wordSize);
   fsw(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_d(FloatRegister r) {
-  addi(esp, esp, -2 * wordSize);
+  subi(esp, esp, 2 * wordSize);
   fsd(r, Address(esp, 0));
 }
 
@@ -498,9 +497,10 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
 
 // remove activation
 //
-// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
+// Apply stack watermark barrier.
+// Notify JVMTI.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -510,31 +510,21 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
 //       installs IllegalMonitorStateException
 //    Else
 //       no error processing
-void InterpreterMacroAssembler::remove_activation(
-                                TosState state,
-                                bool throw_monitor_exception,
-                                bool install_monitor_exception,
-                                bool notify_jvmdi) {
+void InterpreterMacroAssembler::remove_activation(TosState state,
+                                                  bool throw_monitor_exception,
+                                                  bool install_monitor_exception,
+                                                  bool notify_jvmdi) {
   // Note: Registers x13 may be in use for the
   // result check if synchronized method
   Label unlocked, unlock, no_unlock;
 
-  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
-  // that would normally not be safe to use. Such bad returns into unsafe territory of
-  // the stack, will call InterpreterRuntime::at_unwind.
-  Label slow_path;
-  Label fast_path;
-  safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
-  j(fast_path);
-
-  bind(slow_path);
-  push(state);
-  set_last_Java_frame(esp, fp, (address)pc(), t0);
-  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), xthread);
-  reset_last_Java_frame(true);
-  pop(state);
-
-  bind(fast_path);
+#ifdef ASSERT
+  Label not_preempted;
+  ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  beqz(t0, not_preempted);
+  stop("remove_activation: should not have alternate return address set");
+  bind(not_preempted);
+#endif /* ASSERT */
 
   // get the value of _do_not_unlock_if_synchronized into x13
   const Address do_not_unlock_if_synchronized(xthread,
@@ -544,7 +534,7 @@ void InterpreterMacroAssembler::remove_activation(
 
   // get method access flags
   ld(x11, Address(fp, frame::interpreter_frame_method_offset * wordSize));
-  ld(x12, Address(x11, Method::access_flags_offset()));
+  load_unsigned_short(x12, Address(x11, Method::access_flags_offset()));
   test_bit(t0, x12, exact_log2(JVM_ACC_SYNCHRONIZED));
   beqz(t0, unlocked);
 
@@ -656,10 +646,27 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(no_unlock);
 
-  // jvmti support
-  if (notify_jvmdi) {
-    notify_method_exit(state, NotifyJVMTI);    // preserve TOSCA
+  JFR_ONLY(enter_jfr_critical_section();)
 
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
+  j(fast_path);
+
+  bind(slow_path);
+  push(state);
+  set_last_Java_frame(esp, fp, pc(), t0);
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), xthread);
+  reset_last_Java_frame(true);
+  pop(state);
+  bind(fast_path);
+
+  // JVMTI support. Make sure the safepoint poll test is issued prior.
+  if (notify_jvmdi) {
+    notify_method_exit(state, NotifyJVMTI); // preserve TOSCA
   } else {
     notify_method_exit(state, SkipNotifyJVMTI); // preserve TOSCA
   }
@@ -678,8 +685,12 @@ void InterpreterMacroAssembler::remove_activation(
     subw(t0, t0, StackOverflow::stack_guard_enabled);
     beqz(t0, no_reserved_zone_enabling);
 
+    // look for an overflow into the stack reserved zone, i.e.
+    // interpreter_frame_sender_sp <= JavaThread::reserved_stack_activation
     ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
     ble(t1, t0, no_reserved_zone_enabling);
+
+    JFR_ONLY(leave_jfr_critical_section();)
 
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), xthread);
@@ -690,17 +701,33 @@ void InterpreterMacroAssembler::remove_activation(
     bind(no_reserved_zone_enabling);
   }
 
+  // remove frame anchor
+  leave();
+
+  JFR_ONLY(leave_jfr_critical_section();)
+
   // restore sender esp
   mv(esp, t1);
 
-  // remove frame anchor
-  leave();
   // If we're returning to interpreted code we will shortly be
   // adjusting SP to allow some space for ESP.  If we're returning to
   // compiled code the saved sender SP was saved in sender_sp, so this
   // restores it.
   andi(sp, esp, -16);
 }
+
+#if INCLUDE_JFR
+void InterpreterMacroAssembler::enter_jfr_critical_section() {
+  const Address sampling_critical_section(xthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
+  mv(t0, true);
+  sb(t0, sampling_critical_section);
+}
+
+void InterpreterMacroAssembler::leave_jfr_critical_section() {
+  const Address sampling_critical_section(xthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
+  sb(zr, sampling_critical_section);
+}
+#endif // INCLUDE_JFR
 
 // Lock object
 //
@@ -714,83 +741,26 @@ void InterpreterMacroAssembler::remove_activation(
 void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
-  if (LockingMode == LM_MONITOR) {
-    call_VM_preemptable(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            lock_reg);
-  } else {
-    Label count, done;
 
-    const Register swap_reg = x10;
-    const Register tmp = c_rarg2;
-    const Register obj_reg = c_rarg3; // Will contain the oop
-    const Register tmp2 = c_rarg4;
-    const Register tmp3 = c_rarg5;
+  const Register tmp = c_rarg2;
+  const Register obj_reg = c_rarg3; // Will contain the oop
+  const Register tmp2 = c_rarg4;
+  const Register tmp3 = c_rarg5;
 
-    const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
-    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-    const int mark_offset = lock_offset +
-                            BasicLock::displaced_header_offset_in_bytes();
+  // Load object pointer into obj_reg (c_rarg3)
+  ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
-    Label slow_case;
+  Label done, slow_case;
+  fast_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
+  j(done);
 
-    // Load object pointer into obj_reg c_rarg3
-    ld(obj_reg, Address(lock_reg, obj_offset));
+  bind(slow_case);
+  // Call the runtime routine for slow case
+  call_VM_preemptable(noreg,
+          CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+          lock_reg);
 
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, obj_reg);
-      lbu(tmp, Address(tmp, Klass::misc_flags_offset()));
-      test_bit(tmp, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
-      bnez(tmp, slow_case);
-    }
-
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
-      j(done);
-    } else if (LockingMode == LM_LEGACY) {
-      // Load (object->mark() | 1) into swap_reg
-      ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      ori(swap_reg, t0, 1);
-
-      // Save (object->mark() | 1) into BasicLock's displaced header
-      sd(swap_reg, Address(lock_reg, mark_offset));
-
-      assert(lock_offset == 0,
-             "displached header must be first word in BasicObjectLock");
-
-      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, tmp, count, /*fallthrough*/nullptr);
-
-      // Test if the oopMark is an obvious stack pointer, i.e.,
-      //  1) (mark & 7) == 0, and
-      //  2) sp <= mark < mark + os::pagesize()
-      //
-      // These 3 tests can be done by evaluating the following
-      // expression: ((mark - sp) & (7 - os::vm_page_size())),
-      // assuming both stack pointer and pagesize have their
-      // least significant 3 bits clear.
-      // NOTE: the oopMark is in swap_reg x10 as the result of cmpxchg
-      sub(swap_reg, swap_reg, sp);
-      mv(t0, (int64_t)(7 - (int)os::vm_page_size()));
-      andr(swap_reg, swap_reg, t0);
-
-      // Save the test result, for recursive case, the result is zero
-      sd(swap_reg, Address(lock_reg, mark_offset));
-      bnez(swap_reg, slow_case);
-
-      bind(count);
-      inc_held_monitor_count(t0);
-      j(done);
-    }
-
-    bind(slow_case);
-
-    // Call the runtime routine for slow case
-    call_VM_preemptable(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            lock_reg);
-
-    bind(done);
-  }
+  bind(done);
 }
 
 
@@ -809,58 +779,30 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be rarg1");
 
-  if (LockingMode == LM_MONITOR) {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
-  } else {
-    Label count, done;
+  const Register swap_reg   = x10;
+  const Register header_reg = c_rarg2;  // Will contain the old oopMark
+  const Register obj_reg    = c_rarg3;  // Will contain the oop
+  const Register tmp_reg    = c_rarg4;  // Temporary used by fast_unlock
 
-    const Register swap_reg   = x10;
-    const Register header_reg = c_rarg2;  // Will contain the old oopMark
-    const Register obj_reg    = c_rarg3;  // Will contain the oop
-    const Register tmp_reg    = c_rarg4;  // Temporary used by lightweight_unlock
+  save_bcp(); // Save in case of exception
 
-    save_bcp(); // Save in case of exception
+  // Load oop into obj_reg (c_rarg3)
+  ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
-    if (LockingMode != LM_LIGHTWEIGHT) {
-      // Convert from BasicObjectLock structure to object and BasicLock
-      // structure Store the BasicLock address into x10
-      la(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset()));
-    }
+  // Free entry
+  sd(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
 
-    // Load oop into obj_reg(c_rarg3)
-    ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
+  Label done, slow_case;
+  fast_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
+  j(done);
 
-    // Free entry
-    sd(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
+  bind(slow_case);
+  // Call the runtime routine for slow case.
+  sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset())); // restore obj
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
 
-    Label slow_case;
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
-      j(done);
-    } else if (LockingMode == LM_LEGACY) {
-      // Load the old header from BasicLock structure
-      ld(header_reg, Address(swap_reg,
-                             BasicLock::displaced_header_offset_in_bytes()));
-
-      // Test for recursion
-      beqz(header_reg, count);
-
-      // Atomic swap back the old header
-      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, tmp_reg, count, &slow_case);
-
-      bind(count);
-      dec_held_monitor_count(t0);
-      j(done);
-    }
-
-    bind(slow_case);
-    // Call the runtime routine for slow case.
-    sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset())); // restore obj
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
-
-    bind(done);
-    restore_bcp();
-  }
+  bind(done);
+  restore_bcp();
 }
 
 
@@ -895,7 +837,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   assert(ProfileInterpreter, "must be profiling interpreter");
 #ifdef ASSERT
   Label verify_continue;
-  add(sp, sp, -4 * wordSize);
+  subi(sp, sp, 4 * wordSize);
   sd(x10, Address(sp, 0));
   sd(x11, Address(sp, wordSize));
   sd(x12, Address(sp, 2 * wordSize));
@@ -920,7 +862,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   ld(x11, Address(sp, wordSize));
   ld(x12, Address(sp, 2 * wordSize));
   ld(x13, Address(sp, 3 * wordSize));
-  add(sp, sp, 4 * wordSize);
+  addi(sp, sp, 4 * wordSize);
 #endif // ASSERT
 }
 
@@ -935,47 +877,29 @@ void InterpreterMacroAssembler::set_mdp_data_at(Register mdp_in,
 
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      int constant,
-                                                      bool decrement) {
-  increment_mdp_data_at(mdp_in, noreg, constant, decrement);
+                                                      int constant) {
+  increment_mdp_data_at(mdp_in, noreg, constant);
 }
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      Register reg,
-                                                      int constant,
-                                                      bool decrement) {
+                                                      Register index,
+                                                      int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  // %%% this does 64bit counters at best it is wasting space
-  // at worst it is a rare bug when counters overflow
 
-  assert_different_registers(t1, t0, mdp_in, reg);
+  assert_different_registers(t1, t0, mdp_in, index);
 
   Address addr1(mdp_in, constant);
   Address addr2(t1, 0);
   Address &addr = addr1;
-  if (reg != noreg) {
+  if (index != noreg) {
     la(t1, addr1);
-    add(t1, t1, reg);
+    add(t1, t1, index);
     addr = addr2;
   }
 
-  if (decrement) {
-    ld(t0, addr);
-    addi(t0, t0, -DataLayout::counter_increment);
-    Label L;
-    bltz(t0, L);      // skip store if counter underflow
-    sd(t0, addr);
-    bind(L);
-  } else {
-    assert(DataLayout::counter_increment == 1,
-           "flow-free idiom only works with 1");
-    ld(t0, addr);
-    addi(t0, t0, DataLayout::counter_increment);
-    Label L;
-    blez(t0, L);       // skip store if counter overflow
-    sd(t0, addr);
-    bind(L);
-  }
+  ld(t0, addr);
+  addi(t0, t0, DataLayout::counter_increment);
+  sd(t0, addr);
 }
 
 void InterpreterMacroAssembler::set_mdp_flag_at(Register mdp_in,
@@ -1028,7 +952,7 @@ void InterpreterMacroAssembler::update_mdp_by_offset(Register mdp_in,
 void InterpreterMacroAssembler::update_mdp_by_constant(Register mdp_in,
                                                        int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  addi(mdp_in, mdp_in, (unsigned)constant);
+  add(mdp_in, mdp_in, (unsigned)constant);
   sd(mdp_in, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
 }
 
@@ -1037,7 +961,7 @@ void InterpreterMacroAssembler::update_mdp_for_ret(Register return_bci) {
   assert(ProfileInterpreter, "must be profiling interpreter");
 
   // save/restore across call_VM
-  addi(sp, sp, -2 * wordSize);
+  subi(sp, sp, 2 * wordSize);
   sd(zr, Address(sp, 0));
   sd(return_bci, Address(sp, wordSize));
   call_VM(noreg,
@@ -1048,26 +972,16 @@ void InterpreterMacroAssembler::update_mdp_for_ret(Register return_bci) {
   addi(sp, sp, 2 * wordSize);
 }
 
-void InterpreterMacroAssembler::profile_taken_branch(Register mdp,
-                                                     Register bumped_count) {
+void InterpreterMacroAssembler::profile_taken_branch(Register mdp) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
     // If no method data exists, go to profile_continue.
-    // Otherwise, assign to mdp
     test_method_data_pointer(mdp, profile_continue);
 
     // We are taking a branch.  Increment the taken count.
-    Address data(mdp, in_bytes(JumpData::taken_offset()));
-    ld(bumped_count, data);
-    assert(DataLayout::counter_increment == 1,
-            "flow-free idiom only works with 1");
-    addi(bumped_count, bumped_count, DataLayout::counter_increment);
-    Label L;
-    // eg: bumped_count=0x7fff ffff ffff ffff  + 1 < 0. so we use <= 0;
-    blez(bumped_count, L);       // skip store if counter overflow,
-    sd(bumped_count, data);
-    bind(L);
+    increment_mdp_data_at(mdp, in_bytes(JumpData::taken_offset()));
+
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_offset(mdp, in_bytes(JumpData::displacement_offset()));
     bind(profile_continue);
@@ -1081,7 +995,7 @@ void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp) {
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    // We are taking a branch.  Increment the not taken count.
+    // We are not taking a branch.  Increment the not taken count.
     increment_mdp_data_at(mdp, in_bytes(BranchData::not_taken_offset()));
 
     // The method data pointer needs to be updated to correspond to
@@ -1432,8 +1346,6 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
   }
 }
 
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) { ; }
-
 void InterpreterMacroAssembler::notify_method_entry() {
   // Whenever JVMTI is interp_only_mode, method entry/exit events are sent to
   // track stack depth.  If it is possible to enter interp_only_mode we add
@@ -1517,7 +1429,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
                                                   int number_of_arguments) {
   // interpreter specific
   //
-  // Note: No need to save/restore rbcp & rlocals pointer since these
+  // Note: No need to save/restore xbcp & xlocals pointer since these
   //       are callee saved registers and no blocking/ GC can happen
   //       in leaf calls.
 #ifdef ASSERT
@@ -1537,6 +1449,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
 void InterpreterMacroAssembler::call_VM_base(Register oop_result,
                                              Register java_thread,
                                              Register last_java_sp,
+                                             Label*   return_pc,
                                              address  entry_point,
                                              int      number_of_arguments,
                                              bool     check_exceptions) {
@@ -1559,26 +1472,34 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 #endif /* ASSERT */
   // super call
   MacroAssembler::call_VM_base(oop_result, noreg, last_java_sp,
-                               entry_point, number_of_arguments,
-                               check_exceptions);
-// interpreter specific
+                               return_pc, entry_point,
+                               number_of_arguments, check_exceptions);
+  // interpreter specific
   restore_bcp();
   restore_locals();
 }
 
-void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
-                                                    address entry_point,
-                                                    Register arg_1) {
-  assert(arg_1 == c_rarg1, "");
+void InterpreterMacroAssembler::call_VM_preemptable_helper(Register oop_result,
+                                                           address entry_point,
+                                                           int number_of_arguments,
+                                                           bool check_exceptions) {
+  assert(InterpreterRuntime::is_preemptable_call(entry_point),
+         "VM call not preemptable, should use call_VM()");
   Label resume_pc, not_preempted;
 
 #ifdef ASSERT
   {
-    Label L;
+    Label L1, L2;
     ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    beqz(t0, L);
-    stop("Should not have alternate return address set");
-    bind(L);
+    beqz(t0, L1);
+    stop("call_VM_preemptable_helper: Should not have alternate return address set");
+    bind(L1);
+    // We check this counter in patch_return_pc_with_preempt_stub() during freeze.
+    incrementw(Address(xthread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    lw(t0, Address(xthread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    bgtz(t0, L2);
+    stop("call_VM_preemptable_helper: should be > 0");
+    bind(L2);
   }
 #endif /* ASSERT */
 
@@ -1586,11 +1507,21 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   push_cont_fastpath();
 
   // Make VM call. In case of preemption set last_pc to the one we want to resume to.
-  la(t0, resume_pc);
-  sd(t0, Address(xthread, JavaThread::last_Java_pc_offset()));
-  call_VM_base(oop_result, noreg, noreg, entry_point, 1, false /*check_exceptions*/);
+  // Note: call_VM_base will use resume_pc label to set last_Java_pc.
+  call_VM_base(noreg, noreg, noreg, &resume_pc, entry_point, number_of_arguments, false /*check_exceptions*/);
 
   pop_cont_fastpath();
+
+#ifdef ASSERT
+  {
+    Label L;
+    decrementw(Address(xthread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    lw(t0, Address(xthread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    bgez(t0, L);
+    stop("call_VM_preemptable_helper: should be >= 0");
+    bind(L);
+  }
+#endif /* ASSERT */
 
   // Check if preempted.
   ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
@@ -1603,6 +1534,51 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   restore_after_resume(false /* is_native */);
 
   bind(not_preempted);
+  if (check_exceptions) {
+    // check for pending exceptions
+    ld(t0, Address(xthread, in_bytes(Thread::pending_exception_offset())));
+    Label ok;
+    beqz(t0, ok);
+    la(t1, RuntimeAddress(StubRoutines::forward_exception_entry()));
+    jr(t1);
+    bind(ok);
+  }
+
+  // get oop result if there is one and reset the value in the thread
+  if (oop_result->is_valid()) {
+    get_vm_result_oop(oop_result, xthread);
+  }
+}
+
+static void pass_arg1(MacroAssembler* masm, Register arg) {
+  if (c_rarg1 != arg) {
+    masm->mv(c_rarg1, arg);
+  }
+}
+
+static void pass_arg2(MacroAssembler* masm, Register arg) {
+  if (c_rarg2 != arg) {
+    masm->mv(c_rarg2, arg);
+  }
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                         address entry_point,
+                                         Register arg_1,
+                                         bool check_exceptions) {
+  pass_arg1(this, arg_1);
+  call_VM_preemptable_helper(oop_result, entry_point, 1, check_exceptions);
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                         address entry_point,
+                                         Register arg_1,
+                                         Register arg_2,
+                                         bool check_exceptions) {
+  LP64_ONLY(assert_different_registers(arg_1, c_rarg2));
+  pass_arg2(this, arg_2);
+  pass_arg1(this, arg_1);
+  call_VM_preemptable_helper(oop_result, entry_point, 2, check_exceptions);
 }
 
 void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
@@ -1739,7 +1715,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       add(t0, mdp, t0);
       ld(t0, Address(t0));
       sub(tmp, tmp, t0);
-      addi(tmp, tmp, -1);
+      subi(tmp, tmp, 1);
       Address arg_addr = argument_address(tmp);
       ld(tmp, arg_addr);
 
@@ -1762,7 +1738,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
 
       if (MethodData::profile_return()) {
         ld(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::cell_count_offset())));
-        addi(tmp, tmp, -TypeProfileArgsLimit*TypeStackSlotEntries::per_arg_count());
+        sub(tmp, tmp, TypeProfileArgsLimit * TypeStackSlotEntries::per_arg_count());
       }
 
       add(t0, mdp, off_to_args);
@@ -1849,7 +1825,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     // mdo start + parameters offset + array length - 1
     add(mdp, mdp, tmp1);
     ld(tmp1, Address(mdp, ArrayData::array_len_offset()));
-    add(tmp1, tmp1, - TypeStackSlotEntries::per_arg_count());
+    subi(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
 
     Label loop;
     bind(loop);
@@ -1875,7 +1851,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     profile_obj_type(tmp2, arg_type, tmp3);
 
     // go to next parameter
-    add(tmp1, tmp1, - TypeStackSlotEntries::per_arg_count());
+    subi(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
     bgez(tmp1, loop);
 
     bind(profile_continue);
@@ -1890,7 +1866,7 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   slli(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
-  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 
@@ -1906,7 +1882,7 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   }
   // Get address of field entries array
   ld(cache, Address(xcpool, ConstantPoolCache::field_entries_offset()));
-  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
   // Prevents stale data from being read after the bytecode is patched to the fast bytecode
   membar(MacroAssembler::LoadLoad);
@@ -1932,11 +1908,20 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
 
   // Get address of field entries array
   ld(cache, Address(xcpool, ConstantPoolCache::method_entries_offset()));
-  add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 
 #ifdef ASSERT
+void InterpreterMacroAssembler::verify_field_offset(Register reg) {
+  // Verify the field offset is not in the header, implicitly checks for 0
+  Label L;
+  mv(t0, oopDesc::base_offset_in_bytes());
+  bge(reg, t0, L);
+  stop("bad field offset");
+  bind(L);
+}
+
 void InterpreterMacroAssembler::verify_access_flags(Register access_flags, uint32_t flag,
                                                     const char* msg, bool stop_by_hit) {
   Label L;

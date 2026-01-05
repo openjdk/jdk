@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,6 @@ class RawNativeInstruction {
     instr_ldrh_strh  = 0x10,
     instr_fld_fst    = 0xd0
   };
-
-  // illegal instruction used by NativeJump::patch_verified_entry
-  // permanently undefined (UDF): 0xe << 28 | 0b1111111 << 20 | 0b1111 << 4
-  static const int not_entrant_illegal_instruction = 0xe7f000f0;
 
   static int decode_rotated_imm12(int encoding) {
     int base = encoding & 0xff;
@@ -274,10 +270,6 @@ class RawNativeJump: public NativeInstruction {
     }
   }
 
-  static void check_verified_entry_alignment(address entry, address verified_entry);
-
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
-
 };
 
 inline RawNativeJump* rawNativeJump_at(address address) {
@@ -438,6 +430,13 @@ inline NativeCall* nativeCall_before(address return_address) {
 
 class NativePostCallNop: public NativeInstruction {
 public:
+  enum arm_specific_constants {
+    // If the check is adjusted to read beyond size of the instruction sequence at the deopt
+    // handler stub code entry point, it has to happen in two stages - to prevent out of bounds
+    // access in case the return address points to the entry point which could be at
+    // the end of page.
+    first_check_size = instruction_size
+  };
   bool check() const { return is_nop(); }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
   bool patch(int32_t oopmap_slot, int32_t cb_offset) { return false; }

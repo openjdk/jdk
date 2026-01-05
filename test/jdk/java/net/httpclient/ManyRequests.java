@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,19 @@
 /*
  * @test
  * @bug 8087112 8180044 8256459
- * @modules java.net.http
+ * @key intermittent
+ * @modules java.net.http/jdk.internal.net.http.common
  *          java.logging
  *          jdk.httpserver
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
- *                              -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
- * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
- *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ManyRequests
- * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
- *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ManyRequests
- * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
- *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests
  * @summary Send a large number of requests asynchronously
  */
  // * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
@@ -80,7 +77,9 @@ import java.util.logging.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -110,7 +109,7 @@ public class ManyRequests {
         InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         HttpsServer server = HttpsServer.create(addr, 0);
         ExecutorService executor = executorFor("HTTPS/1.1 Server Thread");
-        server.setHttpsConfigurator(new Configurator(ctx));
+        server.setHttpsConfigurator(new Configurator(addr.getAddress(), ctx));
         server.setExecutor(executor);
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                 .name("HttpClient-Worker", 0).factory());
@@ -369,12 +368,17 @@ public class ManyRequests {
     }
 
     static class Configurator extends HttpsConfigurator {
-        public Configurator(SSLContext ctx) {
+        private final InetAddress serverAddr;
+        public Configurator(InetAddress serverAddr, SSLContext ctx) {
             super(ctx);
+            this.serverAddr = serverAddr;
         }
 
+        @Override
         public void configure(HttpsParameters params) {
-            params.setSSLParameters(getSSLContext().getSupportedSSLParameters());
+            final SSLParameters parameters = getSSLContext().getSupportedSSLParameters();
+            TestServerConfigurator.addSNIMatcher(this.serverAddr, parameters);
+            params.setSSLParameters(parameters);
         }
     }
 

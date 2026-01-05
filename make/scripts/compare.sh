@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -203,12 +203,12 @@ compare_permissions() {
     do
         if [ ! -f ${OTHER_DIR}/$f ]; then continue; fi
         if [ ! -f ${THIS_DIR}/$f ]; then continue; fi
-        OP=`ls -l ${OTHER_DIR}/$f | awk '{printf("%.10s\n", $1);}'`
-        TP=`ls -l ${THIS_DIR}/$f | awk '{printf("%.10s\n", $1);}'`
+        OP=`ls -l ${OTHER_DIR}/$f | $AWK '{printf("%.10s\n", $1);}'`
+        TP=`ls -l ${THIS_DIR}/$f | $AWK '{printf("%.10s\n", $1);}'`
         if [ "$OP" != "$TP" ]
         then
             if [ -z "$found" ]; then echo ; found="yes"; fi
-            $PRINTF "\tother: ${OP} this: ${TP}\t$f\n"
+            $PRINTF "\tother: %s this: %s\t%s\n" "${OP}" "${TP}" "$f"
         fi
     done
     if [ -z "$found" ]; then
@@ -260,7 +260,7 @@ compare_file_types() {
                 continue
             else
                 if [ -z "$found" ]; then echo ; found="yes"; fi
-                $PRINTF "\tother: ${OF}\n\tthis : ${TF}\n"
+                $PRINTF "\tother: %s\n\tthis : %s\n" "${OF}" "${TF}"
             fi
         fi
     done

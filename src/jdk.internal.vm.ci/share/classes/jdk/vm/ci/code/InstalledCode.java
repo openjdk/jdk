@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,24 @@ public class InstalledCode {
 
     protected final String name;
 
+    /**
+     * The maximum length of an InstalledCode name. This name is typically installed into
+     * the code cache so it should have a reasonable limit.
+     */
+    public static final int MAX_NAME_LENGTH = 2048;
+
+    /**
+     * @param name the name to be associated with the installed code. Can be null and
+     *        must be no longer than {@link #MAX_NAME_LENGTH}.
+     *
+     * @throws IllegalArgumentException if {@code name.length >} {@link #MAX_NAME_LENGTH}
+     */
     public InstalledCode(String name) {
+        if (name != null && name.length() > MAX_NAME_LENGTH) {
+            String msg = String.format("name length (%d) is greater than %d (name[0:%s] = %s)",
+                                        name.length(), MAX_NAME_LENGTH, MAX_NAME_LENGTH, name.substring(0, MAX_NAME_LENGTH));
+            throw new IllegalArgumentException(msg);
+        }
         this.name = name;
     }
 

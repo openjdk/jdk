@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -57,7 +56,7 @@ public:
 
   virtual void oops_do(OopClosure* cl) override {
     if (_f.is_interpreted_frame()) {
-      _f.oops_interpreted_do(cl, nullptr);
+      _f.oops_interpreted_do(cl, _map);
     } else {
       OopMapDo<OopClosure, DerivedOopClosure, IncludeAllValues> visitor(cl, nullptr);
       visitor.oops_do(&_f, _map, _f.oop_map());
@@ -140,7 +139,7 @@ static int num_java_frames(const StackChunkFrameStream<ChunkFrames::Mixed>& f) {
 int stackChunkOopDesc::num_java_frames() const {
   int n = 0;
   for (StackChunkFrameStream<ChunkFrames::Mixed> f(const_cast<stackChunkOopDesc*>(this)); !f.is_done();
-       f.next(SmallRegisterMap::instance())) {
+       f.next(SmallRegisterMap::instance_no_args())) {
     if (!f.is_stub()) {
       n += ::num_java_frames(f);
     }
@@ -416,10 +415,12 @@ template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Lo
 template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Store>(const StackChunkFrameStream<ChunkFrames::Mixed>& f, const RegisterMap* map);
 template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Load> (const StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, const RegisterMap* map);
 template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Store>(const StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, const RegisterMap* map);
-template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Load> (const StackChunkFrameStream<ChunkFrames::Mixed>& f, const SmallRegisterMap* map);
-template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Store>(const StackChunkFrameStream<ChunkFrames::Mixed>& f, const SmallRegisterMap* map);
-template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Load> (const StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, const SmallRegisterMap* map);
-template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Store>(const StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, const SmallRegisterMap* map);
+template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Load> (const StackChunkFrameStream<ChunkFrames::Mixed>& f, const SmallRegisterMapNoArgs* map);
+template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Store>(const StackChunkFrameStream<ChunkFrames::Mixed>& f, const SmallRegisterMapNoArgs* map);
+template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Load> (const StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, const SmallRegisterMapNoArgs* map);
+template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Store>(const StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, const SmallRegisterMapNoArgs* map);
+template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Load> (const StackChunkFrameStream<ChunkFrames::Mixed>& f, const SmallRegisterMapWithArgs* map);
+template void stackChunkOopDesc::do_barriers0<stackChunkOopDesc::BarrierType::Store>(const StackChunkFrameStream<ChunkFrames::Mixed>& f, const SmallRegisterMapWithArgs* map);
 
 template <typename RegisterMapT>
 void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map) {
@@ -439,7 +440,8 @@ void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map
 }
 
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMap* map);
-template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallRegisterMap* map);
+template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallRegisterMapNoArgs* map);
+template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallRegisterMapWithArgs* map);
 
 void stackChunkOopDesc::transfer_lockstack(oop* dst, bool requires_barriers) {
   const bool requires_gc_barriers = is_gc_mode() || requires_barriers;
@@ -497,7 +499,7 @@ public:
     assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i(obj));
     if (_chunk->has_bitmap()) {
       BitMap::idx_t index = _chunk->bit_index_for(p);
-      assert(_chunk->bitmap().at(index), "Bit not set at index " SIZE_FORMAT " corresponding to " PTR_FORMAT, index, p2i(p));
+      assert(_chunk->bitmap().at(index), "Bit not set at index %zu corresponding to " PTR_FORMAT, index, p2i(p));
     }
   }
 
@@ -528,7 +530,7 @@ public:
     _cb = f.cb();
 
     int fsize = f.frame_size() - ((f.is_interpreted() == _callee_interpreted) ? _argsize : 0);
-    int num_oops = f.num_oops();
+    int num_oops = f.num_oops(map);
     assert(num_oops >= 0, "");
 
     _argsize   = f.stack_argsize() + frame::metadata_words_at_top;
@@ -582,7 +584,7 @@ public:
 
     oop obj = _chunk->load_oop(p);
     assert(obj == nullptr || dbg_is_good_oop(obj),
-           "p: " PTR_FORMAT " obj: " PTR_FORMAT " index: " SIZE_FORMAT,
+           "p: " PTR_FORMAT " obj: " PTR_FORMAT " index: %zu",
            p2i(p), p2i((oopDesc*)obj), index);
 
     return true; // continue processing

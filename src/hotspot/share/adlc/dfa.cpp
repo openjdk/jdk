@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,7 +461,7 @@ void ArchDesc::buildDFA(FILE* fp) {
 
 
 class dfa_shared_preds {
-  enum { count = 3 IA32_ONLY( + 1 ) };
+  enum { count = 3 };
 
   static bool        _found[count];
   static const char* _type [count];
@@ -572,17 +572,17 @@ public:
   }
 };
 // shared predicates, _var and _pred entry should be the same length
-bool         dfa_shared_preds::_found[dfa_shared_preds::count] = { false,          false,           false               IA32_ONLY(COMMA false)  };
-const char*  dfa_shared_preds::_type [dfa_shared_preds::count] = { "int",          "jlong",         "intptr_t"          IA32_ONLY(COMMA "bool") };
-const char*  dfa_shared_preds::_var  [dfa_shared_preds::count] = { "_n_get_int__", "_n_get_long__", "_n_get_intptr_t__" IA32_ONLY(COMMA "Compile__current____select_24_bit_instr__") };
-const char*  dfa_shared_preds::_pred [dfa_shared_preds::count] = { "n->get_int()", "n->get_long()", "n->get_intptr_t()" IA32_ONLY(COMMA "Compile::current()->select_24_bit_instr()") };
+bool         dfa_shared_preds::_found[dfa_shared_preds::count] = { false,          false,           false               };
+const char*  dfa_shared_preds::_type [dfa_shared_preds::count] = { "int",          "jlong",         "intptr_t"          };
+const char*  dfa_shared_preds::_var  [dfa_shared_preds::count] = { "_n_get_int__", "_n_get_long__", "_n_get_intptr_t__" };
+const char*  dfa_shared_preds::_pred [dfa_shared_preds::count] = { "n->get_int()", "n->get_long()", "n->get_intptr_t()" };
 
 // Helper method to check whether a node is vector unary operation.
 static bool is_vector_unary_op_name(const char* op_name) {
   static const char* vector_unary_op_list[] = {
     "AbsVB", "AbsVS", "AbsVI", "AbsVL", "AbsVF", "AbsVD",
     "NegVI", "NegVL", "NegVF", "NegVD",
-    "SqrtVF", "SqrtVD",
+    "SqrtVHF", "SqrtVF", "SqrtVD",
     "PopCountVI", "PopCountVL",
     "CountLeadingZerosV", "CountTrailingZerosV",
     "ReverseV", "ReverseBytesV",

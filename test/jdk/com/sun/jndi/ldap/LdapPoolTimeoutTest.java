@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,16 @@
  * @summary Multi-threaded client timeout tests for ldap pool
  * @library /test/lib
  *          lib/
- * @run testng/othervm LdapPoolTimeoutTest
+ * @run testng/othervm/timeout=480 LdapPoolTimeoutTest
  */
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.InitialDirContext;
+
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -44,13 +44,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.TimeUnit;
 
 import static jdk.test.lib.Utils.adjustTimeout;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.expectThrows;
 
 public class LdapPoolTimeoutTest {
     /*
@@ -89,24 +84,21 @@ public class LdapPoolTimeoutTest {
         env.put(Context.PROVIDER_URL, "ldap://example.com:1234");
 
         try {
-            futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
-            futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
-            futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
-            futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
-            futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
-            futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
-            futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
-            futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
+            // launch a few concurrent connection attempts
+            for (int i = 0; i < 8; i++) {
+                futures.add(executorService.submit(() -> { attemptConnect(env); return null; }));
+            }
         } finally {
             executorService.shutdown();
         }
         int failedCount = 0;
-        for (var f : futures) {
+        for (int i = 0; i < futures.size(); i++) {
             try {
-                f.get();
+                futures.get(i).get();
             } catch (ExecutionException e) {
                 failedCount++;
-                e.getCause().printStackTrace(System.out);
+                System.err.println("task " + (i + 1) + " failed:");
+                e.getCause().printStackTrace();
             }
         }
         if (failedCount > 0)
@@ -115,28 +107,55 @@ public class LdapPoolTimeoutTest {
 
     private static void attemptConnect(Hashtable<Object, Object> env) throws Exception {
         try {
-            LdapTimeoutTest.assertCompletion(CONNECT_MILLIS - 1000,
-                   2 * CONNECT_MILLIS + TOLERANCE,
-                   () -> new InitialDirContext(env));
-        } catch (RuntimeException e) {
-            String msg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
-            System.err.println("MSG RTE: " + msg);
-            // assertCompletion may wrap a CommunicationException in an RTE
-            assertNotNull(msg);
-            assertTrue(msg.contains("Network is unreachable")
-                        || msg.contains("No route to host") || msg.contains("Connection timed out"));
-        } catch (NamingException ex) {
-            String msg = ex.getCause() == null ? ex.getMessage() : ex.getCause().getMessage();
-            System.err.println("MSG: " + msg);
-            assertTrue(msg != null &&
-                    (msg.contains("Network is unreachable")
-                        || msg.contains("Timed out waiting for lock")
-                        || msg.contains("Connect timed out")
-                        || msg.contains("Timeout exceeded while waiting for a connection")));
+            final InitialDirContext unexpectedCtx =
+                    LdapTimeoutTest.assertCompletion(CONNECT_MILLIS - 1000,
+                            2 * CONNECT_MILLIS + TOLERANCE,
+                            () -> new InitialDirContext(env));
+            throw new RuntimeException("InitialDirContext construction was expected to fail," +
+                    " but returned " + unexpectedCtx);
         } catch (Throwable t) {
-            throw new RuntimeException(t);
+            final NamingException namingEx = findNamingException(t);
+            if (namingEx != null) {
+                // found the NamingException, verify it's the right reason
+                if (namingEx.getCause() instanceof SocketTimeoutException ste) {
+                    // got the expected exception
+                    System.out.println("Received expected SocketTimeoutException: " + ste);
+                    return;
+                }
+                // rely on the exception message to verify the expected exception
+                final String msg = namingEx.getCause() == null
+                        ? namingEx.getMessage()
+                        : namingEx.getCause().getMessage();
+                if (msg != null &&
+                        (msg.contains("Network is unreachable")
+                                || msg.contains("No route to host")
+                                || msg.contains("Timed out waiting for lock")
+                                || msg.contains("Connect timed out")
+                                || msg.contains("Timeout exceeded while waiting for a connection"))) {
+                    // got the expected exception
+                    System.out.println("Received expected NamingException with message: " + msg);
+                    return;
+                }
+            }
+            // unexpected exception, propagate it
+            if (t instanceof Exception e) {
+                throw e;
+            } else {
+                throw new Exception(t);
+            }
         }
     }
 
-}
+    // Find and return the NamingException from the given Throwable. Returns null if none found.
+    private static NamingException findNamingException(final Throwable t) {
+        Throwable cause = t;
+        while (cause != null) {
+            if (cause instanceof NamingException ne) {
+                return ne;
+            }
+            cause = cause.getCause();
+        }
+        return null;
+    }
 
+}
