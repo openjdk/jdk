@@ -2641,7 +2641,7 @@ static bool is_ndd_demotable_opr2(const MachNode* mdef) {
   return ((mdef->flags() & Node::PD::Flag_ndd_demotable_opr2) != 0);
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 static bool is_ndd_demotable(const MachNode* mdef) {
   return (is_ndd_demotable_opr1(mdef) || is_ndd_demotable_opr2(mdef));
 }
