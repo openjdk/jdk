@@ -35,6 +35,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
@@ -2336,8 +2337,8 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   return nullptr;
 }
 
-PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose)
-  :_st(st), _verbose(verbose) {
+PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose, bool location)
+  :_st(st), _verbose(verbose), _location(location) {
   ResourceMark rm;
   _st->print("%-18s  ", "KlassAddr");
   _st->print("%-4s  ", "Size");
@@ -2375,6 +2376,41 @@ void PrintClassClosure::do_klass(Klass* k)  {
   _st->print("%-7s  ", buf);
   // klass name
   _st->print("%-5s  ", k->external_name());
+
+  if (k->is_instance_klass() && _location) {
+
+    oop pd = java_lang_Class::protection_domain(k->java_mirror());
+
+    InstanceKlass* ik;
+
+    if (pd != nullptr && (ik = InstanceKlass::cast(pd->klass()))->is_instance_klass()) {
+
+      TempNewSymbol css  = SymbolTable::new_symbol("codesource");
+      TempNewSymbol csss = SymbolTable::new_symbol("Ljava/security/CodeSource;");
+
+      fieldDescriptor csfd;
+
+      if (ik->find_field(css, csss, &csfd)) {
+
+        oop cs = pd->obj_field(csfd.offset());
+
+        if (cs != nullptr && (ik = InstanceKlass::cast(cs->klass()))->is_instance_klass()) {
+          fieldDescriptor locfd;
+
+          TempNewSymbol csls  = SymbolTable::new_symbol("locationNoFragString");
+          TempNewSymbol cslss = SymbolTable::new_symbol("Ljava/lang/String;");
+
+          if (ik->find_field(csls, cslss, &locfd)) {
+            oop loc = cs->obj_field(locfd.offset());
+
+            if (loc != nullptr && loc->klass() == vmClasses::String_klass()) {
+              java_lang_String::print(loc, _st, MAXPATHLEN);
+            }
+          }
+        }
+      }
+    }
+  }
   // end
   _st->cr();
   if (_verbose) {

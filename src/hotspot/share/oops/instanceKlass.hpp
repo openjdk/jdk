@@ -1209,8 +1209,9 @@ class PrintClassClosure : public KlassClosure {
 private:
   outputStream* _st;
   bool _verbose;
+  bool _location;
 public:
-  PrintClassClosure(outputStream* st, bool verbose);
+  PrintClassClosure(outputStream* st, bool verbose, bool location);
 
   void do_klass(Klass* k);
 };

@@ -958,27 +958,30 @@ ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
            "C = marked with @Contended annotation, "
            "R = has been redefined, "
            "S = is shared class",
-           "BOOLEAN", false, "false") {
+           "BOOLEAN", false, "false"),
+  _location("-location", "print class file location url (if available)", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_verbose);
+  _dcmdparser.add_dcmd_option(&_location);
 }
 
 class VM_PrintClasses : public VM_Operation {
 private:
   outputStream* _out;
   bool _verbose;
+  bool _location;
 public:
-  VM_PrintClasses(outputStream* out, bool verbose) : _out(out), _verbose(verbose) {}
+  VM_PrintClasses(outputStream* out, bool verbose, bool location) : _out(out), _verbose(verbose), _location(location) {}
 
   virtual VMOp_Type type() const { return VMOp_PrintClasses; }
 
   virtual void doit() {
-    PrintClassClosure closure(_out, _verbose);
+    PrintClassClosure closure(_out, _verbose, _location);
     ClassLoaderDataGraph::classes_do(&closure);
   }
 };
 
 void ClassesDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintClasses vmop(output(), _verbose.value());
+  VM_PrintClasses vmop(output(), _verbose.value(), _location.value());
   VMThread::execute(&vmop);
 }
 

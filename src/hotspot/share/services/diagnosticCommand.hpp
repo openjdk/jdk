@@ -737,8 +737,9 @@ public:
 class ClassesDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _verbose;
+  DCmdArgument<bool> _location;
 public:
-  static int num_arguments() { return 1; }
+  static int num_arguments() { return 2; }
   ClassesDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.classes";
