@@ -32,13 +32,11 @@
 import java.io.File;
 
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KullaCompletenessStressTest extends CompletenessStressTest {
     @Override
-    @Test
     public File[] getDirectoriesToTest() {
         String src = System.getProperty("test.src");
         File file;
