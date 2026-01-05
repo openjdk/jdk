@@ -22,10 +22,7 @@
  */
 
 #include <inttypes.h>
-#include <jvmti.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "jvmti_common.hpp"
 
 // Track nmethod addresses for LOAD and UNLOAD events
 static const void* first_load_addr      = nullptr;
@@ -41,34 +38,30 @@ static JavaVM* javaVM = nullptr;
  */
 static void updateShouldExit() {
     if (javaVM == nullptr) {
-        printf("ERROR: JavaVM not available\n");
-        return;
+        abort();
     }
 
     JNIEnv* env = nullptr;
     jint result = javaVM->AttachCurrentThread((void**)&env, nullptr);
     if (result != JNI_OK || env == nullptr) {
-        printf("ERROR: Failed to attach to current thread\n");
-        return;
+        LOG("ERROR: Can't attach to current thread\n");
+        abort();
     }
 
     // Find the NMethodRelocationTest class
     jclass testClass = env->FindClass("NMethodRelocationTest");
     if (testClass == nullptr) {
-        printf("ERROR: Could not find NMethodRelocationTest class\n");
-        return;
+        fatal(env, "ERROR: Could not find NMethodRelocationTest class");
     }
 
     // Get the shouldExit field ID
     jfieldID shouldExitField = env->GetStaticFieldID(testClass, "shouldExit", "Z");
     if (shouldExitField == nullptr) {
-        printf("ERROR: Could not find shouldExit field\n");
-        return;
+        fatal(env, "ERROR: Could not find shouldExit field");
     }
 
     // Set shouldExit to true
     env->SetStaticBooleanField(testClass, shouldExitField, JNI_TRUE);
-    printf("Test completion signaled via shouldExit field\n");
 }
 
 /**
@@ -79,33 +72,31 @@ callbackCompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
                             jint code_size, const void* code_addr,
                             jint map_length, const jvmtiAddrLocationMap* map,
                             const void* compile_info) {
-    char* name = nullptr;
-    char* sig = nullptr;
-
-    if (jvmti->GetMethodName(method, &name, &sig, nullptr) != JVMTI_ERROR_NONE) {
-        return;
+    JNIEnv* env = nullptr;
+    if (javaVM->AttachCurrentThread((void**)&env, nullptr) != JNI_OK) {
+        LOG("ERROR: Can't attach to current thread\n");
+        abort();
     }
 
     // Only track events for "compiledMethod"
+    char* name = get_method_name(jvmti, env, method);
     if (strcmp(name, "compiledMethod") != 0) {
         return;
     }
 
-    printf("<COMPILED_METHOD_LOAD>:   name: %s, code: 0x%016" PRIxPTR "\n", name, (uintptr_t)code_addr);
+    LOG("<COMPILED_METHOD_LOAD>:   name: %s, code: 0x%016" PRIxPTR "\n", name, (uintptr_t)code_addr);
 
     if (first_load_addr == nullptr) {
         first_load_addr = code_addr;
     } else if (second_load_addr == nullptr) {
         second_load_addr = code_addr;
 
-        // Verify that the addresses are differnt
+        // Verify that the addresses are different
         if (first_load_addr == second_load_addr) {
-            printf("ERROR: Load events for 'compiledMethod' are expected to use different addresses.\n");
-            exit(1);
+            fatal(env, "ERROR: Load events for 'compiledMethod' are expected to use different addresses.");
         }
     } else {
-        printf("ERROR: Received too many load events for 'compiledMethod'\n");
-        exit(1);
+        fatal(env, "ERROR: Received too many load events for 'compiledMethod'");
     }
 }
 
@@ -115,24 +106,23 @@ callbackCompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
 JNIEXPORT void JNICALL
 callbackCompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
                              const void* code_addr) {
-    char* name = nullptr;
-    char* sig = nullptr;
-
-    if (jvmti->GetMethodName(method, &name, &sig, nullptr) != JVMTI_ERROR_NONE) {
-        return;
+    JNIEnv* env = nullptr;
+    if (javaVM->AttachCurrentThread((void**)&env, nullptr) != JNI_OK) {
+        LOG("ERROR: Can't attach to current thread\n");
+        abort();
     }
 
     // Only track events for "compiledMethod"
+    char* name = get_method_name(jvmti, env, method);
     if (strcmp(name, "compiledMethod") != 0) {
         return;
     }
 
-    printf("<COMPILED_METHOD_UNLOAD>:   name: %s, code: 0x%016" PRIxPTR "\n", name, (uintptr_t)code_addr);
+    LOG("<COMPILED_METHOD_UNLOAD>:   name: %s, code: 0x%016" PRIxPTR "\n", name, (uintptr_t)code_addr);
 
     // Validate both loads have occurred
     if (first_load_addr == nullptr || second_load_addr == nullptr) {
-        printf("ERROR: UNLOAD event for 'compiledMethod' occured before both LOAD events\n");
-        exit(1);
+        fatal(env, "ERROR: UNLOAD event for 'compiledMethod' occurred before both LOAD events");
     }
 
     if (first_unload_addr == nullptr) {
@@ -140,10 +130,9 @@ callbackCompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
     } else {
         second_unload_addr = code_addr;
 
-        // Verify that the addresses are differnt
+        // Verify that the addresses are different
         if (first_unload_addr == second_unload_addr) {
-            printf("ERROR: Unload events for 'compiledMethod' are expected to use different addresses.\n");
-            exit(1);
+            fatal(env, "ERROR: Unload events for 'compiledMethod' are expected to use different addresses.");
         }
 
         // LOAD and UNLOAD events should report the same two addresses, but the order of
@@ -154,21 +143,19 @@ callbackCompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
             // Update shouldExit to signal test completion
             updateShouldExit();
         } else {
-            printf("ERROR: Address mismatch for 'compiledMethod' events\n");
-            exit(1);
+            fatal(env, "ERROR: Address mismatch for 'compiledMethod' events");
         }
     }
 }
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     jvmtiEnv* jvmti = nullptr;
-    jvmtiError error;
 
     // Store JavaVM reference for later use
     javaVM = jvm;
 
     if (jvm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_0) != JNI_OK) {
-        printf("Unable to access JVMTI!\n");
+        LOG("Unable to access JVMTI!\n");
         return JNI_ERR;
     }
 
@@ -176,11 +163,8 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
     jvmtiCapabilities caps;
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_compiled_method_load_events = 1;
-    error = jvmti->AddCapabilities(&caps);
-    if (error != JVMTI_ERROR_NONE) {
-        printf("ERROR: Unable to add capabilities, error=%d\n", error);
-        return JNI_ERR;
-    }
+    jvmtiError error = jvmti->AddCapabilities(&caps);
+    check_jvmti_error(error, "Unable to add capabilities");
 
     // Set event callbacks
     jvmtiEventCallbacks eventCallbacks;
@@ -188,23 +172,14 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
     eventCallbacks.CompiledMethodLoad = callbackCompiledMethodLoad;
     eventCallbacks.CompiledMethodUnload = callbackCompiledMethodUnload;
     error = jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks));
-    if (error != JVMTI_ERROR_NONE) {
-        printf("ERROR: Unable to set event callbacks, error=%d\n", error);
-        return JNI_ERR;
-    }
+    check_jvmti_error(error, "Unable to set event callbacks");
 
     // Enable events
     error = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, nullptr);
-    if (error != JVMTI_ERROR_NONE) {
-        printf("ERROR: Unable to enable COMPILED_METHOD_LOAD event, error=%d\n", error);
-        return JNI_ERR;
-    }
+    check_jvmti_error(error, "Unable to enable COMPILED_METHOD_LOAD event");
 
     error = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_UNLOAD, nullptr);
-    if (error != JVMTI_ERROR_NONE) {
-        printf("ERROR: Unable to enable COMPILED_METHOD_UNLOAD event, error=%d\n", error);
-        return JNI_ERR;
-    }
+    check_jvmti_error(error, "Unable to enable COMPILED_METHOD_UNLOAD event");
 
     return JNI_OK;
 }

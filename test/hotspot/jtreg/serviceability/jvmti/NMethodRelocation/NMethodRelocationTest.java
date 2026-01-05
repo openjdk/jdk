@@ -75,7 +75,7 @@ public class NMethodRelocationTest {
         }
     }
 
-    public static void main(String argv[]) throws Exception {
+    public static void main(String[] argv) throws Exception {
         Executable method = NMethodRelocationTest.class.getDeclaredMethod("compiledMethod");
         WHITE_BOX.testSetDontInlineMethod(method, true);
 
