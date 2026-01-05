@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ class ModuleEntry;
 #define PKG_EXP_ALLUNNAMED   0x0002
 #define PKG_EXP_UNQUALIFIED_OR_ALL_UNAMED (PKG_EXP_UNQUALIFIED | PKG_EXP_ALLUNNAMED)
 
-class PackageEntry : public CHeapObj<mtModule> {
+class PackageEntry : public CHeapObj<mtModule>, public IterableMetadata {
 private:
   Symbol*      _name;
   ModuleEntry* _module;
@@ -204,6 +204,11 @@ public:
   // Purge dead weak references out of exported list when any given class loader is unloaded.
   void purge_qualified_exports();
   void delete_qualified_exports();
+
+  // methods required by MetaspaceClosure and IterableMetadata
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size() const { return (int)heap_word_size(sizeof(PackageEntry)); }
+  MetaspaceObj::Type type() const { return MetaspaceObj::PackageEntryType; }
 
   void print(outputStream* st = tty);
 

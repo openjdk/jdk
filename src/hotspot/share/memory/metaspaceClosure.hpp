@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,23 @@
   class       ArrayKlass;
   class         ObjArrayKlass;
   class         TypeArrayKlass;
+
+class PackageEntry;
+
+// IS_ITERABLE_METADATA_TYPE(T) -- test if type T can be iterated by MetaspaceClosure.
+//
+// For type X to be iterable:
+//
+// [1] Make IterableMetadata a supertype of X (using multiple inheritance if necessary). E.g.,
+//         class PackageEntry : public CHeapObj<mtModule>, public IterableMetadata {...}
+//
+// [2] X (or one of X's supertypes) must have the following public functions:
+//         void metaspace_pointers_do(MetaspaceClosure* it);
+//         int size() const;
+//         MetaspaceObj::Type type() const;
+//         /* optional*/ static bool is_read_only_by_default() { return true; }
+
+#define IS_ITERABLE_METADATA_TYPE(T) (std::is_base_of<IterableMetadata, T>::value)
 
 // class MetaspaceClosure --
 //
@@ -339,23 +356,23 @@ public:
 
   template <typename T>
   void push(T** mpp, Writability w = _default) {
-    static_assert(std::is_base_of<MetaspaceObj, T>::value, "Do not push pointers of arbitrary types");
+    static_assert(IS_ITERABLE_METADATA_TYPE(T), "Do not push pointers of arbitrary types");
     push_with_ref<MSORef<T>>(mpp, w);
   }
 
-  template <typename T, ENABLE_IF(!std::is_base_of<MetaspaceObj, T>::value)>
+  template <typename T, ENABLE_IF(!IS_ITERABLE_METADATA_TYPE(T))>
   void push(Array<T>** mpp, Writability w = _default) {
     push_with_ref<OtherArrayRef<T>>(mpp, w);
   }
 
-  template <typename T, ENABLE_IF(std::is_base_of<MetaspaceObj, T>::value)>
+  template <typename T, ENABLE_IF(IS_ITERABLE_METADATA_TYPE(T))>
   void push(Array<T>** mpp, Writability w = _default) {
     push_with_ref<MSOArrayRef<T>>(mpp, w);
   }
 
   template <typename T>
   void push(Array<T*>** mpp, Writability w = _default) {
-    static_assert(std::is_base_of<MetaspaceObj, T>::value, "Do not push Arrays of arbitrary pointer types");
+    static_assert(IS_ITERABLE_METADATA_TYPE(T), "Do not push Arrays of arbitrary pointer types");
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
   }
 };

@@ -30,7 +30,6 @@
 #include "code/vmreg.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
-#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/stubInfo.hpp"
@@ -38,6 +37,7 @@
 
 class AdapterHandlerEntry;
 class AdapterFingerPrint;
+class MetaspaceClosure;
 class vframeStream;
 
 // Runtime is the base class for various runtime interfaces
