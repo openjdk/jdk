@@ -30,7 +30,15 @@ public interface WinApplicationMixin {
 
     record Stub(DottedVersion winVersion) implements WinApplicationMixin {
         public Stub(Application app) {
-            this(DottedVersion.greedy(app.version()));
+            this(parse(app.version()));
+        }
+
+        private static DottedVersion parse(String strVersion) {
+            try {
+                return DottedVersion.greedy(strVersion);
+            } catch (IllegalArgumentException ex) {
+                throw new JPackageException(ex.getMessage(), ex);
+            }
         }
     }
 }
