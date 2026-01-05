@@ -2381,12 +2381,15 @@ public final class Math {
         // Implementation note: this method is intentionally coded in
         // a straightforward manner relying on BigDecimal for the
         // heavy-lifting of the numerical computation. It would be
-        // possible for the computation done using all binary
+        // possible for the computation to be done solely using binary
         // floating-point and integer operations, at the cost of more
         // complicated logic. Since most processors have hardware
-        // support for fma so and this method is an intrinsic
-        // candidate, the software implementation below would only
-        // used on processors without native fma support.
+        // support for fma and this method is an intrinsic candidate,
+        // the software implementation below would only be used on
+        // processors without native fma support. Therefore, the
+        // direct performance of the code is less of a concern than
+        // the code's simplicity, maintainability, and ease of
+        // testing.
 
         /*
          * Infinity and NaN arithmetic is not quite the same with two
