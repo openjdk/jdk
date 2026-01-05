@@ -37,6 +37,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.hpp"
 
+
 static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   switch (t) {
     case ShenandoahFreeSetPartitionId::NotFree: return "NotFree";
