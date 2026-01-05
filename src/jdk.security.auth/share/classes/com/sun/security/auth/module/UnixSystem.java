@@ -25,6 +25,8 @@
 
 package com.sun.security.auth.module;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -84,10 +86,9 @@ public class UnixSystem {
     private static final AddressLayout C_POINTER
             = ((AddressLayout) LINKER.canonicalLayouts().get("void*"))
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, C_CHAR));
-    private static final ValueLayout.OfLong C_SIZE_T
-            = (ValueLayout.OfLong) LINKER.canonicalLayouts().get("size_t");
+    private static final ValueLayout C_SIZE_T
+            = (ValueLayout) LINKER.canonicalLayouts().get("size_t");
 
-    private static Linker.Option ccs = Linker.Option.captureCallState("errno");
     private static final StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
     private static final VarHandle errnoHandle = capturedStateLayout.varHandle(
             MemoryLayout.PathElement.groupElement("errno"));
@@ -98,17 +99,23 @@ public class UnixSystem {
 
     private static final MethodHandle getgroups = LINKER
             .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getgroups"),
-                    FunctionDescriptor.of(C_INT, C_INT, C_POINTER), ccs);
+                    FunctionDescriptor.of(C_INT, C_INT, C_POINTER),
+                    Linker.Option.captureCallState("errno"));
     private static final MethodHandle getuid = LINKER
             .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getuid"),
                     FunctionDescriptor.of(C_INT));
     private static final MethodHandle getgid = LINKER
             .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getgid"),
                     FunctionDescriptor.of(C_INT));
+
+    // getpwuid_r does not work on AIX, instead we use another similar function
+    // extern int _posix_getpwuid_r(uid_t, struct passwd *, char *, int, struct passwd **)
     private static final MethodHandle getpwuid_r = LINKER
-            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getpwuid_r"),
+            .downcallHandle(SYMBOL_LOOKUP.findOrThrow(
+                            OperatingSystem.isAix() ? "_posix_getpwuid_r" : "getpwuid_r"),
                     FunctionDescriptor.of(C_INT, C_INT, C_POINTER, C_POINTER,
-                            C_SIZE_T, C_POINTER));
+                            OperatingSystem.isAix() ? C_INT : C_SIZE_T,
+                            C_POINTER));
 
     private static final GroupLayout passwd_layout = MemoryLayout.structLayout(
             C_POINTER.withName("pw_name"),
@@ -118,7 +125,7 @@ public class UnixSystem {
             // Different platforms have different fields in `struct passwd`.
             // While we don't need those fields here, the struct needs to be
             // big enough to avoid buffer overflow when `getpwuid_r` is called.
-            MemoryLayout.sequenceLayout(100, C_CHAR).withName("dummy"));
+            MemoryLayout.paddingLayout(100));
 
     private static final ValueLayout.OfInt pw_uid_layout
             = (ValueLayout.OfInt) passwd_layout.select(groupElement("pw_uid"));
@@ -133,10 +140,15 @@ public class UnixSystem {
     private static final long pw_name_offset
             = passwd_layout.byteOffset(groupElement("pw_name"));
 
-    // sysconf(_SC_GETPW_R_SIZE_MAX) on macOS is 4096 and 1024 on Linux.
-    // Not calling sysconf() here because _SC_GETPW_R_SIZE_MAX is different
-    // on different platforms.
-    private static final long GETPW_R_SIZE_MAX = 4096L;
+    // The buffer size for the getpwuid_r function:
+    // 1. sysconf(_SC_GETPW_R_SIZE_MAX) on macOS is 4096 and 1024 on Linux,
+    //    so we choose a bigger one.
+    // 2. We do not call sysconf() here because even _SC_GETPW_R_SIZE_MAX
+    //    could be different on different platforms.
+    // 3. We choose int instead of long because the buffer_size argument
+    //    might be `int` or `long` and converting from `long` to `int`
+    //    requires an explicit cast.
+    private static final int GETPW_R_SIZE_MAX = 4096;
 
     /**
      * Instantiate a {@code UnixSystem} and load
@@ -161,30 +173,33 @@ public class UnixSystem {
 
             groups = new long[groupnum];
             for (int i = 0; i < groupnum; i++) {
-                groups[i] = gs.getAtIndex(C_INT, i);
+                groups[i] = Integer.toUnsignedLong(gs.getAtIndex(C_INT, i));
             }
 
             var pwd = scope.allocate(passwd_layout);
             var result = scope.allocate(C_POINTER);
             var buffer = scope.allocate(GETPW_R_SIZE_MAX);
             var tmpUid = (int)getuid.invokeExact();
-            // Do not call invokeExact because GETPW_R_SIZE_MAX is not
-            // always size_t on the system.
+            // Do not call invokeExact because the type of buffer_size is not
+            // always long in the underlying system.
             int out = (int) getpwuid_r.invoke(
                     tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
             if (out != 0 || result.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
                 if (out != 0) {
+                    // If ERANGE (Result too large) is detected in a new platform,
+                    // consider adjusting GETPW_R_SIZE_MAX.
                     var err = (MemorySegment) strerror.invokeExact(out);
                     getpwuid_r_error = err.reinterpret(Long.MAX_VALUE).getString(0);
                 } else {
                     getpwuid_r_error = "the requested entry is not found";
                 }
-                uid = tmpUid;
-                gid = (int)getgid.invokeExact();
+                uid = Integer.toUnsignedLong(tmpUid);
+                gid = Integer.toUnsignedLong((int)getgid.invokeExact());
                 username = null;
             } else {
-                uid = pwd.get(pw_uid_layout, pw_uid_offset);
-                gid = pwd.get(pw_gid_layout, pw_gid_offset);
+                // uid_t and gid_t were defined unsigned.
+                uid = Integer.toUnsignedLong(pwd.get(pw_uid_layout, pw_uid_offset));
+                gid = Integer.toUnsignedLong(pwd.get(pw_gid_layout, pw_gid_offset));
                 username = pwd.get(pw_name_layout, pw_name_offset).getString(0);
             }
         } catch (Throwable t) {
