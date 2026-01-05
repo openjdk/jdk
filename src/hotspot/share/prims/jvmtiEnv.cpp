@@ -1722,10 +1722,10 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
 } /* end GetThreadListStackTraces */
 
 jvmtiError
-JvmtiEnv::RequestStackTrace(jthread thread, void* ucontext) {
+JvmtiEnv::RequestStackTrace(jthread thread, void* ucontext, jlong user_data) {
 #if INCLUDE_JFR && defined(LINUX)
   if (thread == nullptr) {
-    JfrCPUTimeThreadSampling::jvmti_request_stacktrace(ucontext);
+    JfrCPUTimeThreadSampling::jvmti_request_stacktrace(ucontext, user_data);
     return JVMTI_ERROR_NONE;
   }
 #endif

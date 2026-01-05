@@ -1009,6 +1009,7 @@
          thread="false" experimental="true" startTime="false">
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="Thread" name="eventThread" label="Thread" />
+    <Field type="long" name="userData" label="User-provided data" />
     <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
     <Field type="boolean" name="biased" label="Biased" description="The sample is safepoint-biased" />
   </Event>
