@@ -24,7 +24,7 @@
  */
 package jdk.jpackage.internal.util;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -80,7 +80,7 @@ public final class XmlUtils {
             xml.flush();
             xml.close();
         } catch (XMLStreamException ex) {
-            throw rethrowUnchecked(ex);
+            throw toUnchecked(ex);
         }
     }
 
@@ -101,7 +101,7 @@ public final class XmlUtils {
             xml.flush();
             xml.close();
         } catch (XMLStreamException ex) {
-            throw rethrowUnchecked(ex);
+            throw toUnchecked(ex);
         }
     }
 
