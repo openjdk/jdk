@@ -51,7 +51,7 @@ PackageEntry::PackageEntry(Symbol* name, ModuleEntry* module) :
   _qualified_exports(nullptr),
   _defined_by_cds_in_class_path(0)
 {
-  // name can't be null
+  // name can't be null -- a class in the default package gets a PackageEntry of nullptr.
   _name->increment_refcount();
 
   JFR_ONLY(INIT_ID(this);)

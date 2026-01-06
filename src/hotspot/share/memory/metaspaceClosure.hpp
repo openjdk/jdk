@@ -147,7 +147,6 @@ public:
     virtual bool not_null() const = 0;
     virtual int size() const = 0;
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const = 0;
-    virtual void metaspace_pointers_do_at(MetaspaceClosure *it, address new_loc) const = 0;
     virtual MetaspaceObj::Type msotype() const = 0;
     virtual bool is_read_only_by_default() const = 0;
     virtual ~Ref() {}
@@ -219,8 +218,44 @@ private:
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
       dereference()->metaspace_pointers_do(it);
     }
-    virtual void metaspace_pointers_do_at(MetaspaceClosure *it, address new_loc) const {
-      ((T*)new_loc)->metaspace_pointers_do(it);
+  };
+
+  // CPointerArrayRef<T> -- iterate a C array of pointer type T*
+  // We recursively call MetaspaceClosure::push() for each pointer in this array.
+  template <class T> class CPointerArrayRef : public Ref {
+    T*** _mpp;
+    int _num_elems; // Number of elements
+
+    int byte_size() const {
+      return _num_elems * sizeof(T*);
+    }
+
+  protected:
+    // C pointer arrays don't support tagged pointers.
+    T** dereference() const {
+      return *_mpp;
+    }
+    virtual void** mpp() const {
+      return (void**)_mpp;
+    }
+  public:
+    CPointerArrayRef(T*** mpp, int num_elems, Writability w)
+      : Ref(w), _mpp(mpp), _num_elems(num_elems) {
+      assert(is_aligned(byte_size(), BytesPerWord), "must be");
+    }
+
+    virtual bool is_read_only_by_default() const { return false; } // FIXME ...
+    virtual bool not_null()                const { return dereference() != nullptr; }
+    virtual int size()                     const { return (int)heap_word_size(byte_size()); }
+    virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::CArrayType; }
+
+    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
+      T** array = dereference();
+      log_trace(aot)("Iter(MSOPointerArray): %p [%d]", array, _num_elems);
+      for (int i = 0; i < _num_elems; i++) {
+        T** mpp = array + i;
+        it->push(mpp);
+      }
     }
   };
 
@@ -255,13 +290,9 @@ private:
       Array<T>* array = ArrayRef<T>::dereference();
       log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
     }
-    virtual void metaspace_pointers_do_at(MetaspaceClosure *it, address new_loc) const {
-      Array<T>* array = (Array<T>*)new_loc;
-      log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
-    }
   };
 
-  // MSOArrayRef -- iterate an instance of Array<T>, where T is an IterableMetadata.
+  // MSOArrayRef -- iterate an instance of Array<T>, where T is a subtype of IterableMetadata.
   // We recursively call T::metaspace_pointers_do() for each element in this array.
   template <class T> class MSOArrayRef : public ArrayRef<T> {
   public:
@@ -269,9 +300,6 @@ private:
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
       metaspace_pointers_do_at_impl(it, ArrayRef<T>::dereference());
-    }
-    virtual void metaspace_pointers_do_at(MetaspaceClosure *it, address new_loc) const {
-      metaspace_pointers_do_at_impl(it, (Array<T>*)new_loc);
     }
   private:
     void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T>* array) const {
@@ -283,7 +311,7 @@ private:
     }
   };
 
-  // MSOPointerArrayRef -- iterate an instance of Array<T*>, where T is an IterableMetadata.
+  // MSOPointerArrayRef -- iterate an instance of Array<T*>, where T is subtype of IterableMetadata.
   // We recursively call MetaspaceClosure::push() for each pointer in this array.
   template <class T> class MSOPointerArrayRef : public ArrayRef<T*> {
   public:
@@ -291,9 +319,6 @@ private:
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
       metaspace_pointers_do_at_impl(it, ArrayRef<T*>::dereference());
-    }
-    virtual void metaspace_pointers_do_at(MetaspaceClosure *it, address new_loc) const {
-      metaspace_pointers_do_at_impl(it, (Array<T*>*)new_loc);
     }
   private:
     void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T*>* array) const {
@@ -376,9 +401,11 @@ public:
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
   }
 
+  // Used to handle GrowableArray<T*>::_data, where T is a subtype of IterableMetadata
   template <typename T>
-  void push_c_array(T** mpp, int len, Writability w = _default) {
-
+  void push_c_array(T*** mpp, int num_elems, Writability w = _default) {
+    static_assert(IS_ITERABLE_METADATA_TYPE(T), "Do not push Arrays of arbitrary pointer types");
+    push_impl(new CPointerArrayRef<T>(mpp, num_elems, w));
   }
 };
 

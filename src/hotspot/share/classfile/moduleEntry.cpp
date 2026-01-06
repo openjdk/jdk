@@ -403,7 +403,10 @@ void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
 }
 
 void ModuleEntry::metaspace_pointers_do(MetaspaceClosure* it) {
-
+  it->push(&_name);
+  it->push(&_reads);
+  it->push(&_version);
+  it->push(&_location);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

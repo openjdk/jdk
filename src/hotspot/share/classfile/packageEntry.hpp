@@ -212,6 +212,11 @@ public:
 
   void print(outputStream* st = tty);
 
+  char* name_as_C_string() const {
+    assert(_name != nullptr, "name can't be null");
+    return name()->as_C_string();
+  }
+
 #if INCLUDE_CDS_JAVA_HEAP
   bool should_be_archived() const;
   void iterate_symbols(MetaspaceClosure* closure);

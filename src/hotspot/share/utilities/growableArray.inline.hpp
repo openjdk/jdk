@@ -31,12 +31,13 @@
 
 template <typename E>
 void GrowableArray<E>::metaspace_pointers_do(MetaspaceClosure* it) {
+  GrowableArray<E>::shrink_to_fit(); // FIXME -- remove
   GrowableArrayView<E>::metaspace_pointers_do(it);
 }
 
 template <typename E>
 void GrowableArrayView<E>::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push_c_array<E>(&_data, capacity());
+  it->push_c_array(&_data, capacity());
 }
 
 #endif // SHARE_UTILITIES_GROWABLEARRAY_INLINE_HPP

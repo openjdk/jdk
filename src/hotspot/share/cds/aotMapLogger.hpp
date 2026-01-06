@@ -39,7 +39,9 @@ class DumpRegion;
 class FileMapInfo;
 class KlassTrainingData;
 class MethodTrainingData;
+class ModuleEntry;
 class outputStream;
+class PackageEntry;
 
 // Write detailed info to a mapfile to analyze contents of the AOT cache/CDS archive.
 // -Xlog:aot+map* can be used both when creating an AOT cache, or when using an AOT cache.
@@ -142,6 +144,8 @@ private:
   Thread* current);
   static void log_klass(Klass* k, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method(Method* m, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_module_entry(ModuleEntry* m, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_package_entry(PackageEntry* m, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_symbol(Symbol* s, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name, int bytes, Thread* current);
