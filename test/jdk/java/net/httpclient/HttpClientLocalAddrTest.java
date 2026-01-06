@@ -69,7 +69,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  */
 public class HttpClientLocalAddrTest implements HttpServerAdapters {
 
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private static HttpServerAdapters.HttpTestServer http1_1_Server;
     private static URI httpURI;
     private static HttpServerAdapters.HttpTestServer https_1_1_Server;
@@ -83,9 +83,6 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
     // start various HTTP/HTTPS servers that will be invoked against in the tests
     @BeforeClass
     public static void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        Assert.assertNotNull(sslContext, "Unexpected null sslContext");
-
         HttpServerAdapters.HttpTestHandler handler = (exchange) -> {
             // the handler receives a request and sends back a 200 response with the
             // response body containing the raw IP address (in byte[] form) of the client from whom

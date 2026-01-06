@@ -90,7 +90,7 @@ public class H3ServerPush implements HttpServerAdapters {
     @BeforeTest
     public void setup() throws Exception {
         tempFile = createTempFileOfSize(CLASS_NAME, ".dat", FILE_SIZE);
-        var sslContext = new SimpleSSLContext().get();
+        var sslContext = SimpleSSLContext.findSSLContext();
         var h2Server = new Http2TestServer(true, sslContext);
         h2Server.enableH3AltServiceOnSamePort();
         h2Server.addHandler(new PushHandler(tempFile, LOOPS), "/foo/");
@@ -133,7 +133,7 @@ public class H3ServerPush implements HttpServerAdapters {
         };
 
         try (HttpClient client = newClientBuilderForH3().proxy(Builder.NO_PROXY)
-                .sslContext(new SimpleSSLContext().get())
+                .sslContext(SimpleSSLContext.findSSLContext())
                 .version(Version.HTTP_3).build()) {
             sendHeadRequest(client);
 
@@ -183,7 +183,7 @@ public class H3ServerPush implements HttpServerAdapters {
                 PushPromiseHandler.of(pushPromise -> BodyHandlers.ofString(UTF_8), resultMap);
 
         try (HttpClient client = newClientBuilderForH3().proxy(Builder.NO_PROXY)
-                .sslContext(new SimpleSSLContext().get())
+                .sslContext(SimpleSSLContext.findSSLContext())
                 .version(Version.HTTP_3).build()) {
             sendHeadRequest(client);
             HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
@@ -231,7 +231,7 @@ public class H3ServerPush implements HttpServerAdapters {
         };
 
         try (HttpClient client = newClientBuilderForH3().proxy(Builder.NO_PROXY)
-                .sslContext(new SimpleSSLContext().get())
+                .sslContext(SimpleSSLContext.findSSLContext())
                 .version(Version.HTTP_3).build()) {
             sendHeadRequest(client);
 
@@ -263,7 +263,7 @@ public class H3ServerPush implements HttpServerAdapters {
                 PushPromiseHandler.of(H3ServerPush::requestToPath, resultsMap);
 
         try (HttpClient client = newClientBuilderForH3().proxy(Builder.NO_PROXY)
-                .sslContext(new SimpleSSLContext().get())
+                .sslContext(SimpleSSLContext.findSSLContext())
                 .version(Version.HTTP_3).build()) {
             sendHeadRequest(client);
 
@@ -316,7 +316,7 @@ public class H3ServerPush implements HttpServerAdapters {
                 = new ConcurrentHashMap<>();
 
         try (HttpClient client = newClientBuilderForH3().proxy(Builder.NO_PROXY)
-                .sslContext(new SimpleSSLContext().get())
+                .sslContext(SimpleSSLContext.findSSLContext())
                 .version(Version.HTTP_3).build()) {
             sendHeadRequest(client);
 
@@ -361,7 +361,7 @@ public class H3ServerPush implements HttpServerAdapters {
                 = new ConcurrentHashMap<>();
 
         try (HttpClient client = newClientBuilderForH3().proxy(Builder.NO_PROXY)
-                .sslContext(new SimpleSSLContext().get())
+                .sslContext(SimpleSSLContext.findSSLContext())
                 .version(Version.HTTP_3).build()) {
             sendHeadRequest(client);
 

@@ -88,7 +88,7 @@ import static org.testng.Assert.assertTrue;
 
 public class EncodedCharsInURI implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
     HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -310,10 +310,6 @@ public class EncodedCharsInURI implements HttpServerAdapters {
     @BeforeTest
     public void setup() throws Exception {
         out.println(now() + "begin setup");
-
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
 
         // HTTP/1.1
         HttpTestHandler h1_fixedLengthHandler = new HTTP_FixedLengthHandler();

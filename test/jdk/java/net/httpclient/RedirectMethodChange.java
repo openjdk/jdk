@@ -55,7 +55,7 @@ import static org.testng.Assert.assertEquals;
 
 public class RedirectMethodChange implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpClient client;
 
     HttpTestServer httpTestServer;        // HTTP/1.1    [ 5 servers ]
@@ -203,10 +203,6 @@ public class RedirectMethodChange implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         client = newClientBuilderForH3()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .sslContext(sslContext)

@@ -71,14 +71,12 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
     static HttpTestServer http3Server, https2Server;
     static volatile HttpClient client = null;
     static ExecutorService exec;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static String http3URIString, https2URIString;
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
             exec = Executors.newCachedThreadPool();
             http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, exec);

@@ -51,7 +51,6 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
@@ -133,7 +132,7 @@ class H3MalformedResponseTest {
 
     private static final Logger LOGGER = Utils.getDebugLogger(CLASS_NAME::toString, Utils.DEBUG);
 
-    private static SSLContext SSL_CONTEXT;
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     private static QuicStandaloneServer SERVER;
 
@@ -141,10 +140,6 @@ class H3MalformedResponseTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-
-        // Obtain an `SSLContext`
-        SSL_CONTEXT = new SimpleSSLContext().get();
-        assertNotNull(SSL_CONTEXT);
 
         // Create and start the server
         SERVER = QuicStandaloneServer.newBuilder()

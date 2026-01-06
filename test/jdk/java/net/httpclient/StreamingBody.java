@@ -59,7 +59,7 @@ import static org.testng.Assert.assertEquals;
 
 public class StreamingBody implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
@@ -126,10 +126,6 @@ public class StreamingBody implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new MessageHandler(), "/http1/streamingbody/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/streamingbody/w";

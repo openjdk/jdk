@@ -93,7 +93,7 @@ import static org.testng.Assert.expectThrows;
 
 public class AggregateRequestBodyTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer http1TestServer;   // HTTP/1.1 ( http )
     HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -855,10 +855,6 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         HttpTestHandler handler = new HttpTestEchoHandler();
         http1TestServer = HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(handler, "/http1/echo/");

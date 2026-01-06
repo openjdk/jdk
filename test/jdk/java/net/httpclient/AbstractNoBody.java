@@ -53,7 +53,7 @@ import static org.testng.Assert.assertEquals;
 
 public abstract class AbstractNoBody implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -186,9 +186,6 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
     public void setup() throws Exception {
         printStamp(START, "setup");
         HttpServerAdapters.enableServerLogging();
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
 
         // HTTP/1.1
         HttpTestHandler h1_fixedLengthNoBodyHandler = new FixedLengthNoBodyHandler();

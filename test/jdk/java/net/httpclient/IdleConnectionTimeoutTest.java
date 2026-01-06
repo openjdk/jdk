@@ -94,7 +94,7 @@ import static org.testng.Assert.assertEquals;
 public class IdleConnectionTimeoutTest {
 
     URI timeoutUriH2, noTimeoutUriH2, timeoutUriH3, noTimeoutUriH3, getH3;
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static volatile QuicServerConnection latestServerConn;
     final String KEEP_ALIVE_PROPERTY = "jdk.httpclient.keepalive.timeout";
     final String IDLE_CONN_PROPERTY_H2 = "jdk.httpclient.keepalive.timeout.h2";
@@ -112,7 +112,6 @@ public class IdleConnectionTimeoutTest {
         http2TestServer.addHandler(new ServerNoTimeoutHandlerH2(), NO_TIMEOUT_PATH);
         http2TestServer.setExchangeSupplier(TestExchange::new);
 
-        sslContext = new SimpleSSLContext().get();
         http3TestServer = new Http3TestServer(sslContext) {
             @Override
             public boolean acceptIncoming(SocketAddress source, QuicServerConnection quicConn) {
