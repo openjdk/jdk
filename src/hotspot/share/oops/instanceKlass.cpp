@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2355,7 +2355,10 @@ void PrintClassClosure::do_klass(Klass* k)  {
   // klass size
   _st->print("%4d  ", k->size());
   // initialization state
-  if (k->is_instance_klass()) {
+
+  InstanceKlass *ik = k->is_instance_klass() ? InstanceKlass::cast(k) : nullptr;
+
+  if (ik != nullptr) {
     _st->print("%-20s  ",InstanceKlass::cast(k)->init_state_name());
   } else {
     _st->print("%-20s  ","");
@@ -2364,8 +2367,7 @@ void PrintClassClosure::do_klass(Klass* k)  {
   char buf[10];
   int i = 0;
   if (k->has_finalizer()) buf[i++] = 'F';
-  if (k->is_instance_klass()) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik != nullptr) {
     if (ik->has_final_method()) buf[i++] = 'f';
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
@@ -2377,13 +2379,11 @@ void PrintClassClosure::do_klass(Klass* k)  {
   // klass name
   _st->print("%-5s  ", k->external_name());
 
-  if (k->is_instance_klass() && _location) {
+  if (ik != nullptr && _location) {
 
     oop pd = java_lang_Class::protection_domain(k->java_mirror());
 
-    InstanceKlass* ik;
-
-    if (pd != nullptr && (ik = InstanceKlass::cast(pd->klass()))->is_instance_klass()) {
+    if (pd != nullptr && (ik = pd->klass()->is_instance_klass() ? InstanceKlass::cast(pd->klass()) : nullptr) != nullptr) {
 
       TempNewSymbol css  = SymbolTable::new_symbol("codesource");
       TempNewSymbol csss = SymbolTable::new_symbol("Ljava/security/CodeSource;");
@@ -2394,7 +2394,7 @@ void PrintClassClosure::do_klass(Klass* k)  {
 
         oop cs = pd->obj_field(csfd.offset());
 
-        if (cs != nullptr && (ik = InstanceKlass::cast(cs->klass()))->is_instance_klass()) {
+        if (cs != nullptr && (ik = cs->klass()->is_instance_klass() ? InstanceKlass::cast(cs->klass()) : nullptr) != nullptr) {
           fieldDescriptor locfd;
 
           TempNewSymbol csls  = SymbolTable::new_symbol("locationNoFragString");
