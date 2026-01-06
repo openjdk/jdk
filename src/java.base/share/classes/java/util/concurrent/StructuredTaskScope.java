@@ -1081,10 +1081,9 @@ public sealed interface StructuredTaskScope<T, R>
      * does not throw then the {@code Joiner}'s {@code result()} method is invoked to
      * get the result or throw.
      *
-     * <p> This method may only be invoked by the scope owner. Once the result or
-     * exception outcome is obtained, this method may not be invoked again. The only
-     * case where this method may be called again by the scope owner is after
-     * {@code InterruptedException} is thrown.
+     * <p> This method may only be invoked by the scope owner. It may only be invoked once
+     * to get the result, exception or timeout outcome, unless the previous invocation
+     * resulted in an {@code InterruptedException} being thrown.
      *
      * @return the result
      * @throws WrongThreadException if the current thread is not the scope owner
