@@ -32,15 +32,28 @@ class JavaThread;
 #if defined(LINUX)
 
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
+#include "jfr/recorder/stacktrace//jfrStackTrace.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+
+#if INCLUDE_JVMTI
+#include "jvmti.h"
+#endif
 
 struct JfrCPUTimeSampleRequest {
   JfrSampleRequest _request;
   Tickspan _cpu_time_period;
   bool _jvmti;
-  jlong _user_data;
+  const void* _user_data;
+  jvmtiBeginStackTraceCallback _begin_stack_trace_callback;
+  jvmtiEndStackTraceCallback _end_stack_trace_callback;
+  jvmtiStackFrameCallback _stack_frame_callback;
 
-  JfrCPUTimeSampleRequest() {}
+  JfrCPUTimeSampleRequest() :
+    _jvmti(false),
+    _user_data(nullptr),
+    _begin_stack_trace_callback(nullptr),
+    _end_stack_trace_callback(nullptr),
+    _stack_frame_callback(nullptr) {}
 };
 
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
@@ -136,11 +149,11 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   void handle_timer_signal(siginfo_t* info, void* context);
 
 #if INCLUDE_JVMTI
-  static void jvmti_request_stacktrace(void* ucontext, jlong user_data);
+  static void jvmti_request_stacktrace(void* ucontext,  jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, const void* user_data);
 #endif
 
-  static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period, bool jvmti);
-  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool jvmti, jlong user_data);
+  static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, const void* user_data);
+  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, JfrStackTrace& stacktrace, const void* user_data);
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   static void trigger_async_processing_of_cpu_time_jfr_requests();

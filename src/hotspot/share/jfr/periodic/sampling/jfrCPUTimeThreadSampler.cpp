@@ -41,6 +41,7 @@
 #include "runtime/vmOperation.hpp"
 #include "runtime/vmThread.hpp"
 #include "signals_posix.hpp"
+#include "jfr/support/jfrMethodLookup.hpp"
 #include "utilities/ticks.hpp"
 
 static const int64_t RECOMPUTE_INTERVAL_MS = 100;
@@ -271,7 +272,7 @@ public:
   void on_javathread_create(JavaThread* thread);
   void on_javathread_terminate(JavaThread* thread);
 
-  void handle_request(int timer_overrun, void* context, bool jvmti, jlong user_data);
+  void handle_request(int timer_overrun, void* context, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, const void* user_data);
   bool init_timers();
   void stop_timer();
   virtual void print_on(outputStream* st) const;
@@ -422,7 +423,7 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
 
 static volatile size_t count = 0;
 
-void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, traceid tid, Tickspan cpu_time_period, bool jvmti) {
+void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, traceid tid, Tickspan cpu_time_period, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, const void* user_data) {
   if (!jvmti) {
     EventCPUTimeSample event(UNTIMED);
     event.set_failed(true);
@@ -433,20 +434,15 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, trac
     event.set_biased(false);
     event.commit();
   } else {
-    EventAsyncStackTrace event(UNTIMED);
-    event.set_failed(true);
-    event.set_starttime(start_time);
-    event.set_eventThread(tid);
-    event.set_stackTrace(0);
-    event.set_biased(false);
-    event.commit();
+    begin_stack_trace_callback(true, false, user_data);
+    end_stack_trace_callback(user_data);
   }
 }
 
 
 static volatile size_t biased_count = 0;
 
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool jvmti, jlong user_data) {
+void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, JfrStackTrace& stacktrace, const void* user_data) {
   if (!jvmti) {
     EventCPUTimeSample event(UNTIMED);
     event.set_failed(false);
@@ -464,7 +460,18 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid si
       log_debug(jfr)("CPU thread sampler sent %zu events, lost %d, biased %zu\n", AtomicAccess::load(&count), AtomicAccess::load(&_lost_samples_sum), AtomicAccess::load(&biased_count));
     }
   } else {
-    EventAsyncStackTrace::commit(sid, tid, user_data, false, biased);
+    begin_stack_trace_callback(false, biased, user_data);
+    JfrStackFrames* frames = stacktrace._frames;
+    int num_frames = frames->length();
+    for (int i = 0; i < num_frames; i++) {
+      JfrStackFrame frame = frames->at(i);
+      jvmtiFrameType type = frame._type == JfrStackFrame::FRAME_NATIVE ? JVMTI_NATIVE_FRAME : JVMTI_JAVA_FRAME;
+      jlocation loc = frame._bci;
+      Method* method = JfrMethodLookup::lookup(frame._klass, frame._methodid);
+      jmethodID method_id = method->jmethod_id();
+      stack_frame_callback(type, method_id, loc, user_data);
+    }
+    end_stack_trace_callback(user_data);
   }
 }
 
@@ -591,15 +598,15 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   if (!_sampler->increment_signal_handler_count()) {
     return;
   }
-  _sampler->handle_request(info->si_overrun, context, false, 0);
+  _sampler->handle_request(info->si_overrun, context, false, nullptr, nullptr, nullptr, nullptr);
   _sampler->decrement_signal_handler_count();
 }
 
 #if INCLUDE_JVMTI
-void JfrCPUTimeThreadSampling::jvmti_request_stacktrace(void* ucontext, jlong user_data) {
+void JfrCPUTimeThreadSampling::jvmti_request_stacktrace(void* ucontext,  jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, const void* user_data) {
   assert(_instance != nullptr, "invariant");
   if (_instance->_sampler != nullptr) {
-    _instance->_sampler->handle_request(0, ucontext, true, user_data);
+    _instance->_sampler->handle_request(0, ucontext, true, begin_stack_trace_callback, end_stack_trace_callback, stack_frame_callback, user_data);
   } else {
     tty->print_cr("no sampler");
   }
@@ -631,7 +638,7 @@ static bool check_state(JavaThread* thread) {
   }
 }
 
-void JfrCPUSamplerThread::handle_request(int timer_overrun, void* context, bool jvmti, jlong user_data) {
+void JfrCPUSamplerThread::handle_request(int timer_overrun, void* context, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, const void* user_data) {
   JfrTicks now = JfrTicks::now();
   JavaThread* jt = get_java_thread_if_valid();
   if (jt == nullptr) {
@@ -655,6 +662,9 @@ void JfrCPUSamplerThread::handle_request(int timer_overrun, void* context, bool 
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
   sample_thread(request._request, context, jt, tl, now);
   request._jvmti = jvmti;
+  request._begin_stack_trace_callback = begin_stack_trace_callback;
+  request._end_stack_trace_callback = end_stack_trace_callback;
+  request._stack_frame_callback = stack_frame_callback;
   request._user_data = user_data;
 
   if (queue.enqueue(request)) {
