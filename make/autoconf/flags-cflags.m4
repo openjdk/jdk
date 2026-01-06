@@ -100,9 +100,13 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
+    FINE_DEBUG_LEVEL_FLAGS="-g${FINE_DEBUG_LEVEL}"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FINE_DEBUG_LEVEL_FLAGS}],
+        IF_FALSE: [FINE_DEBUG_LEVEL_FLAGS="-g"])
+
     # Fine debug level should follow the debug format to be effective.
-    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 -g${FINE_DEBUG_LEVEL}"
-    ASFLAGS_DEBUG_SYMBOLS="-g${FINE_DEBUG_LEVEL}"
+    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 ${FINE_DEBUG_LEVEL_FLAGS}"
+    ASFLAGS_DEBUG_SYMBOLS="${FINE_DEBUG_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
       # Check if compiler supports -fdebug-prefix-map. If so, use that to make
@@ -121,9 +125,13 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
         IF_FALSE: [GDWARF_FLAGS=""])
 
+    FINE_DEBUG_LEVEL_FLAGS="-g${FINE_DEBUG_LEVEL}"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FINE_DEBUG_LEVEL_FLAGS}],
+        IF_FALSE: [FINE_DEBUG_LEVEL_FLAGS="-g"])
+
     # Fine debug level should follow the debug format to be effective.
-    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} -g${FINE_DEBUG_LEVEL}"
-    ASFLAGS_DEBUG_SYMBOLS="-g${FINE_DEBUG_LEVEL}"
+    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} ${FINE_DEBUG_LEVEL_FLAGS}"
+    ASFLAGS_DEBUG_SYMBOLS="${FINE_DEBUG_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
   fi
