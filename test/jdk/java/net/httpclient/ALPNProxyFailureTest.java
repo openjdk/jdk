@@ -45,6 +45,9 @@ import java.net.http.HttpClient;
 public class ALPNProxyFailureTest extends ALPNFailureTest {
 
     private static final SSLContext context = SimpleSSLContext.findSSLContext();
+    static {
+        SSLContext.setDefault(context);
+    }
 
     public static void main(String[] args) throws Exception{
         if (args == null || args.length == 0) {
