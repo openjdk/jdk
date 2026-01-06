@@ -1028,6 +1028,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
+    ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
@@ -1349,6 +1350,10 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
 
 bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
+}
+
+bool os::Posix::is_current_user_root(){
+    return is_root(geteuid());
 }
 
 bool os::Posix::matches_effective_uid_or_root(uid_t uid) {
