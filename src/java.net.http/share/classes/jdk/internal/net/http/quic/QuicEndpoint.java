@@ -1509,7 +1509,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     /**
      * Called to schedule sending of a datagram that contains a single {@code ConnectionCloseFrame}
      * sent in response to a {@code ConnectionClose} frame.
-     * This will completely remove the connection from the connection map.
+     * This will replace the {@link QuicConnectionImpl} with a {@link DrainingConnection} that
+     * will discard all incoming packets.
      * @param connection   the connection being closed
      * @param destination  the peer address
      * @param datagram     the datagram
@@ -1518,7 +1519,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                                    InetSocketAddress destination,
                                    ByteBuffer datagram) {
         if (debug.on()) debug.log("Pushing closed datagram for " + connection.logTag());
-        removeConnection(connection);
+        draining(connection);
         pushDatagram(connection, destination, datagram);
     }
 

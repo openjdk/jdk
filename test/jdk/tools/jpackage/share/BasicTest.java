@@ -339,7 +339,7 @@ public final class BasicTest {
 
             // JPackageCommand.execute() will not do the cleanup if `--dest` parameter
             // is not specified, do it manually.
-            TKit.createDirectories(execDir);
+            Files.createDirectories(execDir);
             TKit.deleteDirectoryContentsRecursive(execDir);
         };
 
