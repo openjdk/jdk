@@ -702,13 +702,12 @@ public class LambdaToMethod extends TreeTranslator {
         String functionalInterfaceClass = classSig(targetType);
         String functionalInterfaceMethodName = samSym.getSimpleName().toString();
         String functionalInterfaceMethodSignature = typeSig(types.erasure(samSym.type));
-        Symbol baseMethod = refSym.baseSymbol();
-        Symbol origMethod = baseMethod.baseSymbol();
-        if (baseMethod != origMethod && origMethod.owner == syms.objectType.tsym) {
-            //the implementation method is a java.lang.Object method transferred to an
-            //interface that does not declare it. Runtime will refer to this method as to
-            //a java.lang.Object method, so do the same:
-            refSym = ((MethodSymbol) origMethod).asHandle();
+        Symbol baseMethod = types.overriddenObjectMethod(refSym.enclClass(), refSym);
+        if (baseMethod != null) {
+            // The implementation method is a java.lang.Object method, runtime will resolve this method to
+            // a java.lang.Object method, so do the same.
+            // This case can be removed if JDK-8172817 is fixed.
+            refSym = ((MethodSymbol) baseMethod).asHandle();
         }
         String implClass = classSig(types.erasure(refSym.owner.type));
         String implMethodName = refSym.getQualifiedName().toString();
