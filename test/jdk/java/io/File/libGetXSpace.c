@@ -62,7 +62,7 @@ Java_GetXSpace_getSpace0
     jlong array[4];
     const jchar* strchars = (*env)->GetStringChars(env, root, NULL);
     if (strchars == NULL) {
-        JNU_ThrowByNameWithLastError(env, "java/io/IOException",
+        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                      "GetStringChars");
         return JNI_FALSE;
     }
@@ -131,8 +131,7 @@ Java_GetXSpace_getSpace0
     char* chars = (char*)malloc((len + 1)*sizeof(char));
     if (chars == NULL) {
         (*env)->ReleaseStringChars(env, root, strchars);
-        JNU_ThrowByNameWithLastError(env, "java/io/IOException",
-                                     "malloc");
+        JNU_ThrowOutOfMemoryError(env, "malloc");
         return JNI_FALSE;
     }
 
@@ -167,7 +166,7 @@ Java_GetXSpace_isCDDrive
 #ifdef WINDOWS
     const jchar* strchars = (*env)->GetStringChars(env, root, NULL);
     if (strchars == NULL) {
-        JNU_ThrowByNameWithLastError(env, "java/io/IOException",
+        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                      "GetStringChars");
         return JNI_FALSE;
     }

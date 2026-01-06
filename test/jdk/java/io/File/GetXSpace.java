@@ -417,8 +417,7 @@ public class GetXSpace {
     private static native boolean getSpace0(String root, long[] space)
         throws IOException;
 
-    private static native boolean isCDDrive(String root)
-        throws IOException;
+    private static native boolean isCDDrive(String root);
 
     private static boolean getSpace(String root, long[] space)
         throws IOException {
