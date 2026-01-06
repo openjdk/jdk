@@ -199,8 +199,7 @@ public class TCKDateTimeFormatter {
                 .appendValue(DAY_OF_MONTH).appendLiteral('-').appendValue(DAY_OF_YEAR).toFormatter();
         DateTimeFormatter f = base.withResolverFields(YEAR, DAY_OF_YEAR);
         Set<TemporalField> expected = new HashSet<>(Arrays.asList(YEAR, DAY_OF_YEAR));
-        // Use set.equals();  testNG comparison of Collections is ordered
-        assertTrue(f.getResolverFields().equals(expected), "ResolveFields: " + f.getResolverFields());
+        assertEquals(expected, f.getResolverFields(), "ResolveFields: " + f.getResolverFields());
         try {
             base.parse("2012-6-30-321", LocalDate::from);  // wrong month/day-of-month
             fail();
