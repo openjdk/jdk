@@ -150,7 +150,7 @@ final class AquaUtils {
 
     abstract static class LazySingleton<T> {
         T instance;
- 
+
          final T get() {
             if (instance == null) {
                 instance = getInstance();
