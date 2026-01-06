@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4765299
+ * @key headful
  * @summary Verifies componentResized() is called with nested JSplitPanes
  * @run main TestSplitPaneCompResize
  */
