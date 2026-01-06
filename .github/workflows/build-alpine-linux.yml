@@ -96,6 +96,7 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-zlib=system
           --with-jmod-compress=zip-1
+          --with-external-symbols-in-bundles=none
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
