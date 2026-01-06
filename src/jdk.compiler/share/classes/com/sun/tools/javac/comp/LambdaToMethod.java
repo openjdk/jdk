@@ -714,8 +714,9 @@ public class LambdaToMethod extends TreeTranslator {
         String implMethodName = refSym.getQualifiedName().toString();
         String implMethodSignature = typeSig(types.erasure(refSym.type));
 
+        int implMethodKind = refSym.referenceKind();
         JCExpression kindTest = eqTest(syms.intType, deserGetter("getImplMethodKind", syms.intType),
-                make.Literal(refSym.referenceKind()));
+                make.Literal(implMethodKind));
         ListBuffer<JCExpression> serArgs = new ListBuffer<>();
         int i = 0;
         for (Type t : indyType.getParameterTypes()) {
