@@ -213,7 +213,7 @@ public final class InOutPathTest {
             IOException {
         // Set output dir as a subdir of input dir
         Path outputDir = cmd.inputDir().resolve("out");
-        TKit.createDirectories(outputDir);
+        Files.createDirectories(outputDir);
         cmd.setArgumentValue("--dest", outputDir);
     }
 
@@ -233,7 +233,7 @@ public final class InOutPathTest {
             String argName, Path base) throws IOException {
         Path appContentFile = base.resolve(base.toString().replaceAll("[\\\\/]",
                 "-") + "-foo.txt");
-        TKit.createDirectories(appContentFile.getParent());
+        Files.createDirectories(appContentFile.getParent());
         TKit.createTextFile(appContentFile, List.of("Hello Duke!"));
         cmd.addArguments(argName, appContentFile.getParent());
     }
