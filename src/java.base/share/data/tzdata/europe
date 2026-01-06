@@ -27,9 +27,9 @@
 # 2009-05-17 by Arthur David Olson.
 
 # This file is by no means authoritative; if you think you know better,
-# go ahead and edit the file (and please send any changes to
-# tz@iana.org for general use in the future).  For more, please see
-# the file CONTRIBUTING in the tz distribution.
+# go ahead and edit the file, and please send any changes to
+# the public mailing list tz@iana.org for general use in the future.
+# For more, please see the file CONTRIBUTING in the tz distribution.
 
 # From Paul Eggert (2017-02-10):
 #
@@ -65,7 +65,7 @@
 #	<https://www.jstor.org/stable/1774359>.  He writes:
 #	"It is requested that corrections and additions to these tables
 #	may be sent to Mr. John Milne, Royal Geographical Society,
-#	Savile Row, London."  Nowadays please email them to tz@iana.org.
+#	Savile Row, London."  Nowadays please see the file CONTRIBUTING.
 #
 #	Byalokoz EL. New Counting of Time in Russia since July 1, 1919.
 #	This Russian-language source was consulted by Vladimir Karpinsky; see
@@ -77,7 +77,7 @@
 #	Десятая гос. тип., 1919.
 #	http://resolver.gpntb.ru/purl?docushare/dsweb/Get/Resource-2011/Byalokoz__E.L.__Novyy__schet__vremeni__v__techenie__sutok__izd__2(1).pdf
 #
-#	Brazil's Divisão Serviço da Hora (DSHO),
+#	Brazil's Divisão de Serviços da Hora (DISHO)
 #	History of Summer Time
 #	<http://pcdsh01.on.br/HISTHV.htm>
 #	(1998-09-21, in Portuguese)
@@ -937,7 +937,7 @@ Rule	Belgium	1922	1927	-	Oct	Sat>=1	23:00s	0	-
 Rule	Belgium	1923	only	-	Apr	21	23:00s	1:00	S
 Rule	Belgium	1924	only	-	Mar	29	23:00s	1:00	S
 Rule	Belgium	1925	only	-	Apr	 4	23:00s	1:00	S
-# DSH writes that a royal decree of 1926-02-22 specified the Sun following 3rd
+# DISHO writes that a royal decree of 1926-02-22 specified the Sun following 3rd
 # Sat in Apr (except if it's Easter, in which case it's one Sunday earlier),
 # to Sun following 1st Sat in Oct, and that a royal decree of 1928-09-15
 # changed the transition times to 02:00 GMT.
@@ -1333,6 +1333,13 @@ Zone	Europe/Helsinki	1:39:49 -	LMT	1878 May 31
 # France
 # Monaco
 
+# From Robert H. van Gent (2025-07-21):
+# The most recent issue of the Annuaire [par le Bureau des Longitudes]
+# on Gallica (2021) ... lists information for France
+# https://gallica.bnf.fr/ark:/12148/bpt6k9127672b/f52.item
+# From Paul Eggert (2025-07-21):
+# Go with the 2020 Annuaire (published 2021) except as noted below.
+
 # From Ciro Discepolo (2000-12-20):
 #
 # Henri Le Corre, Régimes horaires pour le monde entier, Éditions
@@ -1394,7 +1401,6 @@ Zone	Europe/Helsinki	1:39:49 -	LMT	1878 May 31
 # problems in Algiers, Monaco and Tunis.
 
 #
-# Shank & Pottenger seem to use '24:00' ambiguously; resolve it with Whitman.
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	France	1916	only	-	Jun	14	23:00s	1:00	S
 Rule	France	1916	1919	-	Oct	Sun>=1	23:00s	0	-
@@ -1406,9 +1412,25 @@ Rule	France	1920	only	-	Oct	23	23:00s	0	-
 Rule	France	1921	only	-	Mar	14	23:00s	1:00	S
 Rule	France	1921	only	-	Oct	25	23:00s	0	-
 Rule	France	1922	only	-	Mar	25	23:00s	1:00	S
-# DSH writes that a law of 1923-05-24 specified 3rd Sat in Apr at 23:00 to 1st
-# Sat in Oct at 24:00; and that in 1930, because of Easter, the transitions
-# were Apr 12 and Oct 5.  Go with Shanks & Pottenger.
+# From Robert H. van Gent (2025-07-22):
+# There is a curious history behind the erroneous date for the start of
+# daylight saving in France in 1923 as listed in the current issues of
+# the Annuaire du Bureau des Longitudes.  [See:]
+# https://lists.iana.org/hyperkitty/list/tz@iana.org/message/MYQEJMSXO2AIEZ3UIXZKMTTAIPY7KNT2/
+# From Brian Inglis (2025-07-23):
+# Légifrance JORF No. 0073 du 15 mars 1922
+# https://www.legifrance.gouv.fr/jorf/jo/id/JORFCONT000000008324
+# Légifrance JORF No. 0139 du 25 mai 1923
+# https://www.legifrance.gouv.fr/jorf/jo/id/JORFCONT000000008416
+# From Paul Eggert (2025-07-23):
+# The latter specifies March's last Saturday at 23:00 to October's first
+# Saturday at 24:00, except that if neighboring allies agree the dates
+# can be moved to April's third Saturday and September's third Saturday.
+# Apparently spring 1923 was tricky.  DISHO writes that in 1930,
+# because of Easter, the transitions were Apr 12 and Oct 5.
+# Use the 2020 Annuaire dates, except for spring 1923 where
+# Shanks & Pottenger's May 26 matches the dates given in the 1924 and
+# 1961-2001 issues of the Annuaire.
 Rule	France	1922	1938	-	Oct	Sat>=1	23:00s	0	-
 Rule	France	1923	only	-	May	26	23:00s	1:00	S
 Rule	France	1924	only	-	Mar	29	23:00s	1:00	S
@@ -2119,12 +2141,10 @@ Zone	Europe/Warsaw	1:24:00 -	LMT	1880
 # all clocks therefore having to be advanced or set back correspondingly ...
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-# From Tim Parenti (2024-07-01), per Paul Eggert (1999-01-30):
-# DSH writes in their history that Decreto 1469 of 1915-03-30 established
-# summer time and that, "despite" this, the change to the clocks was not done
-# every year, depending on what Spain did, because of railroad schedules.
-# In fact, that decree had nothing to do with DST; rather, it regulated the
-# sending of time signals.  But we do see linkage to Spain in the 1920s below.
+# From Tim Parenti (2024-07-01):
+# Decreto 1469 of 1915-03-30 ... had nothing to do with DST;
+# rather it regulated the sending of time signals.
+# But we do see linkage to Spain in the 1920s below.
 # https://dre.pt/dr/detalhe/decreto/1469-1915-285721
 # https://dre.pt/application/conteudo/285721
 #
