@@ -2386,10 +2386,11 @@ public final class Math {
         // complicated logic. Since most processors have hardware
         // support for fma and this method is an intrinsic candidate,
         // the software implementation below would only be used on
-        // processors without native fma support. Therefore, the
-        // direct performance of the code is less of a concern than
-        // the code's simplicity, maintainability, and ease of
-        // testing.
+        // processors without native fma support (and also possibly on
+        // processors with native fma support while running in the
+        // interpreter). Therefore, the direct performance of the code
+        // is less of a concern than the code's simplicity,
+        // maintainability, and testability.
 
         /*
          * Infinity and NaN arithmetic is not quite the same with two
