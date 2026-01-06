@@ -117,6 +117,8 @@ protected:
   ~GrowableArrayView() {}
 
 public:
+  void metaspace_pointers_do(class MetaspaceClosure* it);
+
   bool operator==(const GrowableArrayView& rhs) const {
     if (_len != rhs._len)
       return false;
@@ -711,7 +713,7 @@ public:
 //  See: init_checks.
 
 template <typename E>
-class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
+class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>>, public IterableMetadata {
   friend class VMStructs;
   friend class GrowableArrayWithAllocator<E, GrowableArray>;
   friend class GrowableArrayTest;
@@ -757,6 +759,12 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
       GrowableArrayCHeapAllocator::deallocate(mem);
     }
   }
+
+public:
+  // methods required by MetaspaceClosure and IterableMetadata
+  void metaspace_pointers_do(class MetaspaceClosure* it);
+  int size() const { return (int)heap_word_size(sizeof(*this)); }
+  MetaspaceObj::Type type() const { return MetaspaceObj::GrowableArrayType; }
 
 public:
   GrowableArray() : GrowableArray(2 /* initial_capacity */) {}

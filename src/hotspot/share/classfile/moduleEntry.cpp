@@ -402,6 +402,10 @@ void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
   _loader_data = cld;
 }
 
+void ModuleEntry::metaspace_pointers_do(MetaspaceClosure* it) {
+
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 typedef HashTable<
   const ModuleEntry*,

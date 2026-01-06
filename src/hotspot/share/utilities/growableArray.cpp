@@ -23,6 +23,7 @@
  */
 
 #include "memory/allocation.inline.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/growableArray.hpp"

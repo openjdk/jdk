@@ -37,7 +37,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/events.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/growableArray.inline.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
@@ -191,6 +191,8 @@ void PackageEntry::delete_qualified_exports() {
 
 void PackageEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_name);
+  it->push(&_module);
+  it->push(&_qualified_exports);
 }
 
 PackageEntryTable::PackageEntryTable() { }

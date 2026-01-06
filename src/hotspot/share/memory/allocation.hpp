@@ -329,6 +329,8 @@ class MetaspaceObj : public IterableMetadata {
   f(TypeArrayU4) \
   f(TypeArrayU8) \
   f(TypeArrayOther) \
+  f(GrowableArray) \
+  f(CArray) \
   f(Method) \
   f(ConstMethod) \
   f(MethodData) \

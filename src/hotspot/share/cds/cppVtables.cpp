@@ -28,6 +28,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
@@ -53,6 +54,16 @@
 // + at run time:   we clone the actual contents of the vtables from libjvm.so
 //                  into our own tables.
 
+
+#ifndef PRODUCT
+
+using GrowableArray_ModuleEntry_ptr = GrowableArray<ModuleEntry*>;
+
+#define DEBUG_CPP_VTABLE_TYPES_DO(f) \
+  f(GrowableArray_ModuleEntry_ptr) \
+
+#endif
+
 // Currently, the archive contains ONLY the following types of objects that have C++ vtables.
 #define CPP_VTABLE_TYPES_DO(f) \
   f(ConstantPool) \
@@ -68,7 +79,8 @@
   f(TypeArrayKlass) \
   f(KlassTrainingData) \
   f(MethodTrainingData) \
-  f(CompileTrainingData)
+  f(CompileTrainingData) \
+  NOT_PRODUCT(DEBUG_CPP_VTABLE_TYPES_DO(f))
 
 class CppVtableInfo {
   intptr_t _vtable_size;
@@ -86,7 +98,7 @@ public:
   }
 };
 
-static inline intptr_t* vtable_of(const Metadata* m) {
+static inline intptr_t* vtable_of(const void* m) {
   return *((intptr_t**)m);
 }
 
@@ -116,6 +128,7 @@ CppVtableInfo* CppVtableCloner<T>::allocate_and_initialize(const char* name) {
 
 template <class T>
 void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
+  ResourceMark rm;
   T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
   int n = info->vtable_size();
   intptr_t* srcvtable = vtable_of(&tmp);
@@ -283,13 +296,16 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
   case MetaspaceObj::TypeArrayU4Type:
   case MetaspaceObj::TypeArrayU8Type:
   case MetaspaceObj::TypeArrayOtherType:
+  case MetaspaceObj::CArrayType:
   case MetaspaceObj::ConstMethodType:
   case MetaspaceObj::ConstantPoolCacheType:
   case MetaspaceObj::AnnotationsType:
+  case MetaspaceObj::ModuleEntryType:
   case MetaspaceObj::PackageEntryType:
   case MetaspaceObj::RecordComponentType:
   case MetaspaceObj::AdapterHandlerEntryType:
   case MetaspaceObj::AdapterFingerPrintType:
+  PRODUCT_ONLY(case MetaspaceObj::GrowableArrayType:)
     // These have no vtables.
     break;
   default:

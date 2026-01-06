@@ -244,7 +244,7 @@ private:
     virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::array_type(sizeof(T)); }
   };
 
-  // OtherArrayRef -- iterate an instance of Array<T>, where T is NOT a subtype of MetaspaceObj.
+  // OtherArrayRef -- iterate an instance of Array<T>, where T is NOT an IterableMetadata.
   // T can be a primitive type, such as int, or a structure. However, we do not scan
   // the fields inside T, so you should not embed any pointers inside T.
   template <class T> class OtherArrayRef : public ArrayRef<T> {
@@ -261,7 +261,7 @@ private:
     }
   };
 
-  // MSOArrayRef -- iterate an instance of Array<T>, where T is a subtype of MetaspaceObj.
+  // MSOArrayRef -- iterate an instance of Array<T>, where T is an IterableMetadata.
   // We recursively call T::metaspace_pointers_do() for each element in this array.
   template <class T> class MSOArrayRef : public ArrayRef<T> {
   public:
@@ -283,7 +283,7 @@ private:
     }
   };
 
-  // MSOPointerArrayRef -- iterate an instance of Array<T*>, where T is a subtype of MetaspaceObj.
+  // MSOPointerArrayRef -- iterate an instance of Array<T*>, where T is an IterableMetadata.
   // We recursively call MetaspaceClosure::push() for each pointer in this array.
   template <class T> class MSOPointerArrayRef : public ArrayRef<T*> {
   public:
@@ -374,6 +374,11 @@ public:
   void push(Array<T*>** mpp, Writability w = _default) {
     static_assert(IS_ITERABLE_METADATA_TYPE(T), "Do not push Arrays of arbitrary pointer types");
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
+  }
+
+  template <typename T>
+  void push_c_array(T** mpp, int len, Writability w = _default) {
+
   }
 };
 

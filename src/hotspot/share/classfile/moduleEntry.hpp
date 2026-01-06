@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ class ModuleClosure;
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either
 // data structure.  This lock must be taken on all accesses to either table.
-class ModuleEntry : public CHeapObj<mtModule> {
+class ModuleEntry : public CHeapObj<mtModule>, public IterableMetadata {
 private:
   OopHandle _module_handle;            // java.lang.Module
   OopHandle _shared_pd;                // java.security.ProtectionDomain, cached
@@ -189,6 +189,12 @@ public:
   const char* name_as_C_string() const {
     return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
   }
+
+  // methods required by MetaspaceClosure and IterableMetadata
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size() const { return (int)heap_word_size(sizeof(ModuleEntry)); }
+  MetaspaceObj::Type type() const { return MetaspaceObj::ModuleEntryType; }
+
   void print(outputStream* st = tty) const;
   void verify();
 
