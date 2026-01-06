@@ -70,11 +70,21 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   DEBUG_PREFIX_CFLAGS=
 
   UTIL_ARG_WITH(NAME: debug-info-level, TYPE: string,
-    DEFAULT: 2,
+    DEFAULT: "",
     RESULT: DEBUG_INFO_LEVEL,
     DESC: [Sets the debug info level, when debug info generation is enabled (GCC and Clang only)],
     DEFAULT_DESC: [default])
   AC_SUBST(DEBUG_INFO_LEVEL)
+
+  if test "x${TOOLCHAIN_TYPE}" = xgcc || \
+     test "x${TOOLCHAIN_TYPE}" = xclang; then
+    DEBUG_INFO_LEVEL_FLAGS="-g"
+    if test "x${DEBUG_INFO_LEVEL}" != "x"; then
+      DEBUG_INFO_LEVEL_FLAGS="-g${DEBUG_INFO_LEVEL}"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_INFO_LEVEL_FLAGS}],
+          IF_FALSE: AC_MSG_ERROR("Debug info level ${DEBUG_INFO_LEVEL} is not supported"))
+    fi
+  fi
 
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -100,10 +110,6 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    DEBUG_INFO_LEVEL_FLAGS="-g${DEBUG_INFO_LEVEL}"
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_INFO_LEVEL_FLAGS}],
-        IF_FALSE: [DEBUG_INFO_LEVEL_FLAGS="-g"])
-
     # Debug info level should follow the debug format to be effective.
     CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 ${DEBUG_INFO_LEVEL_FLAGS}"
     ASFLAGS_DEBUG_SYMBOLS="${DEBUG_INFO_LEVEL_FLAGS}"
@@ -124,10 +130,6 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     GDWARF_FLAGS="-gdwarf-4 -gdwarf-aranges"
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
         IF_FALSE: [GDWARF_FLAGS=""])
-
-    DEBUG_INFO_LEVEL_FLAGS="-g${DEBUG_INFO_LEVEL}"
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_INFO_LEVEL_FLAGS}],
-        IF_FALSE: [DEBUG_INFO_LEVEL_FLAGS="-g"])
 
     # Debug info level should follow the debug format to be effective.
     CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} ${DEBUG_INFO_LEVEL_FLAGS}"
