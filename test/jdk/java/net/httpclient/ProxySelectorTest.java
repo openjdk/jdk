@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ import static org.testng.Assert.assertEquals;
 
 public class ProxySelectorTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;            // HTTP/1.1
     HttpTestServer proxyHttpTestServer;       // HTTP/1.1
     HttpTestServer authProxyHttpTestServer;   // HTTP/1.1
@@ -320,10 +320,6 @@ public class ProxySelectorTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new PlainServerHandler("plain-server"), "/http1/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1";

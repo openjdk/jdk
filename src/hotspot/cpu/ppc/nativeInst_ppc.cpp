@@ -402,7 +402,7 @@ void NativePostCallNop::make_deopt() {
 bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
   int32_t i2, i1;
   assert(is_aligned(cb_offset, 4), "cb offset alignment does not match instruction alignment");
-  assert(!decode(i1, i2), "already patched");
+  assert(!decode(i1, i2) || NMethodRelocation, "already patched");
 
   cb_offset = cb_offset >> 2;
   if (((oopmap_slot & ppc_oopmap_slot_mask) != oopmap_slot) || ((cb_offset & ppc_cb_offset_mask) != cb_offset)) {

@@ -363,7 +363,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   # Check if it's a GNU date compatible version
   AC_MSG_CHECKING([if date is a GNU compatible version])
-  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox"`
+  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox\|uutils"`
   if test "x$check_date" != x; then
     AC_MSG_RESULT([yes])
     IS_GNU_DATE=yes

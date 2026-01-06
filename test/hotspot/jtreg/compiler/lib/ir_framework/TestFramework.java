@@ -327,8 +327,10 @@ public class TestFramework {
 
         for (Scenario scenario : scenarios) {
             int scenarioIndex = scenario.getIndex();
-            TestFormat.checkNoThrow(scenarioIndices.add(scenarioIndex),
-                             "Cannot define two scenarios with the same index " + scenarioIndex);
+            if (!scenarioIndices.add(scenarioIndex)) {
+                TestFormat.failNoThrow("Cannot define two scenarios with the same index " + scenarioIndex);
+                continue;
+            }
             this.scenarios.add(scenario);
         }
         TestFormat.throwIfAnyFailures();
@@ -336,9 +338,12 @@ public class TestFramework {
     }
 
     /**
-     * Add the cross-product (cartesian product) of sets of flags as Scenarios. Unlike when when constructing
+     * Add the cross-product (cartesian product) of sets of flags as Scenarios. Unlike when constructing
      * scenarios directly a string can contain multiple flags separated with a space. This allows grouping
-     * flags that have to be specified togeher. Further, an empty string in a set stands in for "no flag".
+     * flags that have to be specified together. Further, an empty string in a set stands in for "no flag".
+     * <p>
+     * Passing a single set will create a scenario for each of the provided flags in the set (i.e. the same as
+     * passing an additional set with an empty string only).
      * <p>
      * Example:
      * <pre>
@@ -355,7 +360,7 @@ public class TestFramework {
      *     Scenario(5, "-Xbatch -XX:-TieredCompilation", "-XX:+UseNewCode2")
      * </pre>
      *
-     * @param sets sets of flags to generate the cross product for.
+     * @param flagSets sets of flags to generate the cross product for.
      * @return the same framework instance.
      */
     @SafeVarargs
@@ -376,7 +381,7 @@ public class TestFramework {
 
         Stream<List<String>> crossProduct = Arrays.stream(flagSets)
             .reduce(
-                Stream.of(Collections.<String>emptyList()), // Initialize Stream<List<String>> acc with a Stream containing an empty list of Strings.
+                Stream.of(Collections.emptyList()), // Initialize Stream<List<String>> acc with a Stream containing an empty list of Strings.
                 (Stream<List<String>> acc, Set<String> set) ->
                     acc.flatMap(lAcc -> // For each List<String>> lAcc in acc...
                         set.stream().map(flag -> { // ...and each flag in the current set...
@@ -384,19 +389,19 @@ public class TestFramework {
                             newList.add(flag); // ...and append the flag.
                             return newList;
                         }) // This results in one List<List<String>> for each lAcc...
-                    ), // ...that get flattend into one big List<List<String>>.
-                (a, b) -> Stream.concat(a, b)); // combiner; if any reduction steps are executed in parallel, just concat two streams.
+                    ), // ...that get flattened into one big List<List<String>>.
+                Stream::concat); // combiner; if any reduction steps are executed in parallel, just concat two streams.
 
         Scenario[] newScenarios = crossProduct
             .map(flags -> new Scenario( // For each List<String> flags in crossProduct create a new Scenario.
                 idx.getAndIncrement(),
                 flags.stream() // Process flags
-                     .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings.
+                     .map(s -> Set.of(s.split("[ ]"))) // Split multiple flags in the same string into separate strings.
                      .flatMap(Collection::stream) // Flatten the Stream<List<String>> into Stream<String>>.
                      .filter(s -> !s.isEmpty()) // Remove empty string flags.
-                     .collect(Collectors.toList())
+                     .toList()
                      .toArray(new String[0])))
-            .collect(Collectors.toList()).toArray(new Scenario[0]);
+            .toList().toArray(new Scenario[0]);
         return addScenarios(newScenarios);
     }
 

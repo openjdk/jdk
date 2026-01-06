@@ -168,7 +168,6 @@ public:
 };
 
 class os: AllStatic {
-  friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class MallocTracker;
 
@@ -332,14 +331,14 @@ class os: AllStatic {
   // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
-  [[nodiscard]] static bool available_memory(size_t& value);
-  [[nodiscard]] static bool used_memory(size_t& value);
-  [[nodiscard]] static bool free_memory(size_t& value);
+  [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
+  [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
+  [[nodiscard]] static bool free_memory(physical_memory_size_type& value);
 
-  [[nodiscard]] static bool total_swap_space(size_t& value);
-  [[nodiscard]] static bool free_swap_space(size_t& value);
+  [[nodiscard]] static bool total_swap_space(physical_memory_size_type& value);
+  [[nodiscard]] static bool free_swap_space(physical_memory_size_type& value);
 
-  static size_t physical_memory();
+  static physical_memory_size_type physical_memory();
   static bool is_server_class_machine();
   static size_t rss();
 
@@ -391,6 +390,8 @@ class os: AllStatic {
   static jint set_minimum_stack_sizes();
 
  public:
+  // get allowed minimum java stack size
+  static jlong get_minimum_java_stack_size();
   // Find committed memory region within specified range (start, start + size),
   // return true if found any
   static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
@@ -535,7 +536,7 @@ class os: AllStatic {
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
-  static bool   numa_has_group_homing();
+  static void   numa_set_thread_affinity(Thread* thread, int node);
   static void   numa_make_local(char *addr, size_t bytes, int lgrp_hint);
   static void   numa_make_global(char *addr, size_t bytes);
   static size_t numa_get_groups_num();
@@ -981,10 +982,7 @@ class os: AllStatic {
   // The thread_cpu_time() and current_thread_cpu_time() are only
   // supported if is_thread_cpu_time_supported() returns true.
 
-  // Thread CPU Time - return the fast estimate on a platform
-  // On Linux   - fast clock_gettime where available - user+sys
-  //            - otherwise: very slow /proc fs - user+sys
-  // On Windows - GetThreadTimes - user+sys
+  // Thread CPU Time - return the fast estimate on a platform - user+sys
   static jlong current_thread_cpu_time();
   static jlong thread_cpu_time(Thread* t);
 

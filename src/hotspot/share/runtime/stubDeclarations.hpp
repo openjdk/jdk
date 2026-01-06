@@ -199,23 +199,10 @@
 // declaration order.
 
 #ifdef COMPILER2
-// do_jvmti_stub(name)
-#if INCLUDE_JVMTI
-#define C2_JVMTI_STUBS_DO(do_jvmti_stub)                               \
-  do_jvmti_stub(notify_jvmti_vthread_start)                            \
-  do_jvmti_stub(notify_jvmti_vthread_end)                              \
-  do_jvmti_stub(notify_jvmti_vthread_mount)                            \
-  do_jvmti_stub(notify_jvmti_vthread_unmount)                          \
-
-#else
-#define C2_JVMTI_STUBS_DO(do_jvmti_stub)
-#endif // INCLUDE_JVMTI
-
 // client macro to operate on c2 stubs
 //
 // do_blob(name, type)
 // do_stub(name, fancy_jump, pass_tls, return_pc)
-// do_jvmti_stub(name)
 //
 // do_blob is used for stubs that are generated via direct invocation
 // of the assembler to write into a blob of the appropriate type
@@ -225,10 +212,8 @@
 // in the IR graph employ a special type of jump (0, 1 or 2) or
 // provide access to TLS and the return pc.
 //
-// do_jvmti_stub generates a JVMTI stub as an IR intrinsic which
-// employs jump 0, and requires no special access
 
-#define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)                   \
+#define C2_STUBS_DO(do_blob, do_stub)                                  \
   do_blob(uncommon_trap, UncommonTrapBlob)                             \
   do_blob(exception, ExceptionBlob)                                    \
   do_stub(new_instance, 0, true, false)                                \
@@ -239,16 +224,19 @@
   do_stub(multianewarray4, 0, true, false)                             \
   do_stub(multianewarray5, 0, true, false)                             \
   do_stub(multianewarrayN, 0, true, false)                             \
-  C2_JVMTI_STUBS_DO(do_jvmti_stub)                                     \
   do_stub(complete_monitor_locking, 0, false, false)                   \
   do_stub(monitor_notify, 0, false, false)                             \
   do_stub(monitor_notifyAll, 0, false, false)                          \
   do_stub(rethrow, 2, true, true)                                      \
   do_stub(slow_arraycopy, 0, false, false)                             \
   do_stub(register_finalizer, 0, false, false)                         \
+  do_stub(vthread_end_first_transition, 0, false, false)               \
+  do_stub(vthread_start_final_transition, 0, false, false)             \
+  do_stub(vthread_start_transition, 0, false, false)                   \
+  do_stub(vthread_end_transition, 0, false, false)                     \
 
 #else
-#define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)
+#define C2_STUBS_DO(do_blob, do_stub)
 #endif
 
 // Stubgen stub declarations
@@ -891,18 +879,28 @@
   do_stub(final, jbyte_arraycopy)                                       \
   do_entry_init(final, jbyte_arraycopy, jbyte_arraycopy,                \
                 jbyte_arraycopy, StubRoutines::jbyte_copy)              \
+  do_entry(final, jbyte_arraycopy, jbyte_arraycopy_nopush,              \
+            jbyte_arraycopy_nopush)                                     \
   do_stub(final, jshort_arraycopy)                                      \
   do_entry_init(final, jshort_arraycopy, jshort_arraycopy,              \
                 jshort_arraycopy, StubRoutines::jshort_copy)            \
+  do_entry(final, jshort_arraycopy, jshort_arraycopy_nopush,            \
+            jshort_arraycopy_nopush)                                    \
   do_stub(final, jint_arraycopy)                                        \
   do_entry_init(final, jint_arraycopy, jint_arraycopy,                  \
                 jint_arraycopy, StubRoutines::jint_copy)                \
+  do_entry(final, jint_arraycopy, jint_arraycopy_nopush,                \
+            jint_arraycopy_nopush)                                      \
   do_stub(final, jlong_arraycopy)                                       \
   do_entry_init(final, jlong_arraycopy, jlong_arraycopy,                \
                 jlong_arraycopy, StubRoutines::jlong_copy)              \
+  do_entry(final, jlong_arraycopy, jlong_arraycopy_nopush,              \
+            jlong_arraycopy_nopush)                                     \
   do_stub(final, oop_arraycopy)                                         \
   do_entry_init(final, oop_arraycopy, oop_arraycopy,                    \
                 oop_arraycopy_entry, StubRoutines::oop_copy)            \
+  do_entry(final, oop_arraycopy, oop_arraycopy_nopush,                  \
+            oop_arraycopy_nopush)                                       \
   do_stub(final, oop_arraycopy_uninit)                                  \
   do_entry_init(final, oop_arraycopy_uninit, oop_arraycopy_uninit,      \
                 oop_arraycopy_uninit_entry,                             \
@@ -911,26 +909,44 @@
   do_entry_init(final, jbyte_disjoint_arraycopy,                        \
                 jbyte_disjoint_arraycopy, jbyte_disjoint_arraycopy,     \
                 StubRoutines::jbyte_copy)                               \
+  do_entry(final, jbyte_disjoint_arraycopy,                             \
+           jbyte_disjoint_arraycopy_nopush,                             \
+           jbyte_disjoint_arraycopy_nopush)                             \
   do_stub(final, jshort_disjoint_arraycopy)                             \
   do_entry_init(final, jshort_disjoint_arraycopy,                       \
                 jshort_disjoint_arraycopy, jshort_disjoint_arraycopy,   \
                 StubRoutines::jshort_copy)                              \
+  do_entry(final, jshort_disjoint_arraycopy,                            \
+           jshort_disjoint_arraycopy_nopush,                            \
+           jshort_disjoint_arraycopy_nopush)                            \
   do_stub(final, jint_disjoint_arraycopy)                               \
   do_entry_init(final, jint_disjoint_arraycopy,                         \
                 jint_disjoint_arraycopy, jint_disjoint_arraycopy,       \
                 StubRoutines::jint_copy)                                \
+  do_entry(final, jint_disjoint_arraycopy,                              \
+           jint_disjoint_arraycopy_nopush,                              \
+           jint_disjoint_arraycopy_nopush)                              \
   do_stub(final, jlong_disjoint_arraycopy)                              \
   do_entry_init(final, jlong_disjoint_arraycopy,                        \
                 jlong_disjoint_arraycopy, jlong_disjoint_arraycopy,     \
                 StubRoutines::jlong_copy)                               \
+  do_entry(final, jlong_disjoint_arraycopy,                             \
+           jlong_disjoint_arraycopy_nopush,                             \
+           jlong_disjoint_arraycopy_nopush)                             \
   do_stub(final, oop_disjoint_arraycopy)                                \
   do_entry_init(final, oop_disjoint_arraycopy, oop_disjoint_arraycopy,  \
                 oop_disjoint_arraycopy_entry, StubRoutines::oop_copy)   \
+  do_entry(final, oop_disjoint_arraycopy,                               \
+           oop_disjoint_arraycopy_nopush,                               \
+           oop_disjoint_arraycopy_nopush)                               \
   do_stub(final, oop_disjoint_arraycopy_uninit)                         \
   do_entry_init(final, oop_disjoint_arraycopy_uninit,                   \
                 oop_disjoint_arraycopy_uninit,                          \
                 oop_disjoint_arraycopy_uninit_entry,                    \
                 StubRoutines::oop_copy_uninit)                          \
+  do_entry(final, oop_disjoint_arraycopy_uninit,                        \
+           oop_disjoint_arraycopy_uninit_nopush,                        \
+           oop_disjoint_arraycopy_uninit_nopush)                        \
   do_stub(final, arrayof_jbyte_arraycopy)                               \
   do_entry_init(final, arrayof_jbyte_arraycopy,                         \
                 arrayof_jbyte_arraycopy, arrayof_jbyte_arraycopy,       \
@@ -960,34 +976,54 @@
                 arrayof_jbyte_disjoint_arraycopy,                       \
                 arrayof_jbyte_disjoint_arraycopy,                       \
                 StubRoutines::arrayof_jbyte_copy)                       \
+  do_entry(final, arrayof_jbyte_disjoint_arraycopy,                     \
+           arrayof_jbyte_disjoint_arraycopy_nopush,                     \
+           arrayof_jbyte_disjoint_arraycopy_nopush)                     \
   do_stub(final, arrayof_jshort_disjoint_arraycopy)                     \
   do_entry_init(final, arrayof_jshort_disjoint_arraycopy,               \
                 arrayof_jshort_disjoint_arraycopy,                      \
                 arrayof_jshort_disjoint_arraycopy,                      \
                 StubRoutines::arrayof_jshort_copy)                      \
+  do_entry(final, arrayof_jshort_disjoint_arraycopy,                    \
+           arrayof_jshort_disjoint_arraycopy_nopush,                    \
+           arrayof_jshort_disjoint_arraycopy_nopush)                    \
   do_stub(final, arrayof_jint_disjoint_arraycopy)                       \
   do_entry_init(final, arrayof_jint_disjoint_arraycopy,                 \
                 arrayof_jint_disjoint_arraycopy,                        \
                 arrayof_jint_disjoint_arraycopy,                        \
                 StubRoutines::arrayof_jint_copy)                        \
+  do_entry(final, arrayof_jint_disjoint_arraycopy,                      \
+           arrayof_jint_disjoint_arraycopy_nopush,                      \
+           arrayof_jint_disjoint_arraycopy_nopush)                      \
   do_stub(final, arrayof_jlong_disjoint_arraycopy)                      \
   do_entry_init(final, arrayof_jlong_disjoint_arraycopy,                \
                 arrayof_jlong_disjoint_arraycopy,                       \
                 arrayof_jlong_disjoint_arraycopy,                       \
                 StubRoutines::arrayof_jlong_copy)                       \
+  do_entry(final, arrayof_jlong_disjoint_arraycopy,                     \
+           arrayof_jlong_disjoint_arraycopy_nopush,                     \
+           arrayof_jlong_disjoint_arraycopy_nopush)                     \
   do_stub(final, arrayof_oop_disjoint_arraycopy)                        \
   do_entry_init(final, arrayof_oop_disjoint_arraycopy,                  \
                 arrayof_oop_disjoint_arraycopy,                         \
                 arrayof_oop_disjoint_arraycopy_entry,                   \
                 StubRoutines::arrayof_oop_copy)                         \
+  do_entry(final, arrayof_oop_disjoint_arraycopy,                       \
+           arrayof_oop_disjoint_arraycopy_nopush,                       \
+           arrayof_oop_disjoint_arraycopy_nopush)                       \
   do_stub(final, arrayof_oop_disjoint_arraycopy_uninit)                 \
   do_entry_init(final, arrayof_oop_disjoint_arraycopy_uninit,           \
                 arrayof_oop_disjoint_arraycopy_uninit,                  \
                 arrayof_oop_disjoint_arraycopy_uninit_entry,            \
                 StubRoutines::arrayof_oop_copy_uninit)                  \
+  do_entry(final, arrayof_oop_disjoint_arraycopy_uninit,                \
+           arrayof_oop_disjoint_arraycopy_uninit_nopush,                \
+           arrayof_oop_disjoint_arraycopy_uninit_nopush)                \
   do_stub(final, checkcast_arraycopy)                                   \
   do_entry(final, checkcast_arraycopy, checkcast_arraycopy,             \
            checkcast_arraycopy_entry)                                   \
+  do_entry(final, checkcast_arraycopy, checkcast_arraycopy_nopush,      \
+            checkcast_arraycopy_nopush)                                 \
   do_stub(final, checkcast_arraycopy_uninit)                            \
   do_entry(final, checkcast_arraycopy_uninit,                           \
            checkcast_arraycopy_uninit,                                  \
@@ -1141,9 +1177,6 @@
 
 // ignore do_stub(name, fancy_jump, pass_tls, return_pc) declarations
 #define DO_STUB_EMPTY4(name, fancy_jump, pass_tls, return_pc)
-
-// ignore do_jvmti_stub(name) declarations
-#define DO_JVMTI_STUB_EMPTY1(stub_name)
 
 // ignore do_stub(blob_name, stub_name) declarations
 #define DO_STUB_EMPTY2(blob_name, stub_name)

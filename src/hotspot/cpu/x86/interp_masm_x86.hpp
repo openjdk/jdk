@@ -62,11 +62,24 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_earlyret_value(TosState state);
 
+  // Use for vthread preemption
   void call_VM_preemptable(Register oop_result,
                            address entry_point,
-                           Register arg_1);
+                           Register arg_1,
+                           bool check_exceptions = true);
+  void call_VM_preemptable(Register oop_result,
+                           address entry_point,
+                           Register arg_1,
+                           Register arg_2,
+                           bool check_exceptions = true);
   void restore_after_resume(bool is_native);
+ private:
+  void call_VM_preemptable_helper(Register oop_result,
+                                  address entry_point,
+                                  int number_of_arguments,
+                                  bool check_exceptions);
 
+ public:
   // Interpreter-specific registers
   void save_bcp() {
     movptr(Address(rbp, frame::interpreter_frame_bcp_offset * wordSize), _bcp_register);
@@ -221,16 +234,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Register test_value_out,
                         Label& not_equal_continue);
 
-  void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2, bool is_virtual_call);
-  void record_klass_in_profile_helper(Register receiver, Register mdp,
-                                      Register reg2, int start_row,
-                                      Label& done, bool is_virtual_call);
-  void record_item_in_profile_helper(Register item, Register mdp, Register reg2, int start_row,
-                                     Label& done, int total_rows,
-                                     OffsetFunction item_offset_fn,
-                                     OffsetFunction item_count_offset_fn);
-
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
   void update_mdp_by_constant(Register mdp_in, int constant);
@@ -241,11 +244,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp,
-                            Register scratch2,
                             bool receiver_can_be_null = false);
   void profile_ret(Register return_bci, Register mdp);
   void profile_null_seen(Register mdp);
-  void profile_typecheck(Register mdp, Register klass, Register scratch);
+  void profile_typecheck(Register mdp, Register klass);
 
   void profile_switch_default(Register mdp);
   void profile_switch_case(Register index_in_scratch, Register mdp,

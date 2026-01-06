@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,10 +296,25 @@ public class ServerCompilerScheduler implements Scheduler {
         return n.getProperties().get("block");
     }
 
+    private boolean initialize(InputGraph graph) {
+        nodes = new ArrayList<>();
+        inputNodeToNode = new HashMap<>(graph.getNodes().size());
+        this.graph = graph;
+        if (!hasCategoryInformation()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                "Cannot find node category information in the input graph. " +
+                "The control-flow graph will not be approximated.");
+            return false;
+        }
+        buildUpGraph();
+        markCFGNodes();
+        return true;
+    }
+
     @Override
-    public Collection<InputBlock> schedule(InputGraph graph) {
+    public void schedule(InputGraph graph) {
         if (graph.getNodes().isEmpty()) {
-            return Collections.emptyList();
+            return;
         }
 
         if (graph.getBlocks().size() > 0) {
@@ -311,20 +326,11 @@ public class ServerCompilerScheduler implements Scheduler {
                     assert graph.getBlock(n) != null;
                 }
             }
-            return graph.getBlocks();
+            return;
         } else {
-            nodes = new ArrayList<>();
-            inputNodeToNode = new HashMap<>(graph.getNodes().size());
-
-            this.graph = graph;
-            if (!hasCategoryInformation()) {
-                ErrorManager.getDefault().log(ErrorManager.WARNING,
-                    "Cannot find node category information in the input graph. " +
-                    "The control-flow graph will not be approximated.");
-                return null;
+            if (!initialize(graph)) {
+                return;
             }
-            buildUpGraph();
-            markCFGNodes();
             buildBlocks();
             schedulePinned();
             buildDominators();
@@ -333,8 +339,24 @@ public class ServerCompilerScheduler implements Scheduler {
             check();
             reportWarnings();
 
-            return blocks;
+            return;
         }
+    }
+
+    @Override
+    public void scheduleLocally(InputGraph graph) {
+        if (!initialize(graph)) {
+            return;
+        }
+        // Import global schedule from the given graph.
+        blocks = new Vector<>();
+        for (InputBlock block : graph.getBlocks()) {
+            blocks.add(block);
+            for (InputNode in : block.getNodes()) {
+                inputNodeToNode.get(in).block = block;
+            }
+        }
+        scheduleLocal();
     }
 
     private void scheduleLocal() {
@@ -653,7 +675,9 @@ public class ServerCompilerScheduler implements Scheduler {
     }
 
     private static boolean isProj(Node n) {
-        return hasName(n, "Proj") || hasName(n, "MachProj");
+        return hasName(n, "Proj") ||
+               hasName(n, "MachProj") ||
+               hasName(n, "NarrowMemProj");
     }
 
     private static boolean isParm(Node n) {

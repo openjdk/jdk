@@ -37,6 +37,7 @@ import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection.ResponseHeaders;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.HeaderFrame;
 import org.testng.TestException;
@@ -252,16 +253,25 @@ public class ExpectContinueTest implements HttpServerAdapters {
 
     static class ExpectContinueTestExchangeImpl extends Http2TestExchangeImpl {
 
-        public ExpectContinueTestExchangeImpl(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
+        public ExpectContinueTestExchangeImpl(int streamid,
+                                              String method,
+                                              HttpHeaders reqheaders,
+                                              HttpHeadersBuilder rspheadersBuilder,
+                                              URI uri, InputStream is,
+                                              SSLSession sslSession,
+                                              BodyOutputStream os,
+                                              Http2TestServerConnection conn,
+                                              boolean pushAllowed) {
             super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
         }
 
         private void sendEndStreamHeaders() throws IOException {
             this.responseLength = 0;
-            rspheadersBuilder.setHeader(":status", Integer.toString(100));
+            HttpHeadersBuilder pseudoHeadersBuilder = new HttpHeadersBuilder();
+            pseudoHeadersBuilder.setHeader(":status", Integer.toString(100));
+            HttpHeaders pseudoHeaders = pseudoHeadersBuilder.build();
             HttpHeaders headers = rspheadersBuilder.build();
-            Http2TestServerConnection.ResponseHeaders response
-                    = new Http2TestServerConnection.ResponseHeaders(headers);
+            ResponseHeaders response = new ResponseHeaders(pseudoHeaders, headers);
             response.streamid(streamid);
             response.setFlag(HeaderFrame.END_HEADERS);
             response.setFlag(HeaderFrame.END_STREAM);

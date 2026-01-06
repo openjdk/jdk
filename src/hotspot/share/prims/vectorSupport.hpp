@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,25 @@ class VectorSupport : AllStatic {
     VECTOR_OP_REVERSE_BYTES = 32,
     VECTOR_OP_COMPRESS_BITS = 33,
     VECTOR_OP_EXPAND_BITS = 34,
+
+    VECTOR_OP_TAN   = 101,
+    VECTOR_OP_TANH  = 102,
+    VECTOR_OP_SIN   = 103,
+    VECTOR_OP_SINH  = 104,
+    VECTOR_OP_COS   = 105,
+    VECTOR_OP_COSH  = 106,
+    VECTOR_OP_ASIN  = 107,
+    VECTOR_OP_ACOS  = 108,
+    VECTOR_OP_ATAN  = 109,
+    VECTOR_OP_ATAN2 = 110,
+    VECTOR_OP_CBRT  = 111,
+    VECTOR_OP_LOG   = 112,
+    VECTOR_OP_LOG10 = 113,
+    VECTOR_OP_LOG1P = 114,
+    VECTOR_OP_POW   = 115,
+    VECTOR_OP_EXP   = 116,
+    VECTOR_OP_EXPM1 = 117,
+    VECTOR_OP_HYPOT = 118,
 
     VECTOR_OP_SADD  = 119,
     VECTOR_OP_SSUB  = 120,

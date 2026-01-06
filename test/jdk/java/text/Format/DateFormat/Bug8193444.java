@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,29 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8193444
  * @summary Checks SimpleDateFormat.format/parse for the AIOOB exception when
  *          formatting/parsing dates through a pattern string that contains a
  *          sequence of 256 or more non-ASCII unicode characters.
- * @run testng/othervm Bug8193444
+ * @run junit/othervm Bug8193444
  */
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Bug8193444 {
 
     private static final String NON_ASCII_CHAR = "\u263A";
 
-    @DataProvider(name = "dateFormat")
     Object[][] dateFormatData() {
         return new Object[][]{
             // short_length (between 0 and 254)
@@ -53,8 +56,9 @@ public class Bug8193444 {
             {257},};
     }
 
-    @Test(dataProvider = "dateFormat")
-    public void testDateFormatAndParse(int length)
+    @ParameterizedTest
+    @MethodSource("dateFormatData")
+    void testDateFormatAndParse(int length)
             throws ParseException {
 
         String pattern = NON_ASCII_CHAR.repeat(length);
@@ -66,7 +70,7 @@ public class Bug8193444 {
         // Since the tested format patterns do not contain any character
         // representing date/time field, those characters are not interpreted,
         // they are simply copied into the output string during formatting
-        assertEquals(result, pattern, "Failed to format the date using"
+        assertEquals(pattern, result, "Failed to format the date using"
                 + " pattern of length: " + length);
 
         // The format pattern used by this SimpleDateFormat

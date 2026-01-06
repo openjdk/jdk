@@ -39,7 +39,7 @@ inline void* G1MonotonicArena::Segment::allocate_slot() {
   if (result >= _num_slots) {
     return nullptr;
   }
-  void* r = _bottom + (size_t)result * _slot_size;
+  void* r = payload(static_cast<size_t>(result) * _slot_size);
   return r;
 }
 

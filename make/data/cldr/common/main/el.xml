@@ -292,6 +292,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">Μπάφια</language>
 			<language type="ksh">Κολωνικά</language>
 			<language type="ku">Κουρδικά</language>
+			<language type="ku" menu="core">Κουρδικά</language>
+			<language type="ku" menu="extension">Κουρμάντζι</language>
 			<language type="kum">Κουμγιούκ</language>
 			<language type="kut">Κουτενάι</language>
 			<language type="kv">Κόμι</language>
@@ -370,6 +372,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="myv">Έρζια</language>
 			<language type="mzn">Μαζαντεράνι</language>
 			<language type="na">Ναούρου</language>
+			<language type="nan" draft="contributed">Μιν Ναν</language>
 			<language type="nap">Ναπολιτανικά</language>
 			<language type="naq">Νάμα</language>
 			<language type="nb">Νορβηγικά Μποκμάλ</language>
@@ -824,6 +827,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">Κίνα</territory>
 			<territory type="CO">Κολομβία</territory>
 			<territory type="CP">Νήσος Κλίπερτον</territory>
+			<territory type="CQ" draft="contributed">Σαρκ</territory>
 			<territory type="CR">Κόστα Ρίκα</territory>
 			<territory type="CU">Κούβα</territory>
 			<territory type="CV">Πράσινο Ακρωτήριο</territory>
@@ -1101,35 +1105,54 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNumeric">Αριθμητική ταξινόμηση</key>
 			<key type="colStrength">Ισχύς ταξινόμησης</key>
 			<key type="currency">Νόμισμα</key>
+			<key type="em">Παρουσίαση emoji</key>
 			<key type="hc">Κύκλος ωρών (12 ή 24)</key>
 			<key type="lb">Στιλ αλλαγής γραμμών</key>
+			<key type="lw">Αλλαγή γραμμής ανάμεσα σε λέξεις</key>
 			<key type="ms">Σύστημα μέτρησης</key>
 			<key type="numbers">Αριθμοί</key>
+			<key type="ss">Τέλος πρότασης μετά από σύντμηση</key>
 			<key type="timezone">Ζώνη ώρας</key>
 			<key type="va">Παραλλαγή τοπικών ρυθμίσεων</key>
 			<key type="x">Ιδιωτική χρήση</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Βουδιστικό ημερολόγιο</type>
+			<type key="calendar" type="buddhist" scope="core">Βουδιστικό</type>
 			<type key="calendar" type="chinese">Κινεζικό ημερολόγιο</type>
+			<type key="calendar" type="chinese" scope="core">Κινεζικό</type>
 			<type key="calendar" type="coptic">Κοπτικό ημερολόγιο</type>
+			<type key="calendar" type="coptic" scope="core">Κοπτικό</type>
 			<type key="calendar" type="dangi">Κορεατικό ημερολόγιο ντάνγκι</type>
+			<type key="calendar" type="dangi" scope="core">Ντάνγκι</type>
 			<type key="calendar" type="ethiopic">Αιθιοπικό ημερολόγιο</type>
+			<type key="calendar" type="ethiopic" scope="core">Αιθιοπικό</type>
 			<type key="calendar" type="ethiopic-amete-alem">Αιθιοπικό ημερολόγιο Άμετ Άλεμ</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Αιθιοπικό Άμετ Άλεμ</type>
 			<type key="calendar" type="gregorian">Γρηγοριανό ημερολόγιο</type>
+			<type key="calendar" type="gregorian" scope="core">Γρηγοριανό</type>
 			<type key="calendar" type="hebrew">Εβραϊκό ημερολόγιο</type>
+			<type key="calendar" type="hebrew" scope="core">Εβραϊκό</type>
 			<type key="calendar" type="indian">Ινδικό εθνικό ημερολόγιο</type>
 			<type key="calendar" type="islamic">Ημερολόγιο Εγίρας</type>
+			<type key="calendar" type="islamic" scope="core">Εγίρα</type>
 			<type key="calendar" type="islamic-civil">Ημερολόγιο Εγίρας (σε μορφή πίνακα, αστικό εποχής)</type>
+			<type key="calendar" type="islamic-civil" scope="core">Εγίρα (σε μορφή πίνακα, αστικό εποχής)</type>
 			<type key="calendar" type="islamic-rgsa" draft="provisional">Ισλαμικό ημερολόγιο (Σαουδική Αραβία, θέαση)</type>
 			<type key="calendar" type="islamic-tbla" draft="provisional">Ισλαμικό ημερολόγιο (δομημένο, αστρονομική εποχή)</type>
 			<type key="calendar" type="islamic-umalqura">Ημερολόγιο Εγίρας (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Εγίρα (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Ημερολόγιο ISO-8601</type>
 			<type key="calendar" type="japanese">Ιαπωνικό ημερολόγιο</type>
+			<type key="calendar" type="japanese" scope="core">Ιαπωνικό</type>
 			<type key="calendar" type="persian">Περσικό ημερολόγιο</type>
+			<type key="calendar" type="persian" scope="core">Περσικό</type>
 			<type key="calendar" type="roc">Ημερολόγιο της Δημοκρατίας της Κίνας</type>
+			<type key="calendar" type="roc" scope="core">Δημοκρατίας της Κίνας</type>
 			<type key="cf" type="account">Λογιστική μορφή νομίσματος</type>
+			<type key="cf" type="account" scope="core">Λογιστική</type>
 			<type key="cf" type="standard">Τυπική μορφή νομίσματος</type>
+			<type key="cf" type="standard" scope="core">Τυπική</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Ταξινόμηση συμβόλων</type>
 			<type key="colAlternate" type="shifted" draft="contributed">Ταξινόμηση με αγνόηση συμβόλων</type>
 			<type key="colBackwards" type="no" draft="contributed">Κανονικά ταξινόμηση τόνων</type>
@@ -1139,22 +1162,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Ταξινόμηση κεφαλαίων χαρακτήρων πρώτα</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Ταξινόμηση με διάκριση χαρακτήρων</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Ταξινόμηση χαρακτήρων διάκρισης</type>
-			<type key="collation" type="big5han">Σειρά ταξινόμησης Παραδοσιακών Κινεζικών - Big5</type>
 			<type key="collation" type="compat">Προηγούμενη σειρά ταξινόμησης, για συμβατότητα</type>
+			<type key="collation" type="compat" scope="core">Συμβατότητα</type>
 			<type key="collation" type="dictionary">Σειρά ταξινόμησης λεξικού</type>
+			<type key="collation" type="dictionary" scope="core">Λεξικό</type>
 			<type key="collation" type="ducet">Προεπιλεγμένη σειρά ταξινόμησης Unicode</type>
+			<type key="collation" type="ducet" scope="core">Προεπιλεγμένη σειρά Unicode</type>
 			<type key="collation" type="eor" draft="contributed">Ευρωπαϊκοί κανόνες ταξινόμησης</type>
-			<type key="collation" type="gb2312han">Σειρά ταξινόμησης Απλοποιημένων Κινεζικών - GB2312</type>
 			<type key="collation" type="phonebook">Σειρά ταξινόμησης τηλεφωνικού καταλόγου</type>
+			<type key="collation" type="phonebook" scope="core">Τηλεφωνικός κατάλογος</type>
 			<type key="collation" type="phonetic">Φωνητική σειρά ταξινόμησης</type>
+			<type key="collation" type="phonetic" scope="core">Φωνητική</type>
 			<type key="collation" type="pinyin">Σειρά ταξινόμησης Πινγίν</type>
+			<type key="collation" type="pinyin" scope="core">Πινγίν</type>
 			<type key="collation" type="search">Αναζήτηση γενικού τύπου</type>
+			<type key="collation" type="search" scope="core">Αναζήτηση</type>
 			<type key="collation" type="searchjl" draft="contributed">Αναζήτηση κατά αρχικό σύμφωνο Χανγκούλ</type>
 			<type key="collation" type="standard">Τυπική σειρά ταξινόμησης</type>
+			<type key="collation" type="standard" scope="core">Τυπική</type>
 			<type key="collation" type="stroke">Σειρά ταξινόμησης κινήσεων</type>
+			<type key="collation" type="stroke" scope="core">Κίνηση</type>
 			<type key="collation" type="traditional">Παραδοσιακή σειρά ταξινόμησης</type>
+			<type key="collation" type="traditional" scope="core">Παραδοσιακή</type>
 			<type key="collation" type="unihan">Σειρά ταξινόμησης ριζικής αρίθμησης</type>
+			<type key="collation" type="unihan" scope="core">Ριζική αρίθμηση</type>
 			<type key="collation" type="zhuyin">Σειρά ταξινόμησης Τζουγίν</type>
+			<type key="collation" type="zhuyin" scope="core">Τζουγίν</type>
 			<type key="colNormalization" type="no" draft="contributed">Ταξινόμηση χωρίς κανονικοποίηση</type>
 			<type key="colNormalization" type="yes" draft="contributed">Κανονικοποιημένη ταξινόμηση Unicode</type>
 			<type key="colNumeric" type="no" draft="contributed">Μεμονωμένη ταξινόμηση ψηφίων</type>
@@ -1167,18 +1200,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="d0" type="fwidth">Πλήρους πλάτους</type>
 			<type key="d0" type="hwidth">Μισού πλάτους</type>
 			<type key="d0" type="npinyin" draft="contributed">Αριθμητικό</type>
+			<type key="em" type="default" scope="core">Προεπιλογή</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text" scope="core">Κείμενο</type>
 			<type key="hc" type="h11">12ωρο σύστημα (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12ωρο σύστημα (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24ωρο σύστημα (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24ωρο σύστημα (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="lb" type="loose">Χαλαρό στιλ αλλαγής γραμμών</type>
+			<type key="lb" type="loose" scope="core">Χαλαρό</type>
 			<type key="lb" type="normal">Κανονικό στιλ αλλαγής γραμμών</type>
+			<type key="lb" type="normal" scope="core">Κανονικό</type>
 			<type key="lb" type="strict">Στενό στιλ αλλαγής γραμμών</type>
+			<type key="lb" type="strict" scope="core">Στενό</type>
+			<type key="lw" type="breakall" scope="core">Διαχωρισμός όλων</type>
+			<type key="lw" type="keepall" scope="core">Διατήρηση όλων</type>
+			<type key="lw" type="normal" scope="core">Κανονικό</type>
+			<type key="lw" type="phrase" scope="core">Διατήρηση σε φράσεις</type>
 			<type key="m0" type="bgn">Μεταγραφή BGN ΗΠΑ</type>
 			<type key="m0" type="ungegn">Μεταγραφή GEGN ΟΗΕ</type>
 			<type key="ms" type="metric">Μετρικό σύστημα</type>
+			<type key="ms" type="metric" scope="core">Μετρικό</type>
 			<type key="ms" type="uksystem">Αγγλοσαξονικό σύστημα μέτρησης</type>
+			<type key="ms" type="uksystem" scope="core">Αγγλοσαξονικό</type>
 			<type key="ms" type="ussystem">Αμερικανικό σύστημα μέτρησης</type>
+			<type key="ms" type="ussystem" scope="core">Αμερικανικό</type>
 			<type key="numbers" type="arab">Αραβικο-ινδικά ψηφία</type>
 			<type key="numbers" type="arabext">Εκτεταμένα αραβικο-ινδικά ψηφία</type>
 			<type key="numbers" type="armn">Αρμενικά αριθμητικά</type>
@@ -1223,6 +1273,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="tibt">Θιβετανικά ψηφία</type>
 			<type key="numbers" type="traditional" draft="contributed">Παραδοσιακά αριθμητικά</type>
 			<type key="numbers" type="vaii">Ψηφία Βάι</type>
+			<type key="ss" type="none" scope="core">Απενεργοποίηση</type>
+			<type key="ss" type="standard" scope="core">Ενεργοποίηση</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Μετρικό</measurementSystemName>
@@ -1249,9 +1301,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<moreInformation>;</moreInformation>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":">[\: ∶]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1353,13 +1402,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">MM-y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, dd-MM-y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hv">h a (vvvv)</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h' (vvvv)</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -1425,7 +1477,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
@@ -1439,7 +1490,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1766,14 +1816,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, dd-MM-y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss (vvvv)</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm (vvvv)</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h' (vvvv)</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E d/M</dateFormatItem>
 						<dateFormatItem id="MMM">MMM</dateFormatItem>
@@ -1844,7 +1897,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
@@ -1858,7 +1910,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -2937,6 +2988,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Easter">
 				<exemplarCity>Νήσος Πάσχα</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>Κοϊάικε</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>Πούντα Αρένας</exemplarCity>
 			</zone>
@@ -3202,9 +3256,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Πνομ Πενχ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Έντερμπερι</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Καντών</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3849,6 +3900,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>Χαράρε</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic draft="contributed">Ώρα Άκρε</generic>
+					<standard>Χειμερινή ώρα Άκρε</standard>
+					<daylight>Θερινή ώρα Άκρε</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Ώρα Αφγανιστάν</standard>
@@ -3871,9 +3929,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Ώρα Δυτικής Αφρικής</generic>
-					<standard>Χειμερινή ώρα Δυτικής Αφρικής</standard>
-					<daylight>Θερινή ώρα Δυτικής Αφρικής</daylight>
+					<standard>Ώρα Δυτικής Αφρικής</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4248,6 +4304,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard>Ώρα Γουιάνας</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Χειμερινή ώρα Χαβάης-Αλεούτιων Νήσων</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4688,6 +4749,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Ώρα Τσουκ</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">Ώρα Τουρκίας</generic>
+					<standard draft="contributed">Χειμερινή ώρα Τουρκίας</standard>
+					<daylight draft="contributed">Θερινή ώρα Τουρκίας</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Ώρα Τουρκμενιστάν</generic>
@@ -4764,9 +4832,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
-					<generic>Ώρα Αικατερίνμπουργκ</generic>
-					<standard>Χειμερινή ώρα Αικατερίνμπουργκ</standard>
-					<daylight>Θερινή ώρα Αικατερίνμπουργκ</daylight>
+					<generic>Ώρα Αικατερινούπολης</generic>
+					<standard>Χειμερινή ώρα Αικατερινούπολης</standard>
+					<daylight>Θερινή ώρα Αικατερινούπολης</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yukon">
@@ -4847,7 +4915,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -6194,6 +6265,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">δολάριο Ανατολικής Καραϊβικής</displayName>
 				<displayName count="other">δολάρια Ανατολικής Καραϊβικής</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>γκίλντα Καραϊβικής</displayName>
+				<displayName count="one" draft="contributed">γκίλντα Καραϊβικής</displayName>
+				<displayName count="other" draft="contributed">γκίλντες Καραϊβικής</displayName>
+			</currency>
 			<currency type="XDR">
 				<displayName>Ειδικά Δικαιώματα Ανάληψης</displayName>
 				<displayName count="one">ειδικό δικαίωμα ανάληψης</displayName>
@@ -6296,6 +6372,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Δολάριο Ζιμπάμπουε</displayName>
 				<displayName count="one">δολάριο Ζιμπάμπουε</displayName>
 				<displayName count="other">δολάρια Ζιμπάμπουε</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>Χρυσός της Ζιμπάμπουε</displayName>
+				<displayName count="one" draft="contributed">Χρυσός της Ζιμπάμπουε</displayName>
+				<displayName count="other" draft="contributed">Χρυσός της Ζιμπάμπουε</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Δολάριο Ζιμπάμπουε (2009)</displayName>
@@ -6635,7 +6716,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} στοιχεία</unitPattern>
 				<unitPattern count="other" case="genitive">{0} στοιχείων</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>μέρη</displayName>
+				<unitPattern count="one">{0} μέρος</unitPattern>
+				<unitPattern count="other">{0} μέρη</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<gender>neuter</gender>
 				<displayName>μέρη ανά εκατομμύριο</displayName>
 				<unitPattern count="one">{0} μέρος ανά εκατομμύριο</unitPattern>
@@ -6674,6 +6760,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-mole">
 				<gender>neuter</gender>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>γλυκόζης</displayName>
+				<unitPattern count="one">{0} γλυκόζης</unitPattern>
+				<unitPattern count="other">{0} γλυκόζης</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<gender>neuter</gender>
@@ -7334,8 +7425,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} καντέλα</unitPattern>
 				<unitPattern count="one" case="accusative">{0} καντέλα</unitPattern>
 				<unitPattern count="one" case="genitive">{0} καντέλας</unitPattern>
-				<unitPattern count="other">{0} καντέλα</unitPattern>
-				<unitPattern count="other" case="accusative">{0} καντέλα</unitPattern>
+				<unitPattern count="other">{0} καντέλες</unitPattern>
+				<unitPattern count="other" case="accusative">{0} καντέλες</unitPattern>
 				<unitPattern count="other" case="genitive">{0} καντέλων</unitPattern>
 			</unit>
 			<unit type="light-lumen">
@@ -7515,6 +7606,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} χιλιοστόμετρα στήλης υδραργύρου</unitPattern>
 				<unitPattern count="other" case="accusative">{0} χιλιοστόμετρα στήλης υδραργύρου</unitPattern>
 				<unitPattern count="other" case="genitive">{0} χιλιοστόμετρων στήλης υδραργύρου</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>χιλιοστόμετρο στήλης υδραργύρου</displayName>
+				<unitPattern count="one">{0} στήλης υδραργύρου</unitPattern>
+				<unitPattern count="other">{0} στήλης υδραργύρου</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>λίβρες ανά τετραγωνική ίντσα</displayName>
@@ -7809,6 +7905,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} μετρικά κύπελλα</unitPattern>
 				<unitPattern count="other" case="genitive">{0} μετρικών κύπελλων</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>μετρική ουγγιά υγρών</displayName>
+				<unitPattern count="one">{0} μετρική ουγγιά υγρών</unitPattern>
+				<unitPattern count="other">{0} μετρικές ουγγιές υγρών</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ακρ-πόδια</displayName>
 				<unitPattern count="one">{0} ακρ-πόδι</unitPattern>
@@ -7905,9 +8006,73 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} αγγλοσαξονικό τέταρτο του γαλονιού</unitPattern>
 				<unitPattern count="other">{0} αγγλοσαξονικά τέταρτα του γαλονιού</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>στερακτίνια</displayName>
+				<unitPattern count="one">{0} στερακτίνιο</unitPattern>
+				<unitPattern count="other">{0} στερακτίνια</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>κατάλ</displayName>
+				<unitPattern count="one">{0} κατάλ</unitPattern>
+				<unitPattern count="other">{0} κατάλ</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>κουλόμπ</displayName>
+				<unitPattern count="one">{0} κουλόμπ</unitPattern>
+				<unitPattern count="other">{0} κουλόμπ</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>φαράντ</displayName>
+				<unitPattern count="one">{0} φαράντ</unitPattern>
+				<unitPattern count="other">{0} φαράντ</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>ανρί</displayName>
+				<unitPattern count="one">{0} ανρί</unitPattern>
+				<unitPattern count="other">{0} ανρί</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>ζίμενς</displayName>
+				<unitPattern count="one">{0} ζίμενς</unitPattern>
+				<unitPattern count="other">{0} ζίμενς</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>θερμίδες ΙΤ</displayName>
+				<unitPattern count="one">{0} θερμίδα IT</unitPattern>
+				<unitPattern count="other">{0} θερμίδες IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>μπεκερέλ</displayName>
+				<unitPattern count="one">{0} μπεκερέλ</unitPattern>
+				<unitPattern count="other">{0} μπεκερέλ</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>sievert</displayName>
+				<unitPattern count="one">{0} sievert</unitPattern>
+				<unitPattern count="other">{0} sievert</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>γκρέυ</displayName>
+				<unitPattern count="one">{0} γκρέυ</unitPattern>
+				<unitPattern count="other">{0} γκρέυ</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>χιλιόγραμμα δύναμης</displayName>
+				<unitPattern count="one">{0} χιλιόγραμμο δύναμης</unitPattern>
+				<unitPattern count="other">{0} χιλιόγραμμα δύναμης</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>τέσλα</displayName>
+				<unitPattern count="one">{0} τέσλα</unitPattern>
+				<unitPattern count="other">{0} τέσλα</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>βέμπερ</displayName>
+				<unitPattern count="one">{0} βέμπερ</unitPattern>
+				<unitPattern count="other">{0} βέμπερ</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<gender>neuter</gender>
-				<displayName>φως</displayName>
 				<unitPattern count="one">{0} φως</unitPattern>
 				<unitPattern count="one" case="accusative">{0} φως</unitPattern>
 				<unitPattern count="one" case="genitive">φωτός</unitPattern>
@@ -7915,7 +8080,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} φως</unitPattern>
 				<unitPattern count="other" case="genitive">{0} φωτός</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>neuter</gender>
 				<displayName>μέρη στο δισεκατομμύριο</displayName>
 				<unitPattern count="one">{0} μέρος στο δισεκατομμύριο</unitPattern>
@@ -8136,7 +8301,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} στοιχείο</unitPattern>
 				<unitPattern count="other">{0} στοιχεία</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>μέρος</displayName>
+				<unitPattern count="one">{0} μέρος</unitPattern>
+				<unitPattern count="other">{0} μέρη</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>μέρη/εκατ.</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -8152,6 +8322,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>μολ</displayName>
 				<unitPattern count="one">{0} μολ</unitPattern>
 				<unitPattern count="other">{0} μολ</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>λίτρα/χλμ.</displayName>
@@ -8567,6 +8740,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} μετρ. κύπελλο</unitPattern>
 				<unitPattern count="other">{0} μετρ. κύπελλα</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>μ. ουγγιά υγρ.</displayName>
+				<unitPattern count="one">μ. ουγγιά υγρ.</unitPattern>
+				<unitPattern count="other">{0} μ. ουγγιές υγρ.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ακρ πόδια</displayName>
 				<unitPattern count="one">{0} ακρ πδ</unitPattern>
@@ -8664,12 +8842,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} αγγλ. τέτ. γαλ.</unitPattern>
 				<unitPattern count="other">{0} αγγλ. τέτ. γαλ.</unitPattern>
 			</unit>
+			<unit type="concentr-katal">
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>φως</displayName>
 				<unitPattern count="one">{0} φως</unitPattern>
 				<unitPattern count="other">{0} φως</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>μέρη/δισεκατομμύριο</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -8801,7 +8986,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-inch">
 				<displayName>τ. ίντσες</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>μέρος</displayName>
+				<unitPattern count="one">{0} μέρος</unitPattern>
+				<unitPattern count="other">{0} μέρη</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -8812,6 +9002,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>λ/χλμ</displayName>
@@ -9054,6 +9247,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} μ. κύπ.</unitPattern>
 				<unitPattern count="other">{0} μ. κύπ.</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>μ. ουγγιά υγρ.</displayName>
+				<unitPattern count="one">{0} μ. ουγγιά υγρ.</unitPattern>
+				<unitPattern count="other">{0} μ. ουγγιές υγρ.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ακρ πδ</displayName>
 			</unit>
@@ -9074,16 +9272,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-dram">
 				<displayName>δρ. όγκου</displayName>
 			</unit>
+			<unit type="concentr-katal">
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>φώς</displayName>
-				<unitPattern count="one">{0} φως</unitPattern>
-				<unitPattern count="other">{0} φως</unitPattern>
 			</unit>
-			<unit type="duration-night">
-				<displayName>νύχτ.</displayName>
-				<unitPattern count="one">{0} νύχτ.</unitPattern>
-				<unitPattern count="other">{0} νύχτ.</unitPattern>
-				<perUnitPattern>{0}/νύχτ.</perUnitPattern>
+			<unit type="concentr-part-per-1e9">
+				<displayName>ppb</displayName>
 			</unit>
 			<coordinateUnit>
 				<displayName>σημεία</displayName>

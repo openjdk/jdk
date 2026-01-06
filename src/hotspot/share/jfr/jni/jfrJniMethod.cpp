@@ -421,9 +421,11 @@ JVM_END
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
 #ifdef LINUX
   // We want the host swap memory, not the container value.
-  return os::Linux::host_swap();
+  physical_memory_size_type host_swap = 0;
+  (void)os::Linux::host_swap(host_swap); // Discard return value and treat as no swap
+  return static_cast<jlong>(host_swap);
 #else
-  size_t total_swap_space = 0;
+  physical_memory_size_type total_swap_space = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::total_swap_space(total_swap_space);
   return static_cast<jlong>(total_swap_space);

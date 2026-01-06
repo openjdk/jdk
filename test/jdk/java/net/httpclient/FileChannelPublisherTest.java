@@ -90,7 +90,7 @@ class FileChannelPublisherTest {
 
     private static final int DEFAULT_BUFFER_SIZE = Utils.getBuffer().capacity();
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     private static final HttpClient CLIENT = HttpClient.newBuilder().sslContext(SSL_CONTEXT).proxy(NO_PROXY).build();
 
@@ -101,14 +101,6 @@ class FileChannelPublisherTest {
             HTTPS1 = ServerRequestPair.of(Version.HTTP_1_1, true),
             HTTP2 = ServerRequestPair.of(Version.HTTP_2, false),
             HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new UncheckedIOException(exception);
-        }
-    }
 
     private record ServerRequestPair(
             String serverName,
@@ -531,9 +523,8 @@ class FileChannelPublisherTest {
 
             // Verifying the client failure
             LOGGER.log("Verifying the client failure");
-            Exception requestFailure0 = assertThrows(ExecutionException.class, () -> responseFutureRef.get().get());
-            Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
-            assertInstanceOf(ClosedChannelException.class, requestFailure1.getCause());
+            Exception requestFailure = assertThrows(ExecutionException.class, () -> responseFutureRef.get().get());
+            assertInstanceOf(ClosedChannelException.class, requestFailure.getCause());
 
             verifyServerIncompleteRead(pair, fileLength);
 
@@ -578,9 +569,8 @@ class FileChannelPublisherTest {
                 // Verifying the client failure
                 LOGGER.log("Verifying the client failure");
                 Exception requestFailure0 = assertThrows(ExecutionException.class, responseFuture::get);
-                Exception requestFailure1 = assertInstanceOf(UncheckedIOException.class, requestFailure0.getCause());
-                Exception requestFailure2 = assertInstanceOf(IOException.class, requestFailure1.getCause());
-                String requestFailure2Message = requestFailure2.getMessage();
+                Exception requestFailure1 = assertInstanceOf(IOException.class, requestFailure0.getCause());
+                String requestFailure2Message = requestFailure1.getMessage();
                 assertTrue(
                         requestFailure2Message.contains("Unexpected EOF"),
                         "unexpected message: " + requestFailure2Message);

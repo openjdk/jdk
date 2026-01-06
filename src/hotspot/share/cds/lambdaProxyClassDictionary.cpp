@@ -357,7 +357,7 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
   assert(nest_host == shared_nest_host, "mismatched nest host");
 
-  EventClassLoad class_load_start_event;
+  EventClassLoad class_load_event;
 
   // Add to class hierarchy, and do possible deoptimizations.
   lambda_ik->add_to_hierarchy(THREAD);
@@ -368,8 +368,8 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
   if (JvmtiExport::should_post_class_load()) {
     JvmtiExport::post_class_load(THREAD, lambda_ik);
   }
-  if (class_load_start_event.should_commit()) {
-    SystemDictionary::post_class_load_event(&class_load_start_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
   }
 
   lambda_ik->initialize(CHECK_NULL);
@@ -518,7 +518,7 @@ void LambdaProxyClassDictionary::print_on(const char* prefix,
   if (!dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
     SharedLambdaDictionaryPrinter ldp(st, start_index);
-    dictionary->iterate(&ldp);
+    dictionary->iterate_all(&ldp);
   }
 }
 

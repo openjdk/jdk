@@ -168,11 +168,17 @@ address Method::get_c2i_entry() {
 }
 
 address Method::get_c2i_unverified_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::get_handle_wrong_method_abstract_stub();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_unverified_entry();
 }
 
 address Method::get_c2i_no_clinit_check_entry() {
+  if (is_abstract()) {
+    return nullptr;
+  }
   assert(VM_Version::supports_fast_class_init_checks(), "");
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_no_clinit_check_entry();
@@ -1287,7 +1293,9 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
     h_method->_from_compiled_entry = SharedRuntime::get_handle_wrong_method_abstract_stub();
   } else if (_adapter == nullptr) {
     (void) make_adapters(h_method, CHECK);
+#ifndef ZERO
     assert(adapter()->is_linked(), "Adapter must have been linked");
+#endif
     h_method->_from_compiled_entry = adapter()->get_c2i_entry();
   }
 

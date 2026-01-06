@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -55,19 +55,19 @@ using MacroAssembler::null_check;
                  Register result);
 
   // locking
-  // hdr     : must be r0, contents destroyed
-  // obj     : must point to the object to lock, contents preserved
-  // disp_hdr: must point to the displaced header location, contents preserved
-  // temp    : temporary register, must not be rscratch1 or rscratch2
+  // hdr       : must be r0, contents destroyed
+  // obj       : must point to the object to lock, contents preserved
+  // basic_lock: must point to the basic lock, contents preserved
+  // temp      : temporary register, must not be rscratch1 or rscratch2
   // returns code offset at which to add null check debug information
-  int lock_object  (Register swap, Register obj, Register disp_hdr, Register temp, Label& slow_case);
+  int lock_object  (Register swap, Register obj, Register basic_lock, Register temp, Label& slow_case);
 
   // unlocking
-  // hdr     : contents destroyed
-  // obj     : must point to the object to lock, contents preserved
-  // disp_hdr: must be r0 & must point to the displaced header location, contents destroyed
-  // temp    : temporary register, must not be rscratch1 or rscratch2
-  void unlock_object(Register swap, Register obj, Register lock, Register temp, Label& slow_case);
+  // hdr       : contents destroyed
+  // obj       : must point to the object to lock, contents preserved
+  // basic_lock: must be r0 & must point to the basic lock, contents destroyed
+  // temp      : temporary register, must not be rscratch1 or rscratch2
+  void unlock_object(Register swap, Register obj, Register basic_lock, Register temp, Label& slow_case);
 
   void initialize_object(
     Register obj,                      // result: pointer to object after successful allocation

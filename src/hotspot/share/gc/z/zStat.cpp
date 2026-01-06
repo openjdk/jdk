@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "cppstdlib/limits.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -45,8 +46,6 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
-
-#include <limits>
 
 #define ZSIZE_FMT                       "%zuM(%.0f%%)"
 #define ZSIZE_ARGS_WITH_MAX(size, max)  ((size) / M), (percent_of(size, max))
@@ -1410,11 +1409,12 @@ ZStatWorkersStats ZStatWorkers::stats() {
 //
 void ZStatLoad::print() {
   double loadavg[3] = {};
-  os::loadavg(loadavg, ARRAY_SIZE(loadavg));
-  log_info(gc, load)("Load: %.2f (%.0f%%) / %.2f (%.0f%%) / %.2f (%.0f%%)",
-                     loadavg[0], percent_of(loadavg[0], (double) ZCPU::count()),
-                     loadavg[1], percent_of(loadavg[1], (double) ZCPU::count()),
-                     loadavg[2], percent_of(loadavg[2], (double) ZCPU::count()));
+  if (os::loadavg(loadavg, ARRAY_SIZE(loadavg)) != -1) {
+    log_info(gc, load)("Load: %.2f (%.0f%%) / %.2f (%.0f%%) / %.2f (%.0f%%)",
+                       loadavg[0], percent_of(loadavg[0], (double) ZCPU::count()),
+                       loadavg[1], percent_of(loadavg[1], (double) ZCPU::count()),
+                       loadavg[2], percent_of(loadavg[2], (double) ZCPU::count()));
+  }
 }
 
 //

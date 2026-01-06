@@ -23,7 +23,6 @@
 
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -50,7 +49,10 @@ import java.net.http.HttpResponse.BodySubscriber;
 
 import static java.lang.String.format;
 import static java.lang.System.out;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 
 /**
  * @test
@@ -91,11 +93,10 @@ public class CancelledResponse {
 
     static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     final ServerSocketFactory factory;
-    final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     final boolean useSSL;
     CancelledResponse(boolean useSSL) throws IOException {
         this.useSSL = useSSL;
-        context = new SimpleSSLContext().get();
         SSLContext.setDefault(context);
         factory = useSSL ? SSLServerSocketFactory.getDefault()
                          : ServerSocketFactory.getDefault();
@@ -164,7 +165,10 @@ public class CancelledResponse {
         server.start();
 
         HttpClient client = newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder(uri).version(version).build();
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                .setOption(H3_DISCOVERY, version == HTTP_3 ? ALT_SVC : null)
+                .version(version)
+                .build();
         try {
             for (int i = 0; i < responses.length; i++) {
                 HttpResponse<String> r = null;

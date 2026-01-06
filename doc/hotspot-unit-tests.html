@@ -305,11 +305,11 @@ recognize your tests.</p>
 the product.</p>
 <ul>
 <li><p>All unit tests for a class from <code>foo/bar/baz.cpp</code>
-should be placed <code>foo/bar/test_baz.cpp</code> in
-<code>hotspot/test/native/</code> directory. Having all tests for a
-class in one file is a common practice for unit tests, it helps to see
-all existing tests at once, share functions and/or resources without
-losing encapsulation.</p></li>
+should be placed <code>foo/bar/test_baz.cpp</code> in the
+<code>test/hotspot/gtest/</code> directory. Having all tests for a class
+in one file is a common practice for unit tests, it helps to see all
+existing tests at once, share functions and/or resources without losing
+encapsulation.</p></li>
 <li><p>For tests which test more than one class, directory hierarchy
 should be the same as product hierarchy, and file name should reflect
 the name of the tested subsystem/functionality. For example, if a
@@ -319,7 +319,7 @@ placed in <code>gc/g1</code> directory.</p></li>
 <p>Please note that framework prepends directory name to a test group
 name. For example, if <code>TEST(foo, check_this)</code> and
 <code>TEST(bar, check_that)</code> are defined in
-<code>hotspot/test/native/gc/shared/test_foo.cpp</code> file, they will
+<code>test/hotspot/gtest/gc/shared/test_foo.cpp</code> file, they will
 be reported as <code>gc/shared/foo::check_this</code> and
 <code>gc/shared/bar::check_that</code>.</p>
 <h3 id="test-names">Test names</h3>

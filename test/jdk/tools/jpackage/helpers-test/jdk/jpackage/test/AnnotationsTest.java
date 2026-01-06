@@ -95,6 +95,18 @@ public class AnnotationsTest extends JUnitAdapter {
             recordTestCase(a, b, other);
         }
 
+        enum Tack {
+            STARBOARD,
+            PORTSIDE;
+        }
+
+        @Test
+        @Parameter({"STARBOARD"})
+        @Parameter({"PORTSIDE", "STARBOARD"})
+        public void testEnumVarArg(Tack ... cource) {
+            recordTestCase((Object[]) cource);
+        }
+
         @Test
         @ParameterSupplier("dateSupplier")
         @ParameterSupplier("jdk.jpackage.test.AnnotationsTest.dateSupplier")
@@ -118,6 +130,8 @@ public class AnnotationsTest extends JUnitAdapter {
                     "().testVarArg2(-89, bar, [more, moore](length=2))",
                     "().testVarArg2(-89, bar, [more](length=1))",
                     "().testVarArg2(12, foo, [](length=0))",
+                    "().testEnumVarArg(STARBOARD)",
+                    "().testEnumVarArg(PORTSIDE, STARBOARD)",
                     "().testDates(2018-05-05)",
                     "().testDates(2018-07-11)",
                     "().testDates(2034-05-05)",
@@ -339,12 +353,12 @@ public class AnnotationsTest extends JUnitAdapter {
         try {
             log = captureJPackageTestLog(() -> Main.main(TestBuilder.build().workDirRoot(workDir), args));
             assertRecordedTestDescs(expectedTestDescs);
-        } catch (Throwable t) {
-            t.printStackTrace(System.err);
+        } catch (Exception ex) {
+            ex.printStackTrace(System.err);
             System.exit(1);
 
             // Redundant, but needed to suppress "The local variable log may not have been initialized" error.
-            throw new RuntimeException(t);
+            throw new RuntimeException(ex);
         }
 
         final var actualTestCount = Integer.parseInt(log.stream().dropWhile(line -> {
