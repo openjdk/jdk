@@ -63,8 +63,8 @@ public class TestSplitPaneCompResize {
         JList list = new JList<>(listItems);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setSelectedIndex(0);
+
         JScrollPane comp = new JScrollPane(list);
- 
         JSplitPane inner = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                                           comp, new JPanel());
         JPanel rightPanel = new JPanel();
