@@ -2205,7 +2205,6 @@ public class BasicSplitPaneUI extends SplitPaneUI
             dividerKeyboardResize = false;
             splitPane.repaint();
         }
-
     }
 
 
