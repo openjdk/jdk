@@ -64,7 +64,7 @@ public class TestSplitPaneCompResize {
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setSelectedIndex(0);
         JScrollPane comp = new JScrollPane(list);
-        
+ 
         JSplitPane inner = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                                           comp, new JPanel());
         JPanel rightPanel = new JPanel();
@@ -106,7 +106,7 @@ public class TestSplitPaneCompResize {
                 frame = new JFrame("SplitPaneDemo");
 
                 TestSplitPaneCompResize sp = new TestSplitPaneCompResize();
-                JSplitPane jsp = sp.getSplitPane(); 
+                JSplitPane jsp = sp.getSplitPane();
                 frame.getContentPane().add(jsp);
                 jsp.setUI(new MySplitPaneUI());
                 jsp.setOneTouchExpandable(true);
