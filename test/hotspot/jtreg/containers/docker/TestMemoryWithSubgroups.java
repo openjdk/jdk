@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025, 2026, BELLSOFT. All rights reserved.
+ * Copyright (C) 2025, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
