@@ -59,7 +59,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  */
 public class AltServiceUsageTest implements HttpServerAdapters {
 
-    private SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private HttpTestServer originServer;
     private HttpTestServer altServer;
 
@@ -67,11 +67,6 @@ public class AltServiceUsageTest implements HttpServerAdapters {
 
     @BeforeClass
     public void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
-
         // attempt to create an HTTP/3 server, an HTTP/2 server, and a
         // DatagramChannel bound to the same port as the HTTP/2 server
         int count = 0;

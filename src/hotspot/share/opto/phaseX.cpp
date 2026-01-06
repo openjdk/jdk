@@ -1079,7 +1079,8 @@ void PhaseIterGVN::verify_optimize() {
 
   if (is_verify_Value() ||
       is_verify_Ideal() ||
-      is_verify_Identity()) {
+      is_verify_Identity() ||
+      is_verify_invariants()) {
     ResourceMark rm;
     Unique_Node_List worklist;
     bool failure = false;
@@ -1091,6 +1092,7 @@ void PhaseIterGVN::verify_optimize() {
       if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, false); }
       if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, true); }
       if (is_verify_Identity()) { failure |= verify_Identity_for(n); }
+      if (is_verify_invariants()) { failure |= verify_node_invariants_for(n); }
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
@@ -1105,7 +1107,7 @@ void PhaseIterGVN::verify_optimize() {
     // We should either make sure that these nodes are properly added back to the IGVN worklist
     // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
     // in the verification code above if that is not possible for some reason (like Load nodes).
-    assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
+    assert(!failure, "Missed optimization opportunity/broken graph in PhaseIterGVN");
   }
 
   verify_empty_worklist(nullptr);
@@ -2060,6 +2062,21 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
   i->dump_bfs(1, nullptr, "", &ss);
   tty->print_cr("%s", ss.as_string());
   return true;
+}
+
+// Some other verifications that are not specific to a particular transformation.
+bool PhaseIterGVN::verify_node_invariants_for(const Node* n) {
+  if (n->is_AddP()) {
+    if (!n->as_AddP()->address_input_has_same_base()) {
+      stringStream ss; // Print as a block without tty lock.
+      ss.cr();
+      ss.print_cr("Base pointers must match for AddP chain:");
+      n->dump_bfs(2, nullptr, "", &ss);
+      tty->print_cr("%s", ss.as_string());
+      return true;
+    }
+  }
+  return false;
 }
 #endif
 
