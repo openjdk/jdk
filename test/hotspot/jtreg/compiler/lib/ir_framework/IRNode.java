@@ -690,16 +690,6 @@ public class IRNode {
         beforeMatchingNameRegex(CON_L, "ConL");
     }
 
-    public static final String CON_D = PREFIX + "CON_D" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(CON_D, "ConD");
-    }
-
-    public static final String CON_F = PREFIX + "CON_F" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(CON_F, "ConF");
-    }
-
     public static final String COUNTED_LOOP = PREFIX + "COUNTED_LOOP" + POSTFIX;
     static {
         String regex = START + "CountedLoop\\b" + MID + END;
@@ -1476,6 +1466,16 @@ public class IRNode {
     public static final String VECTOR_MASK_LANE_IS_SET = PREFIX + "VECTOR_MASK_LANE_IS_SET" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_MASK_LANE_IS_SET, "ExtractUB");
+    }
+
+    public static final String VECTOR_MASK_GEN = PREFIX + "VECTOR_MASK_GEN" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_GEN, "VectorMaskGen");
+    }
+
+    public static final String VECTOR_MASK_FIRST_TRUE = PREFIX + "VECTOR_MASK_FIRST_TRUE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_FIRST_TRUE, "VectorMaskFirstTrue");
     }
 
     // Can only be used if avx512_vnni is available.
@@ -2791,24 +2791,24 @@ public class IRNode {
         machOnlyNameRegex(X86_SCONV_F2L, "convF2L_reg_reg");
     }
 
-    public static final String X86_SCONV_D2I_AVX10 = PREFIX + "X86_SCONV2_D2I_AVX10" + POSTFIX;
+    public static final String X86_SCONV_D2I_AVX10_2 = PREFIX + "X86_SCONV_D2I_AVX10_2" + POSTFIX;
     static {
-        machOnlyNameRegex(X86_SCONV_D2I_AVX10, "convD2I_(reg_reg|reg_mem)_avx10");
+        machOnlyNameRegex(X86_SCONV_D2I_AVX10_2, "convD2I_(reg_reg|reg_mem)_avx10_2");
     }
 
-    public static final String X86_SCONV_D2L_AVX10 = PREFIX + "X86_SCONV_D2L_AVX10" + POSTFIX;
+    public static final String X86_SCONV_D2L_AVX10_2 = PREFIX + "X86_SCONV_D2L_AVX10_2" + POSTFIX;
     static {
-        machOnlyNameRegex(X86_SCONV_D2L_AVX10, "convD2L_(reg_reg|reg_mem)_avx10");
+        machOnlyNameRegex(X86_SCONV_D2L_AVX10_2, "convD2L_(reg_reg|reg_mem)_avx10_2");
     }
 
-    public static final String X86_SCONV_F2I_AVX10 = PREFIX + "X86_SCONV_F2I_AVX10" + POSTFIX;
+    public static final String X86_SCONV_F2I_AVX10_2 = PREFIX + "X86_SCONV_F2I_AVX10_2" + POSTFIX;
     static {
-        machOnlyNameRegex(X86_SCONV_F2I_AVX10, "convF2I_(reg_reg|reg_mem)_avx10");
+        machOnlyNameRegex(X86_SCONV_F2I_AVX10_2, "convF2I_(reg_reg|reg_mem)_avx10_2");
     }
 
-    public static final String X86_SCONV_F2L_AVX10 = PREFIX + "X86_SCONV_F2L_AVX10" + POSTFIX;
+    public static final String X86_SCONV_F2L_AVX10_2 = PREFIX + "X86_SCONV_F2L_AVX10_2" + POSTFIX;
     static {
-        machOnlyNameRegex(X86_SCONV_F2L_AVX10, "convF2L_(reg_reg|reg_mem)_avx10");
+        machOnlyNameRegex(X86_SCONV_F2L_AVX10_2, "convF2L_(reg_reg|reg_mem)_avx10_2");
     }
 
     public static final String X86_VCAST_F2X = PREFIX + "X86_VCAST_F2X" + POSTFIX;
@@ -2821,14 +2821,14 @@ public class IRNode {
         machOnlyNameRegex(X86_VCAST_D2X, "castDtoX_reg_(av|eve)x");
     }
 
-    public static final String X86_VCAST_F2X_AVX10 = PREFIX + "X86_VCAST_F2X_AVX10" + POSTFIX;
+    public static final String X86_VCAST_F2X_AVX10_2 = PREFIX + "X86_VCAST_F2X_AVX10_2" + POSTFIX;
     static {
-        machOnlyNameRegex(X86_VCAST_F2X_AVX10, "castFtoX_(reg|mem)_avx10");
+        machOnlyNameRegex(X86_VCAST_F2X_AVX10_2, "castFtoX_(reg|mem)_avx10_2");
     }
 
-    public static final String X86_VCAST_D2X_AVX10 = PREFIX + "X86_VCAST_D2X_AVX10" + POSTFIX;
+    public static final String X86_VCAST_D2X_AVX10_2 = PREFIX + "X86_VCAST_D2X_AVX10_2" + POSTFIX;
     static {
-        machOnlyNameRegex(X86_VCAST_D2X_AVX10, "castDtoX_(reg|mem)_avx10");
+        machOnlyNameRegex(X86_VCAST_D2X_AVX10_2, "castDtoX_(reg|mem)_avx10_2");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
