@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,18 @@ public class GetXSpace {
             throw new RuntimeException("no partitions?");
 
         for (var p : l) {
-            Space s = new Space(p);
+            Space s;
+            try {
+                s = new Space(p);
+            } catch (RuntimeException x) {
+                // Avoid failing for transient file systems on Windows
+                if (Platform.isWindows()) {
+                    File f = new File(p);
+                    if (!f.exists())
+                        continue;
+                }
+                throw x;
+            }
             compare(s);
             compareZeroNonExist();
             compareZeroExist();
