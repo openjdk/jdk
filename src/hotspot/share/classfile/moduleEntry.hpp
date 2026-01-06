@@ -128,6 +128,12 @@ public:
     _reads = r;
     DEBUG_ONLY(_reads_is_archived = false);
   }
+  void pack_reads() {
+    if (_reads != nullptr) {
+      _reads->shrink_to_fit();
+    }
+  }
+
   Array<ModuleEntry*>* archived_reads() const {
     assert(_reads_is_archived, "sanity");
     return _archived_reads;
@@ -283,6 +289,7 @@ public:
 #if INCLUDE_CDS_JAVA_HEAP
   void iterate_symbols(MetaspaceClosure* closure);
   Array<ModuleEntry*>* allocate_archived_entries();
+  Array<ModuleEntry*>* build_aot_table(ClassLoaderData* loader_data, TRAPS);
   void init_archived_entries(Array<ModuleEntry*>* archived_modules);
   void load_archived_entries(ClassLoaderData* loader_data,
                              Array<ModuleEntry*>* archived_modules);

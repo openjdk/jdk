@@ -31,6 +31,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -189,6 +190,12 @@ void PackageEntry::delete_qualified_exports() {
   _qualified_exports = nullptr;
 }
 
+void PackageEntry::pack_qualified_exports() {
+  if (_qualified_exports != nullptr) {
+    _qualified_exports->shrink_to_fit();
+  }
+}
+
 void PackageEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_name);
   it->push(&_module);
@@ -323,6 +330,36 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   }
   return archived_packages;
 }
+
+Array<PackageEntry*>* PackageEntryTable::build_aot_table(ClassLoaderData* loader_data, TRAPS) {
+  // First count the packages in named modules
+  int n = 0;
+  auto count = [&] (const SymbolHandle& key, PackageEntry*& p) {
+    if (p->should_be_archived()) {
+      n++;
+    }
+  };
+  _table.iterate_all(count);
+
+  Array<PackageEntry*>* archived_packages = MetadataFactory::new_array<PackageEntry*>(loader_data, n, nullptr, CHECK_NULL);
+  // reset n
+  n = 0;
+  auto grab = [&] (const SymbolHandle& key, PackageEntry*& p) {
+    if (p->should_be_archived()) {
+      p->pack_qualified_exports();
+      archived_packages->at_put(n++, p);
+    }
+  };
+  _table.iterate_all(grab);
+
+  if (n > 1) {
+    // Always allocate in the same order to produce deterministic archive.
+    QuickSort::sort(archived_packages->data(), n, compare_package_by_name);
+  }
+
+  return archived_packages;
+}
+
 
 void PackageEntryTable::init_archived_entries(Array<PackageEntry*>* archived_packages) {
   for (int i = 0; i < archived_packages->length(); i++) {

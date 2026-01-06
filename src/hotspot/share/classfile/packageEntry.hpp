@@ -205,6 +205,8 @@ public:
   void purge_qualified_exports();
   void delete_qualified_exports();
 
+  void pack_qualified_exports(); // used by AOT
+
   // methods required by MetaspaceClosure and IterableMetadata
   void metaspace_pointers_do(MetaspaceClosure* it);
   int size() const { return (int)heap_word_size(sizeof(PackageEntry)); }
@@ -282,6 +284,7 @@ public:
 
 #if INCLUDE_CDS_JAVA_HEAP
   void iterate_symbols(MetaspaceClosure* closure);
+  Array<PackageEntry*>* build_aot_table(ClassLoaderData* loader_data, TRAPS);
   Array<PackageEntry*>* allocate_archived_entries();
   void init_archived_entries(Array<PackageEntry*>* archived_packages);
   void load_archived_entries(Array<PackageEntry*>* archived_packages);

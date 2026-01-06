@@ -33,6 +33,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -45,6 +46,10 @@ class ArchivedClassLoaderData {
   Array<ModuleEntry*>* _modules;
   ModuleEntry* _unnamed_module;
 
+  Array<PackageEntry*>* _packages2;
+  Array<ModuleEntry*>* _modules2;
+  ModuleEntry* _unnamed_module2;
+
   void assert_valid(ClassLoaderData* loader_data) {
     // loader_data may be null if the boot layer has loaded no modules for the platform or
     // system loaders (e.g., if you create a custom JDK image with only java.base).
@@ -56,7 +61,9 @@ class ArchivedClassLoaderData {
 public:
   ArchivedClassLoaderData() : _packages(nullptr), _modules(nullptr), _unnamed_module(nullptr) {}
 
+  void iterate_roots(MetaspaceClosure* closure);
   void iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure);
+  void build_tables(ClassLoaderData* loader_data, TRAPS);
   void allocate(ClassLoaderData* loader_data);
   void init_archived_entries(ClassLoaderData* loader_data);
   ModuleEntry* unnamed_module() {
@@ -67,6 +74,9 @@ public:
     f->do_ptr(&_packages);
     f->do_ptr(&_modules);
     f->do_ptr(&_unnamed_module);
+    f->do_ptr(&_packages2);
+    f->do_ptr(&_modules2);
+    f->do_ptr(&_unnamed_module2);
   }
 
   void restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops);
@@ -80,6 +90,13 @@ static ModuleEntry* _archived_javabase_moduleEntry = nullptr;
 static int _platform_loader_root_index = -1;
 static int _system_loader_root_index = -1;
 
+void ArchivedClassLoaderData::iterate_roots(MetaspaceClosure* it) {
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
+  it->push(&_packages2);
+  it->push(&_modules2);
+  it->push(&_unnamed_module2);
+}
+
 void ArchivedClassLoaderData::iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert_valid(loader_data);
@@ -87,6 +104,20 @@ void ArchivedClassLoaderData::iterate_symbols(ClassLoaderData* loader_data, Meta
     loader_data->packages()->iterate_symbols(closure);
     loader_data->modules() ->iterate_symbols(closure);
     loader_data->unnamed_module()->iterate_symbols(closure);
+  }
+}
+
+void ArchivedClassLoaderData::build_tables(ClassLoaderData* loader_data, TRAPS) {
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
+  assert_valid(loader_data);
+  if (loader_data != nullptr) {
+    // We can't create hashtables at dump time because the hashcode depends on the
+    // address of the Symbols, which may be relocated at runtime due to ASLR.
+    // So we store the packages/modules in Arrays. At runtime, we create
+    // the hashtables using these arrays.
+    _packages2 = loader_data->packages()->build_aot_table(loader_data, CHECK);
+    _modules2  = loader_data->modules()->build_aot_table(loader_data, CHECK);
+    _unnamed_module2 = loader_data->unnamed_module();
   }
 }
 
@@ -153,7 +184,6 @@ void ArchivedClassLoaderData::clear_archived_oops() {
 // ------------------------------
 
 void ClassLoaderDataShared::load_archived_platform_and_system_class_loaders() {
-#if INCLUDE_CDS_JAVA_HEAP
   // The streaming object loader prefers loading the class loader related objects before
   //  the CLD constructor which has a NoSafepointVerifier.
   if (!HeapShared::is_loading_streaming_mode()) {
@@ -178,7 +208,6 @@ void ClassLoaderDataShared::load_archived_platform_and_system_class_loaders() {
   if (system_loader_module_entry != nullptr) {
     system_loader_module_entry->preload_archived_oops();
   }
-#endif
 }
 
 static ClassLoaderData* null_class_loader_data() {
@@ -208,6 +237,20 @@ void ClassLoaderDataShared::ensure_module_entry_table_exists(oop class_loader) {
   Handle h_loader(JavaThread::current(), class_loader);
   ModuleEntryTable* met = Modules::get_module_entry_table(h_loader);
   assert(met != nullptr, "sanity");
+}
+
+void ClassLoaderDataShared::build_tables(TRAPS) {
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
+  _archived_boot_loader_data.build_tables(null_class_loader_data(), CHECK);
+  _archived_platform_loader_data.build_tables(java_platform_loader_data_or_null(), CHECK);
+  _archived_system_loader_data.build_tables(java_system_loader_data_or_null(), CHECK);
+}
+
+void ClassLoaderDataShared::iterate_roots(MetaspaceClosure* it) {
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
+  _archived_boot_loader_data.iterate_roots(it);
+  _archived_platform_loader_data.iterate_roots(it);
+  _archived_system_loader_data.iterate_roots(it);
 }
 
 void ClassLoaderDataShared::iterate_symbols(MetaspaceClosure* closure) {

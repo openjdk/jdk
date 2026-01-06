@@ -367,6 +367,9 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
     case MetaspaceObj::PackageEntryType:
       log_package_entry((PackageEntry*)src, requested_addr, type_name, bytes, current);
       break;
+    case MetaspaceObj::GrowableArrayType:
+      log_growable_array((GrowableArrayBase*)src, requested_addr, type_name, bytes, current);
+      break;
     case MetaspaceObj::SymbolType:
       log_symbol((Symbol*)src, requested_addr, type_name, bytes, current);
       break;
@@ -441,6 +444,13 @@ void AOTMapLogger::log_package_entry(PackageEntry* pkg, address requested_addr, 
   ResourceMark rm(current);
   log_debug(aot, map)(_LOG_PREFIX " %s - %s", p2i(requested_addr), type_name, bytes,
                       pkg->module()->name_as_C_string(), pkg->name_as_C_string());
+}
+
+void AOTMapLogger::log_growable_array(GrowableArrayBase* arr, address requested_addr, const char* type_name,
+                                      int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %d (%d)", p2i(requested_addr), type_name, bytes,
+                      arr->length(), arr->capacity());
 }
 
 void AOTMapLogger::log_klass(Klass* k, address requested_addr, const char* type_name,

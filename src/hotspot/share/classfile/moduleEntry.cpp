@@ -37,6 +37,7 @@
 #include "jni.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -44,7 +45,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/events.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/growableArray.inline.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
@@ -613,6 +614,25 @@ Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
   }
   return archived_modules;
 }
+
+Array<ModuleEntry*>* ModuleEntryTable::build_aot_table(ClassLoaderData* loader_data, TRAPS) {
+  Array<ModuleEntry*>* aot_table =
+    MetadataFactory::new_array<ModuleEntry*>(loader_data, _table.number_of_entries(), nullptr, CHECK_NULL);
+  int n = 0;
+  auto grab = [&] (const SymbolHandle& key, ModuleEntry*& m) {
+    m->pack_reads();
+    aot_table->at_put(n++, m);
+  };
+  _table.iterate_all(grab);
+
+  if (n > 1) {
+    // Always allocate in the same order to produce deterministic archive.
+    QuickSort::sort(aot_table->data(), n, compare_module_by_name);
+  }
+
+  return aot_table;
+}
+
 
 void ModuleEntryTable::init_archived_entries(Array<ModuleEntry*>* archived_modules) {
   assert(CDSConfig::is_dumping_full_module_graph(), "sanity");

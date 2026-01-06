@@ -40,6 +40,8 @@ class ClassLoaderDataShared : AllStatic {
 public:
   static void load_archived_platform_and_system_class_loaders() NOT_CDS_JAVA_HEAP_RETURN;
   static void restore_archived_modules_for_preloading_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
+  static void build_tables(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void iterate_roots(MetaspaceClosure* closure) NOT_CDS_JAVA_HEAP_RETURN;
 #if INCLUDE_CDS_JAVA_HEAP
   static void ensure_module_entry_tables_exist();
   static void allocate_archived_tables();

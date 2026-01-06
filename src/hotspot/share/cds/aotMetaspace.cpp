@@ -698,6 +698,9 @@ public:
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
     TrainingData::iterate_roots(it);
+    if (CDSConfig::is_dumping_full_module_graph()) {
+      ClassLoaderDataShared::iterate_roots(it);
+    }
 
     // The above code should find all the symbols that are referenced by the
     // archived classes. We just need to add the extra symbols which
@@ -1135,6 +1138,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     HeapShared::init_heap_writer();
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
+      ClassLoaderDataShared::build_tables(CHECK);
       HeapShared::reset_archived_object_states(CHECK);
     }
 
