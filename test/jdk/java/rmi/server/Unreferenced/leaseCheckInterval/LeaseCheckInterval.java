@@ -114,17 +114,10 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
             // parse the time, representing the time at which the SelfTerminator
             // application termination started
             final Instant terminationStartedAt = Instant.parse(content);
-            final Duration waitDuration = Duration.between(terminationStartedAt,
-                    waitEndedAt);
-            System.out.println("wait completed in " + waitDuration);
-            if (waitDuration.compareTo(EXPECTED_MAX_DURATION) > 0) {
-                throw new RuntimeException("Took unexpectedly long (duration=" +
-                        waitDuration + ") to invoke Unreferenced.unreferenced()," +
-                        " expected max duration=" + EXPECTED_MAX_DURATION);
-            } else {
-                System.err.println("TEST PASSED: unreferenced() invoked in timely" +
-                        " fashion (duration=" + waitDuration + ")");
-            }
+            final Duration waitDuration = assertWithinExpectedTimeLimit(waitEndedAt,
+                    terminationStartedAt);
+            System.err.println("TEST PASSED: unreferenced() invoked in timely" +
+                    " fashion (duration=" + waitDuration + ")");
         } finally {
             if (jvm != null) {
                 jvm.destroy();
@@ -138,5 +131,23 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
             } catch (RemoteException e) {
             }
         }
+    }
+
+    /*
+     * Verifies that the duration between the lease expiration and the callback
+     * invocation is within the expected limit. Throws an exception if the wait
+     * duration is larger than expected limit, else returns the actual wait duration.
+     */
+    private static Duration assertWithinExpectedTimeLimit(final Instant waitEndedAt,
+                                                          final Instant terminationStartedAt) {
+
+        final Duration waitDuration = Duration.between(terminationStartedAt, waitEndedAt);
+        System.out.println("wait completed in " + waitDuration);
+        if (waitDuration.compareTo(EXPECTED_MAX_DURATION) > 0) {
+            throw new RuntimeException("Took unexpectedly long (duration=" +
+                    waitDuration + ") to invoke Unreferenced.unreferenced()," +
+                    " expected max duration=" + EXPECTED_MAX_DURATION);
+        }
+        return waitDuration;
     }
 }
