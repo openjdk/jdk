@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025, BELLSOFT. All rights reserved.
+ * Copyright (C) 2025, 2026, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ public class TestMemoryWithSubgroups {
         opts.javaOpts = new ArrayList<>();
         opts.appendTestJavaOptions = false;
         opts.addDockerOpts("--privileged")
+            .addDockerOpts("--user", "root")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
             .addDockerOpts("--memory", containerMemorySize);
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
@@ -114,6 +115,7 @@ public class TestMemoryWithSubgroups {
         opts.javaOpts = new ArrayList<>();
         opts.appendTestJavaOptions = false;
         opts.addDockerOpts("--privileged")
+            .addDockerOpts("--user", "root")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
             .addDockerOpts("--memory", containerMemorySize);
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
