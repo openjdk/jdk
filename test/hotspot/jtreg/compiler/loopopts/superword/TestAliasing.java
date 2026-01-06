@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8324751
+ * @key randomness
  * @summary Test Speculative Aliasing checks in SuperWord
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestAliasing nCOH_nAV_ySAC

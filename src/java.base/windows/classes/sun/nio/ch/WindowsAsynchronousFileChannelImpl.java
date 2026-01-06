@@ -452,7 +452,7 @@ public class WindowsAsynchronousFileChannelImpl
                 address = IOUtil.bufferAddress(dst) + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
-                address = IOUtil.bufferAddress(buf) + pos;
+                address = IOUtil.bufferAddress(buf);
             }
 
             boolean pending = false;
@@ -640,7 +640,7 @@ public class WindowsAsynchronousFileChannelImpl
                 // temporarily restore position as we don't know how many bytes
                 // will be written
                 src.position(pos);
-                address = IOUtil.bufferAddress(buf) + pos;
+                address = IOUtil.bufferAddress(buf);
             }
 
             try {

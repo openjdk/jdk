@@ -93,16 +93,19 @@ JAVADOC_DISABLED_DOCLINT_WARNINGS := missing
 JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 
 # The initial set of options for javadoc
+# -XDaccessInternalAPI is a temporary workaround, see 8373909
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -serialwarn -encoding utf-8 -docencoding utf-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
-    --override-methods=summary
+    --override-methods=summary \
+    -XDaccessInternalAPI
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
 REFERENCE_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
     -serialwarn -encoding utf-8 -breakiterator -splitIndex --system none \
-    -html5 -javafx --expand-requires transitive
+    -html5 -javafx --expand-requires transitive \
+    -XDaccessInternalAPI
 
 # Should we add DRAFT stamps to the generated javadoc?
 ifeq ($(VERSION_IS_GA), true)
