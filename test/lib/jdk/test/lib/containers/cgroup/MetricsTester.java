@@ -84,7 +84,7 @@ public class MetricsTester {
 
     public static void main(String[] args) throws Exception {
         Metrics m = Metrics.systemMetrics();
-        // If cgroups is not configured, report success
+        // If cgroups is not configured, the test is skipped.
         if (m == null) {
             throw new SkippedException("Cgroup is not configured, test skipped.");
         }
