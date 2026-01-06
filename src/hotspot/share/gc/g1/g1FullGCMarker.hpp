@@ -25,9 +25,12 @@
 #ifndef SHARE_GC_G1_G1FULLGCMARKER_HPP
 #define SHARE_GC_G1_G1FULLGCMARKER_HPP
 
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -38,15 +41,14 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-typedef OverflowTaskQueue<oop, mtGC>                 OopQueue;
-typedef OverflowTaskQueue<ObjArrayTask, mtGC>        ObjArrayTaskQueue;
 
-typedef GenericTaskQueueSet<OopQueue, mtGC>          OopQueueSet;
-typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC> ObjArrayTaskQueueSet;
 
 class G1CMBitMap;
 class G1FullCollector;
 class TaskTerminator;
+
+typedef G1ScannerTasksQueue    G1MarkTasksQueue;
+typedef G1ScannerTasksQueueSet G1MarkTasksQueueSet;
 
 class G1FullGCMarker : public CHeapObj<mtGC> {
   G1FullCollector*   _collector;
@@ -56,8 +58,8 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   G1CMBitMap*        _bitmap;
 
   // Mark stack
-  OopQueue           _oop_stack;
-  ObjArrayTaskQueue  _objarray_stack;
+  G1MarkTasksQueue     _task_queue;
+  PartialArraySplitter _partial_array_splitter;
 
   // Marking closures
   G1MarkAndPushClosure  _mark_closure;
@@ -68,38 +70,30 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
 
   G1RegionMarkStatsCache _mark_stats_cache;
 
-  inline bool is_empty();
-  inline void push_objarray(oop obj, size_t index);
+  inline bool task_queue_empty();
   inline bool mark_object(oop obj);
 
   // Marking helpers
   inline void follow_object(oop obj);
-  inline void follow_array(objArrayOop array);
-  inline void follow_array_chunk(objArrayOop array, int index);
+  inline void dispatch_task(const ScannerTask& task, bool stolen);
+  inline void follow_array(objArrayOop array, size_t start, size_t end);
+  void follow_partial_array(PartialArrayState* state, bool stolen);
+  void follow_array(objArrayOop array);
 
   inline void publish_and_drain_oop_tasks();
-  // Try to publish all contents from the objArray task queue overflow stack to
-  // the shared objArray stack.
-  // Returns true and a valid task if there has not been enough space in the shared
-  // objArray stack, otherwise returns false and the task is invalid.
-  inline bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
-
 public:
   G1FullGCMarker(G1FullCollector* collector,
                  uint worker_id,
                  G1RegionMarkStats* mark_stats);
   ~G1FullGCMarker();
 
-  // Stack getters
-  OopQueue*          oop_stack()       { return &_oop_stack; }
-  ObjArrayTaskQueue* objarray_stack()  { return &_objarray_stack; }
+  G1MarkTasksQueue* task_queue()       { return &_task_queue; }
 
   // Marking entry points
   template <class T> inline void mark_and_push(T* p);
 
   inline void follow_marking_stacks();
-  void complete_marking(OopQueueSet* oop_stacks,
-                        ObjArrayTaskQueueSet* array_stacks,
+  void complete_marking(G1ScannerTasksQueueSet* task_queues,
                         TaskTerminator* terminator);
 
   // Closure getters

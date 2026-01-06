@@ -71,44 +71,37 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     if (mark_object(obj)) {
-      _oop_stack.push(obj);
+      _task_queue.push(ScannerTask(obj));
     }
     assert(_bitmap->is_marked(obj), "Must be marked");
   }
 }
 
-inline bool G1FullGCMarker::is_empty() {
-  return _oop_stack.is_empty() && _objarray_stack.is_empty();
+inline bool G1FullGCMarker::task_queue_empty() {
+  return _task_queue.is_empty();
 }
 
-inline void G1FullGCMarker::push_objarray(oop obj, size_t index) {
-  ObjArrayTask task(obj, index);
-  assert(task.is_valid(), "bad ObjArrayTask");
-  _objarray_stack.push(task);
+inline void G1FullGCMarker::follow_array(objArrayOop array, size_t start, size_t end) {
+  array->oop_iterate_range(mark_closure(),
+                           checked_cast<int>(start),
+                           checked_cast<int>(end));
 }
 
-inline void G1FullGCMarker::follow_array(objArrayOop array) {
-  mark_closure()->do_klass(array->klass());
-  // Don't push empty arrays to avoid unnecessary work.
-  if (array->length() > 0) {
-    push_objarray(array, 0);
+inline void G1FullGCMarker::dispatch_task(const ScannerTask& task, bool stolen) {
+  if (task.is_partial_array_state()) {
+    assert(_bitmap->is_marked(task.to_partial_array_state()->source()), "should be marked");
+    follow_partial_array(task.to_partial_array_state(), stolen);
+  } else {
+    oop obj = task.to_oop();
+    assert(_bitmap->is_marked(obj), "must be marked");
+    if (obj->is_objArray()) {
+      // Handle object arrays explicitly to allow them to
+      // be split into chunks if needed.
+      follow_array((objArrayOop)obj);
+    } else {
+      obj->oop_iterate(mark_closure());
+    }
   }
-}
-
-void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
-  const int len = array->length();
-  const int beg_index = index;
-  assert(beg_index < len || len == 0, "index too large");
-
-  const int stride = MIN2(len - beg_index, (int) ObjArrayMarkingStride);
-  const int end_index = beg_index + stride;
-
-  // Push the continuation first to allow more efficient work stealing.
-  if (end_index < len) {
-    push_objarray(array, end_index);
-  }
-
-  array->oop_iterate_range(mark_closure(), beg_index, end_index);
 }
 
 inline void G1FullGCMarker::follow_object(oop obj) {
@@ -123,42 +116,21 @@ inline void G1FullGCMarker::follow_object(oop obj) {
 }
 
 inline void G1FullGCMarker::publish_and_drain_oop_tasks() {
-  oop obj;
-  while (_oop_stack.pop_overflow(obj)) {
-    if (!_oop_stack.try_push_to_taskqueue(obj)) {
-      assert(_bitmap->is_marked(obj), "must be marked");
-      follow_object(obj);
+  ScannerTask task;
+  while (_task_queue.pop_overflow(task)) {
+    if (!_task_queue.try_push_to_taskqueue(task)) {
+      dispatch_task(task, false);
     }
   }
-  while (_oop_stack.pop_local(obj)) {
-    assert(_bitmap->is_marked(obj), "must be marked");
-    follow_object(obj);
+  while (_task_queue.pop_local(task)) {
+    dispatch_task(task, false);
   }
-}
-
-inline bool G1FullGCMarker::publish_or_pop_objarray_tasks(ObjArrayTask& task) {
-  // It is desirable to move as much as possible work from the overflow queue to
-  // the shared queue as quickly as possible.
-  while (_objarray_stack.pop_overflow(task)) {
-    if (!_objarray_stack.try_push_to_taskqueue(task)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void G1FullGCMarker::follow_marking_stacks() {
   do {
-    // First, drain regular oop stack.
     publish_and_drain_oop_tasks();
-
-    // Then process ObjArrays one at a time to avoid marking stack bloat.
-    ObjArrayTask task;
-    if (publish_or_pop_objarray_tasks(task) ||
-        _objarray_stack.pop_local(task)) {
-      follow_array_chunk(objArrayOop(task.obj()), task.index());
-    }
-  } while (!is_empty());
+  } while (!task_queue_empty());
 }
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP

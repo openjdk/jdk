@@ -25,6 +25,8 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
+#include "gc/shared/partialArraySplitter.inline.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -36,8 +38,8 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _collector(collector),
     _worker_id(worker_id),
     _bitmap(collector->mark_bitmap()),
-    _oop_stack(),
-    _objarray_stack(),
+    _task_queue(),
+    _partial_array_splitter(collector->partial_array_state_manager(), collector->workers(), ObjArrayMarkingStride),
     _mark_closure(worker_id, this, ClassLoaderData::_claim_stw_fullgc_mark, G1CollectedHeap::heap()->ref_processor_stw()),
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_stw_fullgc_mark),
@@ -47,24 +49,36 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
 }
 
 G1FullGCMarker::~G1FullGCMarker() {
-  assert(is_empty(), "Must be empty at this point");
+  assert(task_queue_empty(), "Must be empty at this point");
 }
 
-void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
-                                      ObjArrayTaskQueueSet* array_stacks,
+void G1FullGCMarker::follow_partial_array(PartialArrayState* state, bool stolen) {
+  // Access state before release by claim().
+  objArrayOop obj_array = objArrayOop(state->source());
+  PartialArraySplitter::Claim claim =
+    _partial_array_splitter.claim(state, task_queue(), stolen);
+  follow_array(obj_array, claim._start, claim._end);
+}
+
+void G1FullGCMarker::follow_array(objArrayOop array) {
+  mark_closure()->do_klass(array->klass());
+  // Don't push empty arrays to avoid unnecessary work.
+  size_t array_length = array->length();
+  if (array_length > 0) {
+    size_t initial_chunk_size = _partial_array_splitter.start(task_queue(), array, nullptr, array_length);
+    follow_array(array, 0, initial_chunk_size);
+  }
+}
+
+void G1FullGCMarker::complete_marking(G1ScannerTasksQueueSet* task_queues,
                                       TaskTerminator* terminator) {
   do {
     follow_marking_stacks();
-    ObjArrayTask steal_array;
-    if (array_stacks->steal(_worker_id, steal_array)) {
-      follow_array_chunk(objArrayOop(steal_array.obj()), steal_array.index());
-    } else {
-      oop steal_oop;
-      if (oop_stacks->steal(_worker_id, steal_oop)) {
-        follow_object(steal_oop);
-      }
+    ScannerTask stolen_task;
+    if(task_queues->steal(_worker_id, stolen_task)) {
+      dispatch_task(stolen_task, true);
     }
-  } while (!is_empty() || !terminator->offer_termination());
+  } while (!task_queue_empty() || !terminator->offer_termination());
 }
 
 void G1FullGCMarker::flush_mark_stats_cache() {
