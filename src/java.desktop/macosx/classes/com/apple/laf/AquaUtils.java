@@ -148,14 +148,33 @@ final class AquaUtils {
         protected abstract T create();
     }
 
-    abstract static class RecyclableSingleton<T> {
-
+    abstract static class LazySingleton<T> {
         T instance;
-
-        final T get() {
+ 
+         final T get() {
             if (instance == null) {
                 instance = getInstance();
             }
+            return instance;
+         }
+
+        abstract T getInstance();
+    }
+
+    abstract static class RecyclableSingleton<T> {
+
+        SoftReference<T> ref;
+
+        final T get() {
+            T instance;
+            if (ref != null) {
+                instance = ref.get();
+                if (instance != null) {
+                    return instance;
+                }
+            }
+            instance = getInstance();
+            ref = new SoftReference<>(instance);
             return instance;
         }
 
@@ -197,7 +216,7 @@ final class AquaUtils {
         protected abstract V getInstance(K key);
     }
 
-    private static final RecyclableSingleton<Boolean> enableAnimations = new RecyclableSingleton<Boolean>() {
+    private static final LazySingleton<Boolean> enableAnimations = new LazySingleton<Boolean>() {
         @Override
         protected Boolean getInstance() {
             final String animationsProperty = System.getProperty(ANIMATIONS_PROPERTY);
