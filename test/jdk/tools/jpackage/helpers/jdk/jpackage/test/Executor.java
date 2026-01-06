@@ -285,7 +285,7 @@ public final class Executor extends CommandArguments<Executor> {
                 } default -> {
                     TKit.assertTrue(expectedExitCodes.contains(getExitCode()), String.format(
                             "Check command %s exited with one of %s codes",
-                            base.execSpec(), expectedExitCodes.stream().sorted()));
+                            base.execSpec(), expectedExitCodes.stream().sorted().toList()));
                 }
             }
             return this;
