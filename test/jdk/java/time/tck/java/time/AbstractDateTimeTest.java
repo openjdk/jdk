@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import test.java.time.temporal.MockFieldNoValue;
 
 /**
@@ -197,13 +199,11 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test
-    public void test_get_TemporalField_invalidField() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            for (TemporalAccessor sample : samples()) {
-                sample.get(MockFieldNoValue.INSTANCE);
-            }
-        });
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void test_get_TemporalField_invalidField(TemporalAccessor sample) {
+        Assertions.assertThrows(DateTimeException.class,
+                () -> sample.get(MockFieldNoValue.INSTANCE));
     }
 
     @Test()
@@ -244,13 +244,11 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test
-    public void test_getLong_TemporalField_invalidField() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            for (TemporalAccessor sample : samples()) {
-                sample.getLong(MockFieldNoValue.INSTANCE);
-            }
-        });
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void test_getLong_TemporalField_invalidField(TemporalAccessor sample) {
+        Assertions.assertThrows(DateTimeException.class,
+                () -> sample.getLong(MockFieldNoValue.INSTANCE));
     }
 
     @Test()
