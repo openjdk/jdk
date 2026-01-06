@@ -59,10 +59,6 @@ import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATIO
 
 public class NMethodRelocationTest {
 
-    protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-
-    static volatile boolean shouldExit = false;
-
     /** Load native library if required. */
     static {
         try {
@@ -74,6 +70,10 @@ public class NMethodRelocationTest {
             throw ule;
         }
     }
+
+    protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+
+    native static boolean shouldExit();
 
     public static void main(String[] argv) throws Exception {
         Executable method = NMethodRelocationTest.class.getDeclaredMethod("compiledMethod");
@@ -103,7 +103,7 @@ public class NMethodRelocationTest {
 
         WHITE_BOX.deoptimizeAll();
 
-        while (!shouldExit) {
+        while (!shouldExit()) {
             WHITE_BOX.fullGC();
         }
     }
