@@ -37,20 +37,17 @@ public class InterpretedVFrame extends JavaVFrame {
   }
 
   public StackValueCollection getLocals() {
-    Method m = getMethod();
-
-    int length = (int) m.getMaxLocals();
-
-    if (m.isNative()) {
-      // If the method is native, getMaxLocals is not telling the truth.
-      // maxlocals then equals the size of parameters
-      length = (int) m.getSizeOfParameters();
-    }
-
-    StackValueCollection result = new StackValueCollection(length);
-
     // Get oopmap describing oops and int for current bci
     OopMapCacheEntry oopMask = getMethod().getMaskFor(getBCI());
+
+    // If the method is native, method()->max_locals() is not telling the truth.
+    // For our purposes, max locals instead equals the size of parameters.
+    Method method = getMethod();
+    int maxLocals = method.isNative() ? (int)method.getSizeOfParameters() : (int)method.getMaxLocals();
+
+    int length = maxLocals;
+
+    StackValueCollection result = new StackValueCollection(length);
 
     // handle locals
     for(int i = 0; i < length; i++) {
