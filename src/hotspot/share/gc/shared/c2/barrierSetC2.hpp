@@ -386,4 +386,6 @@ public:
 #endif
 };
 
+const TypeFunc* make_clone_type();
+
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP

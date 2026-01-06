@@ -813,7 +813,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   return old_tlab_top;
 }
 
-static const TypeFunc* make_clone_type_Type() {
+const TypeFunc* make_clone_type() {
   // Create input type (domain)
   int argcnt = NOT_LP64(3) LP64_ONLY(4);
   const Type** const domain_fields = TypeTuple::fields(argcnt);
