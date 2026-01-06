@@ -3104,6 +3104,7 @@ class StubGenerator: public StubCodeGenerator {
 
     ghash_loop(state, subkeyH, ct, blocks, vtmp1, vtmp2, vtmp3);
 
+    __ mv(x10, input_len);
     __ leave();
     __ ret();
   }
@@ -3155,7 +3156,6 @@ class StubGenerator: public StubCodeGenerator {
     Label L_exit;
     // Requires PARALLEN_LEN (512) bytes to efficiently use the intrinsic
     __ andi(input_len, input_len, -512);
-    __ mv(x10, input_len);
     __ beqz(input_len, L_exit);
 
     Label L_aes128, L_aes192;
@@ -3181,6 +3181,7 @@ class StubGenerator: public StubCodeGenerator {
     gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, blocks, vtmp1, vtmp2, vtmp3);
 
     __ bind(L_exit);
+    __ mv(x10, input_len);
     __ leave();
     __ ret();
 
