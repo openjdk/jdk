@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
 
 /*
  * @test
- * @bug 8308144
- * @summary tests that the SSLFlowDelegate doesn't accumulate application data when the
- *          downReader doesn't request any
- * @compile/module=java.net.http ../../../../../../lib/jdk/test/lib/net/SimpleSSLContext.java
- * @modules java.net.http/jdk.internal.net.http
- * @run testng/othervm  -Djdk.internal.httpclient.debug=true
- *                      -Djavax.net.debug=ssl:handshake
- *                      java.net.http/jdk.internal.net.http.SSLFlowDelegateTest
+ * @bug 8374518
+ * @summary Sanity check the flag -XX:+CITime and -XX:+CountLinearScan
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+CITime -XX:+CountLinearScan ${test.main.class}
  */
+
+package compiler.c1;
+
+public class TestCITimeCountLinearScan {
+    public static void main(String[] args) {
+        System.out.println("Hello World!");
+    }
+}
