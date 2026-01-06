@@ -69,12 +69,12 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   # Debug prefix mapping if supported by compiler
   DEBUG_PREFIX_CFLAGS=
 
-  UTIL_ARG_WITH(NAME: fine-debug-level, TYPE: string,
+  UTIL_ARG_WITH(NAME: debug-info-level, TYPE: string,
     DEFAULT: 2,
-    RESULT: FINE_DEBUG_LEVEL,
-    DESC: [Sets the fine-tuned debug level, when debug info generation is enabled],
-    DEFAULT_DESC: [from build debug level])
-  AC_SUBST(FINE_DEBUG_LEVEL)
+    RESULT: DEBUG_INFO_LEVEL,
+    DESC: [Sets the debug info level, when debug info generation is enabled (GCC and Clang only)],
+    DEFAULT_DESC: [default])
+  AC_SUBST(DEBUG_INFO_LEVEL)
 
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -100,13 +100,13 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    FINE_DEBUG_LEVEL_FLAGS="-g${FINE_DEBUG_LEVEL}"
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FINE_DEBUG_LEVEL_FLAGS}],
-        IF_FALSE: [FINE_DEBUG_LEVEL_FLAGS="-g"])
+    DEBUG_INFO_LEVEL_FLAGS="-g${DEBUG_INFO_LEVEL}"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_INFO_LEVEL_FLAGS}],
+        IF_FALSE: [DEBUG_INFO_LEVEL_FLAGS="-g"])
 
-    # Fine debug level should follow the debug format to be effective.
-    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 ${FINE_DEBUG_LEVEL_FLAGS}"
-    ASFLAGS_DEBUG_SYMBOLS="${FINE_DEBUG_LEVEL_FLAGS}"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 ${DEBUG_INFO_LEVEL_FLAGS}"
+    ASFLAGS_DEBUG_SYMBOLS="${DEBUG_INFO_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
       # Check if compiler supports -fdebug-prefix-map. If so, use that to make
@@ -125,13 +125,13 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
         IF_FALSE: [GDWARF_FLAGS=""])
 
-    FINE_DEBUG_LEVEL_FLAGS="-g${FINE_DEBUG_LEVEL}"
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FINE_DEBUG_LEVEL_FLAGS}],
-        IF_FALSE: [FINE_DEBUG_LEVEL_FLAGS="-g"])
+    DEBUG_INFO_LEVEL_FLAGS="-g${DEBUG_INFO_LEVEL}"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_INFO_LEVEL_FLAGS}],
+        IF_FALSE: [DEBUG_INFO_LEVEL_FLAGS="-g"])
 
-    # Fine debug level should follow the debug format to be effective.
-    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} ${FINE_DEBUG_LEVEL_FLAGS}"
-    ASFLAGS_DEBUG_SYMBOLS="${FINE_DEBUG_LEVEL_FLAGS}"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} ${DEBUG_INFO_LEVEL_FLAGS}"
+    ASFLAGS_DEBUG_SYMBOLS="${DEBUG_INFO_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
   fi
