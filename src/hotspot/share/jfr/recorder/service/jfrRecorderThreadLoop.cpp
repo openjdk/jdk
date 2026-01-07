@@ -71,6 +71,9 @@ void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
         if (PROCESS_FULL_BUFFERS) {
           service.process_full_buffers();
         }
+        if (LEAKPROFILER_REFCHAINS) {
+          service.emit_leakprofiler_events();
+        }
         // Check amount of data written to chunk already
         // if it warrants asking for a new chunk.
         service.evaluate_chunk_size_for_rotation();
@@ -80,8 +83,6 @@ void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
           service.rotate(msgs);
         } else if (FLUSHPOINT) {
           service.flushpoint();
-        } else if (LEAKPROFILER_REFCHAINS) {
-          service.emit_leakprofiler_events();
         }
       }
       post_box.notify_waiters();

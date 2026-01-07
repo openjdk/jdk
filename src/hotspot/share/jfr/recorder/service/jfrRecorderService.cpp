@@ -812,26 +812,30 @@ void JfrRecorderService::emit_leakprofiler_events() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   // Take the rotation lock before the transition.
   JfrRotationLock lock;
+  if (_oom_emit_request_delivered) {
+    // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
+    // has already been completed. We are about to crash at any time now.
+    assert(_oom_emit_request_posted, "invariant");
+    assert(CrashOnOutOfMemoryError, "invariant");
+    return;
+  }
+
   assert(_queue->is_nonempty(), "invariant");
+
   {
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
     ThreadInVMfromNative transition(jt);
     while (_queue->is_nonempty()) {
-      if (_oom_emit_request_delivered) {
-        // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
-        // has already been completed. We are about to crash at any time now.
-        assert(_oom_emit_request_posted, "invariant");
-        assert(CrashOnOutOfMemoryError, "invariant");
-        return;
-      }
       const JfrLeakProfilerEmitRequest& request = dequeue();
       LeakProfiler::emit_events(request.cutoff_ticks, request.emit_all, request.skip_bfs);
       if (_oom_emit_request_posted && request.oom) {
         assert(CrashOnOutOfMemoryError, "invariant");
         _oom_emit_request_delivered = true;
+        break;
       }
     }
   }
+
   // If processing involved an out-of-memory request, issue an immediate flush operation.
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   if (_chunkwriter.is_valid() && _oom_emit_request_delivered) {
