@@ -36,7 +36,7 @@ import jdk.test.lib.Platform;
 
 /*
  * @test
- * @summary Check for unwanted file (types/extensions) in the jdk image 
+ * @summary Check for unwanted file (types/extensions) in the jdk image
  * @library /test/lib
  * @run main CheckFiles
  */
@@ -116,7 +116,6 @@ public class CheckFiles {
         }
     }
 
-
     private static boolean scanFiles(Path root, ArrayList<String> allowedEndings) throws IOException {
         AtomicBoolean badFileFound = new AtomicBoolean(false);
 
@@ -149,5 +148,4 @@ public class CheckFiles {
 
         return !badFileFound.get();
     }
-
 }
