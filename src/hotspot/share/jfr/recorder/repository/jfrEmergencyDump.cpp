@@ -546,7 +546,7 @@ class JavaThreadInVMAndNative : public StackObj {
 static void post_events(bool exception_handler, bool oom, Thread * thread) {
   if (exception_handler) {
     EventShutdown e;
-    e.set_reason(exception_handler && oom ? "CrashOnOutOfMemoryError" : "VM Error");
+    e.set_reason(oom ? "CrashOnOutOfMemoryError" : "VM Error");
     e.commit();
   }
   EventDumpReason event;
