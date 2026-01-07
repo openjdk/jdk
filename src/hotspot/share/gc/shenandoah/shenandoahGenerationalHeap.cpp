@@ -691,7 +691,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
     // to hold individually promoted objects and will use unfragmented old-gen memory to represent the old-gen
     // evacuation workloa.
 
-    // We're promoting and have an esimate of memory to be promoted from aged regions
+    // We're promoting and have an estimate of memory to be promoted from aged regions
     assert(max_old_reserve >= (reserve_for_mixed + reserve_for_promo), "Sanity");
     const size_t available_for_additional_promotions = max_old_reserve - (reserve_for_mixed + reserve_for_promo);
     size_t promo_need = (size_t)(promo_load * ShenandoahPromoEvacWaste);
