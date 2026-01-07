@@ -173,12 +173,10 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   assert(!_is_generational || !strcmp(_space_info->name(), "Young") || !strcmp(_space_info->name(), "Global"),
          "Assumed young or global space, but got: %s", _space_info->name());
   assert(_is_generational || !strcmp(_space_info->name(), ""), "Assumed global (unnamed) space, but got: %s", _space_info->name());
-  log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: %zu%s"
-               " after adjusting for spike_headroom: %zu%s"
-               " and penalties: %zu%s", _is_generational? _space_info->name(): "Global",
-               byte_size_in_proper_unit(mutator_available),   proper_unit_for_byte_size(mutator_available),
-               byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
-               byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties));
+  log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: " PROPERFMT
+               " after adjusting for spike_headroom: " PROPERFMT " and penalties: " PROPERFMT,
+               _is_generational? _space_info->name(): "Global",
+               PROPERFMTARGS(mutator_available), PROPERFMTARGS(spike_headroom), PROPERFMTARGS(penalties));
 
   _most_recent_headroom_at_start_of_idle = mutator_available;
   // _trigger_threshold is expressed in words
