@@ -87,9 +87,8 @@ import java.util.function.Supplier;
  * is thrown. Hence, a lazy constant can never hold a {@code null} value. Clients who
  * want to use a nullable constant can wrap the value into an {@linkplain Optional} holder.
  * <p>
- * If the computing function recursively invokes itself (directly or indirectly via
- * the lazy constant), an {@linkplain IllegalStateException} is thrown, and the lazy
- * constant is not initialized.
+ * If the computing function recursively invokes itself via the lazy constant, an
+ * {@linkplain IllegalStateException} is thrown, and the lazy constant is not initialized.
  *
  * <h2 id="composition">Composing lazy constants</h2>
  * A lazy constant can depend on other lazy constants, forming a dependency graph

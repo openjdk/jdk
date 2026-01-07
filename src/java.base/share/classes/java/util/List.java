@@ -1224,7 +1224,7 @@ public interface List<E> extends SequencedCollection<E> {
      * The returned list and its {@link List#subList(int, int) subList()} or
      * {@link List#reversed()} views implement the {@link RandomAccess} interface.
      * <p>
-     * If the provided computing function recursively calls itself or the returned
+     * If the provided computing function recursively calls itself via the returned
      * lazy list for the same index, an {@linkplain IllegalStateException}
      * will be thrown.
      * <p>

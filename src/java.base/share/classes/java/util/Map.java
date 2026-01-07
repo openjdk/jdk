@@ -1777,7 +1777,7 @@ public interface Map<K, V> {
      * The values of any {@link Map#values()} or {@link Map#entrySet()} views of
      * the returned map are also lazily computed.
      * <p>
-     * If the provided computing function recursively calls itself or
+     * If the provided computing function recursively calls itself via
      * the returned lazy map for the same key, an {@linkplain IllegalStateException}
      * will be thrown.
      * <p>
