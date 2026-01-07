@@ -271,6 +271,7 @@ public:
 #endif //ASSERT
 
   const TypeTuple* collect_types(PhaseGVN* phase) const;
+  bool can_be_replaced_by(const PhiNode* other) const;
 };
 
 //------------------------------GotoNode---------------------------------------
