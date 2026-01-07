@@ -240,11 +240,8 @@ public class MacDmgPackagerTest {
 
             var script = dir(Objects.requireNonNull(workDir)).create();
 
-            ExecutorFactory commandMocksExecutorFactory = MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT);
-
-            ExecutorFactory recordingExecutorFactory = MockUtils.withCommandListener(System.out::println).apply(commandMocksExecutorFactory);
-
-            var executorFactory = recordingExecutorFactory;
+            ExecutorFactory executorFactory = MockUtils.buildJPackage()
+                    .script(script).listener(System.out::println).createExecutorFactory();
 
             var objectFactory = ObjectFactory.build()
                     .executorFactory(executorFactory)

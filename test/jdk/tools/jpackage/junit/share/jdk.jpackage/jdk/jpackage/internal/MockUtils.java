@@ -43,12 +43,89 @@ import jdk.jpackage.test.mock.VerbatimCommandMock;
 /**
  * Bridges "jdk.jpackage.internal" and "jdk.jpackage.test.mock" packages.
  */
-final class MockUtils {
+public final class MockUtils {
 
     private MockUtils() {
     }
 
-    static UnaryOperator<ExecutorFactory> withCommandListener(Consumer<List<String>> listener) {
+    public static JPackageToolProviderBuilder buildJPackage() {
+        return new JPackageToolProviderBuilder();
+    }
+
+    public static final class JPackageToolProviderBuilder {
+
+        public ToolProvider create() {
+            return createJPackageToolProvider(os(), createObjectFactory());
+        }
+
+        public Consumer<Globals> createGlobalsMutator() {
+            var objectFactory = createObjectFactory();
+            return globals -> {
+                globals.objectFactory(objectFactory);
+            };
+        }
+
+        public void applyToGlobals() {
+            createGlobalsMutator().accept(Globals.instance());
+        }
+
+        ExecutorFactory createExecutorFactory() {
+            var commandMocksExecutorFactory = Optional.ofNullable(script).map(MockUtils::withCommandMocks).map(mapper -> {
+                return mapper.apply(ExecutorFactory.DEFAULT);
+            }).orElse(ExecutorFactory.DEFAULT);
+
+            var recordingExecutorFactory = Optional.ofNullable(listener).map(MockUtils::withCommandListener).map(mapper -> {
+                return mapper.apply(commandMocksExecutorFactory);
+            }).orElse(commandMocksExecutorFactory);
+
+            return recordingExecutorFactory;
+        }
+
+        ObjectFactory createObjectFactory() {
+            var executorFactory = createExecutorFactory();
+            if (executorFactory == ExecutorFactory.DEFAULT) {
+                return ObjectFactory.DEFAULT;
+            } else {
+                return ObjectFactory.build().executorFactory(executorFactory).create();
+            }
+        }
+
+        public JPackageToolProviderBuilder listener(Consumer<List<String>> v) {
+            listener = v;
+            return this;
+        }
+
+        public JPackageToolProviderBuilder script(Script v) {
+            script = v;
+            return this;
+        }
+
+        public JPackageToolProviderBuilder os(OperatingSystem v) {
+            os = v;
+            return this;
+        }
+
+        private OperatingSystem os() {
+            return Optional.ofNullable(os).orElseGet(OperatingSystem::current);
+        }
+
+        private Consumer<List<String>> listener;
+        private OperatingSystem os;
+        private Script script;
+    }
+
+    public static ToolProvider createJPackageToolProvider(OperatingSystem os, Script script) {
+        return buildJPackage()
+                .os(Objects.requireNonNull(os))
+                .script(Objects.requireNonNull(script))
+                .create();
+    }
+
+    public static ToolProvider createJPackageToolProvider(Script script) {
+        return createJPackageToolProvider(OperatingSystem.current(), script);
+    }
+
+    private static UnaryOperator<ExecutorFactory> withCommandListener(Consumer<List<String>> listener) {
         Objects.requireNonNull(listener);
         return executorFactory -> {
             Objects.requireNonNull(executorFactory);
@@ -67,7 +144,7 @@ final class MockUtils {
         };
     }
 
-    static UnaryOperator<ExecutorFactory> withCommandMocks(Script script) {
+    private static UnaryOperator<ExecutorFactory> withCommandMocks(Script script) {
         return executorFactory -> {
             Objects.requireNonNull(executorFactory);
             return () -> {
@@ -88,11 +165,7 @@ final class MockUtils {
                             var copy = exec.copy().mapper(oldMapper.orElse(null));
                             copy.toolProvider(tp);
                             copy.args().clear();
-                            if (exec.processBuilder().isPresent()) {
-                                copy.args(commandLine.subList(1, commandLine.size()));
-                            } else {
-                                copy.args(commandLine);
-                            }
+                            copy.args(commandLine.subList(1, commandLine.size()));
                             return copy;
                         }
                         default -> {
@@ -107,7 +180,7 @@ final class MockUtils {
         };
     }
 
-    static CliBundlingEnvironment createBundlingEnvironment(OperatingSystem os) {
+    public static CliBundlingEnvironment createBundlingEnvironment(OperatingSystem os) {
         Objects.requireNonNull(os);
 
         String bundlingEnvironmentClassName;

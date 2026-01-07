@@ -137,9 +137,7 @@ public class LinuxPackageArchTest {
 
         Globals.main(() -> {
 
-            ExecutorFactory executorFactory= MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT);
-
-            Globals.instance().executorFactory(executorFactory);
+            MockUtils.buildJPackage().script(script).applyToGlobals();
 
             Result<LinuxPackageArch> arch = LinuxPackageArch.create(pkgType);
 

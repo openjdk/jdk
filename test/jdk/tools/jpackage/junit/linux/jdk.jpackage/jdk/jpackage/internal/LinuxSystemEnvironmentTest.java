@@ -86,9 +86,7 @@ public class LinuxSystemEnvironmentTest {
 
             Globals.main(() -> {
 
-                ExecutorFactory executorFactory = MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT);
-
-                Globals.instance().executorFactory(executorFactory);
+                MockUtils.buildJPackage().script(script).applyToGlobals();
 
                 var actual = LinuxSystemEnvironment.detectNativePackageType();
 

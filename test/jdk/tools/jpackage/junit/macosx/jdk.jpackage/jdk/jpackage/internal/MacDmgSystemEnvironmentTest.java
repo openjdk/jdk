@@ -142,10 +142,8 @@ public class MacDmgSystemEnvironmentTest {
                 mockSpecs.forEach(builder::map);
             }).createSequence();
 
-            ExecutorFactory ef = MockUtils.withCommandMocks(script).apply(ExecutorFactory.DEFAULT);
-
             Globals.main(() -> {
-                Globals.instance().executorFactory(ef);
+                MockUtils.buildJPackage().script(script).applyToGlobals();
 
                 var actual = MacDmgSystemEnvironment.findSetFileUtility();
 
