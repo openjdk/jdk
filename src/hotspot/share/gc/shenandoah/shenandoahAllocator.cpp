@@ -159,7 +159,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_from_free_set
   // The region returned by find_heap_region_for_allocation must have sufficient free space for the allocation if it is not nullptr
   if (r != nullptr) {
     bool ready_for_retire = false;
-    obj = atomic_allocate_in(r, false, req, in_new_region, ready_for_retire);
+    obj = allocate_in<false>(r, false, req, in_new_region, ready_for_retire);
     assert(obj != nullptr, "Should always succeed.");
 
     _free_set->partitions()->increase_used(ALLOC_PARTITION, (req.actual_size() + req.waste()) * HeapWordSize);
@@ -183,15 +183,15 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_from_free_set
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_in_alloc_regions(ShenandoahAllocRequest &req,
-                                                                   bool &in_new_region,
-                                                                   uint const alloc_start_index,
-                                                                   uint &regions_ready_for_refresh) {
+                                                                                    bool &in_new_region,
+                                                                                    uint const alloc_start_index,
+                                                                                    uint &regions_ready_for_refresh) {
   assert(regions_ready_for_refresh == 0u && in_new_region == false && alloc_start_index < _alloc_region_count, "Sanity check");
   uint i = alloc_start_index;
   do {
     if (ShenandoahHeapRegion* r =  nullptr; (r = _alloc_regions[i].address) != nullptr && r->is_active_alloc_region()) {
       bool ready_for_retire = false;
-      HeapWord* obj = atomic_allocate_in(r, true, req, in_new_region, ready_for_retire);
+      HeapWord* obj = allocate_in<true>(r, true, req, in_new_region, ready_for_retire);
       if (ready_for_retire) {
         r->unset_active_alloc_region();
         regions_ready_for_refresh++;
@@ -211,14 +211,18 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_in_alloc_regi
 }
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
-HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::atomic_allocate_in(ShenandoahHeapRegion* region, bool const is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
+template <bool ATOMIC>
+HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion* region, bool const is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
   assert(ready_for_retire == false, "Sanity check");
+  if (ATOMIC) {
+    shenandoah_assert_heaplocked();
+  }
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();
   if (req.is_lab_alloc()) {
-    obj = region->allocate_lab_atomic(req, actual_size, ready_for_retire);
+    obj = ATOMIC ? region->allocate_lab_atomic(req, actual_size, ready_for_retire) : region->allocate_lab(req, actual_size);
   } else {
-    obj = region->allocate_atomic(actual_size, req, ready_for_retire);
+    obj = ATOMIC ? region->allocate_atomic(actual_size, req, ready_for_retire) : region->allocate(req.size(), req);
   }
   if (obj != nullptr) {
     assert(actual_size > 0, "Must be");
@@ -231,6 +235,10 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::atomic_allocate_in(ShenandoahHea
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
       region->concurrent_set_update_watermark(region->top());
+    }
+
+    if (!ATOMIC && region->free_words() < PLAB::min_size()) {
+      ready_for_retire = true;
     }
   }
   return obj;
@@ -290,7 +298,7 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
         assert(_free_set->membership(reserved[i]->index()) == ShenandoahFreeSetPartitionId::NotFree, "Reserved heap region must have been retired from free set.");
         if (satisfy_alloc_req_first && reserved[i]->free_words() >= min_req_size) {
           bool ready_for_retire = false;
-          *obj = atomic_allocate_in(reserved[i], true, *req, *in_new_region, ready_for_retire);
+          *obj = allocate_in<false>(reserved[i], true, *req, *in_new_region, ready_for_retire);
           satisfy_alloc_req_first = *obj == nullptr;
           if (ready_for_retire && reserved[i]->free_words() == 0) {
             log_debug(gc, alloc)("%sAllocator: heap region %li has no space left after satisfying alloc req.",

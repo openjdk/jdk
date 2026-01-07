@@ -70,8 +70,10 @@ protected:
   // to be retired if it is unable to satisfy the allocation request from the existing shared alloc regions.
   HeapWord* attempt_allocation_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint const alloc_start_index, uint &regions_ready_for_refresh);
 
-  // Allocate in a region with atomic.
-  HeapWord* atomic_allocate_in(ShenandoahHeapRegion* region, bool is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire);
+  // Allocate in a region, use atomic operations if template parameter ATOMIC is true.
+  // When template parameter ATOMIC is false, heap lock is required.
+  template <bool ATOMIC>
+  HeapWord* allocate_in(ShenandoahHeapRegion* region, bool is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire);
 
   // Refresh new alloc regions, allocate the object in the new alloc region.
   int refresh_alloc_regions(ShenandoahAllocRequest* req = nullptr, bool* in_new_region = nullptr, HeapWord** obj = nullptr);
