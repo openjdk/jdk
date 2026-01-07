@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,13 +66,13 @@ import java.time.ZoneOffset;
 import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test ZoneOffsetTransitionRule serialization.
  */
-@Test
 public class TCKZoneOffsetTransitionRuleSerialization extends AbstractTCKTest {
 
     private static final LocalTime TIME_0100 = LocalTime.of(1, 0);
