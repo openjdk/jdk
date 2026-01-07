@@ -77,7 +77,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
-    assert(!region->is_active_alloc_region(), "Not expecting any active alloc region at the time");
+    assert(!region->is_active_alloc_region(), "There should be no active alloc regions when choosing collection set");
     if (!_generation->contains(region)) {
       continue;
     }
