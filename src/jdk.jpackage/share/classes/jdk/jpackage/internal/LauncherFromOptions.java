@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
-import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.FileAssociationGroup.FileAssociationException;
 import jdk.jpackage.internal.FileAssociationGroup.FileAssociationNoExtensionsException;
 import jdk.jpackage.internal.FileAssociationGroup.FileAssociationNoMimesException;
@@ -82,7 +81,7 @@ final class LauncherFromOptions {
     }
 
     Launcher create(Options options) {
-        final var builder = new LauncherBuilder().defaultIconResourceName(defaultIconResourceName());
+        final var builder = new LauncherBuilder();
 
         DESCRIPTION.ifPresentIn(options, builder::description);
         builder.icon(toLauncherIcon(ICON.findIn(options).orElse(null)));
@@ -164,23 +163,6 @@ final class LauncherFromOptions {
             return null;
         } else {
             return CustomLauncherIcon.create(launcherIconPath);
-        }
-    }
-
-    private static String defaultIconResourceName() {
-        switch (OperatingSystem.current()) {
-            case WINDOWS -> {
-                return "JavaApp.ico";
-            }
-            case LINUX -> {
-                return "JavaApp.png";
-            }
-            case MACOS -> {
-                return "JavaApp.icns";
-            }
-            default -> {
-                throw new UnsupportedOperationException();
-            }
         }
     }
 
