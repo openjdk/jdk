@@ -401,6 +401,8 @@ public final class Operations {
         new VOP("IS_INFINITE",          VOPType.UNARY, FLOATING_TYPES)
     );
 
+    // TODO: what about Conversion VectorOperators?
+
     private static List<Expression> generateVectorOperations() {
         List<Expression> ops = new ArrayList<>();
 
@@ -470,49 +472,88 @@ public final class Operations {
                                                     + type.elementType.name() + ".class),",
                                                 INTS, // part
                                                 "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
-                    // Reinterpretation FROM floating is not safe, because of different NaN encodings.
-                    if (!type2.elementType.isFloating()) {
-                        ops.add(Expression.make(type,
-                                                    "((" + type.name() + ")",
-                                                    type2,
-                                                    ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                        + type2.elementType.name() +  ".class, "
-                                                        + type.elementType.name() + ".class), 0))"));
-                        ops.add(Expression.make(type,
-                                                    "((" + type.name() + ")",
-                                                    type2,
-                                                    ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                        + type2.elementType.name() +  ".class, "
-                                                        + type.elementType.name() + ".class),",
-                                                    INTS, // part
-                                                    "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
-                        if (type.elementType == BYTES) {
-                            ops.add(Expression.make(type, "", type2, ".reinterpretAsBytes()"));
-                        }
-                        if (type.elementType == SHORTS) {
-                            ops.add(Expression.make(type, "", type2, ".reinterpretAsShorts()"));
-                        }
-                        if (type.elementType == INTS) {
-                            ops.add(Expression.make(type, "", type2, ".reinterpretAsInts()"));
-                        }
-                        if (type.elementType == LONGS) {
-                            ops.add(Expression.make(type, "", type2, ".reinterpretAsLongs()"));
-                        }
-                        if (type.elementType == FLOATS) {
-                            ops.add(Expression.make(type, "", type2, ".reinterpretAsFloats()"));
-                        }
-                        if (type.elementType == DOUBLES) {
-                            ops.add(Expression.make(type, "", type2, ".reinterpretAsDoubles()"));
-                        }
-                        if (type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
-                            ops.add(Expression.make(type, "", type2, ".viewAsFloatingLanes()"));
-                        }
-                        if (!type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
-                            ops.add(Expression.make(type, "", type2, ".viewAsIntegralLanes()"));
-                        }
+                }
+
+                // The following "reinterpret" operations require same input and output shape.
+                if (type.byteSize() == type2.byteSize()) {
+                    // Reinterpretation FROM floating is not safe, because of different NaN encodings, i.e.
+                    // we will not get deterministic results.
+                    var info = type2.elementType.isFloating() ? WITH_NONDETERMINISTIC_RESULT : new Expression.Info();
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), 0))", info));
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class),",
+                                            INTS, // part
+                                            "))", info.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
+                    if (type.elementType == BYTES) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsBytes()", info));
+                    }
+                    if (type.elementType == SHORTS) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsShorts()", info));
+                    }
+                    if (type.elementType == INTS) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsInts()", info));
+                    }
+                    if (type.elementType == LONGS) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsLongs()", info));
+                    }
+                    if (type.elementType == FLOATS) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsFloats()", info));
+                    }
+                    if (type.elementType == DOUBLES) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsDoubles()", info));
+                    }
+                    if (type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
+                        ops.add(Expression.make(type, "", type2, ".viewAsFloatingLanes()", info));
+                    }
+                    if (!type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
+                        ops.add(Expression.make(type, "", type2, ".viewAsIntegralLanes()", info));
                     }
                 }
-                // TODO: convertShape
+                // convertShape
+                ops.add(Expression.make(type,
+                                        "((" + type.name() + ")",
+                                        type2,
+                                        ".convertShape(VectorOperators.Conversion.ofCast("
+                                            + type2.elementType.name() +  ".class, "
+                                            + type.elementType.name() + ".class), "
+                                        + type.speciesName + ", ",
+                                        INTS, // part
+                                        "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
+                // Compute size of logical output, before it is "fit" into the output vector.
+                int conversionLogicalByteSize = type2.length * type.elementType.byteSize();
+                if (conversionLogicalByteSize >= type.byteSize()) {
+                    // Output overflows, is truncated (Expansion): part >= 0
+                    int partMask = conversionLogicalByteSize / type.byteSize() - 1;
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convertShape(VectorOperators.Conversion.ofCast("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
+                                            + type.speciesName + ", ",
+                                            INTS, " & " + partMask + "))"));
+                } else {
+                    // Logical output too small to fill output vector (Contraction): part <= 0
+                    int partMask = type.byteSize() / conversionLogicalByteSize - 1;
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convertShape(VectorOperators.Conversion.ofCast("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
+                                            + type.speciesName + ", "
+                                            + "-(", INTS, " & " + partMask + ")))"));
+                }
+                // TODO: convertShape - reinterpret and zero expand?
                 // TODO: reinterpretShape
             }
 
