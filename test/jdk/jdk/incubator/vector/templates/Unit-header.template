@@ -2591,7 +2591,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $abstractvectortype$ higher = three.addIndex(scale);
         VectorMask<$Wideboxtype$> m = three.compare(VectorOperators.LE, higher);
         assert(m.allTrue());
-        m = higher.min(($type$)-1).test(VectorOperators.IS_NEGATIVE);
+        m = higher.min({#if[FP16]?float16ToShortBits(Float16.valueOf(-1)):($type$)-1}).test(VectorOperators.IS_NEGATIVE);
         assert(m.allTrue());
 #if[FP]
         m = higher.test(VectorOperators.IS_FINITE);

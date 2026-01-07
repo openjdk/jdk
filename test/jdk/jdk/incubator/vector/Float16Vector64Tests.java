@@ -1890,7 +1890,7 @@ public class Float16Vector64Tests extends AbstractVectorTest {
         Float16Vector higher = three.addIndex(scale);
         VectorMask<Float16> m = three.compare(VectorOperators.LE, higher);
         assert(m.allTrue());
-        m = higher.min((short)-1).test(VectorOperators.IS_NEGATIVE);
+        m = higher.min(float16ToShortBits(Float16.valueOf(-1))).test(VectorOperators.IS_NEGATIVE);
         assert(m.allTrue());
         m = higher.test(VectorOperators.IS_FINITE);
         assert(m.allTrue());
