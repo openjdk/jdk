@@ -233,8 +233,9 @@ AbstractRBTree<K, NodeType, COMPARATOR>::cursor(const K& key, const NodeType* hi
 
 template <typename K, typename NodeType, typename COMPARATOR>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::insert_at_cursor(NodeType* node, const Cursor& node_cursor) {
-  assert(node != nullptr, "must be");
-  assert(node_cursor.valid() && !node_cursor.found(), "must be");
+  precond(node != nullptr);
+  precond(node_cursor.valid());
+  precond(!node_cursor.found());
   _num_nodes++;
 
   *node_cursor._insert_location = node;
@@ -448,7 +449,8 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::remove_from_tree(IntrusiveR
 
 template <typename K, typename NodeType, typename COMPARATOR>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::remove_at_cursor(const Cursor& node_cursor) {
-  assert(node_cursor.valid() && node_cursor.found(), "must be");
+  precond(node_cursor.valid());
+  precond(node_cursor.found());
   _num_nodes--;
 
   IntrusiveRBNode* node = node_cursor.node();
@@ -544,8 +546,9 @@ AbstractRBTree<K, NodeType, COMPARATOR>::prev(const Cursor& node_cursor) const {
 
 template <typename K, typename NodeType, typename COMPARATOR>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::replace_at_cursor(NodeType* new_node, const Cursor& node_cursor) {
-  assert(new_node != nullptr, "must be");
-  assert(node_cursor.valid() && node_cursor.found(), "must be");
+  precond(new_node != nullptr);
+  precond(node_cursor.valid());
+  precond(node_cursor.found());
   NodeType* old_node = node_cursor.node();
   if (old_node == new_node) {
     return;
