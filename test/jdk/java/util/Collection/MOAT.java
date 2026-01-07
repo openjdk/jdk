@@ -26,7 +26,7 @@
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
- *          4802647 7123424 8024709 8193128 8327858 8368178
+ *          4802647 7123424 8024709 8193128 8327858 8368178 8371164
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @modules java.base/java.util:open
@@ -887,6 +887,28 @@ public class MOAT {
         catch (Throwable t) { unexpected(t); }
     }
 
+    private static void testAddAll(Collection<Integer> c) {
+        clear(c);
+
+        // Test ArrayList source
+        ArrayList<Integer> arrayListSource = new ArrayList<>();
+        arrayListSource.add(42);
+        arrayListSource.add(99);
+        check(c.addAll(arrayListSource));
+        equal(c.size(), arrayListSource.size());
+        check(c.containsAll(arrayListSource));
+
+        clear(c);
+
+        // Test non-ArrayList source
+        LinkedList<Integer> linkedListSource = new LinkedList<>();
+        linkedListSource.add(77);
+        linkedListSource.add(88);
+        check(c.addAll(linkedListSource));
+        equal(c.size(), linkedListSource.size());
+        check(c.containsAll(linkedListSource));
+    }
+
     private static void testConcurrentCollection(Collection<Integer> c) {
         try {
             c.add(1);
@@ -1293,6 +1315,8 @@ public class MOAT {
 
         clear(c);      testStringElement(c);
         oneElement(c); testStringElement(c);
+
+        testAddAll(c);
 
         if (c.getClass().getName().matches(".*concurrent.*"))
             testConcurrentCollection(c);

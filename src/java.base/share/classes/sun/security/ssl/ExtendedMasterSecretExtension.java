@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ final class ExtendedMasterSecretExtension {
             if (!chc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret ||
                     !chc.conContext.protocolVersion.useTLS10PlusSpec()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extended_master_secret extension");
                 }
@@ -162,7 +162,7 @@ final class ExtendedMasterSecretExtension {
             if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret ||
                     !shc.negotiatedProtocol.useTLS10PlusSpec()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +
                             CH_EXTENDED_MASTER_SECRET.name);
                 }
@@ -182,7 +182,7 @@ final class ExtendedMasterSecretExtension {
                 // with a full handshake.
                 shc.isResumption = false;
                 shc.resumingSession = null;
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "abort session resumption which did not use " +
                         "Extended Master Secret extension");
@@ -213,7 +213,7 @@ final class ExtendedMasterSecretExtension {
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +
                             CH_EXTENDED_MASTER_SECRET.name);
                 }
@@ -252,7 +252,7 @@ final class ExtendedMasterSecretExtension {
                     } else {  // Otherwise, continue with a full handshake.
                         shc.isResumption = false;
                         shc.resumingSession = null;
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.fine(
                                 "abort session resumption, " +
                                 "missing Extended Master Secret extension");

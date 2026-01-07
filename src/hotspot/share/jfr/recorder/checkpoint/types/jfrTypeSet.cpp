@@ -30,11 +30,12 @@
 #include "classfile/vmClasses.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeSet.hpp"
-#include "jfr/recorder/checkpoint/types/jfrTypeSetUtils.hpp"
+#include "jfr/recorder/checkpoint/types/jfrTypeSetUtils.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.inline.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
+#include "jfr/support/jfrSymbolTable.inline.hpp"
 #include "jfr/support/methodtracer/jfrInstrumentedClass.hpp"
 #include "jfr/support/methodtracer/jfrMethodTracer.hpp"
 #include "jfr/utilities/jfrHashtable.hpp"
@@ -1262,7 +1263,7 @@ static size_t teardown() {
     clear_klasses_and_methods();
     clear_method_tracer_klasses();
     JfrKlassUnloading::clear();
-    _artifacts->increment_checkpoint_id();
+    _artifacts->clear();
     _initial_type_set = true;
   } else {
     _initial_type_set = false;

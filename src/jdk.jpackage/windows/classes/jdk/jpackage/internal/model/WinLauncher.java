@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal.model;
 
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.WIN_LAUNCHER_DESKTOP_SHORTCUT;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.WIN_LAUNCHER_MENU_SHORTCUT;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,10 +51,10 @@ public interface WinLauncher extends Launcher, WinLauncherMixin {
     default Map<String, String> extraAppImageFileData() {
         Map<String, String> map = new HashMap<>();
         desktopShortcut().ifPresent(shortcut -> {
-            shortcut.store(SHORTCUT_DESKTOP_ID, map::put);
+            shortcut.store(WIN_LAUNCHER_DESKTOP_SHORTCUT.getName(), map::put);
         });
         startMenuShortcut().ifPresent(shortcut -> {
-            shortcut.store(SHORTCUT_START_MENU_ID, map::put);
+            shortcut.store(WIN_LAUNCHER_MENU_SHORTCUT.getName(), map::put);
         });
         return map;
     }
@@ -59,7 +62,4 @@ public interface WinLauncher extends Launcher, WinLauncherMixin {
     public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {
         return CompositeProxy.create(WinLauncher.class, launcher, mixin);
     }
-
-    public static final String SHORTCUT_START_MENU_ID = "win-menu";
-    public static final String SHORTCUT_DESKTOP_ID = "win-shortcut";
 }
