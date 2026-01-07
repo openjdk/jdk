@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -586,7 +586,7 @@ public class EncryptionKey
         }
         if (etypeFound) {
             if (DEBUG != null) {
-                DEBUG.println("Returned kvno " + key_found.kvno + ", wanted" + kvno);
+                DEBUG.println("Returned kvno " + key_found.kvno + ", wanted " + kvno);
             }
             return key_found;
             // For compatibility, will not fail here.
