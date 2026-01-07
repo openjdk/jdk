@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotGrowableArray.hpp"
 #include "classfile/packageEntry.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/array.hpp"
@@ -34,6 +35,8 @@ static_assert(HAS_METASPACE_POINTERS_DO(Array<int>));
 static_assert(HAS_METASPACE_POINTERS_DO(Array<InstanceKlass*>));
 static_assert(HAS_METASPACE_POINTERS_DO(InstanceKlass));
 static_assert(HAS_METASPACE_POINTERS_DO(PackageEntry));
+static_assert(HAS_METASPACE_POINTERS_DO(AOTGrowableArray<int>));
+static_assert(HAS_METASPACE_POINTERS_DO(AOTGrowableArray<PackageEntry*>));
 
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
   if (_enclosing_ref != nullptr) {

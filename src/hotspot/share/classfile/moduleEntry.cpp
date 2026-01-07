@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotGrowableArray.inline.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"

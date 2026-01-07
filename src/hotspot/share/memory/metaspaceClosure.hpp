@@ -77,7 +77,7 @@ public:
   //         static bool is_read_only_by_default() { return true; }
   //
   // Currently, the iterable types include all subtypes of MetsapceObj, as well
-  // as ModuleEntry and PackageEntry.
+  // as GrowableArray, ModuleEntry and PackageEntry.
   //
   // Calling these functions would be trivial if these were virtual functions.
   // However, to save space, MetaspaceObj has NO vtable. The vtable is introduced
@@ -96,9 +96,6 @@ public:
   //         Symbol*     bar() { return (Symbol*)    _obj; }
   //
   // [2] All Array<T> dimensions are statically declared.
-  //
-  // In addition, AOTGrowableArray<X*> can also be iterated, for the types of X that
-  // match the above requirements.
   //
   // Pointer Tagging
   //
@@ -226,7 +223,7 @@ private:
       assert(is_aligned(byte_size(), BytesPerWord), "must be");
     }
 
-    virtual bool is_read_only_by_default() const { return false; } // FIXME ...
+    virtual bool is_read_only_by_default() const { return false; }
     virtual bool not_null()                const { return dereference() != nullptr; }
     virtual int size()                     const { return (int)heap_word_size(byte_size()); }
     virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::CArrayType; }
@@ -381,42 +378,6 @@ public:
   void push(Array<T*>** mpp, Writability w = _default) {
     static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push Arrays of arbitrary pointer types");
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
-  }
-
-  // Support for AOTGrowableArray
-private:
-  template <class T> class MSOGrowableArrayRef : public Ref {
-    AOTGrowableArray<T*>** _gapp; // growable array pointer pointer
-
-    AOTGrowableArray<T*>* dereference() const {
-      return *_gapp;
-    }
-
-  protected:
-    virtual void** mpp() const {
-      return (void**)_gapp;
-    }
-  public:
-    MSOGrowableArrayRef(AOTGrowableArray<T*>** gapp, Writability w)
-      : Ref(w), _gapp(gapp) {}
-
-    virtual bool is_read_only_by_default() const { return false; }
-    virtual bool not_null()                const { return dereference() != nullptr; }
-    virtual int size()                     const { return (int)heap_word_size(sizeof(GrowableArray<T*>)); }
-    virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::GrowableArrayType; }
-
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      T*** data_addr = dereference()->data_addr();
-      int num_elems = dereference()->capacity();
-      it->push_impl(new MSOPointerCArrayRef<T>(data_addr, num_elems, _default));
-    }
-  };
-
-public:
-  template <typename T>
-  void push(AOTGrowableArray<T*>** gapp, Writability w = _default) {
-    static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push AOTGrowableArrays of arbitrary pointer types");
-    push_impl(new MSOGrowableArrayRef<T>(gapp, w));
   }
 
   // Support for AOTGrowableArray<T*>::_data, where T is a subtype of IterableMetadata

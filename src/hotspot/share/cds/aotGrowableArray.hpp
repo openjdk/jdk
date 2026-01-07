@@ -56,6 +56,12 @@ public:
           initial_capacity) {}
 
   AOTGrowableArray() : AOTGrowableArray(0, mtClassShared) {}
+
+  // methods required by MetaspaceClosure
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size() const { return (int)heap_word_size(sizeof(*this)); }
+  MetaspaceObj::Type type() const { return MetaspaceObj::GrowableArrayType; }
+  static bool is_read_only_by_default() { return false; }
 };
 
 #endif // SHARE_AOT_AOTGROWABLEARRAY_HPP
