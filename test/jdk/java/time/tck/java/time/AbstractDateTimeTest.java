@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@
  */
 package tck.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.DateTimeException;
 import java.time.temporal.TemporalAccessor;
@@ -68,7 +68,9 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.util.List;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import test.java.time.temporal.MockFieldNoValue;
 
 /**
@@ -101,7 +103,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     public void basicTest_isSupported_TemporalField_supported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : validFields()) {
-                assertEquals(sample.isSupported(field), true, "Failed on " + sample + " " + field);
+                assertEquals(true, sample.isSupported(field), "Failed on " + sample + " " + field);
             }
         }
     }
@@ -110,7 +112,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     public void basicTest_isSupported_TemporalField_unsupported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : invalidFields()) {
-                assertEquals(sample.isSupported(field), false, "Failed on " + sample + " " + field);
+                assertEquals(false, sample.isSupported(field), "Failed on " + sample + " " + field);
             }
         }
     }
@@ -118,7 +120,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     @Test()
     public void basicTest_isSupported_TemporalField_null() {
         for (TemporalAccessor sample : samples()) {
-            assertEquals(sample.isSupported(null), false, "Failed on " + sample);
+            assertEquals(false, sample.isSupported(null), "Failed on " + sample);
         }
     }
 
@@ -195,11 +197,13 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_get_TemporalField_invalidField() {
-        for (TemporalAccessor sample : samples()) {
-            sample.get(MockFieldNoValue.INSTANCE);
-        }
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            for (TemporalAccessor sample : samples()) {
+                sample.get(MockFieldNoValue.INSTANCE);
+            }
+        });
     }
 
     @Test()
@@ -240,11 +244,13 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_getLong_TemporalField_invalidField() {
-        for (TemporalAccessor sample : samples()) {
-            sample.getLong(MockFieldNoValue.INSTANCE);
-        }
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            for (TemporalAccessor sample : samples()) {
+                sample.getLong(MockFieldNoValue.INSTANCE);
+            }
+        });
     }
 
     @Test()
@@ -263,12 +269,12 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     @Test
     public void basicTest_query() {
         for (TemporalAccessor sample : samples()) {
-            assertEquals(sample.query(new TemporalQuery<String>() {
+            assertEquals("foo", sample.query(new TemporalQuery<String>() {
                 @Override
                 public String queryFrom(TemporalAccessor temporal) {
                     return "foo";
                 }
-            }), "foo");
+            }));
         }
     }
 
