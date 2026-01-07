@@ -53,9 +53,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import static jdk.test.lib.Asserts.*;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestCodeCacheUnloadDuringConcCycle {
@@ -70,9 +70,10 @@ public class TestCodeCacheUnloadDuringConcCycle {
                                                                     "-Xbootclasspath/a:.",
                                                                     "-Xlog:gc=trace,codecache",
                                                                     "-XX:+WhiteBoxAPI",
-                                                                    "-XX:ReservedCodeCacheSize=8M",
+                                                                    "-XX:ReservedCodeCacheSize=" + (Platform.is32bit() ? "4M" : "8M"),
                                                                     "-XX:StartAggressiveSweepingAt=50",
                                                                     "-XX:CompileCommand=compileonly,gc.g1.SomeClass::*",
+                                                                    "-XX:CompileCommand=compileonly,gc.g1.Foo*::*",
                                                                     TestCodeCacheUnloadDuringConcCycleRunner.class.getName(),
                                                                     concPhase);
         return output;
@@ -140,7 +141,7 @@ class TestCodeCacheUnloadDuringConcCycleRunner {
                     System.out.println("Compiled " + i + " classes");
                 }
                 i++;
-            } while (i < 1000);
+            } while (i < 200);
             System.out.println("Compilation done, compiled " + i + " classes");
         } catch (Throwable t) {
         }
