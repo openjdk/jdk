@@ -1021,30 +1021,39 @@ void Type::check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeet& ve
   const Type* mt1 = verify.meet(t1, t2);
   const Type* mt2 = verify.meet(t2, t1);
   if (mt1 != mt2) {
-    tty->print_cr("=== Meet Not Commutative ===");
-    tty->print("t1          = ");  t1->dump(); tty->cr();
-    tty->print("t2          = ");  t2->dump(); tty->cr();
-    tty->print("t1 meets t2 = "); mt1->dump(); tty->cr();
-    tty->print("t2 meets t1 = "); mt2->dump(); tty->cr();
+    stringStream ss;
+    ss.print_cr("=== Meet Not Commutative ===");
+    ss.print("t1          = ");  t1->dump_on(&ss); ss.cr();
+    ss.print("t2          = ");  t2->dump_on(&ss); ss.cr();
+    ss.print("t1 meets t2 = "); mt1->dump_on(&ss); ss.cr();
+    ss.print("t2 meets t1 = "); mt2->dump_on(&ss); ss.cr();
+    tty->print("%s", ss.as_string());
+    tty->flush();
     fatal("meet not commutative");
   }
 
   const Type* jt1 = verify.join(t1, t2);
   const Type* jt2 = verify.join(t2, t1);
   if (jt1 != jt2) {
-    tty->print_cr("=== Join Not Commutative ===");
-    tty->print("t1          = ");  t1->dump(); tty->cr();
-    tty->print("t2          = ");  t2->dump(); tty->cr();
-    tty->print("t1 joins t2 = "); jt1->dump(); tty->cr();
-    tty->print("t2 joins t1 = "); jt2->dump(); tty->cr();
+    stringStream ss;
+    ss.print_cr("=== Join Not Commutative ===");
+    ss.print("t1          = ");  t1->dump_on(&ss); ss.cr();
+    ss.print("t2          = ");  t2->dump_on(&ss); ss.cr();
+    ss.print("t1 joins t2 = "); jt1->dump_on(&ss); ss.cr();
+    ss.print("t2 joins t1 = "); jt2->dump_on(&ss); ss.cr();
+    tty->print("%s", ss.as_string());
+    tty->flush();
     fatal("join not commutative");
   }
 
   if (t1->isa_ptr() && t1->maybe_null() && t2->isa_ptr() && t2->maybe_null() && jt1->empty()) {
-    tty->print_cr("=== Join of Nullable Pointers Cannot Be Empty ===");
-    tty->print("t1          = ");  t1->dump(); tty->cr();
-    tty->print("t2          = ");  t2->dump(); tty->cr();
-    tty->print("t1 joins t2 = "); jt1->dump(); tty->cr();
+    stringStream ss;
+    ss.print_cr("=== Join of Nullable Pointers Cannot Be Empty ===");
+    ss.print("t1          = ");  t1->dump_on(&ss); ss.cr();
+    ss.print("t2          = ");  t2->dump_on(&ss); ss.cr();
+    ss.print("t1 joins t2 = "); jt1->dump_on(&ss); ss.cr();
+    tty->print("%s", ss.as_string());
+    tty->flush();
     fatal("incorrect join");
   }
 
@@ -1056,11 +1065,14 @@ void Type::check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeet& ve
   if (jt1->remove_speculative() != mdt->remove_speculative() && (!jt1->empty() || !mdt->empty())) {
     bool excluded_case = t1->isa_ptr() && t1->maybe_null() && t2->isa_ptr() && t2->maybe_null() && mdt->empty() && jt1->is_ptr()->ptr() == TypePtr::Null;
     if (!excluded_case) {
-      tty->print_cr("=== Join May Be Incorrect ===");
-      tty->print("t1                                    = ");  t1->dump(); tty->cr();
-      tty->print("t2                                    = ");  t2->dump(); tty->cr();
-      tty->print("t1 joins t2                           = "); jt1->dump(); tty->cr();
-      tty->print("(t1->dual() meets t2->dual())->dual() = "); mdt->dump(); tty->cr();
+      stringStream ss;
+      ss.print_cr("=== Join May Be Incorrect ===");
+      ss.print("t1                                    = ");  t1->dump_on(&ss); ss.cr();
+      ss.print("t2                                    = ");  t2->dump_on(&ss); ss.cr();
+      ss.print("t1 joins t2                           = "); jt1->dump_on(&ss); ss.cr();
+      ss.print("(t1->dual() meets t2->dual())->dual() = "); mdt->dump_on(&ss); ss.cr();
+      tty->print("%s", ss.as_string());
+      tty->flush();
       fatal("join may be incorrect");
     }
   }
@@ -1079,21 +1091,24 @@ void Type::check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeet& ve
 
   if (t1mmt != mt || t2mmt != mt || t1jmt != t1 || t2jmt != t2 ||
       t1mjt != t1 || t2mjt != t2 || t1jjt != jt || t2jjt != jt) {
-    tty->print_cr("=== Fundamental Laws Violation ===");
-    tty->print("t1               = "); t1->dump(); tty->cr();
-    tty->print("t2               = "); t2->dump(); tty->cr();
-    tty->print("mt = t1 meets t2 = "); mt->dump(); tty->cr();
-    tty->print("jt = t1 joins t2 = "); jt->dump(); tty->cr();
+    stringStream ss;
+    ss.print_cr("=== Fundamental Laws Violation ===");
+    ss.print("t1               = "); t1->dump_on(&ss); ss.cr();
+    ss.print("t2               = "); t2->dump_on(&ss); ss.cr();
+    ss.print("mt = t1 meets t2 = "); mt->dump_on(&ss); ss.cr();
+    ss.print("jt = t1 joins t2 = "); jt->dump_on(&ss); ss.cr();
 
-    tty->print("t1 meets mt      = "); t1mmt->dump(); tty->cr();
-    tty->print("t2 meets mt      = "); t2mmt->dump(); tty->cr();
-    tty->print("t1 joins mt      = "); t1jmt->dump(); tty->cr();
-    tty->print("t2 joins mt      = "); t2jmt->dump(); tty->cr();
-    tty->print("t1 meets jt      = "); t1mjt->dump(); tty->cr();
-    tty->print("t2 meets jt      = "); t2mjt->dump(); tty->cr();
-    tty->print("t1 joins jt      = "); t1jjt->dump(); tty->cr();
-    tty->print("t2 joins jt      = "); t2jjt->dump(); tty->cr();
+    ss.print("t1 meets mt      = "); t1mmt->dump_on(&ss); ss.cr();
+    ss.print("t2 meets mt      = "); t2mmt->dump_on(&ss); ss.cr();
+    ss.print("t1 joins mt      = "); t1jmt->dump_on(&ss); ss.cr();
+    ss.print("t2 joins mt      = "); t2jmt->dump_on(&ss); ss.cr();
+    ss.print("t1 meets jt      = "); t1mjt->dump_on(&ss); ss.cr();
+    ss.print("t2 meets jt      = "); t2mjt->dump_on(&ss); ss.cr();
+    ss.print("t1 joins jt      = "); t1jjt->dump_on(&ss); ss.cr();
+    ss.print("t2 joins jt      = "); t2jjt->dump_on(&ss); ss.cr();
 
+    tty->print("%s", ss.as_string());
+    tty->flush();
     fatal("fundamental laws violation");
   }
 }
@@ -2282,8 +2297,6 @@ const Type **TypeTuple::fields( uint arg_cnt ) {
   return flds;
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeTuple::xmeet(const Type* t) const {
   const TypeTuple* x = t->is_tuple();
   assert(_cnt == x->_cnt, "mismatched shape: %d != %d", _cnt, x->_cnt);
@@ -2397,8 +2410,6 @@ const TypeAry* TypeAry::make(const Type* elem, const TypeInt* size, bool stable)
   return (TypeAry*)(new TypeAry(elem,size,stable))->hashcons();
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeAry::xmeet(const Type* t) const {
   const TypeAry* a = t->is_ary();
   const Type* size = _size->meet(a->_size);
@@ -2711,9 +2722,7 @@ intptr_t TypePtr::get_con() const {
   return _offset;
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *TypePtr::xmeet(const Type *t) const {
+const Type* TypePtr::xmeet(const Type* t) const {
   const Type* res = xmeet_helper(t);
   if (res->isa_ptr() == nullptr) {
     return res;
@@ -3271,8 +3280,6 @@ intptr_t TypeRawPtr::get_con() const {
   return (intptr_t)_bits;
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeRawPtr::xmeet(const Type* t) const {
   // Current "this->_base" is RawPtr
   switch (t->base()) {
@@ -3794,8 +3801,6 @@ const TypeKlassPtr* TypeOopPtr::as_klass_type(bool try_for_exact) const {
   return nullptr;
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeOopPtr::xmeet_helper(const Type *t) const {
   if (base() != OopPtr) {
     typerr(t);
@@ -4402,8 +4407,6 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst, const T
 }
 
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeInstPtr::xmeet_helper(const Type* t) const {
   // Current "this->_base" is Pointer
   switch (t->base()) {          // switch on original type
@@ -5168,9 +5171,8 @@ bool TypeAryPtr::is_same_java_type_as_helper(const TypeOopPtr* other) const {
 bool TypeAryPtr::maybe_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const {
   return TypePtr::maybe_java_subtype_of_helper_for_array(this, other, this_exact, other_exact);
 }
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
+
+const Type* TypeAryPtr::xmeet_helper(const Type* t) const {
   if (base() != AryPtr) {
     typerr(t);
   }
@@ -5808,9 +5810,7 @@ const TypeMetadataPtr* TypeMetadataPtr::cast_to_ptr_type(PTR ptr) const {
   return make(ptr, metadata(), _offset);
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
+const Type* TypeMetadataPtr::xmeet(const Type* t) const {
   if (base() != MetadataPtr) {
     typerr(t);
   }

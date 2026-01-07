@@ -690,6 +690,13 @@ template class TypeIntPrototype<intn_t<4>, uintn_t<4>>;
 template class TypeIntPrototype<intn_t<5>, uintn_t<5>>;
 template class TypeIntPrototype<intn_t<6>, uintn_t<6>>;
 
+template <class S, class U, class CT>
+static TypeIntPrototype<S, U> int_type_intersection(const CT* t1, const CT* t2) {
+  return TypeIntPrototype<S, U>{{MAX2(t1->_lo, t2->_lo), MIN2(t1->_hi, t2->_hi)},
+                                {MAX2(t1->_ulo, t2->_ulo), MIN2(t1->_uhi, t2->_uhi)},
+                                {t1->_bits._zeros | t2->_bits._zeros, t1->_bits._ones | t2->_bits._ones}};
+}
+
 template <class CT>
 const Type* TypeIntHelper::int_type_xmeet(const CT* t1, const CT* t2) {
   using S = std::remove_const_t<decltype(CT::_lo)>;
@@ -697,10 +704,7 @@ const Type* TypeIntHelper::int_type_xmeet(const CT* t1, const CT* t2) {
   if (!t1->_is_dual) {
     return int_type_union(t1, t2);
   } else {
-    return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(t1->_lo, t2->_lo), MIN2(t1->_hi, t2->_hi)},
-                                                  {MAX2(t1->_ulo, t2->_ulo), MIN2(t1->_uhi, t2->_uhi)},
-                                                  {t1->_bits._zeros | t2->_bits._zeros, t1->_bits._ones | t2->_bits._ones}},
-                           MIN2(t1->_widen, t2->_widen), true);
+    return CT::make_or_top(int_type_intersection<S, U>(t1, t2), MIN2(t1->_widen, t2->_widen), true);
   }
 }
 template const Type* TypeIntHelper::int_type_xmeet(const TypeInt* i1, const TypeInt* t2);
@@ -710,10 +714,7 @@ template <class CT>
 const Type* TypeIntHelper::int_type_xjoin(const CT* t1, const CT* t2) {
   using S = std::remove_const_t<decltype(CT::_lo)>;
   using U = std::remove_const_t<decltype(CT::_ulo)>;
-  return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(t1->_lo, t2->_lo), MIN2(t1->_hi, t2->_hi)},
-                                                {MAX2(t1->_ulo, t2->_ulo), MIN2(t1->_uhi, t2->_uhi)},
-                                                {t1->_bits._zeros | t2->_bits._zeros, t1->_bits._ones | t2->_bits._ones}},
-                         MIN2(t1->_widen, t2->_widen), false);
+  return CT::make_or_top(int_type_intersection<S, U>(t1, t2), MIN2(t1->_widen, t2->_widen), false);
 }
 template const Type* TypeIntHelper::int_type_xjoin(const TypeInt* i1, const TypeInt* t2);
 template const Type* TypeIntHelper::int_type_xjoin(const TypeLong* i1, const TypeLong* t2);
