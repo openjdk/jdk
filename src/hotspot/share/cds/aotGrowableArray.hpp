@@ -32,6 +32,10 @@ public:
   static void deallocate(void* mem);
 };
 
+// An AOTGrowableArray<T> provides the same functionality as a GrowableArray<T> that
+// uses the C heap allocator. In addition, AOTGrowableArray<T> can be iterated with
+// MetaspaceClosure. This type should be used for growable arrays that need to be
+// stored in the AOT cache. See ModuleEntry::_reads for an example.
 template <typename E>
 class AOTGrowableArray : public GrowableArrayWithAllocator<E, AOTGrowableArray<E>> {
   friend class VMStructs;

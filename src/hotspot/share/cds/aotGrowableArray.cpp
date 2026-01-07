@@ -29,6 +29,6 @@
 
 void AOTGrowableArrayHelper::deallocate(void* mem) {
   if (!AOTMetaspace::in_aot_cache(mem)) {
-    FreeHeap(mem);
+    GrowableArrayCHeapAllocator::deallocate(mem);
   }
 }
