@@ -101,7 +101,7 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
 // -Djava.security.debug=all
 class PlainConnectionLockTest implements HttpServerAdapters {
 
-    private SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private HttpTestServer http1Server;
     private HttpTestServer https1Server;
     private String http1URI;
@@ -133,10 +133,6 @@ class PlainConnectionLockTest implements HttpServerAdapters {
         requestSemaphore = new Semaphore(0);
         responseSemaphore = new Semaphore(0);
         successfulCompletion = false;
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         serverExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("Http1Server", 0).factory());
 
