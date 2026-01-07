@@ -260,7 +260,7 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
   // Step 1: find out the alloc regions which are ready to refresh.
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion* alloc_region = &_alloc_regions[i];
-    ShenandoahHeapRegion* region = AtomicAccess::load(&alloc_region->address);
+    ShenandoahHeapRegion* region = alloc_region->address;
     const size_t free_bytes = region == nullptr ? 0 : region->free();
     if (region == nullptr ||  !region->is_active_alloc_region() || free_bytes / HeapWordSize < PLAB::min_size()) {
       if (region != nullptr) {
