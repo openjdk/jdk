@@ -1326,7 +1326,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     }
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-      HISTOGRAM_TIME_DESCRIBED_BLOCK("allocate_memory_shared");
+      HISTOGRAM_TIME_DESCRIBED_BLOCK("allocate_shared");
       ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen);
       copy = allocate_memory(req);
       alloc_from_lab = false;

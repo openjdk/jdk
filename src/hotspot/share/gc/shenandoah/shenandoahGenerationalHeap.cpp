@@ -334,18 +334,10 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     evac_tracker()->begin_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
   }
 
-  // Copy the object:
-  if (TO_GENERATION == YOUNG_GENERATION) {
-    HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_young_to_young");
+  {
+    // Copy the object:
+    HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_object");
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
-  } else {
-    if (FROM_GENERATION == YOUNG_GENERATION) {
-      HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_young_to_old");
-      Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
-    } else {
-      HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_old_to_old");
-      Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
-    }
   }
 
   oop copy_val = cast_to_oop(copy);
