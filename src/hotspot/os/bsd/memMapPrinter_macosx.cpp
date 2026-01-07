@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 #if defined(__APPLE__)
 
+#include "cppstdlib/cstdlib.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -34,7 +35,6 @@
 
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <libproc.h>
 #include <unistd.h>
 

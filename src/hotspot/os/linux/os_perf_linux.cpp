@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cppstdlib/cstdlib.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_linux.inline.hpp"
@@ -40,7 +41,6 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
