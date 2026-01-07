@@ -37,7 +37,6 @@ import jdk.test.lib.Platform;
 /*
  * @test
  * @summary Check for unwanted file (types/extensions) in the jdk image 
- * @requires !vm.debug
  * @library /test/lib
  * @run main CheckFiles
  */
@@ -91,7 +90,7 @@ public class CheckFiles {
         allowedEndingsLibDir.add("tzdb.dat");
         if (Platform.isWindows()) {
             allowedEndingsLibDir.add(".lib");
-            allowedEndingsLibDir.add("tzmappings"); // we have this on AIX too, maybe this is an error ?
+            allowedEndingsLibDir.add("tzmappings");
         } else {
             allowedEndingsLibDir.add("jexec");
             allowedEndingsLibDir.add("jspawnhelper");
@@ -101,6 +100,9 @@ public class CheckFiles {
                 allowedEndingsLibDir.add(".dylib");
             } else {
                 allowedEndingsLibDir.add(".so");
+            }
+            if (Platform.isAix()) {
+                allowedEndingsLibDir.add("tzmappings");
             }
         }
         boolean libDirRes = scanFiles(libDir, allowedEndingsLibDir);
