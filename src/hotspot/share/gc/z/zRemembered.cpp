@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,20 +403,20 @@ ZRemsetTableIterator::ZRemsetTableIterator(ZRemembered* remembered, bool previou
 
   // This iterator uses the "found old" optimization.
 bool ZRemsetTableIterator::next(ZRemsetTableEntry* entry_addr) {
-  BitMap::idx_t prev = AtomicAccess::load(&_claimed);
+  BitMap::idx_t prev = _claimed.load_relaxed();
 
   for (;;) {
     if (prev == _bm->size()) {
       return false;
     }
 
-    const BitMap::idx_t page_index = _bm->find_first_set_bit(_claimed);
+    const BitMap::idx_t page_index = _bm->find_first_set_bit(_claimed.load_relaxed());
     if (page_index == _bm->size()) {
-      AtomicAccess::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
+      _claimed.compare_exchange(prev, page_index, memory_order_relaxed);
       return false;
     }
 
-    const BitMap::idx_t res = AtomicAccess::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
+    const BitMap::idx_t res = _claimed.compare_exchange(prev, page_index + 1, memory_order_relaxed);
     if (res != prev) {
       // Someone else claimed
       prev = res;
