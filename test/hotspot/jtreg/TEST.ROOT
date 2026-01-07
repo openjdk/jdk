@@ -101,6 +101,7 @@ requires.properties= \
     container.support \
     systemd.support \
     jdk.containerized \
+    jdk.explodedImage \
     jlink.runtime.linkable \
     jlink.packagedModules \
     jdk.static

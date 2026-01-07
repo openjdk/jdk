@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ import jdk.internal.net.http.http3.frames.SettingsFrame;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.Encoder;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -43,7 +41,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.testng.Assert.assertNotEquals;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -59,7 +59,7 @@ import static org.testng.Assert.assertNotEquals;
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
- * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA BlockingDecodingTest
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA BlockingDecodingTest
  */
 
 
@@ -94,7 +94,7 @@ public class BlockingDecodingTest {
         encoder.header(context, header.name(), header.value(),
                 false, IGNORE_RECEIVED_COUNT_CHECK);
         headerFrameWriter.write(headersBb);
-        assertNotEquals(headersBb.position(), 0);
+        assertNotEquals(0, headersBb.position());
         headersBb.flip();
         buffers.add(headersBb);
 
@@ -110,8 +110,8 @@ public class BlockingDecodingTest {
         // and the default number of blocked streams (0) will be exceeded (1).
         var lastHttp3Error = decodingCallback.lastHttp3Error.get();
         System.err.println("Last Http3Error: " + lastHttp3Error);
-        Assert.assertEquals(lastHttp3Error, Http3Error.QPACK_DECOMPRESSION_FAILED);
-        Assert.assertFalse(decodingCallback.completed.isDone());
+        Assertions.assertEquals(Http3Error.QPACK_DECOMPRESSION_FAILED, lastHttp3Error);
+        Assertions.assertFalse(decodingCallback.completed.isDone());
     }
 
     @Test
@@ -149,7 +149,7 @@ public class BlockingDecodingTest {
         encoder.header(context, expectedHeader.name,
                 expectedHeader.value, false, IGNORE_RECEIVED_COUNT_CHECK);
         headerFrameWriter.write(headersBb);
-        assertNotEquals(headersBb.position(), 0);
+        assertNotEquals(0, headersBb.position());
         headersBb.flip();
         buffers.add(headersBb);
 
@@ -165,12 +165,12 @@ public class BlockingDecodingTest {
         // and the default number of blocked streams (0) will be exceeded (1).
         var lastHttp3Error = decodingCallback.lastHttp3Error.get();
         System.err.println("Last Http3Error: " + lastHttp3Error);
-        Assert.assertNull(lastHttp3Error);
-        Assert.assertNull(decodingCallback.lastThrowable.get());
-        Assert.assertTrue(decodingCallback.completed.isDone());
+        Assertions.assertNull(lastHttp3Error);
+        Assertions.assertNull(decodingCallback.lastThrowable.get());
+        Assertions.assertTrue(decodingCallback.completed.isDone());
         // Check that onDecoded was called for the test entry
         var decodedHeader = decodingCallback.decodedHeaders.get(0);
-        Assert.assertEquals(decodedHeader, expectedHeader);
+        Assertions.assertEquals(expectedHeader, decodedHeader);
     }
 
     @Test
@@ -224,7 +224,7 @@ public class BlockingDecodingTest {
                                 IGNORE_RECEIVED_COUNT_CHECK);
                         headerFrameWriter.write(headersBb);
                     }
-                    assertNotEquals(headersBb.position(), 0);
+                    assertNotEquals(0, headersBb.position());
                     headersBb.flip();
                     buffers.add(headersBb);
 
@@ -261,13 +261,13 @@ public class BlockingDecodingTest {
         // Check results of each decoding task
         for (var decodingResultFuture : decodingTaskResults) {
             var taskCallback = decodingResultFuture.get();
-            Assert.assertNull(taskCallback.lastHttp3Error.get());
-            Assert.assertNull(taskCallback.lastThrowable.get());
+            Assertions.assertNull(taskCallback.lastHttp3Error.get());
+            Assertions.assertNull(taskCallback.lastThrowable.get());
             long decodingTaskCompleted = taskCallback.completedTimestamp.get();
             System.err.println("Decoding task completion timestamp: " + decodingTaskCompleted);
-            Assert.assertTrue(decodingTaskCompleted >= updateDoneTimeStamp);
+            Assertions.assertTrue(decodingTaskCompleted >= updateDoneTimeStamp);
             var decodedHeaders = taskCallback.decodedHeaders;
-            Assert.assertEquals(decodedHeaders, expectedHeaders);
+            Assertions.assertEquals(expectedHeaders, decodedHeaders);
         }
     }
 

@@ -76,7 +76,7 @@ public class Response1xxTest implements HttpServerAdapters {
     private String http2RequestURIBase;
 
 
-    private SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private HttpTestServer https2Server;  // h2
     private String https2RequestURIBase;
 
@@ -107,10 +107,6 @@ public class Response1xxTest implements HttpServerAdapters {
         http2Server.start();
         System.out.println("Started HTTP2 server at " + http2Server.getAddress());
 
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         https2Server = HttpTestServer.create(HTTP_2, sslContext);
         https2Server.addHandler(new Http2Handler(), "/http2/101");
         https2RequestURIBase = URIBuilder.newBuilder().scheme("https").loopback()
