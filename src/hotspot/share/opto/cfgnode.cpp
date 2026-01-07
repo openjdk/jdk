@@ -2551,7 +2551,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               }
               Node* phi = mms.memory();
               assert(made_new_phi || phi->in(i) == n, "replace the i-th merge by a slice");
-              phi->set_req(i, mms.memory2());
+              phi->set_req_X(i, mms.memory2(), phase);
             }
           }
         }
@@ -2560,7 +2560,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           for (MergeMemStream mms(result); mms.next_non_empty(); ) {
             Node* phi = mms.memory();
             for (uint i = 1; i < req(); ++i) {
-              if (phi->in(i) == this)  phi->set_req(i, phi);
+              if (phi->in(i) == this) {
+                phi->set_req_X(i, phi, phase);
+              }
             }
           }
         }
@@ -2582,7 +2584,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *ii = in(i);
       Node *new_in = MemNode::optimize_memory_chain(ii, at, nullptr, phase);
       if (ii != new_in ) {
-        set_req(i, new_in);
+        set_req_X(i, new_in, phase);
         progress = this;
       }
     }
