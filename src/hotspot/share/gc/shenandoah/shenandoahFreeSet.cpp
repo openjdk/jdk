@@ -2086,11 +2086,8 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
         young_trashed_regions++;
       }
     } else if (region->is_old()) {
-      // count both humongous and regular regions, but don't count trash (cset) regions.
-      // This comment is confusing.  Trashed regions are not analogous to cset regions.  They are analogous at end of update
-      // refs, but not at start of vacuation.  We say we do not count cset regions, but we actually do!
-      // TODO: is first_old_region and last_old_region only used to measure "fragmentation" of old?  if so, we should
-      //  only update them if !region->is_cset()
+      // We count humongous and regular regions as "old regions".  We do not count trashed regions that are old.  Those
+      // are counted (above) as old_trashed_regions.
       old_region_count++;
       if (first_old_region > idx) {
         first_old_region = idx;
