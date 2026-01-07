@@ -52,6 +52,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -780,10 +781,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     /**
-     * Starts a new thread. In this thread calls
-     * {@link #useToolProviderByDefault(ToolProvider)} with the specified
-     * {@code jpackageToolProvider} and then calls {@code workload.run()}. Joins the
-     * thread.
+     * In a separate thread calls {@link #useToolProviderByDefault(ToolProvider)}
+     * with the specified {@code jpackageToolProvider} and then calls
+     * {@code workload.run()}. Joins the thread.
      * <p>
      * The idea is to run the {@code workload} in the context of the specified
      * jpackage {@code ToolProvider} without altering the global variable holding
@@ -794,13 +794,19 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
      * @param jpackageToolProvider jpackage {@code ToolProvider}
      * @param workload             the workload to run
      */
-    public static void withToolProvider(ToolProvider jpackageToolProvider, Runnable workload) {
-        Objects.requireNonNull(jpackageToolProvider);
+    public static void withToolProvider(Runnable workload, ToolProvider jpackageToolProvider) {
         Objects.requireNonNull(workload);
-        ThrowingRunnable.toRunnable(Thread.ofVirtual().start(() -> {
+        Objects.requireNonNull(jpackageToolProvider);
+
+        CompletableFuture.runAsync(() -> {
+            var oldValue = defaultToolProvider.get();
             useToolProviderByDefault(jpackageToolProvider);
-            workload.run();
-        })::join).run();
+            try {
+                workload.run();
+            } finally {
+                defaultToolProvider.set(oldValue);
+            }
+        }).join();
     }
 
     public JPackageCommand useToolProvider(boolean v) {
