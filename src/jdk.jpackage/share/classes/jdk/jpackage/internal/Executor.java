@@ -25,12 +25,12 @@
 package jdk.jpackage.internal;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,7 +43,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
-import jdk.jpackage.internal.util.CommandOutputControl.ProcessSpec;
+import jdk.jpackage.internal.util.CommandOutputControl.ProcessAttributes;
 import jdk.jpackage.internal.util.CommandOutputControl.Result;
 import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -211,17 +211,11 @@ final class Executor {
             throw new IllegalStateException("No target to execute");
         }
 
-        // Capture interleaved STDOUT & STDERR streams
-        final ByteArrayOutputStream sink;
-
+        PrintableOutputBuilder printableOutputBuilder;
         if (dumpOutput()) {
-            sink = new ByteArrayOutputStream();
-            // Dump into the sink.
-            var ps = new PrintStream(sink, false, coc.charset());
-            // Redirect stderr in stdout.
-            coc.dumpOutput(true).dumpStdout(ps).dumpStderr(ps);
+            printableOutputBuilder = new PrintableOutputBuilder(coc);
         } else {
-            sink = null;
+            printableOutputBuilder = null;
         }
 
         if (dumpOutput()) {
@@ -240,7 +234,7 @@ final class Executor {
         }
 
         if (dumpOutput()) {
-            log(result, sink, coc.charset());
+            log(result, printableOutputBuilder.create());
         }
 
         return result;
@@ -299,14 +293,13 @@ final class Executor {
         return Log.isVerbose() && !quietCommand;
     }
 
-    private static void log(Result result, ByteArrayOutputStream outputSink, Charset outputSinkCharset) throws IOException {
+    private static void log(Result result, String printableOutput) throws IOException {
         Objects.requireNonNull(result);
-        Objects.requireNonNull(outputSink);
-        Objects.requireNonNull(outputSinkCharset);
+        Objects.requireNonNull(printableOutput);
 
         Optional<Long> pid;
-        if (result.execSpec() instanceof ProcessSpec spec) {
-            pid = spec.pid();
+        if (result.execAttrs() instanceof ProcessAttributes attrs) {
+            pid = attrs.pid();
         } else {
             pid = Optional.empty();
         }
@@ -316,15 +309,16 @@ final class Executor {
         pid.ifPresent(p -> {
             sb.append(" [PID: ").append(p).append("]");
         });
-        sb.append(":\n    ").append(result.execSpec());
+        sb.append(":\n    ").append(result.execAttrs());
         Log.verbose(sb.toString());
 
-        var lines = toStringList(outputSink.toByteArray(), outputSinkCharset);
-        if (!lines.isEmpty()) {
+        if (!printableOutput.isEmpty()) {
             sb.delete(0, sb.length());
             sb.append("Output:");
-            for (String s : lines) {
-                sb.append("\n    ").append(s);
+            try (var lines = new BufferedReader(new StringReader(printableOutput)).lines()) {
+                lines.forEach(line -> {
+                    sb.append("\n    ").append(line);
+                });
             }
             Log.verbose(sb.toString());
         }
@@ -336,10 +330,49 @@ final class Executor {
         });
     }
 
-    private static List<String> toStringList(byte[] data, Charset charset) throws IOException {
-        try (var bufReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data), charset))) {
-            return bufReader.lines().toList();
+    private static final class PrintableOutputBuilder {
+
+        PrintableOutputBuilder(CommandOutputControl coc) {
+            coc.dumpOutput(true);
+            charset = coc.charset();
+            if (coc.isBinaryOutput()) {
+                // Assume binary output goes into stdout and text error messages go into stderr, so keep them separated.
+                sinks = new ByteArrayOutputStream[2];
+                sinks[0] = new ByteArrayOutputStream();
+                sinks[1] = new ByteArrayOutputStream();
+                coc.dumpStdout(new PrintStream(sinks[0], false, charset))
+                    .dumpStderr(new PrintStream(sinks[1], false, charset));
+            } else {
+                sinks = new ByteArrayOutputStream[1];
+                sinks[0] = new ByteArrayOutputStream();
+                var ps = new PrintStream(sinks[0], false, charset);
+                // Redirect stderr in stdout.
+                coc.dumpStdout(ps).dumpStderr(ps);
+            }
         }
+
+        String create() {
+            if (isBinaryOutput()) {
+                // In case of binary output:
+                //  - Convert binary stdout to text using ISO-8859-1 encoding and
+                //    replace non-printable characters with the question mark symbol (?).
+                //  - Convert binary stderr to text using designated encoding (assume stderr is always a character stream).
+                //  - Merge text stdout and stderr into a single string;
+                //    stderr first, stdout follows, with the aim to present user error messages first.
+                var sb = new StringBuilder();
+                var stdout = sinks[0].toString(StandardCharsets.ISO_8859_1).replaceAll("[^\\p{Print}\\p{Space}]", "?");
+                return sb.append(sinks[1].toString(charset)).append(stdout).toString();
+            } else {
+                return sinks[0].toString(charset);
+            }
+        }
+
+        private boolean isBinaryOutput() {
+            return sinks.length == 2;
+        }
+
+        private final ByteArrayOutputStream sinks[];
+        private final Charset charset;
     }
 
     private final CommandOutputControl commandOutputControl;
