@@ -108,6 +108,7 @@ template <typename E> class GrowableArrayIterator;
 // of GrowableArrayWithAllocator.
 template <typename E>
 class GrowableArrayView : public GrowableArrayBase {
+friend class MetaspaceClosure;
 protected:
   E* _data; // data array
 
@@ -117,8 +118,6 @@ protected:
   ~GrowableArrayView() {}
 
 public:
-  void metaspace_pointers_do(class MetaspaceClosure* it);
-
   bool operator==(const GrowableArrayView& rhs) const {
     if (_len != rhs._len)
       return false;
@@ -759,13 +758,6 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
       GrowableArrayCHeapAllocator::deallocate(mem);
     }
   }
-
-public:
-  // methods required by MetaspaceClosure
-  void metaspace_pointers_do(class MetaspaceClosure* it);
-  int size() const { return (int)heap_word_size(sizeof(*this)); }
-  MetaspaceObj::Type type() const { return MetaspaceObj::GrowableArrayType; }
-  static bool is_read_only_by_default() { return false; }
 
 public:
   GrowableArray() : GrowableArray(2 /* initial_capacity */) {}
