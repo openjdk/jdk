@@ -1509,7 +1509,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     /**
      * Called to schedule sending of a datagram that contains a single {@code ConnectionCloseFrame}
      * sent in response to a {@code ConnectionClose} frame.
-     * This will completely remove the connection from the connection map.
+     * This will replace the {@link QuicConnectionImpl} with a {@link DrainingConnection} that
+     * will discard all incoming packets.
      * @param connection   the connection being closed
      * @param destination  the peer address
      * @param datagram     the datagram
@@ -1518,7 +1519,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                                    InetSocketAddress destination,
                                    ByteBuffer datagram) {
         if (debug.on()) debug.log("Pushing closed datagram for " + connection.logTag());
-        removeConnection(connection);
+        draining(connection);
         pushDatagram(connection, destination, datagram);
     }
 
@@ -1581,34 +1582,30 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         peerIssuedResetTokens.replaceAll((tok, c) -> c == from ? to : c);
     }
 
-    public void draining(final QuicPacketReceiver connection) {
+    public void draining(final QuicConnectionImpl connection) {
         // remap the connection to a DrainingConnection
         if (closed) return;
+
+        final long idleTimeout = connection.peerPtoMs() * 3; // 3 PTO
+        connection.localConnectionIdManager().close();
+        DrainingConnection draining = new DrainingConnection(connection.connectionIds(), idleTimeout);
+        // we can ignore stateless reset in the draining state.
+        remapPeerIssuedResetToken(connection, draining);
+
         connection.connectionIds().forEach((id) ->
-                connections.compute(id, this::remapDraining));
+                connections.compute(id, (i, r) -> remapDraining(i, r, draining)));
+        draining.startTimer();
         assert !connections.containsValue(connection) : connection;
     }
 
-    private DrainingConnection remapDraining(QuicConnectionId id, QuicPacketReceiver conn) {
+    private DrainingConnection remapDraining(QuicConnectionId id, QuicPacketReceiver conn, DrainingConnection draining) {
         if (closed) return null;
         var debugOn =  debug.on() && !Thread.currentThread().isVirtual();
-        if (conn instanceof ClosingConnection closing) {
+        if (conn instanceof QuicConnectionImpl || conn instanceof ClosingConnection) {
             if (debugOn) debug.log("remapping %s to DrainingConnection", id);
-            final var draining = closing.toDraining();
-            remapPeerIssuedResetToken(closing, draining);
-            draining.startTimer();
             return draining;
-        } else if (conn instanceof DrainingConnection draining) {
-            return draining;
-        } else if (conn instanceof QuicConnectionImpl impl) {
-            final long idleTimeout = impl.peerPtoMs() * 3; // 3 PTO
-            impl.localConnectionIdManager().close();
-            if (debugOn) debug.log("remapping %s to DrainingConnection", id);
-            var draining = new DrainingConnection(conn.connectionIds(), idleTimeout);
-            // we can ignore stateless reset in the draining state.
-            remapPeerIssuedResetToken(impl, draining);
-            draining.startTimer();
-            return draining;
+        } else if (conn instanceof DrainingConnection d) {
+            return d;
         } else if (conn == null) {
             // connection absent (was probably removed), don't remap to draining
             if (debugOn) {
@@ -1623,30 +1620,32 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
 
     protected void closing(QuicConnectionImpl connection, ByteBuffer datagram) {
         if (closed) return;
-        ByteBuffer closing = ByteBuffer.allocate(datagram.limit());
-        closing.put(datagram.slice());
-        closing.flip();
+        ByteBuffer closingDatagram = ByteBuffer.allocate(datagram.limit());
+        closingDatagram.put(datagram.slice());
+        closingDatagram.flip();
+
+        final long idleTimeout = connection.peerPtoMs() * 3; // 3 PTO
+        connection.localConnectionIdManager().close();
+        var closingConnection = new ClosingConnection(connection.connectionIds(), idleTimeout, datagram);
+        remapPeerIssuedResetToken(connection, closingConnection);
+
         connection.connectionIds().forEach((id) ->
-                connections.compute(id, (i, r) -> remapClosing(i, r, closing)));
+                connections.compute(id, (i, r) -> remapClosing(i, r, closingConnection)));
+        closingConnection.startTimer();
         assert !connections.containsValue(connection) : connection;
     }
 
-    private ClosedConnection remapClosing(QuicConnectionId id, QuicPacketReceiver conn, ByteBuffer datagram) {
+    private ClosedConnection remapClosing(QuicConnectionId id, QuicPacketReceiver conn, ClosingConnection closingConnection) {
         if (closed) return null;
         var debugOn =  debug.on() && !Thread.currentThread().isVirtual();
-        if (conn instanceof ClosingConnection closing) {
+        if (conn instanceof QuicConnectionImpl) {
+            if (debugOn) debug.log("remapping %s to ClosingConnection", id);
+            return closingConnection;
+        } else if (conn instanceof ClosingConnection closing) {
             // we already have a closing datagram, drop the new one
             return closing;
         } else if (conn instanceof DrainingConnection draining) {
             return draining;
-        } else if (conn instanceof QuicConnectionImpl impl) {
-            final long idleTimeout = impl.peerPtoMs() * 3; // 3 PTO
-            impl.localConnectionIdManager().close();
-            if (debugOn) debug.log("remapping %s to ClosingConnection", id);
-            var closing = new ClosingConnection(conn.connectionIds(), idleTimeout, datagram);
-            remapPeerIssuedResetToken(impl, closing);
-            closing.startTimer();
-            return closing;
         } else if (conn == null) {
             // connection absent (was probably removed), don't remap to closing
             if (debugOn) {
@@ -1895,10 +1894,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             if (debug.on()) {
                 debug.log("ClosingConnection(%s): dropping %s packet", localConnectionIds, headersType);
             }
-        }
-
-        private DrainingConnection toDraining() {
-            return new DrainingConnection(localConnectionIds, maxIdleTimeMs);
         }
     }
 

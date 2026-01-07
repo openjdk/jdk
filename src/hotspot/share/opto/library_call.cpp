@@ -6171,7 +6171,7 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
 
 CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* node) {
   if (node->is_IfProj()) {
-    Node* other_proj = node->as_IfProj()->other_if_proj();
+    IfProjNode* other_proj = node->as_IfProj()->other_if_proj();
     for (DUIterator_Fast jmax, j = other_proj->fast_outs(jmax); j < jmax; j++) {
       Node* obs = other_proj->fast_out(j);
       if (obs->in(0) == other_proj && obs->is_CallStaticJava() &&

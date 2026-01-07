@@ -508,7 +508,7 @@ final class PackagingPipeline {
         try {
             builder.create().call();
         } catch (Exception ex) {
-            throw ExceptionBox.rethrowUnchecked(ex);
+            throw ExceptionBox.toUnchecked(ex);
         }
     }
 
@@ -632,7 +632,7 @@ final class PackagingPipeline {
             final var accepted = withAction && context.test(id);
 
             if (TRACE_TASK_ACTION) {
-                var sb = new StringBuffer();
+                var sb = new StringBuilder();
                 sb.append("Execute task=[").append(id).append("]: ");
                 if (!withAction) {
                     sb.append("no action");
