@@ -77,7 +77,7 @@ final class Instrumentation {
         ClassModel classModel = classFile.parse(bytecode);
         byte[] generated = classFile.build(classModel.thisClass().asSymbol(), classBuilder -> {
             for (var ce : classModel) {
-                if (modifyClassElement(classModel,classBuilder, ce)) {
+                if (modifyClassElement(classModel, classBuilder, ce)) {
                     modified[0] = true;
                 } else {
                     classBuilder.with(ce);
@@ -108,7 +108,7 @@ final class Instrumentation {
             if (tm != null) {
                 Modification m = tm.modification();
                 if (m.tracing() || m.timing()) {
-                    return modifyMethod(classModel,classBuilder, mm, tm);
+                    return modifyMethod(classModel, classBuilder, mm, tm);
                 }
             }
         }

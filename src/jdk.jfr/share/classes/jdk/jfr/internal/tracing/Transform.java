@@ -173,7 +173,7 @@ final class Transform implements CodeTransform {
             return;
         }
         TryBlock last = tryBlocks.getLast();
-        if (tryBlocks.getLast().end == null) {
+        if (last.end == null) {
             last.end = builder.newBoundLabel();
         }
     }
