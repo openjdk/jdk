@@ -819,7 +819,7 @@ void JfrRecorderService::emit_leakprofiler_events() {
     while (_queue->is_nonempty()) {
       if (_oom_emit_request_delivered) {
         // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
-        // is pending or has already been completed. We are about to crash at any time now.
+        // has already been completed. We are about to crash at any time now.
         assert(_oom_emit_request_posted, "invariant");
         assert(CrashOnOutOfMemoryError, "invariant");
         return;
