@@ -792,46 +792,57 @@ public final class CommandOutputControl {
         return new CommandOutputControl(this);
     }
 
-    public interface ExecutableSpec {
+    public interface ExecutableAttributes {
+        List<String> commandLine();
     }
 
     public sealed interface Executable {
 
-        ExecutableSpec spec();
+        ExecutableAttributes attributes();
 
         Result execute() throws IOException, InterruptedException;
 
         Result execute(long timeout, TimeUnit unit) throws IOException, InterruptedException;
     }
 
-    public record ProcessSpec(Optional<Long> pid, List<String> cmdline) implements ExecutableSpec {
-        public ProcessSpec {
+    public record ProcessAttributes(Optional<Long> pid, List<String> commandLine) implements ExecutableAttributes {
+        public ProcessAttributes {
             Objects.requireNonNull(pid);
-            cmdline.forEach(Objects::requireNonNull);
+            commandLine.forEach(Objects::requireNonNull);
         }
 
         @Override
         public String toString() {
-            return CommandLineFormat.DEFAULT.apply(cmdline);
+            return CommandLineFormat.DEFAULT.apply(commandLine());
         }
     }
 
-    public record ToolProviderSpec(String name, List<String> args) implements ExecutableSpec {
-        public ToolProviderSpec {
+    public record ToolProviderAttributes(String name, List<String> args) implements ExecutableAttributes {
+        public ToolProviderAttributes {
             Objects.requireNonNull(name);
             args.forEach(Objects::requireNonNull);
         }
 
         @Override
         public String toString() {
-            return CommandLineFormat.DEFAULT.apply(Stream.concat(Stream.of(name), args.stream()).toList());
+            return CommandLineFormat.DEFAULT.apply(commandLine());
+        }
+
+        @Override
+        public List<String> commandLine() {
+            return Stream.concat(Stream.of(name), args.stream()).toList();
         }
     }
 
-    public static ExecutableSpec EMPTY_EXECUTABLE_SPEC = new ExecutableSpec() {
+    public static ExecutableAttributes EMPTY_EXECUTABLE_ATTRIBUTES = new ExecutableAttributes() {
         @Override
         public String toString() {
             return "<unknown>";
+        }
+
+        @Override
+        public List<String> commandLine() {
+            return List.of();
         }
     };
 
@@ -847,17 +858,17 @@ public final class CommandOutputControl {
             Optional<Integer> exitCode,
             Optional<CommandOutput<List<String>>> output,
             Optional<CommandOutput<byte[]>> byteOutput,
-            ExecutableSpec execSpec) {
+            ExecutableAttributes execAttrs) {
 
         public Result {
             Objects.requireNonNull(exitCode);
             Objects.requireNonNull(output);
             Objects.requireNonNull(byteOutput);
-            Objects.requireNonNull(execSpec);
+            Objects.requireNonNull(execAttrs);
         }
 
         public Result(int exitCode) {
-            this(Optional.of(exitCode), Optional.empty(), Optional.empty(), EMPTY_EXECUTABLE_SPEC);
+            this(Optional.of(exitCode), Optional.empty(), Optional.empty(), EMPTY_EXECUTABLE_ATTRIBUTES);
         }
 
         public int getExitCode() {
@@ -979,14 +990,14 @@ public final class CommandOutputControl {
 
                 var newOutput = combine(out, err, theByteOutput.interleaved);
 
-                return new Result(exitCode, Optional.of(newOutput), byteOutput.filter(_ -> keepByteContent), execSpec);
+                return new Result(exitCode, Optional.of(newOutput), byteOutput.filter(_ -> keepByteContent), execAttrs);
             } catch (UncheckedIOException ex) {
                 throw ex.getCause();
             }
         }
 
-        public Result copyWithExecutableSpec(ExecutableSpec execSpec) {
-            return new Result(exitCode, output, byteOutput, Objects.requireNonNull(execSpec));
+        public Result copyWithExecutableAttributes(ExecutableAttributes execAttrs) {
+            return new Result(exitCode, output, byteOutput, Objects.requireNonNull(execAttrs));
         }
 
         private static StringListContent toStringList(byte[] data, Charset charset) {
@@ -1006,7 +1017,7 @@ public final class CommandOutputControl {
         }
 
         private UnexpectedResultException(Result value) {
-            this(value, String.format("Unexpected result from executing the command %s", value.execSpec()));
+            this(value, String.format("Unexpected result from executing the command %s", value.execAttrs()));
         }
 
         public Result getResult() {
@@ -1025,7 +1036,7 @@ public final class CommandOutputControl {
         }
 
         public UnexpectedExitCodeException(Result value) {
-            this(value, String.format("Unexpected exit code %d from executing the command %s", value.getExitCode(), value.execSpec()));
+            this(value, String.format("Unexpected exit code %d from executing the command %s", value.getExitCode(), value.execAttrs()));
         }
 
         private static final long serialVersionUID = 1L;
@@ -1153,7 +1164,7 @@ public final class CommandOutputControl {
             throw ex.getCause();
         }
 
-        return csc.createResult(exitCode, new ProcessSpec(getPID(process), pb.command()));
+        return csc.createResult(exitCode, new ProcessAttributes(getPID(process), pb.command()));
     }
 
     private Result execute(ToolProvider tp, long timeoutMillis, String... args)
@@ -1197,7 +1208,7 @@ public final class CommandOutputControl {
             suppressIOException(err::flush);
         }
 
-        return csc.createResult(exitCode, new ToolProviderSpec(tp.name(), List.of(args)));
+        return csc.createResult(exitCode, new ToolProviderAttributes(tp.name(), List.of(args)));
     }
 
     private CommandOutputControl setOutputControl(boolean set, OutputControlOption v) {
@@ -1558,7 +1569,7 @@ public final class CommandOutputControl {
             }
         }
 
-        Result createResult(Optional<Integer> exitCode, ExecutableSpec execSpec) throws IOException {
+        Result createResult(Optional<Integer> exitCode, ExecutableAttributes execAttrs) throws IOException {
 
             CommandOutput<List<String>> output;
             CommandOutput<byte[]> byteOutput;
@@ -1596,7 +1607,7 @@ public final class CommandOutputControl {
                 byteOutput = null;
             }
 
-            return new Result(exitCode, Optional.ofNullable(output), Optional.ofNullable(byteOutput), execSpec);
+            return new Result(exitCode, Optional.ofNullable(output), Optional.ofNullable(byteOutput), execAttrs);
         }
 
         PrintStream out() {
@@ -1791,8 +1802,8 @@ public final class CommandOutputControl {
         }
 
         @Override
-        public ExecutableSpec spec() {
-            return new ToolProviderSpec(tp.name(), args);
+        public ExecutableAttributes attributes() {
+            return new ToolProviderAttributes(tp.name(), args);
         }
     }
 
@@ -1814,8 +1825,8 @@ public final class CommandOutputControl {
         }
 
         @Override
-        public ExecutableSpec spec() {
-            return new ProcessSpec(Optional.empty(), pb.command());
+        public ExecutableAttributes attributes() {
+            return new ProcessAttributes(Optional.empty(), pb.command());
         }
     }
 

@@ -169,7 +169,7 @@ public class CommandOutputControlTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    public void test_ExecutableSpec(boolean toolProvider) {
+    public void test_ExecutableAttributes(boolean toolProvider) {
         var coc = new CommandOutputControl();
         CommandOutputControl.Executable exec;
         if (toolProvider) {
@@ -191,7 +191,7 @@ public class CommandOutputControlTest {
             exec = coc.createExecutable(new ProcessBuilder("runme", "--foo", "--baz=10"));
         }
 
-        assertEquals("runme --foo --baz=10", exec.spec().toString());
+        assertEquals("runme --foo --baz=10", exec.attributes().toString());
     }
 
     @Test
@@ -201,7 +201,7 @@ public class CommandOutputControlTest {
         assertFalse(result.findStdout().isPresent());
         assertFalse(result.findStderr().isPresent());
         assertEquals(7, result.getExitCode());
-        assertSame(Objects.requireNonNull(CommandOutputControl.EMPTY_EXECUTABLE_SPEC), result.execSpec());
+        assertSame(Objects.requireNonNull(CommandOutputControl.EMPTY_EXECUTABLE_ATTRIBUTES), result.execAttrs());
     }
 
     @Test
@@ -259,23 +259,28 @@ public class CommandOutputControlTest {
     }
 
     @Test
-    public void test_Result_toCharacterResult_copyWithExecutableSpec() {
+    public void test_Result_toCharacterResult_copyWithExecutableAttributes() {
 
         var empty = new CommandOutputControl.Result(0);
 
-        var execSpec = new CommandOutputControl.ExecutableSpec() {
+        var execAttrs = new CommandOutputControl.ExecutableAttributes() {
             @Override
             public String toString() {
                 return "foo";
             }
+
+            @Override
+            public List<String> commandLine() {
+                return List.of();
+            }
         };
 
-        var copy = empty.copyWithExecutableSpec(execSpec);
+        var copy = empty.copyWithExecutableAttributes(execAttrs);
 
         assertSame(empty.exitCode(), copy.exitCode());
         assertSame(empty.output(), copy.output());
         assertSame(empty.byteOutput(), copy.byteOutput());
-        assertSame(execSpec, copy.execSpec());
+        assertSame(execAttrs, copy.execAttrs());
     }
 
     @ParameterizedTest
@@ -661,7 +666,7 @@ public class CommandOutputControlTest {
             assertEquals(expected.findStdout(), actual.findStdout());
             assertEquals(expected.findStderr(), actual.findStderr());
 
-            assertSame(byteResult.execSpec(), actual.execSpec());
+            assertSame(byteResult.execAttrs(), actual.execAttrs());
             assertEquals(expected.exitCode(), actual.exitCode());
         }
     }

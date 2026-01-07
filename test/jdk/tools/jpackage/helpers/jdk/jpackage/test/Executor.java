@@ -281,11 +281,11 @@ public final class Executor extends CommandArguments<Executor> {
                     long expectedExitCode = expectedExitCodes.getFirst();
                     TKit.assertEquals(expectedExitCode, getExitCode(), String.format(
                             "Check command %s exited with %d code",
-                            base.execSpec(), expectedExitCode));
+                            base.execAttrs(), expectedExitCode));
                 } default -> {
                     TKit.assertTrue(expectedExitCodes.contains(getExitCode()), String.format(
                             "Check command %s exited with one of %s codes",
-                            base.execSpec(), expectedExitCodes.stream().sorted().toList()));
+                            base.execAttrs(), expectedExitCodes.stream().sorted().toList()));
                 }
             }
             return this;
@@ -300,7 +300,7 @@ public final class Executor extends CommandArguments<Executor> {
         }
 
         public String getPrintableCommandLine() {
-            return base.execSpec().toString();
+            return base.execAttrs().toString();
         }
     }
 
@@ -506,7 +506,8 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     private Result createResult(CommandOutputControl.Result baseResult) {
-        return new Result(baseResult.copyWithExecutableSpec(new ExecutableSpec(getPrintableCommandLine())));
+        return new Result(baseResult.copyWithExecutableAttributes(
+                new ExecutableAttributes(baseResult.execAttrs(), getPrintableCommandLine())));
     }
 
     public String getPrintableCommandLine() {
@@ -527,16 +528,24 @@ public final class Executor extends CommandArguments<Executor> {
         return String.format(format, CommandLineFormat.DEFAULT.apply(cmdline), cmdline.size());
     }
 
-    private record ExecutableSpec(String cmdline) implements CommandOutputControl.ExecutableSpec {
-        ExecutableSpec {
-            if (cmdline.isBlank()) {
+    private record ExecutableAttributes(CommandOutputControl.ExecutableAttributes base, String toStringValue)
+            implements CommandOutputControl.ExecutableAttributes {
+
+        ExecutableAttributes {
+            Objects.requireNonNull(base);
+            if (toStringValue.isBlank()) {
                 throw new IllegalArgumentException();
             }
         }
 
         @Override
         public String toString() {
-            return cmdline;
+            return toStringValue;
+        }
+
+        @Override
+        public List<String> commandLine() {
+            return base.commandLine();
         }
     }
 
