@@ -420,10 +420,9 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   assert(young_evacuated_reserve_used <= total_young_available, "Cannot evacuate more than is available in young");
   young_generation->set_evacuation_reserve(young_evacuated_reserve_used);
 
-  // We have not yet rebuilt the free set.  Memory that is available at this moment may not be available after the
-  // collection set is constructed because some of the available memory may be contained within regions that are to be
-  // selected for the collection set.  We were 
-
+  // We have not yet rebuilt the free set.  Some of the memory that is thought to be avaiable within old may no
+  // longer be available if that memory had been free within regions that were selected for the collection set.
+  // Make the necessary adjustments to old_available.
   size_t old_available =
     old_generation->available() + add_regions_to_old * region_size_bytes - collection_set->get_old_available_bytes_collected();
 
