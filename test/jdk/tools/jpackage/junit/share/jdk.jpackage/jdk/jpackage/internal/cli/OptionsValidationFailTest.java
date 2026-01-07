@@ -40,12 +40,10 @@ import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.util.Result;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JUnitAdapter;
-import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.TKit;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -88,9 +86,8 @@ import org.junit.jupiter.api.condition.EnabledIf;
 @EnabledIf("jtregErrorTestAvailable")
 public class OptionsValidationFailTest {
 
-    @BeforeAll
-    public static void setCustomJPackageToolProvider() {
-        JPackageCommand.useToolProviderByDefault(new ToolProvider() {
+    private static ToolProvider createToolProvider() {
+        return new ToolProvider() {
 
             @Override
             public String name() {
@@ -150,17 +147,11 @@ public class OptionsValidationFailTest {
                 }
 
             };
-        });
-    }
-
-    @AfterAll
-    public static void resetJPackageToolProvider() {
-        Optional.ofNullable(JavaTool.JPACKAGE.asToolProvider()).ifPresentOrElse(
-                JPackageCommand::useToolProviderByDefault, JPackageCommand::useExecutableByDefault);
+        };
     }
 
     @TestFactory
-    Stream<DynamicTest> getTestCasesFromErrorTest() throws Throwable {
+    Stream<DynamicTest> getTestCasesFromErrorTest() throws Exception {
         final var jpackageTestsUnnamedModule = JUnitAdapter.class.getModule();
 
         final var testClassloader = new InMemoryClassLoader(Stream.of(
@@ -201,11 +192,23 @@ public class OptionsValidationFailTest {
             return "--jpt-include=" + testDesc;
         });
 
+        final var jpackageToolProviderMock = createToolProvider();
+
         return JUnitAdapter.createJPackageTests(testClassloader, Stream.of(
                 defaultExcludes,
                 defaultIncludes,
                 Stream.of("--jpt-run=ErrorTest")
-        ).flatMap(x -> x).toArray(String[]::new));
+        ).flatMap(x -> x).toArray(String[]::new)).map(dynamicTest -> {
+            return DynamicTest.dynamicTest(dynamicTest.getDisplayName(), () -> {
+                JPackageCommand.withToolProvider(jpackageToolProviderMock, () -> {
+                    try {
+                        dynamicTest.getExecutable().execute();
+                    } catch (Throwable t) {
+                        throw ExceptionBox.toUnchecked(ExceptionBox.unbox(t));
+                    }
+                });
+            });
+        });
     }
 
     private static boolean jtregErrorTestAvailable() {
