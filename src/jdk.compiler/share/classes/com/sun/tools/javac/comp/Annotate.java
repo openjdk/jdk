@@ -1107,6 +1107,7 @@ public class Annotate {
             for (List<JCAnnotation> dimAnnos : tree.dimAnnotations)
                 enterTypeAnnotations(dimAnnos, env, sym, false);
             scan(tree.elemtype);
+            scan(tree.dims);
             scan(tree.elems);
         }
 

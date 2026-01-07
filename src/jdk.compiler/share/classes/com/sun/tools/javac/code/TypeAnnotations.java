@@ -1403,6 +1403,7 @@ public class TypeAnnotations {
                     break;
                 }
             }
+            scan(tree.dims);
             scan(tree.elems);
         }
 
