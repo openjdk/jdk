@@ -226,6 +226,8 @@ public:
 
   virtual void record_requested_gc();
 
+  // Choose the collection set, returning the number of regions that need to be transferred to the old reserve from the young
+  // reserve in order to effectively evacuate the chosen collection set.
   virtual ssize_t choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
