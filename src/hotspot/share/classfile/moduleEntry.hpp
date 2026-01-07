@@ -199,7 +199,7 @@ public:
 
   // methods required by MetaspaceClosure
   void metaspace_pointers_do(MetaspaceClosure* it);
-  int size() const { return (int)heap_word_size(sizeof(ModuleEntry)); }
+  int size_in_heapwords() const { return (int)heap_word_size(sizeof(ModuleEntry)); }
   MetaspaceObj::Type type() const { return MetaspaceObj::ModuleEntryType; }
   static bool is_read_only_by_default() { return false; }
 

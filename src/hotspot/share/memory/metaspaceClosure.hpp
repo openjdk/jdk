@@ -70,11 +70,12 @@ public:
   //
   // For type X to be iterable by MetaspaceClosure, X (or one of X's supertypes) must have
   // the following public functions:
-  //
   //         void metaspace_pointers_do(MetaspaceClosure* it);
-  //         int size() const;
   //         MetaspaceObj::Type type() const;
   //         static bool is_read_only_by_default() { return true; }
+  //
+  // In addition, if X is not a subtype of MetaspaceObj, it must have the following function:
+  //         int size_in_heapwords() const;
   //
   // Currently, the iterable types include all subtypes of MetsapceObj, as well
   // as GrowableArray, ModuleEntry and PackageEntry.
@@ -170,6 +171,16 @@ public:
   }
 
 private:
+  template <typename T, ENABLE_IF(std::is_base_of<MetaspaceObj, T>::value)>
+  static int get_size(T* obj) {
+    return obj->size();
+  }
+
+  template <typename T, ENABLE_IF(!std::is_base_of<MetaspaceObj, T>::value)>
+  static int get_size(T* obj) {
+    return obj->size_in_heapwords();
+  }
+
   // MSORef -- iterate an instance of T, where T::metaspace_pointers_do() exists.
   template <class T> class MSORef : public Ref {
     T** _mpp;
@@ -186,7 +197,7 @@ private:
 
     virtual bool is_read_only_by_default() const { return T::is_read_only_by_default(); }
     virtual bool not_null()                const { return dereference() != nullptr; }
-    virtual int size()                     const { return dereference()->size(); }
+    virtual int size()                     const { return get_size(dereference()); }
     virtual MetaspaceObj::Type msotype()   const { return dereference()->type(); }
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
