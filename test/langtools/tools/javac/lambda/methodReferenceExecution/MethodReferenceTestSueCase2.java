@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,16 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestSueCase2
+ * @run junit MethodReferenceTestSueCase2
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
  */
 
-@Test
 public class MethodReferenceTestSueCase2 {
 
     public interface Sam2<T> { public String get(T target, String s); }
@@ -46,7 +44,8 @@ public class MethodReferenceTestSueCase2 {
 
     String m() {  return var.get(new MethodReferenceTestSueCase2(), ""); }
 
+    @Test
     public void testSueCase2() {
-        assertEquals(m(), "2");
+        assertEquals("2", m());
     }
 }

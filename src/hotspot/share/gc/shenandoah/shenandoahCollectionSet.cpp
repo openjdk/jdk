@@ -200,3 +200,38 @@ void ShenandoahCollectionSet::print_on(outputStream* out) const {
   }
   assert(regions == count(), "Must match");
 }
+
+void ShenandoahCollectionSet::summarize(size_t total_garbage, size_t immediate_garbage, size_t immediate_regions) const {
+  const LogTarget(Info, gc, ergo) lt;
+  LogStream ls(lt);
+  if (lt.is_enabled()) {
+    const size_t cset_percent = (total_garbage == 0) ? 0 : (garbage() * 100 / total_garbage);
+    const size_t collectable_garbage = garbage() + immediate_garbage;
+    const size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);
+    const size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
+
+    ls.print_cr("Collectable Garbage: " PROPERFMT " (%zu%%), "
+                 "Immediate: " PROPERFMT " (%zu%%), %zu regions, "
+                 "CSet: " PROPERFMT " (%zu%%), %zu regions",
+                 PROPERFMTARGS(collectable_garbage),
+                 collectable_garbage_percent,
+
+                 PROPERFMTARGS(immediate_garbage),
+                 immediate_percent,
+                 immediate_regions,
+
+                 PROPERFMTARGS(garbage()),
+                 cset_percent,
+                 count());
+
+    if (garbage() > 0) {
+      const size_t young_evac_bytes = get_live_bytes_in_untenurable_regions();
+      const size_t promote_evac_bytes = get_live_bytes_in_tenurable_regions();
+      const size_t old_evac_bytes = get_live_bytes_in_old_regions();
+      const size_t total_evac_bytes = young_evac_bytes + promote_evac_bytes + old_evac_bytes;
+      ls.print_cr("Evacuation Targets: "
+                  "YOUNG: " PROPERFMT ", " "PROMOTE: " PROPERFMT ", " "OLD: " PROPERFMT ", " "TOTAL: " PROPERFMT,
+                  PROPERFMTARGS(young_evac_bytes), PROPERFMTARGS(promote_evac_bytes), PROPERFMTARGS(old_evac_bytes), PROPERFMTARGS(total_evac_bytes));
+    }
+  }
+}

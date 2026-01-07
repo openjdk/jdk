@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
 import jdk.test.lib.Asserts;
 import sun.security.krb5.Config;
 
+import javax.swing.JOptionPane;
+
 // =================== Attention ===================
 // This test calls a native method implemented in libTestDynamicStore.m
 // to modify system-level Kerberos 5 settings stored in the dynamic store.
@@ -55,6 +57,17 @@ public class TestDynamicStore {
     }
 
     public static void main(String[] args) throws Exception {
+
+        // Show a popup to remind to run this test as sudo user
+        // this will only trigger if sudo (root) user is not detected
+        if (!"root".equals(System.getProperty("user.name"))) {
+
+            JOptionPane.showMessageDialog(null, """
+                            This test MUST be run as ROOT.\s
+                            Please close and RESTART the test.""");
+
+            Asserts.assertFalse(true, "This test must be run as ROOT");
+        }
 
         System.loadLibrary("TestDynamicStore");
 

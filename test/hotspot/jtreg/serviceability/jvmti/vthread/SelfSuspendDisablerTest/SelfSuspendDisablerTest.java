@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,37 +82,47 @@ public class SelfSuspendDisablerTest {
         });
         Thread t2 = Thread.ofVirtual().factory().newThread(() -> {
             testJvmtiThreadState(Thread.currentThread(), RUNNABLE);
-            while(!isSuspended(t1)) {
+            selfSuspend();
+        });
+        Thread t3 = Thread.ofVirtual().factory().newThread(() -> {
+            testJvmtiThreadState(Thread.currentThread(), RUNNABLE);
+            while(!isSuspended(t1) || !isSuspended(t2)) {
               Thread.yield();
             }
             Thread.yield(); // provoke unmount
 
             testJvmtiThreadState(t1, SUSPENDED);
+            testJvmtiThreadState(t2, SUSPENDED);
 
             resume(t1);
+            resume(t2);
 
             suspendAllVirtualThreads();
         });
 
         testJvmtiThreadState(t1, NEW);
         testJvmtiThreadState(t2, NEW);
+        testJvmtiThreadState(t3, NEW);
 
         t1.start();
         t2.start();
+        t3.start();
 
-        while(!isSuspended(t2)) {
+        while(!isSuspended(t3)) {
             sleep(100);
         }
 
-        testJvmtiThreadState(t2, SUSPENDED);
+        testJvmtiThreadState(t3, SUSPENDED);
 
         resumeAllVirtualThreads();
 
+        t3.join();
         t2.join();
         t1.join();
 
         testJvmtiThreadState(t1, TERMINATED);
         testJvmtiThreadState(t2, TERMINATED);
+        testJvmtiThreadState(t3, TERMINATED);
     }
 
 }

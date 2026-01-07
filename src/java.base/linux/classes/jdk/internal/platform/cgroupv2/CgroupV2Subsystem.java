@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2022, Red Hat Inc.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,22 +156,39 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     @Override
     public long getCpuShares() {
         long sharesRaw = getLongVal("cpu.weight");
-        if (sharesRaw == 100 || sharesRaw <= 0) {
+        // cg v2 value must be in range [1,10000]
+        if (sharesRaw == 100 || sharesRaw <= 0 || sharesRaw > 10000) {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }
         int shares = (int)sharesRaw;
         // CPU shares (OCI) value needs to get translated into
         // a proper Cgroups v2 value. See:
-        // https://github.com/containers/crun/blob/master/crun.1.md#cpu-controller
+        // https://github.com/containers/crun/blob/1.24/crun.1.md#cpu-controller
         //
         // Use the inverse of (x == OCI value, y == cgroupsv2 value):
-        // ((262142 * y - 1)/9999) + 2 = x
+        // y = 10^(log2(x)^2/612 + 125/612 * log2(x) - 7.0/34.0)
         //
-        int x = 262142 * shares - 1;
-        double frac = x/9999.0;
-        x = ((int)frac) + 2;
+        // By re-arranging it to the standard quadratic form:
+        // log2(x)^2 + 125 * log2(x) - (126 + 612 * log_10(y)) = 0
+        //
+        // Therefore, log2(x) = (-125 + sqrt( 125^2 - 4 * (-(126 + 612 * log_10(y)))))/2
+        //
+        // As a result we have the inverse (we can discount substraction of the
+        // square root value since those values result in very small numbers and the
+        // cpu shares values - OCI - are in range [2-262144])
+        //
+        // x = 2^((-125 + sqrt(16129 + 2448* log10(y)))/2)
+        //
+        double logMultiplicand = Math.log10(shares);
+        double discriminant = 16129 + 2448 * logMultiplicand;
+        double squareRoot = Math.sqrt(discriminant);
+        double exponent = (-125 + squareRoot)/2;
+        double scaledValue = Math.pow(2, exponent);
+
+        int x = (int)scaledValue;
         if ( x <= PER_CPU_SHARES ) {
-            return PER_CPU_SHARES; // mimic cgroups v1
+            // Return the back-mapped value.
+            return x;
         }
         int f = x/PER_CPU_SHARES;
         int lower_multiple = f * PER_CPU_SHARES;

@@ -39,16 +39,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.StandardConstants;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
 
@@ -74,6 +73,15 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
     }
 
     abstract boolean isCheckingDisabled();
+
+    // TODO move this method to a public interface / class
+    abstract String chooseQuicClientAlias(String[] keyTypes, Principal[] issuers,
+                                          QuicTLSEngineImpl quicTLSEngine);
+
+    // TODO move this method to a public interface / class
+    abstract String chooseQuicServerAlias(String keyType,
+                                          X500Principal[] issuers,
+                                          QuicTLSEngineImpl quicTLSEngine);
 
     // Entry point to do all certificate checks.
     protected EntryStatus checkAlias(int keyStoreIndex, String alias,
@@ -108,7 +116,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         }
 
         if (keyIndex == -1) {
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("keymanager")) {
                 SSLLogger.fine("Ignore alias " + alias
                         + ": key algorithm does not match");
             }
@@ -126,7 +134,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                 }
             }
             if (!found) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("keymanager")) {
                     SSLLogger.fine(
                             "Ignore alias " + alias
                                     + ": issuers do not match");
@@ -142,7 +150,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                 !conformsToAlgorithmConstraints(constraints, chain,
                         checkType.getValidator())) {
 
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("keymanager")) {
                 SSLLogger.fine("Ignore alias " + alias +
                         ": certificate chain does not conform to " +
                         "algorithm constraints");
@@ -168,19 +176,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         }
 
         if (socket instanceof SSLSocket sslSocket && sslSocket.isConnected()) {
-            SSLSession session = sslSocket.getHandshakeSession();
-
-            if (session instanceof ExtendedSSLSession extSession
-                    && ProtocolVersion.useTLS12PlusSpec(
-                    extSession.getProtocol())) {
-                // Use peer supported certificate signature algorithms
-                // sent with "signature_algorithms_cert" TLS extension.
-                return SSLAlgorithmConstraints.forSocket(sslSocket,
-                        extSession.getPeerSupportedSignatureAlgorithms(),
-                        true);
-            }
-
-            return SSLAlgorithmConstraints.forSocket(sslSocket, true);
+            return SSLAlgorithmConstraints.forSocket(
+                    sslSocket, SIGNATURE_CONSTRAINTS_MODE.PEER, true);
         }
 
         return SSLAlgorithmConstraints.DEFAULT;
@@ -193,21 +190,19 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
             return null;
         }
 
-        if (engine != null) {
-            SSLSession session = engine.getHandshakeSession();
+        return SSLAlgorithmConstraints.forEngine(
+                engine, SIGNATURE_CONSTRAINTS_MODE.PEER, true);
+    }
 
-            if (session instanceof ExtendedSSLSession extSession
-                    && ProtocolVersion.useTLS12PlusSpec(
-                    extSession.getProtocol())) {
-                // Use peer supported certificate signature algorithms
-                // sent with "signature_algorithms_cert" TLS extension.
-                return SSLAlgorithmConstraints.forEngine(engine,
-                        extSession.getPeerSupportedSignatureAlgorithms(),
-                        true);
-            }
+    // Gets algorithm constraints of QUIC TLS engine.
+    protected AlgorithmConstraints getAlgorithmConstraints(QuicTLSEngineImpl engine) {
+
+        if (checksDisabled) {
+            return null;
         }
 
-        return SSLAlgorithmConstraints.forEngine(engine, true);
+        return SSLAlgorithmConstraints.forQUIC(
+                engine, SIGNATURE_CONSTRAINTS_MODE.PEER, true);
     }
 
     // Algorithm constraints check.
@@ -224,7 +219,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
             checker.init(false);
         } catch (CertPathValidatorException cpve) {
             // unlikely to happen
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("keymanager")) {
                 SSLLogger.fine(
                         "Cannot initialize algorithm constraints checker",
                         cpve);
@@ -240,7 +235,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                 // We don't care about the unresolved critical extensions.
                 checker.check(cert, Collections.emptySet());
             } catch (CertPathValidatorException cpve) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("keymanager")) {
                     SSLLogger.fine("Certificate does not conform to " +
                             "algorithm constraints", cert, cpve);
                 }
@@ -397,7 +392,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                                         serverName.getEncoded());
                             } catch (IllegalArgumentException iae) {
                                 // unlikely to happen, just in case ...
-                                if (SSLLogger.isOn &&
+                                if (SSLLogger.isOn() &&
                                         SSLLogger.isOn("keymanager")) {
                                     SSLLogger.fine("Illegal server name: "
                                             + serverName);
@@ -413,7 +408,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                             X509TrustManagerImpl.checkIdentity(hostname,
                                     cert, idAlgorithm);
                         } catch (CertificateException e) {
-                            if (SSLLogger.isOn &&
+                            if (SSLLogger.isOn() &&
                                     SSLLogger.isOn("keymanager")) {
                                 SSLLogger.fine(
                                         "Certificate identity does not match "

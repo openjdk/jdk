@@ -388,7 +388,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   // Decode flags
   const bool finalizable = entry.finalizable();
@@ -790,7 +789,6 @@ typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkOldCLDClosu
 
 class ZMarkOldRootsTask : public ZTask {
 private:
-  ZMark* const                  _mark;
   ZRootsIteratorStrongColored   _roots_colored;
   ZRootsIteratorStrongUncolored _roots_uncolored;
 
@@ -801,9 +799,8 @@ private:
   ZMarkNMethodClosure           _nm_cl;
 
 public:
-  ZMarkOldRootsTask(ZMark* mark)
+  ZMarkOldRootsTask()
     : ZTask("ZMarkOldRootsTask"),
-      _mark(mark),
       _roots_colored(ZGenerationIdOptional::old),
       _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
@@ -848,7 +845,6 @@ public:
 
 class ZMarkYoungRootsTask : public ZTask {
 private:
-  ZMark* const               _mark;
   ZRootsIteratorAllColored   _roots_colored;
   ZRootsIteratorAllUncolored _roots_uncolored;
 
@@ -859,9 +855,8 @@ private:
   ZMarkYoungNMethodClosure   _nm_cl;
 
 public:
-  ZMarkYoungRootsTask(ZMark* mark)
+  ZMarkYoungRootsTask()
     : ZTask("ZMarkYoungRootsTask"),
-      _mark(mark),
       _roots_colored(ZGenerationIdOptional::young),
       _roots_uncolored(ZGenerationIdOptional::young),
       _cl_colored(),
@@ -929,13 +924,13 @@ void ZMark::resize_workers(uint nworkers) {
 
 void ZMark::mark_young_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
-  ZMarkYoungRootsTask task(this);
+  ZMarkYoungRootsTask task;
   workers()->run(&task);
 }
 
 void ZMark::mark_old_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
-  ZMarkOldRootsTask task(this);
+  ZMarkOldRootsTask task;
   workers()->run(&task);
 }
 

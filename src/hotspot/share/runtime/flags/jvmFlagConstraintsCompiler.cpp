@@ -306,7 +306,7 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
 }
 
 JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
-  const int max_modes = 4;
+  const int max_modes = 5;
   uint original_value = value;
   for (int i = 0; i < max_modes; i++) {
     if (value % 10 > 1) {
@@ -355,10 +355,8 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
    }
 
   int minimum_alignment = 16;
-#if defined(X86) && !defined(AMD64)
+#if (defined(X86) && !defined(AMD64)) || defined(S390)
   minimum_alignment = 4;
-#elif defined(S390)
-  minimum_alignment = 2;
 #endif
 
   if (InteriorEntryAlignment < minimum_alignment) {

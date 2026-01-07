@@ -24,14 +24,17 @@
 /*
  *
  * @test
- * @bug 8176841 8194148 8284840 8306116 8333582
+ * @bug 8176841 8194148 8284840 8306116 8333582 8354548
  * @summary Tests *Format class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
- * @run testng FormatTests
+ * @run junit FormatTests
  */
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.DateFormat;
 import java.text.NumberFormat;
@@ -40,15 +43,11 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test *Format classes with BCP47 U extensions
  */
-@Test
 public class FormatTests {
     private static TimeZone defaultTZ;
 
@@ -80,25 +79,24 @@ public class FormatTests {
                                         .build()
                                         .getTime();
 
-    @BeforeTest
-    public void beforeTest() {
+    @BeforeAll
+    static void beforeTest() {
         defaultTZ = TimeZone.getDefault();
         TimeZone.setDefault(AMLA);
     }
 
-    @AfterTest
-    public void afterTest() {
+    @AfterAll
+    static void afterTest() {
         TimeZone.setDefault(defaultTZ);
     }
 
-    @DataProvider(name="dateFormatData")
-    Object[][] dateFormatData() {
+    static Object[][] dateFormatData() {
         return new Object[][] {
             // Locale, Expected calendar, Expected timezone, Expected formatted string
 
             // -ca
             {JCAL, "java.util.JapaneseImperialCalendar", null,
-            "Thursday, August 10, 29 Heisei, 3:15:00\u202fPM Pacific Daylight Time"
+            "Thursday, August 10, 29 Heisei at 3:15:00\u202fPM Pacific Daylight Time"
             },
 
             // -tz
@@ -116,8 +114,7 @@ public class FormatTests {
         };
     }
 
-    @DataProvider(name="numberFormatData")
-    Object[][] numberFormatData() {
+    static Object[][] numberFormatData() {
         return new Object[][] {
             // Locale, number, expected format
 
@@ -136,33 +133,35 @@ public class FormatTests {
         };
     }
 
-    @Test(dataProvider="dateFormatData")
-    public void test_DateFormat(Locale locale, String calClass, TimeZone tz,
+    @MethodSource("dateFormatData")
+    @ParameterizedTest
+    void test_DateFormat(Locale locale, String calClass, TimeZone tz,
                                 String formatExpected) throws Exception {
         DateFormat df = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL, locale);
         if (calClass != null) {
             try {
                 Class expected = Class.forName(calClass);
-            assertEquals(df.getCalendar().getClass(), expected);
+            assertEquals(expected, df.getCalendar().getClass());
             } catch (Exception e) {
                 throw e;
             }
         }
         if (tz != null) {
-            assertEquals(df.getTimeZone(), tz);
+            assertEquals(tz, df.getTimeZone());
         }
         String formatted = df.format(testDate);
-        assertEquals(formatted, formatExpected);
-        assertEquals(df.parse(formatted), testDate);
+        assertEquals(formatExpected, formatted);
+        assertEquals(testDate, df.parse(formatted));
     }
 
-    @Test(dataProvider="numberFormatData")
-    public void test_NumberFormat(Locale locale, double num,
+    @MethodSource("numberFormatData")
+    @ParameterizedTest
+    void test_NumberFormat(Locale locale, double num,
                                 String formatExpected) throws Exception {
         NumberFormat nf = NumberFormat.getNumberInstance(locale);
         nf.setMaximumFractionDigits(4);
         String formatted = nf.format(num);
-        assertEquals(nf.format(num), formatExpected);
-        assertEquals(nf.parse(formatted), num);
+        assertEquals(formatExpected, nf.format(num));
+        assertEquals(num, nf.parse(formatted));
     }
 }

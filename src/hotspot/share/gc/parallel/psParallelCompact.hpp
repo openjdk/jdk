@@ -360,11 +360,6 @@ public:
   inline RegionData* region(size_t region_idx) const;
   inline size_t     region(const RegionData* const region_ptr) const;
 
-  // Fill in the regions covering [beg, end) so that no data moves; i.e., the
-  // destination of region n is simply the start of region n.  Both arguments
-  // beg and end must be region-aligned.
-  void summarize_dense_prefix(HeapWord* beg, HeapWord* end);
-
   HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
                                   HeapWord* destination, HeapWord* target_end,
                                   HeapWord** target_next);
@@ -760,7 +755,7 @@ private:
   static void fill_range_in_dense_prefix(HeapWord* start, HeapWord* end);
 
 public:
-  static void fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers);
+  static void fill_dead_objs_in_dense_prefix();
 
   // This method invokes a full collection.
   // clear_all_soft_refs controls whether soft-refs should be cleared or not.

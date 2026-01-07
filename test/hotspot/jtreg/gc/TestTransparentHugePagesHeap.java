@@ -49,11 +49,7 @@
  * @run driver TestTransparentHugePagesHeap Serial
 */
 
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Scanner;
@@ -62,6 +58,8 @@ import jdk.test.lib.os.linux.HugePageConfiguration;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Platform;
+import jdk.test.lib.os.linux.Smaps;
+import jdk.test.lib.os.linux.Smaps.Range;
 
 import jtreg.SkippedException;
 
@@ -100,82 +98,37 @@ public class TestTransparentHugePagesHeap {
 
         public static void main(String args[]) throws Exception {
             // Extract the heap start from pagesize logging
-            BigInteger heapStart = extractHeapStartFromLog();
+            String heapStart = extractHeapStartFromLog();
 
-            Path smaps = makeSmapsCopy();
+            Smaps smaps = Smaps.parseSelf();
 
-            final Pattern addressRangePattern = Pattern.compile("([0-9a-f]*?)-([0-9a-f]*?) .*");
-            final Pattern thpEligiblePattern = Pattern.compile("THPeligible:\\s+(\\d)\\s*");
-
-            Scanner smapsFile = new Scanner(smaps);
-            while (smapsFile.hasNextLine()) {
-                Matcher addressRangeMatcher = addressRangePattern.matcher(smapsFile.nextLine());
-                if (!addressRangeMatcher.matches()) {
-                    continue;
-                }
-
-                // Found an address range line in the smaps file
-
-                BigInteger addressStart = new BigInteger(addressRangeMatcher.group(1), 16);
-                BigInteger addressEnd = new BigInteger(addressRangeMatcher.group(2), 16);
-
-                // Linux sometimes merges adjacent VMAs so we can't search for a range that
-                // exactly matches the heap range. Instead we look for the first range that
-                // contains the start of the heap and verify that that range is THP eligible.
-
-                if (addressStart.compareTo(heapStart) > 0 || heapStart.compareTo(addressEnd) >= 0) {
-                    continue;
-                }
-
-                // Found a range that contains the start of the heap, verify that it is THP eligible.
-
-                while (smapsFile.hasNextLine()) {
-                    Matcher m = thpEligiblePattern.matcher(smapsFile.nextLine());
-                    if (!m.matches()) {
-                        continue;
-                    }
-
-                    // Found the THPeligible line
-
-                    if (m.group(1).equals("1")) {
-                        // Success - THPeligible is 1, heap can be backed by huge pages
-                        return;
-                    }
-
-                    throw new RuntimeException("The address range 0x" + addressStart.toString(16)
-                                               + "-0x" + addressEnd.toString(16)
-                                               + " that contains the heap start" + heapStart
-                                               + " is not THPeligible");
-                }
-
-                throw new RuntimeException("Couldn't find THPeligible in the smaps file");
+            Range range = smaps.getRange(heapStart);
+            if (range == null) {
+                throw new AssertionError("Could not find heap section in smaps file. No memory range found for heap start: " + heapStart);
             }
 
-            throw new RuntimeException("Could not find an address range containing the heap start " + heapStart + " in the smaps file");
+            if (!range.isTransparentHuge()) {
+                // Failed to verify THP for heap
+                throw new RuntimeException("The address range 0x" + range.getStart().toString(16)
+                        + "-0x" + range.getEnd().toString(16)
+                        + " that contains the heap start" + heapStart
+                        + " is not THPeligible");
+            }
         }
 
-        private static BigInteger extractHeapStartFromLog() throws Exception {
+        private static String extractHeapStartFromLog() throws Exception {
             // [0.041s][info][pagesize] Heap:  min=128M max=128M base=0x0000ffff5c600000 size=128M page_size=2M
             final Pattern heapAddress = Pattern.compile(".* Heap: .*base=0x([0-9A-Fa-f]*).*");
 
             Scanner logFile = new Scanner(Paths.get("thp-" + ProcessHandle.current().pid() + ".log"));
             while (logFile.hasNextLine()) {
-                String line = logFile.nextLine();
-
-                Matcher m = heapAddress.matcher(line);
+                Matcher m = heapAddress.matcher(logFile.nextLine());
                 if (m.matches()) {
-                    return new BigInteger(m.group(1), 16);
+                    return m.group(1);
                 }
             }
 
             throw new RuntimeException("Failed to find heap start");
-        }
-
-        private static Path makeSmapsCopy() throws Exception {
-            Path src = Paths.get("/proc/self/smaps");
-            Path dest = Paths.get("smaps-copy-" +  ProcessHandle.current().pid() + ".txt");
-            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
-            return dest;
         }
     }
 }

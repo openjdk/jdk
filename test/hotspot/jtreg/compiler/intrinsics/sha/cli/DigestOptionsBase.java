@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class DigestOptionsBase extends CommandLineOptionTest {
             case DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION:
                 return IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE;
             case DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION:
-                return IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE;
+                return IntrinsicPredicates.isSHA512IntrinsicAvailable();
             case DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION:
                 return IntrinsicPredicates.SHA3_INSTRUCTION_AVAILABLE;
             default:

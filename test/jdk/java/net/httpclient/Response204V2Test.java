@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
@@ -71,14 +70,19 @@ import javax.net.ssl.SSLContext;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 public class Response204V2Test implements HttpServerAdapters {
 
     SSLContext sslContext;
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String http2URI;
     String https2URI;
+    String http3URI;
 
     static final int RESPONSE_CODE = 204;
     static final int ITERATION_COUNT = 4;
@@ -177,6 +181,7 @@ public class Response204V2Test implements HttpServerAdapters {
 
     private String[] uris() {
         return new String[] {
+                http3URI,
                 http2URI,
                 https2URI,
         };
@@ -201,9 +206,9 @@ public class Response204V2Test implements HttpServerAdapters {
         return result;
     }
 
-    private HttpClient makeNewClient() {
+    private HttpClient makeNewClient(HttpClient.Builder builder) {
         clientCount.incrementAndGet();
-        HttpClient client =  HttpClient.newBuilder()
+        HttpClient client =  builder
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
@@ -211,14 +216,17 @@ public class Response204V2Test implements HttpServerAdapters {
         return TRACKER.track(client);
     }
 
-    HttpClient newHttpClient(boolean share) {
-        if (!share) return makeNewClient();
+    HttpClient newHttpClient(String uri, boolean share) {
+        if (!share) return makeNewClient(newClientBuilderForH3());
         HttpClient shared = sharedClient;
         if (shared != null) return shared;
         synchronized (this) {
             shared = sharedClient;
             if (shared == null) {
-                shared = sharedClient = makeNewClient();
+                var builder = uri.contains("/http3/")
+                        ? newClientBuilderForH3()
+                        : HttpClient.newBuilder();
+                shared = sharedClient = makeNewClient(builder);
             }
             return shared;
         }
@@ -241,25 +249,37 @@ public class Response204V2Test implements HttpServerAdapters {
         }
     }
 
+    private HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
 
     @Test(dataProvider = "variants")
     public void test(String uri, boolean sameClient) throws Exception {
         checkSkip();
-        System.out.println("Request to " + uri);
+        out.println("Request to " + uri);
 
-        HttpClient client = newHttpClient(sameClient);
+        HttpClient client = newHttpClient(uri, sameClient);
 
-        HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+        HttpRequest request = newRequestBuilder(URI.create(uri))
                 .GET()
                 .build();
         for (int i = 0; i < ITERATION_COUNT; i++) {
-            System.out.println("Iteration: " + i);
+            out.println("Iteration: " + i);
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
             int expectedResponse =  RESPONSE_CODE;
             if (response.statusCode() != expectedResponse)
-                throw new RuntimeException("wrong response code " + Integer.toString(response.statusCode()));
+                throw new RuntimeException("wrong response code " + response.statusCode());
         }
-        System.out.println("test: DONE");
+        if (!sameClient) {
+            out.println("test: closing test client");
+            client.close();
+        }
+        out.println("test: DONE");
     }
 
     @BeforeTest
@@ -279,9 +299,14 @@ public class Response204V2Test implements HttpServerAdapters {
         https2TestServer.addHandler(handler204, "/https2/test204/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/test204/x";
 
-        serverCount.addAndGet(4);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(handler204, "/http3/test204/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/test204/x";
+
+        serverCount.addAndGet(3);
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -294,6 +319,7 @@ public class Response204V2Test implements HttpServerAdapters {
         try {
             http2TestServer.stop();
             https2TestServer.stop();
+            http3TestServer.stop();
         } finally {
             if (fail != null) {
                 if (sharedClientName != null) {

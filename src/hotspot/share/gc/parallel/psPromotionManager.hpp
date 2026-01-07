@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,6 @@ class PSPromotionManager {
                                                     int start, int end);
   void process_array_chunk(PartialArrayState* state, bool stolen);
   void push_objArray(oop old_obj, oop new_obj);
-
-  void push_depth(ScannerTask task);
 
   inline void promotion_trace_event(oop new_obj, Klass* klass, size_t obj_size,
                                     uint age, bool tenured,

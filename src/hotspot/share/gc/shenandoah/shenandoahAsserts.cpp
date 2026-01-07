@@ -425,6 +425,16 @@ void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const 
   }
 }
 
+void ShenandoahAsserts::assert_mark_complete(HeapWord* obj, const char* file, int line) {
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  const ShenandoahHeapRegion* region = heap->heap_region_containing(obj);
+  const ShenandoahGeneration* generation = heap->generation_for(region->affiliation());
+  if (!generation->is_mark_complete()) {
+    ShenandoahMessageBuffer msg("Marking should be complete for object " PTR_FORMAT " in the %s generation", p2i(obj), generation->name());
+    report_vm_error(file, line, msg.buffer());
+  }
+}
+
 void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
@@ -539,22 +549,6 @@ void ShenandoahAsserts::assert_control_or_vm_thread_at_safepoint(bool at_safepoi
   if (at_safepoint) {
     msg.append(" at a safepoint");
   }
-  report_vm_error(file, line, msg.buffer());
-}
-
-void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line) {
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    return;
-  }
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGeneration* ggen = heap->gc_generation();
-  ShenandoahGeneration* agen = heap->active_generation();
-  if (agen == ggen) {
-    return;
-  }
-
-  ShenandoahMessageBuffer msg("Active(%d) & GC(%d) Generations aren't reconciled", agen->type(), ggen->type());
   report_vm_error(file, line, msg.buffer());
 }
 

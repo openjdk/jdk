@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,7 @@
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/exceptions.hpp"
 
 JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
@@ -113,6 +115,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       JavaThread* jt = JavaThread::thread_from_jni_environment(env);
       assert(jt != nullptr, "invariant");
       assert(jt->thread_state() == _thread_in_native, "invariant");
+      MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
       ThreadInVMfromNative transition(jt);
       log_error(jfr, system)("RegisterNatives for JVM class failed!");
     }

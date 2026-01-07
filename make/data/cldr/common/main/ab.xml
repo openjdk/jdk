@@ -2072,7 +2072,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity draft="unconfirmed">Пномпен</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity draft="unconfirmed">Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -2746,9 +2746,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="unconfirmed">Мраҭашәаратәи Африка</generic>
-					<standard draft="unconfirmed">Мраҭашәаратәи Африка, астандартә аамҭа</standard>
-					<daylight draft="unconfirmed">Мраҭашәаратәи Африка, аԥхынтәи аамҭа</daylight>
+					<standard draft="unconfirmed">Мраҭашәаратәи Африка</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3134,6 +3132,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard draft="unconfirmed">Гаиана</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">Ҳаваи-алеуттәи астандартә аамҭа</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3686,6 +3689,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>

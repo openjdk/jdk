@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,10 @@
  *       RedirectWithCookie
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.CookieManager;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
@@ -49,7 +44,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.List;
 import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -58,6 +52,9 @@ import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -69,10 +66,12 @@ public class RedirectWithCookie implements HttpServerAdapters {
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
 
     static final String MESSAGE = "BasicRedirectTest message body";
     static final int ITERATIONS = 3;
@@ -80,6 +79,7 @@ public class RedirectWithCookie implements HttpServerAdapters {
     @DataProvider(name = "positive")
     public Object[][] positive() {
         return new Object[][] {
+                { http3URI,   },
                 { httpURI,    },
                 { httpsURI,   },
                 { http2URI,   },
@@ -87,10 +87,22 @@ public class RedirectWithCookie implements HttpServerAdapters {
         };
     }
 
+    private HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "positive")
     void test(String uriString) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
-        HttpClient client = HttpClient.newBuilder()
+        var builder = uriString.contains("/http3/")
+                ? newClientBuilderForH3()
+                : HttpClient.newBuilder();
+        HttpClient client = builder
                 .followRedirects(Redirect.ALWAYS)
                 .cookieHandler(new CookieManager())
                 .sslContext(sslContext)
@@ -98,7 +110,7 @@ public class RedirectWithCookie implements HttpServerAdapters {
         assert client.cookieHandler().isPresent();
 
         URI uri = URI.create(uriString);
-        HttpRequest request = HttpRequest.newBuilder(uri).build();
+        HttpRequest request = newRequestBuilder(uri).build();
         out.println("Initial request: " + request.uri());
 
         for (int i=0; i< ITERATIONS; i++) {
@@ -114,6 +126,8 @@ public class RedirectWithCookie implements HttpServerAdapters {
             assertTrue(response.uri().getPath().endsWith("message"));
             assertPreviousRedirectResponses(request, response);
         }
+
+        client.close();
     }
 
     static void assertPreviousRedirectResponses(HttpRequest initialRequest,
@@ -164,10 +178,15 @@ public class RedirectWithCookie implements HttpServerAdapters {
         https2TestServer.addHandler(new CookieRedirectHandler(), "/https2/cookie/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/cookie/redirect";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new CookieRedirectHandler(), "/http3/cookie/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/cookie/redirect";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -176,6 +195,7 @@ public class RedirectWithCookie implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
     }
 
     static class CookieRedirectHandler implements HttpTestHandler {

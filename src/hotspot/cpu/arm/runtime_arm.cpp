@@ -182,8 +182,6 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 
 //------------------------------ generate_exception_blob ---------------------------
 // creates exception blob at the end
-// Using exception blob, this code is jumped from a compiled method.
-// (see emit_exception_handler in sparc.ad file)
 //
 // Given an exception pc at a call we call into the runtime for the
 // handler in this method. This handler might merely restore state
@@ -263,11 +261,6 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ reset_last_Java_frame(Rtemp);
 
   __ raw_pop(FP, LR);
-
-  // Restore SP from its saved reg (FP) if the exception PC is a MethodHandle call site.
-  __ ldr(Rtemp, Address(Rthread, JavaThread::is_method_handle_return_offset()));
-  __ cmp(Rtemp, 0);
-  __ mov(SP, Rmh_SP_save, ne);
 
   // R0 contains handler address
   // Since this may be the deopt blob we must set R5 to look like we returned
