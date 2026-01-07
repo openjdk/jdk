@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.test.mock;
 
 import jdk.jpackage.internal.util.CommandOutputControl;

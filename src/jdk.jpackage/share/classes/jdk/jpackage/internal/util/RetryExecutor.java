@@ -123,7 +123,7 @@ public class RetryExecutor<T, E extends Exception> {
     final public T executeUnchecked() {
         try {
             return execute();
-        } catch (Error|RuntimeException t) {
+        } catch (Error | RuntimeException t) {
             throw t;
         } catch (Exception ex) {
             if (exceptionType.isInstance(ex)) {

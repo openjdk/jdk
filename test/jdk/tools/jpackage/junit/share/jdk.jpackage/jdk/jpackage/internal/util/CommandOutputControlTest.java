@@ -100,6 +100,19 @@ public class CommandOutputControlTest {
         spec.test();
     }
 
+    /**
+     * Runs cherry-picked {@link OutputTestSpec} test cases.
+     * <p>
+     * This test method is mutual exclusive with
+     * {@link #testSavedOutput(OutputTestSpec)} and is aimed for debugging
+     * {@code OutputTestSpec} test cases.
+     * <p>
+     * It is disabled by default. To enable it, manually edit {@link #testSomeSavedOutput()}.
+     *
+     * @see #testSomeSavedOutput()
+     *
+     * @param spec the test case
+     */
     @EnabledIf("cherryPickSavedOutputTestCases")
     @ParameterizedTest
     @MethodSource
@@ -126,7 +139,6 @@ public class CommandOutputControlTest {
         // This test is mostly for coverage.
         var desc = spec.create().description();
         assertFalse(desc.isBlank());
-//        System.out.println(desc);
     }
 
     @Test
@@ -698,6 +710,26 @@ public class CommandOutputControlTest {
         return !testSomeSavedOutput().isEmpty();
     }
 
+    /**
+     * Returns test cases for {@link #testSomeSavedOutput(OutputTestSpec)}.
+     * <p>
+     * Aimed to simplify debugging of {@link #OutputTestSpec} test cases.
+     * <p>
+     * The total number of {@code #OutputTestSpec} test cases is ~1500. When some
+     * fail and need debugging, it is a waste of time to run them all. This method
+     * allows running only selected test cases. It works this way:
+     * <ul>
+     * <li>Run CommandOutputControlTest test.
+     * <li>If some {@linke #testSavedOutput(OutputTestSpec)} invocations fail,
+     * capture their IDs (test case ID is an index starting from 1).
+     * <li>Replace "/* 10, 67, 456 *&#47;" comment in the body of this method with
+     * the captured test case IDs.
+     * <li>Rerun CommandOutputControlTest test. This time, it will run
+     * {@link #testSomeSavedOutput(OutputTestSpec)} method instead of
+     * {@link #testSavedOutput(OutputTestSpec)} with the list of the captured test
+     * case IDs.
+     * </ul>
+     */
     private static List<OutputTestSpec> testSomeSavedOutput() {
         var testIds = List.<Integer>of(/* 10, 67, 456 */);
         if (testIds.isEmpty()) {
@@ -1005,7 +1037,7 @@ public class CommandOutputControlTest {
                                 }).run();
                             }
                             case CatCommandAction _ -> {
-                                // Not used, no pint to implement.
+                                // Not used, no point to implement.
                                 throw new UnsupportedOperationException();
                             }
                         }
