@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,14 @@
 #include "gc/z/zGenerationId.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/threadSMR.hpp"
 
 template <typename Iterator>
 class ZParallelApply {
 private:
   Iterator      _iter;
-  volatile bool _completed;
+  Atomic<bool>  _completed;
 
 public:
   ZParallelApply(ZGenerationIdOptional generation)
@@ -113,7 +114,7 @@ public:
 class ZJavaThreadsIterator {
 private:
   ThreadsListHandle           _threads;
-  volatile uint               _claimed;
+  Atomic<uint>                _claimed;
   const ZGenerationIdOptional _generation;
 
   uint claim();
