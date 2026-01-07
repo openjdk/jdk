@@ -189,11 +189,10 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_in_alloc_regi
   assert(regions_ready_for_refresh == 0u && in_new_region == false && alloc_start_index < _alloc_region_count, "Sanity check");
   uint i = alloc_start_index;
   do {
-    if (ShenandoahHeapRegion* r =  nullptr; (r = _alloc_regions[i].address) != nullptr && r->is_active_alloc_region()) {
+    if (ShenandoahHeapRegion* r = nullptr; (r = AtomicAccess::load(&_alloc_regions[i].address)) != nullptr) {
       bool ready_for_retire = false;
       HeapWord* obj = allocate_in<true>(r, true, req, in_new_region, ready_for_retire);
       if (ready_for_retire) {
-        r->unset_active_alloc_region();
         regions_ready_for_refresh++;
       }
       if (obj != nullptr) {
@@ -343,7 +342,7 @@ void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
 
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion& alloc_region = _alloc_regions[i];
-    ShenandoahHeapRegion* r = AtomicAccess::load(&alloc_region.address);
+    ShenandoahHeapRegion* r = alloc_region.address;
     if (r != nullptr) {
       log_debug(gc, alloc)("%sAllocator: Releasing heap region %li from alloc region %i",
         _alloc_partition_name, r->index(), i);
@@ -365,7 +364,7 @@ void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
         }
       }
     }
-    assert(AtomicAccess::load(&alloc_region.address) == nullptr, "Alloc region is set to nullptr after release");
+    assert(alloc_region.address == nullptr, "Alloc region is set to nullptr after release");
   }
   _free_set->partitions()->decrease_used(ALLOC_PARTITION, total_free_bytes);
   _free_set->partitions()->increase_region_counts(ALLOC_PARTITION, total_regions_to_unretire);
