@@ -22,8 +22,8 @@
  *
  */
 
-#include "cds/aotGrowableArray.inline.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotGrowableArray.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -537,6 +537,34 @@ void ModuleEntry::init_as_archived_entry() {
   ArchivePtrMarker::mark_pointer((address*)&_reads);
   ArchivePtrMarker::mark_pointer((address*)&_version);
   ArchivePtrMarker::mark_pointer((address*)&_location);
+}
+
+void ModuleEntry::remove_unshareable_info() {
+  if (_reads != nullptr) {
+    _reads->set_in_aot_cache();
+  }
+
+  // Clear handles and restore at run time. Handles cannot be archived.
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    OopHandle null_handle;
+    _shared_pd = null_handle;
+  } else {
+    assert(shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  }
+
+  OopHandle null_handle;
+  _module_handle = null_handle;
+
+  _loader_data = nullptr;  // re-init at runtime
+  if (name() != nullptr) {
+    Symbol* src_location = ArchiveBuilder::current()->get_source_addr(_location);
+    _shared_path_index = AOTClassLocationConfig::dumptime()->get_module_shared_path_index(src_location);
+  } else {
+    // _shared_path_index is used only by SystemDictionary::is_shared_class_visible_impl()
+    // for checking classes in named modules.
+    _shared_path_index = -1;
+  }
+  JFR_ONLY(set_trace_id(0);) // re-init at runtime
 }
 
 #ifndef PRODUCT

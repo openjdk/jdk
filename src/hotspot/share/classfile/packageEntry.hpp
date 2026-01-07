@@ -226,6 +226,7 @@ public:
   void iterate_symbols(MetaspaceClosure* closure);
   PackageEntry* allocate_archived_entry() const;
   void init_as_archived_entry();
+  void remove_unshareable_info();
   static PackageEntry* get_archived_entry(PackageEntry* orig_entry);
   void load_from_archive();
 #endif

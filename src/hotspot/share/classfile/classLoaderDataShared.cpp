@@ -66,6 +66,7 @@ public:
   void build_tables(ClassLoaderData* loader_data, TRAPS);
   void allocate(ClassLoaderData* loader_data);
   void init_archived_entries(ClassLoaderData* loader_data);
+  void remove_unshareable_info();
   ModuleEntry* unnamed_module() {
     return _unnamed_module;
   }
@@ -118,6 +119,25 @@ void ArchivedClassLoaderData::build_tables(ClassLoaderData* loader_data, TRAPS) 
     _packages2 = loader_data->packages()->build_aot_table(loader_data, CHECK);
     _modules2  = loader_data->modules()->build_aot_table(loader_data, CHECK);
     _unnamed_module2 = loader_data->unnamed_module();
+  }
+}
+
+void ArchivedClassLoaderData::remove_unshareable_info() {
+  if (_packages2 != nullptr) {
+    _packages2 = ArchiveBuilder::current()->get_buffered_addr(_packages2);
+    for (int i = 0; i < _packages2->length(); i++) {
+      _packages2->at(i)->remove_unshareable_info();
+    }
+  }
+  if (_modules2 != nullptr) {
+    _modules2 = ArchiveBuilder::current()->get_buffered_addr(_modules2);
+    for (int i = 0; i < _modules2->length(); i++) {
+      _modules2->at(i)->remove_unshareable_info();
+    }
+  }
+  if (_unnamed_module2 != nullptr) {
+    _unnamed_module2 = ArchiveBuilder::current()->get_buffered_addr(_unnamed_module2);
+    _unnamed_module2->remove_unshareable_info();
   }
 }
 
@@ -251,6 +271,13 @@ void ClassLoaderDataShared::iterate_roots(MetaspaceClosure* it) {
   _archived_boot_loader_data.iterate_roots(it);
   _archived_platform_loader_data.iterate_roots(it);
   _archived_system_loader_data.iterate_roots(it);
+}
+
+void ClassLoaderDataShared::remove_unshareable_info() {
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
+  _archived_boot_loader_data.remove_unshareable_info();
+  _archived_platform_loader_data.remove_unshareable_info();
+  _archived_system_loader_data.remove_unshareable_info();
 }
 
 void ClassLoaderDataShared::iterate_symbols(MetaspaceClosure* closure) {

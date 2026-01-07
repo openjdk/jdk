@@ -283,6 +283,14 @@ void PackageEntry::init_as_archived_entry() {
   }
 }
 
+void PackageEntry::remove_unshareable_info() {
+  if (_qualified_exports != nullptr) {
+    _qualified_exports->set_in_aot_cache();
+  }
+  _defined_by_cds_in_class_path = 0;
+  JFR_ONLY(set_trace_id(0);) // re-init at runtime
+}
+
 void PackageEntry::load_from_archive() {
   _qualified_exports = ModuleEntry::restore_growable_array((Array<ModuleEntry*>*)_qualified_exports);
   JFR_ONLY(INIT_ID(this);)
@@ -348,6 +356,12 @@ Array<PackageEntry*>* PackageEntryTable::build_aot_table(ClassLoaderData* loader
     if (p->should_be_archived()) {
       p->pack_qualified_exports();
       archived_packages->at_put(n++, p);
+
+      LogStreamHandle(Info, aot, package) st;
+      if (st.is_enabled()) {
+        st.print("archived ");
+        p->print(&st);
+      }
     }
   };
   _table.iterate_all(grab);

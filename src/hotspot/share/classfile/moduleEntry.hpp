@@ -25,8 +25,8 @@
 #ifndef SHARE_CLASSFILE_MODULEENTRY_HPP
 #define SHARE_CLASSFILE_MODULEENTRY_HPP
 
-#include "jni.h"
 #include "cds/aotGrowableArray.hpp"
+#include "jni.h"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
@@ -215,6 +215,7 @@ public:
   void iterate_symbols(MetaspaceClosure* closure);
   ModuleEntry* allocate_archived_entry() const;
   void init_as_archived_entry();
+  void remove_unshareable_info();
   static ModuleEntry* get_archived_entry(ModuleEntry* orig_entry);
   bool has_been_archived();
   static Array<ModuleEntry*>* write_growable_array(AOTGrowableArray<ModuleEntry*>* array);

@@ -50,7 +50,11 @@ class AOTGrowableArray : public GrowableArrayWithAllocator<E, AOTGrowableArray<E
   }
 
   void deallocate(E* mem) {
+#if INCLUDE_CDS
     AOTGrowableArrayHelper::deallocate(mem);
+#else
+    GrowableArrayCHeapAllocator::deallocate(mem);
+#endif
   }
 
 public:

@@ -424,6 +424,7 @@ class AnyObj {
  public:
   enum allocation_type { STACK_OR_EMBEDDED = 0, RESOURCE_AREA, C_HEAP, ARENA, allocation_mask = 0x3 };
   static void set_allocation_type(address res, allocation_type type) NOT_DEBUG_RETURN;
+  void set_in_aot_cache() NOT_DEBUG_RETURN;
 #ifdef ASSERT
  private:
   // When this object is allocated on stack the new() operator is not
@@ -433,6 +434,7 @@ class AnyObj {
   uintptr_t _allocation_t[2];
   bool is_type_set() const;
   void initialize_allocation_info();
+  bool in_aot_cache() const;
  public:
   allocation_type get_allocation_type() const;
   bool allocated_on_stack_or_embedded() const { return get_allocation_type() == STACK_OR_EMBEDDED; }

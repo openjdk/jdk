@@ -42,6 +42,7 @@ public:
   static void restore_archived_modules_for_preloading_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
   static void build_tables(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void iterate_roots(MetaspaceClosure* closure) NOT_CDS_JAVA_HEAP_RETURN;
+  static void remove_unshareable_info() NOT_CDS_JAVA_HEAP_RETURN;
 #if INCLUDE_CDS_JAVA_HEAP
   static void ensure_module_entry_tables_exist();
   static void allocate_archived_tables();

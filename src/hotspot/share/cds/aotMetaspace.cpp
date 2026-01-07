@@ -798,6 +798,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   _builder.make_klasses_shareable();
   AOTMetaspace::make_method_handle_intrinsics_shareable();
 
+  if (CDSConfig::is_dumping_full_module_graph()) {
+    ClassLoaderDataShared::remove_unshareable_info();
+  }
+
   dump_java_heap_objects();
   dump_shared_symbol_table(_builder.symbols());
 
