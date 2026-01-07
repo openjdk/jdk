@@ -26,7 +26,7 @@
  * @bug 8374570
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @summary array fill stub generation might fail
- * 
+ *
  * @run main/othervm -XX:+EnableX86ECoreOpts -XX:MaxVectorSize=8 -XX:UseAVX=3 Test8374570
  */
 
