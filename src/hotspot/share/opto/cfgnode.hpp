@@ -84,7 +84,7 @@ private:
   bool _is_unreachable_region;
   LoopStatus _loop_status;
 
-  bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
+  bool is_possible_unsafe_loop() const;
   bool is_unreachable_from_root(const PhaseGVN* phase) const;
 public:
   // Node layout (parallels PhiNode):
@@ -182,6 +182,9 @@ class PhiNode : public TypeNode {
 
   bool is_split_through_mergemem_terminating() const;
 
+  void verify_type_stability(const PhaseGVN* phase, const Type* union_of_input_types, const Type* new_type) const NOT_DEBUG_RETURN;
+  bool wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const;
+
 public:
   // Node layout (parallels RegionNode):
   enum { Region,                // Control input is the Phi's region.
@@ -271,6 +274,7 @@ public:
 #endif //ASSERT
 
   const TypeTuple* collect_types(PhaseGVN* phase) const;
+  bool can_be_replaced_by(const PhiNode* other) const;
 };
 
 //------------------------------GotoNode---------------------------------------
@@ -339,19 +343,19 @@ class IfNode : public MultiBranchNode {
   // Helper methods for fold_compares
   bool cmpi_folds(PhaseIterGVN* igvn, bool fold_ne = false);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
-  bool has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail);
-  bool has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn);
-  Node* merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+  bool has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const;
+  bool has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail, PhaseIterGVN* igvn) const;
+  Node* merge_uncommon_traps(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn);
   static void improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGVN* igvn);
-  bool is_cmp_with_loadrange(ProjNode* proj);
-  bool is_null_check(ProjNode* proj, PhaseIterGVN* igvn);
-  bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
-  void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
-  bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+  bool is_cmp_with_loadrange(IfProjNode* proj) const;
+  bool is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const;
+  bool is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) const;
+  static void reroute_side_effect_free_unc(IfProjNode* proj, IfProjNode* dom_proj, PhaseIterGVN* igvn);
+  bool fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn);
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
 protected:
-  ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
+  IfProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r) const;
   Node* Ideal_common(PhaseGVN *phase, bool can_reshape);
   Node* search_identical(int dist, PhaseIterGVN* igvn);
 
@@ -429,6 +433,24 @@ public:
   IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);
 
   static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol);
+
+  IfTrueNode* true_proj() const {
+    return proj_out(true)->as_IfTrue();
+  }
+
+  IfTrueNode* true_proj_or_null() const {
+    ProjNode* true_proj = proj_out_or_null(true);
+    return true_proj == nullptr ? nullptr : true_proj->as_IfTrue();
+  }
+
+  IfFalseNode* false_proj() const {
+    return proj_out(false)->as_IfFalse();
+  }
+
+  IfFalseNode* false_proj_or_null() const {
+    ProjNode* false_proj = proj_out_or_null(false);
+    return false_proj == nullptr ? nullptr : false_proj->as_IfFalse();
+  }
 
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }
@@ -520,7 +542,7 @@ class ParsePredicateNode : public IfNode {
 
   // Return the uncommon trap If projection of this Parse Predicate.
   ParsePredicateUncommonProj* uncommon_proj() const {
-    return proj_out(0)->as_IfFalse();
+    return false_proj();
   }
 
   Node* uncommon_trap() const;
@@ -537,6 +559,11 @@ class IfProjNode : public CProjNode {
 public:
   IfProjNode(IfNode *ifnode, uint idx) : CProjNode(ifnode,idx) {}
   virtual Node* Identity(PhaseGVN* phase);
+
+  // Return the other IfProj node.
+  IfProjNode* other_if_proj() const {
+    return in(0)->as_If()->proj_out(1 - _con)->as_IfProj();
+  }
 
   void pin_array_access_nodes(PhaseIterGVN* igvn);
 
