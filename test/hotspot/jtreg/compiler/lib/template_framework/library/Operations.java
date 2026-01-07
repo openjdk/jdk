@@ -474,43 +474,6 @@ public final class Operations {
                                                 "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
                 }
 
-                // convertShape - Cast
-                ops.add(Expression.make(type,
-                                        "((" + type.name() + ")",
-                                        type2,
-                                        ".convertShape(VectorOperators.Conversion.ofCast("
-                                            + type2.elementType.name() +  ".class, "
-                                            + type.elementType.name() + ".class), "
-                                        + type.speciesName + ", ",
-                                        INTS, // part
-                                        "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
-                // Compute size of logical output, before it is "fit" into the output vector.
-                int conversionLogicalByteSize = type2.length * type.elementType.byteSize();
-                if (conversionLogicalByteSize >= type.byteSize()) {
-                    // Output overflows, is truncated (Expansion): part >= 0
-                    int partMask = conversionLogicalByteSize / type.byteSize() - 1;
-                    ops.add(Expression.make(type,
-                                            "((" + type.name() + ")",
-                                            type2,
-                                            ".convertShape(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class), "
-                                            + type.speciesName + ", ",
-                                            INTS, " & " + partMask + "))"));
-                } else {
-                    // Logical output too small to fill output vector (Contraction): part <= 0
-                    int partMask = type.byteSize() / conversionLogicalByteSize - 1;
-                    ops.add(Expression.make(type,
-                                            "((" + type.name() + ")",
-                                            type2,
-                                            ".convertShape(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class), "
-                                            + type.speciesName + ", "
-                                            + "-(", INTS, " & " + partMask + ")))"));
-                }
-                // TODO: convertShape - reinterpret and zero expand?
-
                 // Reinterpretation FROM floating is not safe, because of different NaN encodings, i.e.
                 // we will not get deterministic results.
                 var reinterpretInfo = type2.elementType.isFloating() ? WITH_NONDETERMINISTIC_RESULT : new Expression.Info();
@@ -575,6 +538,72 @@ public final class Operations {
                                             ".reinterpretShape(" + type.speciesName + ", "
                                             + "-(", INTS, " & " + partMask + ")))", reinterpretInfo));
                 }
+
+                // convertShape - Cast/Reinterpret
+                ops.add(Expression.make(type,
+                                        "((" + type.name() + ")",
+                                        type2,
+                                        ".convertShape(VectorOperators.Conversion.ofCast("
+                                            + type2.elementType.name() +  ".class, "
+                                            + type.elementType.name() + ".class), "
+                                        + type.speciesName + ", ",
+                                        INTS, // part
+                                        "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
+                ops.add(Expression.make(type,
+                                        "((" + type.name() + ")",
+                                        type2,
+                                        ".convertShape(VectorOperators.Conversion.ofReinterpret("
+                                            + type2.elementType.name() +  ".class, "
+                                            + type.elementType.name() + ".class), "
+                                        + type.speciesName + ", ",
+                                        INTS, // part
+                                        "))", reinterpretInfo.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
+                // Compute size of logical output, before it is "fit" into the output vector.
+                // Each element is cast/reinterpret individually, and so the logical output
+                // has the lane count of the input vector, and the element size that of the output element size.
+                // Note: reinterpret of float -> long means we expand each element from 4->8 bytes, and so
+                // we take the lower 4 bytes from the float and add 4 bytes of zero padding.
+                int conversionLogicalByteSize = type2.length * type.elementType.byteSize();
+                if (conversionLogicalByteSize >= type.byteSize()) {
+                    // Output overflows, is truncated (Expansion): part >= 0
+                    int partMask = conversionLogicalByteSize / type.byteSize() - 1;
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convertShape(VectorOperators.Conversion.ofCast("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
+                                            + type.speciesName + ", ",
+                                            INTS, " & " + partMask + "))"));
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convertShape(VectorOperators.Conversion.ofReinterpret("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
+                                            + type.speciesName + ", ",
+                                            INTS, " & " + partMask + "))", reinterpretInfo));
+                } else {
+                    // Logical output too small to fill output vector (Contraction): part <= 0
+                    int partMask = type.byteSize() / conversionLogicalByteSize - 1;
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convertShape(VectorOperators.Conversion.ofCast("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
+                                            + type.speciesName + ", "
+                                            + "-(", INTS, " & " + partMask + ")))"));
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convertShape(VectorOperators.Conversion.ofReinterpret("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), "
+                                            + type.speciesName + ", "
+                                            + "-(", INTS, " & " + partMask + ")))", reinterpretInfo));
+                }
+                // TODO: convertShape - zero expand?
             }
 
             ops.add(Expression.make(type, "", type, ".div(", type.elementType, ")", WITH_ARITHMETIC_EXCEPTION));
