@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class GZIPInputStream extends InflaterInputStream {
         super(in, createInflater(in, size), size);
         usesDefaultInflater = true;
         try {
-            readHeader(in);
+            readHeader(in, true);
         } catch (IOException ioe) {
             this.inf.end();
             throw ioe;
@@ -190,12 +190,35 @@ public class GZIPInputStream extends InflaterInputStream {
     /*
      * Reads GZIP member header and returns the total byte number
      * of this member header.
+     * If failOnEOF is false and if the given InputStream has already
+     * reached EOF when this method was invoked, then this method returns
+     * 0 (indicating that there's no GZIP member header).
+     * In all other cases of malformed header or EOF being detected
+     * when reading the header, this method will throw an IOException.
      */
-    private int readHeader(InputStream this_in) throws IOException {
+    private int readHeader(InputStream this_in, boolean failOnEOF) throws IOException {
         CheckedInputStream in = new CheckedInputStream(this_in, crc);
         crc.reset();
+
+        int magic;
+        if (!failOnEOF) {
+            // read unsigned byte
+            int b = in.read();
+            if (b == -1) { // EOF
+                crc.reset();
+                return 0; // represents no header bytes available
+            }
+            checkUnexpectedByte(b);
+            // read the next unsigned byte to form the unsigned
+            // short. we throw the usual EOFException/ZipException
+            // from this point on if there is no more data or
+            // the data doesn't represent a header.
+            magic = (readUByte(in) << 8) | b;
+        } else {
+            magic = readUShort(in);
+        }
         // Check header magic
-        if (readUShort(in) != GZIP_MAGIC) {
+        if (magic != GZIP_MAGIC) {
             throw new ZipException("Not in GZIP format");
         }
         // Check compression method
@@ -234,6 +257,7 @@ public class GZIPInputStream extends InflaterInputStream {
             n += 2;
         }
         crc.reset();
+        assert n != 0 : "incorrect number of header bytes";
         return n;
     }
 
@@ -261,7 +285,11 @@ public class GZIPInputStream extends InflaterInputStream {
         // try concatenated case
         int m = 8;                  // this.trailer
         try {
-            m += readHeader(in);    // next.header
+            int numNextHeaderBytes = readHeader(in, false); // next.header (if available)
+            if (numNextHeaderBytes == 0) {
+                return true; // end of stream reached
+            }
+            m += numNextHeaderBytes;
         } catch (IOException ze) {
             return true;  // ignore any malformed, do nothing
         }
@@ -295,12 +323,16 @@ public class GZIPInputStream extends InflaterInputStream {
         if (b == -1) {
             throw new EOFException();
         }
-        if (b < -1 || b > 255) {
-            // Report on this.in, not argument in; see read{Header, Trailer}.
-            throw new IOException(this.in.getClass().getName()
-                + ".read() returned value out of range -1..255: " + b);
-        }
+        checkUnexpectedByte(b);
         return b;
+    }
+
+    private void checkUnexpectedByte(final int b) throws IOException {
+        if (b < -1 || b > 255) {
+            // report the InputStream type which returned this unexpected byte
+            throw new IOException(this.in.getClass().getName()
+                    + ".read() returned value out of range -1..255: " + b);
+        }
     }
 
     private byte[] tmpbuf = new byte[128];
