@@ -474,51 +474,7 @@ public final class Operations {
                                                 "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
                 }
 
-                // The following "reinterpret" operations require same input and output shape.
-                if (type.byteSize() == type2.byteSize()) {
-                    // Reinterpretation FROM floating is not safe, because of different NaN encodings, i.e.
-                    // we will not get deterministic results.
-                    var info = type2.elementType.isFloating() ? WITH_NONDETERMINISTIC_RESULT : new Expression.Info();
-                    ops.add(Expression.make(type,
-                                            "((" + type.name() + ")",
-                                            type2,
-                                            ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class), 0))", info));
-                    ops.add(Expression.make(type,
-                                            "((" + type.name() + ")",
-                                            type2,
-                                            ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.name() +  ".class, "
-                                                + type.elementType.name() + ".class),",
-                                            INTS, // part
-                                            "))", info.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
-                    if (type.elementType == BYTES) {
-                        ops.add(Expression.make(type, "", type2, ".reinterpretAsBytes()", info));
-                    }
-                    if (type.elementType == SHORTS) {
-                        ops.add(Expression.make(type, "", type2, ".reinterpretAsShorts()", info));
-                    }
-                    if (type.elementType == INTS) {
-                        ops.add(Expression.make(type, "", type2, ".reinterpretAsInts()", info));
-                    }
-                    if (type.elementType == LONGS) {
-                        ops.add(Expression.make(type, "", type2, ".reinterpretAsLongs()", info));
-                    }
-                    if (type.elementType == FLOATS) {
-                        ops.add(Expression.make(type, "", type2, ".reinterpretAsFloats()", info));
-                    }
-                    if (type.elementType == DOUBLES) {
-                        ops.add(Expression.make(type, "", type2, ".reinterpretAsDoubles()", info));
-                    }
-                    if (type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
-                        ops.add(Expression.make(type, "", type2, ".viewAsFloatingLanes()", info));
-                    }
-                    if (!type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
-                        ops.add(Expression.make(type, "", type2, ".viewAsIntegralLanes()", info));
-                    }
-                }
-                // convertShape
+                // convertShape - Cast
                 ops.add(Expression.make(type,
                                         "((" + type.name() + ")",
                                         type2,
@@ -554,7 +510,71 @@ public final class Operations {
                                             + "-(", INTS, " & " + partMask + ")))"));
                 }
                 // TODO: convertShape - reinterpret and zero expand?
-                // TODO: reinterpretShape
+
+                // Reinterpretation FROM floating is not safe, because of different NaN encodings, i.e.
+                // we will not get deterministic results.
+                var reinterpretInfo = type2.elementType.isFloating() ? WITH_NONDETERMINISTIC_RESULT : new Expression.Info();
+
+                // The following "reinterpret" operations require same input and output shape.
+                if (type.byteSize() == type2.byteSize()) {
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class), 0))", reinterpretInfo));
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                + type2.elementType.name() +  ".class, "
+                                                + type.elementType.name() + ".class),",
+                                            INTS, // part
+                                            "))", reinterpretInfo.combineWith(WITH_OUT_OF_BOUNDS_EXCEPTION)));
+                    if (type.elementType == BYTES) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsBytes()", reinterpretInfo));
+                    }
+                    if (type.elementType == SHORTS) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsShorts()", reinterpretInfo));
+                    }
+                    if (type.elementType == INTS) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsInts()", reinterpretInfo));
+                    }
+                    if (type.elementType == LONGS) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsLongs()", reinterpretInfo));
+                    }
+                    if (type.elementType == FLOATS) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsFloats()", reinterpretInfo));
+                    }
+                    if (type.elementType == DOUBLES) {
+                        ops.add(Expression.make(type, "", type2, ".reinterpretAsDoubles()", reinterpretInfo));
+                    }
+                    if (type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
+                        ops.add(Expression.make(type, "", type2, ".viewAsFloatingLanes()", reinterpretInfo));
+                    }
+                    if (!type.elementType.isFloating() && type.elementType.byteSize() == type2.elementType.byteSize()) {
+                        ops.add(Expression.make(type, "", type2, ".viewAsIntegralLanes()", reinterpretInfo));
+                    }
+                }
+
+                // reinterpretShape
+                if (type2.byteSize() >= type.byteSize()) {
+                    // Output overflows, is truncated (Expansion): part >= 0
+                    int partMask = type2.byteSize() / type.byteSize() - 1;
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".reinterpretShape(" + type.speciesName + ", ",
+                                            INTS, " & " + partMask + "))", reinterpretInfo));
+                } else {
+                    // Logical output too small to fill output vector (Contraction): part <= 0
+                    int partMask = type.byteSize() / type2.byteSize() - 1;
+                    ops.add(Expression.make(type,
+                                            "((" + type.name() + ")",
+                                            type2,
+                                            ".reinterpretShape(" + type.speciesName + ", "
+                                            + "-(", INTS, " & " + partMask + ")))", reinterpretInfo));
+                }
             }
 
             ops.add(Expression.make(type, "", type, ".div(", type.elementType, ")", WITH_ARITHMETIC_EXCEPTION));
