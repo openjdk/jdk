@@ -99,7 +99,7 @@ class ModuleEntry;
 #define PKG_EXP_ALLUNNAMED   0x0002
 #define PKG_EXP_UNQUALIFIED_OR_ALL_UNAMED (PKG_EXP_UNQUALIFIED | PKG_EXP_ALLUNNAMED)
 
-class PackageEntry : public CHeapObj<mtModule>, public IterableMetadata {
+class PackageEntry : public CHeapObj<mtModule> {
 private:
   Symbol*      _name;
   ModuleEntry* _module;
@@ -207,10 +207,11 @@ public:
 
   void pack_qualified_exports(); // used by AOT
 
-  // methods required by MetaspaceClosure and IterableMetadata
+  // methods required by MetaspaceClosure
   void metaspace_pointers_do(MetaspaceClosure* it);
   int size() const { return (int)heap_word_size(sizeof(PackageEntry)); }
   MetaspaceObj::Type type() const { return MetaspaceObj::PackageEntryType; }
+  static bool is_read_only_by_default() { return false; }
 
   void print(outputStream* st = tty);
 

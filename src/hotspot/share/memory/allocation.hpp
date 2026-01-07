@@ -243,30 +243,7 @@ class StackObj {
 class ClassLoaderData;
 class MetaspaceClosure;
 
-// IterableMetadata is inherited by classes that can be iterated by MetaspaceClosure.
-// It may be used as part of multiple inheritance. See PackageEntry for an example.
-class IterableMetadata {
-public:
-  // The following would have been declared as pure virtual functions, but that would
-  // add a vptr to many MetaspaceObj types and increase footprint.
-  //
-  // To save space, we require any subclass X of IterableMetadata to have the following
-  // 3 public functions, in X itself or one of the superclasses of X. Failure to do
-  // so will result in compilation error when instantiating the templates in
-  // metaspaceClosure.hpp
-  //
-  // public:
-  //     void metaspace_pointers_do(MetaspaceClosure* it);
-  //     int size() const;
-  //     MetaspaceObj::Type type() const;
-
-  // Declare a *static* method with the same signature in any subclass of IterableMetadata
-  // that should be read-only by default. See symbol.hpp for an example. This function
-  // is used by the templates in metaspaceClosure.hpp
-  static bool is_read_only_by_default() { return false; }
-};
-
-class MetaspaceObj : public IterableMetadata {
+class MetaspaceObj {
   // There are functions that all subtypes of MetaspaceObj are expected
   // to implement, so that templates which are defined for this class hierarchy
   // can work uniformly. Within the sub-hierarchy of Metadata, these are virtuals.
@@ -386,6 +363,11 @@ class MetaspaceObj : public IterableMetadata {
   // This is used for allocating training data. We are allocating training data in many cases where a GC cannot be triggered.
   void* operator new(size_t size, MemTag flags);
   void operator delete(void* p) = delete;
+
+  // Declare a *static* method with the same signature in any subclass of MetaspaceObj
+  // that should be read-only by default. See symbol.hpp for an example. This function
+  // is used by the templates in metaspaceClosure.hpp
+  static bool is_read_only_by_default() { return false; }
 };
 
 // Base class for classes that constitute name spaces.

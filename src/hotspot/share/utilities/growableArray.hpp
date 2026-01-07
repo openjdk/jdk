@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -713,7 +713,7 @@ public:
 //  See: init_checks.
 
 template <typename E>
-class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>>, public IterableMetadata {
+class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
   friend class VMStructs;
   friend class GrowableArrayWithAllocator<E, GrowableArray>;
   friend class GrowableArrayTest;
@@ -761,10 +761,11 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>>, pu
   }
 
 public:
-  // methods required by MetaspaceClosure and IterableMetadata
+  // methods required by MetaspaceClosure
   void metaspace_pointers_do(class MetaspaceClosure* it);
   int size() const { return (int)heap_word_size(sizeof(*this)); }
   MetaspaceObj::Type type() const { return MetaspaceObj::GrowableArrayType; }
+  static bool is_read_only_by_default() { return false; }
 
 public:
   GrowableArray() : GrowableArray(2 /* initial_capacity */) {}

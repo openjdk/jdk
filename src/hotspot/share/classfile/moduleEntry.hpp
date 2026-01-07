@@ -61,7 +61,7 @@ class ModuleClosure;
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either
 // data structure.  This lock must be taken on all accesses to either table.
-class ModuleEntry : public CHeapObj<mtModule>, public IterableMetadata {
+class ModuleEntry : public CHeapObj<mtModule> {
 private:
   OopHandle _module_handle;            // java.lang.Module
   OopHandle _shared_pd;                // java.security.ProtectionDomain, cached
@@ -196,10 +196,11 @@ public:
     return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
   }
 
-  // methods required by MetaspaceClosure and IterableMetadata
+  // methods required by MetaspaceClosure
   void metaspace_pointers_do(MetaspaceClosure* it);
   int size() const { return (int)heap_word_size(sizeof(ModuleEntry)); }
   MetaspaceObj::Type type() const { return MetaspaceObj::ModuleEntryType; }
+  static bool is_read_only_by_default() { return false; }
 
   void print(outputStream* st = tty) const;
   void verify();
