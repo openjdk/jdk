@@ -1477,11 +1477,11 @@ class Http2Connection implements Closeable {
                 debug.log("%d stream(s) marked as unprocessed, processed streams will be closed by termination",
                         numUnprocessed.get());
             }
-
-            close(cause);
         } finally {
             stateLock.unlock();
         }
+
+        close(cause);
     }
 
     /**
