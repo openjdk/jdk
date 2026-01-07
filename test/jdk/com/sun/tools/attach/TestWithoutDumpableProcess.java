@@ -80,8 +80,7 @@ public class TestWithoutDumpableProcess {
         public static ProcessThread start() {
             var args = new String[]{
                 "--enable-native-access=ALL-UNNAMED",
-                String.format("-D%s=%s", EXPECTED_PROP_KEY, EXPECTED_PROP_VALUE),
-                Debuggee.class.getName()
+                String.format("-D%s=%s", EXPECTED_PROP_KEY, EXPECTED_PROP_VALUE), Debuggee.class.getName()
             };
             var pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
             var pt = new ProcessThread("runApplication", Application.READY_MSG::equals, pb);
