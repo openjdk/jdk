@@ -199,23 +199,10 @@
 // declaration order.
 
 #ifdef COMPILER2
-// do_jvmti_stub(name)
-#if INCLUDE_JVMTI
-#define C2_JVMTI_STUBS_DO(do_jvmti_stub)                               \
-  do_jvmti_stub(notify_jvmti_vthread_start)                            \
-  do_jvmti_stub(notify_jvmti_vthread_end)                              \
-  do_jvmti_stub(notify_jvmti_vthread_mount)                            \
-  do_jvmti_stub(notify_jvmti_vthread_unmount)                          \
-
-#else
-#define C2_JVMTI_STUBS_DO(do_jvmti_stub)
-#endif // INCLUDE_JVMTI
-
 // client macro to operate on c2 stubs
 //
 // do_blob(name, type)
 // do_stub(name, fancy_jump, pass_tls, return_pc)
-// do_jvmti_stub(name)
 //
 // do_blob is used for stubs that are generated via direct invocation
 // of the assembler to write into a blob of the appropriate type
@@ -225,10 +212,8 @@
 // in the IR graph employ a special type of jump (0, 1 or 2) or
 // provide access to TLS and the return pc.
 //
-// do_jvmti_stub generates a JVMTI stub as an IR intrinsic which
-// employs jump 0, and requires no special access
 
-#define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)                   \
+#define C2_STUBS_DO(do_blob, do_stub)                                  \
   do_blob(uncommon_trap, UncommonTrapBlob)                             \
   do_blob(exception, ExceptionBlob)                                    \
   do_stub(new_instance, 0, true, false)                                \
@@ -239,16 +224,19 @@
   do_stub(multianewarray4, 0, true, false)                             \
   do_stub(multianewarray5, 0, true, false)                             \
   do_stub(multianewarrayN, 0, true, false)                             \
-  C2_JVMTI_STUBS_DO(do_jvmti_stub)                                     \
   do_stub(complete_monitor_locking, 0, false, false)                   \
   do_stub(monitor_notify, 0, false, false)                             \
   do_stub(monitor_notifyAll, 0, false, false)                          \
   do_stub(rethrow, 2, true, true)                                      \
   do_stub(slow_arraycopy, 0, false, false)                             \
   do_stub(register_finalizer, 0, false, false)                         \
+  do_stub(vthread_end_first_transition, 0, false, false)               \
+  do_stub(vthread_start_final_transition, 0, false, false)             \
+  do_stub(vthread_start_transition, 0, false, false)                   \
+  do_stub(vthread_end_transition, 0, false, false)                     \
 
 #else
-#define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)
+#define C2_STUBS_DO(do_blob, do_stub)
 #endif
 
 // Stubgen stub declarations
@@ -1189,9 +1177,6 @@
 
 // ignore do_stub(name, fancy_jump, pass_tls, return_pc) declarations
 #define DO_STUB_EMPTY4(name, fancy_jump, pass_tls, return_pc)
-
-// ignore do_jvmti_stub(name) declarations
-#define DO_JVMTI_STUB_EMPTY1(stub_name)
 
 // ignore do_stub(blob_name, stub_name) declarations
 #define DO_STUB_EMPTY2(blob_name, stub_name)

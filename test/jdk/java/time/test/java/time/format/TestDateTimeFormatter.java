@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,12 @@
 package test.java.time.format;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
@@ -93,14 +94,16 @@ import java.time.temporal.TemporalAccessor;
 import java.util.Locale;
 import java.util.function.Function;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test DateTimeFormatter.
  * @bug 8085887 8293146
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDateTimeFormatter {
 
     @Test
@@ -203,7 +206,6 @@ public class TestDateTimeFormatter {
         assertTrue(msg.contains("11:30:56"), msg);
     }
 
-    @DataProvider(name="nozone_exception_cases")
     Object[][] exceptionCases() {
         return new Object[][] {
                 {LocalDateTime.of(2000, 1, 1, 1, 1), "z", "ZoneId"},
@@ -213,7 +215,8 @@ public class TestDateTimeFormatter {
 
     // Test cases that should throw an exception with a cogent message
     // containing the Type being queried and the Temporal being queried.
-    @Test(dataProvider="nozone_exception_cases")
+    @ParameterizedTest
+    @MethodSource("exceptionCases")
     public void test_throws_message(Temporal temporal, String pattern, String queryName) {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
         try {
@@ -277,7 +280,6 @@ public class TestDateTimeFormatter {
     private static final DateTimeFormatter STRICT_WEEK = DateTimeFormatter.ofPattern("YYYY-'W'ww-e")
             .withResolverStyle(ResolverStyle.STRICT);
     private static final Locale EGYPT = Locale.forLanguageTag("en-EG");
-    @DataProvider(name = "week53Dates")
     Object[][] data_week53Dates() {
         return new Object[][] {
                 // WeekFields[SUNDAY,1]
@@ -321,15 +323,14 @@ public class TestDateTimeFormatter {
         };
     }
 
-    @Test (dataProvider = "week53Dates")
+    @ParameterizedTest
+    @MethodSource("data_week53Dates")
     public void test_week_53(String weekDate, Locale locale, LocalDate expected) {
         var f = STRICT_WEEK.withLocale(locale);
         if (expected != null) {
-            assertEquals(LocalDate.parse(weekDate, f), expected);
+            assertEquals(expected, LocalDate.parse(weekDate, f));
         } else {
-            assertThrows(DateTimeException.class, () -> {
-                LocalDate.parse(weekDate, f);
-            });
+            assertThrows(DateTimeException.class, () -> LocalDate.parse(weekDate, f));
         }
     }
 }

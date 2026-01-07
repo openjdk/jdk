@@ -233,7 +233,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   Node* inline_block = generate_guard(ctrl, bol_le, nullptr, PROB_FAIR);
   Node* stub_block = *ctrl;
 
-  Node* casted_length = new CastLLNode(inline_block, length, inline_range, ConstraintCastNode::RegularDependency);
+  Node* casted_length = new CastLLNode(inline_block, length, inline_range, ConstraintCastNode::DependencyType::FloatingNarrowing);
   transform_later(casted_length);
   Node* mask_gen = VectorMaskGenNode::make(casted_length, type);
   transform_later(mask_gen);

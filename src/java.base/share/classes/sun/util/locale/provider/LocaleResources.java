@@ -62,7 +62,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import jdk.internal.util.StaticProperty;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
 import sun.util.resources.TimeZoneNamesBundle;
@@ -288,16 +287,6 @@ public class LocaleResources {
     }
 
     public String getLocaleName(String key) {
-        // Get names for old ISO codes with new ISO code resources
-        if (StaticProperty.javaLocaleUseOldISOCodes().equalsIgnoreCase("true")) {
-            key = switch (key) {
-                case "iw" -> "he";
-                case "in" -> "id";
-                case "ji" -> "yi";
-                default -> key;
-            };
-        }
-
         Object localeName = null;
         String cacheKey = LOCALE_NAMES + key;
 
