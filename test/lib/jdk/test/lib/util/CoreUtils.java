@@ -165,30 +165,6 @@ public class CoreUtils {
                     line = line.trim();
                     System.out.println(line);
                     if (line.startsWith("|")) {
-                        if (line.split("\\s+", 2)[0].endsWith("systemd-coredump")) {
-                            // A systemd linux system. Try to retrieve core
-                            // file. It can take a few seconds for the system to
-                            // process the just produced core file so we may need to
-                            // retry a few times.
-                            System.out.println("Running systemd-coredump: trying coredumpctl command");
-                            String core = "core";
-                            try {
-                                for (int i = 0; i < 10; i++) {
-                                    Thread.sleep(5000);
-                                    OutputAnalyzer out = ProcessTools.executeProcess("coredumpctl", "dump",  "-1",  "-o", core, String.valueOf(pid));
-                                    if (!out.getOutput().contains("output may be incomplete")) {
-                                        break;
-                                    }
-                                }
-                            } catch(Throwable t) {
-                            }
-                            final File coreFile = new File(core);
-                            if (coreFile.exists()) {
-                                Asserts.assertGT(coreFile.length(), 0L, "Unexpected core size");
-                                System.out.println("coredumpctl succeeded");
-                                return core;
-                            }
-                        }
                         System.out.println(
                             "\nThis system uses a crash report tool ($cat /proc/sys/kernel/core_pattern).\n" +
                             "Core files might not be generated. Please reset /proc/sys/kernel/core_pattern\n" +
