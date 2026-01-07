@@ -146,6 +146,7 @@ void ShenandoahDegenGC::op_degenerated() {
         // Clean the read table before swapping it. The end goal here is to have a clean
         // write table, and to have the read table updated with the previous write table.
         heap->old_generation()->card_scan()->mark_read_table_as_clean();
+        heap->old_generation()->record_tops_at_evac_start();
 
         if (_generation->is_young()) {
           // Swap remembered sets for young
@@ -275,6 +276,11 @@ void ShenandoahDegenGC::op_degenerated() {
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       } else {
         _abbreviated = true;
+      }
+
+      // labs are retired, walk the old regions and update remembered set
+      if (ShenandoahHeap::heap()->mode()->is_generational()) {
+        ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
       }
 
     case _degenerated_update_refs:

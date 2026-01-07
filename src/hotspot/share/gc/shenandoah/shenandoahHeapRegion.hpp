@@ -245,6 +245,7 @@ private:
   double _empty_time;
 
   HeapWord* _top_before_promoted;
+  HeapWord* _top_at_evac_start;
 
   // Seldom updated fields
   volatile RegionState _state;
@@ -369,6 +370,9 @@ public:
   }
   inline void restore_top_before_promote();
   inline size_t garbage_before_padded_for_promote() const;
+
+  HeapWord* get_top_at_evac_start() const { return _top_at_evac_start; }
+  void record_top_at_evac_start()         { _top_at_evac_start = _top; }
 
   // If next available memory is not aligned on address that is multiple of alignment, fill the empty space
   // so that returned object is aligned on an address that is a multiple of alignment_in_bytes.  Requested

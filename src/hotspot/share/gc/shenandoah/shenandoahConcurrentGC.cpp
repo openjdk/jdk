@@ -206,6 +206,12 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // Perform update-refs phase.
     entry_concurrent_update_refs_prepare(heap);
+
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      // Heap needs to be parsable here.
+      ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
+    }
+
     if (ShenandoahVerify) {
       vmop_entry_init_update_refs();
     }

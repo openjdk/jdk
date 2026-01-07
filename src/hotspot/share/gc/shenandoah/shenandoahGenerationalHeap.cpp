@@ -370,10 +370,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
       // Record that the evacuation succeeded
       evac_tracker()->end_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
     }
-
-    if (TO_GENERATION == OLD_GENERATION && !alloc_from_lab) {
-      old_generation()->handle_evacuation(copy, size);
-    }
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
     // new allocation is certainly after TAMS, it will be considered live in the next cycle.
@@ -573,25 +569,10 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
     log_debug(gc, plab)("Retire PLAB, unexpend unpromoted: %zu", not_promoted * HeapWordSize);
     old_generation()->unexpend_promoted(not_promoted);
   }
-  const size_t original_waste = plab->waste();
-  HeapWord* top = plab->top();
-  HeapWord* const bottom = plab->bottom();
 
   // plab->retire() overwrites unused memory between plab->top() and plab->hard_end() with a dummy object to make memory parsable.
   // It adds the size of this unused memory, in words, to plab->waste().
   plab->retire();
-  if (top != nullptr && plab->waste() > original_waste && is_in_old(top)) {
-    const size_t remnant_words = plab->waste() - original_waste;
-    // If retiring the plab created a filler object, then we need to register it with our card scanner so it can
-    // safely walk the region backing the plab.
-    log_debug(gc, plab)("retire_plab() is registering remnant of size %zu bytes at " PTR_FORMAT,
-                        remnant_words * HeapWordSize, p2i(top));
-    // No lock is necessary because the PLAB memory is aligned on card boundaries.
-    old_generation()->card_scan()->register_object_without_lock(top);
-    top += remnant_words;
-  }
-
-  old_generation()->update_card_table(bottom, top);
 }
 
 void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {

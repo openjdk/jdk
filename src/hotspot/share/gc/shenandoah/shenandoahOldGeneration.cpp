@@ -284,6 +284,12 @@ bool ShenandoahOldGeneration::is_concurrent_mark_in_progress() {
   return ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress();
 }
 
+void ShenandoahOldGeneration::record_tops_at_evac_start() {
+  for_each_region([](ShenandoahHeapRegion* region) {
+    region->record_top_at_evac_start();
+  });
+}
+
 void ShenandoahOldGeneration::cancel_marking() {
   if (is_concurrent_mark_in_progress()) {
     log_debug(gc)("Abandon SATB buffers");
@@ -624,8 +630,10 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
   }
 }
 
-void ShenandoahOldGeneration::update_card_table(HeapWord* start, HeapWord* end) const {
-  _card_scan->update_card_table(start, end);
+void ShenandoahOldGeneration::update_card_table() {
+  for_each_region([this](ShenandoahHeapRegion* region) {
+    _card_scan->update_card_table(region->get_top_at_evac_start(), region->top());
+  });
 }
 
 void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words) const {

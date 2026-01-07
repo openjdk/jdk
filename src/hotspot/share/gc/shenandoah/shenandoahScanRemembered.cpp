@@ -173,40 +173,51 @@ void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
 
 void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
   HISTOGRAM_TIME_BLOCK
-  assert(is_aligned(start, CardTable::card_size_in_words()), "PLAB start should be aligned with card size");
-  assert(is_aligned(end, CardTable::card_size_in_words()), "PLAB end should be aligned with card size");
   HeapWord* address = start;
-  HeapWord* next_card_start = start;
-  HeapWord* card_end_address = nullptr;
-  size_t current_card_index = -1;
+  // HeapWord* next_card_start = start;
+  // HeapWord* card_end_address = nullptr;
+  // size_t current_card_index = -1;
 
-  while (address < end) {
+  log_debug(gc, remset)("Update remembered set from " PTR_FORMAT ", to " PTR_FORMAT, p2i(start), p2i(end));
+
+  {
     // TODO: Experiment with more precise card marking by iterating fields in object
-    const size_t object_size_words = cast_to_oop(address)->size();
-    HeapWord* object_end_address = address + object_size_words;
+    HISTOGRAM_TIME_DESCRIBED_BLOCK("dirty_cards");
+    _rs->mark_range_as_dirty(start, pointer_delta(end, start));
+  }
 
-    if (object_end_address >= next_card_start) {
-      _rs->mark_range_as_dirty(address, object_size_words);
-      next_card_start = align_up(object_end_address, CardTable::card_size_in_words());
+  {
+    HISTOGRAM_TIME_DESCRIBED_BLOCK("register_objects");
+    while (address < end) {
+
+      const size_t object_size_words = cast_to_oop(address)->size();
+      HeapWord* object_end_address = address + object_size_words;
+
+      register_object_without_lock(address);
+
+      // if (object_end_address >= next_card_start) {
+      //   _rs->mark_range_as_dirty(address, object_size_words);
+      //   next_card_start = align_up(object_end_address, CardTable::card_size_in_words());
+      // }
+      //
+      // size_t object_card_index = _rs->card_index_for_addr(address);
+      // HeapWord* card_start_address = _rs->addr_for_card_index(object_card_index);
+      // uint8_t offset_in_card = checked_cast<uint8_t>(pointer_delta(address, card_start_address));
+      //
+      // if (object_card_index != current_card_index) {
+      //   current_card_index = object_card_index;
+      //   card_end_address = _rs->addr_for_card_index(object_card_index + 1);
+      //   set_first_start(object_card_index, offset_in_card);
+      // }
+      //
+      // set_last_start(object_card_index, offset_in_card);
+      // assert(card_end_address != nullptr, "Card end address cannot be null here");
+      // if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::lab_alignment_reserve()) {
+      //   set_last_start(object_card_index, offset_in_card);
+      // }
+
+      address = object_end_address;
     }
-
-    size_t object_card_index = _rs->card_index_for_addr(address);
-    HeapWord* card_start_address = _rs->addr_for_card_index(object_card_index);
-    uint8_t offset_in_card = checked_cast<uint8_t>(pointer_delta(address, card_start_address));
-
-    if (object_card_index != current_card_index) {
-      current_card_index = object_card_index;
-      card_end_address = _rs->addr_for_card_index(object_card_index + 1);
-      set_first_start(object_card_index, offset_in_card);
-    }
-
-    set_last_start(object_card_index, offset_in_card);
-    // assert(card_end_address != nullptr, "Card end address cannot be null here");
-    // if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::lab_alignment_reserve()) {
-    //   set_last_start(object_card_index, offset_in_card);
-    // }
-
-    address = object_end_address;
   }
 }
 
