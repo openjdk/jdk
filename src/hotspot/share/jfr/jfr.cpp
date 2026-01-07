@@ -176,7 +176,7 @@ bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* de
 }
 
 void Jfr::on_report_java_out_of_memory() {
-  if (CrashOnOutOfMemoryError) {
+  if (CrashOnOutOfMemoryError && JfrRecorder::is_recording()) {
     JfrRecorderService::emit_leakprofiler_events_on_oom();
   }
 }
