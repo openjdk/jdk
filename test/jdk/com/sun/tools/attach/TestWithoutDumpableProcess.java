@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, NTT DATA
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
