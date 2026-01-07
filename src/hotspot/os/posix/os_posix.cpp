@@ -457,12 +457,6 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
     return nullptr;
   }
-  if (base != nullptr && addr != base) {
-    if (!os::release_memory(addr, size)) {
-      warning("Could not release memory on unsuccessful file mapping");
-    }
-    return nullptr;
-  }
   return addr;
 }
 
