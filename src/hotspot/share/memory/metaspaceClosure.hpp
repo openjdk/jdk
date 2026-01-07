@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_METASPACECLOSURE_HPP
 #define SHARE_MEMORY_METASPACECLOSURE_HPP
 
+#include "cds/aotGrowableArray.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
@@ -96,7 +97,7 @@ public:
   //
   // [2] All Array<T> dimensions are statically declared.
   //
-  // In addition, GrowableArray<X*> can also be iterated, for the types of X that
+  // In addition, AOTGrowableArray<X*> can also be iterated, for the types of X that
   // match the above requirements.
   //
   // Pointer Tagging
@@ -198,7 +199,7 @@ private:
 
   // MSOPointerCArrayRef<T> -- iterate a C array of pointer type T*, where T has metaspace_pointer_do()
   // We recursively call MetaspaceClosure::push() for each pointer in this array. This is for iterating
-  // GrowableArray<T*>.
+  // AOTGrowableArray<T*>.
   //
   // E.g., PackageEntry** _pkg_entry_pointers[10];
   //       ...
@@ -382,12 +383,12 @@ public:
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
   }
 
-  // Support for GrowableArray
+  // Support for AOTGrowableArray
 private:
   template <class T> class MSOGrowableArrayRef : public Ref {
-    GrowableArray<T*>** _gapp; // growable array pointer pointer
+    AOTGrowableArray<T*>** _gapp; // growable array pointer pointer
 
-    GrowableArray<T*>* dereference() const {
+    AOTGrowableArray<T*>* dereference() const {
       return *_gapp;
     }
 
@@ -396,7 +397,7 @@ private:
       return (void**)_gapp;
     }
   public:
-    MSOGrowableArrayRef(GrowableArray<T*>** gapp, Writability w)
+    MSOGrowableArrayRef(AOTGrowableArray<T*>** gapp, Writability w)
       : Ref(w), _gapp(gapp) {}
 
     virtual bool is_read_only_by_default() const { return false; }
@@ -405,7 +406,7 @@ private:
     virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::GrowableArrayType; }
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      T*** data_addr = &(dereference()->_data);
+      T*** data_addr = dereference()->data_addr();
       int num_elems = dereference()->capacity();
       it->push_impl(new MSOPointerCArrayRef<T>(data_addr, num_elems, _default));
     }
@@ -413,12 +414,12 @@ private:
 
 public:
   template <typename T>
-  void push(GrowableArray<T*>** gapp, Writability w = _default) {
-    static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push GrowableArrays of arbitrary pointer types");
+  void push(AOTGrowableArray<T*>** gapp, Writability w = _default) {
+    static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push AOTGrowableArrays of arbitrary pointer types");
     push_impl(new MSOGrowableArrayRef<T>(gapp, w));
   }
 
-  // Support for GrowableArray<T*>::_data, where T is a subtype of IterableMetadata
+  // Support for AOTGrowableArray<T*>::_data, where T is a subtype of IterableMetadata
   template <typename T>
   void push_c_array(T*** mpp, int num_elems, Writability w = _default) {
     static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push C arrays of arbitrary pointer types");

@@ -167,7 +167,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (reads() == nullptr) {
       // Lazily create a module's reads list
-      GrowableArray<ModuleEntry*>* new_reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      AOTGrowableArray<ModuleEntry*>* new_reads = new (mtModule) AOTGrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
       set_reads(new_reads);
     }
 
@@ -477,7 +477,7 @@ ModuleEntry* ModuleEntry::get_archived_entry(ModuleEntry* orig_entry) {
 // This function is used to archive ModuleEntry::_reads and PackageEntry::_qualified_exports.
 // GrowableArray cannot be directly archived, as it needs to be expandable at runtime.
 // Write it out as an Array, and convert it back to GrowableArray at runtime.
-Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry*>* array) {
+Array<ModuleEntry*>* ModuleEntry::write_growable_array(AOTGrowableArray<ModuleEntry*>* array) {
   Array<ModuleEntry*>* archived_array = nullptr;
   int length = (array == nullptr) ? 0 : array->length();
   if (length > 0) {
@@ -492,11 +492,11 @@ Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry
   return archived_array;
 }
 
-GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEntry*>* archived_array) {
-  GrowableArray<ModuleEntry*>* array = nullptr;
+AOTGrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEntry*>* archived_array) {
+  AOTGrowableArray<ModuleEntry*>* array = nullptr;
   int length = (archived_array == nullptr) ? 0 : archived_array->length();
   if (length > 0) {
-    array = new (mtModule) GrowableArray<ModuleEntry*>(length, mtModule);
+    array = new (mtModule) AOTGrowableArray<ModuleEntry*>(length, mtModule);
     for (int i = 0; i < length; i++) {
       ModuleEntry* archived_entry = archived_array->at(i);
       array->append(archived_entry);

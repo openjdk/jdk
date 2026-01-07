@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotGrowableArray.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
@@ -57,7 +58,7 @@
 
 #ifndef PRODUCT
 
-using GrowableArray_ModuleEntry_ptr = GrowableArray<ModuleEntry*>;
+using GrowableArray_ModuleEntry_ptr = AOTGrowableArray<ModuleEntry*>;
 
 #define DEBUG_CPP_VTABLE_TYPES_DO(f) \
   f(GrowableArray_ModuleEntry_ptr) \

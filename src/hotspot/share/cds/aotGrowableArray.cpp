@@ -22,21 +22,13 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_GROWABLEARRAY_INLINE_HPP
-#define SHARE_UTILITIES_GROWABLEARRAY_INLINE_HPP
-
+#include "cds/aotGrowableArray.hpp"
+#include "cds/aotMetaspace.hpp"
+#include "memory/allocation.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-#include "memory/metaspaceClosure.hpp"
-
-template <typename E>
-void GrowableArray<E>::metaspace_pointers_do(MetaspaceClosure* it) {
-  GrowableArrayView<E>::metaspace_pointers_do(it);
+void AOTGrowableArrayHelper::deallocate(void* mem) {
+  if (!AOTMetaspace::in_aot_cache(mem)) {
+    FreeHeap(mem);
+  }
 }
-
-template <typename E>
-void GrowableArrayView<E>::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push_c_array(&_data, capacity());
-}
-
-#endif // SHARE_UTILITIES_GROWABLEARRAY_INLINE_HPP

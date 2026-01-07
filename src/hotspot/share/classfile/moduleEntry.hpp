@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_MODULEENTRY_HPP
 
 #include "jni.h"
+#include "cds/aotGrowableArray.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
@@ -70,7 +71,7 @@ private:
   ClassLoaderData* _loader_data;
 
   union {
-    GrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
+    AOTGrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
     Array<ModuleEntry*>* _archived_reads; // List of readable modules stored in the CDS archive
   };
   Symbol* _version;                    // module version number
@@ -120,11 +121,11 @@ public:
 
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
-  GrowableArray<ModuleEntry*>* reads() const {
+  AOTGrowableArray<ModuleEntry*>* reads() const {
     assert(!_reads_is_archived, "sanity");
     return _reads;
   }
-  void set_reads(GrowableArray<ModuleEntry*>* r) {
+  void set_reads(AOTGrowableArray<ModuleEntry*>* r) {
     _reads = r;
     DEBUG_ONLY(_reads_is_archived = false);
   }
@@ -216,8 +217,8 @@ public:
   void init_as_archived_entry();
   static ModuleEntry* get_archived_entry(ModuleEntry* orig_entry);
   bool has_been_archived();
-  static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
-  static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
+  static Array<ModuleEntry*>* write_growable_array(AOTGrowableArray<ModuleEntry*>* array);
+  static AOTGrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
   void preload_archived_oops();
   void restore_archived_oops(ClassLoaderData* loader_data);

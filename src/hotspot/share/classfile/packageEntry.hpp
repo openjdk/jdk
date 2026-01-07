@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_PACKAGEENTRY_HPP
 #define SHARE_CLASSFILE_PACKAGEENTRY_HPP
 
+#include "cds/aotGrowableArray.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
@@ -114,7 +115,7 @@ private:
   bool _must_walk_exports;
   // Contains list of modules this package is qualifiedly exported to.  Access
   // to this list is protected by the Module_lock.
-  GrowableArray<ModuleEntry*>* _qualified_exports;
+  AOTGrowableArray<ModuleEntry*>* _qualified_exports;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
   // Initial size of a package entry's list of qualified exports.

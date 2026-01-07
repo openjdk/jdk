@@ -108,7 +108,6 @@ template <typename E> class GrowableArrayIterator;
 // of GrowableArrayWithAllocator.
 template <typename E>
 class GrowableArrayView : public GrowableArrayBase {
-friend class MetaspaceClosure;
 protected:
   E* _data; // data array
 
@@ -297,6 +296,11 @@ public:
       tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
     }
     tty->print("}\n");
+  }
+
+  // MetaspaceClosure support.
+  E** data_addr() {
+    return &_data;
   }
 };
 
