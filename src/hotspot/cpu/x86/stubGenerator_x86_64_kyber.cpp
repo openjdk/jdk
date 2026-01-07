@@ -64,7 +64,7 @@ static address kyberAvx512ConstsAddr(int offset) {
 
 const Register scratch = r10;
 
-ATTRIBUTE_ALIGNED(64) static const uint8_t kyberAvx512_12To16Swap[] = {
+ATTRIBUTE_ALIGNED(64) static const uint8_t kyberAvx512_12To16Dup[] = {
 // 0 - 63
     0, 1, 1, 2, 3, 4, 4, 5, 6, 7, 7, 8, 9, 10, 10, 11, 12, 13, 13, 14, 15, 16,
     16, 17, 18, 19, 19, 20, 21, 22, 22, 23, 24, 25, 25, 26, 27, 28, 28, 29, 30,
@@ -72,8 +72,8 @@ ATTRIBUTE_ALIGNED(64) static const uint8_t kyberAvx512_12To16Swap[] = {
     45, 46, 46, 47
   };
 
-static address kyberAvx512_12To16SwapAddr() {
-  return (address) kyberAvx512_12To16Swap;
+static address kyberAvx512_12To16DupAddr() {
+  return (address) kyberAvx512_12To16Dup;
 }
 
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16Shift[] = {
@@ -859,12 +859,12 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
 
   __ addptr(condensed, condensedOffs);
 
-  if (VM_Version::supports_avx512_vbmi2()) {
+  if (VM_Version::supports_avx512_vbmi()) {
     // mask load for the first 48 bytes of each vector
     __ mov64(rax, 0x0000FFFFFFFFFFFF);
     __ kmovql(k1, rax);
 
-    __ lea(perms, ExternalAddress(kyberAvx512_12To16SwapAddr()));
+    __ lea(perms, ExternalAddress(kyberAvx512_12To16DupAddr()));
     __ evmovdqub(xmm20, Address(perms), Assembler::AVX_512bit);
 
     __ lea(perms, ExternalAddress(kyberAvx512_12To16ShiftAddr()));
