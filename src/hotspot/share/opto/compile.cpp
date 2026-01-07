@@ -595,7 +595,9 @@ void Compile::print_ideal_ir(const char* phase_name) {
   if (_output == nullptr) {
     ss.print_cr("AFTER: %s", phase_name);
     // Print out all nodes in ascending order of index.
-    root()->dump_bfs(MaxNodeLimit, nullptr, "+S$", &ss);
+    // It is important that we traverse both inputs and outputs of nodes,
+    // so that we reach all nodes that are connected to Root.
+    root()->dump_bfs(MaxNodeLimit, nullptr, "-+S$", &ss);
   } else {
     // Dump the node blockwise if we have a scheduling
     _output->print_scheduling(&ss);
@@ -3418,10 +3420,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_AddP: {               // Assert sane base pointers
     Node *addp = n->in(AddPNode::Address);
-    assert( !addp->is_AddP() ||
-            addp->in(AddPNode::Base)->is_top() || // Top OK for allocation
-            addp->in(AddPNode::Base) == n->in(AddPNode::Base),
-            "Base pointers must match (addp %u)", addp->_idx );
+    assert(n->as_AddP()->address_input_has_same_base(), "Base pointers must match (addp %u)", addp->_idx );
 #ifdef _LP64
     if ((UseCompressedOops || UseCompressedClassPointers) &&
         addp->Opcode() == Op_ConP &&
@@ -4582,7 +4581,7 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
     // node from floating above the range check during loop optimizations. Otherwise, the
     // ConvI2L node may be eliminated independently of the range check, causing the data path
     // to become TOP while the control path is still there (although it's unreachable).
-    value = new CastIINode(ctrl, value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
+    value = new CastIINode(ctrl, value, itype, carry_dependency ? ConstraintCastNode::DependencyType::NonFloatingNarrowing : ConstraintCastNode::DependencyType::FloatingNarrowing, true /* range check dependency */);
     value = phase->transform(value);
   }
   const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen);
