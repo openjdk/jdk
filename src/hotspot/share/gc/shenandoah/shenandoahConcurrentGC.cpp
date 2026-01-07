@@ -1211,11 +1211,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
-  if (heap->mode()->is_generational()) {
-    heap->young_generation()->heuristics()->start_idle_span();
-  } else {
-    heap->heuristics()->start_idle_span();
-  }
+  _generation->heuristics()->start_idle_span();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_propagate_gc_state);
