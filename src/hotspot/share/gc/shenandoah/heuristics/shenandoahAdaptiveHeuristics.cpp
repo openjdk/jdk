@@ -194,7 +194,7 @@ void ShenandoahAdaptiveHeuristics::resume_idle_span() {
 }
 
 // There is no headroom during evacuation and update refs.  This information is not used to trigger the next GC.
-// Rather, it is made available to support throttling of allocations during GC.
+// In future implementations, this information may feed into worker surge calculations.
 void ShenandoahAdaptiveHeuristics::start_evac_span() {
   size_t mutator_available = _free_set->capacity() - _free_set->used();
   _trigger_threshold = mutator_available;
