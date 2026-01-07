@@ -192,7 +192,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * of this member header.
      * If failOnEOF is false and if the given InputStream has already
      * reached EOF when this method was invoked, then this method returns
-     * 0 (indicating that there's no GZIP member header).
+     * -1 (indicating that there's no GZIP member header).
      * In all other cases of malformed header or EOF being detected
      * when reading the header, this method will throw an IOException.
      */
@@ -206,7 +206,7 @@ public class GZIPInputStream extends InflaterInputStream {
             int b = in.read();
             if (b == -1) { // EOF
                 crc.reset();
-                return 0; // represents no header bytes available
+                return -1; // represents no header bytes available
             }
             checkUnexpectedByte(b);
             // read the next unsigned byte to form the unsigned
@@ -257,7 +257,7 @@ public class GZIPInputStream extends InflaterInputStream {
             n += 2;
         }
         crc.reset();
-        assert n != 0 : "incorrect number of header bytes";
+        assert n > 0 : "incorrect number of header bytes: " + n;
         return n;
     }
 
@@ -286,7 +286,7 @@ public class GZIPInputStream extends InflaterInputStream {
         int m = 8;                  // this.trailer
         try {
             int numNextHeaderBytes = readHeader(in, false); // next.header (if available)
-            if (numNextHeaderBytes == 0) {
+            if (numNextHeaderBytes == -1) {
                 return true; // end of stream reached
             }
             m += numNextHeaderBytes;
