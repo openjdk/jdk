@@ -60,6 +60,7 @@ import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.SetBuilder;
 
 /**
@@ -683,6 +684,7 @@ public final class StandardOption {
     }
 
 
+    @SelfContainedException
     static class AddLauncherIllegalArgumentException extends IllegalArgumentException {
 
         AddLauncherIllegalArgumentException(String message) {

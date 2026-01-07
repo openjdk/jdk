@@ -32,6 +32,7 @@ import java.util.function.IntPredicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.BundlingEnvironment;
+import jdk.jpackage.internal.model.SelfContainedException;
 
 final class Utils {
 
@@ -98,6 +99,7 @@ final class Utils {
                 });
     }
 
+    @SelfContainedException
     static final class ParseException extends RuntimeException {
 
         ParseException(String msg) {
