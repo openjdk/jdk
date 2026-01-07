@@ -121,13 +121,14 @@ void BFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
      return;
   }
 
-  if (_use_dfs) {
-    assert(_current_parent != nullptr, "invariant");
-    DFSClosure::find_leaks_from_edge(_edge_store, _mark_bits, _current_parent);
-    return;
-  }
-
   if (!_mark_bits->is_marked(pointee)) {
+
+    if (_use_dfs) {
+      assert(_current_parent != nullptr, "invariant");
+      DFSClosure::find_leaks_from_edge(_edge_store, _mark_bits, _current_parent);
+      return;
+    }
+
     _mark_bits->mark_obj(pointee);
     // is the pointee a sample object?
     if (pointee->mark().is_marked()) {

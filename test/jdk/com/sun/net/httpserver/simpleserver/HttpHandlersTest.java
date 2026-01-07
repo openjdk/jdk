@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Tests for HttpHandlers
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
- * @run testng/othervm HttpHandlersTest
+ * @run junit/othervm HttpHandlersTest
  */
 
 import java.io.IOException;
@@ -44,12 +44,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.*;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class HttpHandlersTest {
 
@@ -61,8 +63,8 @@ public class HttpHandlersTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    @BeforeTest
-    public void setup() {
+    @BeforeAll
+    public static void setup() {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
@@ -103,11 +105,11 @@ public class HttpHandlersTest {
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertTrue(response.headers().map().containsKey("date"));
-            assertEquals(response.headers().firstValue("foo").get(), "bar");
-            assertEquals(response.headers().firstValue("content-length").get(), "0");
-            assertEquals(response.headers().map().size(), 3);
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "");
+            assertEquals("bar", response.headers().firstValue("foo").get());
+            assertEquals("0", response.headers().firstValue("content-length").get());
+            assertEquals(3, response.headers().map().size());
+            assertEquals(200, response.statusCode());
+            assertEquals("", response.body());
         } finally {
             server.stop(0);
         }
@@ -125,11 +127,11 @@ public class HttpHandlersTest {
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertTrue(response.headers().map().containsKey("date"));
-            assertEquals(response.headers().firstValue("foo").get(), "bar");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().map().size(), 3);
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "hello world");
+            assertEquals("bar", response.headers().firstValue("foo").get());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(3, response.headers().map().size());
+            assertEquals(200, response.statusCode());
+            assertEquals("hello world", response.body());
         } finally {
             server.stop(0);
         }
@@ -148,9 +150,9 @@ public class HttpHandlersTest {
                     .method("HEAD", BodyPublishers.noBody()).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertTrue(response.headers().map().containsKey("date"));
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().map().size(), 2);
-            assertEquals(response.statusCode(), 200);
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(2, response.headers().map().size());
+            assertEquals(200, response.statusCode());
         } finally {
             server.stop(0);
         }
@@ -168,22 +170,22 @@ public class HttpHandlersTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertNotEquals(response.headers().firstValue("date").get(), "12345");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().map().size(), 2);
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "hello world");
+            assertNotEquals("12345", response.headers().firstValue("date").get());
+            assertEquals(expectedLength, response.headers().firstValue("content-length").get());
+            assertEquals(2, response.headers().map().size());
+            assertEquals(200, response.statusCode());
+            assertEquals("hello world", response.body());
         } finally {
             server.stop(0);
         }
     }
 
-    @DataProvider
-    public Object[][] responseBodies() {
+    public static Object[][] responseBodies() {
         return new Object[][] { {"hello world"}, {""} };
     }
 
-    @Test(dataProvider = "responseBodies")
+    @ParameterizedTest
+    @MethodSource("responseBodies")
     public void testOfThrowingExchange(String body) {
         var h = HttpHandlers.of(200, Headers.of(), body);
         {
@@ -192,8 +194,8 @@ public class HttpHandlersTest {
                     throw new RuntimeException("getRequestBody");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "getRequestBody");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("getRequestBody", t.getMessage());
         }
         {
             var exchange = new ThrowingHttpExchange() {
@@ -201,8 +203,8 @@ public class HttpHandlersTest {
                     throw new RuntimeException("getResponseHeaders");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "getResponseHeaders");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("getResponseHeaders", t.getMessage());
         }
         {
             var exchange = new ThrowingHttpExchange() {
@@ -210,8 +212,8 @@ public class HttpHandlersTest {
                     throw new RuntimeException("sendResponseHeaders");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "sendResponseHeaders");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("sendResponseHeaders", t.getMessage());
         }
         {
             var exchange = new ThrowingHttpExchange() {
@@ -220,8 +222,8 @@ public class HttpHandlersTest {
                 }
             };
             if (!body.isEmpty()) {  // getResponseBody not called if no responseBody
-                var t = expectThrows(RE, () -> h.handle(exchange));
-                assertEquals(t.getMessage(), "getResponseBody");
+                var t = assertThrows(RE, () -> h.handle(exchange));
+                assertEquals("getResponseBody", t.getMessage());
             }
         }
         {
@@ -230,8 +232,8 @@ public class HttpHandlersTest {
                     throw new RuntimeException("close");
                 }
             };
-            var t = expectThrows(RE, () -> h.handle(exchange));
-            assertEquals(t.getMessage(), "close");
+            var t = assertThrows(RE, () -> h.handle(exchange));
+            assertEquals("close", t.getMessage());
         }
     }
 
@@ -247,8 +249,8 @@ public class HttpHandlersTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "TestHandler-1");
+            assertEquals(200, response.statusCode());
+            assertEquals("TestHandler-1", response.body());
         } finally {
             server.stop(0);
         }
@@ -266,8 +268,8 @@ public class HttpHandlersTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "TestHandler-2");
+            assertEquals(200, response.statusCode());
+            assertEquals("TestHandler-2", response.body());
         } finally {
             server.stop(0);
         }
@@ -287,8 +289,8 @@ public class HttpHandlersTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "TestHandler-2");
+            assertEquals(200, response.statusCode());
+            assertEquals("TestHandler-2", response.body());
         } finally {
             server.stop(0);
         }

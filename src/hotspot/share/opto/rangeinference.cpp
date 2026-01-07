@@ -25,7 +25,6 @@
 #include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
 #include "utilities/intn_t.hpp"
-#include "utilities/tuple.hpp"
 
 // If the cardinality of a TypeInt is below this threshold, use min widen, see
 // TypeIntPrototype<S, U>::normalize_widen
@@ -688,16 +687,15 @@ template class TypeIntPrototype<intn_t<1>, uintn_t<1>>;
 template class TypeIntPrototype<intn_t<2>, uintn_t<2>>;
 template class TypeIntPrototype<intn_t<3>, uintn_t<3>>;
 template class TypeIntPrototype<intn_t<4>, uintn_t<4>>;
+template class TypeIntPrototype<intn_t<5>, uintn_t<5>>;
+template class TypeIntPrototype<intn_t<6>, uintn_t<6>>;
 
 template <class CT>
 const Type* TypeIntHelper::int_type_xmeet(const CT* t1, const CT* t2) {
   using S = std::remove_const_t<decltype(CT::_lo)>;
   using U = std::remove_const_t<decltype(CT::_ulo)>;
   if (!t1->_is_dual) {
-    return CT::make_or_top(TypeIntPrototype<S, U>{{MIN2(t1->_lo, t2->_lo), MAX2(t1->_hi, t2->_hi)},
-                                                  {MIN2(t1->_ulo, t2->_ulo), MAX2(t1->_uhi, t2->_uhi)},
-                                                  {t1->_bits._zeros & t2->_bits._zeros, t1->_bits._ones & t2->_bits._ones}},
-                           MAX2(t1->_widen, t2->_widen), false);
+    return int_type_union(t1, t2);
   } else {
     return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(t1->_lo, t2->_lo), MIN2(t1->_hi, t2->_hi)},
                                                   {MAX2(t1->_ulo, t2->_ulo), MIN2(t1->_uhi, t2->_uhi)},
