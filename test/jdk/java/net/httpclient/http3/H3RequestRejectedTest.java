@@ -50,6 +50,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.BodyPublishers;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderForH3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -71,12 +72,10 @@ class H3RequestRejectedTest {
     private static final String HANDLER_PATH = "/foo";
 
     private static HttpTestServer server;
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        assertNotNull(sslContext, "SSLContext could not be constructed");
         server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         server.addHandler(new Handler(), HANDLER_PATH);
         server.start();
@@ -100,7 +99,7 @@ class H3RequestRejectedTest {
      */
     @Test
     void testAlwaysRejected() throws Exception {
-        try (final HttpClient client = HttpClient.newBuilder()
+        try (final HttpClient client = createClientBuilderForH3()
                 .sslContext(sslContext).proxy(NO_PROXY).version(HTTP_3)
                 .build()) {
 
@@ -134,7 +133,7 @@ class H3RequestRejectedTest {
      */
     @Test
     void testRejectedRequest() throws Exception {
-        try (final HttpClient client = HttpClient.newBuilder().sslContext(sslContext)
+        try (final HttpClient client = createClientBuilderForH3().sslContext(sslContext)
                 .proxy(NO_PROXY).version(HTTP_3)
                 .build()) {
 

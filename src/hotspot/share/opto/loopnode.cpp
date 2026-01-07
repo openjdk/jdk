@@ -79,11 +79,10 @@ bool LoopNode::is_valid_counted_loop(BasicType bt) const {
     BaseCountedLoopNode*    l  = as_BaseCountedLoop();
     BaseCountedLoopEndNode* le = l->loopexit_or_null();
     if (le != nullptr &&
-        le->proj_out_or_null(1 /* true */) == l->in(LoopNode::LoopBackControl)) {
+        le->true_proj_or_null() == l->in(LoopNode::LoopBackControl)) {
       Node* phi  = l->phi();
-      Node* exit = le->proj_out_or_null(0 /* false */);
-      if (exit != nullptr && exit->Opcode() == Op_IfFalse &&
-          phi != nullptr && phi->is_Phi() &&
+      IfFalseNode* exit = le->false_proj_or_null();
+      if (exit != nullptr && phi != nullptr && phi->is_Phi() &&
           phi->in(LoopNode::LoopBackControl) == l->incr() &&
           le->loopnode() == l && le->stride_is_con()) {
         return true;
@@ -942,7 +941,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     safepoint = find_safepoint(back_control, x, loop);
   }
 
-  Node* exit_branch = exit_test->proj_out(false);
+  IfFalseNode* exit_branch = exit_test->false_proj();
   Node* entry_control = head->in(LoopNode::EntryControl);
 
   // Clone the control flow of the loop to build an outer loop
@@ -1001,7 +1000,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     // a negative stride). We add a CastII here to guarantee that, when the counted loop is created in a subsequent loop
     // opts pass, an accurate range of values for the limits is found.
     const TypeInt* inner_iters_actual_int_range = TypeInt::make(0, iters_limit, Type::WidenMin);
-    inner_iters_actual_int = new CastIINode(outer_head, inner_iters_actual_int, inner_iters_actual_int_range, ConstraintCastNode::UnconditionalDependency);
+    inner_iters_actual_int = new CastIINode(outer_head, inner_iters_actual_int, inner_iters_actual_int_range, ConstraintCastNode::DependencyType::NonFloatingNonNarrowing);
     _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
   } else {
     inner_iters_actual_int = inner_iters_actual;
@@ -1162,13 +1161,16 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 class CloneShortLoopPredicateVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_loop;
   PhaseIdealLoop* const _phase;
+  Node* const _new_init;
 
 public:
   CloneShortLoopPredicateVisitor(LoopNode* target_loop_head,
+                                 Node* new_init,
                                  const NodeInSingleLoopBody &node_in_loop_body,
                                  PhaseIdealLoop* phase)
     : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
-      _phase(phase) {
+      _phase(phase),
+      _new_init(new_init) {
   }
   NONCOPYABLE(CloneShortLoopPredicateVisitor);
 
@@ -1180,10 +1182,31 @@ public:
   }
 
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
-    _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
+    _clone_predicate_to_loop.clone_template_assertion_predicate_and_replace_init(template_assertion_predicate, _new_init);
     template_assertion_predicate.kill(_phase->igvn());
   }
 };
+
+// For an int counted loop, try_make_short_running_loop() transforms the loop from:
+//     for (int = start; i < stop; i+= stride) { ... }
+// to
+//     for (int = 0; i < stop - start; i+= stride) { ... }
+// Template Assertion Predicates added so far were with an init value of start. They need to be updated with the new
+// init value of 0 (otherwise when a template assertion predicate is turned into an initialized assertion predicate, it
+// performs an incorrect check):
+//                                zero
+//        init                     |
+//         |           ===>   OpaqueLoopInit   init
+//  OpaqueLoopInit                         \   /
+//                                          AddI
+//
+Node* PhaseIdealLoop::new_assertion_predicate_opaque_init(Node* entry_control, Node* init, Node* int_zero) {
+  OpaqueLoopInitNode* new_opaque_init = new OpaqueLoopInitNode(C, int_zero);
+  register_new_node(new_opaque_init, entry_control);
+  Node* new_init = new AddINode(new_opaque_init, init);
+  register_new_node(new_init, entry_control);
+  return new_init;
+}
 
 // If the loop is either statically known to run for a small enough number of iterations or if profile data indicates
 // that, we don't want an outer loop because the overhead of having an outer loop whose backedge is never taken, has a
@@ -1236,6 +1259,7 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
   }
   register_new_node(new_limit, entry_control);
 
+  Node* int_zero = intcon(0);
   PhiNode* phi = head->phi()->as_Phi();
   if (profile_short_running_loop) {
     // Add a Short Running Long Loop Predicate. It's the first predicate in the predicate chain before entering a loop
@@ -1261,9 +1285,11 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     if (!short_running_long_loop_predicate_block->has_parse_predicate()) { // already trapped
       return false;
     }
+    Node* new_init = new_assertion_predicate_opaque_init(entry_control, init, int_zero);
+
     PredicateIterator predicate_iterator(entry_control);
     NodeInSingleLoopBody node_in_short_loop_body(this, loop);
-    CloneShortLoopPredicateVisitor clone_short_loop_predicates_visitor(head, node_in_short_loop_body, this);
+    CloneShortLoopPredicateVisitor clone_short_loop_predicates_visitor(head, new_init, node_in_short_loop_body, this);
     predicate_iterator.for_each(clone_short_loop_predicates_visitor);
 
     entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
@@ -1288,7 +1314,7 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     register_new_node(bol, iff->in(0));
     new_limit = ConstraintCastNode::make_cast_for_basic_type(new_predicate_proj, new_limit,
                                                              TypeInteger::make(1, iters_limit_long, Type::WidenMin, bt),
-                                                             ConstraintCastNode::UnconditionalDependency, bt);
+                                                             ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, bt);
     register_new_node(new_limit, new_predicate_proj);
 
 #ifndef PRODUCT
@@ -1307,10 +1333,14 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
     new_limit = ConstraintCastNode::make_cast_for_basic_type(predicates.entry(), new_limit,
                                                              TypeLong::make(0, new_limit_t->_hi, new_limit_t->_widen),
-                                                             ConstraintCastNode::UnconditionalDependency, bt);
+                                                             ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, bt);
     register_new_node(new_limit, predicates.entry());
   } else {
     assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");
+    PredicateIterator predicate_iterator(entry_control);
+    Node* new_init = new_assertion_predicate_opaque_init(entry_control, init, int_zero);
+    UpdateInitForTemplateAssertionPredicates update_init_for_template_assertion_predicates(new_init, this);
+    predicate_iterator.for_each(update_init_for_template_assertion_predicates);
   }
   IfNode* exit_test = head->loopexit();
 
@@ -1320,7 +1350,6 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     register_new_node(new_limit, entry_control);
   }
 
-  Node* int_zero = intcon(0);
   if (stride_con < 0) {
     new_limit = new SubINode(int_zero, new_limit);
     register_new_node(new_limit, entry_control);
@@ -3057,7 +3086,7 @@ IfFalseNode* OuterStripMinedLoopNode::outer_loop_exit() const {
   if (le == nullptr) {
     return nullptr;
   }
-  Node* c = le->proj_out_or_null(false);
+  IfFalseNode* c = le->false_proj_or_null();
   if (c == nullptr) {
     return nullptr;
   }
@@ -3377,7 +3406,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     return;
   }
 
-  Node* cle_tail = inner_cle->proj_out(true);
+  IfTrueNode* cle_tail = inner_cle->true_proj();
   ResourceMark rm;
   Node_List old_new;
   if (cle_tail->outcnt() > 1) {
@@ -3519,7 +3548,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
     iloop->replace_node_and_forward_ctrl(outer_le, new_end);
   }
   // the backedge of the inner loop must be rewired to the new loop end
-  Node* backedge = cle->proj_out(true);
+  IfTrueNode* backedge = cle->true_proj();
   igvn->replace_input_of(backedge, 0, new_end);
   if (iloop != nullptr) {
     iloop->set_idom(backedge, new_end, iloop->dom_depth(new_end) + 1);
@@ -3600,7 +3629,7 @@ const Type* OuterStripMinedLoopEndNode::Value(PhaseGVN* phase) const {
 bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
   // The outer strip mined loop head only has Phi uses after expansion
   if (phase->is_IterGVN()) {
-    Node* backedge = proj_out_or_null(true);
+    IfTrueNode* backedge = true_proj_or_null();
     if (backedge != nullptr) {
       Node* head = backedge->unique_ctrl_out_or_null();
       if (head != nullptr && head->is_OuterStripMinedLoop()) {

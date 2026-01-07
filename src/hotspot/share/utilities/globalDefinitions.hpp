@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1374,16 +1374,29 @@ template<typename K> int primitive_compare(const K& k0, const K& k1) {
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
 
-// This provides a workaround for static_assert(false) in discarded or
-// otherwise uninstantiated places.  Instead use
-//   static_assert(DependentAlwaysFalse<T>, "...")
-// See http://wg21.link/p2593r1. Some, but not all, compiler versions we're
-// using have implemented that change as a DR:
-// https://cplusplus.github.io/CWG/issues/2518.html
-template<typename T> inline constexpr bool DependentAlwaysFalse = false;
-
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.
 bool IEEE_subnormal_handling_OK();
+
+//----------------------------------------------------------------------------------------------------
+// Forbid using the global allocator by HotSpot code.
+//
+// This is a subset of allocator and deallocator functions. These are
+// implicitly declared in all translation units, without needing to include
+// <new>; see C++17 6.7.4. This isn't even the full set of those; implicit
+// declarations involving std::align_val_t are not covered here, since that
+// type is defined in <new>.  A translation unit that doesn't include <new> is
+// still likely to include this file.  See cppstdlib/new.hpp for more details.
+#ifndef HOTSPOT_GTEST
+
+[[deprecated]] void* operator new(std::size_t);
+[[deprecated]] void operator delete(void*) noexcept;
+[[deprecated]] void operator delete(void*, std::size_t) noexcept;
+
+[[deprecated]] void* operator new[](std::size_t);
+[[deprecated]] void operator delete[](void*) noexcept;
+[[deprecated]] void operator delete[](void*, std::size_t) noexcept;
+
+#endif // HOTSPOT_GTEST
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

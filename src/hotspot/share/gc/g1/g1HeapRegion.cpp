@@ -307,10 +307,6 @@ void G1HeapRegion::add_code_root(nmethod* nm) {
   rem_set()->add_code_root(nm);
 }
 
-void G1HeapRegion::remove_code_root(nmethod* nm) {
-  rem_set()->remove_code_root(nm);
-}
-
 void G1HeapRegion::code_roots_do(NMethodClosure* blk) const {
   rem_set()->code_roots_do(blk);
 }
@@ -787,23 +783,13 @@ void G1HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) 
   // possible that there is a pinned object that is not any more referenced by
   // Java code (only by native).
   //
-  // In this case we must not zap contents of such an array but we can overwrite
-  // the header; since only pinned typearrays are allowed, this fits nicely with
-  // putting filler arrays into the dead range as the object header sizes match and
-  // no user data is overwritten.
+  // In this case we should not zap, because that would overwrite
+  // user-observable data. Memory corresponding to obj-header is safe to
+  // change, since it's not directly user-observable.
   //
   // In particular String Deduplication might change the reference to the character
   // array of the j.l.String after native code obtained a raw reference to it (via
   // GetStringCritical()).
-  CollectedHeap::fill_with_objects(start, range_size, !has_pinned_objects());
-  HeapWord* current = start;
-  do {
-    // Update the BOT if the a threshold is crossed.
-    size_t obj_size = cast_to_oop(current)->size();
-    update_bot_for_block(current, current + obj_size);
-
-    // Advance to the next object.
-    current += obj_size;
-    guarantee(current <= end, "Should never go past end");
-  } while (current != end);
+  CollectedHeap::fill_with_object(start, range_size, !has_pinned_objects());
+  update_bot_for_block(start, start + range_size);
 }

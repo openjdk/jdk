@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8350582 8340312 8369995
+ * @bug 8350582 8340312 8369995 8372004
  * @library /test/lib /javax/net/ssl/templates
  * @summary Correct the parsing of the ssl value in javax.net.debug
  * @run junit DebugPropertyValuesTest
@@ -91,6 +91,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 List.of("FINE: adding as trusted certificates:"
                             + System.lineSeparator() +
                             "  \"certificate\" : \\{",
+                        "sun.security.ssl.SSLSocketImpl close",
                         "FINE: Produced ClientHello handshake message:" +
                             System.lineSeparator() +
                             "\"ClientHello\": \\{",

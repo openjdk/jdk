@@ -118,6 +118,8 @@ inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_va
   return add_using_helper<int32_t>(ARMAtomicFuncs::_add_func, dest, add_value);
 }
 
+template<>
+struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
 
 template<>
 template<typename T>

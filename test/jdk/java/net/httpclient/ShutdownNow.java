@@ -91,7 +91,7 @@ public class ShutdownNow implements HttpServerAdapters {
     }
     static final Random RANDOM = RandomFactory.getRandom();
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
@@ -321,10 +321,6 @@ public class ShutdownNow implements HttpServerAdapters {
     @BeforeTest
     public void setup() throws Exception {
         out.println("\n**** Setup ****\n");
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new ServerRequestHandler(), "/http1/exec/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/exec/retry";

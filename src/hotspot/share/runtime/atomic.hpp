@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_ATOMIC_HPP
 
 #include "cppstdlib/type_traits.hpp"
-#include "metaprogramming/enableIf.hpp"
+#include "metaprogramming/dependentAlwaysFalse.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -75,6 +75,7 @@
 //     v.release_store(x) -> void
 //     v.release_store_fence(x) -> void
 //     v.compare_exchange(x, y [, o]) -> T
+//     v.exchange(x [, o]) -> T
 //
 // (2) All atomic types are default constructible.
 //
@@ -88,11 +89,14 @@
 // value will be initialized as if by translating the value that would be
 // provided by default constructing an atomic type for the value type's
 // decayed type.
-
-// (3) Atomic pointers and atomic integers additionally provide
+//
+// (3) Constructors for all atomic types are constexpr, to ensure non-local
+// atomic variables are constant initialized (C++17 6.6.2) when initialized
+// with suitable arguments.
+//
+// (4) Atomic pointers and atomic integers additionally provide
 //
 //   member functions:
-//     v.exchange(x [, o]) -> T
 //     v.add_then_fetch(i [, o]) -> T
 //     v.sub_then_fetch(i [, o]) -> T
 //     v.fetch_then_add(i [, o]) -> T
@@ -101,9 +105,6 @@
 // sizeof(i) must not exceed sizeof(T). For atomic integers, both T and the
 // type of i must be signed, or both must be unsigned. Atomic pointers perform
 // element arithmetic.
-//
-// (4) An atomic translated type additionally provides the exchange
-// function if its associated atomic decayed type provides that function.
 //
 // (5) Atomic integers additionally provide
 //
@@ -126,9 +127,6 @@
 // the AtomicAccess names. Some of the naming choices are also to make them
 // stand out a little more when used in surrounding non-atomic code. Without
 // the "AtomicAccess::" qualifier, some of those names are easily overlooked.
-//
-// Atomic bytes don't provide exchange(). This is because that operation
-// hasn't been implemented for 1 byte values. That could be changed if needed.
 //
 // Atomic for 2 byte integers is not supported. This is because atomic
 // operations of that size have not been implemented. There haven't been
@@ -184,14 +182,7 @@ private:
 
   // Helper base classes, providing various parts of the APIs.
   template<typename T> class CommonCore;
-  template<typename T> class SupportsExchange;
   template<typename T> class SupportsArithmetic;
-
-  // Support conditional exchange() for atomic translated types.
-  template<typename T> class HasExchange;
-  template<typename T> class DecayedHasExchange;
-  template<typename Derived, typename T, bool = DecayedHasExchange<T>::value>
-  class TranslatedExchange;
 
 public:
   template<typename T, Category = category<T>()>
@@ -230,7 +221,7 @@ class AtomicImpl::CommonCore {
   T volatile _value;
 
 protected:
-  explicit CommonCore(T value) : _value(value) {}
+  explicit constexpr CommonCore(T value) : _value(value) {}
   ~CommonCore() = default;
 
   T volatile* value_ptr() { return &_value; }
@@ -275,15 +266,7 @@ public:
                      atomic_memory_order order = memory_order_conservative) {
     return AtomicAccess::cmpxchg(value_ptr(), compare_value, new_value, order);
   }
-};
 
-template<typename T>
-class AtomicImpl::SupportsExchange : public CommonCore<T> {
-protected:
-  explicit SupportsExchange(T value) : CommonCore<T>(value) {}
-  ~SupportsExchange() = default;
-
-public:
   T exchange(T new_value,
              atomic_memory_order order = memory_order_conservative) {
     return AtomicAccess::xchg(this->value_ptr(), new_value, order);
@@ -291,7 +274,7 @@ public:
 };
 
 template<typename T>
-class AtomicImpl::SupportsArithmetic : public SupportsExchange<T> {
+class AtomicImpl::SupportsArithmetic : public CommonCore<T> {
   // Guarding the AtomicAccess calls with constexpr checking of Offset produces
   // better compile-time error messages.
   template<typename Offset>
@@ -311,7 +294,7 @@ class AtomicImpl::SupportsArithmetic : public SupportsExchange<T> {
   }
 
 protected:
-  explicit SupportsArithmetic(T value) : SupportsExchange<T>(value) {}
+  explicit constexpr SupportsArithmetic(T value) : CommonCore<T>(value) {}
   ~SupportsArithmetic() = default;
 
 public:
@@ -354,7 +337,7 @@ class AtomicImpl::Atomic<T, AtomicImpl::Category::Integer>
   : public SupportsArithmetic<T>
 {
 public:
-  explicit Atomic(T value = 0) : SupportsArithmetic<T>(value) {}
+  explicit constexpr Atomic(T value = 0) : SupportsArithmetic<T>(value) {}
 
   NONCOPYABLE(Atomic);
 
@@ -394,7 +377,7 @@ class AtomicImpl::Atomic<T, AtomicImpl::Category::Byte>
   : public CommonCore<T>
 {
 public:
-  explicit Atomic(T value = 0) : CommonCore<T>(value) {}
+  explicit constexpr Atomic(T value = 0) : CommonCore<T>(value) {}
 
   NONCOPYABLE(Atomic);
 
@@ -410,7 +393,7 @@ class AtomicImpl::Atomic<T, AtomicImpl::Category::Pointer>
   : public SupportsArithmetic<T>
 {
 public:
-  explicit Atomic(T value = nullptr) : SupportsArithmetic<T>(value) {}
+  explicit constexpr Atomic(T value = nullptr) : SupportsArithmetic<T>(value) {}
 
   NONCOPYABLE(Atomic);
 
@@ -424,65 +407,28 @@ public:
 
 // Atomic translated type
 
-// Test whether Atomic<T> has exchange().
 template<typename T>
-class AtomicImpl::HasExchange {
-  template<typename Check> static void* test(decltype(&Check::exchange));
-  template<typename> static int test(...);
-  using test_type = decltype(test<Atomic<T>>(nullptr));
-public:
-  static constexpr bool value = std::is_pointer_v<test_type>;
-};
-
-// Test whether the atomic decayed type associated with T has exchange().
-template<typename T>
-class AtomicImpl::DecayedHasExchange {
-  using Translator = PrimitiveConversions::Translate<T>;
-  using Decayed = typename Translator::Decayed;
-
-  // "Unit test" HasExchange<>.
-  static_assert(HasExchange<int>::value);
-  static_assert(HasExchange<int*>::value);
-  static_assert(!HasExchange<char>::value);
-
-public:
-  static constexpr bool value = HasExchange<Decayed>::value;
-};
-
-// Base class for atomic translated type if atomic decayed type doesn't have
-// exchange().
-template<typename Derived, typename T, bool>
-class AtomicImpl::TranslatedExchange {};
-
-// Base class for atomic translated type if atomic decayed type does have
-// exchange().
-template<typename Derived, typename T>
-class AtomicImpl::TranslatedExchange<Derived, T, true> {
-public:
-  T exchange(T new_value,
-             atomic_memory_order order = memory_order_conservative) {
-    return static_cast<Derived*>(this)->exchange_impl(new_value, order);
-  }
-};
-
-template<typename T>
-class AtomicImpl::Atomic<T, AtomicImpl::Category::Translated>
-  : public TranslatedExchange<Atomic<T>, T>
-{
-  // Give TranslatedExchange<> access to exchange_impl() if needed.
-  friend class TranslatedExchange<Atomic<T>, T>;
-
+class AtomicImpl::Atomic<T, AtomicImpl::Category::Translated> {
   using Translator = PrimitiveConversions::Translate<T>;
   using Decayed = typename Translator::Decayed;
 
   Atomic<Decayed> _value;
 
-  static Decayed decay(T x) { return Translator::decay(x); }
+  // The decay function and the constructors are constexpr so that a non-local
+  // atomic object constructed with constant arguments will be a constant
+  // initialization.  One might ask why it's not a problem that some
+  // specializations of these functions are not constant expressions. The
+  // answer lies in C++17 10.1.5/6, along with us having *some* constexpr
+  // translator decay functions, constexpr ctors for some translated types,
+  // and constexpr ctors for some decayed types.  Also, C++23 removes those
+  // restrictions on constexpr functions and ctors.
+
+  static constexpr Decayed decay(T x) { return Translator::decay(x); }
   static T recover(Decayed x) { return Translator::recover(x); }
 
   // Support for default construction via the default construction of _value.
   struct UseDecayedCtor {};
-  explicit Atomic(UseDecayedCtor) : _value() {}
+  explicit constexpr Atomic(UseDecayedCtor) : _value() {}
   using DefaultCtorSelect =
     std::conditional_t<std::is_default_constructible_v<T>, T, UseDecayedCtor>;
 
@@ -491,9 +437,9 @@ public:
 
   // If T is default constructible, construct from a default constructed T.
   // Otherwise, default construct the underlying Atomic<Decayed>.
-  Atomic() : Atomic(DefaultCtorSelect()) {}
+  constexpr Atomic() : Atomic(DefaultCtorSelect()) {}
 
-  explicit Atomic(T value) : _value(decay(value)) {}
+  explicit constexpr Atomic(T value) : _value(decay(value)) {}
 
   NONCOPYABLE(Atomic);
 
@@ -533,12 +479,7 @@ public:
                                            order));
   }
 
-private:
-  // Implementation of exchange() if needed.
-  // Exclude when not needed, to prevent reference to non-existent function
-  // of atomic decayed type if someone explicitly instantiates Atomic<T>.
-  template<typename Dep = Decayed, ENABLE_IF(HasExchange<Dep>::value)>
-  T exchange_impl(T new_value, atomic_memory_order order) {
+  T exchange(T new_value, atomic_memory_order order = memory_order_conservative) {
     return recover(_value.exchange(decay(new_value), order));
   }
 };

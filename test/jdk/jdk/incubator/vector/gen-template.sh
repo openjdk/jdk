@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,9 @@ binary_math_template="Binary-op-math"
 binary_math_broadcast_template="Binary-Broadcast-op-math"
 bool_reduction_scalar="BoolReduction-Scalar-op"
 bool_reduction_template="BoolReduction-op"
+bool_binary_template="BoolBinary-op"
+bool_unary_template="BoolUnary-op"
+mask_fromtolong_template="Mask-FromToLong"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
@@ -230,7 +233,8 @@ function gen_op_tmpl {
 
   local gen_perf_tests=$generate_perf_tests
   if [[ $template == *"-Broadcast-"* ]] || [[ $template == "Miscellaneous" ]] ||
-     [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]]; then
+     [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]] ||
+     [[ $template == *"Mask-Binary"* ]]; then
     gen_perf_tests=false
   fi
   if [ $gen_perf_tests == true ]; then
@@ -624,6 +628,15 @@ gen_unary_alu_op "REVERSE" "REVERSE_scalar(a)" "BITWISE"
 gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "intOrLong"
 gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "short"
 gen_unary_alu_op "REVERSE_BYTES" "a" "byte"
+
+# Mask operations
+gen_op_tmpl $bool_binary_template "and" "a \& b"
+gen_op_tmpl $bool_binary_template "or" "a | b"
+gen_op_tmpl $bool_binary_template "xor" "a != b"
+gen_op_tmpl $bool_binary_template "andNot" "a \& !b"
+gen_op_tmpl $bool_binary_template "eq" "a == b"
+gen_op_tmpl $bool_unary_template "not" "!a"
+gen_op_tmpl $mask_fromtolong_template "FromToLong" ""
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""
