@@ -329,7 +329,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   assert(sid != 0, "invariant");
 
 
-  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, request._user_data, biased, request._jvmti);
+  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased, request._jvmti, request._user_data);
   if (current == jt) {
     send_safepoint_latency_event(request._request, now, sid, jt);
   }
