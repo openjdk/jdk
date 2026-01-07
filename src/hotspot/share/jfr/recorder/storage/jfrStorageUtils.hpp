@@ -140,18 +140,6 @@ class ConcurrentWriteOp {
   size_t size() const { return _operation.size(); }
 };
 
-template <typename Operation, typename Predicate>
-class PredicatedConcurrentWriteOp : public ConcurrentWriteOp<Operation> {
- private:
-  Predicate& _predicate;
- public:
-  PredicatedConcurrentWriteOp(Operation& operation, Predicate& predicate) :
-    ConcurrentWriteOp<Operation>(operation), _predicate(predicate) {}
-  bool process(typename Operation::Type* t) {
-    return _predicate.process(t) ? ConcurrentWriteOp<Operation>::process(t) : true;
-  }
-};
-
 template <typename Operation>
 class ExclusiveOp : private MutexedWriteOp<Operation> {
  private:
