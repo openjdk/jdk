@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,10 +396,7 @@ final class TextLine {
                                                  BufferedImage.TYPE_INT_ARGB);
 
             Graphics2D g2d = im.createGraphics();
-            g2d.setColor(Color.WHITE);
-            g2d.fillRect(0, 0, im.getWidth(), im.getHeight());
-
-            g2d.setColor(Color.BLACK);
+            g2d.setColor(Color.WHITE); // white over transparent black bg
             draw(g2d, rx + MARGIN - bounds.x, ry + MARGIN - bounds.y);
 
             result = computePixelBounds(im);
@@ -428,7 +425,7 @@ final class TextLine {
             loop: while (++t < h) {
                 im.getRGB(0, t, buf.length, 1, buf, 0, w); // w ignored
                 for (int i = 0; i < buf.length; i++) {
-                    if (buf[i] != -1) {
+                    if (buf[i] != 0) {
                         break loop;
                     }
                 }
@@ -441,7 +438,7 @@ final class TextLine {
             loop: while (--b > t) {
                 im.getRGB(0, b, buf.length, 1, buf, 0, w); // w ignored
                 for (int i = 0; i < buf.length; ++i) {
-                    if (buf[i] != -1) {
+                    if (buf[i] != 0) {
                         break loop;
                     }
                 }
@@ -454,7 +451,7 @@ final class TextLine {
             loop: while (++l < r) {
                 for (int i = t; i < b; ++i) {
                     int v = im.getRGB(l, i);
-                    if (v != -1) {
+                    if (v != 0) {
                         break loop;
                     }
                 }
@@ -466,7 +463,7 @@ final class TextLine {
             loop: while (--r > l) {
                 for (int i = t; i < b; ++i) {
                     int v = im.getRGB(r, i);
-                    if (v != -1) {
+                    if (v != 0) {
                         break loop;
                     }
                 }

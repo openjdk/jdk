@@ -28,6 +28,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/threadSMR.hpp"
 
@@ -191,6 +192,13 @@ void MountUnmountDisabler::end_transition(JavaThread* current, oop vthread, bool
     MonitorLocker ml(VThreadTransition_lock);
     ml.notify_all();
   }
+}
+
+// disable transitions for one virtual thread
+// disable transitions for all threads if thread is nullptr or a platform thread
+MountUnmountDisabler::MountUnmountDisabler(jthread thread)
+  : MountUnmountDisabler(JNIHandles::resolve_external_guard(thread))
+{
 }
 
 // disable transitions for one virtual thread

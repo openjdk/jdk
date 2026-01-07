@@ -84,13 +84,11 @@ public class H3BasicTest implements HttpServerAdapters {
     static HttpClient client = null;
     static ExecutorService clientExec;
     static ExecutorService serverExec;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static volatile String http3URIString, pingURIString, https2URIString;
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
 
             // server that only supports HTTP/3
