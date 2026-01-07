@@ -53,15 +53,18 @@ protected:
   // start index of the shared alloc regions where the allocation will start from.
   virtual uint alloc_start_index() { return 0u; }
 
-  // Attempt to allocate
-  // It will try to allocate in alloc regions first, if fails it will try to get new alloc regions from free-set
-  // and allocate with in the region got from free-set.
+  // Attempt to allocate memory to satisfy alloc request.
+  // If _alloc_region_count is not 0, it will try to allocate in shared alloc regions first with atomic operations w/o
+  // the need of global heap lock(fast path); when fast path fails, it will call attempt_allocation_slow which takes
+  // global heap lock and try to refresh shared alloc regions if they are not refreshed by other mutator thread.
+  // If _alloc_region_count is 0, no shared alloc region will be reserved, allocation is always done with global heap lock held.
   HeapWord* attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Slow path of allocation attempt, it will handle the allocation with heap lock held.
+  // Slow path of allocation attempt. When fast path trying to allocate in shared alloc regions fails attempt_allocation_slow will
+  // be called to refresh shared alloc regions and allocate memory for the alloc request.
   HeapWord* attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Attempt to allocate from a region in free set, rather than from any of alloc regions.
+  // Attempt to allocate from a region in free set, rather than from any of shared alloc regions.
   // Caller have to hold heap lock.
   HeapWord* attempt_allocation_from_free_set(ShenandoahAllocRequest& req, bool& in_new_region);
 
@@ -75,7 +78,7 @@ protected:
   template <bool ATOMIC>
   HeapWord* allocate_in(ShenandoahHeapRegion* region, bool is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire);
 
-  // Refresh new alloc regions, allocate the object in the new alloc region.
+  // Refresh new alloc regions, allocate the object in the new alloc region before making the new alloc region visible to other mutators.
   int refresh_alloc_regions(ShenandoahAllocRequest* req = nullptr, bool* in_new_region = nullptr, HeapWord** obj = nullptr);
 #ifdef ASSERT
   virtual void verify(ShenandoahAllocRequest& req) { }
