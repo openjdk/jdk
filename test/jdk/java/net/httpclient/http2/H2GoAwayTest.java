@@ -69,12 +69,10 @@ public class H2GoAwayTest {
     private static final String REQ_PATH = "/test";
     private static HttpTestServer server;
     private static String REQ_URI_BASE;
-    private static SSLContext sslCtx;
+    private static final SSLContext sslCtx = SimpleSSLContext.findSSLContext();
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        sslCtx = new SimpleSSLContext().get();
-        assertNotNull(sslCtx, "SSLContext couldn't be created");
         server = HttpTestServer.create(HTTP_2, sslCtx);
         server.addHandler(new Handler(), REQ_PATH);
         server.start();

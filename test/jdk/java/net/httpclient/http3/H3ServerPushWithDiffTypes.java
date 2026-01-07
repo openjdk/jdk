@@ -95,7 +95,7 @@ public class H3ServerPushWithDiffTypes implements HttpServerAdapters {
 
     @Test
     public void test() throws Exception {
-        var sslContext = new SimpleSSLContext().get();
+        var sslContext = SimpleSSLContext.findSSLContext();
         try (HttpTestServer server = HttpTestServer.create(ANY, sslContext)) {
             HttpTestHandler pushHandler =
                     new ServerPushHandler("the main response body",

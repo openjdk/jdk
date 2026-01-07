@@ -344,9 +344,6 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   }
   if (w.has_monitor()) {
     w = w.monitor()->header();
-  } else if (w.is_being_inflated() || w.has_displaced_mark_helper()) {
-    // Informs caller that we aren't able to determine the age
-    return markWord::max_age + 1; // sentinel
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
