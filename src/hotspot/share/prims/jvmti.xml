@@ -3029,7 +3029,9 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         Request a stack trace.
       </description>
       <origin></origin>
-      <capabilities></capabilities>
+      <capabilities>
+        <required id="can_request_stack_trace"></required>
+      </capabilities>
       <parameters>
         <param id="thread">
           <jthread null="current" impl="noconvert"/>
@@ -10847,6 +10849,13 @@ myInit() {
           and the following events can be enabled:
           <eventlink id="VirtualThreadStart"></eventlink>,
           <eventlink id="VirtualThreadEnd"></eventlink>.
+        </description>
+      </capabilityfield>
+      <capabilityfield id="can_request_stack_trace" since="27">
+        <description>
+          Can request stack traces.
+          If this capability is enabled then the following function can be called:
+          <functionlink id="RequestStackTrace"></functionlink>.
         </description>
       </capabilityfield>
     </capabilitiestypedef>

@@ -500,6 +500,9 @@ JfrCPUTimeThreadSampling& JfrCPUTimeThreadSampling::instance() {
 JfrCPUTimeThreadSampling* JfrCPUTimeThreadSampling::create() {
   assert(_instance == nullptr, "invariant");
   _instance = new JfrCPUTimeThreadSampling();
+  if (JvmtiExport::can_request_stack_trace()) {
+    initialize_jvmti();
+  }
   return _instance;
 }
 
@@ -535,10 +538,15 @@ void JfrCPUTimeThreadSampling::update_run_state(JfrCPUSamplerThrottle& throttle)
     }
     return;
   }
-  if (_sampler != nullptr) {
+  if (_sampler != nullptr && !JvmtiExport::can_request_stack_trace()) {
     _sampler->set_throttle(throttle);
     _sampler->disenroll();
   }
+}
+
+void JfrCPUTimeThreadSampling::initialize_jvmti() {
+  JfrCPUSamplerThrottle throttle(500.0);
+  instance().update_run_state(throttle);
 }
 
 void JfrCPUTimeThreadSampling::set_rate(double rate) {
@@ -593,6 +601,11 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
     // not the signal we are interested in
     return;
   }
+  if (!JfrEventSetting::is_enabled(JfrCPUTimeSampleEvent)) {
+    // Event not enabled. May happen when JVMTI initializes CPU time sampling.
+    return;
+  }
+
   assert(_sampler != nullptr, "invariant");
 
   if (!_sampler->increment_signal_handler_count()) {
@@ -871,7 +884,9 @@ JfrCPUTimeThreadSampling& JfrCPUTimeThreadSampling::instance() {
 }
 
 JfrCPUTimeThreadSampling* JfrCPUTimeThreadSampling::create() {
-  _instance = new JfrCPUTimeThreadSampling();
+  if (_instance == nullptr) {
+    _instance = new JfrCPUTimeThreadSampling();
+  }
   return _instance;
 }
 
