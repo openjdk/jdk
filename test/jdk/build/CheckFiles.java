@@ -37,6 +37,7 @@ import jdk.test.lib.Platform;
  * @test
  * @summary Check for unwanted file (types/extensions) in the jdk image
  * @library /test/lib
+ * @requires !vm.debug
  * @run main CheckFiles
  */
 public class CheckFiles {
