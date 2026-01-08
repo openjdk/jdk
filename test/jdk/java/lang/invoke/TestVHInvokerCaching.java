@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static org.testng.Assert.assertSame;
+import static org.testng.Assert.*;
 
 public class TestVHInvokerCaching {
 
@@ -74,13 +74,15 @@ public class TestVHInvokerCaching {
 
         MethodHandles.Lookup lookup = lookup();
 
-        for (Field field : Holder.class.getFields()) {
+        for (Field field : Holder.class.getDeclaredFields()) {
             String fieldName = field.getName();
             Class<?> fieldType = field.getType();
 
             testHandles.add(MethodHandles.arrayElementVarHandle(fieldType.arrayType()));
             testHandles.add(lookup.findVarHandle(Holder.class, fieldName, fieldType));
         }
+
+        assertFalse(testHandles.isEmpty());
 
         return testHandles.stream().map(vh -> new Object[]{ vh }).toArray(Object[][]::new);
     }

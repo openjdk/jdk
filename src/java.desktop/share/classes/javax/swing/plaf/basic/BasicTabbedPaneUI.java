@@ -293,6 +293,16 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         installDefaults();
         installListeners();
         installKeyboardActions();
+        setFocusIndex(tabPane.getSelectedIndex(), false);
+
+        if (tabPane.getLayout() instanceof TabbedPaneScrollLayout) {
+            ensureCurrentLayout();
+            int index = tabPane.getSelectedIndex();
+            if (index < rects.length && index != -1) {
+                tabScroller.tabPanel.scrollRectToVisible(
+                            (Rectangle)rects[index].clone());
+            }
+        }
     }
 
     public void uninstallUI(JComponent c) {

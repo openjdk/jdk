@@ -31,6 +31,7 @@ import java.util.Random;
 /*
  * @test
  * @bug 8323220
+ * @key randomness
  * @summary Test loop invariant code motion of add/sub through reassociation
  * @library /test/lib /
  * @run driver compiler.c2.loopopts.InvariantCodeMotionReassociateAddSub

@@ -70,7 +70,7 @@ public:
 
 
   enum RegisterLayout {
-    fpu_save_size = FloatRegisterImpl::number_of_registers,
+    fpu_save_size = FloatRegister::number_of_registers,
 #ifndef __SOFTFP__
     D0_offset = 0,
 #endif
@@ -139,8 +139,8 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm,
     if (VM_Version::has_vfp3_32()) {
       __ fpush(FloatRegisterSet(D16, 16));
     } else {
-      if (FloatRegisterImpl::number_of_registers > 32) {
-        assert(FloatRegisterImpl::number_of_registers == 64, "nb fp registers should be 64");
+      if (FloatRegister::number_of_registers > 32) {
+        assert(FloatRegister::number_of_registers == 64, "nb fp registers should be 64");
         __ sub(SP, SP, 32 * wordSize);
       }
     }
@@ -182,8 +182,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_lr
     if (VM_Version::has_vfp3_32()) {
       __ fpop(FloatRegisterSet(D16, 16));
     } else {
-      if (FloatRegisterImpl::number_of_registers > 32) {
-        assert(FloatRegisterImpl::number_of_registers == 64, "nb fp registers should be 64");
+      if (FloatRegister::number_of_registers > 32) {
+        assert(FloatRegister::number_of_registers == 64, "nb fp registers should be 64");
         __ add(SP, SP, 32 * wordSize);
       }
     }
@@ -1139,8 +1139,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov(sync_handle, R1);
 
     log_trace(fastlock)("SharedRuntime lock fast");
-    __ lightweight_lock(sync_obj /* object */, basic_lock /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                        0x7 /* savemask */, slow_lock);
+    __ fast_lock(sync_obj /* object */, basic_lock /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                 0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
     __ bind(lock_done);
   }
@@ -1195,8 +1195,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
     log_trace(fastlock)("SharedRuntime unlock fast");
-    __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                          7 /* savemask */, slow_unlock);
+    __ fast_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                   7 /* savemask */, slow_unlock);
     // Fall through
 
     __ bind(unlock_done);

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="mww"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar" draft="unconfirmed">𞄤𞄣</language>
+			<language type="bn" draft="unconfirmed">𞄜𞄤</language>
+			<language type="en" draft="unconfirmed">𞄥𞄴𞄅𞄇𞄉𞄦𞄱𞄊</language>
+			<language type="fr" draft="unconfirmed">𞄕𞄤𞄰𞄎𞄦𞄴</language>
+			<language type="zh" draft="unconfirmed">𞄋𞄄</language>
+		</languages>
+		<scripts>
+			<script type="Hmnp" draft="unconfirmed">𞄐𞄦𞄲𞄤𞄎𞄫𞄰 𞄚𞄜𞄲𞄔𞄬𞄱 𞄀𞄄𞄰𞄩</script>
+		</scripts>
+		<territories>
+			<territory type="US" draft="unconfirmed">𞄒𞄫𞄱𞄔𞄩𞄴</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="unconfirmed">[𞄱 𞄶 𞄲 𞄳 𞄰 𞄴 𞄵 𞅏 𞄼 𞄽 𞄀 𞄁 𞄂 𞄃 𞄄 𞄅 𞄆 𞄇 𞄈 𞄉 𞄊 𞄋 𞄌 𞄍 𞄎 𞄏 𞄐 𞄑 𞄒 𞄓 𞄔 𞄕 𞄖 𞄗 𞄘 𞄙 𞄚 𞄛 𞄜 𞄝 𞄞 𞄟 𞄠 𞄡 𞄢 𞄣 𞄤 𞄥 𞄦 𞄧 𞄨 𞄩 𞄪 𞄫 𞄬 𞅎]</exemplarCharacters>
+		<!-- <exemplarCharacters type="auxiliary">[]</exemplarCharacters> -->
+		<exemplarCharacters type="index" draft="unconfirmed">[𞄀 𞄁 𞄂 𞄃 𞄄 𞄅 𞄆 𞄇 𞄈 𞄉 𞄊 𞄋 𞄌 𞄍 𞄎 𞄏 𞄐 𞄑 𞄒 𞄓 𞄔 𞄕 𞄖 𞄗 𞄘 𞄙 𞄚 𞄛 𞄜 𞄝 𞄞 𞄟 𞄠 𞄡 𞄢 𞄣 𞄤 𞄥 𞄦 𞄧 𞄨 𞄩 𞄪 𞄫 𞄬]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="unconfirmed">[\- ‑ , . % + 𞅀 𞅁 𞅂 𞅃 𞅄 𞅅 𞅆 𞅇 𞅈 𞅉]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">𞄆𞄬</month>
+							<month type="2" draft="unconfirmed">𞄛𞄨𞄱𞄄𞄤𞄲𞄨</month>
+							<month type="3" draft="unconfirmed">𞄒𞄫𞄰𞄒𞄪𞄱</month>
+							<month type="4" draft="unconfirmed">𞄤𞄨𞄱</month>
+							<month type="5" draft="unconfirmed">𞄀𞄪𞄴</month>
+							<month type="6" draft="unconfirmed">𞄛𞄤𞄱𞄞𞄤𞄦</month>
+							<month type="7" draft="unconfirmed">𞄔𞄩𞄴𞄆𞄨𞄰</month>
+							<month type="8" draft="unconfirmed">𞄕𞄩𞄲𞄔𞄄𞄰𞄤</month>
+							<month type="9" draft="unconfirmed">𞄛𞄤𞄱𞄒𞄤𞄰</month>
+							<month type="10" draft="unconfirmed">𞄪𞄱𞄀𞄤𞄴</month>
+							<month type="11" draft="unconfirmed">𞄚𞄦𞄲𞄤𞄚𞄄𞄰𞄫</month>
+							<month type="12" draft="unconfirmed">𞄒𞄩𞄱𞄔𞄬𞄴</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="stand-alone">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">𞄎𞄤𞄲</day>
+							<day type="mon" draft="unconfirmed">𞄈𞄦</day>
+							<day type="tue" draft="unconfirmed">𞄆𞄨𞄰</day>
+							<day type="wed" draft="unconfirmed">𞄗𞄄𞄤𞄰𞄦</day>
+							<day type="thu" draft="unconfirmed">𞄙𞄤𞄱𞄨</day>
+							<day type="fri" draft="unconfirmed">𞄑𞄤𞄱𞄨</day>
+							<day type="sat" draft="unconfirmed">𞄊𞄧𞄳</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">𞅁</quarter>
+							<quarter type="2" draft="unconfirmed">𞅂</quarter>
+							<quarter type="3" draft="unconfirmed">𞅃</quarter>
+							<quarter type="4" draft="unconfirmed">𞅄</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">𞄜𞄆𞄪</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<displayName draft="unconfirmed">𞄛𞄩</displayName>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>hmnp</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
+		<currencies>
+			<currency type="USD">
+				<symbol draft="contributed">𞅎</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

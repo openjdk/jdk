@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/trainingData.hpp"
 #include "runtime/arguments.hpp"
@@ -82,7 +83,7 @@ static void verify_archived_entry(TrainingData* td, const TrainingData::Key* k) 
 
 void TrainingData::verify() {
   if (TrainingData::have_data() && !TrainingData::assembling_data()) {
-    archived_training_data_dictionary()->iterate([&](TrainingData* td) {
+    archived_training_data_dictionary()->iterate_all([&](TrainingData* td) {
       if (td->is_KlassTrainingData()) {
         KlassTrainingData* ktd = td->as_KlassTrainingData();
         if (ktd->has_holder() && ktd->holder()->is_loaded()) {
@@ -352,6 +353,8 @@ void MethodTrainingData::prepare(Visitor& visitor) {
     _final_counters = holder()->method_counters();
     _final_profile  = holder()->method_data();
     assert(_final_profile == nullptr || _final_profile->method() == holder(), "");
+    _invocation_count = holder()->invocation_count();
+    _backedge_count = holder()->backedge_count();
   }
   for (int i = 0; i < CompLevel_count - 1; i++) {
     CompileTrainingData* ctd = _last_toplevel_compiles[i];
@@ -463,7 +466,7 @@ void TrainingData::init_dumptime_table(TRAPS) {
   precond((!assembling_data() && !need_data()) || need_data() != assembling_data());
   if (assembling_data()) {
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
-    _archived_training_data_dictionary.iterate([&](TrainingData* record) {
+    _archived_training_data_dictionary.iterate_all([&](TrainingData* record) {
       _dumptime_training_data_dictionary->append(record);
     });
   }
@@ -689,7 +692,7 @@ void TrainingData::print_archived_training_data_on(outputStream* st) {
   st->print_cr("Archived TrainingData Dictionary");
   TrainingDataPrinter tdp(st);
   TrainingDataLocker::initialize();
-  _archived_training_data_dictionary.iterate(&tdp);
+  _archived_training_data_dictionary.iterate_all(&tdp);
 }
 
 void TrainingData::Key::metaspace_pointers_do(MetaspaceClosure *iter) {

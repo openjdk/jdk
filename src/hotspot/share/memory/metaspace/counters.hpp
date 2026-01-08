@@ -26,11 +26,10 @@
 #ifndef SHARE_MEMORY_METASPACE_COUNTERS_HPP
 #define SHARE_MEMORY_METASPACE_COUNTERS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 namespace metaspace {
 

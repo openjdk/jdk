@@ -527,6 +527,9 @@ public final class URLPermission extends Permission {
         HostPortrange p;
 
         Authority(String scheme, String authority) {
+            if (authority == null || authority.isEmpty()) {
+                throw new IllegalArgumentException("Invalid URL: authority is empty");
+            }
             int at = authority.indexOf('@');
             if (at == -1) {
                     p = new HostPortrange(scheme, authority);

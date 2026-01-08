@@ -2214,7 +2214,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
   __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ li(R4_ARG2, code);
-  __ call_VM(noreg, entry, R4_ARG2);
+  __ call_VM_preemptable(noreg, entry, R4_ARG2);
 
   // Update registers with resolved info.
   __ load_method_entry(Rcache, Rindex);
@@ -2262,7 +2262,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
   __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ li(R4_ARG2, code);
-  __ call_VM(noreg, entry, R4_ARG2);
+  __ call_VM_preemptable(noreg, entry, R4_ARG2);
 
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
@@ -3864,7 +3864,7 @@ void TemplateTable::_new() {
   // --------------------------------------------------------------------------
   // slow case
   __ bind(Lslow_case);
-  call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Rcpool, Rindex);
+  __ call_VM_preemptable(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Rcpool, Rindex);
 
   // continue
   __ bind(Ldone);
