@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
   class Node {
    private:
     DEBUG_ONLY(size_t _saved_hash);
-    Node * volatile _next;
+    Atomic<Node*> _next;
     VALUE _value;
    public:
     Node(const VALUE& value, Node* next = nullptr)
@@ -80,8 +80,8 @@ class ConcurrentHashTable : public CHeapObj<MT> {
     }
 
     Node* next() const;
-    void set_next(Node* node)         { _next = node; }
-    Node* const volatile * next_ptr() { return &_next; }
+    void set_next(Node* node) { _next.store_relaxed(node); }
+    const Atomic<Node*>* next_ptr() const { return &_next; }
 #ifdef ASSERT
     size_t saved_hash() const         { return _saved_hash; }
     void set_saved_hash(size_t hash)  { _saved_hash = hash; }
@@ -123,7 +123,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
     // unlocked -> locked -> redirect
     // Locked state only applies to an updater.
     // Reader only check for redirect.
-    Node * volatile _first;
+    Atomic<Node*> _first;
 
     static const uintptr_t STATE_LOCK_BIT     = 0x1;
     static const uintptr_t STATE_REDIRECT_BIT = 0x2;
@@ -157,20 +157,25 @@ class ConcurrentHashTable : public CHeapObj<MT> {
     // A bucket is only one pointer with the embedded state.
     Bucket() : _first(nullptr) {};
 
+    NONCOPYABLE(Bucket);
+
+    // Copy bucket's first entry to this.
+    void assign(const Bucket& bucket);
+
     // Get the first pointer unmasked.
     Node* first() const;
 
     // Get a pointer to the const first pointer. Do not deference this
     // pointer, the pointer pointed to _may_ contain an embedded state. Such
     // pointer should only be used as input to release_assign_node_ptr.
-    Node* const volatile * first_ptr() { return &_first; }
+    const Atomic<Node*>* first_ptr() const { return &_first; }
 
     // This is the only place where a pointer to a Node pointer that potentially
     // is _first should be changed. Otherwise we destroy the embedded state. We
     // only give out pointer to const Node pointer to avoid accidental
     // assignment, thus here we must cast const part away. Method is not static
     // due to an assert.
-    void release_assign_node_ptr(Node* const volatile * dst, Node* node) const;
+    void release_assign_node_ptr(const Atomic<Node*>* dst, Node* node) const;
 
     // This method assigns this buckets last Node next ptr to input Node.
     void release_assign_last_node_next(Node* node);

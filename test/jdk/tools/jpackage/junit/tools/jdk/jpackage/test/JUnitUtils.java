@@ -22,6 +22,8 @@
  */
 package jdk.jpackage.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.Assertions;
@@ -38,7 +40,11 @@ public final class JUnitUtils {
      * @param actual   the actual array to test for equality
      */
     public static void assertArrayEquals(Object expected, Object actual) {
-        ARRAY_ASSERTERS.getOrDefault(expected.getClass().componentType(), OBJECT_ARRAY_ASSERTER).acceptUnchecked(expected, actual);
+        if (expected == null || actual == null) {
+            assertEquals(expected, actual);
+        } else {
+            ARRAY_ASSERTERS.getOrDefault(expected.getClass().componentType(), OBJECT_ARRAY_ASSERTER).acceptUnchecked(expected, actual);
+        }
     }
 
     /**
