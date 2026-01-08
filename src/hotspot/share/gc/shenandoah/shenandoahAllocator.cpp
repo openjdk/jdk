@@ -213,7 +213,7 @@ template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 template <bool ATOMIC>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion* region, bool const is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
   assert(ready_for_retire == false, "Sanity check");
-  if (ATOMIC) {
+  if (!ATOMIC) {
     shenandoah_assert_heaplocked();
   }
   HeapWord* obj = nullptr;
