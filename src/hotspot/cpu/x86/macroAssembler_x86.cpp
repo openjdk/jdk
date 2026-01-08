@@ -4749,6 +4749,203 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   return Address(rsp, scale_reg, scale_factor, offset);
 }
 
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets. Slots are pointer-sized, so is the global offset.
+  assert(is_aligned(mdp_offset, BytesPerWord), "sanity");
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+  // Scale down to optimize encoding. Slots are pointer-sized.
+  assert(is_aligned(base_receiver_offset,   BytesPerWord), "sanity");
+  assert(is_aligned(end_receiver_offset,    BytesPerWord), "sanity");
+  assert(is_aligned(poly_count_offset,      BytesPerWord), "sanity");
+  assert(is_aligned(receiver_step,          BytesPerWord), "sanity");
+  assert(is_aligned(receiver_to_count_step, BytesPerWord), "sanity");
+  base_receiver_offset   >>= LogBytesPerWord;
+  end_receiver_offset    >>= LogBytesPerWord;
+  poly_count_offset      >>= LogBytesPerWord;
+  receiver_step          >>= LogBytesPerWord;
+  receiver_to_count_step >>= LogBytesPerWord;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert((offset << LogBytesPerWord) == real_recv_offset, "receiver slot math");
+    assert((count_offset << LogBytesPerWord) == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset << LogBytesPerWord == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    addptr(Address(mdp, poly_count_offset, Address::times_ptr), DataLayout::counter_increment);
+    return;
+  }
+
+  Register offset = rscratch1;
+
+  Label L_loop_search_receiver, L_loop_search_empty;
+  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //   goto polymorphic
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // polymorphic:
+  //   count++;
+  //   return
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  movptr(offset, base_receiver_offset);
+  bind(L_loop_search_receiver);
+    cmpptr(recv, Address(mdp, offset, Address::times_ptr));
+    jccb(Assembler::equal, L_found_recv);
+  addptr(offset, receiver_step);
+  cmpptr(offset, end_receiver_offset);
+  jccb(Assembler::notEqual, L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is full
+  movptr(offset, base_receiver_offset);
+  bind(L_loop_search_empty);
+    cmpptr(Address(mdp, offset, Address::times_ptr), NULL_WORD);
+    jccb(Assembler::equal, L_found_empty);
+  addptr(offset, receiver_step);
+  cmpptr(offset, end_receiver_offset);
+  jccb(Assembler::notEqual, L_loop_search_empty);
+  jmpb(L_polymorphic);
+
+  // Slow: try to install receiver
+  bind(L_found_empty);
+
+  // Atomically swing receiver slot: null -> recv.
+  //
+  // The update code uses CAS, which wants RAX register specifically, *and* it needs
+  // other important registers untouched, as they form the address. Therefore, we need
+  // to shift any important registers from RAX into some other spare register. If we
+  // have a spare register, we are forced to save it on stack here.
+
+  Register spare_reg = noreg;
+  Register shifted_mdp = mdp;
+  Register shifted_recv = recv;
+  if (recv == rax || mdp == rax) {
+    spare_reg = (recv != rbx && mdp != rbx) ? rbx :
+                (recv != rcx && mdp != rcx) ? rcx :
+                rdx;
+    assert_different_registers(mdp, recv, offset, spare_reg);
+
+    push(spare_reg);
+    if (recv == rax) {
+      movptr(spare_reg, recv);
+      shifted_recv = spare_reg;
+    } else {
+      assert(mdp == rax, "Remaining case");
+      movptr(spare_reg, mdp);
+      shifted_mdp = spare_reg;
+    }
+  } else {
+    push(rax);
+  }
+
+  // None of the important registers are in RAX after this shuffle.
+  assert_different_registers(rax, shifted_mdp, shifted_recv, offset);
+
+  xorptr(rax, rax);
+  cmpxchgptr(shifted_recv, Address(shifted_mdp, offset, Address::times_ptr));
+
+  // Unshift registers.
+  if (recv == rax || mdp == rax) {
+    movptr(rax, spare_reg);
+    pop(spare_reg);
+  } else {
+    pop(rax);
+  }
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  jmpb(L_restart);
+
+  // Counter updates:
+
+  // Increment polymorphic counter instead of receiver slot.
+  bind(L_polymorphic);
+  movptr(offset, poly_count_offset);
+  jmpb(L_count_update);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  addptr(offset, receiver_to_count_step);
+
+  bind(L_count_update);
+  addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
+}
+
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
@@ -6054,46 +6251,32 @@ void MacroAssembler::evpbroadcast(BasicType type, XMMRegister dst, Register src,
   }
 }
 
-// Encode given char[]/byte[] to byte[] in ISO_8859_1 or ASCII
-//
-// @IntrinsicCandidate
-// int sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(
-//         char[] sa, int sp, byte[] da, int dp, int len) {
-//     int i = 0;
-//     for (; i < len; i++) {
-//         char c = sa[sp++];
-//         if (c > '\u00FF')
-//             break;
-//         da[dp++] = (byte) c;
-//     }
-//     return i;
-// }
-//
-// @IntrinsicCandidate
-// int java.lang.StringCoding.encodeISOArray0(
-//         byte[] sa, int sp, byte[] da, int dp, int len) {
-//   int i = 0;
-//   for (; i < len; i++) {
-//     char c = StringUTF16.getChar(sa, sp++);
-//     if (c > '\u00FF')
-//       break;
-//     da[dp++] = (byte) c;
-//   }
-//   return i;
-// }
-//
-// @IntrinsicCandidate
-// int java.lang.StringCoding.encodeAsciiArray0(
-//         char[] sa, int sp, byte[] da, int dp, int len) {
-//   int i = 0;
-//   for (; i < len; i++) {
-//     char c = sa[sp++];
-//     if (c >= '\u0080')
-//       break;
-//     da[dp++] = (byte) c;
-//   }
-//   return i;
-// }
+// encode char[] to byte[] in ISO_8859_1 or ASCII
+   //@IntrinsicCandidate
+   //private static int implEncodeISOArray(byte[] sa, int sp,
+   //byte[] da, int dp, int len) {
+   //  int i = 0;
+   //  for (; i < len; i++) {
+   //    char c = StringUTF16.getChar(sa, sp++);
+   //    if (c > '\u00FF')
+   //      break;
+   //    da[dp++] = (byte)c;
+   //  }
+   //  return i;
+   //}
+   //
+   //@IntrinsicCandidate
+   //private static int implEncodeAsciiArray(char[] sa, int sp,
+   //    byte[] da, int dp, int len) {
+   //  int i = 0;
+   //  for (; i < len; i++) {
+   //    char c = sa[sp++];
+   //    if (c >= '\u0080')
+   //      break;
+   //    da[dp++] = (byte)c;
+   //  }
+   //  return i;
+   //}
 void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   XMMRegister tmp1Reg, XMMRegister tmp2Reg,
   XMMRegister tmp3Reg, XMMRegister tmp4Reg,
