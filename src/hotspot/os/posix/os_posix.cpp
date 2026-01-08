@@ -457,6 +457,10 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
     return nullptr;
   }
+
+  // The requested address should be the same as the returned address when using MAP_FIXED
+  // as per POSIX.
+  assert(base == nullptr || addr == base, "base should equal addr when using MAP_FIXED");
   return addr;
 }
 
