@@ -720,13 +720,46 @@ public final class Operations {
                 // TODO: enforce precision instead of just making it non-deterministic?
                 ops.add(Expression.make(type, "", type, ".pow(", type.elementType, ")", WITH_NONDETERMINISTIC_RESULT));
                 ops.add(Expression.make(type, "", type, ".pow(", type, ")", WITH_NONDETERMINISTIC_RESULT));
-                ops.add(Expression.make(type, "", type, ".sqrt(", type, ")"));
+                ops.add(Expression.make(type, "", type, ".sqrt()"));
             }
 
             ops.add(Expression.make(type.shuffleType, "", type, ".toShuffle()"));
 
             // ----------------- MaskVector --------------------
-            // TODO: ops
+            // skip fromValues, too many inputs
+            // skip fromArray
+            ops.add(Expression.make(type.maskType, "VectorMask.fromLong(" + type.speciesName + ", ", LONGS, ")"));
+            for (var type2 : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
+                var mask = type.shuffleType;
+                var mask2 = type2.shuffleType;
+                if (type.length == type2.length) {
+                    ops.add(Expression.make(mask, "((" + mask.name() + ")", mask2 , ".cast(" + type.speciesName + "))"));
+                }
+            }
+            ops.add(Expression.make(LONGS, "", type.maskType , ".toLong()"));
+            // skip toArray
+            // skip intoArray
+            ops.add(Expression.make(BOOLEANS, "", type.maskType , ".anyTrue()"));
+            ops.add(Expression.make(BOOLEANS, "", type.maskType , ".allTrue()"));
+            ops.add(Expression.make(INTS, "", type.maskType , ".trueCount()"));
+            ops.add(Expression.make(INTS, "", type.maskType , ".firstTrue()"));
+            ops.add(Expression.make(INTS, "", type.maskType , ".lastTrue()"));
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".and(", type.maskType, ")"));
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".or(", type.maskType, ")"));
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".xor(", type.maskType, ")"));
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".andNot(", type.maskType, ")"));
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".eq(", type.maskType, ")"));
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".not()"));
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".indexInRange(", INTS, ", ", INTS,")"));
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".indexInRange(", LONGS, ", ", LONGS,")"));
+            ops.add(Expression.make(type, "", type.maskType , ".toVector()"));
+            ops.add(Expression.make(BOOLEANS, "", type.maskType , ".laneIsSet(", INTS, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
+            ops.add(Expression.make(BOOLEANS, "", type.maskType , ".laneIsSet(", INTS, " & " + (type.length-1) + ")"));
+            // skip check
+            // skip toString
+            // skip equals
+            // skip hashCode
+            ops.add(Expression.make(type.maskType, "", type.maskType , ".compress()"));
 
             // ----------------- ShuffleVector --------------------
             for (var type2 : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
