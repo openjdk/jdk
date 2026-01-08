@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ Java_GetXSpace_getSpace0
         BOOL hres = pfnGetDiskSpaceInformation(path, &diskSpaceInfo);
         (*env)->ReleaseStringChars(env, root, strchars);
         if (FAILED(hres)) {
-            JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+            JNU_ThrowByNameWithLastError(env, "java/io/IOException",
                                          "GetDiskSpaceInformationW");
             return totalSpaceIsEstimated;
         }
@@ -113,7 +113,7 @@ Java_GetXSpace_getSpace0
             &totalNumberOfBytes, &totalNumberOfFreeBytes);
         (*env)->ReleaseStringChars(env, root, strchars);
         if (FAILED(hres)) {
-            JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+            JNU_ThrowByNameWithLastError(env, "java/io/IOException",
                                          "GetDiskFreeSpaceExW");
             return totalSpaceIsEstimated;
         }
@@ -131,8 +131,7 @@ Java_GetXSpace_getSpace0
     char* chars = (char*)malloc((len + 1)*sizeof(char));
     if (chars == NULL) {
         (*env)->ReleaseStringChars(env, root, strchars);
-        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
-                                     "malloc");
+        JNU_ThrowOutOfMemoryError(env, "malloc");
         return JNI_FALSE;
     }
 
@@ -146,7 +145,7 @@ Java_GetXSpace_getSpace0
     int result = statfs(chars, &buf);
     free(chars);
     if (result < 0) {
-        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+        JNU_ThrowByNameWithLastError(env, "java/io/IOException",
                                      strerror(errno));
         return totalSpaceIsEstimated;
     }
