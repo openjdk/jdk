@@ -87,6 +87,7 @@ import javax.lang.model.util.*;
  * @jls 8.9 Enum Classes
  * @jls 8.10 Record Classes
  * @jls 9.1 Interface Declarations
+ * @jls 9.5 Member Class and Interface Declarations
  * @jls 9.6 Annotation Interfaces
  *
  * @since 1.6

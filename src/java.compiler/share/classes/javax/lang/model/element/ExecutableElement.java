@@ -38,8 +38,8 @@ import javax.lang.model.type.*;
  *
  * @see ExecutableType
  * @jls 8.4 Method Declarations
- * @jls 8.4 8.6 Instance Initializers
- * @jls 8.4 8.7 Static Initializers
+ * @jls 8.6 Instance Initializers
+ * @jls 8.7 Static Initializers
  * @jls 8.8 Constructor Declarations
  * @jls 9.4 Method Declarations
  * @jls 9.6.1 Annotation Interface Elements

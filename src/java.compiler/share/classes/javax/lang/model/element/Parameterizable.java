@@ -31,7 +31,9 @@ import java.util.List;
  * A mixin interface for an element that has type parameters.
  *
  * @jls 4.5 Parameterized Types
-
+ * @jls 8.4.4 Generic Methods
+ * @jls 8.8.4 Generic Constructors
+ *
  * @since 1.7
  */
 public interface Parameterizable extends Element {

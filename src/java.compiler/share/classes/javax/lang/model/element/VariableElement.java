@@ -37,7 +37,7 @@ import javax.lang.model.type.TypeKind;
  * @jls 8.3 Field Declaration
  * @jls 8.9.1 Enum Constants
  * @jls 8.4.1 Formal Parameters
- * @jls 8.8.1. Formal Parameters
+ * @jls 8.8.1 Formal Parameters
  * @jls 14.4 Local Variable Declarations
  * @jls 14.20 The {@code try} statement
  * @jls 14.20.3 {@code try}-with-resources

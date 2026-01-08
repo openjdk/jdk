@@ -36,6 +36,8 @@ import javax.lang.model.type.TypeVariable;
  *
  * @see TypeVariable
  * @jls 8.1.2 Generic Classes and Type Parameters
+ * @jls 8.4.4 Generic Methods
+ * @jls 8.8.4 Generic Constructors
  * @jls 9.1.2 Generic Interfaces and Type Parameters
  *
  * @since 1.6
