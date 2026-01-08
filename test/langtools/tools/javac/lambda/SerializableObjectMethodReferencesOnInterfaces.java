@@ -85,12 +85,14 @@ public class SerializableObjectMethodReferencesOnInterfaces {
                 getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
                 getImplClass java/lang/Object
                 getImplMethodSignature ()I
+                getInstantiatedMethodType (LSerializableObjectMethodReferencesOnInterfaces$Test$I1;)Ljava/lang/Integer;
                 getImplMethodKind 5
                 getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
                 getFunctionalInterfaceMethodName apply
                 getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
                 getImplClass java/lang/Object
                 getImplMethodSignature ()I
+                getInstantiatedMethodType (LSerializableObjectMethodReferencesOnInterfaces$Test$I2;)Ljava/lang/Integer;
                 """;
         if (!actual.equals(expected)) {
             throw new AssertionError(
