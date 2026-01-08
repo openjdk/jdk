@@ -49,7 +49,6 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @run main/othervm jdk.jfr.event.runtime.TestBackToBackSensitive
  */
 public class TestBackToBackSensitive {
-
     @StackTrace(false)
     static class FillEvent extends Event {
         String message;
