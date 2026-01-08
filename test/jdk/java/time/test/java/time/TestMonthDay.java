@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,26 +59,28 @@
  */
 package test.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.ObjectStreamClass;
+import java.io.ObjectStreamField;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.MonthDay;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test MonthDay.
  */
-@Test
 public class TestMonthDay extends AbstractTest {
 
     private MonthDay TEST_07_15;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         TEST_07_15 = MonthDay.of(7, 15);
     }
@@ -91,8 +93,8 @@ public class TestMonthDay extends AbstractTest {
 
     //-----------------------------------------------------------------------
     void check(MonthDay test, int m, int d) {
-        assertEquals(test.getMonth().getValue(), m);
-        assertEquals(test.getDayOfMonth(), d);
+        assertEquals(m, test.getMonth().getValue());
+        assertEquals(d, test.getDayOfMonth());
     }
 
     @Test
@@ -126,22 +128,35 @@ public class TestMonthDay extends AbstractTest {
                 MonthDay b = localDates[j];
                 if (i < j) {
                     assertTrue(a.compareTo(b) < 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), true, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertEquals(true, a.isBefore(b), a + " <=> " + b);
+                    assertEquals(false, a.isAfter(b), a + " <=> " + b);
+                    assertEquals(false, a.equals(b), a + " <=> " + b);
                 } else if (i > j) {
                     assertTrue(a.compareTo(b) > 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), true, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertEquals(false, a.isBefore(b), a + " <=> " + b);
+                    assertEquals(true, a.isAfter(b), a + " <=> " + b);
+                    assertEquals(false, a.equals(b), a + " <=> " + b);
                 } else {
-                    assertEquals(a.compareTo(b), 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), true, a + " <=> " + b);
+                    assertEquals(0, a.compareTo(b), a + " <=> " + b);
+                    assertEquals(false, a.isBefore(b), a + " <=> " + b);
+                    assertEquals(false, a.isAfter(b), a + " <=> " + b);
+                    assertEquals(true, a.equals(b), a + " <=> " + b);
                 }
             }
         }
     }
 
+
+    // Verify serialized fields types are backward compatible
+    @Test
+    public void verifySerialFields() {
+        var osc = ObjectStreamClass.lookup(MonthDay.class);
+        for (ObjectStreamField f : osc.getFields()) {
+            switch (f.getName()) {
+                case "month",
+                     "day" -> assertEquals(int.class, f.getType(), f.getName());
+                default -> fail("unknown field in MonthDay: " + f.getName());
+            }
+        }
+    }
 }

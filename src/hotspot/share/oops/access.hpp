@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,9 +128,9 @@ class Access: public AllStatic {
 
 protected:
   template <typename T>
-  static inline bool oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
-                                   arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
-                                   size_t length) {
+  static inline OopCopyResult oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
+                                            arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                            size_t length) {
     verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |
                       AS_DECORATOR_MASK | IS_ARRAY | IS_DEST_UNINITIALIZED>();
     return AccessInternal::arraycopy<decorators | INTERNAL_VALUE_IS_OOP>(src_obj, src_offset_in_bytes, src_raw,
@@ -316,19 +316,24 @@ public:
                        length);
   }
 
-  static inline bool oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
-                                   arrayOop dst_obj, size_t dst_offset_in_bytes,
-                                   size_t length) {
+  [[nodiscard]] // The caller is responsible to throw an exception on failure
+  static inline OopCopyResult oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
+                                            arrayOop dst_obj, size_t dst_offset_in_bytes,
+                                            size_t length) {
     return AccessT::oop_arraycopy(src_obj, src_offset_in_bytes, static_cast<const HeapWord*>(nullptr),
                                   dst_obj, dst_offset_in_bytes, static_cast<HeapWord*>(nullptr),
                                   length);
   }
 
   template <typename T>
-  static inline bool oop_arraycopy_raw(T* src, T* dst, size_t length) {
-    return AccessT::oop_arraycopy(nullptr, 0, src,
-                                  nullptr, 0, dst,
-                                  length);
+  static inline void oop_arraycopy_raw(T* src, T* dst, size_t length) {
+    static_assert((decorators & ARRAYCOPY_CHECKCAST) == 0);
+
+    OopCopyResult result = AccessT::oop_arraycopy(nullptr, 0, src,
+                                                  nullptr, 0, dst,
+                                                  length);
+
+    assert(result == OopCopyResult::ok, "Should never fail");
   }
 
 };

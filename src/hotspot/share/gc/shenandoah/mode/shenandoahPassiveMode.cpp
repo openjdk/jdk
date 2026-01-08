@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 
 void ShenandoahPassiveMode::initialize_flags() const {
@@ -38,7 +39,10 @@ void ShenandoahPassiveMode::initialize_flags() const {
 
   // No need for evacuation reserve with Full GC, only for Degenerated GC.
   if (!ShenandoahDegeneratedGC) {
-    SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahEvacReserve, 0);
+    if (FLAG_IS_DEFAULT(ShenandoahEvacReserve)) {
+      log_info(gc)("Heuristics sets -XX:ShenandoahEvacReserve=0");
+      FLAG_SET_DEFAULT(ShenandoahEvacReserve, 0);
+    }
   }
 
   // Disable known barriers by default.
@@ -48,11 +52,6 @@ void ShenandoahPassiveMode::initialize_flags() const {
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStackWatermarkBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCardBarrier);
-
-  // Final configuration checks
-  // Passive mode does not instantiate the machinery to support the card table.
-  // Exit if the flag has been explicitly set.
-  SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahCardBarrier);
 }
 
 ShenandoahHeuristics* ShenandoahPassiveMode::initialize_heuristics(ShenandoahSpaceInfo* space_info) const {

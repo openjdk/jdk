@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
-import java.util.regex.Pattern;
-import static java.util.stream.Collectors.joining;
 
 public class StubStatement implements Statement {
+
+    protected final Connection con;
+
+    public StubStatement(StubConnection con) {
+        this.con = con;
+    }
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
@@ -44,7 +48,7 @@ public class StubStatement implements Statement {
 
     @Override
     public void close() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        con.close();
     }
 
     @Override
@@ -169,7 +173,7 @@ public class StubStatement implements Statement {
 
     @Override
     public Connection getConnection() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return con;
     }
 
     @Override
@@ -251,7 +255,4 @@ public class StubStatement implements Statement {
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-
-
 }

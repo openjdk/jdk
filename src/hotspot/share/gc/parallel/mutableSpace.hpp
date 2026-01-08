@@ -117,21 +117,16 @@ public:
   size_t free_in_bytes() const                { return free_in_words() * HeapWordSize; }
 
   // Size computations.  Sizes are in heapwords.
-  virtual size_t used_in_words() const                    { return pointer_delta(top(), bottom()); }
-  virtual size_t free_in_words() const                    { return pointer_delta(end(),    top()); }
-  virtual size_t tlab_capacity(Thread* thr) const         { return capacity_in_bytes();            }
-  virtual size_t tlab_used(Thread* thr) const             { return used_in_bytes();                }
-  virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
+  virtual size_t used_in_words() const         { return pointer_delta(top(), bottom()); }
+  virtual size_t free_in_words() const         { return pointer_delta(end(),    top()); }
+  virtual size_t tlab_capacity() const         { return capacity_in_bytes();            }
+  virtual size_t tlab_used() const             { return used_in_bytes();                }
+  virtual size_t unsafe_max_tlab_alloc() const { return free_in_bytes();                }
 
   // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);
   // Optional deallocation. Used in NUMA-allocator.
   bool cas_deallocate(HeapWord *obj, size_t size);
-  // Return true if this space needs to be expanded in order to satisfy an
-  // allocation request of the indicated size.  Concurrent allocations and
-  // resizes may change the result of a later call.  Used by oldgen allocator.
-  // precondition: holding PSOldGenExpand_lock if not VM thread
-  bool needs_expand(size_t word_size) const;
 
   // Iteration.
   void oop_iterate(OopIterateClosure* cl);

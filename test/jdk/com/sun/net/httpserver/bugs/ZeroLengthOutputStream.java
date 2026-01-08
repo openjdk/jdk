@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class ZeroLengthOutputStream
 {
@@ -101,7 +102,7 @@ public class ZeroLengthOutputStream
         public void handle(HttpExchange t) throws IOException {
             try {
                 OutputStream os = t.getResponseBody();
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, RSPBODY_EMPTY);
                 os.write(new byte[0]);
                 os.close();
                 System.out.println("Output stream closed");

@@ -28,11 +28,11 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.compiler2.enabled & vm.opt.SegmentedCodeCache != false & vm.opt.TieredCompilation != false
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions
- *                   -XX:+NMethodRelocation compiler.whitebox.StressNMethodRelocation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.StressNMethodRelocation
  */
 
 package compiler.whitebox;
@@ -45,27 +45,27 @@ import jdk.test.whitebox.code.NMethod;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Random;
 
 public class StressNMethodRelocation {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final int C2_LEVEL = 4;
-    private static final int ACTIVE_METHODS = 1024;
 
-    private static TestMethod[] methods;
+    private static ArrayList<TestMethod> methods;
     private static byte[] num1;
     private static byte[] num2;
 
-    private static long DURATION = 60_000;
+    private static long COMPILE_DURATION = 30_000;
+    private static long RUN_DURATION = 60_000;
 
     public static void main(String[] args) throws Exception {
         // Initialize defaults
         initNums();
 
         // Generate compiled code
-        methods = new TestMethod[ACTIVE_METHODS];
+        methods = new ArrayList<>();
         generateCode(methods);
 
         // Create thread that runs compiled methods
@@ -108,13 +108,15 @@ public class StressNMethodRelocation {
         num2 = genNum(random, digitCount);
     }
 
-    private static void generateCode(TestMethod[] m) throws Exception {
+    private static void generateCode(ArrayList<TestMethod> m) throws Exception {
         byte[] result = new byte[num1.length + 1];
 
-        for (int i = 0; i < ACTIVE_METHODS; ++i) {
-            m[i] = new TestMethod();
-            m[i].profile(num1, num2, result);
-            m[i].compileWithC2();
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < COMPILE_DURATION) {
+            TestMethod testMethod = new TestMethod();
+            testMethod.profile(num1, num2, result);
+            testMethod.compileWithC2();
+            m.add(testMethod);
         }
     }
 
@@ -194,7 +196,7 @@ public class StressNMethodRelocation {
         // Move nmethod back and forth between NonProfiled and Profiled code heaps
         public void run() {
             long startTime = System.currentTimeMillis();
-            while (System.currentTimeMillis() - startTime < DURATION) {
+            while (System.currentTimeMillis() - startTime < RUN_DURATION) {
                 // Relocate NonProfiled to Profiled
                 CodeBlob[] nonProfiledBlobs = CodeBlob.getCodeBlobs(BlobType.MethodNonProfiled);
                 for (CodeBlob blob : nonProfiledBlobs) {
@@ -220,7 +222,7 @@ public class StressNMethodRelocation {
         public void run() {
             try {
                 long startTime = System.currentTimeMillis();
-                while (System.currentTimeMillis() - startTime < DURATION) {
+                while (System.currentTimeMillis() - startTime < RUN_DURATION) {
                     callMethods();
                 }
             } catch (Exception e) {

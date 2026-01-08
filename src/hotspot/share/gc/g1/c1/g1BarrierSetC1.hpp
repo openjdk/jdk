@@ -27,7 +27,7 @@
 
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
-#include "gc/shared/c1/modRefBarrierSetC1.hpp"
+#include "gc/shared/c1/cardTableBarrierSetC1.hpp"
 
 class G1PreBarrierStub: public CodeStub {
   friend class G1BarrierSetC1;
@@ -93,7 +93,7 @@ class G1PreBarrierStub: public CodeStub {
 
 class CodeBlob;
 
-class G1BarrierSetC1 : public ModRefBarrierSetC1 {
+class G1BarrierSetC1 : public CardTableBarrierSetC1 {
  protected:
   CodeBlob* _pre_barrier_c1_runtime_code_blob;
 

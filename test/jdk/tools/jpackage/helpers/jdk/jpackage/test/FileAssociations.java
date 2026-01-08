@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
-import jdk.jpackage.internal.util.PathUtils;
 
 
 public final class FileAssociations {
@@ -75,13 +74,6 @@ public final class FileAssociations {
         return this;
     }
 
-    Path getLinuxIconFileName() {
-        if (icon == null) {
-            return null;
-        }
-        return Path.of(getMime().replace('/', '-') + PathUtils.getSuffix(icon));
-    }
-
     Path getPropertiesFile() {
         return file;
     }
@@ -92,6 +84,10 @@ public final class FileAssociations {
 
     String getMime() {
         return "application/x-jpackage-" + suffixName;
+    }
+
+    boolean hasIcon() {
+        return icon != null;
     }
 
     public void applyTo(PackageTest test) {

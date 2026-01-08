@@ -60,10 +60,10 @@ class G1Policy: public CHeapObj<mtGC> {
 
   static G1IHOPControl* create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                                             const G1Predictions* predictor);
-  // Update the IHOP control with necessary statistics.
-  void update_ihop_prediction(double mutator_time_s,
+  // Update the IHOP control with the necessary statistics. Returns true if there
+  // has been a significant update to the prediction.
+  bool update_ihop_prediction(double mutator_time_s,
                               bool this_gc_was_young_only);
-  void report_ihop_statistics();
 
   G1Predictions _predictor;
   G1Analytics* _analytics;
@@ -269,7 +269,7 @@ public:
 private:
   void abandon_collection_set_candidates();
   // Sets up marking if proper conditions are met.
-  void maybe_start_marking();
+  void maybe_start_marking(size_t allocation_word_size);
   // Manage time-to-mixed tracking.
   void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
@@ -307,20 +307,22 @@ public:
   void record_young_gc_pause_start();
   void record_young_gc_pause_end(bool evacuation_failed);
 
-  bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
+  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size);
 
-  bool concurrent_operation_is_full_mark(const char* msg = nullptr);
+  bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
 
   bool about_to_start_mixed_phase() const;
 
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_pause_start_time();
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure);
+  void record_young_collection_end(bool concurrent_operation_is_full_mark,
+                                   bool allocation_failure,
+                                   size_t allocation_word_size);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
-  void record_full_collection_end();
+  void record_full_collection_end(size_t allocation_word_size);
 
   // Must currently be called while the world is stopped.
   void record_concurrent_mark_init_end();
@@ -365,6 +367,7 @@ public:
   uint young_list_target_length() const { return AtomicAccess::load(&_young_list_target_length); }
 
   bool should_allocate_mutator_region() const;
+  bool should_expand_on_mutator_allocation() const;
 
   bool use_adaptive_young_list_length() const;
 

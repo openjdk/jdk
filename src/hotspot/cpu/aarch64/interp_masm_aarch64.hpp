@@ -45,6 +45,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   virtual void call_VM_base(Register oop_result,
                             Register java_thread,
                             Register last_java_sp,
+                            Label*   return_pc,
                             address  entry_point,
                             int number_of_arguments,
                             bool check_exceptions);
@@ -58,11 +59,24 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_earlyret_value(TosState state);
 
+  // Use for vthread preemption
   void call_VM_preemptable(Register oop_result,
                            address entry_point,
-                           Register arg_1);
+                           Register arg_1,
+                           bool check_exceptions = true);
+  void call_VM_preemptable(Register oop_result,
+                           address entry_point,
+                           Register arg_1,
+                           Register arg_2,
+                           bool check_exceptions = true);
   void restore_after_resume(bool is_native);
+ private:
+  void call_VM_preemptable_helper(Register oop_result,
+                                  address entry_point,
+                                  int number_of_arguments,
+                                  bool check_exceptions);
 
+ public:
   void jump_to_entry(address entry);
 
   virtual void check_and_handle_popframe(Register java_thread);

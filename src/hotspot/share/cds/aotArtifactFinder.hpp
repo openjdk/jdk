@@ -39,7 +39,7 @@ class TypeArrayKlass;
 // It also decides what Klasses must be cached in aot-initialized state.
 //
 // ArchiveBuilder uses [1] as roots to scan for all MetaspaceObjs that need to be cached.
-// ArchiveHeapWriter uses [2] to create an image of the archived heap.
+// HeapShared uses [2] to create an image of the archived heap.
 //
 // [1] is stored in _all_cached_classes in aotArtifactFinder.cpp.
 // [2] is stored in HeapShared::archived_object_cache().
