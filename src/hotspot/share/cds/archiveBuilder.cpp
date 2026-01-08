@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,11 +271,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   aot_log_info(aot)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit);
-#if INCLUDE_CDS_JAVA_HEAP
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    ClassLoaderDataShared::iterate_symbols(&doit);
-  }
-#endif
   doit.finish();
 
   if (CDSConfig::is_dumping_static_archive()) {
@@ -615,15 +610,6 @@ void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
   aot_log_info(aot)("Allocating RW objects ... ");
   make_shallow_copies(&_rw_region, &_rw_src_objs);
-
-#if INCLUDE_CDS_JAVA_HEAP
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    // Archive the ModuleEntry's and PackageEntry's of the 3 built-in loaders
-    char* start = rw_region()->top();
-    ClassLoaderDataShared::allocate_archived_tables();
-    alloc_stats()->record_modules(rw_region()->top() - start, /*read_only*/false);
-  }
-#endif
 }
 
 void ArchiveBuilder::dump_ro_metadata() {
@@ -632,15 +618,6 @@ void ArchiveBuilder::dump_ro_metadata() {
 
   start_dump_region(&_ro_region);
   make_shallow_copies(&_ro_region, &_ro_src_objs);
-
-#if INCLUDE_CDS_JAVA_HEAP
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    char* start = ro_region()->top();
-    ClassLoaderDataShared::init_archived_tables();
-    alloc_stats()->record_modules(ro_region()->top() - start, /*read_only*/true);
-  }
-#endif
-
   RegeneratedClasses::record_regenerated_objects();
 }
 

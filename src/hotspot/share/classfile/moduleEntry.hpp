@@ -69,11 +69,8 @@ private:
                                        // for shared classes from this module
   Symbol*          _name;              // name of this module
   ClassLoaderData* _loader_data;
+  AOTGrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
 
-  union {
-    AOTGrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
-    Array<ModuleEntry*>* _archived_reads; // List of readable modules stored in the CDS archive
-  };
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
   CDS_ONLY(int _shared_path_index;)    // >=0 if classes in this module are in CDS archive
@@ -82,7 +79,6 @@ private:
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
   bool _is_open;                       // whether the packages in the module are all unqualifiedly exported
   bool _is_patched;                    // whether the module is patched via --patch-module
-  DEBUG_ONLY(bool _reads_is_archived);
   CDS_JAVA_HEAP_ONLY(int _archived_module_index;)
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
@@ -122,12 +118,10 @@ public:
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
   AOTGrowableArray<ModuleEntry*>* reads() const {
-    assert(!_reads_is_archived, "sanity");
     return _reads;
   }
   void set_reads(AOTGrowableArray<ModuleEntry*>* r) {
     _reads = r;
-    DEBUG_ONLY(_reads_is_archived = false);
   }
   void pack_reads() {
     if (_reads != nullptr) {
@@ -135,14 +129,6 @@ public:
     }
   }
 
-  Array<ModuleEntry*>* archived_reads() const {
-    assert(_reads_is_archived, "sanity");
-    return _archived_reads;
-  }
-  void set_archived_reads(Array<ModuleEntry*>* r) {
-    _archived_reads = r;
-    DEBUG_ONLY(_reads_is_archived = true);
-  }
   void             add_read(ModuleEntry* m);
   void             set_read_walk_required(ClassLoaderData* m_loader_data);
 
@@ -212,19 +198,11 @@ public:
 
 #if INCLUDE_CDS_JAVA_HEAP
   bool should_be_archived() const;
-  void iterate_symbols(MetaspaceClosure* closure);
-  ModuleEntry* allocate_archived_entry() const;
-  void init_as_archived_entry();
   void remove_unshareable_info();
-  static ModuleEntry* get_archived_entry(ModuleEntry* orig_entry);
-  bool has_been_archived();
-  static Array<ModuleEntry*>* write_growable_array(AOTGrowableArray<ModuleEntry*>* array);
-  static AOTGrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
   void preload_archived_oops();
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
-  static void verify_archived_module_entries() PRODUCT_RETURN;
 #endif
 };
 
@@ -290,10 +268,7 @@ public:
   void verify();
 
 #if INCLUDE_CDS_JAVA_HEAP
-  void iterate_symbols(MetaspaceClosure* closure);
-  Array<ModuleEntry*>* allocate_archived_entries();
   Array<ModuleEntry*>* build_aot_table(ClassLoaderData* loader_data, TRAPS);
-  void init_archived_entries(Array<ModuleEntry*>* archived_modules);
   void load_archived_entries(ClassLoaderData* loader_data,
                              Array<ModuleEntry*>* archived_modules);
   void restore_archived_oops(ClassLoaderData* loader_data,

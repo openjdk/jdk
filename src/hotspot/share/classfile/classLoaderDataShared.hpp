@@ -45,9 +45,6 @@ public:
   static void remove_unshareable_info() NOT_CDS_JAVA_HEAP_RETURN;
 #if INCLUDE_CDS_JAVA_HEAP
   static void ensure_module_entry_tables_exist();
-  static void allocate_archived_tables();
-  static void iterate_symbols(MetaspaceClosure* closure);
-  static void init_archived_tables();
   static void serialize(SerializeClosure* f);
   static void clear_archived_oops();
   static void restore_archived_entries_for_null_class_loader_data();

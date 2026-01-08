@@ -223,11 +223,7 @@ public:
 
 #if INCLUDE_CDS_JAVA_HEAP
   bool should_be_archived() const;
-  void iterate_symbols(MetaspaceClosure* closure);
-  PackageEntry* allocate_archived_entry() const;
-  void init_as_archived_entry();
   void remove_unshareable_info();
-  static PackageEntry* get_archived_entry(PackageEntry* orig_entry);
   void load_from_archive();
 #endif
 
@@ -286,10 +282,7 @@ public:
   void print(outputStream* st = tty);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  void iterate_symbols(MetaspaceClosure* closure);
   Array<PackageEntry*>* build_aot_table(ClassLoaderData* loader_data, TRAPS);
-  Array<PackageEntry*>* allocate_archived_entries();
-  void init_archived_entries(Array<PackageEntry*>* archived_packages);
   void load_archived_entries(Array<PackageEntry*>* archived_packages);
 #endif
 };

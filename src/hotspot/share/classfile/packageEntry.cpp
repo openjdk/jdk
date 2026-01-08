@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotGrowableArray.inline.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -184,7 +185,7 @@ void PackageEntry::purge_qualified_exports() {
 }
 
 void PackageEntry::delete_qualified_exports() {
-  if (_qualified_exports != nullptr) {
+  if (_qualified_exports != nullptr && !AOTMetaspace::in_aot_cache(_qualified_exports)) {
     delete _qualified_exports;
   }
   _qualified_exports = nullptr;
@@ -225,62 +226,8 @@ PackageEntryTable::~PackageEntryTable() {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-typedef HashTable<
-  const PackageEntry*,
-  PackageEntry*,
-  557, // prime number
-  AnyObj::C_HEAP> ArchivedPackageEntries;
-static ArchivedPackageEntries* _archived_packages_entries = nullptr;
-
 bool PackageEntry::should_be_archived() const {
   return module()->should_be_archived();
-}
-
-PackageEntry* PackageEntry::allocate_archived_entry() const {
-  precond(should_be_archived());
-  PackageEntry* archived_entry = (PackageEntry*)ArchiveBuilder::rw_region_alloc(sizeof(PackageEntry));
-  memcpy((void*)archived_entry, (void*)this, sizeof(PackageEntry));
-
-  if (_archived_packages_entries == nullptr) {
-    _archived_packages_entries = new (mtClass)ArchivedPackageEntries();
-  }
-  assert(_archived_packages_entries->get(this) == nullptr, "Each PackageEntry must not be shared across PackageEntryTables");
-  _archived_packages_entries->put(this, archived_entry);
-
-  return archived_entry;
-}
-
-PackageEntry* PackageEntry::get_archived_entry(PackageEntry* orig_entry) {
-  PackageEntry** ptr = _archived_packages_entries->get(orig_entry);
-  if (ptr != nullptr) {
-    return *ptr;
-  } else {
-    return nullptr;
-  }
-}
-
-void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
-  closure->push(&_name);
-}
-
-void PackageEntry::init_as_archived_entry() {
-  Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_growable_array(_qualified_exports);
-
-  _name = ArchiveBuilder::get_buffered_symbol(_name);
-  _module = ModuleEntry::get_archived_entry(_module);
-  _qualified_exports = (AOTGrowableArray<ModuleEntry*>*)archived_qualified_exports;
-  _defined_by_cds_in_class_path = 0;
-  JFR_ONLY(set_trace_id(0);) // re-init at runtime
-
-  ArchivePtrMarker::mark_pointer((address*)&_name);
-  ArchivePtrMarker::mark_pointer((address*)&_module);
-  ArchivePtrMarker::mark_pointer((address*)&_qualified_exports);
-
-  LogStreamHandle(Info, aot, package) st;
-  if (st.is_enabled()) {
-    st.print("archived ");
-    print(&st);
-  }
 }
 
 void PackageEntry::remove_unshareable_info() {
@@ -292,51 +239,12 @@ void PackageEntry::remove_unshareable_info() {
 }
 
 void PackageEntry::load_from_archive() {
-  _qualified_exports = ModuleEntry::restore_growable_array((Array<ModuleEntry*>*)_qualified_exports);
   JFR_ONLY(INIT_ID(this);)
 }
 
 static int compare_package_by_name(PackageEntry* a, PackageEntry* b) {
   assert(a == b || a->name() != b->name(), "no duplicated names");
   return a->name()->fast_compare(b->name());
-}
-
-void PackageEntryTable::iterate_symbols(MetaspaceClosure* closure) {
-  auto syms = [&] (const SymbolHandle& key, PackageEntry*& p) {
-      p->iterate_symbols(closure);
-  };
-  _table.iterate_all(syms);
-}
-
-Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
-  // First count the packages in named modules
-  int n = 0;
-  auto count = [&] (const SymbolHandle& key, PackageEntry*& p) {
-    if (p->should_be_archived()) {
-      n++;
-    }
-  };
-  _table.iterate_all(count);
-
-  Array<PackageEntry*>* archived_packages = ArchiveBuilder::new_rw_array<PackageEntry*>(n);
-  // reset n
-  n = 0;
-  auto grab = [&] (const SymbolHandle& key, PackageEntry*& p) {
-    if (p->should_be_archived()) {
-      archived_packages->at_put(n++, p);
-    }
-  };
-  _table.iterate_all(grab);
-
-  if (n > 1) {
-    // Always allocate in the same order to produce deterministic archive.
-    QuickSort::sort(archived_packages->data(), n, compare_package_by_name);
-  }
-  for (int i = 0; i < n; i++) {
-    archived_packages->at_put(i, archived_packages->at(i)->allocate_archived_entry());
-    ArchivePtrMarker::mark_pointer((address*)archived_packages->adr_at(i));
-  }
-  return archived_packages;
 }
 
 Array<PackageEntry*>* PackageEntryTable::build_aot_table(ClassLoaderData* loader_data, TRAPS) {
@@ -372,14 +280,6 @@ Array<PackageEntry*>* PackageEntryTable::build_aot_table(ClassLoaderData* loader
   }
 
   return archived_packages;
-}
-
-
-void PackageEntryTable::init_archived_entries(Array<PackageEntry*>* archived_packages) {
-  for (int i = 0; i < archived_packages->length(); i++) {
-    PackageEntry* archived_entry = archived_packages->at(i);
-    archived_entry->init_as_archived_entry();
-  }
 }
 
 void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_packages) {

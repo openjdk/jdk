@@ -2795,24 +2795,9 @@ void InstanceKlass::remove_java_mirror() {
 
 void InstanceKlass::init_shared_package_entry() {
   assert(CDSConfig::is_dumping_archive(), "must be");
-#if !INCLUDE_CDS_JAVA_HEAP
-  _package_entry = nullptr;
-#else
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    if (defined_by_other_loaders()) {
-      _package_entry = nullptr;
-    } else {
-      _package_entry = PackageEntry::get_archived_entry(ArchiveBuilder::current()->get_source_addr(this)->_package_entry); // FIXME
-    }
-  } else if (CDSConfig::is_dumping_dynamic_archive() &&
-             CDSConfig::is_using_full_module_graph() &&
-             AOTMetaspace::in_aot_cache(_package_entry)) {
-    // _package_entry is an archived package in the base archive. Leave it as is.
-  } else {
+  if (!CDSConfig::is_dumping_full_module_graph() || defined_by_other_loaders()) {
     _package_entry = nullptr;
   }
-  ArchivePtrMarker::mark_pointer((address**)&_package_entry);
-#endif
 }
 
 void InstanceKlass::compute_has_loops_flag_for_methods() {

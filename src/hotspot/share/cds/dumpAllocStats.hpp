@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ public:
   f(SymbolBucket) \
   f(StringHashentry) \
   f(StringBucket) \
-  f(ModulesNatives) \
   f(CppVTables) \
   f(Other)
 
@@ -106,11 +105,6 @@ public:
     int which = (read_only) ? RO : RW;
     _counts[which][type] ++;
     _bytes [which][type] += byte_size;
-  }
-
-  void record_modules(int byte_size, bool read_only) {
-    int which = (read_only) ? RO : RW;
-    _bytes [which][ModulesNativesType] += byte_size;
   }
 
   void record_other_type(int byte_size, bool read_only) {
