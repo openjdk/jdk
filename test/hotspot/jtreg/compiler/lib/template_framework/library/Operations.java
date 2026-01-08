@@ -411,6 +411,7 @@ public final class Operations {
         List<Expression> ops = new ArrayList<>();
 
         for (var type : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
+            // ----------------- IntVector, FloatVector, ... --------------------
             ops.add(Expression.make(type, "", type, ".abs()"));
             ops.add(Expression.make(type, "", type, ".add(", type.elementType, ")"));
             ops.add(Expression.make(type, "", type, ".add(", type.elementType, ", ", type.maskType, ")"));
@@ -445,7 +446,7 @@ public final class Operations {
                 ops.add(Expression.make(type, "((" + type.name() + ")", type2 , ".castShape(" + type.speciesName + ", ", INTS, "))", WITH_OUT_OF_BOUNDS_EXCEPTION));
             }
 
-            // Note: check works on class / species, leaving them out.
+            // skip check
 
             for (VOP cmp : VECTOR_CMP) {
                 if (cmp.elementTypes().contains(type.elementType)) {
@@ -617,12 +618,14 @@ public final class Operations {
 
             ops.add(Expression.make(type.maskType, "", type, ".eq(", type.elementType, ")"));
             ops.add(Expression.make(type.maskType, "", type, ".eq(", type, ")"));
-
+            // skip equals
             ops.add(Expression.make(type, "", type, ".expand(", type.maskType, ")"));
-
-            // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment. Also: toArray and type variants.
-            // It is not clear yet if these are to be modeled as Expressions, or rather statements.
-
+            // skip fromArray
+            // skip fromMemorySegment
+            // skip hashCode
+            // skip intoArray
+            // skip intoMemorySegment
+            // TODO: memory accesses. It is not clear yet if these are to be modeled as Expressions, or rather statements.
             ops.add(Expression.make(type.elementType, "", type, ".lane(", INTS, " & " + (type.length-1) + ")"));
             ops.add(Expression.make(type.elementType, "", type, ".lane(", INTS, ")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
 
@@ -666,6 +669,8 @@ public final class Operations {
             ops.add(Expression.make(type.maskType, "", type, ".lt(", type.elementType, ")"));
             ops.add(Expression.make(type.maskType, "", type, ".lt(", type, ")"));
 
+            ops.add(Expression.make(type.maskType, "", type, ".maskAll(", BOOLEANS, ")"));
+
             ops.add(Expression.make(type, "", type, ".max(", type.elementType, ")"));
             ops.add(Expression.make(type, "", type, ".max(", type, ")"));
             ops.add(Expression.make(type, "", type, ".min(", type.elementType, ")"));
@@ -703,6 +708,8 @@ public final class Operations {
                 }
             }
 
+            // skip toArray and friends
+
             ops.add(Expression.make(type, "", type, ".unslice(", INTS, " & " + (type.length-1) + ")"));
             ops.add(Expression.make(type, "", type, ".unslice(", INTS, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
             ops.add(Expression.make(type, "", type, ".unslice(", INTS, " & " + (type.length-1) + ", ", type, ", ", INTS, " & 2)"));
@@ -724,6 +731,8 @@ public final class Operations {
             }
 
             ops.add(Expression.make(type.shuffleType, "", type, ".toShuffle()"));
+
+            ops.add(Expression.make(type, type.name() + ".zero(" + type.speciesName + ")"));
 
             // ----------------- MaskVector --------------------
             // skip fromValues, too many inputs
