@@ -731,8 +731,7 @@ public final class Operations {
             }
 
             ops.add(Expression.make(type.shuffleType, "", type, ".toShuffle()"));
-
-            ops.add(Expression.make(type, type.name() + ".zero(" + type.speciesName + ")"));
+            // skip zero - can get it from type.con() anyway.
 
             // ----------------- MaskVector --------------------
             // skip fromValues, too many inputs
