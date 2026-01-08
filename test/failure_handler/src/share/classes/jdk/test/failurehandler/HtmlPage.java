@@ -78,6 +78,9 @@ public class HtmlPage implements AutoCloseable {
 
     private static void createStyleSheetFile(final Path destDir) throws IOException {
         final Path styleSheet = destDir.resolve(STYLE_SHEET_FILENAME);
+        if (Files.exists(styleSheet)) {
+            return;
+        }
         final String content = """
                 div { display:none;}
                 """;
@@ -86,6 +89,9 @@ public class HtmlPage implements AutoCloseable {
 
     private static void createScriptFile(final Path destDir) throws IOException {
         final Path script = destDir.resolve(SCRIPT_FILENAME);
+        if (Files.exists(script)) {
+            return;
+        }
         final String content = """
                 function doShow(e) {
                   while (e != null) {
