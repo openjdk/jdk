@@ -264,7 +264,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
 // Scan the memory graph upwards from a starting node to an arraycopy. Given an elemnt from the destination array,
 // check whether the element from the source array that was copied into the given destination element is modified
 // after the arraycopy. This assumes that the destination array is scalar replacable but the source is not.
-bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* start, const Node* mem, const intptr_t offset, PhaseGVN* phase) {
+bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* start, const Node* mem, const intptr_t offset, PhaseGVN* phase, Node_Stack* phis, const int level) {
   assert(mem != nullptr, "sanity");
   if (mem == ac) {
     return true;
@@ -272,6 +272,11 @@ bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* 
 
   // Loop in the memory graph
   if (mem == start) {
+    return false;
+  }
+
+  // Recursion too deep
+  if (level == 0) {
     return false;
   }
 
@@ -285,24 +290,37 @@ bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* 
     }
     if (const CallNode* call = proj->in(0)->isa_Call(); call != nullptr) {
       if (!call->may_modify(src_ptr_ty, phase)) {
-        return src_elem_not_modified_after_arraycopy(ac, start, call->memory(), offset, phase);
+        return src_elem_not_modified_after_arraycopy(ac, start, call->memory(), offset, phase, phis, level);
       }
 
       return false;
     }
   } else if (const MergeMemNode* mm = mem->isa_MergeMem(); mm != nullptr) {
-    return src_elem_not_modified_after_arraycopy(ac, start, mm->memory_at(src_alias_idx), offset, phase) &&
-           src_elem_not_modified_after_arraycopy(ac, start, mm->base_memory(), offset, phase); // TODO: really needed?
+    return src_elem_not_modified_after_arraycopy(ac, start, mm->memory_at(src_alias_idx), offset, phase, phis, level) &&
+           src_elem_not_modified_after_arraycopy(ac, start, mm->base_memory(), offset, phase, phis, level); // TODO: really needed?
   } else if (const StoreNode* store = mem->isa_Store(); store != nullptr) {
     const TypePtr* store_ptr_ty = store->adr_type();
     const int store_alias_idx = phase->C->get_alias_index(store_ptr_ty);
     if (store_alias_idx != src_alias_idx || offset == Type::OffsetBot || store_ptr_ty->offset() == Type::OffsetBot || offset != store_ptr_ty->offset()) {
-      return src_elem_not_modified_after_arraycopy(ac, start, store->in(StoreNode::Memory), offset, phase);
+      return src_elem_not_modified_after_arraycopy(ac, start, store->in(StoreNode::Memory), offset, phase, phis, level);
     }
 
     return false;
+  } else if (PhiNode* phi = mem->isa_Phi(); phi != nullptr) {
+    if (phis->find(phi->_idx) != nullptr) {
+      // Looped back to a previously encountered phi without modification on the memory slice.
+      return true;
+    }
+    bool result = true;
+    for (uint i = 1; i < phi->len(); i++) {
+      if (phi->in(i) == nullptr) {
+        continue;
+      }
+      phis->push(phi, phi->_idx);
+      result &= src_elem_not_modified_after_arraycopy(ac, start, phi->in(i), offset, phase, phis, level - 1);
+    }
+    return result;
   }
-  // TODO: phi
   // TODO: clear array nodes
   // TODO: SCMemProj nodes
   // TODO: StrInflatedCopy
@@ -366,15 +384,16 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, Node* sfpt, intpt
         }
       }
       // Ensure that pinning rematerialization load inside the uncommon path is safe.
+      Node_Stack stack(8);
       if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() &&
-          !src_elem_not_modified_after_arraycopy(ac, sfpt, mem, adr_type->offset(), &_igvn)) {
-        tty->print_cr("used not safe path");
+          !src_elem_not_modified_after_arraycopy(ac, sfpt, mem, adr_type->offset(), &_igvn, &stack, 10)) {
+        tty->print_cr("used not safe path, offset = %lx", offset);
         // Not safe: use control and memory from the arraycopy to ensure correct memory state.
         return make_arraycopy_load(ac, sfpt, offset, ac->control(), ac->memory(), ft, ftype, alloc);
       }
-      MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
+      MergeMemNode* mergemem = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
+      res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemem, adr, adr_type, type, bt);
     }
   }
   if (res != nullptr) {
