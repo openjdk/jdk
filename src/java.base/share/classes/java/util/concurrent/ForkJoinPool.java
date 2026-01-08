@@ -1947,28 +1947,25 @@ public class ForkJoinPool extends AbstractExecutorService
                 int i = r, step = (r >>> 16) | 1;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 scan: for (int j = n; j != 0; --j, i += step) {
-                    WorkQueue q; int qid, cap; ForkJoinTask<?>[] a;
-                    if ((q = qs[qid = i & (n - 1)]) != null &&
-                        (a = q.array) != null && (cap = a.length) > 0) {
-                        for (;;) {                        // poll queue
+                    WorkQueue q; int qid;
+                    if ((q = qs[qid = i & (n - 1)]) != null) {
+                        ForkJoinTask<?>[] a; int cap;     // poll queue
+                        while ((a = q.array) != null && (cap = a.length) > 0) {
                             int b, nb; long bp; ForkJoinTask<?> t;
                             t = (ForkJoinTask<?>)U.getReferenceAcquire(
                                 a, bp = slotOffset((cap - 1) & (b = q.base)));
                             long np = slotOffset((nb = b + 1) & (cap - 1));
                             if (q.base == b) {            // else inconsistent
                                 if (t == null) {
-                                    if (rescans > 0)      // ran or stalled
-                                        break scan;
-                                    if (q.array != a) {    // resized
-                                        rescans = 1;
-                                        break scan;
+                                    if (q.array == a) {   // else resized
+                                        if (rescans > 0)  // ran or stalled
+                                            break scan;
+                                        if (U.getReference(a, np) == null &&
+                                            U.getReference(a, bp) == null &&
+                                            (rescans >= 0 || q.top == b))
+                                            break;
+                                        rescans = 1;      // may be stalled
                                     }
-                                    if (U.getReference(a, np) == null &&
-                                        (rescans >= 0 ||
-                                         (U.getReferenceAcquire(a, bp) == null &&
-                                          q.top == q.base)))
-                                        break;
-                                    rescans = 1;          // may be stalled
                                 }
                                 else if (idle != 0) {
                                     if ((idle = tryReactivate(w)) != 0) {
