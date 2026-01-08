@@ -40,7 +40,7 @@ import org.openjdk.jmh.annotations.*;
 @Threads(1)
 
 @Fork(value = 10)
-public class OpenFileStress {
+public class OpenFileForWritingBench {
     final byte[] payload = "something".getBytes();
     final String path = System.getProperty("os.name", "unknown").toLowerCase().contains("win") ? "NUL" : "/dev/null";
 
