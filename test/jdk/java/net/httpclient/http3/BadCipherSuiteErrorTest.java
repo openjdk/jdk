@@ -65,7 +65,7 @@ public class BadCipherSuiteErrorTest implements HttpServerAdapters {
     //@Test(timeOut=5000)
     @Test
     public void test() throws Exception {
-        SSLContext sslContext = (new SimpleSSLContext()).get();
+        SSLContext sslContext = SimpleSSLContext.findSSLContext();
         ExecutorService exec = Executors.newCachedThreadPool();
         var builder = newClientBuilderForH3()
                                       .executor(exec)
@@ -80,7 +80,7 @@ public class BadCipherSuiteErrorTest implements HttpServerAdapters {
 
         HttpTestServer httpsServer = null;
         try {
-            SSLContext serverContext = (new SimpleSSLContext()).get();
+            SSLContext serverContext = SimpleSSLContext.findSSLContext();
             SSLParameters p = serverContext.getSupportedSSLParameters();
             p.setApplicationProtocols(new String[]{"h3"});
             httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, serverContext);
