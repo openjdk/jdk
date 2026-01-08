@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class PSSKeyCompatibility {
             final PEMDecoder decoder = PEMDecoder.of()
                     .withFactory(Security.getProvider(provider));
             final PrivateKey priv = decoder.decode(
-                    new PEM("PRIVATE KEY", type).toString(),
+                    type,
                     PrivateKey.class
             );
 
@@ -153,7 +153,8 @@ public class PSSKeyCompatibility {
 
     //rsa_pss_pss_sha256
     private static final String PRIVATE
-            = "MIIEvAIBADALBgkqhkiG9w0BAQoEggSoMIIEpAIBAAKCAQEAu1qb8PZ8vMrX08Gf\n"
+            = "-----BEGIN PRIVATE KEY-----\n"
+            + "MIIEvAIBADALBgkqhkiG9w0BAQoEggSoMIIEpAIBAAKCAQEAu1qb8PZ8vMrX08Gf\n"
             + "y9mx7c5NHymdPIpdDvaiYkpRfYGXp3Jpx7A0Hq01QY0OUu+0sCd5IbiVoVGqM4cq\n"
             + "r2e4eyYnbgJEF7Tg8Ipu70cOUCZLj/fYNAjvFjv4+lxQYRCZHUH+lWPDPtJWKELx\n"
             + "iIsAL5tglfyrQrdWLaOiZKlJ49DrYKU6PYqELxdQ1lw3r8iBbgGJP2podGD0rMWw\n"
@@ -178,7 +179,8 @@ public class PSSKeyCompatibility {
             + "oBcmFKelq+sLzm0IdFqndY8n5HvvBqjEaS6cmwKBgQDM5VsMKnGuqy5pozamgABu\n"
             + "/z3f8ATzPVr85LiEWP7qB9Y1JIFuTma3IVlULtab2S4rhrHqQNy6qA6Be9fKKPwE\n"
             + "TCmM/SDdolcz2d0rC2VDO+pc1RPluDpB/Ag8aHkV58azQASHHvAKBckIe7fay2t2\n"
-            + "j4FaKzM/ieY3WSapIbjf3w==";
+            + "j4FaKzM/ieY3WSapIbjf3w==\n"
+            + "-----END PRIVATE KEY-----";
 
     /*
      * Certificate: Data: Version: 3 (0x2)
