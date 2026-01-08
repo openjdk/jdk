@@ -262,7 +262,6 @@ public class GZIPInputStream extends InflaterInputStream {
             n += 2;
         }
         crc.reset();
-        assert n > 0 : "incorrect number of header bytes: " + n;
         return n;
     }
 
