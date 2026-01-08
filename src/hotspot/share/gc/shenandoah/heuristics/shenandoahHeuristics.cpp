@@ -72,7 +72,7 @@ ShenandoahHeuristics::~ShenandoahHeuristics() {
   FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
 }
 
-ssize_t ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
+size_t ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(collection_set->is_empty(), "Must be empty");

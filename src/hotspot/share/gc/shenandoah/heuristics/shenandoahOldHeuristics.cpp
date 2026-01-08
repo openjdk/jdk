@@ -339,7 +339,7 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
   return (_included_old_regions > 0);
 }
 
-bool ShenandoahOldHeuristics::top_off_collection_set(ssize_t &add_regions_to_old) {
+bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old) {
   if (unprocessed_old_collection_candidates() == 0) {
     return false;
   } else {
@@ -862,8 +862,9 @@ bool ShenandoahOldHeuristics::is_experimental() {
   return true;
 }
 
-void ShenandoahOldHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
-                                                                    ShenandoahHeuristics::RegionData* data,
-                                                                    size_t data_size, size_t free) {
+size_t ShenandoahOldHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                                                      ShenandoahHeuristics::RegionData* data,
+                                                                      size_t data_size, size_t free) {
   ShouldNotReachHere();
+  return 0;
 }

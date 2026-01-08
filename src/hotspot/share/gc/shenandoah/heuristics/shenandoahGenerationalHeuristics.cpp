@@ -37,7 +37,7 @@ ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGen
         : ShenandoahAdaptiveHeuristics(generation), _generation(generation) {
 }
 
-ssize_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
+size_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
   assert(collection_set->is_empty(), "Must be empty");
 
   auto heap = ShenandoahGenerationalHeap::heap();
@@ -170,27 +170,10 @@ ssize_t ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollec
   size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
   bool doing_promote_in_place = (humongous_regions_promoted + regular_regions_promoted_in_place > 0);
 
-  ssize_t add_regions_to_old = 0;
+  size_t add_regions_to_old = 0;
   if (doing_promote_in_place || (preselected_candidates > 0) || (immediate_percent <= ShenandoahImmediateThreshold)) {
-    // Only young collections need to prime the collection set.
-    bool need_to_finalize_mixed = false;
-    if (_generation->is_young()) {
-      need_to_finalize_mixed = heap->old_generation()->heuristics()->prime_collection_set(collection_set);
-    }
-
     // Call the subclasses to add young-gen regions into the collection set.
-    choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-
-    if (_generation->is_young()) {
-      // Especially when young-gen trigger is expedited in order to finish mixed evacuations, there may not be
-      // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
-      // young-gen reserve available following selection of the young-gen collection set, see if we can use
-      // this memory to expand the old-gen evacuation collection set.
-      need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(add_regions_to_old);
-      if (need_to_finalize_mixed) {
-        heap->old_generation()->heuristics()->finalize_mixed_evacs();
-      }
-    }
+    add_regions_to_old = choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
 
   if (collection_set->has_old_regions()) {

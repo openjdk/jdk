@@ -370,7 +370,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 // Having chosen the collection set, adjust the budgets for generational mode based on its composition.  Note
 // that young_generation->available() now knows about recently discovered immediate garbage.
 void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
-                                                     ShenandoahCollectionSet* const collection_set, ssize_t add_regions_to_old) {
+                                                     ShenandoahCollectionSet* const collection_set, size_t add_regions_to_old) {
   shenandoah_assert_generational();
   // We may find that old_evacuation_reserve and/or loaned_for_young_evacuation are not fully consumed, in which case we may
   //  be able to increase regions_available_to_loan
@@ -807,7 +807,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       compute_evacuation_budgets(heap);
 
       // Choose the collection set, including the regions preselected above for promotion into the old generation.
-      ssize_t add_regions_to_old = _heuristics->choose_collection_set(collection_set);
+      size_t add_regions_to_old = _heuristics->choose_collection_set(collection_set);
       // Even if collection_set->is_empty(), we want to adjust budgets, making reserves available to mutator.
       adjust_evacuation_budgets(heap, collection_set, add_regions_to_old);
       if (is_global()) {
