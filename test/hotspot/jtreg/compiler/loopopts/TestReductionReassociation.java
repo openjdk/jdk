@@ -97,13 +97,12 @@ public class TestReductionReassociation {
 
     record TestGenerator(AddOp add, int size) {
         public TemplateToken generate() {
-            final String id = add.toString();
             var testTemplate = Template.make(() -> {
-                String test = $("test_" + id);
-                String input = $("input_" + id);
-                String expected = $("expected_" + id);
-                String setup = $("setup_" + id);
-                String check = $("check_" + id);
+                String test = $("test");
+                String input = $("input");
+                String expected = $("expected");
+                String setup = $("setup");
+                String check = $("check");
                 return scope(
                     """
                     // --- $test start ---
