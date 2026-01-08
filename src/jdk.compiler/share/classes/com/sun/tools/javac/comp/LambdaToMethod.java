@@ -725,14 +725,14 @@ public class LambdaToMethod extends TreeTranslator {
             ++i;
         }
         JCStatement stmt = make.If(
-                deserTests(kindTest, Map.of(
-                        "getFunctionalInterfaceClass", functionalInterfaceClass,
-                        "getFunctionalInterfaceMethodName", functionalInterfaceMethodName,
-                        "getFunctionalInterfaceMethodSignature", functionalInterfaceMethodSignature,
-                        "getImplClass", implClass,
-                        "getImplMethodSignature", implMethodSignature,
-                        "getInstantiatedMethodType", instantiatedMethodType
-                )),
+                deserTest(deserTest(deserTest(deserTest(deserTest(deserTest(
+                                                                kindTest,
+                                                                "getFunctionalInterfaceClass", functionalInterfaceClass),
+                                                        "getFunctionalInterfaceMethodName", functionalInterfaceMethodName),
+                                                "getFunctionalInterfaceMethodSignature", functionalInterfaceMethodSignature),
+                                        "getImplClass", implClass),
+                                "getImplMethodSignature", implMethodSignature),
+                        "getInstantiatedMethodType", instantiatedMethodType),
                 make.Return(makeIndyCall(
                         pos,
                         syms.lambdaMetafactory,
@@ -763,15 +763,6 @@ public class LambdaToMethod extends TreeTranslator {
         testExpr.operator = operators.resolveBinary(testExpr, Tag.EQ, argType, argType);
         testExpr.setType(syms.booleanType);
         return testExpr;
-    }
-
-    private JCExpression deserTests(JCExpression prev, Map<String, String> tests) {
-        for (Map.Entry<String, String> entry : tests.entrySet()) {
-            String func = entry.getKey();
-            String lit = entry.getValue();
-            prev = deserTest(prev, func, lit);
-        }
-        return prev;
     }
 
     private JCExpression deserTest(JCExpression prev, String func, String lit) {
