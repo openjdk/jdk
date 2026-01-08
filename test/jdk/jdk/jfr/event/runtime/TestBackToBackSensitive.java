@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import jdk.jfr.Recording;
 import jdk.jfr.StackTrace;
 import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordingStream;
+import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
@@ -48,12 +49,18 @@ import jdk.jfr.consumer.RecordingStream;
  * @run main/othervm jdk.jfr.event.runtime.TestBackToBackSensitive
  */
 public class TestBackToBackSensitive {
+
     @StackTrace(false)
     static class FillEvent extends Event {
         String message;
     }
+    public static Object OBJECT;
 
     public static void main(String... arg) throws Exception {
+        TestClassLoader loader = new TestClassLoader();
+        Class<?> clazz = loader.loadClass(TestBackToBackSensitive.class.getName());
+        String classLoaderName = loader.getClass().getName();
+        OBJECT = clazz.getDeclaredConstructor().newInstance();
         Set<Instant> threadDumps = Collections.synchronizedSet(new LinkedHashSet<>());
         Set<Instant> classLoaderStatistics = Collections.synchronizedSet(new LinkedHashSet<>());
         Set<Instant> physicalMemory = Collections.synchronizedSet(new LinkedHashSet<>());
@@ -65,7 +72,7 @@ public class TestBackToBackSensitive {
             r1.onEvent("jdk.ClassLoaderStatistics", e -> {
                 RecordedClassLoader cl = e.getValue("classLoader");
                 if (cl != null) {
-                    if (cl.getType().getName().contains("PlatformClassLoader")) {
+                    if (cl.getType().getName().equals(classLoaderName)) {
                         classLoaderStatistics.add(e.getStartTime());
                         System.out.println("Class loader" + e);
                     }
