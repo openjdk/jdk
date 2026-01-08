@@ -726,6 +726,14 @@ public final class Operations {
             ops.add(Expression.make(type.shuffleType, "", type, ".toShuffle()"));
 
             // TODO: rest of the ops from ShuffleVector.
+            for (var type2 : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
+                var shuffle = type.shuffleType;
+                var shuffle2 = type2.shuffleType;
+                if (type.length == type2.length) {
+                    ops.add(Expression.make(shuffle, "((" + shuffle.name() + ")", shuffle2 , ".cast(" + type.speciesName + "))"));
+                }
+            }
+            // TODO: wrapIndex ...
         }
 
         // Make sure the list is not modifiable.
