@@ -278,10 +278,6 @@ bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
     heap->update_region_ages(_generation->complete_marking_context());
   }
 
-  // After an abbreviated cycle, we reclaim immediate garbage.  Rebuild the freeset in order to establish
-  // reserves for the next GC cycle.
-  assert(_abbreviated, "Only rebuild free set for abbreviated and old-marking cycles");
-  heap->rebuild_free_set(true /*concurrent*/);
   return true;
 }
 
@@ -538,6 +534,12 @@ void ShenandoahConcurrentGC::entry_cleanup_early() {
   // This phase does not use workers, no need for setup
   heap->try_inject_alloc_failure();
   op_cleanup_early();
+  if (!heap->is_evacuation_in_progress()) {
+    // This is an abbreviated cycle.  Rebuild the freeset in order to establish reserves for the next GC cycle.  Doing
+    // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that we will degenerate
+    // during promote-in-place processing.
+    heap->rebuild_free_set(true /*concurrent*/);
+  }
 }
 
 void ShenandoahConcurrentGC::entry_evacuate() {
