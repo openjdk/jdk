@@ -29,10 +29,14 @@
  * @run main XBMDecoderTest
  */
 
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
 import javax.swing.ImageIcon;
 
 public class XBMDecoderTest {
@@ -68,10 +72,27 @@ public class XBMDecoderTest {
                     throw new RuntimeException("Test failed: ImageFormatException"
                             + " expected but not thrown");
                 }
+                if (validCase) {
+                    assertHasPixelData(icon.getImage());
+                }
                 System.out.println("PASSED\n");
             } finally {
                 System.setErr(originalErr);
             }
+        }
+    }
+
+    private static void assertHasPixelData(Image img) {
+        int w = img.getWidth(null);
+        int h = img.getHeight(null);
+        BufferedImage bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = bi.createGraphics();
+        g.drawImage(img, 0, 0, null);
+        g.dispose();
+        int[] pixels = bi.getRGB(0, 0, w, h, null, 0, w);
+        if (Arrays.stream(pixels).allMatch(i -> i == 0)) {
+            throw new RuntimeException("Test failed: the parsed image does " +
+                    "not contain any pixel data");
         }
     }
 }
