@@ -69,7 +69,7 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
 
   G1RegionMarkStatsCache _mark_stats_cache;
 
-  inline bool task_queue_empty();
+  inline bool is_task_queue_empty();
   inline bool mark_object(oop obj);
 
   // Marking helpers

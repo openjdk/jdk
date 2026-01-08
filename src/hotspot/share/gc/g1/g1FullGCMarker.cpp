@@ -49,7 +49,7 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
 }
 
 G1FullGCMarker::~G1FullGCMarker() {
-  assert(task_queue_empty(), "Must be empty at this point");
+  assert(is_task_queue_empty(), "Must be empty at this point");
 }
 
 void G1FullGCMarker::follow_partial_objArray(PartialArrayState* state, bool stolen) {
@@ -75,10 +75,10 @@ void G1FullGCMarker::complete_marking(G1ScannerTasksQueueSet* task_queues,
   do {
     follow_marking_stacks();
     ScannerTask stolen_task;
-    if(task_queues->steal(_worker_id, stolen_task)) {
+    if (task_queues->steal(_worker_id, stolen_task)) {
       dispatch_task(stolen_task, true);
     }
-  } while (!task_queue_empty() || !terminator->offer_termination());
+  } while (!is_task_queue_empty() || !terminator->offer_termination());
 }
 
 void G1FullGCMarker::flush_mark_stats_cache() {

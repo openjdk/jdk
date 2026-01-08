@@ -78,7 +78,7 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
   }
 }
 
-inline bool G1FullGCMarker::task_queue_empty() {
+inline bool G1FullGCMarker::is_task_queue_empty() {
   return _task_queue.is_empty();
 }
 
@@ -120,7 +120,7 @@ inline void G1FullGCMarker::publish_and_drain_oop_tasks() {
 void G1FullGCMarker::follow_marking_stacks() {
   do {
     publish_and_drain_oop_tasks();
-  } while (!task_queue_empty());
+  } while (!is_task_queue_empty());
 }
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
