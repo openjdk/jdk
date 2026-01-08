@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -560,8 +560,6 @@ java/net/MulticastSocket/Test.java                              7145658,8308807 
 ############################################################################
 
 # jdk_nio
-
-java/nio/channels/AsyncCloseAndInterrupt.java                   8368290 macosx-26.0.1
 
 java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807,8144003 aix-ppc64,macosx-all
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
