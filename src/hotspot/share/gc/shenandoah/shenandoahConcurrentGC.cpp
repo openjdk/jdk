@@ -162,6 +162,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     return false;
   }
 
+  assert(heap->is_concurrent_weak_root_in_progress(), "Must be doing weak roots now");
+
   // Concurrent stack processing
   if (heap->is_evacuation_in_progress()) {
     entry_thread_roots();
