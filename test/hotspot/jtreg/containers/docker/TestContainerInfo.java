@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
  * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build CheckContainerized jdk.test.whitebox.WhiteBox PrintContainerInfo
@@ -49,10 +50,7 @@ public class TestContainerInfo {
     private static final String imageName = Common.imageName("container-info");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
@@ -75,23 +73,11 @@ public class TestContainerInfo {
         checkContainerInfo(out);
     }
 
-    private static void shouldMatchWithValue(OutputAnalyzer output, String match, String value) {
-        output.shouldContain(match);
-        String str = output.getOutput();
-        for (String s : str.split(System.lineSeparator())) {
-            if (s.contains(match)) {
-                if (!s.contains(value)) {
-                    throw new RuntimeException("memory_swap_current_in_bytes NOT " + value + "! Line was : " + s);
-                }
-            }
-        }
-    }
-
     private static void checkContainerInfo(OutputAnalyzer out) throws Exception {
         String str = out.getOutput();
         if (str.contains("cgroupv2")) {
-            shouldMatchWithValue(out, "memory_swap_max_limit_in_bytes", "0");
-            shouldMatchWithValue(out, "memory_swap_current_in_bytes", "0");
+            DockerTestUtils.shouldMatchWithValue(out, "memory_swap_max_limit", "0");
+            DockerTestUtils.shouldMatchWithValue(out, "memory_swap_current", "0");
         } else {
             throw new SkippedException("This test is cgroups v2 specific, skipped on cgroups v1");
         }

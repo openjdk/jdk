@@ -95,15 +95,7 @@ class H3ServerPushTest {
 
     private static final HttpHeaders EMPTY_HEADERS = HttpHeaders.of(Map.of(), (_, _) -> false);
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     @Test
     @Order(1)

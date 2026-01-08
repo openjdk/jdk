@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class HandlerConnectionClose
 {
     static final int ONEK = 1024;
     static final long POST_SIZE = ONEK * 1L;
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     Logger logger;
 
     void test(String[] args) throws Exception {
@@ -77,7 +77,6 @@ public class HandlerConnectionClose
         } finally {
             httpServer.stop(0);
         }
-        sslContext = new SimpleSSLContext().get();
         HttpServer httpsServer = startHttpServer("https");
         try {
             testHttpURLConnection(httpsServer, "https","/close/legacy/https/chunked");

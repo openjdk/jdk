@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary InvalidClassException is thrown when the canonical constructor
  *          cannot be found during deserialization.
  * @library /test/lib
- * @run testng BadCanonicalCtrTest
+ * @run junit BadCanonicalCtrTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -44,22 +44,25 @@ import java.lang.constant.MethodTypeDesc;
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.ByteCodeLoader;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Checks that an InvalidClassException is thrown when the canonical
  * constructor cannot be found during deserialization.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BadCanonicalCtrTest {
 
     // ClassLoader for creating instances of the records to test with.
@@ -76,7 +79,7 @@ public class BadCanonicalCtrTest {
      * the initial bytecode for the record classes using javac, then removes or
      * modifies the generated canonical constructor.
      */
-    @BeforeTest
+    @BeforeAll
     public void setup() {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("R1",
@@ -133,7 +136,6 @@ public class BadCanonicalCtrTest {
         return c.getConstructor(long.class).newInstance(l);
     }
 
-    @DataProvider(name = "recordInstances")
     public Object[][] recordInstances() throws Exception {
         return new Object[][] {
                 new Object[] { newR1()        },
@@ -148,13 +150,14 @@ public class BadCanonicalCtrTest {
      * Tests that InvalidClassException is thrown when no constructor is
      * present.
      */
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void missingConstructorTest(Object objToSerialize) throws Exception {
         out.println("\n---");
         out.println("serializing : " + objToSerialize);
         byte[] bytes = serialize(objToSerialize);
         out.println("deserializing");
-        InvalidClassException ice = expectThrows(ICE, () -> deserialize(bytes, missingCtrClassLoader));
+        InvalidClassException ice = Assertions.assertThrows(ICE, () -> deserialize(bytes, missingCtrClassLoader));
         out.println("caught expected ICE: " + ice);
         assertTrue(ice.getMessage().contains("record canonical constructor not found"));
     }
@@ -164,13 +167,14 @@ public class BadCanonicalCtrTest {
      * constructor is not present. ( a non-canonical constructor is
      * present ).
      */
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void nonCanonicalConstructorTest(Object objToSerialize) throws Exception {
         out.println("\n---");
         out.println("serializing : " + objToSerialize);
         byte[] bytes = serialize(objToSerialize);
         out.println("deserializing");
-        InvalidClassException ice = expectThrows(ICE, () -> deserialize(bytes, nonCanonicalCtrClassLoader));
+        InvalidClassException ice = Assertions.assertThrows(ICE, () -> deserialize(bytes, nonCanonicalCtrClassLoader));
         out.println("caught expected ICE: " + ice);
         assertTrue(ice.getMessage().contains("record canonical constructor not found"));
     }
