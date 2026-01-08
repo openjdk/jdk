@@ -4978,6 +4978,86 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
+static Node* reassociate_chain(Node* node, PhiNode* phi, Node* loop_head, PhaseIdealLoop* phase) {
+  if (phi == node->in(1)) {
+    return node->in(2);
+  }
+
+  if (phi == node->in(2)) {
+    return node->in(1);
+  }
+
+  Node* left;
+  Node* right;
+  if (node->in(1)->Opcode() == Op_MaxL) {
+    left = reassociate_chain(node->in(1), phi, loop_head, phase);
+    right = node->in(2);
+  } else {
+    left = node->in(1);
+    right = reassociate_chain(node->in(2), phi, loop_head, phase);
+  }
+
+  Node* reassoc = new MaxLNode(phase->C, left, right);
+  phase->register_new_node(reassoc, loop_head);
+  return reassoc;
+}
+
+static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLoop* phase) {
+  Node* chain_head = nullptr;
+  Node* current = phi;
+  int chain_length = 0;
+  while (current != nullptr) {
+    if (current->outcnt() != 1) {
+      break;
+    }
+
+    Node* use = current->find_out_with(Op_MaxL);
+    if (use != nullptr) {
+      if (!phase->ctrl_is_member(lpt, use)) {
+        // Only interested in commutative add nodes that are in use in the loop
+        return;
+      }
+      if (use->in(1)->Opcode() == Op_MaxL && use->in(2)->Opcode() == Op_MaxL) {
+        // A chain to reassociate cannot be constructed
+        // when the chain can have multiple paths
+        return;
+      }
+
+      chain_length++;
+      chain_head = use;
+    }
+
+    current = use;
+  }
+
+  if (chain_length < 2) {
+    // Only reassociate long enough chains
+    return;
+  }
+
+  // todo remove check
+  if (!is_power_of_2(chain_length)) {
+    // If not power of 2 chains are common enough, they could be reassociated
+    // in a simpler way without using a tree. Moving the Phi value to the front
+    // would be enough to get a performance boost.
+    return;
+  }
+
+  // tty->print("[avoid-cmov] try reassociate; chain length: %d\n", chain_length);
+  // tty->print("[avoid-cmov] try reassociate:\n");
+  // tty->print("[avoid-cmov] phi: ");
+  // phi->dump();
+  // tty->print("[avoid-cmov] try reassociate; chain head:\n");
+  // chain_head->dump();
+
+  Node* loop_head = lpt->head();
+  Node* reassociated = reassociate_chain(chain_head, phi, loop_head, phase);
+
+  Node* new_chain_head = new MaxLNode(phase->C, phi, reassociated);
+  phase->register_new_node(new_chain_head, loop_head);
+  phase->igvn().replace_node(chain_head, new_chain_head);
+}
+
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
@@ -5352,6 +5432,24 @@ void PhaseIdealLoop::build_and_optimize() {
       tty->print_cr("PredicatesOff");
     }
     C->set_major_progress();
+  }
+
+  if (!C->major_progress()) {
+    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+      IdealLoopTree* lpt = iter.current();
+      // todo do I need is_counted?
+      if (lpt->is_innermost() && lpt->is_counted()) {
+        Node* loop_head = lpt->head();
+
+        // Look for loop head uses that are Phi
+        for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
+          Node* loop_head_use = loop_head->fast_out(i);
+          if (loop_head_use->is_Phi()) {
+            try_reassociate_chain(loop_head_use->as_Phi(), lpt, this);
+          }
+        }
+      }
+    }
   }
 }
 
