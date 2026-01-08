@@ -53,6 +53,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -806,7 +807,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             } finally {
                 defaultToolProvider.set(oldValue);
             }
-        }).join();
+        }, Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())).join();
     }
 
     public JPackageCommand useToolProvider(boolean v) {
