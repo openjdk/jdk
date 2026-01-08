@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @key randomness
  *
  * @summary converted from VM Testbase nsk/monitoring/GarbageCollectorMXBean/CollectionCounters/CollectionCounters003.
  * VM Testbase keywords: [monitoring]
