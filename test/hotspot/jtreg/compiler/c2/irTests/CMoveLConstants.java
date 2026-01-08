@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,19 +39,30 @@ public class CMoveLConstants {
     }
 
     @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_CMOVEL_IMM01, "1"}, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = {IRNode.X86_CMOVEL_IMM01, "1"},
+        applyIfPlatform = {"x64", "true"},
+        phase = CompilePhase.FINAL_CODE)
     public static long testSigned(int a, int b) {
         return a > b ? 1L : 0L;
     }
 
     @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_CMOVEL_IMM01U, "1"}, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = {IRNode.X86_CMOVEL_IMM01U, "1"},
+        applyIfPlatform = {"x64", "true"},
+        phase = CompilePhase.FINAL_CODE)
     public static long testUnsigned(int a, int b) {
         return Integer.compareUnsigned(a, b) > 0 ? 1L : 0L;
     }
 
     @Test
-    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_CMOVEL_IMM01UCF, "1"}, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = {IRNode.X86_CMOVEL_IMM01UCF, "1"},
+        applyIfPlatform = {"x64", "true"},
+        applyIfCPUFeature = {"apx_f", "false"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(counts = {IRNode.X86_CMOVEL_IMM01UCFE, "1"},
+        applyIfPlatform = {"x64", "true"},
+        applyIfCPUFeature = {"apx_f", "true"},
+        phase = CompilePhase.FINAL_CODE)
     public static long testFloat(float a, float b) {
         return a > b ? 1L : 0L;
     }
