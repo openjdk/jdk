@@ -79,6 +79,10 @@ public class GZIPInputStream extends InflaterInputStream {
         super(in, createInflater(in, size), size);
         usesDefaultInflater = true;
         try {
+            // we don't expect the stream to be at EOF
+            // and if it is, then we want readHeader to
+            // raise an exception, so we pass "true" for
+            // the "failOnEOF" param.
             readHeader(in, true);
         } catch (IOException ioe) {
             this.inf.end();
