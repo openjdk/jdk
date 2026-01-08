@@ -799,12 +799,6 @@ public final class Security {
             (type, getSpiClass(type), algorithm, params, provider).toArray();
     }
 
-    static Properties getAllSecurityPropertiesReadOnly() {
-        Properties copy = new Properties();
-        copy.putAll(props);
-        return copy;
-    }
-
     /**
      * Gets a security property value.
      *
