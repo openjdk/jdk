@@ -187,7 +187,10 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
     return body_status;
   }
 
-  _memory_slices.find_memory_slices();
+  VStatus slices_status = _memory_slices.find_memory_slices();
+  if (!slices_status.is_success()) {
+    return slices_status;
+  }
 
   // If there is no memory slice detected, it means there is no store.
   // If there is no reduction and no store, then we give up, because
@@ -207,9 +210,11 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 }
 
 // There are 2 kinds of slices:
-// - No memory phi: only loads. All have the same input memory state from before the loop.
+// - No memory phi: only loads.
+//   - Usually, all loads have the same input memory state from before the loop.
+//   - Only rarely this is not the case, and we just bail out for now.
 // - With memory phi. Chain of memory operations inside the loop.
-void VLoopMemorySlices::find_memory_slices() {
+VStatus VLoopMemorySlices::find_memory_slices() {
   Compile* C = _vloop.phase()->C;
   // We iterate over the body, which is topologically sorted. Hence, if there is a phi
   // in a slice, we will find it first, and the loads and stores afterwards.
@@ -228,8 +233,15 @@ void VLoopMemorySlices::find_memory_slices() {
       PhiNode* head = _heads.at(alias_idx);
       if (head == nullptr) {
         // We did not find a phi on this slice yet -> must be a slice with only loads.
-        assert(_inputs.at(alias_idx) == nullptr || _inputs.at(alias_idx) == load->in(1),
-               "not yet touched or the same input");
+        // For now, we can only handle slices with a single memory input before the loop,
+        // so if we find multiple, we bail out of auto vectorization. If this becomes
+        // too restrictive in the fututure, we could consider tracking multiple inputs.
+        // Different memory inputs can for example happen if one load has its memory state
+        // optimized, and the other load fails to have it optimized, for example because
+        // it does not end up on the IGVN worklist any more.
+        if (_inputs.at(alias_idx) != nullptr && _inputs.at(alias_idx) != load->in(1)) {
+          return VStatus::make_failure(FAILURE_DIFFERENT_MEMORY_INPUT);
+        }
         _inputs.at_put(alias_idx, load->in(1));
       } // else: the load belongs to a slice with a phi that already set heads and inputs.
 #ifdef ASSERT
@@ -243,6 +255,7 @@ void VLoopMemorySlices::find_memory_slices() {
     }
   }
   NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
+  return VStatus::make_success();
 }
 
 #ifndef PRODUCT
