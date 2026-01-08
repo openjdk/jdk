@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.tools.jnativescan;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.net.URI;
@@ -40,7 +42,12 @@ sealed interface ClassFileSource {
     String moduleName();
     Path path();
 
-    Stream<byte[]> classFiles(Runtime.Version version) throws IOException;
+    Stream<byte[]> classFiles() throws IOException;
+
+    default Stream<ClassModel> classModels() throws IOException {
+        ClassFile classFile = ClassFile.of();
+        return classFiles().map(classFile::parse);
+    }
 
     record Module(ModuleReference reference) implements ClassFileSource {
         @Override
@@ -55,7 +62,7 @@ sealed interface ClassFileSource {
         }
 
         @Override
-        public Stream<byte[]> classFiles(Runtime.Version version) throws IOException {
+        public Stream<byte[]> classFiles() throws IOException {
             ModuleReader reader = reference().open();
             return reader.list()
                 .filter(resourceName -> resourceName.endsWith(".class"))
@@ -75,14 +82,14 @@ sealed interface ClassFileSource {
         }
     }
 
-    record ClassPathJar(Path path) implements ClassFileSource {
+    record ClassPathJar(Path path, Runtime.Version version) implements ClassFileSource {
         @Override
         public String moduleName() {
             return "ALL-UNNAMED";
         }
 
         @Override
-        public Stream<byte[]> classFiles(Runtime.Version version) throws IOException {
+        public Stream<byte[]> classFiles() throws IOException {
             JarFile jf = new JarFile(path().toFile(), false, ZipFile.OPEN_READ, version);
             return jf.versionedStream()
                 .filter(je -> je.getName().endsWith(".class"))
@@ -109,7 +116,7 @@ sealed interface ClassFileSource {
         }
 
         @Override
-        public Stream<byte[]> classFiles(Runtime.Version version) throws IOException {
+        public Stream<byte[]> classFiles() throws IOException {
             return Files.walk(path)
                 .filter(file -> Files.isRegularFile(file) && file.toString().endsWith(".class"))
                 .map(file -> {

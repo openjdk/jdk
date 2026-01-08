@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,43 @@ package helpers;
 
 import jdk.internal.classfile.impl.LabelContext;
 import jdk.internal.classfile.impl.LabelImpl;
+
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeTransform;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 
-import java.io.FileOutputStream;
+import java.lang.constant.ClassDesc;
 import java.util.Collection;
+import java.util.function.Consumer;
 
-public class TestUtil {
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.MTD_void;
+
+public final class TestUtil {
+
+    /// Run a code handler in different builders.
+    public static void runCodeHandler(Consumer<CodeBuilder> handler) {
+        ClassFile cf = ClassFile.of();
+        // Direct builders
+        cf.build(ClassDesc.of("Test"), clb -> clb.withMethodBody("test", MTD_void, ACC_STATIC, handler));
+        // Chained builders
+        cf.build(ClassDesc.of("Test"), clb -> clb
+                .withMethodBody("test", MTD_void, ACC_STATIC, cob -> cob
+                        .transforming(CodeTransform.ACCEPT_ALL, handler)));
+        // Indirect builders
+        var classTemplate = cf.build(ClassDesc.of("Test"), clb -> clb
+                .withMethodBody("test", MTD_void, ACC_STATIC, CodeBuilder::return_));
+        cf.transformClass(cf.parse(classTemplate),
+                ClassTransform.transformingMethodBodies(CodeTransform.endHandler(handler)
+                        .andThen(CodeBuilder::with)));
+    }
 
     public static void assertEmpty(Collection<?> col) {
         if (!col.isEmpty()) throw new AssertionError(col);
     }
-
-    public static void writeClass(byte[] bytes, String fn) {
-        try {
-            FileOutputStream out = new FileOutputStream(fn);
-            out.write(bytes);
-            out.close();
-        } catch (Exception ex) {
-            throw new InternalError(ex);
-        }
-    }
-
 
     public static class ExpectedLvRecord {
         int slot;

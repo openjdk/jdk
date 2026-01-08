@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,16 +266,12 @@ public class FileOutputStream extends OutputStream
 
     private void traceWrite(int b, boolean append) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             write(b, append);
             bytesWritten = 1;
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 
@@ -310,16 +306,12 @@ public class FileOutputStream extends OutputStream
 
     private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             writeBytes(b, off, len, append);
             bytesWritten = len;
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 

@@ -120,27 +120,6 @@ void AbstractInterpreter::layout_activation(Method* method,
     method->method_holder()->java_mirror();
 }
 
-#ifndef _LP64
-int AbstractInterpreter::BasicType_as_index(BasicType type) {
-  int i = 0;
-  switch (type) {
-    case T_BOOLEAN: i = 0; break;
-    case T_CHAR   : i = 1; break;
-    case T_BYTE   : i = 2; break;
-    case T_SHORT  : i = 3; break;
-    case T_INT    : // fall through
-    case T_LONG   : // fall through
-    case T_VOID   : i = 4; break;
-    case T_FLOAT  : i = 5; break;  // have to treat float and double separately for SSE
-    case T_DOUBLE : i = 6; break;
-    case T_OBJECT : // fall through
-    case T_ARRAY  : i = 7; break;
-    default       : ShouldNotReachHere();
-  }
-  assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers, "index out of bounds");
-  return i;
-}
-#else
 int AbstractInterpreter::BasicType_as_index(BasicType type) {
   int i = 0;
   switch (type) {
@@ -161,7 +140,6 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
          "index out of bounds");
   return i;
 }
-#endif // _LP64
 
 // How much stack a method activation needs in words.
 int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
@@ -173,11 +151,7 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
   const int overhead_size =
     -(frame::interpreter_frame_initial_sp_offset) + entry_size;
 
-#ifndef _LP64
-  const int stub_code = 4;  // see generate_call_stub
-#else
   const int stub_code = frame::entry_frame_after_call_words;
-#endif
 
   const int method_stack = (method->max_locals() + method->max_stack()) *
                            Interpreter::stackElementWords;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import java.awt.Component;
 import java.awt.Color;
 import java.awt.Rectangle;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
@@ -371,6 +374,17 @@ public class DefaultTableCellRenderer extends JLabel
      */
     protected void setValue(Object value) {
         setText((value == null) ? "" : value.toString());
+    }
+
+    /**
+     * See readObject() and writeObject() in JComponent for more
+     * information about serialization in Swing.
+     */
+    @Serial
+    private void writeObject(ObjectOutputStream s) throws IOException {
+        s.defaultWriteObject();
+        setForeground(null);
+        setBackground(null);
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,24 +48,24 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                 trustManager = getInstance(TrustStoreManager.getTrustedCerts());
             } catch (SecurityException se) {
                 // eat security exceptions but report other throwables
-                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
                     SSLLogger.fine(
                             "SunX509: skip default keystore", se);
                 }
             } catch (Error err) {
-                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
                     SSLLogger.fine(
                         "SunX509: skip default keystore", err);
                 }
                 throw err;
             } catch (RuntimeException re) {
-                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
                     SSLLogger.fine(
                         "SunX509: skip default keystore", re);
                 }
                 throw re;
             } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
                     SSLLogger.fine(
                         "SunX509: skip default keystore", e);
                 }

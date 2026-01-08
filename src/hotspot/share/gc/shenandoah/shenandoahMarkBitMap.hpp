@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,12 +28,12 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_HPP
 
 #include "memory/memRegion.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahMarkBitMap {
 public:
-  typedef size_t idx_t;         // Type used for bit and word indices.
+  typedef size_t idx_t;        // Type used for bit and word indices.
   typedef uintptr_t bm_word_t;  // Element type of array that represents the
                                 // bitmap, with BitsPerWord bits per element.
 
@@ -119,9 +119,21 @@ private:
   template<bm_word_t flip, bool aligned_right>
   inline idx_t get_next_bit_impl(idx_t l_index, idx_t r_index) const;
 
-  inline idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
+  // Helper for get_prev_{zero,one}_bit variants.
+  // - flip designates whether searching for 1s or 0s.  Must be one of
+  //   find_{zeros,ones}_flip.
+  // - aligned_left is true if l_index is a priori on a bm_word_t boundary.
+  template<bm_word_t flip, bool aligned_left>
+  inline idx_t get_prev_bit_impl(idx_t l_index, idx_t r_index) const;
 
-  void clear_large_range (idx_t beg, idx_t end);
+  // Search for the first marked address in the range [l_index, r_index), or r_index if none found.
+  inline idx_t get_next_one_offset(idx_t l_index, idx_t r_index) const;
+
+  // Search for last one in the range [l_index, r_index).  Return r_index if not found.
+  inline idx_t get_prev_one_offset(idx_t l_index, idx_t r_index) const;
+
+  // Clear the strong and weak mark bits for all index positions >= l_index and < r_index.
+  void clear_large_range(idx_t beg, idx_t end);
 
   // Verify bit is less than size().
   void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
@@ -162,11 +174,13 @@ public:
 
   bool is_bitmap_clear_range(const HeapWord* start, const HeapWord* end) const;
 
-  // Return the address corresponding to the next marked bit at or after
-  // "addr", and before "limit", if "limit" is non-null.  If there is no
-  // such bit, returns "limit" if that is non-null, or else "endWord()".
+  // Return the first marked address in the range [addr, limit), or limit if none found.
   HeapWord* get_next_marked_addr(const HeapWord* addr,
                                  const HeapWord* limit) const;
+
+  // Return the last marked address in the range [limit, addr], or addr+1 if none found.
+  HeapWord* get_prev_marked_addr(const HeapWord* limit,
+                                 const HeapWord* addr) const;
 
   bm_word_t inverted_bit_mask_for_range(idx_t beg, idx_t end) const;
   void  clear_range_within_word    (idx_t beg, idx_t end);

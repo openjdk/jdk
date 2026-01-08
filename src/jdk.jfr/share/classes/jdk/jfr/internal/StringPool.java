@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public final class StringPool {
     private static int preCacheOld = 0;
     /* max size bytes */
     private static long currentSizeUTF16;
-    /* string pool generation (0-65535) set by the JVM on epoch shift. Not private to avoid being optimized away. */
+    /* The string pool epoch generation is the range [1-32767] set by the JVM on epoch shift. Not private to avoid being optimized away. */
     static short generation = 0;
 
     /* internalSid is a composite id [48-bit externalSid][16-bit generation]. */

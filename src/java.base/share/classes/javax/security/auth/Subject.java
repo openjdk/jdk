@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ public final class Subject implements java.io.Serializable {
      * @since 18
      */
     public static Subject current() {
-        return SCOPED_SUBJECT.orElse(null);
+        return SCOPED_SUBJECT.isBound() ? SCOPED_SUBJECT.get() : null;
     }
 
     /**

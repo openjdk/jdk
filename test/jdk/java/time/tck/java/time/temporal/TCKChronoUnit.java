@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,30 +70,28 @@ import static java.time.temporal.ChronoUnit.NANOS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAccessor;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKChronoUnit {
 
     //-----------------------------------------------------------------------
     // isDateBased(), isTimeBased() and isDurationEstimated()
     //-----------------------------------------------------------------------
-    @DataProvider(name="chronoUnit")
     Object[][] data_chronoUnit() {
         return new Object[][] {
                 {FOREVER, false, false, true},
@@ -117,17 +115,17 @@ public class TCKChronoUnit {
         };
     }
 
-    @Test(dataProvider = "chronoUnit")
+    @ParameterizedTest
+    @MethodSource("data_chronoUnit")
     public void test_unitType(ChronoUnit unit, boolean isDateBased, boolean isTimeBased, boolean isDurationEstimated) {
-        assertEquals(unit.isDateBased(), isDateBased);
-        assertEquals(unit.isTimeBased(), isTimeBased);
-        assertEquals(unit.isDurationEstimated(), isDurationEstimated);
+        assertEquals(isDateBased, unit.isDateBased());
+        assertEquals(isTimeBased, unit.isTimeBased());
+        assertEquals(isDurationEstimated, unit.isDurationEstimated());
     }
 
     //-----------------------------------------------------------------------
     // isSupportedBy(), addTo() and between()
     //-----------------------------------------------------------------------
-    @DataProvider(name="unitAndTemporal")
     Object[][] data_unitAndTemporal() {
         return new Object[][] {
                 {CENTURIES, LocalDate.of(2000, 1, 10), true, 1, LocalDate.of(2100, 1, 10)},
@@ -163,13 +161,14 @@ public class TCKChronoUnit {
         };
     }
 
-    @Test(dataProvider = "unitAndTemporal")
+    @ParameterizedTest
+    @MethodSource("data_unitAndTemporal")
     public void test_unitAndTemporal(ChronoUnit unit, Temporal base, boolean isSupportedBy, long amount,  Temporal target) {
-        assertEquals(unit.isSupportedBy(base), isSupportedBy);
+        assertEquals(isSupportedBy, unit.isSupportedBy(base));
         if (isSupportedBy) {
             Temporal result = unit.addTo(base, amount);
-            assertEquals(result, target);
-            assertEquals(unit.between(base, result), amount);
+            assertEquals(target, result);
+            assertEquals(amount, unit.between(base, result));
         }
     }
 
@@ -179,7 +178,7 @@ public class TCKChronoUnit {
     @Test
     public void test_valueOf() {
         for (ChronoUnit unit : ChronoUnit.values()) {
-            assertEquals(ChronoUnit.valueOf(unit.name()), unit);
+            assertEquals(unit, ChronoUnit.valueOf(unit.name()));
         }
     }
 }

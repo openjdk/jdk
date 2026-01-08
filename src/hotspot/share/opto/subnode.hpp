@@ -328,7 +328,10 @@ struct BoolTest {
   // a simple char array where each element is the ASCII version of a 'mask'
   // enum from above.
   mask commute( ) const { return mask("032147658"[_test]-'0'); }
-  mask negate( ) const { return mask(_test^4); }
+  mask negate( ) const { return negate_mask(_test); }
+  // Return the negative mask for the given mask, for both signed and unsigned comparison.
+  static mask negate_mask(mask btm) { return mask(btm ^ 4); }
+  static mask unsigned_mask(mask btm);
   bool is_canonical( ) const { return (_test == BoolTest::ne || _test == BoolTest::lt || _test == BoolTest::le || _test == BoolTest::overflow); }
   bool is_less( )  const { return _test == BoolTest::lt || _test == BoolTest::le; }
   bool is_greater( ) const { return _test == BoolTest::gt || _test == BoolTest::ge; }
@@ -554,11 +557,17 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
+
+class ReverseBytesNode : public Node {
+public:
+  ReverseBytesNode(Node* in) : Node(nullptr, in) {}
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
 //-------------------------------ReverseBytesINode--------------------------------
 // reverse bytes of an integer
-class ReverseBytesINode : public Node {
+class ReverseBytesINode : public ReverseBytesNode {
 public:
-  ReverseBytesINode(Node* in) : Node(nullptr, in) {}
+  ReverseBytesINode(Node* in) : ReverseBytesNode(in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -566,9 +575,9 @@ public:
 
 //-------------------------------ReverseBytesLNode--------------------------------
 // reverse bytes of a long
-class ReverseBytesLNode : public Node {
+class ReverseBytesLNode : public ReverseBytesNode {
 public:
-  ReverseBytesLNode(Node* in) : Node(nullptr, in) {}
+  ReverseBytesLNode(Node* in) : ReverseBytesNode(in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
@@ -576,9 +585,9 @@ public:
 
 //-------------------------------ReverseBytesUSNode--------------------------------
 // reverse bytes of an unsigned short / char
-class ReverseBytesUSNode : public Node {
+class ReverseBytesUSNode : public ReverseBytesNode {
 public:
-  ReverseBytesUSNode(Node* in1) : Node(nullptr, in1) {}
+  ReverseBytesUSNode(Node* in1) : ReverseBytesNode(in1) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::CHAR; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -586,9 +595,9 @@ public:
 
 //-------------------------------ReverseBytesSNode--------------------------------
 // reverse bytes of a short
-class ReverseBytesSNode : public Node {
+class ReverseBytesSNode : public ReverseBytesNode {
 public:
-  ReverseBytesSNode(Node* in) : Node(nullptr, in) {}
+  ReverseBytesSNode(Node* in) : ReverseBytesNode(in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -598,7 +607,7 @@ public:
 // reverse bits of an int
 class ReverseINode : public Node {
 public:
-  ReverseINode(Node* in) : Node(nullptr, in) {}
+  ReverseINode(Node* in) : Node(nullptr,in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }

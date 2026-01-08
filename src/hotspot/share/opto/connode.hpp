@@ -43,8 +43,12 @@ public:
   }
   virtual int  Opcode() const;
   virtual uint hash() const;
-  virtual const RegMask &out_RegMask() const { return RegMask::Empty; }
-  virtual const RegMask &in_RegMask(uint) const { return RegMask::Empty; }
+  virtual const RegMask& out_RegMask() const { return RegMask::EMPTY; }
+  virtual const RegMask& in_RegMask(uint) const { return RegMask::EMPTY; }
+
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) {
+    return Node::Ideal(phase, can_reshape);
+  }
 
   // Polymorphic factory method:
   static ConNode* make(const Type *t);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 #ifndef SHARE_OOPS_ACCESSDECORATORS_HPP
 #define SHARE_OOPS_ACCESSDECORATORS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // A decorator is an attribute or property that affects the way a memory access is performed in some way.
 // There are different groups of decorators. Some have to do with memory ordering, others to do with,

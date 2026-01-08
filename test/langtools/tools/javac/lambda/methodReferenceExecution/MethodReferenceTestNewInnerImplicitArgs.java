@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @bug 8011591
  * @summary BootstrapMethodError when capturing constructor ref to local classes
- * @run testng MethodReferenceTestNewInnerImplicitArgs
+ * @run junit MethodReferenceTestNewInnerImplicitArgs
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the case that a constructor has implicit parameters added to
@@ -39,7 +38,6 @@ import static org.testng.Assert.assertEquals;
  * @author Robert Field
  */
 
-@Test
 public class MethodReferenceTestNewInnerImplicitArgs {
 
 
@@ -56,7 +54,8 @@ public class MethodReferenceTestNewInnerImplicitArgs {
         S m(int i, int j);
     }
 
-    public static void testConstructorReferenceImplicitParameters() {
+    @Test
+    public void testConstructorReferenceImplicitParameters() {
         String title = "Hey";
         String a2 = "!!!";
         class MS extends S {
@@ -66,7 +65,7 @@ public class MethodReferenceTestNewInnerImplicitArgs {
         }
 
         I result = MS::new;
-        assertEquals(result.m().b, "Hey!!!");
+        assertEquals("Hey!!!", result.m().b);
 
         class MS2 extends S {
             MS2(int x, int y) {
@@ -75,6 +74,6 @@ public class MethodReferenceTestNewInnerImplicitArgs {
         }
 
         I2 result2 = MS2::new;
-        assertEquals(result2.m(8, 4).b, "Hey8!!!4");
+        assertEquals("Hey8!!!4", result2.m(8, 4).b);
     }
 }

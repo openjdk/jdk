@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "utilities/spinYield.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/spinYield.hpp"
 #include "utilities/ticks.hpp"
 
 // GCLockerTimingDebugLogger tracks specific timing information for GC lock waits.
@@ -60,16 +60,13 @@ public:
 };
 
 Monitor* GCLocker::_lock;
-volatile bool GCLocker::_is_gc_request_pending;
+Atomic<bool> GCLocker::_is_gc_request_pending{false};
 
-DEBUG_ONLY(uint64_t GCLocker::_verify_in_cr_count;)
+DEBUG_ONLY(Atomic<uint64_t> GCLocker::_verify_in_cr_count{0};)
 
 void GCLocker::initialize() {
-  assert(Heap_lock != nullptr, "inv");
-  _lock = Heap_lock;
-  _is_gc_request_pending = false;
-
-  DEBUG_ONLY(_verify_in_cr_count = 0;)
+  assert(JNICritical_lock != nullptr, "inv");
+  _lock = JNICritical_lock;
 }
 
 bool GCLocker::is_active() {
@@ -82,12 +79,13 @@ bool GCLocker::is_active() {
 }
 
 void GCLocker::block() {
-  assert(_lock->is_locked(), "precondition");
-  assert(Atomic::load(&_is_gc_request_pending) == false, "precondition");
+  // _lock is held from the beginning of block() to the end of of unblock().
+  _lock->lock();
+  assert(_is_gc_request_pending.load_relaxed() == false, "precondition");
 
   GCLockerTimingDebugLogger logger("Thread blocked to start GC.");
 
-  Atomic::store(&_is_gc_request_pending, true);
+  _is_gc_request_pending.store_relaxed(true);
 
   // The _is_gc_request_pending and _jni_active_critical (inside
   // in_critical_atomic()) variables form a Dekker duality. On the GC side, the
@@ -111,15 +109,15 @@ void GCLocker::block() {
 #ifdef ASSERT
   // Matching the storestore in GCLocker::exit.
   OrderAccess::loadload();
-  assert(Atomic::load(&_verify_in_cr_count) == 0, "inv");
+  assert(_verify_in_cr_count.load_relaxed() == 0, "inv");
 #endif
 }
 
 void GCLocker::unblock() {
-  assert(_lock->is_locked(), "precondition");
-  assert(Atomic::load(&_is_gc_request_pending) == true, "precondition");
+  assert(_is_gc_request_pending.load_relaxed() == true, "precondition");
 
-  Atomic::store(&_is_gc_request_pending, false);
+  _is_gc_request_pending.store_relaxed(false);
+  _lock->unlock();
 }
 
 void GCLocker::enter_slow(JavaThread* current_thread) {
@@ -138,7 +136,7 @@ void GCLocker::enter_slow(JavaThread* current_thread) {
     // Same as fast path.
     OrderAccess::fence();
 
-    if (!Atomic::load(&_is_gc_request_pending)) {
+    if (!_is_gc_request_pending.load_relaxed()) {
       return;
     }
 

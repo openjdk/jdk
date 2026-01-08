@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ public class US_ASCII
             assert (dp <= dl);
             dp = (dp <= dl ? dp : dl);
 
-            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
 

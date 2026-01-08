@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA option processing on supported CPU.
+ *          ( Disable this test on riscv, because on riscv UseSHA could depend UseSHA1Intrinsics which depends on !AvoidUnalignedAccesses. )
  * @library /test/lib /
  * @requires vm.flagless
+ * @requires os.arch != "riscv64"
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

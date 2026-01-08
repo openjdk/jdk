@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ package java.beans;
  * The JavaBeans specification defines the notion of design time as is a
  * mode in which JavaBeans instances should function during their composition
  * and customization in a interactive design, composition or construction tool,
- * as opposed to runtime when the JavaBean is part of an applet, application,
+ * as opposed to runtime when the JavaBean is part of an application,
  * or other live Java executable abstraction.
  *
  * @author Laurence P. G. Cable

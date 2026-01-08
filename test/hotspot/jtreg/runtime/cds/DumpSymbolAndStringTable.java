@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,21 +32,17 @@
  *                   -XX:+WhiteBoxAPI DumpSymbolAndStringTable
  */
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.whitebox.WhiteBox;
 
 public class DumpSymbolAndStringTable {
     public static void main(String[] args) throws Exception {
-        // Grab my own PID
-        String pid = Long.toString(ProcessTools.getProcessId());
-
         WhiteBox wb = WhiteBox.getWhiteBox();
         boolean sharingEnabled = wb.isSharingEnabled();
 
         ProcessBuilder pb = new ProcessBuilder();
-        pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.symboltable", "-verbose"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.symboltable", "-verbose"));
         OutputAnalyzer output = CDSTestUtils.executeAndLog(pb, "jcmd-symboltable");
         final String sharedSymbolsHeader = "Shared symbols:\n";
         try {
@@ -59,7 +55,7 @@ public class DumpSymbolAndStringTable {
             output.shouldContain("Unknown diagnostic command");
         }
 
-        pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.stringtable", "-verbose"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.stringtable", "-verbose"));
         output = CDSTestUtils.executeAndLog(pb, "jcmd-stringtable");
         final String sharedStringsHeader = "Shared strings:\n";
         try {
@@ -74,7 +70,7 @@ public class DumpSymbolAndStringTable {
             output.shouldContain("Unknown diagnostic command");
         }
 
-        pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.systemdictionary"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.systemdictionary"));
         output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary");
         try {
             output.shouldContain("System Dictionary for 'app' class loader statistics:");
@@ -85,7 +81,7 @@ public class DumpSymbolAndStringTable {
             output.shouldContain("Unknown diagnostic command");
         }
 
-        pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.systemdictionary", "-verbose"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.systemdictionary", "-verbose"));
         output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary");
         try {
             output.shouldContain("Dictionary for loader data: 0x");

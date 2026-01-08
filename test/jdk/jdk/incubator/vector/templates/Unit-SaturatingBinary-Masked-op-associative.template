@@ -1,0 +1,7 @@
+
+    @Test(dataProvider = "$type$SaturatingBinaryOpAssocMaskProvider")
+    static void [[TEST]]Assoc$vectorteststype$Masked(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb,
+                                                     IntFunction<$type$[]> fc, IntFunction<boolean[]> fm) {
+[[KERNEL]]
+        assertArraysEqualsAssociative(rl, rr, a, b, c, mask, $vectorteststype$::[[TEST]]);
+    }

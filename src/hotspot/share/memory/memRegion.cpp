@@ -22,7 +22,6 @@
  *
  */
 
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/globals.hpp"

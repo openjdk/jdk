@@ -23,12 +23,13 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 
 void ShenandoahPassiveMode::initialize_flags() const {
@@ -36,12 +37,12 @@ void ShenandoahPassiveMode::initialize_flags() const {
   FLAG_SET_DEFAULT(ExplicitGCInvokesConcurrent, false);
   FLAG_SET_DEFAULT(ShenandoahImplicitGCInvokesConcurrent, false);
 
-  // Passive runs with max speed for allocation, because GC is always STW
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahPacing);
-
   // No need for evacuation reserve with Full GC, only for Degenerated GC.
   if (!ShenandoahDegeneratedGC) {
-    SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahEvacReserve, 0);
+    if (FLAG_IS_DEFAULT(ShenandoahEvacReserve)) {
+      log_info(gc)("Heuristics sets -XX:ShenandoahEvacReserve=0");
+      FLAG_SET_DEFAULT(ShenandoahEvacReserve, 0);
+    }
   }
 
   // Disable known barriers by default.
@@ -51,11 +52,6 @@ void ShenandoahPassiveMode::initialize_flags() const {
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStackWatermarkBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCardBarrier);
-
-  // Final configuration checks
-  // Passive mode does not instantiate the machinery to support the card table.
-  // Exit if the flag has been explicitly set.
-  SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahCardBarrier);
 }
 
 ShenandoahHeuristics* ShenandoahPassiveMode::initialize_heuristics(ShenandoahSpaceInfo* space_info) const {

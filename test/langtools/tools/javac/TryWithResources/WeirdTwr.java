@@ -1,7 +1,6 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 6911256 6964740
- * @author Joseph D. Darcy
  * @summary Strange TWRs
  * @compile WeirdTwr.java
  * @run main WeirdTwr

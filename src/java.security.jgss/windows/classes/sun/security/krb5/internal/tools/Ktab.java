@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@ import sun.security.krb5.internal.ktab.*;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Serial;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -80,8 +83,8 @@ public class Ktab {
     }
 
     private static class ExitException extends RuntimeException {
-        @java.io.Serial
-        static final long serialVersionUID = 0L;
+        @Serial
+        private static final long serialVersionUID = 0L;
         private final int errorCode;
         public ExitException(int errorCode) {
             this.errorCode = errorCode;
@@ -304,8 +307,7 @@ public class Ktab {
         }
         if (password == null) {
             try {
-                BufferedReader cis =
-                    new BufferedReader(new InputStreamReader(System.in));
+                BufferedReader cis = stdinReader();
                 System.out.print("Password for " + pname.toString() + ":");
                 System.out.flush();
                 password = cis.readLine().toCharArray();
@@ -403,6 +405,12 @@ public class Ktab {
         }
     }
 
+    private static BufferedReader stdinReader() {
+        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+        Reader reader = new InputStreamReader(System.in, charset);
+        return new BufferedReader(reader);
+    }
+
     /**
      * Deletes an entry from the key table.
      */
@@ -412,8 +420,7 @@ public class Ktab {
             pname = new PrincipalName(principal);
             if (!fopt) {
                 String answer;
-                BufferedReader cis =
-                    new BufferedReader(new InputStreamReader(System.in));
+                BufferedReader cis = stdinReader();
                 System.out.print("Are you sure you want to delete "+
                         "service key(s) for " + pname.toString() +
                         " (" + (etype==-1?"all etypes":("etype="+etype)) + ", " +

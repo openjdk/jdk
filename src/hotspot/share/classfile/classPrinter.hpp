@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ public:
     PRINT_BYTECODE_ADDR     = 1 << 2,
     PRINT_DYNAMIC           = 1 << 3, // extra information for invokedynamic (and dynamic constant ...)
     PRINT_METHOD_HANDLE     = 1 << 4, // extra information for invokehandle
+    PRINT_CLASS_DETAILS     = 1 << 5, // print details of the C++ and Java objects that represent classes
+    PRINT_METHOD_DETAILS    = 1 << 6, // print details of the C++ objects that represent methods
   };
   static bool has_mode(int flags, Mode mode) {
     return (flags & static_cast<int>(mode)) != 0;

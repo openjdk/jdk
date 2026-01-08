@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="lzz"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en">İngilizuri</language>
+			<language type="laz">Lazuri</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b cç{ç̌} d {dz} e f gğ h iİ j kǩ l m n o p{p̌} q r sş t{t̆} {ts} {tz} u v x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ı ö ü w ž ʒǯ]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B CÇ{Ç̌} D E F GĞ H İ J KǨ L M N O P{P̌} Q R SŞ T{T̆} U V W X Y Z]</exemplarCharacters>
+	</characters>
+</ldml>

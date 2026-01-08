@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,15 @@
  * questions.
  */
 
+import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
+
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.HelloApp;
-import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
+import jdk.jpackage.test.JPackageCommand;
 
 /* @test
  * @bug 8340311
@@ -41,7 +40,7 @@ import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
  * @requires os.family == "windows"
  * @build jdk.jpackage.test.*
  * @build WinNoRestartTest
- * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=480 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinNoRestartTest
  */
 
@@ -93,18 +92,16 @@ public class WinNoRestartTest {
             // Save updated main launcher .cfg file
             cfgFile.save(cmd.appLauncherCfgPath(null));
 
-            try ( // Launch the app in a separate thread
-                ExecutorService exec = Executors.newSingleThreadExecutor()) {
-                exec.execute(() -> {
-                    HelloApp.executeLauncher(cmd);
-                });
+            // Launch the app in a separate thread
+            new Thread(() -> {
+                HelloApp.executeLauncher(cmd);
+            }).start();
 
-                // Wait a bit to let the app start
-                Thread.sleep(Duration.ofSeconds(10));
+            // Wait a bit to let the app start
+            Thread.sleep(Duration.ofSeconds(10));
 
-                // Find the main app launcher process and kill it
-                killAppLauncherProcess(cmd, null, expectedNoRestarted ? 1 : 2);
-            }
+            // Find the main app launcher process and kill it
+            killAppLauncherProcess(cmd, null, expectedNoRestarted ? 1 : 2);
         }
     }
 

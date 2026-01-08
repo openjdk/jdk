@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class FixedLengthInputStream
 {
@@ -132,7 +133,7 @@ public class FixedLengthInputStream
 
             debug("Received " + count + " bytes");
 
-            t.sendResponseHeaders(200, -1);
+            t.sendResponseHeaders(200, RSPBODY_EMPTY);
             t.close();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Collections;
 // in test environment.
 public class DockerRunOptions {
     public String imageNameAndTag;
+    public ArrayList<String> engineOpts = new ArrayList<>();
     public ArrayList<String> dockerOpts = new ArrayList<>();
     public String command;    // normally a full path to java
     public ArrayList<String> javaOpts = new ArrayList<>();
@@ -67,6 +68,11 @@ public class DockerRunOptions {
 
     public final DockerRunOptions addDockerOpts(String... opts) {
         Collections.addAll(dockerOpts, opts);
+        return this;
+    }
+
+    public final DockerRunOptions addEngineOpts(String... opts) {
+        Collections.addAll(engineOpts, opts);
         return this;
     }
 

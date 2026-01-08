@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,22 @@ public abstract class BaseOptions {
      * Default is false.
      */
     private boolean noTimestamp = false;
+
+
+    /**
+     * Argument for command-line option {@code --preview-note-tag}.
+     * If set, the JavaDoc tag with the given name can be used to add
+     * preview-related notes to permanent APIs or override the default
+     * preview note for preview APIs.
+     */
+    private String previewNoteTag = null;
+
+    /**
+     * Argument for command-line option {@code --preview-feature-tag}.
+     * If set, the JavaDoc inline tag with the given name is used to
+     * add mark an API element as preview feature in non-JDK contexts.
+     */
+    private String previewFeatureTag = null;
 
     /**
      * Argument for command-line option {@code -quiet}.
@@ -545,6 +561,22 @@ public abstract class BaseOptions {
                                 return false;
                             }
                         }
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--preview-note-tag", 1) {
+                    @Override
+                    public boolean process(String option, List<String> args) {
+                        previewNoteTag = args.getFirst();
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--preview-feature-tag", 1) {
+                    @Override
+                    public boolean process(String option, List<String> args) {
+                        previewFeatureTag = args.getFirst();
                         return true;
                     }
                 },
@@ -939,6 +971,18 @@ public abstract class BaseOptions {
     public boolean noTimestamp() {
         return noTimestamp;
     }
+
+    /**
+     * Argument for command-line option {@code --preview-note-tag}.
+     * Name of inline tag for preview notes on permanent APIs.
+     */
+    public String previewNoteTag() { return previewNoteTag; }
+
+    /**
+     * Argument for command-line option {@code --preview-feature-tag}.
+     * Name of inline tag for marking APIs as preview feature.
+     */
+    public String previewFeatureTag() { return previewFeatureTag; }
 
     /**
      * Argument for command-line option {@code -quiet}.

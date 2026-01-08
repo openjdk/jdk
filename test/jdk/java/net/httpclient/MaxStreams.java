@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class MaxStreams {
     Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
     Http2TestServer https2TestServer;   // HTTP/2 ( h2 )
     final Http2FixedHandler handler = new Http2FixedHandler();
-    SSLContext ctx;
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
     String http2FixedURI;
     String https2FixedURI;
     ExecutorService exec;
@@ -163,7 +163,6 @@ public class MaxStreams {
 
     @BeforeTest
     public void setup() throws Exception {
-        ctx = (new SimpleSSLContext()).get();
         exec = Executors.newCachedThreadPool();
 
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);

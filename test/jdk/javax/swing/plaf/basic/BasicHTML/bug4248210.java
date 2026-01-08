@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class bug4248210 {
             UIManager.getDefaults().put("Label.foreground", labelColor);
         }
 
-        JLabel label = new JLabel("<html><body>Can You Read This?</body></html>");
+        JLabel label = new JLabel("<html><body>\u2588 \u2588 \u2588 \u2588</body></html>");
         label.setSize(150, 30);
 
         BufferedImage img = paintToImage(label);

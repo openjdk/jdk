@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
 #ifndef SHARE_PRIMS_JVMTIAGENTLIST_HPP
 #define SHARE_PRIMS_JVMTIAGENTLIST_HPP
 
-#include "nmt/memTag.hpp"
 #include "prims/jvmtiAgent.hpp"
-#include "utilities/growableArray.hpp"
 
 class JvmtiEnv;
 
-// Maintains a single cas linked-list of JvmtiAgents.
+// Maintains thread-safe linked list of JvmtiAgents.
 class JvmtiAgentList : AllStatic {
-  friend class Iterator;
   friend class JvmtiExport;
  public:
   class Iterator {
@@ -46,20 +43,20 @@ class JvmtiAgentList : AllStatic {
       NOT_XRUN,
       ALL
     };
-    GrowableArrayCHeap<JvmtiAgent*, mtServiceability>* _stack;
     const Filter _filter;
-    Iterator() : _stack(nullptr), _filter(ALL) {}
-    Iterator(JvmtiAgent** list, Filter filter);
+    JvmtiAgent* _next;
+    Iterator(): _filter(ALL), _next(nullptr) {}
+    Iterator(JvmtiAgent* head, Filter filter);
     JvmtiAgent* select(JvmtiAgent* agent) const;
    public:
     bool has_next() const NOT_JVMTI_RETURN_(false);
     JvmtiAgent* next() NOT_JVMTI_RETURN_(nullptr);
-    const JvmtiAgent* next() const NOT_JVMTI_RETURN_(nullptr);
-    ~Iterator() { delete _stack; }
   };
 
  private:
-  static JvmtiAgent* _list;
+  static JvmtiAgent* _head;
+
+  static JvmtiAgent* head();
 
   static void initialize();
   static void convert_xrun_agents();
@@ -86,6 +83,7 @@ class JvmtiAgentList : AllStatic {
   static Iterator java_agents();
   static Iterator native_agents();
   static Iterator xrun_agents();
+  static bool disable_agent_list() NOT_JVMTI_RETURN_(false);
 };
 
 #endif // SHARE_PRIMS_JVMTIAGENTLIST_HPP

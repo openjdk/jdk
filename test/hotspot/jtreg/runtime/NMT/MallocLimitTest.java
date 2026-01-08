@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver MallocLimitTest compiler-limit-fatal
+ * @run driver/timeout=480 MallocLimitTest compiler-limit-fatal
  */
 
 /*

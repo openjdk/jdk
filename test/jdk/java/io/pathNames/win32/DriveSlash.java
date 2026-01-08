@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
    @bug 4065189
    @summary Check that win32 pathnames of the form "C:\\"
             can be listed by the File.list method
+   @requires (os.family == "windows")
    @author Mark Reinhold
  */
 
@@ -34,9 +35,6 @@ import java.io.*;
 public class DriveSlash {
 
     public static void main(String[] args) throws Exception {
-
-        /* This test is only valid on win32 systems */
-        if (File.separatorChar != '\\') return;
 
         File f = new File("c:\\");
         System.err.println(f.getCanonicalPath());

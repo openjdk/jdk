@@ -55,7 +55,6 @@ import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.UNIX;
 
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
 /**
@@ -132,7 +131,7 @@ class ServerSocketChannelImpl
         if (family == UNIX) {
             this.fd = UnixDomainSockets.socket();
         } else {
-            this.fd = Net.serverSocket(family, true);
+            this.fd = Net.serverSocket(family);
         }
         this.fdVal = IOUtil.fdVal(fd);
     }
@@ -331,7 +330,6 @@ class ServerSocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
-        NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
         Net.listen(fd, backlog < 1 ? 50 : backlog);
         return Net.localAddress(fd);

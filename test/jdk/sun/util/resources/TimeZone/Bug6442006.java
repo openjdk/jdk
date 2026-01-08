@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6442006 8008577 8174269
+ * @bug 6442006 8008577 8174269 8354548
  * @modules jdk.localedata
  * @summary Test case for verifying timezone display name for Asia/Taipei
  * @run main Bug6442006
@@ -38,8 +38,8 @@ public class Bug6442006 {
 
         TimeZone tz = TimeZone.getTimeZone("Asia/Taipei");
         Locale tzLocale = Locale.JAPANESE;
-        String jaStdName = "\u53f0\u5317\u6a19\u6e96\u6642";
-        String jaDstName = "\u53f0\u5317\u590f\u6642\u9593";
+        String jaStdName = "台湾標準時";
+        String jaDstName = "台湾夏時間";
 
         if (!tz.getDisplayName(false, TimeZone.LONG, tzLocale).equals
            (jaStdName))

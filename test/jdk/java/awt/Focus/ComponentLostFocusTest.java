@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,20 @@ import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.TextField;
+import java.awt.Toolkit;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.imageio.ImageIO;
 
 public class ComponentLostFocusTest {
 
@@ -49,10 +56,10 @@ public class ComponentLostFocusTest {
     static TextField tf;
     static Robot r;
     static Dialog dialog = null;
-    static volatile boolean passed;
     static volatile Point loc;
     static volatile int width;
     static volatile int top;
+    static final CountDownLatch focusGainedLatch = new CountDownLatch(1);
 
     private static void createTestUI() {
 
@@ -75,11 +82,7 @@ public class ComponentLostFocusTest {
 
     public static void doTest() {
         System.out.println("dialog.setVisible.... ");
-        new Thread(new Runnable() {
-            public void run() {
-                dialog.setVisible(true);
-            }
-        }).start();
+        new Thread(() -> dialog.setVisible(true)).start();
 
         // The bug is that this construction leads to the redundant xRequestFocus
         // By the way, the requestFocusInWindow() works fine before the fix
@@ -98,7 +101,7 @@ public class ComponentLostFocusTest {
         tf.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 System.out.println("TextField gained focus: " + e);
-                passed = true;
+                focusGainedLatch.countDown();
             }
         });
 
@@ -114,6 +117,17 @@ public class ComponentLostFocusTest {
 
         // request focus to the text field
         tf.requestFocus();
+    }
+
+    private static void captureScreen() {
+        try {
+            final Rectangle screenBounds = new Rectangle(
+                    Toolkit.getDefaultToolkit().getScreenSize());
+            ImageIO.write(r.createScreenCapture(screenBounds),
+                    "png", new File("ComponentLostFocusTest.png"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static final void main(String args[]) throws Exception {
@@ -138,9 +152,10 @@ public class ComponentLostFocusTest {
             System.out.println("Focus owner: " +
                 KeyboardFocusManager.getCurrentKeyboardFocusManager().
                                      getFocusOwner());
-
-            if (!passed) {
-                throw new RuntimeException("TextField got no focus! Test failed.");
+            if (!focusGainedLatch.await(5, TimeUnit.SECONDS)) {
+                captureScreen();
+                throw new RuntimeException("Waited too long, " +
+                        "TextField got no focus! Test failed.");
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -151,4 +166,3 @@ public class ComponentLostFocusTest {
         }
     }
 }
-

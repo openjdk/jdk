@@ -30,7 +30,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.security.Permission;
+
 import sun.net.www.ParseUtil;
 
 /**
@@ -136,8 +136,11 @@ import sun.net.www.ParseUtil;
  */
 public abstract class JarURLConnection extends URLConnection {
 
-    private URL jarFileURL;
-    private String entryName;
+    // The URL to the JAR file this connection reads from
+    private final URL jarFileURL;
+
+    // The entry this connection reads from, if any
+    private final String entryName;
 
     /**
      * The connection to the JAR file URL, if the connection has been
@@ -152,44 +155,63 @@ public abstract class JarURLConnection extends URLConnection {
      * could be found in a specification string or the
      * string could not be parsed.
      */
-
     protected JarURLConnection(URL url) throws MalformedURLException {
         super(url);
-        parseSpecs(url);
-    }
 
-    /* get the specs for a given url out of the cache, and compute and
-     * cache them if they're not there.
-     */
-    private void parseSpecs(URL url) throws MalformedURLException {
+        // Extract JAR file URL and entry name components from the URL
         String spec = url.getFile();
+        int separatorIndex = spec.indexOf("!/");
 
-        int separator = spec.indexOf("!/");
-        /*
-         * REMIND: we don't handle nested JAR URLs
-         */
-        if (separator == -1) {
+        // REMIND: we don't handle nested JAR URLs
+        if (separatorIndex == -1) {
             throw new MalformedURLException("no !/ found in url spec:" + spec);
         }
 
-        @SuppressWarnings("deprecation")
-        var _unused = jarFileURL = new URL(spec.substring(0, separator++));
+        jarFileURL = parseJarFileURL(spec, separatorIndex, url);
+        entryName = parseEntryName(spec, separatorIndex);
+    }
 
+    /**
+     * Parse the URL of the JAR file backing this JarURLConnection,
+     * appending any #runtime fragment as neccessary
+     *
+     * @param spec the URL spec of this connection
+     * @param separatorIndex the index of the '!/' separator
+     * @param connectionURL the URL passed to the constructor
+     * @return a URL to the JAR file this connection reads from
+     *
+     * @throws MalformedURLException if a malformed URL is found
+     */
+    @SuppressWarnings("deprecation")
+    private static URL parseJarFileURL(String spec, int separatorIndex, URL connectionURL) throws MalformedURLException {
+
+        URL url = new URL(spec.substring(0, separatorIndex));
         /*
-         * The url argument may have had a runtime fragment appended, so
+         * The url passed to the constructor may have had a runtime fragment appended, so
          * we need to add a runtime fragment to the jarFileURL to enable
          * runtime versioning when the underlying jar file is opened.
          */
-        if ("runtime".equals(url.getRef())) {
-            @SuppressWarnings("deprecation")
-            var _unused2 = jarFileURL = new URL(jarFileURL, "#runtime");
+        if ("runtime".equals(connectionURL.getRef())) {
+            return new URL(url, "#runtime");
         }
-        entryName = null;
+        return url;
+    }
 
-        /* if ! is the last letter of the innerURL, entryName is null */
-        if (++separator != spec.length()) {
-            entryName = spec.substring(separator, spec.length());
-            entryName = ParseUtil.decode (entryName);
+    /**
+     * Parse the entry name (if any) of this JarURLConnection
+     *
+     * @param spec the URL spec of this connection
+     * @param separatorIndex the index of the '!/' separator
+     * @return the decoded entry name, or null if this URL has no entry name
+     */
+    private static String parseEntryName(String spec, int separatorIndex) {
+        // If the URL ends with the '!/' separator, entryName is null
+        int nameIndex = separatorIndex + 2;
+        if (nameIndex == spec.length()) {
+            return null;
+        } else {
+            String encodedName = spec.substring(nameIndex, spec.length());
+            return ParseUtil.decode(encodedName);
         }
     }
 

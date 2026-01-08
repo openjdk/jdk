@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -28,7 +28,6 @@ import com.sun.org.apache.xerces.internal.util.XMLAttributesIteratorImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
@@ -56,6 +55,7 @@ import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityManager.Limit;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 
 /**
  *
@@ -74,7 +74,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, SUN Microsystems
  *
- * @LastModified: Nov 2024
+ * @LastModified: Apr 2025
  */
 public class XMLDocumentFragmentScannerImpl
         extends XMLScanner

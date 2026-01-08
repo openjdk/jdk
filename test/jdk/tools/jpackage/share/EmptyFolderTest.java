@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,16 +97,21 @@ public class EmptyFolderTest {
     }
 
     private static void validateDirTree(JPackageCommand cmd) {
+        // When MSI package is unpacked and not installed, empty directories are not created.
+        final boolean emptyDirSupported = !(PackageType.WINDOWS.contains(cmd.packageType()) && cmd.isPackageUnpacked());
+        validateDirTree(cmd, emptyDirSupported);
+    }
+
+    private static void validateDirTree(JPackageCommand cmd, boolean emptyDirSupported) {
         var outputBaseDir = cmd.appLayout().appDirectory();
         var inputBaseDir = cmd.inputDir();
         for (var path : DIR_STRUCT) {
             Path outputPath = outputBaseDir.resolve(path);
             if (isFile(outputPath)) {
                 TKit.assertFileExists(outputPath);
-            } else if (!PackageType.WINDOWS.contains(cmd.packageType())) {
+            } else if (emptyDirSupported) {
                 TKit.assertDirectoryExists(outputPath);
             } else if (inputBaseDir.resolve(path).toFile().list().length == 0) {
-                // MSI packages don't support empty folders
                 TKit.assertPathExists(outputPath, false);
             } else {
                 TKit.assertDirectoryNotEmpty(outputPath);

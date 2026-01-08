@@ -43,8 +43,10 @@ import java.util.Queue;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import junit.framework.Test;
@@ -1886,4 +1888,112 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         }
     }
 
+    public void testInterruptedExceptionThrownInBlockingMethods() throws InterruptedException {
+        // Ensure that putFirst(), putLast(), takeFirst(), and takeLast()
+        // immediately throw an InterruptedException if the thread is
+        // interrupted, to be consistent with other blocking queues such as
+        // ArrayBlockingQueue and LinkedBlockingQueue
+        try (var pool = Executors.newSingleThreadExecutor()) {
+            Future<Void> success = pool.submit(() -> {
+                var queue = new LinkedBlockingDeque<>();
+                Thread.currentThread().interrupt();
+                try {
+                    queue.putFirst(42);
+                    fail("Expected InterruptedException in putFirst()");
+                } catch (InterruptedException expected) {
+                    // good that's what we want
+                    assertFalse(Thread.currentThread().isInterrupted());
+                }
+
+                Thread.currentThread().interrupt();
+                try {
+                    queue.putLast(42);
+                    fail("Expected InterruptedException in putLast()");
+                } catch (InterruptedException expected) {
+                    // good that's what we want
+                    assertFalse(Thread.currentThread().isInterrupted());
+                }
+
+                queue.add(42);
+                Thread.currentThread().interrupt();
+                try {
+                    queue.takeFirst();
+                    fail("Expected InterruptedException in takeFirst()");
+                } catch (InterruptedException expected) {
+                    // good that's what we want
+                    assertFalse(Thread.currentThread().isInterrupted());
+                }
+
+                queue.add(42);
+                Thread.currentThread().interrupt();
+                try {
+                    queue.takeLast();
+                    fail("Expected InterruptedException in takeLast()");
+                } catch (InterruptedException expected) {
+                    // good that's what we want
+                    assertFalse(Thread.currentThread().isInterrupted());
+                }
+                return null;
+            });
+            try {
+                success.get();
+            } catch (ExecutionException e) {
+                try {
+                    throw e.getCause();
+                } catch (Error | RuntimeException unchecked) {
+                    throw unchecked;
+                } catch (Throwable cause) {
+                    throw new AssertionError(cause);
+                }
+            }
+        }
+    }
+
+    public void testWeaklyConsistentIterationWithClear() {
+        final LinkedBlockingDeque<Item> q = new LinkedBlockingDeque<>();
+        q.add(one);
+        q.add(two);
+        q.add(three);
+        final Iterator<Item> it = q.iterator();
+        mustEqual(one, it.next());
+        q.clear();
+        q.add(four);
+        q.add(five);
+        q.add(six);
+        mustEqual(two, it.next());
+        mustEqual(four, it.next());
+        mustEqual(five, it.next());
+        mustEqual(six, it.next());
+        mustEqual(3, q.size());
+    }
+
+    public void testWeaklyConsistentIterationWithIteratorRemove() {
+        final LinkedBlockingDeque<Item> q = new LinkedBlockingDeque<>();
+        q.add(one);
+        q.add(two);
+        q.add(three);
+        q.add(four);
+        q.add(five);
+        final Iterator<Item> it1 = q.iterator();
+        final Iterator<Item> it2 = q.iterator();
+        final Iterator<Item> it3 = q.iterator();
+        mustEqual(one, it1.next());
+        mustEqual(two, it1.next());
+        it1.remove(); // removing "two"
+        mustEqual(one, it2.next());
+        it2.remove(); // removing "one"
+        mustEqual(three, it2.next());
+        mustEqual(four, it2.next());
+        it2.remove(); // removing "four"
+        mustEqual(one, it3.next());
+        mustEqual(three, it3.next());
+        mustEqual(five, it3.next());
+        assertFalse(it3.hasNext());
+        mustEqual(three, it1.next());
+        mustEqual(five, it1.next());
+        assertFalse(it1.hasNext());
+        mustEqual(five, it2.next());
+        assertFalse(it2.hasNext());
+        mustEqual(2, q.size());
+    }
 }

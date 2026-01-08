@@ -48,26 +48,26 @@ public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 
   void lock(bool allow_block_for_safepoint) {
-    assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
+    assert(AtomicAccess::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
 
     if ((allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) ||
-        (Atomic::cmpxchg(&_state, unlocked, locked) != unlocked)) {
+        (AtomicAccess::cmpxchg(&_state, unlocked, locked) != unlocked)) {
       // 1. Java thread, and there is a pending safepoint. Dive into contended locking
       //    immediately without trying anything else, and block.
       // 2. Fast lock fails, dive into contended lock handling.
       contended_lock(allow_block_for_safepoint);
     }
 
-    assert(Atomic::load(&_state) == locked, "must be locked");
-    assert(Atomic::load(&_owner) == nullptr, "must not be owned");
-    DEBUG_ONLY(Atomic::store(&_owner, Thread::current());)
+    assert(AtomicAccess::load(&_state) == locked, "must be locked");
+    assert(AtomicAccess::load(&_owner) == nullptr, "must not be owned");
+    DEBUG_ONLY(AtomicAccess::store(&_owner, Thread::current());)
   }
 
   void unlock() {
-    assert(Atomic::load(&_owner) == Thread::current(), "sanity");
-    DEBUG_ONLY(Atomic::store(&_owner, (Thread*)nullptr);)
+    assert(AtomicAccess::load(&_owner) == Thread::current(), "sanity");
+    DEBUG_ONLY(AtomicAccess::store(&_owner, (Thread*)nullptr);)
     OrderAccess::fence();
-    Atomic::store(&_state, unlocked);
+    AtomicAccess::store(&_state, unlocked);
   }
 
   void contended_lock(bool allow_block_for_safepoint);

@@ -26,7 +26,7 @@
 package com.sun.tools.javac.code;
 
 import com.sun.source.tree.Tree.Kind;
-
+import java.lang.runtime.ExactConversionsSupport;
 import javax.lang.model.type.TypeKind;
 
 import static com.sun.tools.javac.code.TypeTag.NumericClasses.*;
@@ -186,6 +186,10 @@ public enum TypeTag {
         return (this.numericClass & tag.superClasses) != 0;
     }
 
+    public boolean isNumeric() {
+        return this.numericClass != 0;
+    }
+
     /** Returns the number of type tags.
      */
     public static int getTypeTagCount() {
@@ -247,11 +251,11 @@ public enum TypeTag {
             case BOOLEAN:
                 return 0 <= value && value <= 1;
             case BYTE:
-                return Byte.MIN_VALUE <= value && value <= Byte.MAX_VALUE;
+                return ExactConversionsSupport.isIntToByteExact(value);
             case CHAR:
-                return Character.MIN_VALUE <= value && value <= Character.MAX_VALUE;
+                return ExactConversionsSupport.isIntToCharExact(value);
             case SHORT:
-                return Short.MIN_VALUE <= value && value <= Short.MAX_VALUE;
+                return ExactConversionsSupport.isIntToShortExact(value);
             case INT:
                 return true;
             default:

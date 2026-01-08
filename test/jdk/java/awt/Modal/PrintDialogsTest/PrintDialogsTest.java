@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,40 +49,35 @@ import java.awt.event.ActionListener;
 
 public class PrintDialogsTest extends Panel implements ActionListener {
 
-    static final String INSTRUCTIONS = """
-        This test is free format, which means there is no enforced or guided sequence.
-
-        Please select each of
-        (a) The dialog parent type.
-        (b) The dialog modality type
-        (c) The print dialog type (Print dialog or Page Setup dialog)
-
-        Once the choices have been made click the "Start test" button.
-
-        Three windows will appear
-        (1) A Frame or a Dialog - in the case you selected "Dialog" as the parent type
-        (2) a Window (ie an undecorated top-level)
-        (3) A dialog with two buttons "Open" and "Finish"
-
-        Now check as follows whether modal blocking works as expected.
-        Windows (1) and (2) contain a button which you should be able to press
-        ONLY if you selected "Non-modal", or "Modeless" for modality type.
-        In other cases window (3) will block input to (1) and (2)
-
-        Then push the "Open" button on the Dialog to show the printing dialog and check
-        if it blocks the rest of the application - ie all of windows (1), (2) and (3)
-        should ALWAYS be blocked when the print dialog is showing.
-        Now cancel the printing dialog and check the correctness of modal blocking
-        behavior for the Dialog again.
-        To close all the 3 test windows please push the "Finish" button.
-
-        Repeat all the above for different combinations, which should include
-        using all of the Dialog parent choices and all of the Dialog Modality types.
-
-        If any behave incorrectly, note the combination of choices and press Fail.
-
-        If all behave correctly, press Pass.
-    """;
+    static final String INSTRUCTIONS =
+        "1. On the Test UI Select:\n" +
+        "\tThe dialog parent type. (e.g. Frame, Dialog, Hidden, Null)\n" +
+        "\tThe dialog modality type. (e.g. Modal, Non-Modal, Toolkit modal).\n" +
+        "\tThe print dialog type. (Print dialog or Page Setup dialog).\n\n" +
+        "2. Next, click on 'Start test' - Three windows will appear:\n" +
+        "\tWindow (1) -a Frame or Dialog (depending on selected parent type).\n" +
+        "\tWindow (2) -an undecorated top-level Window.\n" +
+        "\tWindow (3) -a Dialog containing two buttons: 'Open' and 'Finish'.\n" +
+        "\tWindows (1) & (2) have a Dummy button.\n\n" +
+        "3. Press the button on Window (1) & Window (2) \n" +
+        "Verification step:\n" +
+        "\tIf Modality is 'Non-modal' or 'Modeless', Button is pressed \n" +
+        "\tIf Modality is 'Document' & parent is not Frame/Dialog, Button is pressed \n" +
+        "\tIn all other cases, button is not pressed & Window (3) should \n" +
+        "\tblock input to Windows (1) & (2).\n\n" +
+        "4. Next, press the 'Open' button in Window (3) to open print dialog.\n\n" +
+        "5. Press the button on Window (1) & Window (2)\n" +
+        "Verification step:\n" +
+        "\tThe print dialog should block all three windows (1, 2, and 3).\n\n" +
+        "6. Cancel the print dialog, Check again if Window (3) " +
+        "blocks Windows (1) and (2) correctly.\n" +
+        "Verification step:\n" +
+        "\tConditions as seen in Verification step 3 " +
+        "should be seen, as before.\n" +
+        "To close all test windows, press 'Finish'.\n\n" +
+        "7. Repeat the steps for different combinations of Dialog Parent, Dialog Modality Type, Print Dialg Type.\n" +
+        "Try every dialog parent type and every dialog modality type.\n\n" +
+        "If any of the Verification step fails, note the combination and press 'Fail'.\n";
 
     public static void main(String[] args) throws Exception {
 

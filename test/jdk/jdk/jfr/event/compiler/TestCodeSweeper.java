@@ -65,8 +65,8 @@ public class TestCodeSweeper {
     private static final String METHOD_NAME = "verifyFullEvent";
     private static final String pathFull = EventNames.CodeCacheFull;
     private static final String pathFailure = EventNames.CompilationFailure;
-    public static final long SEGMENT_SIZE = WhiteBox.getWhiteBox().getUintxVMFlag("CodeCacheSegmentSize");
-    public static final long MIN_BLOCK_LENGTH = WhiteBox.getWhiteBox().getUintxVMFlag("CodeCacheMinBlockLength");
+    public static final long SEGMENT_SIZE = WhiteBox.getWhiteBox().getSizeTVMFlag("CodeCacheSegmentSize");
+    public static final long MIN_BLOCK_LENGTH = WhiteBox.getWhiteBox().getSizeTVMFlag("CodeCacheMinBlockLength");
     public static final long MIN_ALLOCATION = SEGMENT_SIZE * MIN_BLOCK_LENGTH;
     private static final double CACHE_USAGE_COEF = 0.95d;
 

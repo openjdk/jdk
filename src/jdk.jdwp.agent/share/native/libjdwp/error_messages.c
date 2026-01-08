@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@
  *    NOTE: This function is at the lowest level of the call tree.
  *          Do not use the ERROR* macros here.
  */
+
+ATTRIBUTE_PRINTF(4, 0)
 static void
 vprint_message(FILE *fp, const char *prefix, const char *suffix,
                const char *format, va_list ap)
@@ -84,6 +86,7 @@ vprint_message(FILE *fp, const char *prefix, const char *suffix,
  *    NOTE: This function is at the lowest level of the call tree.
  *          Do not use the ERROR* macros here.
  */
+ATTRIBUTE_PRINTF(4, 5)
 void
 print_message(FILE *fp, const char *prefix,  const char *suffix,
               const char *format, ...)
@@ -96,6 +99,7 @@ print_message(FILE *fp, const char *prefix,  const char *suffix,
 }
 
 /* Generate error message */
+ATTRIBUTE_PRINTF(1, 2)
 void
 error_message(const char *format, ...)
 {
@@ -110,6 +114,7 @@ error_message(const char *format, ...)
 }
 
 /* Print plain message to stdout. */
+ATTRIBUTE_PRINTF(1, 2)
 void
 tty_message(const char *format, ...)
 {

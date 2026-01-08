@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,6 @@
 #define FALSE           (0)
 #define TRUE            (!FALSE)
 #endif
-
-#define GTHREAD_LIB_VERSIONED VERSIONED_JNI_LIB_NAME("gthread-2.0", "0")
-#define GTHREAD_LIB JNI_LIB_NAME("gthread-2.0")
 
 #define _G_TYPE_CIC(ip, gt, ct)       ((ct*) ip)
 #define G_TYPE_CHECK_INSTANCE_CAST(instance, g_type, c_type)  \
@@ -678,6 +675,7 @@ typedef struct GtkApi {
     GVariant *(*g_variant_new_boolean)(gboolean value);
     GVariant *(*g_variant_new_uint32)(guint32 value);
 
+    gchar *(*g_variant_print)(GVariant* value, gboolean type_annotate);
 
     void (*g_variant_get)(GVariant *value,
                                     const gchar *format_string,
@@ -733,6 +731,8 @@ typedef struct GtkApi {
     void *(*g_string_printf)(GString *string,
                              const gchar *format,
                              ...);
+
+    gchar* (*g_strconcat)(const gchar* string1, ...);
 
     gboolean (*g_uuid_string_is_valid)(const gchar *str);
 
@@ -847,9 +847,6 @@ typedef struct GtkApi {
 gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose);
 gboolean gtk_check_version(GtkVersion version);
 
-typedef struct _GThreadFunctions GThreadFunctions;
-static gboolean (*fp_g_thread_get_initialized)(void);
-static void (*fp_g_thread_init)(GThreadFunctions *vtable);
 static void (*fp_gdk_threads_init)(void);
 static void (*fp_gdk_threads_enter)(void);
 static void (*fp_gdk_threads_leave)(void);

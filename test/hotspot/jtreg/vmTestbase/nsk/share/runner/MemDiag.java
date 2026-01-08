@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class MemDiag implements Runnable {
 
         public void run() {
                 System.out.println(Runtime.getRuntime().freeMemory());
-                // Ensure that interrupt status is not lost
+                // Ensure that interrupted status is not lost
                 if (Thread.currentThread().isInterrupted())
                         return;
                 try {

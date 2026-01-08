@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,7 +349,7 @@ const char* symbol_for_pc(struct ps_prochandle* ph, uintptr_t addr, uintptr_t* p
 thread_info* add_thread_info(struct ps_prochandle* ph, lwpid_t lwp_id) {
    thread_info* newthr;
    if ( (newthr = (thread_info*) calloc(1, sizeof(thread_info))) == NULL) {
-      print_debug("can't allocate memory for thread_info\n");
+      print_error("can't allocate memory for thread_info\n");
       return NULL;
    }
 

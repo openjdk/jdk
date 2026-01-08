@@ -36,7 +36,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_LANGTOOLS, \
     COMPILER := bootjdk, \
     TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/make/langtools/tools, \
-    INCLUDES := compileproperties propertiesparser, \
+    INCLUDES := compileproperties flagsgenerator propertiesparser, \
     COPY := .properties, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes, \
 ))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,9 @@ class WindowsConstants {
     public static final int BACKUP_SPARSE_BLOCK             = 0x00000009;
 
     // reparse point/symbolic link related constants
-    public static final int IO_REPARSE_TAG_SYMLINK              = 0xA000000C;
     public static final int IO_REPARSE_TAG_AF_UNIX              = 0x80000023;
+    public static final int IO_REPARSE_TAG_MOUNT_POINT          = 0xA0000003;
+    public static final int IO_REPARSE_TAG_SYMLINK              = 0xA000000C;
     public static final int MAXIMUM_REPARSE_DATA_BUFFER_SIZE    = 16 * 1024;
     public static final int SYMBOLIC_LINK_FLAG_DIRECTORY        = 0x1;
     public static final int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;
@@ -95,6 +96,7 @@ class WindowsConstants {
     public static final int ERROR_NOT_SAME_DEVICE       = 17;
     public static final int ERROR_NOT_READY             = 21;
     public static final int ERROR_SHARING_VIOLATION     = 32;
+    public static final int ERROR_NETWORK_ACCESS_DENIED = 65;
     public static final int ERROR_FILE_EXISTS           = 80;
     public static final int ERROR_INVALID_PARAMETER     = 87;
     public static final int ERROR_DISK_FULL             = 112;
@@ -109,6 +111,7 @@ class WindowsConstants {
     public static final int ERROR_PRIVILEGE_NOT_HELD    = 1314;
     public static final int ERROR_NONE_MAPPED           = 1332;
     public static final int ERROR_CANT_ACCESS_FILE      = 1920;
+    public static final int ERROR_CANT_RESOLVE_FILENAME = 1921;
     public static final int ERROR_NOT_A_REPARSE_POINT   = 4390;
     public static final int ERROR_INVALID_REPARSE_DATA  = 4392;
 

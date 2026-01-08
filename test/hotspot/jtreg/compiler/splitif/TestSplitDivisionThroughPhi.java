@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public class TestSplitDivisionThroughPhi {
    // the iv phi in one pass of Split If.
     static void testPushDivIThruPhiInChain() {
         for (int i = 10; i > 1; i -= 2) {
-            // Empty one iteration loop which is only removed after split if in first loop opts phase. This prevents
+            // Empty one-iteration loop which is only removed after split if in first loop opts phase. This prevents
             // that the Mul node is already split through the iv phi while the Div node cannot be split yet due to
             // the zero divisor check which can only be removed in the IGVN after the first loop opts pass.
             for (int j = 0; j < 1; j++) {

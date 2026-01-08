@@ -27,7 +27,6 @@
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
  * @run junit/othervm/native --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
@@ -36,7 +35,6 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
  * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *     --enable-native-access=ALL-UNNAMED ThreadAPI
  */
@@ -70,7 +68,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -256,35 +253,6 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::stop from current thread.
-     */
-    @Test
-    void testStop1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::stop);
-        });
-    }
-
-    /**
-     * Test Thread::stop from another thread.
-     */
-    @Test
-    void testStop2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, thread::stop);
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
      * Test Thread.join before thread starts, platform thread invokes join.
      */
     @Test
@@ -435,7 +403,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test platform thread invoking Thread.join with interrupt status set.
+     * Test platform thread invoking Thread.join with interrupted status set.
      */
     @Test
     void testJoin15() throws Exception {
@@ -451,7 +419,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test virtual thread invoking Thread.join with interrupt status set.
+     * Test virtual thread invoking Thread.join with interrupted status set.
      */
     @Test
     void testJoin16() throws Exception {
@@ -459,7 +427,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test platform thread invoking timed-Thread.join with interrupt status set.
+     * Test platform thread invoking timed-Thread.join with interrupted status set.
      */
     @Test
     void testJoin17() throws Exception {
@@ -475,7 +443,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test virtual thread invoking timed-Thread.join with interrupt status set.
+     * Test virtual thread invoking timed-Thread.join with interrupted status set.
      */
     @Test
     void testJoin18() throws Exception {
@@ -483,7 +451,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test platform thread invoking timed-Thread.join with interrupt status set.
+     * Test platform thread invoking timed-Thread.join with interrupted status set.
      */
     @Test
     void testJoin19() throws Exception {
@@ -500,7 +468,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test virtual thread invoking timed-Thread.join with interrupt status set.
+     * Test virtual thread invoking timed-Thread.join with interrupted status set.
      */
     @Test
     void testJoin20() throws Exception {
@@ -625,7 +593,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test virtual thread with interrupt status set calling Thread.join to wait
+     * Test virtual thread with interrupted status set calling Thread.join to wait
      * for platform thread to terminate.
      */
     @Test
@@ -764,7 +732,7 @@ class ThreadAPI {
             assertFalse(me.isInterrupted());
             me.interrupt();
             assertTrue(me.isInterrupted());
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
             assertFalse(me.isInterrupted());
             me.interrupt();
         });
@@ -792,7 +760,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test termination with interrupt status set.
+     * Test termination with interrupted status set.
      */
     @Test
     void testInterrupt4() throws Exception {
@@ -837,7 +805,7 @@ class ThreadAPI {
                     Thread.sleep(60*1000);
                     fail("sleep not interrupted");
                 } catch (InterruptedException e) {
-                    // interrupt status should be reset
+                    // interrupted status should be reset
                     assertFalse(Thread.interrupted());
                 }
             } catch (Exception e) {
@@ -871,7 +839,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test trying to park with interrupt status set.
+     * Test trying to park with interrupted status set.
      */
     @Test
     void testInterrupt8() throws Exception {
@@ -884,7 +852,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test trying to wait with interrupt status set.
+     * Test trying to wait with interrupted status set.
      */
     @Test
     void testInterrupt9() throws Exception {
@@ -903,7 +871,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test trying to block with interrupt status set.
+     * Test trying to block with interrupted status set.
      */
     @Test
     void testInterrupt10() throws Exception {
@@ -1112,7 +1080,6 @@ class ThreadAPI {
      * Test Thread.yield releases carrier thread when virtual thread holds a monitor.
      */
     @Test
-    @DisabledIf("LockingMode#isLegacy")
     void testYieldReleasesCarrierWhenHoldingMonitor() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
@@ -1270,7 +1237,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.sleep with interrupt status set.
+     * Test Thread.sleep with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("sleepers")
@@ -1289,7 +1256,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.sleep with interrupt status set and a negative duration.
+     * Test Thread.sleep with interrupted status set and a negative duration.
      */
     @Test
     void testSleep4() throws Exception {
@@ -1325,7 +1292,7 @@ class ThreadAPI {
                 sleeper.run();
                 fail("sleep was not interrupted");
             } catch (InterruptedException e) {
-                // interrupt status should be cleared
+                // interrupted status should be cleared
                 assertFalse(t.isInterrupted());
             }
         });
@@ -1389,7 +1356,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.sleep when pinned and with interrupt status set.
+     * Test Thread.sleep when pinned and with interrupted status set.
      */
     @Test
     void testSleep9() throws Exception {
@@ -1422,7 +1389,7 @@ class ThreadAPI {
                 });
                 fail("sleep not interrupted");
             } catch (InterruptedException e) {
-                // interrupt status should be cleared
+                // interrupted status should be cleared
                 assertFalse(t.isInterrupted());
             }
         });

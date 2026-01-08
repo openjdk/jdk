@@ -22,13 +22,15 @@
  *
  */
 #include "cds/filemap.hpp"
+#include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/mallocTracker.hpp"
-#include "nmt/memTag.hpp"
-#include "nmt/memReporter.hpp"
-#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/memReporter.hpp"
+#include "nmt/memTag.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/regionsTree.inline.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/debug.hpp"
@@ -36,7 +38,7 @@
 #include "utilities/ostream.hpp"
 
 #define INDENT_BY(num_chars, CODE) { \
-  streamIndentor si(out, num_chars); \
+  StreamIndentor si(out, num_chars); \
   { CODE }                           \
 }
 
@@ -51,7 +53,7 @@ static ssize_t counter_diff(size_t c1, size_t c2) {
 }
 
 MemReporterBase::MemReporterBase(outputStream* out, size_t scale) :
-  _scale(scale), _output(out), _auto_indentor(out) {}
+  _scale(scale), _output(out) {}
 
 size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
@@ -230,7 +232,7 @@ void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
 #endif
   out->print_cr(")");
 
-  streamIndentor si(out, indent);
+  StreamIndentor si(out, indent);
 
   if (mem_tag == mtClass) {
     // report class count
@@ -249,7 +251,7 @@ void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
 
    // report malloc'd memory
   if (amount_in_current_scale(MAX2(malloc_memory->malloc_size(), pk_malloc)) > 0) {
-    print_malloc(malloc_memory->malloc_counter());
+    print_malloc(malloc_memory->malloc_counter(), mem_tag);
     out->cr();
   }
 
@@ -392,13 +394,11 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
 
 void MemDetailReporter::report_virtual_memory_map() {
   // Virtual memory map always in base address order
-  VirtualMemoryAllocationIterator itr = _baseline.virtual_memory_allocations();
-  const ReservedMemoryRegion* rgn;
-
   output()->print_cr("Virtual memory map:");
-  while ((rgn = itr.next()) != nullptr) {
-    report_virtual_memory_region(rgn);
-  }
+  _baseline.virtual_memory_allocations()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+    report_virtual_memory_region(&rgn);
+    return true;
+  });
 }
 
 void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion* reserved_rgn) {
@@ -419,7 +419,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   outputStream* out = output();
   const char* scale = current_scale();
   const NativeCallStack*  stack = reserved_rgn->call_stack();
-  bool all_committed = reserved_rgn->size() == reserved_rgn->committed_size();
+  bool all_committed = reserved_rgn->size() == _baseline.virtual_memory_allocations()->committed_size(*reserved_rgn);
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->cr();
   print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());
@@ -432,34 +432,45 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   }
 
   if (all_committed) {
-    CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
-    const CommittedMemoryRegion* committed_rgn = itr.next();
-    if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
-      // One region spanning the entire reserved region, with the same stack trace.
-      // Don't print this regions because the "reserved and committed" line above
-      // already indicates that the region is committed.
-      assert(itr.next() == nullptr, "Unexpectedly more than one regions");
+    bool reserved_and_committed = false;
+    _baseline.virtual_memory_allocations()->visit_committed_regions(*reserved_rgn,
+                                                                  [&](CommittedMemoryRegion& committed_rgn) {
+      if (committed_rgn.equals(*reserved_rgn)) {
+        // One region spanning the entire reserved region, with the same stack trace.
+        // Don't print this regions because the "reserved and committed" line above
+        // already indicates that the region is committed.
+        reserved_and_committed = true;
+        return false;
+      }
+      return true;
+    });
+
+    if (reserved_and_committed) {
       return;
     }
   }
 
-  CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
-  const CommittedMemoryRegion* committed_rgn;
-  while ((committed_rgn = itr.next()) != nullptr) {
+  auto print_committed_rgn = [&](const CommittedMemoryRegion& crgn) {
     // Don't report if size is too small
-    if (amount_in_current_scale(committed_rgn->size()) == 0) continue;
-    stack = committed_rgn->call_stack();
+    if (amount_in_current_scale(crgn.size()) == 0) return;
+    stack = crgn.call_stack();
     out->cr();
     INDENT_BY(8,
-      print_virtual_memory_region("committed", committed_rgn->base(), committed_rgn->size());
+      print_virtual_memory_region("committed", crgn.base(), crgn.size());
       if (stack->is_empty()) {
         out->cr();
       } else {
         out->print_cr(" from");
-        INDENT_BY(4, stack->print_on(out);)
+        INDENT_BY(4, _stackprinter.print_stack(stack);)
       }
     )
-  }
+  };
+
+  _baseline.virtual_memory_allocations()->visit_committed_regions(*reserved_rgn,
+                                                                  [&](CommittedMemoryRegion& crgn) {
+    print_committed_rgn(crgn);
+    return true;
+  });
 }
 
 void MemDetailReporter::report_memory_file_allocations() {
@@ -641,7 +652,7 @@ void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
       early_reserved_amount, early_committed_amount);
     out->print_cr(")");
 
-    streamIndentor si(out, indent);
+    StreamIndentor si(out, indent);
 
     // detail lines
     if (mem_tag == mtClass) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,18 +55,22 @@ public class TIFFImageWriterSpi extends ImageWriterSpi {
               );
     }
 
+    @Override
     public boolean canEncodeImage(ImageTypeSpecifier type) {
         return true;
     }
 
+    @Override
     public String getDescription(Locale locale) {
         return "Standard TIFF image writer";
     }
 
+    @Override
     public ImageWriter createWriterInstance(Object extension) {
         return new TIFFImageWriter(this);
     }
 
+    @Override
     public void onRegistration(ServiceRegistry registry,
                                Class<?> category) {
         if (registered) {

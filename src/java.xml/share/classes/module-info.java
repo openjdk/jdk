@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -868,19 +868,19 @@
  * </tr>
  * <tr>
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
- * <td>Determines if XSLT and XPath extension functions are to be allowed.
+ * <td>Determines whether extension functions in the Transform API are to be allowed.
+ * The extension functions in the XPath API are not affected by this property.
  * </td>
  * <td style="text-align:center" rowspan="5">yes</td>
  * <td style="text-align:center" rowspan="3">Boolean</td>
  * <td>
  * true or false. True indicates that extension functions are allowed; False otherwise.
  * </td>
- * <td style="text-align:center">true</td>
+ * <td style="text-align:center">false</td>
  * <td style="text-align:center">false</td>
  * <td style="text-align:center">Yes</td>
  * <td style="text-align:center">
  *     <a href="#Transform">Transform</a><br>
- *     <a href="#XPATH">XPath</a>
  * </td>
  * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">8</td>

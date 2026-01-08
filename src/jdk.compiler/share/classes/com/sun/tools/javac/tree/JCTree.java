@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,7 +505,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     // for default DiagnosticPosition
     public int getStartPosition() {
-        return TreeInfo.getStartPos(this);
+        return noNoPos(TreeInfo.getStartPos(this));
     }
 
     // for default DiagnosticPosition
@@ -515,7 +515,14 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     // for default DiagnosticPosition
     public int getEndPosition(EndPosTable endPosTable) {
-        return TreeInfo.getEndPos(this, endPosTable);
+        return noNoPos(TreeInfo.getEndPos(this, endPosTable));
+    }
+
+    private int noNoPos(int position) {
+        if (position == JCDiagnostic.NOPOS) {
+            return pos;
+        }
+        return position;
     }
 
     /**
@@ -1002,6 +1009,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * A variable definition.
      */
     public static class JCVariableDecl extends JCStatement implements VariableTree {
+
+        public enum DeclKind {
+            EXPLICIT,       // "SomeType name"
+            IMPLICIT,       // "name"
+            VAR,            // "var name"
+        }
+
         /** variable modifiers */
         public JCModifiers mods;
         /** variable name */
@@ -1014,17 +1028,17 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression init;
         /** symbol */
         public VarSymbol sym;
-        /** explicit start pos */
-        public int startPos = Position.NOPOS;
-        /** declared using `var` */
-        private boolean declaredUsingVar;
+        /** how the variable's type was declared */
+        public DeclKind declKind;
+        /** a source code position to use for "vartype" when null (can happen if declKind != EXPLICIT) */
+        public int typePos;
 
         protected JCVariableDecl(JCModifiers mods,
                          Name name,
                          JCExpression vartype,
                          JCExpression init,
                          VarSymbol sym) {
-            this(mods, name, vartype, init, sym, false);
+            this(mods, name, vartype, init, sym, DeclKind.EXPLICIT, Position.NOPOS);
         }
 
         protected JCVariableDecl(JCModifiers mods,
@@ -1032,19 +1046,21 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                                  JCExpression vartype,
                                  JCExpression init,
                                  VarSymbol sym,
-                                 boolean declaredUsingVar) {
+                                 DeclKind declKind,
+                                 int typePos) {
             this.mods = mods;
             this.name = name;
             this.vartype = vartype;
             this.init = init;
             this.sym = sym;
-            this.declaredUsingVar = declaredUsingVar;
+            this.declKind = declKind;
+            this.typePos = typePos;
         }
 
         protected JCVariableDecl(JCModifiers mods,
                          JCExpression nameexpr,
                          JCExpression vartype) {
-            this(mods, null, vartype, null, null, false);
+            this(mods, null, vartype, null, null, DeclKind.EXPLICIT, Position.NOPOS);
             this.nameexpr = nameexpr;
             if (nameexpr.hasTag(Tag.IDENT)) {
                 this.name = ((JCIdent)nameexpr).name;
@@ -1059,7 +1075,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
 
         public boolean declaredUsingVar() {
-            return declaredUsingVar;
+            return declKind == DeclKind.VAR;
         }
 
         @Override
@@ -1121,7 +1137,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** statements */
         public List<JCStatement> stats;
         /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
+        public int bracePos = Position.NOPOS;
         /** If this block contains record pattern, it is necessary to catch
          *  exceptions from the deconstructors and wrap them.
          * The {@code patternMatchingCatch} keeps the list of the deconstructor
@@ -1330,7 +1346,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression selector;
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
+        public int bracePos = Position.NOPOS;
         public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;
@@ -1430,7 +1446,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression selector;
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
+        public int bracePos = Position.NOPOS;
         public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;

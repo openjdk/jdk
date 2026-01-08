@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2024 Unicode, Inc.
+Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -19,7 +19,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
         <!-- 2: one,other -->
 
-        <pluralRules locales="am as bn doi fa gu hi kn pcm zu">
+        <pluralRules locales="am as bn doi fa gu hi kn kok kok_Latn pcm zu">
             <pluralRule count="one">i = 0 or n = 1 @integer 0, 1 @decimal 0.0~1.0, 0.00~0.04</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 1.1~2.6, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
@@ -27,7 +27,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
             <pluralRule count="one">i = 0,1 @integer 0, 1 @decimal 0.0~1.5</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 2.0~3.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
-        <pluralRules locales="ast de en et fi fy gl ia io ji lij nl sc sv sw ur yi">
+        <pluralRules locales="ast de en et fi fy gl ia ie io ji lij nl sc sv sw ur yi">
             <pluralRule count="one">i = 1 and v = 0 @integer 1</pluralRule>
             <pluralRule count="other"> @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
@@ -76,12 +76,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
             <pluralRule count="one">i = 0,1 and n != 0 @integer 1 @decimal 0.1~1.6</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 2.0~3.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
-        <pluralRules locales="blo">
-            <pluralRule count="zero">n = 0 @integer 0 @decimal 0.0, 0.00, 0.000, 0.0000</pluralRule>
-            <pluralRule count="one">n = 1 @integer 1 @decimal 1.0, 1.00, 1.000, 1.0000</pluralRule>
-            <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 0.1~0.9, 1.1~1.7, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
-        </pluralRules>
-        <pluralRules locales="ksh">
+        <pluralRules locales="blo cv ksh">
             <pluralRule count="zero">n = 0 @integer 0 @decimal 0.0, 0.00, 0.000, 0.0000</pluralRule>
             <pluralRule count="one">n = 1 @integer 1 @decimal 1.0, 1.00, 1.000, 1.0000</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 0.1~0.9, 1.1~1.7, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
@@ -197,6 +192,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
         <!-- 5: one,two,few,many,other -->
 
+        <pluralRules locales="sgs">
+            <pluralRule count="one">n % 10 = 1 and n % 100 != 11 @integer 1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, … @decimal 1.0, 21.0, 31.0, 41.0, 51.0, 61.0, 71.0, 81.0, 101.0, 1001.0, …</pluralRule>
+            <pluralRule count="two">n = 2 @integer 2 @decimal 2.0, 2.00, 2.000, 2.0000</pluralRule>
+            <pluralRule count="few">n != 2 and n % 10 = 2..9 and n % 100 != 11..19 @integer 3~9, 22~29, 32, 102, 1002, … @decimal 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 22.0, 102.0, 1002.0, …</pluralRule>
+            <pluralRule count="many">f != 0   @decimal 0.1~0.9, 1.1~1.7, 10.1, 100.1, 1000.1, …</pluralRule>
+            <pluralRule count="other"> @integer 0, 10~20, 30, 40, 50, 60, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
+        </pluralRules>
         <pluralRules locales="br">
             <pluralRule count="one">n % 10 = 1 and n % 100 != 11,71,91 @integer 1, 21, 31, 41, 51, 61, 81, 101, 1001, … @decimal 1.0, 21.0, 31.0, 41.0, 51.0, 61.0, 81.0, 101.0, 1001.0, …</pluralRule>
             <pluralRule count="two">n % 10 = 2 and n % 100 != 12,72,92 @integer 2, 22, 32, 42, 52, 62, 82, 102, 1002, … @decimal 2.0, 22.0, 32.0, 42.0, 52.0, 62.0, 82.0, 102.0, 1002.0, …</pluralRule>

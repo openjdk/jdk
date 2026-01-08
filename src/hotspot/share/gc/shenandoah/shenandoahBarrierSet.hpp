@@ -128,8 +128,8 @@ public:
   void write_ref_array(HeapWord* start, size_t count);
 
 private:
-  template <class T>
-  inline void arraycopy_marking(T* src, T* dst, size_t count, bool is_old_marking);
+  template <bool IS_GENERATIONAL, class T>
+  void arraycopy_marking(T* dst, size_t count);
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>
@@ -173,9 +173,9 @@ public:
     static oop oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value);
 
     template <typename T>
-    static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
-                                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
-                                      size_t length);
+    static OopCopyResult oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                               size_t length);
 
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size);

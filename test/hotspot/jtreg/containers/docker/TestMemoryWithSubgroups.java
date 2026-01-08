@@ -21,11 +21,11 @@
  * questions.
  */
 
+import jdk.test.lib.Container;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 import jdk.test.lib.containers.docker.DockerRunOptions;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.internal.platform.Metrics;
 
 import java.util.ArrayList;
@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 8343191
  * @requires os.family == "linux"
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -43,7 +44,6 @@ import jtreg.SkippedException;
  * @run main TestMemoryWithSubgroups
  */
 public class TestMemoryWithSubgroups {
-
     private static final String imageName = Common.imageName("subgroup");
 
     public static void main(String[] args) throws Exception {
@@ -52,9 +52,12 @@ public class TestMemoryWithSubgroups {
             System.out.println("Cgroup not configured.");
             return;
         }
-        if (!DockerTestUtils.canTestDocker()) {
-            System.out.println("Unable to run docker tests.");
-            return;
+        DockerTestUtils.checkCanTestDocker();
+
+        ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
+
+        if (DockerTestUtils.isRootless()) {
+            throw new SkippedException("Test skipped in rootless mode");
         }
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);

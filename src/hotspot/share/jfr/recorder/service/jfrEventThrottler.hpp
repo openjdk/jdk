@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,11 +26,14 @@
 #ifndef SHARE_JFR_RECORDER_SERVICE_JFREVENTTHROTTLER_HPP
 #define SHARE_JFR_RECORDER_SERVICE_JFREVENTTHROTTLER_HPP
 
-#include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/support/jfrAdaptiveSampler.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
+
+class ThrottlerLookupTable;
 
 class JfrEventThrottler : public JfrAdaptiveSampler {
   friend class JfrRecorder;
+  friend class ThrottlerLookupTable;
  private:
   JfrSamplerParams _last_params;
   int64_t _sample_size;
@@ -43,6 +46,7 @@ class JfrEventThrottler : public JfrAdaptiveSampler {
   static bool create();
   static void destroy();
   JfrEventThrottler(JfrEventId event_id);
+  static JfrEventThrottler* create_throttler(JfrEventId event_id);
   void configure(int64_t event_sample_size, int64_t period_ms);
 
   const JfrSamplerParams& update_params(const JfrSamplerWindow* expired);

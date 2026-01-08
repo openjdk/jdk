@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class attachnosuspend001 {
 
         Binder binder = new Binder(argHandler, log);
         log.display("command: " + cmd);
-        Debugee debugee = binder.startLocalDebugee(cmd);
+        Debugee debugee = binder.startDebugee(cmd);
         JDWP.ListenAddress listenAddress = debugee.redirectOutputAndDetectListeningAddress(log);
         String port = listenAddress.address();
 

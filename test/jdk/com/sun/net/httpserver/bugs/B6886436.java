@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class B6886436 {
 
@@ -96,7 +97,7 @@ public class B6886436 {
             while (is.read () != -1) ;
             is.close();
             // send a 204 response with an empty chunked body
-            t.sendResponseHeaders (204, 0);
+            t.sendResponseHeaders (204, RSPBODY_CHUNKED);
             t.close();
         }
     }

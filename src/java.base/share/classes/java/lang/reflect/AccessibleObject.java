@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,8 @@ public class AccessibleObject implements AnnotatedElement {
      *         objects in the array
      * @throws SecurityException if an element in the array is a constructor for {@code
      *         java.lang.Class}
+     * @throws NullPointerException if {@code array} or any of its elements is
+     *         {@code null}
      */
     @CallerSensitive
     public static void setAccessible(AccessibleObject[] array, boolean flag) {
@@ -159,18 +161,6 @@ public class AccessibleObject implements AnnotatedElement {
      * protected constructors when the declaring class is in a different module
      * to the caller and the package containing the declaring class is not open
      * to the caller's module. </p>
-     *
-     * <p> This method cannot be used to enable {@linkplain Field#set <em>write</em>}
-     * access to a <em>non-modifiable</em> final field.  The following fields
-     * are non-modifiable:
-     * <ul>
-     * <li>static final fields declared in any class or interface</li>
-     * <li>final fields declared in a {@linkplain Class#isHidden() hidden class}</li>
-     * <li>final fields declared in a {@linkplain Class#isRecord() record}</li>
-     * </ul>
-     * <p> The {@code accessible} flag when {@code true} suppresses Java language access
-     * control checks to only enable {@linkplain Field#get <em>read</em>} access to
-     * these non-modifiable final fields.
      *
      * @param flag the new value for the {@code accessible} flag
      * @throws InaccessibleObjectException if access cannot be enabled

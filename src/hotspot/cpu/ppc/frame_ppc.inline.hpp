@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,5 +390,44 @@ template <typename RegisterMapT>
 void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) {
   // Nothing to do.
 }
+
+#if INCLUDE_JFR
+
+// Static helper routines
+inline intptr_t* frame::sender_sp(intptr_t* fp) { return fp; }
+
+// Extract common_abi parts.
+inline intptr_t* frame::fp(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(((common_abi*)sp)->callers_sp);
+}
+
+inline intptr_t* frame::link(const intptr_t* fp) { return frame::fp(fp); }
+
+inline address frame::return_address(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<address>(((common_abi*)sp)->lr);
+}
+
+inline address frame::interpreter_return_address(const intptr_t* fp) { return frame::return_address(fp); }
+
+// Extract java interpreter state parts.
+inline address frame::interpreter_bcp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(*(fp + ijava_idx(bcp)));
+}
+
+inline intptr_t* frame::interpreter_sender_sp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(*(fp + ijava_idx(sender_sp)));
+}
+
+inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp) {
+  assert(fp != nullptr, "invariant");
+  assert(sp != nullptr, "invariant");
+  return sp <= fp - ((frame::ijava_state_size + frame::top_ijava_frame_abi_size) >> LogBytesPerWord);
+}
+
+#endif // INCLUDE_JFR
 
 #endif // CPU_PPC_FRAME_PPC_INLINE_HPP

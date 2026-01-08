@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ public abstract class DoubleByteEncoder
         this.index2 = index2;
     }
 
+    @Override
     public boolean canEncode(char c) {
         return (encodeSingle(c) != -1 ||
                 encodeDouble(c) != 0);
@@ -198,6 +199,7 @@ public abstract class DoubleByteEncoder
         }
     }
 
+    @Override
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
         if (src.hasArray() && dst.hasArray())
             return encodeArrayLoop(src, dst);

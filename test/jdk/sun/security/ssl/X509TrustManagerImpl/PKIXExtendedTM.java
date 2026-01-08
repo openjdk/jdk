@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,23 @@
  * @test
  * @bug 6916074 8170131
  * @summary Add support for TLS 1.2
+ * @enablePreview
  * @run main/othervm PKIXExtendedTM 0
  * @run main/othervm PKIXExtendedTM 1
  * @run main/othervm PKIXExtendedTM 2
  * @run main/othervm PKIXExtendedTM 3
  */
 
-import java.net.*;
-import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
+import java.security.PEMDecoder;
 import java.security.Security;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.X509Certificate;
 import java.security.spec.*;
 import java.security.interfaces.*;
 import java.math.BigInteger;
@@ -906,7 +907,7 @@ public class PKIXExtendedTM {
         (byte)0x4f
     };
 
-    static char passphrase[] = "passphrase".toCharArray();
+    static char[] passphrase = "passphrase".toCharArray();
 
     /*
      * Is the server ready to serve?
@@ -1001,13 +1002,9 @@ public class PKIXExtendedTM {
             String keyCertStr, byte[] modulus,
             byte[] privateExponent, char[] passphrase) throws Exception {
 
+        PEMDecoder pemDecoder = PEMDecoder.of();
         // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(trusedCertStr.getBytes());
-        Certificate trusedCert = cf.generateCertificate(is);
-        is.close();
+        Certificate trusedCert = pemDecoder.decode(trusedCertStr, X509Certificate.class);
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -1026,9 +1023,7 @@ public class PKIXExtendedTM {
                     (RSAPrivateKey)kf.generatePrivate(priKeySpec);
 
             // generate certificate chain
-            is = new ByteArrayInputStream(keyCertStr.getBytes());
-            Certificate keyCert = cf.generateCertificate(is);
-            is.close();
+            Certificate keyCert = pemDecoder.decode(keyCertStr, X509Certificate.class);
 
             Certificate[] chain = new Certificate[2];
             chain[0] = keyCert;
@@ -1114,6 +1109,10 @@ public class PKIXExtendedTM {
     };
 
     public static void main(String args[]) throws Exception {
+        // Disable KeyManager's algorithm constraints checking as this test
+        // is about TrustManager's constraints check.
+        System.setProperty("jdk.tls.SunX509KeyManager.certChecking", "false");
+
         if (args.length != 1) {
             throw new Exception("Incorrect number of arguments");
         }

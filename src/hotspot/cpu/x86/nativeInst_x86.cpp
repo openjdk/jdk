@@ -67,9 +67,7 @@ void NativeCall::print() {
 // Inserts a native call instruction at a given pc
 void NativeCall::insert(address code_pos, address entry) {
   intptr_t disp = (intptr_t)entry - ((intptr_t)code_pos + 1 + 4);
-#ifdef AMD64
   guarantee(disp == (intptr_t)(jint)disp, "must be 32-bit offset");
-#endif // AMD64
   *code_pos = instruction_code;
   *((int32_t *)(code_pos+1)) = (int32_t) disp;
   ICache::invalidate_range(code_pos, instruction_size);
@@ -140,7 +138,7 @@ bool NativeCall::is_displacement_aligned() {
 // Used in the runtime linkage of calls; see class CompiledIC.
 // (Cf. 4506997 and 4479829, where threads witnessed garbage displacements.)
 void NativeCall::set_destination_mt_safe(address dest) {
-  debug_only(verify());
+  DEBUG_ONLY(verify());
   // Make sure patching code is locked.  No two threads can patch at the same
   // time but one may be executing this code.
   assert(CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint() ||
@@ -157,7 +155,6 @@ void NativeCall::set_destination_mt_safe(address dest) {
 
 
 void NativeMovConstReg::verify() {
-#ifdef AMD64
   // make sure code pattern is actually a mov reg64, imm64 instruction
   bool valid_rex_prefix  = ubyte_at(0) == Assembler::REX_W || ubyte_at(0) == Assembler::REX_WB;
   bool valid_rex2_prefix = ubyte_at(0) == Assembler::REX2  &&
@@ -169,12 +166,6 @@ void NativeMovConstReg::verify() {
     print();
     fatal("not a REX.W[B] mov reg64, imm64");
   }
-#else
-  // make sure code pattern is actually a mov reg, imm32 instruction
-  u_char test_byte = *(u_char*)instruction_address();
-  u_char test_byte_2 = test_byte & ( 0xff ^ register_mask);
-  if (test_byte_2 != instruction_code) fatal("not a mov reg, imm32");
-#endif // AMD64
 }
 
 
@@ -192,12 +183,10 @@ int NativeMovRegMem::instruction_start() const {
   // See comment in Assembler::locate_operand() about VEX prefixes.
   if (instr_0 == instruction_VEX_prefix_2bytes) {
     assert((UseAVX > 0), "shouldn't have VEX prefix");
-    NOT_LP64(assert((0xC0 & ubyte_at(1)) == 0xC0, "shouldn't have LDS and LES instructions"));
     return 2;
   }
   if (instr_0 == instruction_VEX_prefix_3bytes) {
     assert((UseAVX > 0), "shouldn't have VEX prefix");
-    NOT_LP64(assert((0xC0 & ubyte_at(1)) == 0xC0, "shouldn't have LDS and LES instructions"));
     return 3;
   }
   if (instr_0 == instruction_EVEX_prefix_4bytes) {
@@ -313,8 +302,7 @@ void NativeMovRegMem::print() {
 void NativeLoadAddress::verify() {
   // make sure code pattern is actually a mov [reg+offset], reg instruction
   u_char test_byte = *(u_char*)instruction_address();
-  if ( ! ((test_byte == lea_instruction_code)
-          LP64_ONLY(|| (test_byte == mov64_instruction_code) ))) {
+  if ((test_byte != lea_instruction_code) && (test_byte != mov64_instruction_code)) {
     fatal ("not a lea reg, [reg+offs] instruction");
   }
 }
@@ -340,105 +328,12 @@ void NativeJump::verify() {
 
 void NativeJump::insert(address code_pos, address entry) {
   intptr_t disp = (intptr_t)entry - ((intptr_t)code_pos + 1 + 4);
-#ifdef AMD64
   guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
-#endif // AMD64
 
   *code_pos = instruction_code;
   *((int32_t*)(code_pos + 1)) = (int32_t)disp;
 
   ICache::invalidate_range(code_pos, instruction_size);
-}
-
-void NativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
-  // Patching to not_entrant can happen while activations of the method are
-  // in use. The patching in that instance must happen only when certain
-  // alignment restrictions are true. These guarantees check those
-  // conditions.
-#ifdef AMD64
-  const int linesize = 64;
-#else
-  const int linesize = 32;
-#endif // AMD64
-
-  // Must be wordSize aligned
-  guarantee(((uintptr_t) verified_entry & (wordSize -1)) == 0,
-            "illegal address for code patching 2");
-  // First 5 bytes must be within the same cache line - 4827828
-  guarantee((uintptr_t) verified_entry / linesize ==
-            ((uintptr_t) verified_entry + 4) / linesize,
-            "illegal address for code patching 3");
-}
-
-
-// MT safe inserting of a jump over an unknown instruction sequence (used by nmethod::make_not_entrant)
-// The problem: jmp <dest> is a 5-byte instruction. Atomic write can be only with 4 bytes.
-// First patches the first word atomically to be a jump to itself.
-// Then patches the last byte  and then atomically patches the first word (4-bytes),
-// thus inserting the desired jump
-// This code is mt-safe with the following conditions: entry point is 4 byte aligned,
-// entry point is in same cache line as unverified entry point, and the instruction being
-// patched is >= 5 byte (size of patch).
-//
-// In C2 the 5+ byte sized instruction is enforced by code in MachPrologNode::emit.
-// In C1 the restriction is enforced by CodeEmitter::method_entry
-// In JVMCI, the restriction is enforced by HotSpotFrameContext.enter(...)
-//
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  // complete jump instruction (to be inserted) is in code_buffer;
-#ifdef _LP64
-  union {
-    jlong cb_long;
-    unsigned char code_buffer[8];
-  } u;
-
-  u.cb_long = *(jlong *)verified_entry;
-
-  intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
-  guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
-
-  u.code_buffer[0] = instruction_code;
-  *(int32_t*)(u.code_buffer + 1) = (int32_t)disp;
-
-  Atomic::store((jlong *) verified_entry, u.cb_long);
-  ICache::invalidate_range(verified_entry, 8);
-
-#else
-  unsigned char code_buffer[5];
-  code_buffer[0] = instruction_code;
-  intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
-  *(int32_t*)(code_buffer + 1) = (int32_t)disp;
-
-  check_verified_entry_alignment(entry, verified_entry);
-
-  // Can't call nativeJump_at() because it's asserts jump exists
-  NativeJump* n_jump = (NativeJump*) verified_entry;
-
-  //First patch dummy jmp in place
-
-  unsigned char patch[4];
-  assert(sizeof(patch)==sizeof(int32_t), "sanity check");
-  patch[0] = 0xEB;       // jmp rel8
-  patch[1] = 0xFE;       // jmp to self
-  patch[2] = 0xEB;
-  patch[3] = 0xFE;
-
-  // First patch dummy jmp in place
-  *(int32_t*)verified_entry = *(int32_t *)patch;
-
-  n_jump->wrote(0);
-
-  // Patch 5th byte (from jump instruction)
-  verified_entry[4] = code_buffer[4];
-
-  n_jump->wrote(4);
-
-  // Patch bytes 0-3 (from jump instruction)
-  *(int32_t*)verified_entry = *(int32_t *)code_buffer;
-  // Invalidate.  Opteron requires a flush after every write.
-  n_jump->wrote(0);
-#endif // _LP64
-
 }
 
 void NativeIllegalInstruction::insert(address code_pos) {
@@ -455,9 +350,7 @@ void NativeGeneralJump::verify() {
 
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   intptr_t disp = (intptr_t)entry - ((intptr_t)code_pos + 1 + 4);
-#ifdef AMD64
   guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
-#endif // AMD64
 
   *code_pos = unconditional_long_jump;
   *((int32_t *)(code_pos+1)) = (int32_t) disp;

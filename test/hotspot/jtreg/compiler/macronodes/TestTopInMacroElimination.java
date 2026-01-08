@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8325030
+ * @bug 8325030 8362832
  * @summary Regression test for an assert triggered during allocation elimination because top is found during
  * constructing new phis.
  * @run main/othervm -XX:-ProfileExceptionHandlers compiler.macronodes.TestTopInMacroElimination

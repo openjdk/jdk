@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ public class Basic {
         viaProvider("bert", KNOWN);
         viaBadProvider("tom", SCE);
         viaBadProvider("jerry", SCE);
+        viaCircularProvider("circular", CIRCULAR);
     }
 
     private static String withoutWarning(String in) {
@@ -97,6 +98,12 @@ public class Basic {
         if (r.exitValue == 0 ||
             !r.output.contains("java.util.ServiceConfigurationError")) {
             throw new RuntimeException("exitValue: "+ r.exitValue + ", output:[" +r.output +"]");
+        }
+    };
+    static final Consumer<Result> CIRCULAR = r -> {
+        if (r.exitValue == 0 ||
+            !r.output.contains("Circular loading of URL stream handler providers detected")) {
+            throw new RuntimeException("exitValue: " + r.exitValue + ", output:[" + r.output + "]");
         }
     };
 
@@ -122,6 +129,15 @@ public class Basic {
     {
         viaProviderWithTemplate(protocol, resultChecker,
                                 TEST_SRC.resolve("bad.provider.template"),
+                                sysProps);
+    }
+
+    static void viaCircularProvider(String protocol, Consumer<Result> resultChecker,
+                                    String... sysProps)
+        throws Exception
+    {
+        viaProviderWithTemplate(protocol, resultChecker,
+                                TEST_SRC.resolve("circular.provider.template"),
                                 sysProps);
     }
 

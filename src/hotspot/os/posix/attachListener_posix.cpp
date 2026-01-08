@@ -24,19 +24,19 @@
 
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "os_posix.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
-#include "os_posix.hpp"
 #include "services/attachListener.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
-#include <unistd.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 #if INCLUDE_SERVICES
 #ifndef AIX
@@ -114,6 +114,7 @@ public:
 
   void close() {
     if (opened()) {
+      ::shutdown(_socket, SHUT_RDWR);
       ::close(_socket);
       _socket = -1;
     }
@@ -132,9 +133,8 @@ public:
     RESTARTABLE(::write(_socket, buffer, size), n);
     return checked_cast<int>(n);
   }
-  // called after writing all data
+
   void flush() override {
-    ::shutdown(_socket, SHUT_RDWR);
   }
 };
 
@@ -144,13 +144,16 @@ class PosixAttachOperation: public AttachOperation {
   SocketChannel _socket_channel;
 
  public:
+  PosixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {}
+
   void complete(jint res, bufferedStream* st) override;
 
-  PosixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {
+  ReplyWriter* get_reply_writer() override {
+    return &_socket_channel;
   }
 
   bool read_request() {
-    return AttachOperation::read_request(&_socket_channel, &_socket_channel);
+    return _socket_channel.read_request(this, &_socket_channel);
   }
 };
 
@@ -192,10 +195,10 @@ int PosixAttachListener::init() {
     ::atexit(listener_cleanup);
   }
 
-  int n = snprintf(path, UNIX_PATH_MAX, "%s/.java_pid%d",
-                   os::get_temp_directory(), os::current_process_id());
+  int n = os::snprintf(path, UNIX_PATH_MAX, "%s/.java_pid%d",
+                       os::get_temp_directory(), os::current_process_id());
   if (n < (int)UNIX_PATH_MAX) {
-    n = snprintf(initial_path, UNIX_PATH_MAX, "%s.tmp", path);
+    n = os::snprintf(initial_path, UNIX_PATH_MAX, "%s.tmp", path);
   }
   if (n >= (int)UNIX_PATH_MAX) {
     return -1;
@@ -318,11 +321,6 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
 // socket could be made non-blocking and a timeout could be used.
 
 void PosixAttachOperation::complete(jint result, bufferedStream* st) {
-  JavaThread* thread = JavaThread::current();
-  ThreadBlockInVM tbivm(thread);
-
-  write_reply(&_socket_channel, result, st);
-
   delete this;
 }
 
@@ -348,9 +346,8 @@ void AttachListener::vm_start() {
   struct stat st;
   int ret;
 
-  int n = snprintf(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
-           os::get_temp_directory(), os::current_process_id());
-  assert(n < (int)UNIX_PATH_MAX, "java_pid file name buffer overflow");
+  os::snprintf_checked(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
+                       os::get_temp_directory(), os::current_process_id());
 
   RESTARTABLE(::stat(fn, &st), ret);
   if (ret == 0) {
@@ -420,8 +417,8 @@ bool AttachListener::is_init_trigger() {
   RESTARTABLE(::stat(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
-    snprintf(fn, sizeof(fn), "%s/.attach_pid%d", os::get_temp_directory(),
-             os::current_process_id());
+    os::snprintf_checked(fn, sizeof(fn), "%s/.attach_pid%d", os::get_temp_directory(),
+                         os::current_process_id());
     RESTARTABLE(::stat(fn, &st), ret);
     if (ret == -1) {
       log_debug(attach)("Failed to find attach file: %s", fn);

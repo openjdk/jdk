@@ -619,7 +619,7 @@ public final class QuickHuffman {
         }
     }
 
-    static final class Reader implements Huffman.Reader {
+    public static final class Reader implements Huffman.Reader {
 
         private final BufferUpdateConsumer UPDATER =
                 (buf, bufLen) -> {
@@ -703,7 +703,7 @@ public final class QuickHuffman {
         }
     }
 
-    static final class Writer implements Huffman.Writer {
+    public static final class Writer implements Huffman.Writer {
 
         private final BufferUpdateConsumer UPDATER =
                 (buf, bufLen) -> {
@@ -782,12 +782,26 @@ public final class QuickHuffman {
 
         @Override
         public int lengthOf(CharSequence value, int start, int end) {
-            int len = 0;
-            for (int i = start; i < end; i++) {
-                char c = value.charAt(i);
-                len += codeLengthOf(c);
-            }
-            return bytesForBits(len);
+            return QuickHuffman.lengthOf(value, start, end);
         }
+    }
+
+    public static int lengthOf(CharSequence value, int start, int end) {
+        int len = 0;
+        for (int i = start; i < end; i++) {
+            char c = value.charAt(i);
+            len += codeLengthOf(c);
+        }
+        return bytesForBits(len);
+    }
+
+    public static int lengthOf(CharSequence value) {
+        return lengthOf(value, 0, value.length());
+    }
+
+    /* Used to calculate the number of bytes required for Huffman encoding */
+
+    public static boolean isHuffmanBetterFor(CharSequence input) {
+        return lengthOf(input) < input.length();
     }
 }

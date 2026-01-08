@@ -31,8 +31,8 @@
 #include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/oopMapCache.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -52,11 +52,11 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/timerTrace.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/timerTrace.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -771,7 +771,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
           LinkResolver::resolve_static_call(result,
-                        link_info, false, THREAD);
+                        link_info, ClassInitMode::dont_init, THREAD);
         } else if (ref_kind == JVM_REF_invokeInterface) {
           LinkResolver::resolve_interface_call(result, Handle(), defc,
                         link_info, false, THREAD);
@@ -833,7 +833,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         LinkInfo link_info(defc, name, type, caller, LinkInfo::AccessCheck::skip, loader_constraint_check);
-        LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
+        LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, ClassInitMode::dont_init, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           if (speculative_resolve) {
             CLEAR_PENDING_EXCEPTION;
@@ -902,7 +902,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       if (clazz == nullptr) {
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nothing to expand (as field)");
       }
-      InstanceKlass* defc = InstanceKlass::cast(java_lang_Class::as_Klass(clazz));
+      InstanceKlass* defc = java_lang_Class::as_InstanceKlass(clazz);
       DEBUG_ONLY(clazz = nullptr);  // safety
       intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
       bool is_static = ((flags & JVM_ACC_STATIC) != 0);
@@ -929,8 +929,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
 }
 
 void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
+  assert_lock_strong(CodeCache_lock);
   DependencyContext deps = java_lang_invoke_CallSite::vmdependencies(call_site);
   deps.add_dependent_nmethod(nm);
 }
@@ -1237,6 +1236,9 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
                                               jint start, jint end,
                                               jobjectArray buf_jh, jint pos,
                                               jboolean resolve, jobject ifna_jh)) {
+  // caller->constants->copy_bootstrap_arguments_at performs a runtime
+  // range check, but let's assert earlier as well.
+  assert(start < end && start >= 0, "invariant");
   Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller_jh));
   if (caller_k == nullptr || !caller_k->is_instance_klass()) {
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad caller");
@@ -1257,54 +1259,9 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
       != caller->constants()->bootstrap_argument_count_at(bss_index_in_pool)) {
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
   }
-  objArrayHandle buf(THREAD, (objArrayOop) JNIHandles::resolve(buf_jh));
-  if (start < 0) {
-    for (int pseudo_index = -4; pseudo_index < 0; pseudo_index++) {
-      if (start == pseudo_index) {
-        if (start >= end || 0 > pos || pos >= buf->length())  break;
-        oop pseudo_arg = nullptr;
-        switch (pseudo_index) {
-        case -4:  // bootstrap method
-          {
-            int bsm_index = caller->constants()->bootstrap_method_ref_index_at(bss_index_in_pool);
-            pseudo_arg = caller->constants()->resolve_possibly_cached_constant_at(bsm_index, CHECK);
-            break;
-          }
-        case -3:  // name
-          {
-            Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
-            Handle str = java_lang_String::create_from_symbol(name, CHECK);
-            pseudo_arg = str();
-            break;
-          }
-        case -2:  // type
-          {
-            Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
-            Handle th;
-            if (type->char_at(0) == JVM_SIGNATURE_FUNC) {
-              th = SystemDictionary::find_method_handle_type(type, caller, CHECK);
-            } else {
-              th = SystemDictionary::find_java_mirror_for_type(type, caller, SignatureStream::NCDFError, CHECK);
-            }
-            pseudo_arg = th();
-            break;
-          }
-        case -1:  // argument count
-          {
-            int argc = caller->constants()->bootstrap_argument_count_at(bss_index_in_pool);
-            jvalue argc_value; argc_value.i = (jint)argc;
-            pseudo_arg = java_lang_boxing_object::create(T_INT, &argc_value, CHECK);
-            break;
-          }
-        }
 
-        // Store the pseudo-argument, and advance the pointers.
-        buf->obj_at_put(pos++, pseudo_arg);
-        ++start;
-      }
-    }
-    // When we are done with this there may be regular arguments to process too.
-  }
+  objArrayHandle buf(THREAD, (objArrayOop)JNIHandles::resolve(buf_jh));
+
   Handle ifna(THREAD, JNIHandles::resolve(ifna_jh));
   caller->constants()->
     copy_bootstrap_arguments_at(bss_index_in_pool,

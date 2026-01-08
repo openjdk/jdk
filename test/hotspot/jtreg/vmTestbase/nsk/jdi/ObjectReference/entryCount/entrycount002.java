@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public class entrycount002 {
     //--------------------------------------------------------- mutable common methods
 
     private void execTest() {
-        ThreadReference mainThread = debuggee.threadByName("main");
+        ThreadReference mainThread = debuggee.mainThread();
 
         BreakpointRequest bpRequest = debuggee.makeBreakpoint(debuggeeClass,
                                                             "methodForCommunication",
@@ -292,6 +292,8 @@ public class entrycount002 {
 
         ClassPrepareEvent event = (ClassPrepareEvent) waitForEvent(cpRequest);
         cpRequest.disable();
+
+        debuggee.setMainThread(event.thread()); // Needed so debuggee.mainThread() will work
 
         if (!event.referenceType().name().equals(debuggeeName)) {
            throw new Failure("Unexpected class name for ClassPrepareEvent : " + debuggeeClass.name());

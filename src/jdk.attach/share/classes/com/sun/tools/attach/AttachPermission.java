@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,17 @@ package com.sun.tools.attach;
  * @apiNote
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
+ * Consequently this class is deprecated for removal in a future release.
  *
  * @see com.sun.tools.attach.VirtualMachine
  * @see com.sun.tools.attach.spi.AttachProvider
  * @since 1.6
+ *
+ * @deprecated This class was only useful in conjunction with the Security Manager,
+ * which is no longer supported. There is no replacement for this class.
  */
 
+@Deprecated(since="25", forRemoval=true)
 public final class AttachPermission extends java.security.BasicPermission {
 
     /** use serialVersionUID for interoperability */

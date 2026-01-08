@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -107,7 +107,7 @@
   static int fpu_reg2rnr (FloatRegister reg) {
     assert(_init_done, "tables not initialized");
     int c1rnr = _fpu_reg2rnr[reg->encoding()];
-    debug_only(fpu_range_check(c1rnr);)
+    DEBUG_ONLY(fpu_range_check(c1rnr);)
     return c1rnr;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1EVACSTATS_HPP
 #define SHARE_GC_G1_G1EVACSTATS_HPP
 
-#include "gc/shared/plab.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "gc/shared/plab.hpp"
 
 // Records various memory allocation statistics gathered during evacuation. All sizes
 // are in HeapWords.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package jdk.internal.foreign.abi;
 
+import java.util.Objects;
+
 /**
  *
  * @param type              the type of storage. e.g. stack, or which register type (GP, FP, vector)
@@ -32,7 +34,7 @@ package jdk.internal.foreign.abi;
  * @param indexOrOffset     the index is either a register number within a type, or
  *                          a stack offset in bytes if type = stack.
  *                          (a particular platform might add a bias to this in generate code)
- * @param debugName         the debug name
+ * @param debugName         the debug name, mostly derived from type
  */
 public record VMStorage(byte type,
                         short segmentMaskOrSize,
@@ -43,4 +45,14 @@ public record VMStorage(byte type,
         this(type, segmentMaskOrSize, indexOrOffset, "Stack@" + indexOrOffset);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, segmentMaskOrSize, indexOrOffset);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof VMStorage that &&
+                type == that.type && segmentMaskOrSize == that.segmentMaskOrSize && indexOrOffset == that.indexOrOffset;
+    }
 }

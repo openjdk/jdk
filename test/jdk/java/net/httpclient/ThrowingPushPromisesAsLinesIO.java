@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,16 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker AbstractThrowingPushPromises ThrowingPushPromisesAsLinesIO
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm -Djdk.internal.httpclient.debug=true ThrowingPushPromisesAsLinesIO
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ThrowingPushPromisesAsLinesIO
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ThrowingPushPromisesAsLinesIO extends AbstractThrowingPushPromises {
 
-    @Test(dataProvider = "ioVariants")
+    @ParameterizedTest
+    @MethodSource("ioVariants")
     public void testThrowingAsLines(String uri, boolean sameClient, Thrower thrower)
             throws Exception {
         super.testThrowingAsLinesImpl(uri, sameClient, thrower);

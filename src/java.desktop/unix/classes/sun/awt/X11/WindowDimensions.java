@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package sun.awt.X11;
 
 import java.awt.*;
 
-class WindowDimensions {
+final class WindowDimensions {
     private Point loc;
     private Dimension size;
     private Insets insets;
@@ -160,10 +160,12 @@ class WindowDimensions {
         return isClientSizeSet;
     }
 
+    @Override
     public String toString() {
         return "[" + loc + ", " + size + "(" +(isClientSizeSet?"client":"bounds") + ")+" + insets + "]";
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof WindowDimensions)) {
             return false;
@@ -174,6 +176,7 @@ class WindowDimensions {
             && (getBounds().equals(dims.getBounds()));
     }
 
+    @Override
     public int hashCode() {
         return ((insets == null)? (0):(insets.hashCode())) ^ getClientRect().hashCode() ^ getBounds().hashCode();
     }

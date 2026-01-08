@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,30 +31,30 @@ class ContextList {
 
     private final LinkedList<HttpContextImpl> list = new LinkedList<>();
 
-    public synchronized void add (HttpContextImpl ctx) {
+    public synchronized void add(HttpContextImpl ctx) {
         assert ctx.getPath() != null;
         if (contains(ctx)) {
-            throw new IllegalArgumentException ("cannot add context to list");
+            throw new IllegalArgumentException("cannot add context to list");
         }
-        list.add (ctx);
+        list.add(ctx);
     }
 
     boolean contains(HttpContextImpl ctx) {
         return findContext(ctx.getProtocol(), ctx.getPath(), true) != null;
     }
 
-    public synchronized int size () {
+    public synchronized int size() {
         return list.size();
     }
 
    /* initially contexts are located only by protocol:path.
     * Context with longest prefix matches (currently case-sensitive)
     */
-    synchronized HttpContextImpl findContext (String protocol, String path) {
-        return findContext (protocol, path, false);
+    synchronized HttpContextImpl findContext(String protocol, String path) {
+        return findContext(protocol, path, false);
     }
 
-    synchronized HttpContextImpl findContext (String protocol, String path, boolean exact) {
+    synchronized HttpContextImpl findContext(String protocol, String path, boolean exact) {
         protocol = protocol.toLowerCase(Locale.ROOT);
         String longest = "";
         HttpContextImpl lc = null;
@@ -63,7 +63,7 @@ class ContextList {
                 continue;
             }
             String cpath = ctx.getPath();
-            if (exact && !cpath.equals (path)) {
+            if (exact && !cpath.equals(path)) {
                 continue;
             } else if (!exact && !path.startsWith(cpath)) {
                 continue;
@@ -76,25 +76,25 @@ class ContextList {
         return lc;
     }
 
-    public synchronized void remove (String protocol, String path)
+    public synchronized void remove(String protocol, String path)
         throws IllegalArgumentException
     {
-        HttpContextImpl ctx = findContext (protocol, path, true);
+        HttpContextImpl ctx = findContext(protocol, path, true);
         if (ctx == null) {
-            throw new IllegalArgumentException ("cannot remove element from list");
+            throw new IllegalArgumentException("cannot remove element from list");
         }
-        list.remove (ctx);
+        list.remove(ctx);
     }
 
-    public synchronized void remove (HttpContextImpl context)
+    public synchronized void remove(HttpContextImpl context)
         throws IllegalArgumentException
     {
         for (HttpContextImpl ctx: list) {
-            if (ctx.equals (context)) {
-                list.remove (ctx);
+            if (ctx.equals(context)) {
+                list.remove(ctx);
                 return;
             }
         }
-        throw new IllegalArgumentException ("no such context in list");
+        throw new IllegalArgumentException("no such context in list");
     }
 }

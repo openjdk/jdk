@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,6 +271,10 @@ public class TrigTests {
             {0x1.000000000001cp300, -0x1.b30fc9f73002cp-1},
             {0x1.0000000000013p500, -0x1.c4e46751be12cp-1},
             {0x1.00000000000ep1023, -0x1.d52c4ec04f108p-2},
+
+            // Julia worst-case input
+            {0x1.e608f1390d9fp293,  -0x1.9942a10545925p-1},
+
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM
             {+0x1.371a47b7e4eb2p+11,    0x1.9ded57c9ff46ap-1},

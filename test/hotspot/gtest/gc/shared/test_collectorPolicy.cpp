@@ -117,7 +117,7 @@ class TestGenCollectorPolicy {
         initial_heap_size = InitialHeapSize;
       }
 
-      size_t expected = scale_by_NewRatio_aligned(initial_heap_size, GenAlignment);
+      size_t expected = scale_by_NewRatio_aligned(initial_heap_size, SpaceAlignment);
       ASSERT_EQ(expected, NewSize);
     }
   };
@@ -138,17 +138,6 @@ class TestGenCollectorPolicy {
       sa.initialize_heap_sizes();
 
       ASSERT_EQ(param, NewSize);
-    }
-  };
-
-  class SetMaxNewSizeCmd : public BinaryExecutor {
-   public:
-    SetMaxNewSizeCmd(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
-    void execute() {
-      size_t heap_alignment = GCArguments::compute_heap_alignment();
-      size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
-              - param1 + param2;
-      FLAG_SET_CMDLINE(MaxNewSize, new_size_value);
     }
   };
 };

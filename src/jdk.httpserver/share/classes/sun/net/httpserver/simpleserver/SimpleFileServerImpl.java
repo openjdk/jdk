@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -139,6 +141,7 @@ final class SimpleFileServerImpl {
 
         // configure and start server
         try {
+            root = realPath(root);
             var socketAddr = new InetSocketAddress(addr, port);
             var server = SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
             server.start();
@@ -150,6 +153,25 @@ final class SimpleFileServerImpl {
             out.flush();
         }
         return Startup.OK.statusCode;
+    }
+
+    private static Path realPath(Path root) {
+
+        // `toRealPath()` invocation below already checks if file exists, though
+        // there is no way to figure out if it fails due to a non-existent file.
+        // Hence, checking the existence here first to deliver the user a more
+        // descriptive message.
+        if (!Files.exists(root)) {
+            throw new IllegalArgumentException("Path does not exist: " + root);
+        }
+
+        // Obtain the real path
+        try {
+            return root.toRealPath();
+        } catch (IOException exception) {
+            throw new IllegalArgumentException("Path is invalid: " + root, exception);
+        }
+
     }
 
     private static final class Out {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicToolTipUI;
 
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaToolTipUI extends BasicToolTipUI {
+public final class AquaToolTipUI extends BasicToolTipUI {
     private static final RecyclableSingletonFromDefaultConstructor<AquaToolTipUI> sharedAquaInstance = new RecyclableSingletonFromDefaultConstructor<AquaToolTipUI>(AquaToolTipUI.class);
 
     public static ComponentUI createUI(final JComponent c) {

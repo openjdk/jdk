@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1092,7 +1092,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private static class AWTTextPane extends JScrollPane implements FocusListener {
+    private static final class AWTTextPane extends JScrollPane implements FocusListener {
 
         private final JTextArea jtext;
         private final XWindow xwin;
@@ -1189,7 +1189,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    static class BevelBorder extends AbstractBorder implements UIResource {
+    static final class BevelBorder extends AbstractBorder implements UIResource {
         private Color darkShadow = SystemColor.controlDkShadow;
         private Color lightShadow = SystemColor.controlLtHighlight;
         private Color control = SystemColor.controlShadow;

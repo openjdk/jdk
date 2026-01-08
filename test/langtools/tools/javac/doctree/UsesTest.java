@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160196 8273244
+ * @bug 8160196 8273244 8352249
  * @summary Module summary page should display information based on "api" or "detail" mode.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -40,14 +40,14 @@ class UsesTest {
       */
     void simple_uses() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    Uses[USES, pos:7
+    Uses[USES, pos:5
       serviceName:
-        Reference[REFERENCE, pos:13, ProvidesTest]
+        Reference[REFERENCE, pos:11, ProvidesTest]
       description: empty
     ]
 ]
@@ -59,16 +59,16 @@ DocComment[DOC_COMMENT, pos:1
       */
     void uses_with_description() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    Uses[USES, pos:7
+    Uses[USES, pos:5
       serviceName:
-        Reference[REFERENCE, pos:13, ProvidesTest]
+        Reference[REFERENCE, pos:11, ProvidesTest]
       description: 1
-        Text[TEXT, pos:26, Test_description_for_uses.]
+        Text[TEXT, pos:24, Test_description_for_uses.]
     ]
 ]
 */

@@ -93,6 +93,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   const char* name() const { return _zip_name; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name);
   virtual ~ClassPathZipEntry();
+  bool has_entry(JavaThread* current, const char* name);
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
@@ -211,7 +212,7 @@ class ClassLoader: AllStatic {
   //    Note: boot loader append path does not support named modules.
   static ClassPathEntry* volatile _first_append_entry_list;
   static ClassPathEntry* first_append_entry() {
-    return Atomic::load_acquire(&_first_append_entry_list);
+    return AtomicAccess::load_acquire(&_first_append_entry_list);
   }
 
   // Last entry in linked list of appended ClassPathEntry instances
@@ -344,7 +345,9 @@ class ClassLoader: AllStatic {
   static char* uri_to_path(const char* uri);
   static void  record_result(JavaThread* current, InstanceKlass* ik,
                              const ClassFileStream* stream, bool redefined);
+  static void record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined);
   static void record_hidden_class(InstanceKlass* ik);
+  static void append_boot_classpath(ClassPathEntry* new_entry);
 #endif
 
   static char* lookup_vm_options();

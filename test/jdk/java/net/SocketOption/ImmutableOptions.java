@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,10 +161,6 @@ public class ImmutableOptions {
         protected int peekData(DatagramPacket p) throws IOException { return 0; }
 
         protected void receive(DatagramPacket p) throws IOException { }
-
-        protected void setTTL(byte ttl) throws IOException { }
-
-        protected byte getTTL() throws IOException { return 0; }
 
         protected void setTimeToLive(int ttl) throws IOException { }
 

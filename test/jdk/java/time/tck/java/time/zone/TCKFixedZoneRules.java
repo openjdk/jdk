@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@
  */
 package tck.java.time.zone;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -76,13 +76,16 @@ import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
 import java.time.zone.ZoneRules;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test ZoneRules for fixed offset time-zones.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKFixedZoneRules {
 
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
@@ -95,7 +98,6 @@ public class TCKFixedZoneRules {
         return offset.getRules();
     }
 
-    @DataProvider(name="rules")
     Object[][] data_rules() {
         return new Object[][] {
             {make(OFFSET_PONE), OFFSET_PONE},
@@ -108,95 +110,111 @@ public class TCKFixedZoneRules {
     // Basics
     //-----------------------------------------------------------------------
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_getOffset_Instant(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getOffset(INSTANT), expectedOffset);
-        assertEquals(test.getOffset((Instant) null), expectedOffset);
+        assertEquals(expectedOffset, test.getOffset(INSTANT));
+        assertEquals(expectedOffset, test.getOffset((Instant) null));
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_getOffset_LocalDateTime(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getOffset(LDT), expectedOffset);
-        assertEquals(test.getOffset((LocalDateTime) null), expectedOffset);
+        assertEquals(expectedOffset, test.getOffset(LDT));
+        assertEquals(expectedOffset, test.getOffset((LocalDateTime) null));
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_getValidOffsets_LDT(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getValidOffsets(LDT).size(), 1);
-        assertEquals(test.getValidOffsets(LDT).get(0), expectedOffset);
-        assertEquals(test.getValidOffsets(null).size(), 1);
-        assertEquals(test.getValidOffsets(null).get(0), expectedOffset);
+        assertEquals(1, test.getValidOffsets(LDT).size());
+        assertEquals(expectedOffset, test.getValidOffsets(LDT).get(0));
+        assertEquals(1, test.getValidOffsets(null).size());
+        assertEquals(expectedOffset, test.getValidOffsets(null).get(0));
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_getTransition_LDT(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getTransition(LDT), null);
-        assertEquals(test.getTransition(null), null);
+        assertEquals(null, test.getTransition(LDT));
+        assertEquals(null, test.getTransition(null));
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_isValidOffset_LDT_ZO(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.isValidOffset(LDT, expectedOffset), true);
-        assertEquals(test.isValidOffset(LDT, ZoneOffset.UTC), false);
-        assertEquals(test.isValidOffset(LDT, null), false);
+        assertEquals(true, test.isValidOffset(LDT, expectedOffset));
+        assertEquals(false, test.isValidOffset(LDT, ZoneOffset.UTC));
+        assertEquals(false, test.isValidOffset(LDT, null));
 
-        assertEquals(test.isValidOffset(null, expectedOffset), true);
-        assertEquals(test.isValidOffset(null, ZoneOffset.UTC), false);
-        assertEquals(test.isValidOffset(null, null), false);
+        assertEquals(true, test.isValidOffset(null, expectedOffset));
+        assertEquals(false, test.isValidOffset(null, ZoneOffset.UTC));
+        assertEquals(false, test.isValidOffset(null, null));
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_getStandardOffset_Instant(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getStandardOffset(INSTANT), expectedOffset);
-        assertEquals(test.getStandardOffset(null), expectedOffset);
+        assertEquals(expectedOffset, test.getStandardOffset(INSTANT));
+        assertEquals(expectedOffset, test.getStandardOffset(null));
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_getDaylightSavings_Instant(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getDaylightSavings(INSTANT), Duration.ZERO);
-        assertEquals(test.getDaylightSavings(null), Duration.ZERO);
+        assertEquals(Duration.ZERO, test.getDaylightSavings(INSTANT));
+        assertEquals(Duration.ZERO, test.getDaylightSavings(null));
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_isDaylightSavings_Instant(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.isDaylightSavings(INSTANT), false);
-        assertEquals(test.isDaylightSavings(null), false);
+        assertEquals(false, test.isDaylightSavings(INSTANT));
+        assertEquals(false, test.isDaylightSavings(null));
     }
 
     //-------------------------------------------------------------------------
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_nextTransition_Instant(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.nextTransition(INSTANT), null);
-        assertEquals(test.nextTransition(null), null);
+        assertEquals(null, test.nextTransition(INSTANT));
+        assertEquals(null, test.nextTransition(null));
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_previousTransition_Instant(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.previousTransition(INSTANT), null);
-        assertEquals(test.previousTransition(null), null);
+        assertEquals(null, test.previousTransition(INSTANT));
+        assertEquals(null, test.previousTransition(null));
     }
 
     //-------------------------------------------------------------------------
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_getTransitions(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getTransitions().size(), 0);
+        assertEquals(0, test.getTransitions().size());
     }
 
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test
     public void test_getTransitions_immutable() {
-        ZoneRules test = make(OFFSET_PTWO);
-        test.getTransitions().add(ZoneOffsetTransition.of(LDT, OFFSET_PONE, OFFSET_PTWO));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+            ZoneRules test = make(OFFSET_PTWO);
+            test.getTransitions().add(ZoneOffsetTransition.of(LDT, OFFSET_PONE, OFFSET_PTWO));
+        });
     }
 
-    @Test(dataProvider="rules")
+    @ParameterizedTest
+    @MethodSource("data_rules")
     public void test_getTransitionRules(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getTransitionRules().size(), 0);
+        assertEquals(0, test.getTransitionRules().size());
     }
 
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test
     public void test_getTransitionRules_immutable() {
-        ZoneRules test = make(OFFSET_PTWO);
-        test.getTransitionRules().add(ZoneOffsetTransitionRule.of(Month.JULY, 2, null, LocalTime.of(12, 30), false, TimeDefinition.STANDARD, OFFSET_PONE, OFFSET_PTWO, OFFSET_PONE));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+            ZoneRules test = make(OFFSET_PTWO);
+            test.getTransitionRules().add(ZoneOffsetTransitionRule.of(Month.JULY, 2, null, LocalTime.of(12, 30), false, TimeDefinition.STANDARD, OFFSET_PONE, OFFSET_PTWO, OFFSET_PONE));
+        });
     }
 
     //-----------------------------------------------------------------------
@@ -207,16 +225,16 @@ public class TCKFixedZoneRules {
         ZoneRules a = make(OFFSET_PONE);
         ZoneRules b = make(OFFSET_PTWO);
 
-        assertEquals(a.equals(a), true);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(b.equals(b), true);
+        assertEquals(true, a.equals(a));
+        assertEquals(false, a.equals(b));
+        assertEquals(false, b.equals(a));
+        assertEquals(true, b.equals(b));
 
-        assertEquals(a.equals("Rubbish"), false);
-        assertEquals(a.equals(null), false);
+        assertEquals(false, a.equals("Rubbish"));
+        assertEquals(false, a.equals(null));
 
-        assertEquals(a.hashCode() == a.hashCode(), true);
-        assertEquals(b.hashCode() == b.hashCode(), true);
+        assertEquals(true, a.hashCode() == a.hashCode());
+        assertEquals(true, b.hashCode() == b.hashCode());
     }
 
 }

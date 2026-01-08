@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,10 @@
 
 inline int compare_traceid(const traceid& lhs, const traceid& rhs) {
   return lhs > rhs ? 1 : (lhs < rhs) ? -1 : 0;
+}
+
+inline bool equals_traceid(const traceid& lhs, const traceid& rhs) {
+  return lhs == rhs;
 }
 
 inline int sort_traceid(traceid* lhs, traceid* rhs) {

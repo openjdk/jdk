@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @bug 6808647
  * @summary Checks that a DirectoryStream's iterator returns the expected
  *    path when opening a directory by specifying only the drive letter.
+ * @requires (os.family == "windows")
  * @library ..
  */
 
@@ -35,11 +36,6 @@ import java.io.IOException;
 public class DriveLetter {
 
     public static void main(String[] args) throws IOException {
-        String os = System.getProperty("os.name");
-        if (!os.startsWith("Windows")) {
-            System.out.println("This is Windows specific test");
-            return;
-        }
         String here = System.getProperty("user.dir");
         if (here.length() < 2 || here.charAt(1) != ':')
             throw new RuntimeException("Unable to determine drive letter");

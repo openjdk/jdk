@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public class hashcode001a {
 
     static Object lock = new Object();
     static Object wait = new Object();
+    static Thread thread1 = null;
 
     //------------------------------------------------------ mutable common method
 
@@ -73,7 +74,7 @@ public class hashcode001a {
         log = new Log(System.err, argHandler);
         pipe = argHandler.createDebugeeIOPipe(log);
         try {
-            Thread thread1 = JDIThreadFactory.newThread(new hashcode001aThread("thread1"));
+            thread1 = JDIThreadFactory.newThread(new hashcode001aThread("thread1"));
 
             synchronized (lock) {
                  synchronized(wait) {

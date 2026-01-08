@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@
 
 #include "gc/shared/oopStorageParState.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "utilities/macros.hpp"
-
-#include <type_traits>
 
 template<typename F>
 class OopStorage::BasicParState::AlwaysTrueFn {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.net.ProxySelector;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.security.Permission;
+
 import sun.net.NetworkClient;
 import sun.net.util.IPAddressUtil;
 import sun.net.www.MessageHeader;
@@ -53,6 +54,7 @@ import sun.net.ftp.FtpClient;
 import sun.net.ftp.FtpProtocolException;
 import sun.net.www.ParseUtil;
 
+import static sun.net.util.ProxyUtil.copyProxy;
 
 /**
  * This class Opens an FTP input (or output) stream given a URL.
@@ -234,7 +236,7 @@ public class FtpURLConnection extends URLConnection {
                     throw new IOException("Failed to select a proxy", iae);
                 }
                 for (Proxy proxy : proxies) {
-                    p = proxy;
+                    p = copyProxy(proxy);
                     if (p == null || p == Proxy.NO_PROXY ||
                         p.type() == Proxy.Type.SOCKS) {
                         break;
@@ -569,6 +571,8 @@ public class FtpURLConnection extends URLConnection {
      * @return  The {@code Permission} object.
      */
     @Override
+    @Deprecated(since = "25", forRemoval = true)
+    @SuppressWarnings("removal")
     public Permission getPermission() {
         if (permission == null) {
             int urlport = url.getPort();

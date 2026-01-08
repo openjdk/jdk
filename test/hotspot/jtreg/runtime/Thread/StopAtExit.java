@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8167108 8266130 8283467 8284632 8286830
  * @summary Stress test JVM/TI StopThread() at thread exit.
+ * @requires test.thread.factory == null
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:StopAtExit StopAtExit
  */

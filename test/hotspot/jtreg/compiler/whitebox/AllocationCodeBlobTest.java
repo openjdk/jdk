@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import java.util.EnumSet;
 public class AllocationCodeBlobTest {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final long CODE_CACHE_SIZE
-            = WHITE_BOX.getUintxVMFlag("ReservedCodeCacheSize");
+            = WHITE_BOX.getSizeTVMFlag("ReservedCodeCacheSize");
     private static final int SIZE = 1;
 
     public static void main(String[] args) {

@@ -94,4 +94,13 @@ public abstract class AbstractPosixTerminal extends AbstractTerminal {
     public SystemStream getSystemStream() {
         return getPty().getSystemStream();
     }
+
+    @Override
+    public String toString() {
+        return getKind() + "[" + "name='"
+                + name + '\'' + ", pty='"
+                + pty + '\'' + ", type='"
+                + type + '\'' + ", size='"
+                + getSize() + '\'' + ']';
+    }
 }

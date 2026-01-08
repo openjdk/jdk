@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.awt.dnd.DnDConstants;
  *
  * @since 1.5
  */
-class XDnDConstants {
+final class XDnDConstants {
     static final XAtom XA_XdndActionCopy = XAtom.get("XdndActionCopy");
     static final XAtom XA_XdndActionMove = XAtom.get("XdndActionMove");
     static final XAtom XA_XdndActionLink = XAtom.get("XdndActionLink");

@@ -26,7 +26,6 @@
 
 #include "nmt/memTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -52,7 +51,7 @@ void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeC
   align_thread_stack_boundaries_inward(base, size);
 
   MemTracker::NmtVirtualMemoryLocker nvml;
-  VirtualMemoryTracker::add_reserved_region((address)base, size, stack, mtThreadStack);
+  VirtualMemoryTracker::Instance::add_reserved_region((address)base, size, stack, mtThreadStack);
   _thread_count++;
 }
 
@@ -62,7 +61,7 @@ void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
   align_thread_stack_boundaries_inward(base, size);
 
   MemTracker::NmtVirtualMemoryLocker nvml;
-  VirtualMemoryTracker::remove_released_region((address)base, size);
+  MemTracker::record_virtual_memory_release((address)base, size);
   _thread_count--;
 }
 

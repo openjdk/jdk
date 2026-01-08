@@ -35,6 +35,10 @@
 #include "gc/shared/fullGCForwarding.inline.hpp"
 
 void G1DetermineCompactionQueueClosure::free_empty_humongous_region(G1HeapRegion* hr) {
+  if (VerifyDuringGC) {
+    // Satisfy some asserts in free_..._region.
+    hr->clear_both_card_tables();
+  }
   _g1h->free_humongous_region(hr, nullptr);
   _collector->set_free(hr->hrm_index());
   add_to_compaction_queue(hr);

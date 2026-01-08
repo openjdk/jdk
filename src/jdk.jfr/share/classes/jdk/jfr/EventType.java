@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public final class EventType {
      */
     public String getLabel() {
         if (label == UNKNOWN) {
-            label = platformEventType.getLabel();;
+            label = platformEventType.getLabel();
         }
         return label;
     }
@@ -226,7 +226,7 @@ public final class EventType {
     }
 
     /**
-     * Returns the list of human-readable names that makes up the categories for
+     * Returns the list of human-readable names that make up the categories for
      * this event type (for example, {@code "Java Application"}, {@code "Statistics"}).
      *
      * @return an immutable list of category names, or a list with the name

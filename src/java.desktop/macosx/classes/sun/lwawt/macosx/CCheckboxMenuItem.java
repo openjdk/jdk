@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.awt.peer.CheckboxMenuItemPeer;
 
 import sun.awt.SunToolkit;
 
-public class CCheckboxMenuItem extends CMenuItem implements CheckboxMenuItemPeer {
+public final class CCheckboxMenuItem extends CMenuItem implements CheckboxMenuItemPeer {
     volatile boolean fAutoToggle = true;
     volatile boolean fIsIndeterminate;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ import java.util.Set;
  * @see X509Extension
  */
 
-public abstract class X509CRL extends CRL implements X509Extension {
+public abstract non-sealed class X509CRL extends CRL implements X509Extension, DEREncodable {
 
     private transient X500Principal issuerPrincipal;
 

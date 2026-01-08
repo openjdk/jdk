@@ -148,7 +148,9 @@ void TemplateTable::patch_bytecode(Bytecodes::Code new_bc, Register Rnew_bc, Reg
     __ bind(L_fast_patch);
   }
 
-  // Patch bytecode.
+  // Patch bytecode with release store to coordinate with ResolvedFieldEntry
+  // and ResolvedMethodEntry loads in fast bytecode codelets.
+  __ release();
   __ stb(Rnew_bc, 0, R14_bcp);
 
   __ bind(L_patch_done);
@@ -312,6 +314,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.)
   __ get_cache_index_at_bcp(R31, 1, index_size);  // Load index.
+  // Only rewritten during link time. So, no need for memory barriers for accessing resolved info.
   __ load_resolved_reference_at_index(R17_tos, R31, R11_scratch1, R12_scratch2, &is_null);
 
   // Convert null sentinel to null
@@ -319,14 +322,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   __ ld(R31, simm16_rest, R11_scratch1);
   __ resolve_oop_handle(R31, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_NONE);
   __ cmpld(CR0, R17_tos, R31);
-  if (VM_Version::has_isel()) {
-    __ isel_0(R17_tos, CR0, Assembler::equal);
-  } else {
-    Label not_sentinel;
-    __ bne(CR0, not_sentinel);
-    __ li(R17_tos, 0);
-    __ bind(not_sentinel);
-  }
+  __ isel_0(R17_tos, CR0, Assembler::equal);
   __ verify_oop(R17_tos);
   __ dispatch_epilog(atos, Bytecodes::length_for(bytecode()));
 
@@ -386,7 +382,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg  = R4_ARG2;
   __ li(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags);
+  __ get_vm_result_metadata(flags);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -1042,7 +1038,7 @@ void TemplateTable::bastore() {
 
   // Need to check whether array is boolean or byte
   // since both types share the bastore bytecode.
-  __ load_klass(Rscratch, Rarray);
+  __ load_klass_check_null_throw(Rscratch, Rarray, Rscratch);
   __ lwz(Rscratch, in_bytes(Klass::layout_helper_offset()), Rscratch);
   int diffbit = exact_log2(Klass::layout_helper_boolean_diffbit());
   __ testbitdi(CR0, R0, Rscratch, diffbit);
@@ -1534,25 +1530,12 @@ void TemplateTable::convert() {
     case Bytecodes::_i2f:
       __ extsw(R17_tos, R17_tos);
       __ move_l_to_d();
-      if (VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-        // Comment: alternatively, load with sign extend could be done by lfiwax.
-        __ fcfids(F15_ftos, F15_ftos);
-      } else {
-        __ fcfid(F15_ftos, F15_ftos);
-        __ frsp(F15_ftos, F15_ftos);
-      }
+      __ fcfids(F15_ftos, F15_ftos);
       break;
 
     case Bytecodes::_l2f:
-      if (VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-        __ move_l_to_d();
-        __ fcfids(F15_ftos, F15_ftos);
-      } else {
-        // Avoid rounding problem when result should be 0x3f800001: need fixup code before fcfid+frsp.
-        __ mr(R3_ARG1, R17_tos);
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::l2f));
-        __ fmr(F15_ftos, F1_RET);
-      }
+      __ move_l_to_d();
+      __ fcfids(F15_ftos, F15_ftos);
       break;
 
     case Bytecodes::_f2d:
@@ -1748,16 +1731,18 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     const Register osr_nmethod = R31;
     __ mr(osr_nmethod, R3_RET);
     __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
+    JFR_ONLY(__ enter_jfr_critical_section();)
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
     __ reset_last_Java_frame();
     // OSR buffer is in ARG1.
 
     // Remove the interpreter frame.
-    __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
+    __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R12_scratch2, R11_scratch1, R0);
+    JFR_ONLY(__ leave_jfr_critical_section();)
 
     // Jump to the osr code.
     __ ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
-    __ mtlr(R0);
+    __ mtlr(R12_scratch2);
     __ mtctr(R11_scratch1);
     __ bctr();
 
@@ -2197,17 +2182,11 @@ void TemplateTable::_return(TosState state) {
 //   - Rscratch
 void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rcache, Register Rscratch) {
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
-  Label Lresolved, Ldone, L_clinit_barrier_slow;
+
+  Label L_clinit_barrier_slow, L_done;
   Register Rindex = Rscratch;
 
   Bytecodes::Code code = bytecode();
-  switch (code) {
-    case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
-    case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
-    default:
-      break;
-  }
-
   const int bytecode_offset = (byte_no == f1_byte) ? in_bytes(ResolvedMethodEntry::bytecode1_offset())
                                                    : in_bytes(ResolvedMethodEntry::bytecode2_offset());
   __ load_method_entry(Rcache, Rindex);
@@ -2215,20 +2194,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
   __ lbz(Rscratch, bytecode_offset, Rcache);
   // Acquire by cmp-br-isync (see below).
   __ cmpdi(CR0, Rscratch, (int)code);
-  __ beq(CR0, Lresolved);
+  __ bne(CR0, L_clinit_barrier_slow);
 
-  // Class initialization barrier slow path lands here as well.
-  __ bind(L_clinit_barrier_slow);
-
-  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ li(R4_ARG2, code);
-  __ call_VM(noreg, entry, R4_ARG2, true);
-
-  // Update registers with resolved info.
-  __ load_method_entry(Rcache, Rindex);
-  __ b(Ldone);
-
-  __ bind(Lresolved);
   __ isync(); // Order load wrt. succeeding loads.
 
   // Class initialization barrier for static methods
@@ -2238,18 +2205,26 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
 
     __ ld(method, in_bytes(ResolvedMethodEntry::method_offset()), Rcache);
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, R16_thread, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
+    __ clinit_barrier(klass, R16_thread, &L_done, /*L_slow_path*/ nullptr);
+  } else {
+    __ b(L_done);
   }
 
-  __ bind(Ldone);
+  // Class initialization barrier slow path lands here as well.
+  __ bind(L_clinit_barrier_slow);
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ li(R4_ARG2, code);
+  __ call_VM_preemptable(noreg, entry, R4_ARG2);
+
+  // Update registers with resolved info.
+  __ load_method_entry(Rcache, Rindex);
+  __ bind(L_done);
 }
 
-void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
-                                            Register Rcache,
-                                            Register index) {
+void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcache, Register index) {
   assert_different_registers(Rcache, index);
 
-  Label resolved;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2264,19 +2239,34 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
                                          : in_bytes(ResolvedFieldEntry::put_code_offset());
   __ lbz(R0, code_offset, Rcache);
   __ cmpwi(CR0, R0, (int)code); // have we resolved this bytecode?
-  __ beq(CR0, resolved);
+  __ bne(CR0, L_clinit_barrier_slow);
+
+  __ isync(); // Order load wrt. succeeding loads.
+
+  // Class initialization barrier for static fields
+  if (VM_Version::supports_fast_class_init_checks() &&
+      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+    const Register field_holder = R4_ARG2;
+
+    // InterpreterRuntime::resolve_get_put sets field_holder and finally release-stores put_code.
+    // We have seen the released put_code above and will read the corresponding field_holder and init_state
+    // (ordered by compare-branch-isync).
+    __ ld(field_holder, ResolvedFieldEntry::field_holder_offset(), Rcache);
+    __ clinit_barrier(field_holder, R16_thread, &L_done, /*L_slow_path*/ nullptr);
+  } else {
+    __ b(L_done);
+  }
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ li(R4_ARG2, (int)code);
-  __ call_VM(noreg, entry, R4_ARG2);
+  __ li(R4_ARG2, code);
+  __ call_VM_preemptable(noreg, entry, R4_ARG2);
 
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
-  __ bind(resolved);
-
-  // Use acquire semantics for the bytecode (see ResolvedFieldEntry::fill_in()).
-  __ isync(); // Order load wrt. succeeding loads.
+  __ bind(L_done);
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,
@@ -3127,7 +3117,7 @@ void TemplateTable::fast_storefield(TosState state) {
   const ConditionRegister CR_is_vol = CR2; // Non-volatile condition register (survives runtime call in do_oop_store).
 
   // Constant pool already resolved => Load flags and offset of field.
-  __ load_field_entry(Rcache, Rscratch);
+  __ load_field_entry(Rcache, Rscratch, 1, /* for_fast_bytecode */ true);
   jvmti_post_field_mod(Rcache, Rscratch, false /* not static */);
   load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
@@ -3208,7 +3198,7 @@ void TemplateTable::fast_accessfield(TosState state) {
                  // R12_scratch2 used by load_field_cp_cache_entry
 
   // Constant pool already resolved. Get the field offset.
-  __ load_field_entry(Rcache, Rscratch);
+  __ load_field_entry(Rcache, Rscratch, 1, /* for_fast_bytecode */ true);
   load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support
@@ -3347,7 +3337,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ ld(Rclass_or_obj, 0, R18_locals);
 
   // Constant pool already resolved. Get the field offset.
-  __ load_field_entry(Rcache, Rscratch, 2);
+  __ load_field_entry(Rcache, Rscratch, 2, /* for_fast_bytecode */ true);
   load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support not needed, since we switch back to single bytecode as soon as debugger attaches.
@@ -3508,7 +3498,7 @@ void TemplateTable::fast_invokevfinal(int byte_no) {
 
   assert(byte_no == f2_byte, "use this argument");
   Register Rcache  = R31;
-  __ load_method_entry(Rcache, R11_scratch1);
+  __ load_method_entry(Rcache, R11_scratch1, 1, /* for_fast_bytecode */ true);
   invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, R22_tmp2, R23_tmp3);
 }
 
@@ -3874,7 +3864,7 @@ void TemplateTable::_new() {
   // --------------------------------------------------------------------------
   // slow case
   __ bind(Lslow_case);
-  call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Rcpool, Rindex);
+  __ call_VM_preemptable(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Rcpool, Rindex);
 
   // continue
   __ bind(Ldone);
@@ -3964,7 +3954,7 @@ void TemplateTable::checkcast() {
   // Call into the VM to "quicken" instanceof.
   __ push_ptr();  // for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(RspecifiedKlass);
+  __ get_vm_result_metadata(RspecifiedKlass);
   __ pop_ptr();   // Restore receiver.
   __ b(Lresolved);
 
@@ -4026,7 +4016,7 @@ void TemplateTable::instanceof() {
   // Call into the VM to "quicken" instanceof.
   __ push_ptr();  // for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(RspecifiedKlass);
+  __ get_vm_result_metadata(RspecifiedKlass);
   __ pop_ptr();   // Restore receiver.
   __ b(Lresolved);
 

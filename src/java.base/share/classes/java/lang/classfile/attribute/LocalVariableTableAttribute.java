@@ -83,6 +83,8 @@ public sealed interface LocalVariableTableAttribute
      * {@link CodeBuilder#localVariable CodeBuilder::localVariable} instead.
      *
      * @param locals the local variable descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static LocalVariableTableAttribute of(List<LocalVariableInfo> locals) {
         return new UnboundAttribute.UnboundLocalVariableTableAttribute(locals);

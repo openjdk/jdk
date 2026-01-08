@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -56,69 +56,78 @@
 
 #ifdef P11_ENABLE_GETNATIVEKEYINFO
 
-#define CK_ATTRIBUTES_TEMPLATE_LENGTH (CK_ULONG)61U
+#define CK_ATTRIBUTES_TEMPLATE_LENGTH (CK_ULONG)60U
 
+// Group attributes based on their value types; put attributes whose values
+// requiring address alignments, e.g. CK_ULONG, first
 static CK_ATTRIBUTE ckpAttributesTemplate[CK_ATTRIBUTES_TEMPLATE_LENGTH] = {
-        {CKA_CLASS, 0, 0},
-        {CKA_TOKEN, 0, 0},
-        {CKA_PRIVATE, 0, 0},
-        {CKA_LABEL, 0, 0},
-        {CKA_APPLICATION, 0, 0},
-        {CKA_VALUE, 0, 0},
-        {CKA_OBJECT_ID, 0, 0},
+        // CK_ULONG
         {CKA_CERTIFICATE_TYPE, 0, 0},
-        {CKA_ISSUER, 0, 0},
-        {CKA_SERIAL_NUMBER, 0, 0},
-        {CKA_AC_ISSUER, 0, 0},
-        {CKA_OWNER, 0, 0},
-        {CKA_ATTR_TYPES, 0, 0},
-        {CKA_TRUSTED, 0, 0},
+        {CKA_CLASS, 0, 0},
+        {CKA_HW_FEATURE_TYPE, 0, 0},
+        {CKA_KEY_GEN_MECHANISM, 0, 0},
         {CKA_KEY_TYPE, 0, 0},
-        {CKA_SUBJECT, 0, 0},
-        {CKA_ID, 0, 0},
-        {CKA_SENSITIVE, 0, 0},
-        {CKA_ENCRYPT, 0, 0},
-        {CKA_DECRYPT, 0, 0},
-        {CKA_WRAP, 0, 0},
-        {CKA_UNWRAP, 0, 0},
-        {CKA_SIGN, 0, 0},
-        {CKA_SIGN_RECOVER, 0, 0},
-        {CKA_VERIFY, 0, 0},
-        {CKA_VERIFY_RECOVER, 0, 0},
-        {CKA_DERIVE, 0, 0},
-        {CKA_START_DATE, 0, 0},
-        {CKA_END_DATE, 0, 0},
-        {CKA_MODULUS, 0, 0},
         {CKA_MODULUS_BITS, 0, 0},
-        {CKA_PUBLIC_EXPONENT, 0, 0},
-        {CKA_PRIVATE_EXPONENT, 0, 0},
-        {CKA_PRIME_1, 0, 0},
-        {CKA_PRIME_2, 0, 0},
-        {CKA_EXPONENT_1, 0, 0},
-        {CKA_EXPONENT_2, 0, 0},
-        {CKA_COEFFICIENT, 0, 0},
-        {CKA_PRIME, 0, 0},
-        {CKA_SUBPRIME, 0, 0},
-        {CKA_BASE, 0, 0},
         {CKA_PRIME_BITS, 0, 0},
         {CKA_SUB_PRIME_BITS, 0, 0},
         {CKA_VALUE_BITS, 0, 0},
         {CKA_VALUE_LEN, 0, 0},
-        {CKA_EXTRACTABLE, 0, 0},
-        {CKA_LOCAL, 0, 0},
-        {CKA_NEVER_EXTRACTABLE, 0, 0},
+        // CK_BBOOL
         {CKA_ALWAYS_SENSITIVE, 0, 0},
-        {CKA_KEY_GEN_MECHANISM, 0, 0},
+        {CKA_DECRYPT, 0, 0},
+        {CKA_DERIVE, 0, 0},
+        {CKA_ENCRYPT, 0, 0},
+        {CKA_EXTRACTABLE, 0, 0},
+        {CKA_HAS_RESET, 0, 0},
+        {CKA_LOCAL, 0, 0},
         {CKA_MODIFIABLE, 0, 0},
-        {CKA_ECDSA_PARAMS, 0, 0},
+        {CKA_NEVER_EXTRACTABLE, 0, 0},
+        {CKA_PRIVATE, 0, 0},
+        {CKA_RESET_ON_INIT, 0, 0},
+        {CKA_SENSITIVE, 0, 0},
+        {CKA_SIGN, 0, 0},
+        {CKA_SIGN_RECOVER, 0, 0},
+        {CKA_TOKEN, 0, 0},
+        {CKA_TRUSTED, 0, 0},
+        {CKA_UNWRAP, 0, 0},
+        {CKA_VERIFY, 0, 0},
+        {CKA_VERIFY_RECOVER, 0, 0},
+        {CKA_WRAP, 0, 0},
+        // PTR: byte[]
+        {CKA_AC_ISSUER, 0, 0},
+        {CKA_ATTR_TYPES, 0, 0},
+        {CKA_BASE, 0, 0},
+        {CKA_COEFFICIENT, 0, 0},
         {CKA_EC_PARAMS, 0, 0},
         {CKA_EC_POINT, 0, 0},
+        {CKA_EXPONENT_1, 0, 0},
+        {CKA_EXPONENT_2, 0, 0},
+        {CKA_ID, 0, 0},
+        {CKA_ISSUER, 0, 0},
+        {CKA_MODULUS, 0, 0},
+        {CKA_OBJECT_ID, 0, 0},
+        {CKA_OWNER, 0, 0},
+        {CKA_PRIME, 0, 0},
+        {CKA_PRIME_1, 0, 0},
+        {CKA_PRIME_2, 0, 0},
+        {CKA_PRIVATE_EXPONENT, 0, 0},
+        {CKA_PUBLIC_EXPONENT, 0, 0},
+        {CKA_SERIAL_NUMBER, 0, 0},
+        {CKA_SUBJECT, 0, 0},
+        {CKA_SUBPRIME, 0, 0},
+        {CKA_VALUE, 0, 0},
+        // PTR: CK_UTF8CHAR[]
+        {CKA_APPLICATION, 0, 0},
+        {CKA_LABEL, 0, 0},
+        // PTR: CK_DATE
+        {CKA_START_DATE, 0, 0},
+        {CKA_END_DATE, 0, 0},
+        // deprecated
         {CKA_SECONDARY_AUTH, 0, 0},
         {CKA_AUTH_PIN_FLAGS, 0, 0},
-        {CKA_HW_FEATURE_TYPE, 0, 0},
-        {CKA_RESET_ON_INIT, 0, 0},
-        {CKA_HAS_RESET, 0, 0},
+        // misc
         {CKA_VENDOR_DEFINED, 0, 0},
+        // keep this at the end to match the impl in getNativeKeyInfo(...)
         {CKA_NETSCAPE_DB, 0, 0},
 };
 

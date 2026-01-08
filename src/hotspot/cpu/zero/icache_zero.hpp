@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@
 
 class ICache : public AbstractICache {
  public:
-  static void initialize() {}
+  static void initialize(int phase) {}
   static void invalidate_word(address addr) {}
   static void invalidate_range(address start, int nbytes) {}
 };

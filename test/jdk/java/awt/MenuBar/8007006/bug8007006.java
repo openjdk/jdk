@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,76 +21,86 @@
  * questions.
  */
 
-/**
+import java.awt.Color;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+/*
  * @test
  * @key headful
  * @bug 8007006
  * @requires (os.family == "mac")
  * @summary [macosx] Closing subwindow loses main window menus.
- * @library /test/lib
- * @build jdk.test.lib.Platform
- * @run main bug8007006
  */
 
-import java.awt.*;
-import java.awt.event.*;
-
-import jdk.test.lib.Platform;
-
 public class bug8007006 {
-    private static Frame frame1;
-    private static Frame frame2;
-    private static volatile boolean isActionPerformed;
+    private static Frame mainFrame;
+    private static Frame subFrame;
+    private static final CountDownLatch isActionPerformed = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.isOSX()) {
-            System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
-            return;
-        }
+        try {
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            Robot robot = new Robot();
 
-        System.setProperty("apple.laf.useScreenMenuBar", "true");
+            EventQueue.invokeAndWait(bug8007006::createAndShowGUI);
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(300);
+            EventQueue.invokeAndWait(() -> subFrame.dispose());
+            robot.waitForIdle();
+            robot.delay(300);
 
-        createAndShowGUI();
-        robot.waitForIdle();
-        frame2.dispose();
-        robot.waitForIdle();
+            performMenuItemTest(robot);
 
-        performMenuItemTest(robot);
-
-        frame1.dispose();
-        if (!isActionPerformed) {
-            throw new Exception("Test failed: menu item action was not performed");
+            if (!isActionPerformed.await(1, TimeUnit.SECONDS)) {
+                throw new Exception("Test failed: menu item action was not performed");
+            }
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (mainFrame != null) {
+                    mainFrame.dispose();
+                }
+            });
         }
     }
 
     private static void createAndShowGUI() {
-        frame1 = new Frame("Frame 1");
-        frame1.setMenuBar(createMenuBar());
-        frame1.setSize(200, 200);
+        mainFrame = new Frame("Frame 1");
+        mainFrame.setMenuBar(createMenuBar());
+        mainFrame.setSize(200, 200);
+        mainFrame.setBackground(Color.GREEN);
+        mainFrame.setLocationRelativeTo(null);
 
-        frame2 = new Frame("Frame 2");
-        frame2.setMenuBar(createMenuBar());
-        frame2.setSize(200, 200);
+        subFrame = new Frame("Frame 2");
+        subFrame.setMenuBar(createMenuBar());
+        subFrame.setSize(200, 200);
+        subFrame.setBackground(Color.RED);
+        subFrame.setLocationRelativeTo(null);
 
-        frame1.setVisible(true);
-        frame2.setVisible(true);
+        mainFrame.setVisible(true);
+        subFrame.setVisible(true);
     }
 
     private static MenuBar createMenuBar() {
-        // A very long name makes it more likely that the robot will hit the
-        // menu
+        // A very long name makes it more likely
+        // that the robot will hit the menu
         Menu menu = new Menu("TestTestTestTestTestTestTestTestTestTest");
         MenuItem item = new MenuItem("TestTestTestTestTestTestTestTestTestTest");
-        item.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ev) {
-                isActionPerformed = true;
-            }
-        });
         menu.add(item);
+        item.addActionListener(ev -> isActionPerformed.countDown());
+
         MenuBar mb = new MenuBar();
         mb.add(menu);
         return mb;
@@ -102,29 +112,29 @@ public class bug8007006 {
         // of the first menu.
         // Unfortunately, the application name can vary based on how the
         // application is run.
-        // The work around is to make the menu and the menu item names very
+        // The workaround is to make the menu and the menu item names very
         // long.
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        GraphicsConfiguration gc =
+                GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                   .getDefaultScreenDevice()
+                                   .getDefaultConfiguration();
+
+        Insets screenInsets = toolkit.getScreenInsets(gc);
+        System.out.println("Screen insets: " + screenInsets);
+
         int menuBarX = 250;
-        int menuBarY = 11;
+        int menuBarY = screenInsets.top / 2;
         int menuItemX = menuBarX;
-        int menuItemY = 34;
+        int menuItemY = screenInsets.top + 10;
         robot.mouseMove(menuBarX, menuBarY);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseMove(menuItemX, menuItemY);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        waitForAction();
-    }
 
-    private static void waitForAction() {
-        try {
-            for (int i = 0; i < 10; i++) {
-                if (isActionPerformed) {
-                    return;
-                }
-                Thread.sleep(100);
-            }
-        } catch (InterruptedException ex) {
-        }
+        robot.mouseMove(menuItemX, menuItemY);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
     }
 }

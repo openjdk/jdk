@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.*;
 import java.math.*;
 
 import nsk.share.*;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * This test exercises the JVMTI event <code>GarbageCollectionStart</code>.
@@ -61,13 +62,7 @@ public class gcstart002 {
     }
 
     private int runThis(String argv[], PrintStream out) {
-        try {
-            for (int i=0; i<ITERATIONS; i++)
-                ClassUnloader.eatMemory(); // provoke garbage collecting
-        } catch (OutOfMemoryError e) {
-            // ignoring
-        }
-
+        WhiteBox.getWhiteBox().fullGC(); // provoke garbage collecting
         return Consts.TEST_PASSED;
     }
 }

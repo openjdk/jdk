@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 /*
  * @test
@@ -54,7 +55,7 @@ public class Http10KeepAliveMaxParamTest {
         final HttpServer server = HttpServer.create(bindAddr, backlog);
         server.createContext("/", (exchange) -> {
             System.out.println("Sending response for request " + exchange.getRequestURI());
-            exchange.sendResponseHeaders(200, 0);
+            exchange.sendResponseHeaders(200, RSPBODY_CHUNKED);
             exchange.getResponseBody().close();
         });
         server.start();

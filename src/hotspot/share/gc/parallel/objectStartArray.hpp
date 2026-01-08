@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   DEBUG_ONLY(MemRegion  _covered_region;)
 
   // BOT array
-  PSVirtualSpace  _virtual_space;
+  PSVirtualSpace* _virtual_space;
 
   // Biased array-start of BOT array for fast heap-addr / BOT entry translation
   uint8_t*        _offset_base;
@@ -74,7 +74,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
 
  public:
-  void initialize(MemRegion reserved_region);
+  ObjectStartArray(MemRegion covered_region);
 
   // Heap old-gen resizing
   void set_covered_region(MemRegion mr);

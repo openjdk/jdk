@@ -142,6 +142,7 @@ public class HandshakeFailureTest {
         SSLParameters params = new SSLParameters();
         params.setProtocols(new String[] { tlsProtocol });
         return HttpClient.newBuilder()
+                .version(Version.HTTP_2)
                 .sslParameters(params)
                 .build();
     }

@@ -47,7 +47,6 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror HostArchPkgTest.java
  * @requires (os.family == "mac")
- * @key jpackagePlatformPackage
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=HostArchPkgTest
  */

@@ -99,7 +99,7 @@ JVMCFG := $(LIB_DST_DIR)/jvm.cfg
 
 define print-cfg-line
 	$(call LogInfo, Adding -$1 $2 to jvm.cfg)
-	$(PRINTF) -- "-$1 $2\n" >> $@ $(NEWLINE)
+	$(ECHO) "-$1 $2" >> $@ $(NEWLINE)
 endef
 
 $(JVMCFG): $(call DependOnVariable, ORDERED_CFG_VARIANTS)
@@ -144,15 +144,6 @@ $(NET_PROPERTIES_DST): $(NET_PROPERTIES_SRCS)
 	$(CAT) $(NET_PROPERTIES_SRCS) > $@
 
 TARGETS += $(NET_PROPERTIES_DST)
-
-ifeq ($(call isTargetOs, linux), true)
-  $(eval $(call SetupCopyFiles, COPY_SDP_CONF, \
-      FILES := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/sdp/sdp.conf.template, \
-      DEST := $(CONF_DST_DIR)/sdp, \
-  ))
-
-  TARGETS += $(COPY_SDP_CONF)
-endif
 
 ################################################################################
 

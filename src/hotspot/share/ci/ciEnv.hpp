@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerThread.hpp"
-#include "compiler/cHeapStringHolder.hpp"
 #include "oops/methodData.hpp"
 #include "runtime/javaThread.hpp"
 

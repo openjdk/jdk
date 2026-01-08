@@ -24,7 +24,7 @@
  *
  */
 
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 

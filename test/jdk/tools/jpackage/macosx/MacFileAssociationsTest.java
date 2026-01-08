@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,25 @@
  * questions.
  */
 
+import static java.util.Map.entry;
+import static jdk.jpackage.internal.util.PListWriter.writeDict;
+import static jdk.jpackage.internal.util.PListWriter.writePList;
+import static jdk.jpackage.internal.util.XmlUtils.createXml;
+import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import static jdk.jpackage.test.MacHelper.flatMapPList;
+import static jdk.jpackage.test.MacHelper.readPListFromAppImage;
+import static jdk.jpackage.test.MacHelper.writeFaPListFragment;
+
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import static java.util.Map.entry;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.MacHelper;
-import jdk.jpackage.test.MacHelper.PListWrapper;
-import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Tests generation of app image with --file-associations and mac additional file
@@ -44,15 +54,15 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @build MacFileAssociationsTest
  * @requires (os.family == "mac")
- * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=480 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacFileAssociationsTest
  */
 public class MacFileAssociationsTest {
 
     @Test
     public static void test() throws Exception {
-        final Path propFile = TKit.workDir().resolve("fa.properties");
-        Map<String, String> map = Map.ofEntries(
+        final Path propFile = TKit.createTempFile("fa.properties");
+        final var props = List.of(
                 entry("mime-type", "application/x-jpackage-foo"),
                 entry("extension", "foo"),
                 entry("description", "bar"),
@@ -64,49 +74,28 @@ public class MacFileAssociationsTest {
                 entry("mac.UISupportsDocumentBrowser", "false"),
                 entry("mac.NSExportableTypes", "public.png, public.jpg"),
                 entry("mac.UTTypeConformsTo", "public.image, public.data"));
-        TKit.createPropertiesFile(propFile, map);
+        TKit.createPropertiesFile(propFile, props);
 
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
+        final var cmd = JPackageCommand.helloAppImage().setFakeRuntime();
         cmd.addArguments("--file-associations", propFile);
         cmd.executeAndAssertHelloAppImageCreated();
 
-        Path appImage = cmd.outputBundle();
-        verifyPList(appImage);
-    }
+        Function<Map.Entry<String, String>, String> toString = e -> {
+            return String.format("%s => %s", e.getKey(), e.getValue());
+        };
 
-    private static void checkStringValue(PListWrapper plist, String key, String value) {
-        String result = plist.queryValue(key);
-        TKit.assertEquals(value, result, String.format(
-                "Check value of %s plist key", key));
-    }
+        final var actualFaProperties = flatMapPList(readPListFromAppImage(cmd.outputBundle())).entrySet().stream().filter(e -> {
+            return Stream.of("/CFBundleDocumentTypes", "/UTExportedTypeDeclarations").anyMatch(e.getKey()::startsWith);
+        }).sorted(Comparator.comparing(Map.Entry::getKey)).map(toString).toList();
 
-    private static void checkBoolValue(PListWrapper plist, String key, Boolean value) {
-        Boolean result = plist.queryBoolValue(key);
-        TKit.assertEquals(value.toString(), result.toString(), String.format(
-                "Check value of %s plist key", key));
-    }
+        final var expectedFaProperties = flatMapPList(new PListReader(createXml(xml -> {
+            writePList(xml, toXmlConsumer(() -> {
+                writeDict(xml, toXmlConsumer(() -> {
+                    writeFaPListFragment(cmd, xml);
+                }));
+            }));
+        }).getNode())).entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).map(toString).toList();
 
-    private static void checkArrayValue(PListWrapper plist, String key,
-            List<String> values) {
-        List<String> result = plist.queryArrayValue(key);
-        TKit.assertStringListEquals(values, result, String.format(
-                "Check value of %s plist key", key));
-    }
-
-    private static void verifyPList(Path appImage) throws Exception {
-        PListWrapper plist = MacHelper.readPListFromAppImage(appImage);
-        checkStringValue(plist, "CFBundleTypeRole", "Viewer");
-        checkStringValue(plist, "LSHandlerRank", "Default");
-        checkStringValue(plist, "NSDocumentClass", "SomeClass");
-
-        checkBoolValue(plist, "LSTypeIsPackage", true);
-        checkBoolValue(plist, "LSSupportsOpeningDocumentsInPlace", false);
-        checkBoolValue(plist, "UISupportsDocumentBrowser", false);
-
-        checkArrayValue(plist, "NSExportableTypes", List.of("public.png",
-                                                            "public.jpg"));
-
-        checkArrayValue(plist, "UTTypeConformsTo", List.of("public.image",
-                                                           "public.data"));
+        TKit.assertStringListEquals(expectedFaProperties, actualFaProperties, "Check fa properties in the Info.plist file as expected");
     }
 }

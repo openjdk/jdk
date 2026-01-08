@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.awt.Rectangle;
 import sun.awt.EmbeddedFrame;
 import sun.awt.Win32GraphicsEnvironment;
 
-public class WEmbeddedFramePeer extends WFramePeer {
+public final class WEmbeddedFramePeer extends WFramePeer {
 
     public WEmbeddedFramePeer(EmbeddedFrame target) {
         super(target);

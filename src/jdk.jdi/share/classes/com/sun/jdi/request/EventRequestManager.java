@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,13 +251,13 @@ public interface EventRequestManager extends Mirror {
      * after the first step is detected.  Thus a next line method
      * would do the following:
      * <pre>{@code
-     *     EventRequestManager mgr = myVM.{@link VirtualMachine#eventRequestManager eventRequestManager}();
+     *     EventRequestManager mgr = myVM.eventRequestManager();
      *     StepRequest request = mgr.createStepRequest(myThread,
-     *                                                 StepRequest.{@link StepRequest#STEP_LINE STEP_LINE},
-     *                                                 StepRequest.{@link StepRequest#STEP_OVER STEP_OVER});
-     *     request.{@link EventRequest#addCountFilter addCountFilter}(1);  // next step only
+     *                                                 StepRequest.STEP_LINE,
+     *                                                 StepRequest.STEP_OVER);
+     *     request.addCountFilter(1);  // next step only
      *     request.enable();
-     *     myVM.{@link VirtualMachine#resume resume}();
+     *     myVM.resume();
      * }</pre>
      *
      * @param thread the thread in which to step
@@ -382,7 +382,7 @@ public interface EventRequestManager extends Mirror {
      *   Iterator iter = requestManager.stepRequests().iterator();
      *   while (iter.hasNext()) {
      *      requestManager.deleteEventRequest(iter.next());
-     *  }
+     *   }
      * </PRE>
      * may cause a {@link java.util.ConcurrentModificationException}.
      * Instead use

@@ -232,8 +232,8 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * that is older than the specified length of time is removed by the Java
      * Virtual Machine (JVM).
      * <p>
-     * If neither maximum limit or the maximum age is set, the size of the
-     * recording may grow indefinitely if events are on
+     * If neither the maximum limit nor the maximum age is set, the size of the
+     * recording may grow indefinitely if events are not consumed.
      *
      * @param maxAge the length of time that data is kept, or {@code null} if
      *        infinite

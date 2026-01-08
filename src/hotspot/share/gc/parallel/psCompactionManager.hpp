@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
 #include "classfile/classLoaderData.hpp"
 #include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
-#include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/partialArrayState.hpp"
+#include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -120,7 +120,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
 
   inline PSMarkTaskQueue*  marking_stack() { return &_marking_stack; }
-  inline void push(PartialArrayState* stat);
   void push_objArray(oop obj);
 
   // To collect per-region live-words in a worker local cache in order to
@@ -189,7 +188,6 @@ public:
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
 
   // Save for later processing.  Must not fail.
-  inline void push(oop obj);
   inline void push_region(size_t index);
 
   // Check mark and maybe push on marking stack.

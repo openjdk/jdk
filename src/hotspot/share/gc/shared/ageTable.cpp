@@ -28,11 +28,11 @@
 #include "gc/shared/gc_globals.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/copy.hpp"
-#include "logging/logStream.hpp"
 
 /* Copyright (c) 1992, 2025, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */

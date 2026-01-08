@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,18 @@
  * @summary Check that ClassLoader.getResource works as expected in the JShell agent.
  * @modules jdk.jshell
  * @build KullaTesting TestingInputStream
- * @run testng GetResourceTest
+ * @run junit GetResourceTest
  */
 
 import jdk.jshell.Snippet;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.Status.VALID;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 
-@Test
 public class GetResourceTest extends KullaTesting {
 
+    @Test
     public void checkGetResource() {
         assertEval("import java.util.Arrays;");
         assertEval("boolean match(byte[] data, byte[] snippet) {\n" +
@@ -57,6 +57,7 @@ public class GetResourceTest extends KullaTesting {
         assertEval("test()", "true");
     }
 
+    @Test
     public void checkRedefine() {
         assertEval("import java.util.Arrays;");
         assertEval("boolean match(byte[] data, byte[] snippet) {\n" +
@@ -85,6 +86,7 @@ public class GetResourceTest extends KullaTesting {
         assertEval("test()", "true");
     }
 
+    @Test
     public void checkResourceSize() {
         assertEval("import java.net.*;");
         assertEval("boolean test() throws Exception {\n" +
@@ -97,6 +99,7 @@ public class GetResourceTest extends KullaTesting {
         assertEval("test()", "true");
     }
 
+    @Test
     public void checkTimestampCheck() {
         assertEval("import java.net.*;");
         assertEval("import java.time.*;");
@@ -138,6 +141,7 @@ public class GetResourceTest extends KullaTesting {
         assertEval("nue[0] == nue[2]", "true");
     }
 
+    @Test
     public void checkFieldAccess() {
         assertEval("import java.net.*;");
         assertEval("Class c = new Object() {}.getClass().getEnclosingClass();");
@@ -154,6 +158,7 @@ public class GetResourceTest extends KullaTesting {
         assertEval("connection.getHeaderField(3) == null", "true");
     }
 
+    @Test
     public void checkGetResources() {
         assertEval("import java.net.*;");
         assertEval("Class c = new Object() {}.getClass().getEnclosingClass();");

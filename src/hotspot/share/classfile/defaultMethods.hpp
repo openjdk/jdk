@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_CLASSFILE_DEFAULTMETHODS_HPP
 
 #include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/growableArray.hpp"
 
 class InstanceKlass;
 class Symbol;

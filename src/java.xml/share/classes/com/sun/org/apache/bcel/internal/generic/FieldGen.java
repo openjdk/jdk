@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,37 +40,34 @@ import com.sun.org.apache.bcel.internal.util.BCELComparator;
  * to a field (which must of course be compatible with to the declared type).
  *
  * @see Field
- * @LastModified: May 2021
+ * @LastModified: Sept 2025
  */
 public class FieldGen extends FieldGenOrMethodGen {
 
-    private static BCELComparator bcelComparator = new BCELComparator() {
+    private static BCELComparator<FieldGen> bcelComparator = new BCELComparator<FieldGen>() {
 
         @Override
-        public boolean equals(final Object o1, final Object o2) {
-            final FieldGen THIS = (FieldGen) o1;
-            final FieldGen THAT = (FieldGen) o2;
-            return Objects.equals(THIS.getName(), THAT.getName()) && Objects.equals(THIS.getSignature(), THAT.getSignature());
+        public boolean equals(final FieldGen a, final FieldGen b) {
+            return a == b || a != null && b != null && Objects.equals(a.getName(), b.getName()) && Objects.equals(a.getSignature(), b.getSignature());
         }
 
         @Override
-        public int hashCode(final Object o) {
-            final FieldGen THIS = (FieldGen) o;
-            return THIS.getSignature().hashCode() ^ THIS.getName().hashCode();
+        public int hashCode(final FieldGen o) {
+            return o != null ? Objects.hash(o.getSignature(), o.getName()) : 0;
         }
     };
 
     /**
-     * @return Comparison strategy object
+     * @return Comparison strategy object.
      */
-    public static BCELComparator getComparator() {
+    public static BCELComparator<FieldGen> getComparator() {
         return bcelComparator;
     }
 
     /**
-     * @param comparator Comparison strategy object
+     * @param comparator Comparison strategy object.
      */
-    public static void setComparator(final BCELComparator comparator) {
+    public static void setComparator(final BCELComparator<FieldGen> comparator) {
         bcelComparator = comparator;
     }
 
@@ -81,8 +78,8 @@ public class FieldGen extends FieldGenOrMethodGen {
     /**
      * Instantiate from existing field.
      *
-     * @param field Field object
-     * @param cp constant pool (must contain the same entries as the field's constant pool)
+     * @param field Field object.
+     * @param cp constant pool (must contain the same entries as the field's constant pool).
      */
     public FieldGen(final Field field, final ConstantPoolGen cp) {
         this(field.getAccessFlags(), Type.getType(field.getSignature()), field.getName(), cp);
@@ -187,11 +184,11 @@ public class FieldGen extends FieldGenOrMethodGen {
      */
     @Override
     public boolean equals(final Object obj) {
-        return bcelComparator.equals(this, obj);
+        return obj instanceof FieldGen && bcelComparator.equals(this, (FieldGen) obj);
     }
 
     /**
-     * Get field object after having set up all necessary values.
+     * Gets field object after having set up all necessary values.
      */
     public Field getField() {
         final String signature = getSignature();
@@ -207,10 +204,7 @@ public class FieldGen extends FieldGenOrMethodGen {
     }
 
     public String getInitValue() {
-        if (value != null) {
-            return value.toString();
-        }
-        return null;
+        return Objects.toString(value, null);
     }
 
     @Override
@@ -219,7 +213,7 @@ public class FieldGen extends FieldGenOrMethodGen {
     }
 
     /**
-     * Return value as defined by given BCELComparator strategy. By default return the hashcode of the field's name XOR
+     * Return value as defined by given BCELComparator strategy. By default return the hash code of the field's name XOR
      * signature.
      *
      * @see Object#hashCode()
@@ -295,7 +289,7 @@ public class FieldGen extends FieldGenOrMethodGen {
     }
 
     /**
-     * Set (optional) initial value of field, otherwise it will be set to null/0/false by the JVM automatically.
+     * Sets (optional) initial value of field, otherwise it will be set to null/0/false by the JVM automatically.
      */
     public void setInitValue(final String str) {
         checkType(ObjectType.getInstance("java.lang.String"));

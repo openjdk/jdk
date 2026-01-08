@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,12 @@ public class BootLoader {
 
     static {
         JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-        UNNAMED_MODULE = jla.defineUnnamedModule(null);
+        ArchivedClassLoaders archivedClassLoaders = ArchivedClassLoaders.get();
+        if (archivedClassLoaders != null) {
+            UNNAMED_MODULE = archivedClassLoaders.unnamedModuleForBootLoader();
+        } else {
+            UNNAMED_MODULE = jla.defineUnnamedModule(null);
+        }
         jla.addEnableNativeAccess(UNNAMED_MODULE);
         setBootLoaderUnnamedModule0(UNNAMED_MODULE);
     }
@@ -70,9 +75,13 @@ public class BootLoader {
     private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP
         = new ConcurrentHashMap<>();
 
-    // native libraries loaded by the boot class loader
-    private static final NativeLibraries NATIVE_LIBS
-        = NativeLibraries.newInstance(null);
+    // Holder has the field(s) that need to be initialized during JVM bootstrap even if
+    // the outer is aot-initialized.
+    private static class Holder {
+        // native libraries loaded by the boot class loader
+        private static final NativeLibraries NATIVE_LIBS
+            = NativeLibraries.newInstance(null);
+    }
 
     /**
      * Returns the unnamed module for the boot loader.
@@ -99,7 +108,7 @@ public class BootLoader {
      * Returns NativeLibraries for the boot class loader.
      */
     public static NativeLibraries getNativeLibraries() {
-        return NATIVE_LIBS;
+        return Holder.NATIVE_LIBS;
     }
 
     /**

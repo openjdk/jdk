@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.jshell;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A Snippet represents a snippet of Java source code as passed to
@@ -219,9 +218,8 @@ public abstract class Snippet {
          * Import Module Declaration.
          * An import declaration of a module.
          * @jls 7.5.5 Import Module Declarations
-         * @since 23
+         * @since 25
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.MODULE_IMPORTS, reflective=true)
         MODULE_IMPORT_SUBKIND(Kind.IMPORT),
 
         /**
@@ -526,7 +524,7 @@ public abstract class Snippet {
 
         /**
          * The snippet is inactive because it does not yet exist.
-         * Used only in {@link SnippetEvent#previousStatus} for new
+         * Used only in {@link SnippetEvent#previousStatus()} for new
          * snippets.
          * {@link jdk.jshell.JShell#status(jdk.jshell.Snippet) JShell.status(Snippet)}
          * will never return this {@code Status}.

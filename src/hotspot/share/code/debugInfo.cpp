@@ -28,11 +28,11 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/stackValue.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/stackValue.hpp"
 
 // Constructors
 

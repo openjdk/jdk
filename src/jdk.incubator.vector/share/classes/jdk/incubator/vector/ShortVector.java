@@ -84,7 +84,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     //       super.bOp((Byte128Vector) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -554,7 +554,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<Short>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -689,7 +689,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
         }
@@ -717,7 +717,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
         }
@@ -727,6 +727,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             this, m,
             UN_IMPL.find(op, opc, ShortVector::unaryOperations));
     }
+
 
     private static final
     ImplCache<Unary, UnaryOperation<ShortVector, VectorMask<Short>>>
@@ -824,6 +825,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                     = this.compare(EQ, (short) 0, m);
                 return this.blend(that, mask);
             }
+
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
                 // This allows the JIT to ignore some ISA details.
@@ -849,6 +851,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             this, that, m,
             BIN_IMPL.find(op, opc, ShortVector::binaryOperations));
     }
+
 
     private static final
     ImplCache<Binary, BinaryOperation<ShortVector, VectorMask<Short>>>
@@ -1748,7 +1751,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1781,7 +1784,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1805,7 +1808,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1838,7 +1841,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1907,7 +1910,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical complement ({@code ~})
      * of this vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "not" operation ({@code ~})
      * to each lane value.
      *
@@ -2874,6 +2877,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (short) VectorMath.minUnsigned(a, b)));
             case VECTOR_OP_UMAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (short) VectorMath.maxUnsigned(a, b)));
+            case VECTOR_OP_SUADD: return (v, m) ->
+                    toBits(v.rOp((short)0, m, (i, a, b) -> (short) VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((short)-1, m, (i, a, b) -> (short)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
@@ -2951,7 +2956,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ShortVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2971,7 +2976,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ShortVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2991,7 +2996,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ShortVector},
      * there will be no loss of precision.
      */
@@ -3118,17 +3123,21 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
 
         // Check indices are within array bounds.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
+        IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
+        VectorIntrinsics.checkIndex(vix0, a.length);
+
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        IntVector vix1 = null;
+        if (vlen >= idx_vlen * 2) {
+            vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
+            VectorIntrinsics.checkIndex(vix1, a.length);
         }
 
         return VectorSupport.loadWithMap(
             vectorType, null, short.class, vsp.laneCount(),
-            lsp.vectorType(),
-            a, ARRAY_BASE, null, null,
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, null, null, null,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
@@ -3865,17 +3874,21 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
         // Check indices are within array bounds.
         // FIXME: Check index under mask controlling.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
+        IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
+        VectorIntrinsics.checkIndex(vix0, a.length);
+
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        IntVector vix1 = null;
+        if (vlen >= idx_vlen * 2) {
+            vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
+            VectorIntrinsics.checkIndex(vix1, a.length);
         }
 
         return VectorSupport.loadWithMap(
             vectorType, maskClass, short.class, vsp.laneCount(),
-            lsp.vectorType(),
-            a, ARRAY_BASE, null, m,
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, null, null, m,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));

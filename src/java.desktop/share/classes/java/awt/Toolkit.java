@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1350,22 +1350,16 @@ public abstract class Toolkit {
     }
 
     /**
-     * Get the application's or applet's EventQueue instance.
-     * Depending on the Toolkit implementation, different EventQueues
-     * may be returned for different applets.  Applets should
-     * therefore not assume that the EventQueue instance returned
-     * by this method will be shared by other applets or the system.
-     *
-     * @return    the {@code EventQueue} object
+     * {@return the {@code EventQueue} for this application}
     */
     public final EventQueue getSystemEventQueue() {
         return getSystemEventQueueImpl();
     }
 
     /**
-     * Gets the application's or applet's {@code EventQueue}
-     * instance, without checking access.  For security reasons,
-     * this can only be called from a {@code Toolkit} subclass.
+     * A method used by toolkit subclasses to get the {@code EventQueue}.
+     * This may be more direct or more efficient than calling
+     * {@code getSystemEventQueue()}.
      * @return the {@code EventQueue} object
      */
     protected abstract EventQueue getSystemEventQueueImpl();
@@ -1472,8 +1466,7 @@ public abstract class Toolkit {
         Object oldValue;
 
         synchronized (this) {
-            oldValue = desktopProperties.get(name);
-            desktopProperties.put(name, newValue);
+            oldValue = desktopProperties.put(name, newValue);
         }
 
         // Don't fire change event if old and new values are null.
@@ -1633,7 +1626,7 @@ public abstract class Toolkit {
     private int[] calls = new int[LONG_BITS];
     private static volatile long enabledOnToolkitMask;
     private AWTEventListener eventListener = null;
-    private WeakHashMap<AWTEventListener, SelectiveAWTEventListener> listener2SelectiveListener = new WeakHashMap<>();
+    private final WeakHashMap<AWTEventListener, SelectiveAWTEventListener> listener2SelectiveListener = new WeakHashMap<>();
 
     /*
      * Extracts a "pure" AWTEventListener from a AWTEventListenerProxy,
@@ -1736,16 +1729,15 @@ public abstract class Toolkit {
     public void removeAWTEventListener(AWTEventListener listener) {
         AWTEventListener localL = deProxyAWTEventListener(listener);
 
-        if (listener == null) {
+        if (localL == null) {
             return;
         }
 
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
-                listener2SelectiveListener.get(localL);
+                listener2SelectiveListener.remove(localL);
 
             if (selectiveListener != null) {
-                listener2SelectiveListener.remove(localL);
                 int[] listenerCalls = selectiveListener.getCalls();
                 for (int i=0; i<LONG_BITS; i++) {
                     calls[i] -= listenerCalls[i];

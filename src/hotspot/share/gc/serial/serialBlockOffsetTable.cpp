@@ -155,7 +155,7 @@ void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
     assert(start_card_for_region > end_card, "Sanity check");
   }
 
-  debug_only(verify_for_block(blk_start, blk_end);)
+  DEBUG_ONLY(verify_for_block(blk_start, blk_end);)
 }
 
 HeapWord* SerialBlockOffsetTable::block_start_reaching_into_card(const void* addr) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,11 @@ public:
   // Clear a range of bits corresponding to heap address range [beg, end).
   inline void clear_range(HeapWord* beg, HeapWord* end);
 
-  void print_on_error(outputStream* st) const {
+  void print_on(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
-    _beg_bits.print_on_error(st, " Begin Bits: ");
+
+    StreamIndentor si(st, 1);
+    _beg_bits.print_range_on(st, "Begin Bits: ");
   }
 
 #ifdef  ASSERT

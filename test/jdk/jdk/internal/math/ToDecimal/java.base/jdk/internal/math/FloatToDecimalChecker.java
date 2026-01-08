@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,33 +26,33 @@ package jdk.internal.math;
 import java.math.BigDecimal;
 import java.util.Random;
 
-import static java.lang.Float.*;
+import static java.lang.Float.floatToRawIntBits;
+import static java.lang.Float.intBitsToFloat;
 import static java.lang.Integer.numberOfTrailingZeros;
-import static java.lang.StrictMath.scalb;
-import static jdk.internal.math.MathUtils.flog10pow2;
 
-public class FloatToDecimalChecker extends ToDecimalChecker {
+public final class FloatToDecimalChecker extends ToDecimalChecker {
 
-    private static final int P =
-            numberOfTrailingZeros(floatToRawIntBits(3)) + 2;
-    private static final int W = (SIZE - 1) - (P - 1);
-    private static final int Q_MIN = (-1 << (W - 1)) - P + 3;
-    private static final int Q_MAX = (1 << (W - 1)) - P;
-    private static final int C_MIN = 1 << (P - 1);
-    private static final int C_MAX = (1 << P) - 1;
+    private static final int P = numberOfTrailingZeros(floatToRawIntBits(3)) + 2;
+    private static final int W = w(P);
 
-    private static final int K_MIN = flog10pow2(Q_MIN);
-    private static final int K_MAX = flog10pow2(Q_MAX);
-    private static final int H = flog10pow2(P) + 2;
+    private static final int Q_MIN = q_min(P);
+    private static final int Q_MAX = q_max(P);
+    private static final long C_MIN = c_min(P);
+    private static final long C_MAX = c_max(P);
 
-    private static final float MIN_VALUE = scalb(1.0f, Q_MIN);
-    private static final float MIN_NORMAL = scalb((float) C_MIN, Q_MIN);
-    private static final float MAX_VALUE = scalb((float) C_MAX, Q_MAX);
+    private static final int E_MIN = e_min(P);
+    private static final int E_MAX = e_max(P);
+    private static final int E_THR_Z = e_thr_z(P);
+    private static final int E_THR_I = e_thr_i(P);
+    private static final int K_MIN = k_min(P);
+    private static final int K_MAX = k_max(P);
 
-    private static final int E_MIN = e(MIN_VALUE);
-    private static final int E_MAX = e(MAX_VALUE);
+    private static final int C_TINY = c_tiny(P);
+    private static final int H = h(P);
 
-    private static final long C_TINY = cTiny(Q_MIN, K_MIN);
+    private static final BigDecimal MIN_VALUE = min_value(P);
+    private static final BigDecimal MIN_NORMAL = min_normal(P);
+    private static final BigDecimal MAX_VALUE = max_value(P);
 
     private static final int Z = 1_024;
 
@@ -60,8 +60,17 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
 
     private FloatToDecimalChecker(float v) {
         super(FloatToDecimal.toString(v));
-//        super(Float.toString(v));
         this.v = v;
+    }
+
+    @Override
+    int eMin() {
+        return E_MIN;
+    }
+
+    @Override
+    int eMax() {
+        return E_MAX;
     }
 
     @Override
@@ -86,42 +95,32 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
 
     @Override
     boolean recovers(String s) {
-        return parseFloat(s) == v;
+        return Float.parseFloat(s) == v;
     }
 
     @Override
     String hexString() {
-        return toHexString(v) + "F";
-    }
-
-    @Override
-    int minExp() {
-        return E_MIN;
-    }
-
-    @Override
-    int maxExp() {
-        return E_MAX;
+        return Float.toHexString(v) + "F";
     }
 
     @Override
     boolean isNegativeInfinity() {
-        return v == NEGATIVE_INFINITY;
+        return v == Float.NEGATIVE_INFINITY;
     }
 
     @Override
     boolean isPositiveInfinity() {
-        return v == POSITIVE_INFINITY;
+        return v == Float.POSITIVE_INFINITY;
     }
 
     @Override
     boolean isMinusZero() {
-        return floatToIntBits(v) == 0x8000_0000;
+        return floatToRawIntBits(v) == 0x8000_0000;
     }
 
     @Override
     boolean isPlusZero() {
-        return floatToIntBits(v) == 0x0000_0000;
+        return floatToRawIntBits(v) == 0x0000_0000;
     }
 
     @Override
@@ -139,7 +138,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
      * as any value returned by intBitsToFloat() is valid.
      */
     private static void testAround(float v, int z) {
-        int bits = floatToIntBits(v);
+        int bits = floatToRawIntBits(v);
         for (int i = -z; i <= z; ++i) {
             testDec(intBitsToFloat(bits + i));
         }
@@ -149,17 +148,17 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
      * MIN_NORMAL is incorrectly rendered by older JDKs.
      */
     private static void testExtremeValues() {
-        testDec(NEGATIVE_INFINITY);
-        testAround(-MAX_VALUE, Z);
-        testAround(-MIN_NORMAL, Z);
-        testAround(-MIN_VALUE, Z);
+        testDec(Float.NEGATIVE_INFINITY);
+        testAround(-Float.MAX_VALUE, Z);
+        testAround(-Float.MIN_NORMAL, Z);
+        testAround(-Float.MIN_VALUE, Z);
         testDec(-0.0f);
         testDec(0.0f);
-        testAround(MIN_VALUE, Z);
-        testAround(MIN_NORMAL, Z);
-        testAround(MAX_VALUE, Z);
-        testDec(POSITIVE_INFINITY);
-        testDec(NaN);
+        testAround(Float.MIN_VALUE, Z);
+        testAround(Float.MIN_NORMAL, Z);
+        testAround(Float.MAX_VALUE, Z);
+        testDec(Float.POSITIVE_INFINITY);
+        testDec(Float.NaN);
 
         /*
          * Quiet NaNs have the most significant bit of the mantissa as 1,
@@ -176,7 +175,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
          * All values treated specially by Schubfach
          */
         for (int c = 1; c < C_TINY; ++c) {
-            testDec(c * MIN_VALUE);
+            testDec(c * Float.MIN_VALUE);
         }
     }
 
@@ -186,7 +185,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
      */
     private static void testPowersOf10() {
         for (int e = E_MIN; e <= E_MAX; ++e) {
-            testAround(parseFloat("1e" + e), Z);
+            testAround(Float.parseFloat("1e" + e), Z);
         }
     }
 
@@ -195,7 +194,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
      * The rendering is either too long or it is not the closest decimal.
      */
     private static void testPowersOf2() {
-        for (float v = MIN_VALUE; v <= MAX_VALUE; v *= 2) {
+        for (float v = Float.MIN_VALUE; v <= Float.MAX_VALUE; v *= 2) {
             testAround(v, Z);
         }
     }
@@ -218,7 +217,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
 
     private static void testSomeAnomalies() {
         for (String dec : Anomalies) {
-            testDec(parseFloat(dec));
+            testDec(Float.parseFloat(dec));
         }
     }
 
@@ -285,7 +284,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
 
     private static void testPaxson() {
         for (int i = 0; i < PaxsonSignificands.length; ++i) {
-            testDec(scalb(PaxsonSignificands[i], PaxsonExponents[i]));
+            testDec(StrictMath.scalb(PaxsonSignificands[i], PaxsonExponents[i]));
         }
     }
 
@@ -366,29 +365,34 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
         int e = r.nextInt(E_MAX - E_MIN + 1) + E_MIN;
         for (int pow10 = 1; pow10 < 10_000; pow10 *= 10) {
             /* randomly generate an int in [pow10, 10 pow10) */
-            testAround(parseFloat((r.nextInt(9 * pow10) + pow10) + "e" + e), Z);
+            testAround(Float.parseFloat((r.nextInt(9 * pow10) + pow10) + "e" + e), Z);
         }
     }
 
-
     private static void testConstants() {
         addOnFail(P == FloatToDecimal.P, "P");
-        addOnFail((int) (float) C_MIN == C_MIN, "C_MIN");
-        addOnFail((int) (float) C_MAX == C_MAX, "C_MAX");
-        addOnFail(MIN_VALUE == Float.MIN_VALUE, "MIN_VALUE");
-        addOnFail(MIN_NORMAL == Float.MIN_NORMAL, "MIN_NORMAL");
-        addOnFail(MAX_VALUE == Float.MAX_VALUE, "MAX_VALUE");
+        addOnFail(W == FloatToDecimal.W, "W");
 
         addOnFail(Q_MIN == FloatToDecimal.Q_MIN, "Q_MIN");
         addOnFail(Q_MAX == FloatToDecimal.Q_MAX, "Q_MAX");
-
-        addOnFail(K_MIN == FloatToDecimal.K_MIN, "K_MIN");
-        addOnFail(K_MAX == FloatToDecimal.K_MAX, "K_MAX");
-        addOnFail(H == FloatToDecimal.H, "H");
+        addOnFail(C_MIN == FloatToDecimal.C_MIN, "C_MIN");
+        addOnFail(C_MAX == FloatToDecimal.C_MAX, "C_MAX");
+        addOnFail((int) (float) C_MIN == C_MIN, "C_MIN");
+        addOnFail((int) (float) C_MAX == C_MAX, "C_MAX");
 
         addOnFail(E_MIN == FloatToDecimal.E_MIN, "E_MIN");
         addOnFail(E_MAX == FloatToDecimal.E_MAX, "E_MAX");
+        addOnFail(E_THR_Z == FloatToDecimal.E_THR_Z, "E_THR_Z");
+        addOnFail(E_THR_I == FloatToDecimal.E_THR_I, "E_THR_I");
+        addOnFail(K_MIN == FloatToDecimal.K_MIN, "K_MIN");
+        addOnFail(K_MAX == FloatToDecimal.K_MAX, "K_MAX");
+
         addOnFail(C_TINY == FloatToDecimal.C_TINY, "C_TINY");
+        addOnFail(H == FloatToDecimal.H, "H");
+
+        addOnFail(MIN_VALUE.compareTo(new BigDecimal(Float.MIN_VALUE)) == 0, "MIN_VALUE");
+        addOnFail(MIN_NORMAL.compareTo(new BigDecimal(Float.MIN_NORMAL)) == 0, "MIN_NORMAL");
+        addOnFail(MAX_VALUE.compareTo(new BigDecimal(Float.MAX_VALUE)) == 0, "MAX_VALUE");
     }
 
     public static void test(int randomCount, Random r) {

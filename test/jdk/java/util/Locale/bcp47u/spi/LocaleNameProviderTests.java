@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 8176841
+ * @bug 8176841 8354548
  * @summary Tests LocaleNameProvider SPIs
  * @library provider
  * @build provider/module-info provider/foo.LocaleNameProviderImpl
@@ -40,7 +40,7 @@ import java.util.Locale;
  * LocaleNameProvider works.
  */
 public class LocaleNameProviderTests {
-    private static final String expected = "foo (foo_ca:foo_japanese)";
+    private static final String expected = "foo (foo_ca=foo_japanese)";
 
     public static void main(String... args) {
         String name = Locale.forLanguageTag("foo-u-ca-japanese").getDisplayName(Locale.of("foo"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.awt.*;
  * @author Clemens Eisserer
  */
 
-public class XRColor {
+public final class XRColor {
     public static final XRColor FULL_ALPHA = new XRColor(0xffff, 0, 0, 0);
     public static final XRColor NO_ALPHA = new XRColor(0, 0, 0, 0);
 
@@ -109,6 +109,7 @@ public class XRColor {
         return xrValue;
     }
 
+    @Override
     public String toString(){
         return "A:"+alpha+"  R:"+red+"  G:"+green+" B:"+blue;
     }

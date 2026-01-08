@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,9 @@ public class CheckNestmateAttrs {
         runCheck(params, new String [] {
                         "NestHost: class CheckNestmateAttrs",
                         "0: aload_0",
-                        "1: getfield      #1                  // Field this$1:LCheckNestmateAttrs$Inner;",
-                        "4: getfield      #13                 // Field CheckNestmateAttrs$Inner.this$0:LCheckNestmateAttrs;",
-                        "7: invokevirtual #19                 // Method CheckNestmateAttrs.test:()V",
+                        "1: getfield      #7                  // Field this$1:LCheckNestmateAttrs$Inner;",
+                        "4: getfield      #19                 // Field CheckNestmateAttrs$Inner.this$0:LCheckNestmateAttrs;",
+                        "7: invokevirtual #25                 // Method CheckNestmateAttrs.test:()V",
                         "10: return"
         });
 

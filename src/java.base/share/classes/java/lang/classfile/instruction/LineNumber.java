@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ public sealed interface LineNumber extends PseudoInstruction
      * {@return a line number pseudo-instruction}
      *
      * @param line the line number
+     * @throws IllegalArgumentException if {@code line} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static LineNumber of(int line) {
         return LineNumberImpl.of(line);

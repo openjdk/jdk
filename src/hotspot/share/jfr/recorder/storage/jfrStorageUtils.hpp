@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP
 #define SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP
 
-#include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/javaThread.hpp"

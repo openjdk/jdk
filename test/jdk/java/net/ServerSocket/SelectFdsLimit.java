@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary The total number of file descriptors is limited to
  * 1024(FDSET_SIZE) on MacOSX (the size of fd array passed to select()
  * call in java.net classes is limited to this value).
+ * @requires os.family == "mac"
  * @run main/othervm SelectFdsLimit
  * @author aleksej.efimov@oracle.com
  */
@@ -35,7 +36,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 
@@ -71,12 +71,6 @@ public class SelectFdsLimit {
     }
 
     public static void main(String [] args) throws IOException, FileNotFoundException {
-
-        //The bug 8021820 is a Mac specific and because of that test will pass on all
-        //other platforms
-        if (!System.getProperty("os.name").contains("OS X")) {
-           return;
-        }
 
         //Create test directory with test files
         prepareTestEnv();

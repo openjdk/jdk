@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.javap;
 import java.io.PrintWriter;
 import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Modifier;
 import java.util.EnumMap;
 import java.util.Map;
@@ -44,25 +45,6 @@ import java.util.function.Supplier;
  *  deletion without notice.</b>
  */
 public class BasicWriter {
-    private static final Map<AccessFlag.Location, Integer> LOCATION_MASKS;
-
-    static {
-        var map = new EnumMap<AccessFlag.Location, Integer>(AccessFlag.Location.class);
-        for (var loc : AccessFlag.Location.values()) {
-            map.put(loc, 0);
-        }
-
-        for (var flag : AccessFlag.values()) {
-            for (var loc : flag.locations()) {
-                map.compute(loc, (_, v) -> v | flag.mask());
-            }
-        }
-
-        // Peculiarities from AccessFlag.maskToAccessFlag
-        map.compute(AccessFlag.Location.METHOD, (_, v) -> v | Modifier.STRICT);
-
-        LOCATION_MASKS = map;
-    }
 
     protected BasicWriter(Context context) {
         lineWriter = LineWriter.instance(context);
@@ -72,17 +54,17 @@ public class BasicWriter {
             throw new AssertionError();
     }
 
-    protected Set<AccessFlag> flagsReportUnknown(AccessFlags flags) {
-        return maskToAccessFlagsReportUnknown(flags.flagsMask(), flags.location());
+    protected Set<AccessFlag> flagsReportUnknown(AccessFlags flags, ClassFileFormatVersion cffv) {
+        return maskToAccessFlagsReportUnknown(flags.flagsMask(), flags.location(), cffv);
     }
 
-    protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location) {
+    protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location, ClassFileFormatVersion cffv) {
         try {
-            return AccessFlag.maskToAccessFlags(mask, location);
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
         } catch (IllegalArgumentException ex) {
-            mask &= LOCATION_MASKS.get(location);
+            mask &= location.flagsMask(cffv);
             report("Access Flags: " + ex.getMessage());
-            return AccessFlag.maskToAccessFlags(mask, location);
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
         }
     }
 

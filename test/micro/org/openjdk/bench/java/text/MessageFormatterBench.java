@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,6 +52,8 @@ import java.util.concurrent.TimeUnit;
 public class MessageFormatterBench {
 
     private Object[][] values;
+    private String choicePattern;
+    private String numberPattern;
 
     @Setup
     public void setup() {
@@ -60,6 +63,8 @@ public class MessageFormatterBench {
                 new Object[]{Double.valueOf(123.89), "MyDisk3"},
                 new Object[]{Long.valueOf(1234567), "MyDisk4"},
         };
+        choicePattern = "{0,choice,0#|1#{1}|2#{1} ({2})}";
+        numberPattern = "{0,number,000}";
     }
 
     private MessageFormat messageFormat = new MessageFormat("There is {0} GB of free space on the {1}.", Locale.ENGLISH);
@@ -70,6 +75,16 @@ public class MessageFormatterBench {
         for (Object[] value : values) {
             bh.consume(messageFormat.format(value));
         }
+    }
+
+    @Benchmark
+    public MessageFormat testSubformatChoice() {
+        return new MessageFormat(choicePattern);
+    }
+
+    @Benchmark
+    public MessageFormat testSubformatNumber() {
+        return new MessageFormat(numberPattern);
     }
 
     public static void main(String... args) throws Exception {

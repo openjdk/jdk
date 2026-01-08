@@ -23,7 +23,7 @@
 
 /*
  * @test id=GenerateOpensslPKCS12
- * @bug 8076190 8242151 8153005 8266182
+ * @bug 8076190 8242151 8153005 8266182 8362894
  * @summary This is java keytool <-> openssl interop test. This test generates
  *          some openssl keystores on the fly, java operates on it and
  *          vice versa.
@@ -36,7 +36,7 @@
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  * @library /test/lib /sun/security/pkcs11/
- * @run main/othervm KeytoolOpensslInteropTest true
+ * @run main/othervm/timeout=480 KeytoolOpensslInteropTest true
  */
 
 /*
@@ -48,7 +48,7 @@
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  * @library /test/lib /sun/security/pkcs11/
- * @run main/othervm KeytoolOpensslInteropTest false
+ * @run main/othervm/timeout=480 KeytoolOpensslInteropTest false
  */
 
 import jdk.test.lib.Asserts;
@@ -56,7 +56,6 @@ import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.security.OpensslArtifactFetcher;
-import jtreg.SkippedException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,19 +81,9 @@ public class KeytoolOpensslInteropTest {
         boolean generatePKCS12 = Boolean.parseBoolean(args[0]);
         if (generatePKCS12) {
             String opensslPath = OpensslArtifactFetcher.getOpensslPath();
-            if (opensslPath != null) {
-                // if the current version of openssl is available, perform all
-                // keytool <-> openssl interop tests
-                generateInitialKeystores(opensslPath);
-                testWithJavaCommands();
-                testWithOpensslCommands(opensslPath);
-            } else {
-                String exMsg = "Can't find the version: "
-                        + OpensslArtifactFetcher.getTestOpensslBundleVersion()
-                        + " of openssl binary on this machine, please install"
-                        + " and set openssl path with property 'test.openssl.path'";
-                throw new SkippedException(exMsg);
-            }
+            generateInitialKeystores(opensslPath);
+            testWithJavaCommands();
+            testWithOpensslCommands(opensslPath);
         } else {
             // since this scenario is using preexisting PKCS12, skip all
             // openssl command dependent tests
@@ -149,6 +138,11 @@ public class KeytoolOpensslInteropTest {
                 "pass:changeit", "-certpbe", "AES-256-CBC", "-keypbe",
                 "AES-256-CBC", "-macalg", "SHA512")
                 .shouldHaveExitValue(0);
+
+        ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
+                        "kandc", "-out", "os6", "-name", "a", "-passout",
+                        "pass:changeit", "-pbmac1_pbkdf2", "-macalg", "sha256")
+                .shouldHaveExitValue(0);
     }
 
     private static void testWithJavaCommands() throws Throwable {
@@ -178,6 +172,8 @@ public class KeytoolOpensslInteropTest {
         check("os5", "a", "wrongpass", "-", IOException.class, "-", "-");
         // no storepass no cert
         check("os5", "a", null, "changeit", true, false, true);
+
+        check("os6", "a", "changeit", "changeit", true, true, true);
 
         // keytool
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ public class Signatures {
                     boolean isFirst = true;
                     for (TypeMirror type : interfaces) {
                         TypeElement tDoc = utils.asTypeElement(type);
-                        if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc))) {
+                        if (!utils.isVisible(tDoc)) {
                             continue;
                         }
                         if (isFirst) {

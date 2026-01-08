@@ -92,7 +92,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * <h3>Locale Extensions</h3>
  * Formatting behavior can be changed when using a locale that contains any of the following
- * <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+ * {@linkplain Locale##def_locale_extension Unicode extensions},
  * <ul>
  * <li> "nu"
  * (<a href="https://unicode.org/reports/tr35/#UnicodeNumberSystemIdentifier">
@@ -103,11 +103,14 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <li> "cf"
  * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
  * Currency Format style</a>) - Overrides the Currency Format style used
+ * <li> "cu"
+ * (<a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyIdentifier">
+ * Currency Type</a>) - Overrides the Currency used
  * </ul>
  * <p>
- * If both "nu" and "rg" are specified, the decimal digits from the "nu"
- * extension supersedes the implicit one from the "rg" extension.
- * Although <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>
+ * For both "nu" and "cu", if they are specified in addition to "rg", the respective
+ * values from the "nu" and "cu" extension supersede the implicit ones from the "rg" extension.
+ * Although {@linkplain Locale##def_locale_extension Unicode extensions}
  * defines various keys and values, actual locale-sensitive service implementations
  * in a Java Runtime Environment might not support any particular Unicode locale
  * attributes or key/type pairs.
@@ -129,9 +132,9 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <ul>
  * <li> {@link #setParseIntegerOnly(boolean)}; when {@code true}, will only return the
  * integer portion of the number parsed from the String.
- * <li> {@link #setMinimumFractionDigits(int)}; Use to adjust the expected digits when
- * formatting. Use any of the other minimum/maximum or fraction/integer setter methods
- * in the same manner.
+ * <li> {@link #setMinimumFractionDigits(int)}; Use to adjust the expected digits
+ * when formatting. Use any of the other minimum/maximum or fraction/integer
+ * setter methods in the same manner. These methods have no impact on parsing behavior.
  * <li> {@link #setGroupingUsed(boolean)}; when {@code true}, formatted numbers will be displayed
  * with grouping separators. Additionally, when {@code false}, parsing will not expect
  * grouping separators in the parsed String.
@@ -192,7 +195,11 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * Lenient parsing should be used when attempting to parse a number
  * out of a String that contains non-numerical or non-format related values.
  * For example, using a {@link Locale#US} currency format to parse the number
- * {@code 1000} out of the String "$1,000.00 was paid".
+ * {@code 1000} out of the String "$1,000.00 was paid". Lenient parsing also
+ * allows loose matching of characters in the source text. For example, an
+ * implementation of the {@code NumberFormat} class may allow matching "−"
+ * (U+2212 MINUS SIGN) to the "-" (U+002D HYPHEN-MINUS) pattern character
+ * when used as a negative prefix.
  * <p>
  * Strict parsing should be used when attempting to ensure a String adheres exactly
  * to a locale's conventions, and can thus serve to validate input. For example, successfully
@@ -684,7 +691,7 @@ public abstract class NumberFormat extends Format  {
      * <p>If the specified locale contains the "{@code cf}" (
      * <a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
      * currency format style</a>)
-     * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extension},
      * the returned currency format uses the style if it is available.
      * Otherwise, the style uses the default "{@code standard}" currency format.
      * For example, if the style designates "{@code account}", negative
@@ -918,7 +925,7 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Returns the maximum number of digits allowed in the integer portion of a
-     * number.
+     * number during formatting.
      *
      * @return the maximum number of digits
      * @see #setMaximumIntegerDigits
@@ -929,14 +936,15 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Sets the maximum number of digits allowed in the integer portion of a
-     * number. maximumIntegerDigits must be &ge; minimumIntegerDigits.  If the
-     * new value for maximumIntegerDigits is less than the current value
-     * of minimumIntegerDigits, then minimumIntegerDigits will also be set to
-     * the new value.
+     * number during formatting. {@code maximumIntegerDigits} must be &ge;
+     * {@code minimumIntegerDigits}. If the new value for {@code
+     * maximumIntegerDigits} is less than the current value of
+     * {@code minimumIntegerDigits}, then {@code minimumIntegerDigits} will
+     * also be set to the new value. Negative input values are replaced with 0.
      *
-     * @param newValue the maximum number of integer digits to be shown; if
-     * less than zero, then zero is used. The concrete subclass may enforce an
-     * upper limit to this value appropriate to the numeric type being formatted.
+     * @param newValue the maximum number of integer digits to be shown. The
+     * concrete subclass may enforce an upper limit to this value appropriate to
+     * the numeric type being formatted.
      * @see #getMaximumIntegerDigits
      */
     public void setMaximumIntegerDigits(int newValue) {
@@ -948,7 +956,7 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Returns the minimum number of digits allowed in the integer portion of a
-     * number.
+     * number during formatting.
      *
      * @return the minimum number of digits
      * @see #setMinimumIntegerDigits
@@ -959,14 +967,15 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Sets the minimum number of digits allowed in the integer portion of a
-     * number. minimumIntegerDigits must be &le; maximumIntegerDigits.  If the
-     * new value for minimumIntegerDigits exceeds the current value
-     * of maximumIntegerDigits, then maximumIntegerDigits will also be set to
-     * the new value
+     * number during formatting. {@code minimumIntegerDigits} must be &le;
+     * {@code maximumIntegerDigits}. If the new value for {@code minimumIntegerDigits}
+     * exceeds the current value of {@code maximumIntegerDigits}, then {@code
+     * maximumIntegerDigits} will also be set to the new value. Negative input
+     * values are replaced with 0.
      *
-     * @param newValue the minimum number of integer digits to be shown; if
-     * less than zero, then zero is used. The concrete subclass may enforce an
-     * upper limit to this value appropriate to the numeric type being formatted.
+     * @param newValue the minimum number of integer digits to be shown. The
+     * concrete subclass may enforce an upper limit to this value appropriate to
+     * the numeric type being formatted.
      * @see #getMinimumIntegerDigits
      */
     public void setMinimumIntegerDigits(int newValue) {
@@ -978,7 +987,7 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Returns the maximum number of digits allowed in the fraction portion of a
-     * number.
+     * number during formatting.
      *
      * @return the maximum number of digits.
      * @see #setMaximumFractionDigits
@@ -989,14 +998,15 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Sets the maximum number of digits allowed in the fraction portion of a
-     * number. maximumFractionDigits must be &ge; minimumFractionDigits.  If the
-     * new value for maximumFractionDigits is less than the current value
-     * of minimumFractionDigits, then minimumFractionDigits will also be set to
-     * the new value.
+     * number during formatting. {@code maximumFractionDigits} must be &ge;
+     * {@code minimumFractionDigits}. If the new value for {@code maximumFractionDigits}
+     * is less than the current value of {@code minimumFractionDigits}, then
+     * {@code minimumFractionDigits} will also be set to the new value. Negative
+     * input values are replaced with 0.
      *
-     * @param newValue the maximum number of fraction digits to be shown; if
-     * less than zero, then zero is used. The concrete subclass may enforce an
-     * upper limit to this value appropriate to the numeric type being formatted.
+     * @param newValue the maximum number of fraction digits to be shown. The
+     * concrete subclass may enforce an upper limit to this value appropriate to
+     * the numeric type being formatted.
      * @see #getMaximumFractionDigits
      */
     public void setMaximumFractionDigits(int newValue) {
@@ -1008,7 +1018,7 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Returns the minimum number of digits allowed in the fraction portion of a
-     * number.
+     * number during formatting.
      *
      * @return the minimum number of digits
      * @see #setMinimumFractionDigits
@@ -1019,14 +1029,15 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Sets the minimum number of digits allowed in the fraction portion of a
-     * number. minimumFractionDigits must be &le; maximumFractionDigits.  If the
-     * new value for minimumFractionDigits exceeds the current value
-     * of maximumFractionDigits, then maximumFractionDigits will also be set to
-     * the new value
+     * number during formatting. {@code minimumFractionDigits} must be &le;
+     * {@code maximumFractionDigits}. If the new value for {@code
+     * minimumFractionDigits} exceeds the current value of {@code
+     * maximumFractionDigits}, then {@code maximumFractionDigits} will also be
+     * set to the new value. Negative input values are replaced with 0.
      *
-     * @param newValue the minimum number of fraction digits to be shown; if
-     * less than zero, then zero is used. The concrete subclass may enforce an
-     * upper limit to this value appropriate to the numeric type being formatted.
+     * @param newValue the minimum number of fraction digits to be shown. The
+     * concrete subclass may enforce an upper limit to this value appropriate to
+     * the numeric type being formatted.
      * @see #getMinimumFractionDigits
      */
     public void setMinimumFractionDigits(int newValue) {

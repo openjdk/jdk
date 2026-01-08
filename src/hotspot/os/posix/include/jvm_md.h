@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
 //       cause problems if JVM and the rest of JDK are built on different
 //       Linux releases. Here we define JVM_MAXPATHLEN to be MAXPATHLEN + 1,
 //       so buffers declared in VM are always >= 4096.
-#define JVM_MAXPATHLEN MAXPATHLEN + 1
+#define JVM_MAXPATHLEN (MAXPATHLEN + 1)
 #endif
 
 #define JVM_R_OK    R_OK

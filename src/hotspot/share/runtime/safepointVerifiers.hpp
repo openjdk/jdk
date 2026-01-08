@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,9 @@ class NoSafepointVerifier : public StackObj {
 
  private:
   Thread *_thread;
+  bool _active;
  public:
-  NoSafepointVerifier()  NOT_DEBUG_RETURN;
+  explicit NoSafepointVerifier(bool active = true)  NOT_DEBUG_RETURN;
   ~NoSafepointVerifier() NOT_DEBUG_RETURN;
 };
 

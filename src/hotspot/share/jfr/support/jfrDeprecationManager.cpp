@@ -24,12 +24,11 @@
 
 #include "classfile/moduleEntry.hpp"
 #include "interpreter/bytecodes.hpp"
-#include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/jfrEventSetting.inline.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
@@ -41,15 +40,15 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-// for strstr
 #include <string.h>
 
 static bool _enqueue_klasses = false;
@@ -152,11 +151,11 @@ static bool max_limit_not_reached() {
   static size_t num_edges = 0;
   size_t compare_value;
   do {
-    compare_value = Atomic::load(&num_edges);
+    compare_value = AtomicAccess::load(&num_edges);
     if (compare_value == max_num_edges) {
       return false;
     }
-  } while (compare_value != Atomic::cmpxchg(&num_edges, compare_value, compare_value + 1));
+  } while (compare_value != AtomicAccess::cmpxchg(&num_edges, compare_value, compare_value + 1));
   if (compare_value + 1 == max_num_edges) {
     log_max_num_edges_reached();
   }
@@ -305,7 +304,7 @@ static DeprecatedEdgeList::NodePtr _pending_head = nullptr;
 static DeprecatedEdgeList::NodePtr _pending_tail = nullptr;
 
 inline DeprecatedEdgeList::NodePtr pending_head() {
-  return Atomic::load(&_pending_head);
+  return AtomicAccess::load(&_pending_head);
 }
 
 // The test for a pending head can be read concurrently from a thread doing class unloading.
@@ -318,7 +317,7 @@ inline static bool no_pending_head() {
 }
 
 inline static void set_pending_head(DeprecatedEdgeList::NodePtr head) {
-  Atomic::store(&_pending_head, head);
+  AtomicAccess::store(&_pending_head, head);
 }
 
 class PendingListProcessor {
@@ -354,7 +353,6 @@ static void reset_type_set_blobs() {
 void JfrDeprecationManager::prepare_type_set(JavaThread* jt) {
   reset_type_set_blobs();
   if (_pending_list.is_nonempty()) {
-    JfrKlassUnloading::sort(true);
     JfrCheckpointWriter writer(true /* prev epoch */, jt,  false /* header */);
     PendingListProcessor plp(writer, jt);
     _pending_list.iterate(plp);
@@ -391,15 +389,16 @@ static inline void write_stacktraces(JfrChunkWriter& cw) {
   _resolved_list.iterate(scw);
 }
 
-// First, we consolidate all stack trace blobs into a single TYPE_STACKTRACE checkpoint
-// and serialize it to the chunk. Then, all events are serialized, and unique type set blobs
-// written into the JfrCheckpoint system to be serialized to the chunk upon return.
+// First, all events are serialized, and unique type set blobs are written into the
+// JfrCheckpoint system to be serialized to the chunk upon return.
+// Then, we consolidate all stack trace blobs into a single TYPE_STACKTRACE checkpoint
+// and serialize it directly to the chunk.
 void JfrDeprecationManager::write_edges(JfrChunkWriter& cw, Thread* thread, bool on_error /* false */) {
   if (_resolved_list.is_nonempty() && JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent)) {
+    write_events(cw, thread, on_error);
     if (has_stacktrace()) {
       write_stacktraces(cw);
     }
-    write_events(cw, thread, on_error);
   }
 }
 

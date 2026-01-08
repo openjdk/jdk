@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import nsk.share.jdi.*;
  */
 public class invokemethod002t {
     static {} // force javac to produce <clinit> method
+    static Thread testThread = null;
 
     invokemethod002t() {} // force javac to produce <init> method
 
@@ -49,7 +50,8 @@ public class invokemethod002t {
         IOPipe pipe = argHandler.createDebugeeIOPipe();
         invokemethod002tDummyClass invokemethod002tdummyCls = new invokemethod002tDummyClass();
 
-        Thread.currentThread().setName(invokemethod002.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(invokemethod002.DEBUGGEE_THRNAME);
 
         pipe.println(invokemethod002.COMMAND_READY);
         String cmd = pipe.readln();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
  * @test
  * @bug 8332463
  * @summary Byte conditional pattern case element dominates short constant case element
- * @compile --enable-preview --source ${jdk.version} T8332463a.java
+ * @compile/fail/ref=T8332463a.out -XDrawDiagnostics --enable-preview --source ${jdk.version} T8332463a.java
  */
 public class T8332463a {
     public int test2() {
         Byte i = (byte) 42;
         return switch (i) {
             case Byte ib  -> 1;
-            case short s  -> 2;
+            case short s  -> 2; // dominated
         };
     }
 
@@ -40,7 +40,7 @@ public class T8332463a {
         int i = 42;
         return switch (i) {
             case Integer ib -> 1;
-            case byte ip    -> 2;
+            case byte ip    -> 2; // dominated
         };
     }
 
@@ -48,7 +48,7 @@ public class T8332463a {
         int i = 42;
         return switch (i) {
             case Integer ib -> 1;
-            case (byte) 0   -> 2;
+            case (byte) 0   -> 2; // dominated
         };
     }
 }

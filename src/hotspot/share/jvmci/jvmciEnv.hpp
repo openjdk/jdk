@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,7 @@ public:
   JVMCIObjectArray new_byte_array_array(int length, JVMCI_TRAPS);
 
   JVMCIObject new_StackTraceElement(const methodHandle& method, int bci, JVMCI_TRAPS);
-  JVMCIObject new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jlong compileId, JVMCI_TRAPS);
+  JVMCIObject new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jboolean profileDeopt, jlong compileId, JVMCI_TRAPS);
   JVMCIObject new_VMField(JVMCIObject name, JVMCIObject type, jlong offset, jlong address, JVMCIObject value, JVMCI_TRAPS);
   JVMCIObject new_VMFlag(JVMCIObject name, JVMCIObject type, JVMCIObject value, JVMCI_TRAPS);
   JVMCIObject new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, jboolean isAvailable, jboolean c1Supported, jboolean c2Supported, JVMCI_TRAPS);
@@ -462,7 +462,7 @@ public:
   // field of `mirror` to prevent it from being called.
   // If `deoptimize` is true, the nmethod is immediately deoptimized.
   // The HotSpotNmethod.address field is zero upon returning.
-  void invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimze, JVMCI_TRAPS);
+  void invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimze, nmethod::InvalidationReason invalidation_reason, JVMCI_TRAPS);
 
   void initialize_installed_code(JVMCIObject installed_code, CodeBlob* cb, JVMCI_TRAPS);
 

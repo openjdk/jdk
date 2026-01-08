@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class TestFrameworkSocket implements AutoCloseable {
     public static final String TESTLIST_TAG = "[TESTLIST]";
     public static final String DEFAULT_REGEX_TAG = "[DEFAULT_REGEX]";
     public static final String PRINT_TIMES_TAG = "[PRINT_TIMES]";
+    public static final String NOT_COMPILABLE_TAG = "[NOT_COMPILABLE]";
 
     // Static fields used for test VM only.
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";

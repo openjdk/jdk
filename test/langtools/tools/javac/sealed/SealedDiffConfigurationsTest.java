@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -556,7 +556,7 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                 .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = List.of(
-                "Sealed.java:1:66: compiler.err.invalid.permits.clause: (compiler.misc.doesnt.extend.sealed: pkg.Sub2)",
+                "Sealed.java:1:66: compiler.err.invalid.permits.clause: (compiler.misc.doesnt.implement.sealed: kindname.class, pkg.Sub2)",
                 "1 error");
         if (!error.containsAll(expected)) {
             throw new AssertionError("Expected output not found. Found: " + error);

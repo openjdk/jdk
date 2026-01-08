@@ -81,7 +81,7 @@ import sun.util.ResourceBundleEnumeration;
  * Keys are case-sensitive.
  * {@snippet lang=properties :
  *     # MessageFormat pattern
- *     s1=Die Platte \"{1}\" enth\u00E4lt {0}.
+ *     s1=Die Platte \"{1}\" enthält {0}.
  *     # location of {0} in pattern
  *     s2=1
  *     # sample disk name
@@ -93,7 +93,7 @@ import sun.util.ResourceBundleEnumeration;
  *     # third ChoiceFormat choice
  *     s6={0,number} Dateien
  *     # sample date
- *     s7=3. M\u00E4rz 1996
+ *     s7=3. März 1996
  * }
  *
  * @apiNote

@@ -25,47 +25,95 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals_extension.hpp"
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
   _use_adaptive_sizing(true), _min_desired_young_length(0), _max_desired_young_length(0) {
 
+  precond(!FLAG_IS_ERGO(NewRatio));
+  precond(!FLAG_IS_ERGO(NewSize));
+  precond(!FLAG_IS_ERGO(MaxNewSize));
+
+  // Figure out compatible young gen sizing policies.
+  // This will either use all default, NewRatio or a combination of NewSize and
+  // MaxNewSize. If both ratio and size is user specified NewRatio will be ignored.
+
+  const bool user_specified_NewRatio = !FLAG_IS_DEFAULT(NewRatio);
+  const bool user_specified_NewSize = !FLAG_IS_DEFAULT(NewSize);
+  const bool user_specified_MaxNewSize = !FLAG_IS_DEFAULT(MaxNewSize);
+
+  // MaxNewSize is updated every time the heap is resized (and when initialized),
+  // as such the value of MaxNewSize is only modified if it is also used by the
+  // young generation sizing. (If MaxNewSize is user specified).
+
+  if (!user_specified_NewRatio && !user_specified_NewSize && !user_specified_MaxNewSize) {
+    // Using Defaults.
+    return;
+  }
+
+  if (user_specified_NewRatio && !user_specified_NewSize && !user_specified_MaxNewSize) {
+    // Using NewRatio.
+    _sizer_kind = SizerNewRatio;
+    _use_adaptive_sizing = false;
+    return;
+  }
+
   if (FLAG_IS_CMDLINE(NewRatio)) {
-    if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
-      log_warning(gc, ergo)("-XX:NewSize and -XX:MaxNewSize override -XX:NewRatio");
-    } else {
-      _sizer_kind = SizerNewRatio;
-      _use_adaptive_sizing = false;
-      return;
+    // NewRatio ignored at this point, issue warning if NewRatio was specified
+    // on the command line.
+    log_warning(gc, ergo)("-XX:NewSize and -XX:MaxNewSize overrides -XX:NewRatio");
+  }
+
+  assert(!FLAG_IS_DEFAULT(InitialHeapSize), "Initial heap size must be selected");
+  if (user_specified_NewSize && NewSize > InitialHeapSize) {
+    // If user specifed NewSize is larger than the InitialHeapSize truncate the value.
+    if (FLAG_IS_CMDLINE(NewSize)) {
+      log_warning(gc, ergo)("NewSize (%zuk) is greater than the initial heap size (%zuk). "
+                            "A new NewSize of %zuk will be used.",
+                            NewSize/K, InitialHeapSize/K, InitialHeapSize/K);
     }
+    FLAG_SET_ERGO(NewSize, InitialHeapSize);
+  }
+
+  assert(!FLAG_IS_DEFAULT(MaxHeapSize), "Max heap size must be selected");
+  if (user_specified_MaxNewSize && MaxNewSize > MaxHeapSize) {
+    // If user specifed MaxNewSize is larger than the MaxHeapSize truncate the value.
+    if (FLAG_IS_CMDLINE(MaxNewSize)) {
+      log_warning(gc, ergo)("MaxNewSize (%zuk) greater than the entire heap (%zuk). "
+                            "A new MaxNewSize of %zuk will be used.",
+                            MaxNewSize/K, MaxHeapSize/K, MaxHeapSize/K);
+    }
+    FLAG_SET_ERGO(MaxNewSize, MaxHeapSize);
   }
 
   if (NewSize > MaxNewSize) {
+    // Either NewSize, MaxNewSize or both have been specified and are incompatible.
+    // In either case set MaxNewSize to the value of NewSize.
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      log_warning(gc, ergo)("NewSize (%zuk) is greater than the MaxNewSize (%zuk). "
-                            "A new max generation size of %zuk will be used.",
+      log_warning(gc, ergo)("NewSize (%zuk) is greater than MaxNewSize (%zuk). "
+                            "A new MaxNewSize of %zuk will be used.",
                             NewSize/K, MaxNewSize/K, NewSize/K);
     }
     FLAG_SET_ERGO(MaxNewSize, NewSize);
   }
 
-  if (FLAG_IS_CMDLINE(NewSize)) {
-    _min_desired_young_length = MAX2((uint) (NewSize / G1HeapRegion::GrainBytes),
-                                     1U);
-    if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      _max_desired_young_length =
-                             MAX2((uint) (MaxNewSize / G1HeapRegion::GrainBytes),
-                                  1U);
-      _sizer_kind = SizerMaxAndNewSize;
-      _use_adaptive_sizing = _min_desired_young_length != _max_desired_young_length;
-    } else {
-      _sizer_kind = SizerNewSizeOnly;
-    }
-  } else if (FLAG_IS_CMDLINE(MaxNewSize)) {
-    _max_desired_young_length =
-                             MAX2((uint) (MaxNewSize / G1HeapRegion::GrainBytes),
-                                  1U);
+  if (user_specified_NewSize) {
+    _min_desired_young_length = MAX2((uint)(NewSize / G1HeapRegion::GrainBytes), 1U);
+  }
+
+  if (user_specified_MaxNewSize) {
+    _max_desired_young_length = MAX2((uint)(MaxNewSize / G1HeapRegion::GrainBytes), 1U);
+  }
+
+  if (user_specified_NewSize && user_specified_MaxNewSize) {
+    _sizer_kind = SizerMaxAndNewSize;
+    _use_adaptive_sizing = _min_desired_young_length != _max_desired_young_length;
+  } else if (user_specified_NewSize) {
+    _sizer_kind = SizerNewSizeOnly;
+  } else {
+    postcond(user_specified_MaxNewSize);
     _sizer_kind = SizerMaxNewSizeOnly;
   }
 }

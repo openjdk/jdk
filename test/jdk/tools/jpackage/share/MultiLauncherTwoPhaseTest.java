@@ -22,13 +22,12 @@
  */
 
 import java.nio.file.Path;
-import java.io.IOException;
 import jdk.jpackage.test.AdditionalLauncher;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.JPackageCommand;
 
 /**
  * Test multiple launchers in two phases. First test creates app image and then
@@ -55,7 +54,7 @@ import jdk.jpackage.test.JPackageCommand;
 public class MultiLauncherTwoPhaseTest {
 
     @Test
-    public static void test() throws IOException {
+    public static void test() {
         Path appimageOutput = TKit.createTempDirectory("appimage");
 
         JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
@@ -68,12 +67,9 @@ public class MultiLauncherTwoPhaseTest {
         launcher2.applyTo(appImageCmd);
 
         PackageTest packageTest = new PackageTest()
-                .addRunOnceInitializer(() -> appImageCmd.execute())
+                .addRunOnceInitializer(appImageCmd::execute)
                 .addBundleDesktopIntegrationVerifier(true)
-                .addInitializer(cmd -> {
-                    cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                    cmd.removeArgumentWithValue("--input");
-                })
+                .usePredefinedAppImage(appImageCmd)
                 .forTypes(PackageType.WINDOWS)
                 .addInitializer(cmd -> {
                     cmd.addArguments("--win-shortcut", "--win-menu",

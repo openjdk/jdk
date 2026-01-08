@@ -26,6 +26,7 @@
 #define SHARE_ASM_CODEBUFFER_INLINE_HPP
 
 #include "asm/codeBuffer.hpp"
+
 #include "ci/ciEnv.hpp"
 #include "code/compiledIC.hpp"
 

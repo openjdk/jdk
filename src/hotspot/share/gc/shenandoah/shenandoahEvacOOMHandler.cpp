@@ -37,22 +37,22 @@ ShenandoahEvacOOMCounter::ShenandoahEvacOOMCounter() :
 void ShenandoahEvacOOMCounter::decrement() {
   assert(unmasked_count() > 0, "sanity");
   // NOTE: It's ok to simply decrement, even with mask set, because unmasked value is positive.
-  Atomic::dec(&_bits);
+  AtomicAccess::dec(&_bits);
 }
 
 void ShenandoahEvacOOMCounter::clear() {
   assert(unmasked_count() == 0, "sanity");
-  Atomic::release_store_fence(&_bits, (jint)0);
+  AtomicAccess::release_store_fence(&_bits, (jint)0);
 }
 
 void ShenandoahEvacOOMCounter::set_oom_bit(bool decrement) {
-  jint threads_in_evac = Atomic::load_acquire(&_bits);
+  jint threads_in_evac = AtomicAccess::load_acquire(&_bits);
   while (true) {
     jint newval = decrement
       ? (threads_in_evac - 1) | OOM_MARKER_MASK
       : threads_in_evac | OOM_MARKER_MASK;
 
-    jint other = Atomic::cmpxchg(&_bits, threads_in_evac, newval);
+    jint other = AtomicAccess::cmpxchg(&_bits, threads_in_evac, newval);
     if (other == threads_in_evac) {
       // Success: wait for other threads to get out of the protocol and return.
       break;
@@ -65,7 +65,7 @@ void ShenandoahEvacOOMCounter::set_oom_bit(bool decrement) {
 
 bool ShenandoahEvacOOMCounter::try_increment()
 {
-  jint threads_in_evac = Atomic::load_acquire(&_bits);
+  jint threads_in_evac = AtomicAccess::load_acquire(&_bits);
 
   while (true) {
     // Cannot enter evacuation if OOM_MARKER_MASK is set.
@@ -73,7 +73,7 @@ bool ShenandoahEvacOOMCounter::try_increment()
       return false;
     }
 
-    jint other = Atomic::cmpxchg(&_bits, threads_in_evac, threads_in_evac + 1);
+    jint other = AtomicAccess::cmpxchg(&_bits, threads_in_evac, threads_in_evac + 1);
     if (other == threads_in_evac) {
       // Success: caller may safely enter evacuation
       return true;

@@ -282,7 +282,7 @@ public final class Decoder {
         if (endOfHeaderBlock && state != State.READY) {
             logger.log(NORMAL, () -> format("unexpected end of %s representation",
                     state));
-            throw new IOException("Unexpected end of header block");
+            throw new ProtocolException("Unexpected end of header block");
         }
         if (endOfHeaderBlock) {
             size = indexed = 0;

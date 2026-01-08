@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,14 +170,19 @@ import javax.xml.transform.Source;
  * The conceptual states of writable and not writable determine if one
  * of the writing APIs will set a value or throw an exception.
  * <p>
- * The state moves from readable to not readable once free() or any of the
+ * The state moves from readable to not readable once close(), free() or any of the
  * reading APIs are called: getBinaryStream(), getCharacterStream(), getSource(), and getString().
  * Implementations may also change the state to not writable when this occurs.
  * <p>
- * The state moves from writable to not writable once free() or any of the
+ * The state moves from writable to not writable once close(), free() or any of the
  * writing APIs are called: setBinaryStream(), setCharacterStream(), setResult(), and setString().
  * Implementations may also change the state to not readable when this occurs.
- *
+ * <p>
+ * To release resources used by the {@code SQLXML} object, applications must call
+ * either the {@link #free()} or the {@link #close()} method.  Any attempt to
+ * invoke a method other than {@link #free()} or {@link #close()} after the
+ * {@code SQLXML} object has been closed, will result in a {@link SQLException}
+ * being thrown.
  * <p>
  * All methods on the {@code SQLXML} interface must be fully implemented if the
  * JDBC driver supports the data type.
@@ -188,21 +193,19 @@ import javax.xml.transform.Source;
  * @see javax.xml.xpath
  * @since 1.6
  */
-public interface SQLXML
+public interface SQLXML extends AutoCloseable
 {
   /**
-   * This method closes this object and releases the resources that it held.
-   * The SQL XML object becomes invalid and neither readable or writable
-   * when this method is called.
+   * Closes and releases the resources held by this {@code SQLXML} object.
+   * <p>
+   * If the {@code SQLXML} object is already closed, then invoking this method
+   * has no effect.
    *
-   * After {@code free} has been called, any attempt to invoke a
-   * method other than {@code free} will result in a {@code SQLException}
-   * being thrown.  If {@code free} is called multiple times, the subsequent
-   * calls to {@code free} are treated as a no-op.
    * @throws SQLException if there is an error freeing the XML value.
    * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
+   * @see #close()
    */
   void free() throws SQLException;
 
@@ -424,4 +427,21 @@ public interface SQLXML
    */
   <T extends Result> T setResult(Class<T> resultClass) throws SQLException;
 
+  /**
+   * Closes and releases the resources held by this {@code SQLXML} object.
+   * <p>
+   * If the {@code SQLXML} object is already closed, then invoking this method
+   * has no effect.
+   *
+   * @throws SQLException                    if an error occurs releasing
+   *                                         the SQLXML's resources
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *                                         does not support this method
+   * @implSpec The default implementation calls the {@link #free()} method.
+   * @see #free()
+   * @since 26
+   */
+  default void close() throws SQLException {
+    free();
+  };
 }

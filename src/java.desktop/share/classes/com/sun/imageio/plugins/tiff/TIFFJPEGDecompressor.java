@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import javax.imageio.stream.MemoryCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.plugins.tiff.BaselineTIFFTagSet;
 import javax.imageio.plugins.tiff.TIFFField;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 
 public class TIFFJPEGDecompressor extends TIFFDecompressor {
     // Start of Image
@@ -52,6 +54,7 @@ public class TIFFJPEGDecompressor extends TIFFDecompressor {
 
     public TIFFJPEGDecompressor() {}
 
+    @Override
     public void beginDecoding() {
         // Initialize the JPEG reader if needed.
         if(this.JPEGReader == null) {
@@ -64,6 +67,13 @@ public class TIFFJPEGDecompressor extends TIFFDecompressor {
 
             // Initialize reader to the first one.
             this.JPEGReader = iter.next();
+
+            // The JDK built-in ImageReader will self-dispose.
+            // So a Disposer is only needed here if it is an unknown reader.
+            // This is not common, so likely this will rarely be needed.
+            if (!(this.JPEGReader instanceof com.sun.imageio.plugins.jpeg.JPEGImageReader)) {
+                Disposer.addRecord(this, new ImageReaderDisposerRecord(this.JPEGReader));
+            }
 
             this.JPEGParam = JPEGReader.getDefaultReadParam();
         }
@@ -81,6 +91,7 @@ public class TIFFJPEGDecompressor extends TIFFDecompressor {
         }
     }
 
+    @Override
     public void decodeRaw(byte[] b,
                           int dstOffset,
                           int bitsPerPixel,
@@ -139,9 +150,16 @@ public class TIFFJPEGDecompressor extends TIFFDecompressor {
         JPEGReader.read(0, JPEGParam);
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        super.finalize();
-        JPEGReader.dispose();
+    private static class ImageReaderDisposerRecord implements DisposerRecord {
+        private final ImageReader reader;
+
+        public ImageReaderDisposerRecord(ImageReader reader) {
+            this.reader = reader;
+        }
+
+        @Override
+        public void dispose() {
+            reader.dispose();
+        }
     }
 }

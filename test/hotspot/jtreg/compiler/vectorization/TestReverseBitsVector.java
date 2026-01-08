@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
  * @bug 8290034
  * @summary Auto-vectorization of Reverse bit operation.
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.arch == "aarch64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
+ *           os.arch == "aarch64" |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*zbkb.*" & vm.cpu.features ~= ".*zvbb.*")
  * @library /test/lib /
  * @run driver compiler.vectorization.TestReverseBitsVector
  */

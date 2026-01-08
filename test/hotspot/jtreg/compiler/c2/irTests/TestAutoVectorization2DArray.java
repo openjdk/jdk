@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2022, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,10 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8279258
  * @summary Auto-vectorization enhancement for two-dimensional array operations
- * @requires ((os.arch == "x86" | os.arch == "i386") & (vm.opt.UseSSE == "null" | vm.opt.UseSSE >= 2))
- *           | (os.arch != "x86" & os.arch != "i386" & os.arch != "riscv64")
- *           | (os.arch == "riscv64" & vm.opt.UseRVV == true)
+ * @requires (os.arch != "x86" & os.arch != "i386" & os.arch != "ppc64" & os.arch != "ppc64le" & os.arch != "riscv64")
+ *           | ((os.arch == "x86" | os.arch == "i386") & (vm.opt.UseSSE == "null" | vm.opt.UseSSE >= 2))
+ *           | ((os.arch == "ppc64" | os.arch == "ppc64le") & vm.cpu.features ~= ".*darn.*")
+ *           | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestAutoVectorization2DArray
  */

@@ -28,6 +28,7 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.instruction.CharacterRange;
 
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a single character range entry in the {@link
@@ -166,6 +167,8 @@ public sealed interface CharacterRangeInfo
      * @param characterRangeEnd the encoded end of character positions in the
      *        source file, exclusive
      * @param flags the flags of this entry
+     * @throws IllegalArgumentException if {@code startPc}, {@code endPc}, or
+     *         {@code flags} is not {@link java.lang.classfile##u2 u2}
      */
     static CharacterRangeInfo of(int startPc,
                                  int endPc,

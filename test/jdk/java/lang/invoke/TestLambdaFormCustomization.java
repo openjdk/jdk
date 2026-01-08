@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import java.util.ArrayList;
   * @test
   * @bug 8340812
   * @summary Verify that LambdaForm customization via MethodHandle::updateForm is thread safe.
-  * @run main TestLambdaFormCustomization
-  * @run main/othervm -Djava.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD=0 TestLambdaFormCustomization
+  * @run main/timeout=480 TestLambdaFormCustomization
+  * @run main/othervm/timeout=480 -Djava.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD=0 TestLambdaFormCustomization
   */
 public class TestLambdaFormCustomization {
 

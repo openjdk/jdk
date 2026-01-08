@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,9 @@ class PartialArraySplitter {
   TASKQUEUE_STATS_ONLY(PartialArrayTaskStats _stats;)
 
 public:
-  PartialArraySplitter(PartialArrayStateManager* manager, uint num_workers);
+  PartialArraySplitter(PartialArrayStateManager* manager,
+                       uint num_workers,
+                       size_t chunk_size);
   ~PartialArraySplitter() = default;
 
   NONCOPYABLE(PartialArraySplitter);

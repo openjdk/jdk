@@ -790,12 +790,10 @@ class MacroAssembler: public Assembler {
   // Kills registers tmp1_reg and tmp2_reg and preserves the condition code.
   void increment_counter_eq(address counter_address, Register tmp1_reg, Register tmp2_reg);
 
-  void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2);
-  void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2);
-  void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Label& slow);
-  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Label& slow);
-  void compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2);
-  void compiler_fast_unlock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2);
+  void fast_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Label& slow);
+  void fast_unlock(Register obj, Register tmp1, Register tmp2, Label& slow);
+  void compiler_fast_lock_object(Register obj, Register box, Register tmp1, Register tmp2);
+  void compiler_fast_unlock_object(Register obj, Register box, Register tmp1, Register tmp2);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
@@ -816,8 +814,8 @@ class MacroAssembler: public Assembler {
   void set_thread_state(JavaThreadState new_state);
 
   // Read vm result from thread.
-  void get_vm_result  (Register oop_result);
-  void get_vm_result_2(Register result);
+  void get_vm_result_oop  (Register oop_result);
+  void get_vm_result_metadata(Register result);
 
   // Vm result is currently getting hijacked to for oop preservation.
   void set_vm_result(Register oop_result);
@@ -1109,6 +1107,8 @@ class MacroAssembler: public Assembler {
   void pop_count_int_with_ext3(Register dst, Register src);
   void pop_count_long_with_ext3(Register dst, Register src);
 
+  void load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc);
+  void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
 };
 
 #ifdef ASSERT

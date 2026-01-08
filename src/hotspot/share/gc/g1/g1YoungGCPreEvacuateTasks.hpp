@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,13 @@
 #include "gc/g1/g1BatchedTask.hpp"
 
 // Set of pre evacuate collection set tasks containing ("s" means serial):
-// - Retire TLAB and Flush Logs (Java threads)
+// - Retire TLABs (Java threads)
 // - Flush pin count cache (Java threads)
-// - Flush Logs (s) (Non-Java threads)
 class G1PreEvacuateCollectionSetBatchTask : public G1BatchedTask {
-  class JavaThreadRetireTLABAndFlushLogs;
-  class NonJavaThreadFlushLogs;
-
-  size_t _old_pending_cards;
+  class JavaThreadRetireTLABs;
 
   // References to the tasks to retain access to statistics.
-  JavaThreadRetireTLABAndFlushLogs* _java_retire_task;
-  NonJavaThreadFlushLogs* _non_java_retire_task;
+  JavaThreadRetireTLABs* _java_retire_task;
 
 public:
   G1PreEvacuateCollectionSetBatchTask();

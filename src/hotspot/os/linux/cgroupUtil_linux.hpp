@@ -25,19 +25,26 @@
 #ifndef CGROUP_UTIL_LINUX_HPP
 #define CGROUP_UTIL_LINUX_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "cgroupSubsystem_linux.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class CgroupUtil: AllStatic {
 
   public:
-    static int processor_count(CgroupCpuController* cpu, int host_cpus);
+    static bool processor_count(CgroupCpuController* cpu, int upper_bound, int& value);
     // Given a memory controller, adjust its path to a point in the hierarchy
     // that represents the closest memory limit.
     static void adjust_controller(CgroupMemoryController* m);
     // Given a cpu controller, adjust its path to a point in the hierarchy
     // that represents the closest cpu limit.
     static void adjust_controller(CgroupCpuController* c);
+  private:
+    static physical_memory_size_type get_updated_mem_limit(CgroupMemoryController* m,
+                                                           physical_memory_size_type lowest,
+                                                           physical_memory_size_type upper_bound);
+    static int get_updated_cpu_limit(CgroupCpuController* c,
+                                     int lowest,
+                                     int upper_bound);
 };
 
 #endif // CGROUP_UTIL_LINUX_HPP

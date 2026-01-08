@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,25 +27,28 @@
 
 #include "runtime/safepointMechanism.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
+#endif
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_page(uintptr_t poll_value) {
-  Atomic::store(&_polling_page, poll_value);
+  AtomicAccess::store(&_polling_page, poll_value);
 }
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_word(uintptr_t poll_value) {
-  Atomic::store(&_polling_word, poll_value);
+  AtomicAccess::store(&_polling_word, poll_value);
 }
 
 // The acquire makes sure reading of polling page is done before
 // the reading the handshake operation or the global state
 inline uintptr_t SafepointMechanism::ThreadData::get_polling_word() {
-  return Atomic::load_acquire(&_polling_word);
+  return AtomicAccess::load_acquire(&_polling_word);
 }
 
 bool SafepointMechanism::local_poll_armed(JavaThread* thread) {
@@ -54,6 +57,10 @@ bool SafepointMechanism::local_poll_armed(JavaThread* thread) {
 
 bool SafepointMechanism::global_poll() {
   return (SafepointSynchronize::_state != SafepointSynchronize::_not_synchronized);
+}
+
+inline bool SafepointMechanism::has_pending_safepoint(JavaThread* thread) {
+  return global_poll() || thread->handshake_state()->has_operation() JFR_ONLY(|| Jfr::has_sample_request(thread));
 }
 
 bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {

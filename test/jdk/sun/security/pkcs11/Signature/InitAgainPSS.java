@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.*;
-import java.security.spec.*;
+import jtreg.SkippedException;
+
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Signature;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 
 /**
  * @test
@@ -46,9 +53,7 @@ public class InitAgainPSS extends PKCS11Test {
         try {
             s1 = Signature.getInstance(sigAlg, p);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skip testing " + sigAlg +
-                " due to no support");
-            return;
+            throw new SkippedException("No support " + sigAlg);
         }
 
         byte[] msg = "hello".getBytes();

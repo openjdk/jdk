@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,13 @@ public interface JdkConsoleProvider {
     /**
      * The module name of the JdkConsole default provider.
      */
-    String DEFAULT_PROVIDER_MODULE_NAME = "jdk.internal.le";
+    String DEFAULT_PROVIDER_MODULE_NAME = "java.base";
 
     /**
      * {@return the Console instance, or {@code null} if not available}
      * @param isTTY indicates if the jvm is attached to a terminal
-     * @param charset charset of the platform console
+     * @param inCharset Standard input charset of the platform console
+     * @param outCharset Standard output charset of the platform console
      */
-    JdkConsole console(boolean isTTY, Charset charset);
+    JdkConsole console(boolean isTTY, Charset inCharset, Charset outCharset);
 }

@@ -228,6 +228,9 @@ public class Names {
     public final Name enumSwitch;
     public final Name enumConstant;
 
+    // special annotation names
+    public final Name requiresIdentityInternal;
+
     public final Name.Table table;
 
     @SuppressWarnings("this-escape")
@@ -412,6 +415,9 @@ public class Names {
         typeSwitch = fromString("typeSwitch");
         enumSwitch = fromString("enumSwitch");
         enumConstant = fromString("enumConstant");
+
+        // special annotations:
+        requiresIdentityInternal = fromString("jdk.internal.RequiresIdentity+Annotation");
     }
 
     protected Name.Table createTable(Options options) {

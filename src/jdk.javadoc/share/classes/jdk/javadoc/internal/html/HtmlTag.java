@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,6 +257,9 @@ public enum HtmlTag {
         }
     },
 
+    OPTION(BlockType.OTHER, EndKind.OPTIONAL,
+            attrs(AttrKind.OK, HtmlAttr.LABEL, SELECTED, VALUE)),
+
     P(BlockType.BLOCK, EndKind.OPTIONAL,
             EnumSet.of(Flag.EXPECT_CONTENT),
             attrs(AttrKind.HTML4, ALIGN)),
@@ -284,6 +287,9 @@ public enum HtmlTag {
 
     SCRIPT(BlockType.INLINE, EndKind.REQUIRED,
             attrs(AttrKind.OK, SRC, TYPE)),
+
+    SELECT(BlockType.INLINE, EndKind.REQUIRED,
+            attrs(AttrKind.OK, NAME, SIZE, VALUE)),
 
     SECTION(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),

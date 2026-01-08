@@ -34,6 +34,8 @@ import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
+import com.sun.tools.javac.comp.Check.CheckContext;
+import com.sun.tools.javac.comp.Check.NestedCheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
@@ -66,6 +68,7 @@ public class AttrRecover {
     protected static final Context.Key<AttrRecover> attrRepairKey = new Context.Key<>();
 
     final Attr attr;
+    final Check chk;
     final DeferredAttr deferredAttr;
     final Names names;
     final TreeMaker make;
@@ -84,6 +87,7 @@ public class AttrRecover {
         context.put(attrRepairKey, this);
 
         attr = Attr.instance(context);
+        chk = Check.instance(context);
         deferredAttr = DeferredAttr.instance(context);
         names = Names.instance(context);
         make = TreeMaker.instance(context);
@@ -192,8 +196,14 @@ public class AttrRecover {
                 while (pats.length() < args.length()) {
                     pats = pats.append(syms.errType);
                 }
+                CheckContext recoveryCheckContext = new NestedCheckContext(todo.resultInfo.checkContext) {
+                    @Override
+                    public void report(JCDiagnostic.DiagnosticPosition pos, JCDiagnostic details) {
+                        chk.basicHandler.report(pos, details);
+                    }
+                };
                 owntype = attr.checkMethod(todo.site, todo.candSym,
-                                 attr.new ResultInfo(todo.resultInfo.pkind, todo.resultInfo.pt.getReturnType(), todo.resultInfo.checkContext, todo.resultInfo.checkMode),
+                                 attr.new ResultInfo(todo.resultInfo.pkind, todo.resultInfo.pt.getReturnType(), recoveryCheckContext, todo.resultInfo.checkMode),
                                  todo.env, args, pats,
                                  todo.resultInfo.pt.getTypeArguments());
                 rollback.forEach(Runnable::run);

@@ -28,8 +28,8 @@
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
-#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "runtime/os.hpp"
 

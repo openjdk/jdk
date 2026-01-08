@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ class Forest {
             treeHeight = Memory.balancedTreeHeightFromMemory(size / ntrees, (int) new TreeNode(nodeGarbageSize).getTotalSize());
         }
 
-        log.debug("The expected forest paramteres: tree height = " + treeHeight  + " number of trees = " + ntrees
+        log.debug("The expected forest parameters: tree height = " + treeHeight + " number of trees = " + ntrees
                 + " size = " +  new TreeNode(nodeGarbageSize).getTotalSize());
         Tree[] localTrees = new Tree[ntrees * 4];
         Lock[] localLocks = new Lock[ntrees * 4];
@@ -104,7 +104,7 @@ class Forest {
                     instance.where = new AtomicCycleInteger(instance.trees.length);
                     instance.nodeGarbageSize = nodeGarbageSize;
 
-                    log.debug("The forest real paramteres: tree height = " + treeHeight  + " number of trees = " + instance.trees.length
+                    log.debug("The forest real parameters: tree height = " + treeHeight + " number of trees = " + instance.trees.length
                             + " number of nodes = " + allNodesCount);
                     log.debug("Approximate node size = " + nodeSize + " calc = " + instance.trees[0].getRoot().getSize());
                     return instance;
@@ -140,12 +140,12 @@ class Forest {
         int h2 = root.getShortestPath();
         if ((h1 != treeHeight) || (h2 != treeHeight)) {
             throw new TestFailure("The tree is not balanced expected " + treeHeight
-                    + " value = " + h1 + " shortedtPath = " + h2);
+                    + " value = " + h1 + " shortestPath = " + h2);
         }
     }
 
     // Swap subtrees in 2 trees, the path is used
-    // as sequence of 1-0 to select subtree (left-reight sequence)
+    // as sequence of 1-0 to select subtree (left-right sequence)
     static void swapSubtrees(Tree t1, Tree t2, int depth, int path) {
         TreeNode tn1 = t1.getRoot();
         TreeNode tn2 = t2.getRoot();
@@ -210,7 +210,7 @@ class Forest {
         }
     }
 
-    // the index in tree array which should be chnaged during next regeneration
+    // the index in tree array which should be changed during next regeneration
     AtomicCycleInteger where = null;
 
     // generate new full and partial trees in our forest
@@ -276,10 +276,10 @@ public class Concurrent extends ThreadedGCTest implements GarbageProducerAware, 
     // Heap as tree
     Forest forest;
 
-    // GP for old gargbage production
+    // GP for old garbage production
     GarbageProducer gpOld;
 
-    // GP for young gargbage production
+    // GP for young garbage production
     GarbageProducer gpYoung;
 
     MemoryStrategy ms;
@@ -322,7 +322,7 @@ public class Concurrent extends ThreadedGCTest implements GarbageProducerAware, 
     // young garbage in percent and absolute
     private static int youngPercent = 0;
     long youngGarbageSize;
-    // mutation rate (parcent and absolute trees)
+    // mutation rate (percent and absolute trees)
     private static int ptrMutRate = 50;
     long mutateTrees;
     // percent of heap to occupy by forest (long live garbage)

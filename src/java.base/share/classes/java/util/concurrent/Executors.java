@@ -306,7 +306,7 @@ public final class Executors {
     }
 
     /**
-     * Creates a thread pool that can schedule commands to run after a
+     * Creates a fixed-size thread pool that can schedule commands to run after a
      * given delay, or to execute periodically.
      * @param corePoolSize the number of threads to keep in the pool,
      * even if they are idle
@@ -318,7 +318,7 @@ public final class Executors {
     }
 
     /**
-     * Creates a thread pool that can schedule commands to run after a
+     * Creates a fixed-size thread pool that can schedule commands to run after a
      * given delay, or to execute periodically.
      * @param corePoolSize the number of threads to keep in the pool,
      * even if they are idle
@@ -754,6 +754,13 @@ public final class Executors {
         public void shutdown() {
             super.shutdown();
             cleanable.clean();  // unregisters the cleanable
+        }
+
+        @Override
+        public List<Runnable> shutdownNow() {
+            List<Runnable> unexecuted = super.shutdownNow();
+            cleanable.clean();  // unregisters the cleanable
+            return unexecuted;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * }
  * where
  * <ul>
- * <li>{@code slot} must be within {@code [0, 65535]}.
+ * <li>{@code slot} must be {@link java.lang.classfile##u2 u2}.
  * <li>{@code constant} must be within {@code [-32768, 32767]}.
  * </ul>
  *
@@ -73,7 +73,7 @@ public sealed interface IncrementInstruction extends Instruction
     /**
      * {@return an increment instruction}
      * <ul>
-     * <li>{@code slot} must be within {@code [0, 65535]}.
+     * <li>{@code slot} must be {@link java.lang.classfile##u2 u2}.
      * <li>{@code constant} must be within {@code [-32768, 32767]}.
      * </ul>
      *

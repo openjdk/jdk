@@ -46,7 +46,6 @@
 
 //------------------------------generate_exception_blob---------------------------
 // Creates exception blob at the end.
-// Using exception blob, this code is jumped from a compiled method.
 //
 // Given an exception pc at a call we call into the runtime for the
 // handler in this method. This handler might merely restore state
@@ -67,12 +66,15 @@
 //
 // Note: the exception pc MUST be at a call (precise debug information)
 //
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
 
   address start = __ pc();
@@ -143,7 +145,7 @@ void OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob.
-  _exception_blob = ExceptionBlob::create(&buffer, oop_maps,
+  return ExceptionBlob::create(&buffer, oop_maps,
                                           frame_size_in_bytes/wordSize);
 }
 

@@ -42,8 +42,8 @@
 #include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -217,7 +217,7 @@ public:
   void push_va(ciEnv* ci, const char* fmt, va_list args) {
     char *e = ci->_dyno_name + strlen(ci->_dyno_name);
     char *m = ci->_dyno_name + ARRAY_SIZE(ci->_dyno_name) - 1;
-    os::vsnprintf(e, m - e, fmt, args);
+    (void) os::vsnprintf(e, m - e, fmt, args);
     assert(strlen(ci->_dyno_name) < (ARRAY_SIZE(ci->_dyno_name) - 1), "overflow");
   }
 
@@ -1057,7 +1057,9 @@ void ciEnv::register_method(ciMethod* target,
     }
 
     assert(offsets->value(CodeOffsets::Deopt) != -1, "must have deopt entry");
-    assert(offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
+
+    assert(compiler->type() == compiler_c2 ||
+           offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
 
     nm =  nmethod::new_nmethod(method,
                                compile_id(),
@@ -1159,6 +1161,13 @@ int ciEnv::compile_id() {
 // ciEnv::notice_inlined_method()
 void ciEnv::notice_inlined_method(ciMethod* method) {
   _num_inlined_bytecodes += method->code_size_for_inlining();
+  CompileTrainingData* ctd = task()->training_data();
+  if (ctd != nullptr) {
+    GUARDED_VM_ENTRY({
+      methodHandle mh(Thread::current(), method->get_Method());
+      ctd->notice_inlined_method(task(), mh);
+    });
+  }
 }
 
 // ------------------------------------------------------------------
@@ -1170,6 +1179,15 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
+  // record the bailout for hserr envlog
+  if (reason != nullptr) {
+    if (CompilationLog::log() != nullptr) {
+      CompilerThread* thread = CompilerThread::current();
+      CompileTask* task = thread->task();
+      CompilationLog::log()->log_failure(thread, task, reason, nullptr);
+    }
+  }
+
   if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
     _failure_reason.set(reason);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,27 @@
 import java.io.IOException;
 
 /*
- * @test
- * @summary Verify Signal mask is cleared by ProcessBuilder start
+ * @test id=posix_spawn
+ * @summary Verify Signal mask is cleared by ProcessBuilder start when using posix_spawn mode
  * @bug 8234262
  * @requires (os.family == "linux" | os.family == "mac")
  * @comment Don't allow -Xcomp, it disturbs the relative timing of the sleep and kill commands
  * @requires (vm.compMode != "Xcomp")
- * @run main/othervm UnblockSignals
- * @run main/othervm -Xrs UnblockSignals
+ * @run main/othervm/timeout=480 -Djdk.lang.Process.launchMechanism=POSIX_SPAWN UnblockSignals
+ * @run main/othervm/timeout=480 -Djdk.lang.Process.launchMechanism=POSIX_SPAWN -Xrs UnblockSignals
  */
+
+/*
+ * @test id=fork
+ * @summary Verify Signal mask is cleared by ProcessBuilder start when using fork mode
+ * @bug 8357683
+ * @requires (os.family == "linux" | os.family == "mac")
+ * @comment Don't allow -Xcomp, it disturbs the relative timing of the sleep and kill commands
+ * @requires (vm.compMode != "Xcomp")
+ * @run main/othervm/timeout=480 -Djdk.lang.Process.launchMechanism=FORK UnblockSignals
+ * @run main/othervm/timeout=480 -Djdk.lang.Process.launchMechanism=FORK -Xrs UnblockSignals
+ */
+
 public class UnblockSignals {
     public static void main(String[] args)  throws IOException, InterruptedException {
         // Check that SIGQUIT is not masked, in previous releases it was masked

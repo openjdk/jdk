@@ -22,16 +22,16 @@
  *
  */
 
-#include "runtime/interfaceSupport.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/vmreg.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/typeArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
-#include "prims/foreignGlobals.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/downcallLinker.hpp"
+#include "prims/foreignGlobals.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 
 JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,

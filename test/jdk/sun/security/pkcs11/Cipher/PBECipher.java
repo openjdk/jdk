@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2023, 2025, Red Hat, Inc.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,14 +40,14 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /*
  * @test
- * @bug 8301553
+ * @bug 8301553 8348732
  * @summary test password based encryption on SunPKCS11's Cipher service
  * @library /test/lib ..
  * @run main/othervm/timeout=30 PBECipher
  */
 
 public final class PBECipher extends PKCS11Test {
-    private static final char[] password = "123456".toCharArray();
+    private static final char[] password = "123456\uA4F7".toCharArray();
     private static final byte[] salt = "abcdefgh".getBytes(
             StandardCharsets.UTF_8);
     private static final int iterations = 1000;
@@ -61,10 +61,6 @@ public final class PBECipher extends PKCS11Test {
     private enum Configuration {
         // Pass salt and iterations to a Cipher through a PBEParameterSpec.
         PBEParameterSpec,
-
-        // Derive a key using SunPKCS11's SecretKeyFactory (wrapping password,
-        // salt and iterations in a PBEKeySpec), and pass it to a Cipher.
-        SecretKeyFactoryDerivedKey,
 
         // Pass salt and iterations to a Cipher through an AlgorithmParameters.
         AlgorithmParameters,
@@ -116,35 +112,35 @@ public final class PBECipher extends PKCS11Test {
     // Generated with SunJCE.
     private static final AssertionData[] assertionData = new AssertionData[]{
             cipherAssertionData("PBEWithHmacSHA1AndAES_128",
-                    "AES/CBC/PKCS5Padding", "ba1c9614d550912925d99e0bc8969032" +
-                    "7ac6258b72117dcf750c19ee6ca73dd4"),
+                    "AES/CBC/PKCS5Padding", "9e097796e8d8224f2a7f5c950677d879" +
+                    "c0c578340147c7ae357550e2f4d4c6ce"),
             cipherAssertionData("PBEWithHmacSHA224AndAES_128",
-                    "AES/CBC/PKCS5Padding", "41960c43ca99cf2184511aaf2f0508a9" +
-                    "7da3762ee6c2b7e2027c8076811f2e52"),
+                    "AES/CBC/PKCS5Padding", "7b915941d8e3a87c00e2fbd8ad67a578" +
+                    "9a25648933b737706de4e4d48bdb61b6"),
             cipherAssertionData("PBEWithHmacSHA256AndAES_128",
-                    "AES/CBC/PKCS5Padding", "6bb6a3dc3834e81e5ca6b5e70073ff46" +
-                    "903b188940a269ed26db2ffe622b8e16"),
+                    "AES/CBC/PKCS5Padding", "c23912d15599908f47cc32c9da56b37f" +
+                    "e41e958e9c3a6c6e4e631a2a9e6cd20f"),
             cipherAssertionData("PBEWithHmacSHA384AndAES_128",
-                    "AES/CBC/PKCS5Padding", "22aabf7a6a059415dc4ca7d985f3de06" +
-                    "8f8300ca48d8de585d802670f4c1d9bd"),
+                    "AES/CBC/PKCS5Padding", "f05c6b2dea545d59f2a6fde845170dd6" +
+                    "7aebd6b1cc28904699d7dcff1a0a238c"),
             cipherAssertionData("PBEWithHmacSHA512AndAES_128",
-                    "AES/CBC/PKCS5Padding", "b523e7c462a0b7fd74e492b3a6550464" +
-                    "ceebe81f08649ae163673afc242ad8a2"),
+                    "AES/CBC/PKCS5Padding", "949c0c01a29375b9d421f6e2bf6ed0d7" +
+                    "15a118e0980494797d3a3b799b67daf6"),
             cipherAssertionData("PBEWithHmacSHA1AndAES_256",
-                    "AES/CBC/PKCS5Padding", "1e7c25e166afae069cec68ef9affca61" +
-                    "aea02ab1c3dc7471cb767ed7d6e37af0"),
+                    "AES/CBC/PKCS5Padding", "7bd686b15bc09e5fb5aa1f881c92aa5a" +
+                    "e72bdcd864c74e62395b9aaea7443bcd"),
             cipherAssertionData("PBEWithHmacSHA224AndAES_256",
-                    "AES/CBC/PKCS5Padding", "6701f1cc75b6494ec4bd27158aa2c15d" +
-                    "7d10bc2f1fbb7d92d8277c7edfd1dd57"),
+                    "AES/CBC/PKCS5Padding", "df58a1b26cca7e9e297da61ada03ddc4" +
+                    "39d2a5699753433f19891de33f8741a2"),
             cipherAssertionData("PBEWithHmacSHA256AndAES_256",
-                    "AES/CBC/PKCS5Padding", "f82eb2fc016505baeb23ecdf85163933" +
-                    "5e8d6d48b48631185641febb75898a1d"),
+                    "AES/CBC/PKCS5Padding", "f6ae5a15ec2c18eaa25927858f1da990" +
+                    "6df58a3b4830dbaaaa4c4317e53d717d"),
             cipherAssertionData("PBEWithHmacSHA384AndAES_256",
-                    "AES/CBC/PKCS5Padding", "ee9528022e58cdd9be80cd88443e03b3" +
-                    "de13376cf97c53d946d5c5dfc88097be"),
+                    "AES/CBC/PKCS5Padding", "5795625f51ec701594506944e5ed79f0" +
+                    "c9d8e82319762f00f8ff06a8b6195ac4"),
             cipherAssertionData("PBEWithHmacSHA512AndAES_256",
-                    "AES/CBC/PKCS5Padding", "18f472912ffaa31824e20a5486324e14" +
-                    "0225e20cb158762e8647b1216fe0ab7e"),
+                    "AES/CBC/PKCS5Padding", "ddf55933f80f42f2a8d4e8726290766e" +
+                    "024f225b76b594e8005c00227d553d05"),
     };
 
     private static final class NoRandom extends SecureRandom {
@@ -201,11 +197,6 @@ public final class PBECipher extends PKCS11Test {
                     }
                 }
             }
-            case SecretKeyFactoryDerivedKey -> {
-                SecretKey key = getDerivedSecretKey(p, keyAlgo);
-                cipher.init(Cipher.ENCRYPT_MODE, key,
-                        pbeSpec.getParameterSpec());
-            }
             case AnonymousPBEKey -> {
                 SecretKey key = getAnonymousPBEKey(keyAlgo,
                         svcAlgo.equals(keyAlgo));
@@ -222,30 +213,17 @@ public final class PBECipher extends PKCS11Test {
                 .generateSecret(new PBEKeySpec(password));
     }
 
-    private static SecretKey getDerivedSecretKey(Provider sunPKCS11,
-            String algorithm) throws GeneralSecurityException {
-        return SecretKeyFactory.getInstance(algorithm, sunPKCS11)
-                .generateSecret(new PBEKeySpec(password, salt, iterations));
-    }
-
     private static SecretKey getAnonymousPBEKey(String algorithm,
-            boolean isPbeCipherSvc) {
+            boolean isPbeCipherSvc) throws GeneralSecurityException {
+        byte[] enc = (isPbeCipherSvc ?
+                    getPasswordOnlyPBEKey().getEncoded() : null);
         return new PBEKey() {
             public byte[] getSalt() { return salt.clone(); }
             public int getIterationCount() { return iterations; }
             public String getAlgorithm() { return algorithm; }
             public String getFormat() { return "RAW"; }
             public char[] getPassword() { return password.clone(); }
-            public byte[] getEncoded() {
-                byte[] encodedKey = null;
-                if (isPbeCipherSvc) {
-                    encodedKey = new byte[password.length];
-                    for (int i = 0; i < password.length; i++) {
-                        encodedKey[i] = (byte) (password[i] & 0x7f);
-                    }
-                }
-                return encodedKey;
-            }
+            public byte[] getEncoded() { return enc; }
         };
     }
 

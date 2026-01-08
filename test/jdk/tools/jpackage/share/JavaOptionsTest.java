@@ -37,7 +37,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror JavaOptionsTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=2840 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
  */
@@ -76,7 +76,7 @@ public class JavaOptionsTest {
 
     public JavaOptionsTest(String javaAppDesc, String[] jpackageArgs,
             String[] expectedParams) {
-        cmd = JPackageCommand.helloAppImage(javaAppDesc);
+        cmd = JPackageCommand.helloAppImage(javaAppDesc).ignoreFakeRuntime();
         if (jpackageArgs != null) {
             cmd.addArguments(jpackageArgs);
         }
@@ -90,9 +90,8 @@ public class JavaOptionsTest {
 
         // 2.) run the launcher it generated
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
-        TKit.assertNotNull(output, "output is null");
         for (String expect : expected) {
-            TKit.assertTextStream(expect).apply(output.stream());
+            TKit.assertTextStream(expect).apply(output);
         }
     }
 

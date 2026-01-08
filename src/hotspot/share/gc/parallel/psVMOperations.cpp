@@ -22,8 +22,8 @@
  *
  */
 
-#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
+#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -52,9 +52,9 @@ static bool is_cause_full(GCCause::Cause cause) {
 
 // Only used for System.gc() calls
 VM_ParallelGCCollect::VM_ParallelGCCollect(uint gc_count,
-                                             uint full_gc_count,
-                                             GCCause::Cause gc_cause) :
-  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause)) {}
+                                           uint full_gc_count,
+                                           GCCause::Cause gc_cause) :
+  VM_GC_Collect_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause)) {}
 
 void VM_ParallelGCCollect::doit() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();

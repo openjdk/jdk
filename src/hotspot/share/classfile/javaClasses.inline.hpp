@@ -80,7 +80,7 @@ uint8_t* java_lang_String::flags_addr(oop java_string) {
 }
 
 bool java_lang_String::is_flag_set(oop java_string, uint8_t flag_mask) {
-  return (Atomic::load(flags_addr(java_string)) & flag_mask) != 0;
+  return (AtomicAccess::load(flags_addr(java_string)) & flag_mask) != 0;
 }
 
 bool java_lang_String::deduplication_forbidden(oop java_string) {
@@ -289,6 +289,12 @@ inline Klass* java_lang_Class::as_Klass(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field(_klass_offset));
   assert(k == nullptr || k->is_klass(), "type check");
   return k;
+}
+
+inline InstanceKlass* java_lang_Class::as_InstanceKlass(oop java_class) {
+  Klass* k = as_Klass(java_class);
+  assert(k == nullptr || k->is_instance_klass(), "type check");
+  return static_cast<InstanceKlass*>(k);
 }
 
 inline bool java_lang_Class::is_primitive(oop java_class) {

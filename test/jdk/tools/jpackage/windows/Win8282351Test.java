@@ -24,9 +24,11 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.JPackageCommand;
+import java.util.List;
+import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.TKit;
 
@@ -48,13 +50,13 @@ import jdk.jpackage.test.TKit;
 public class Win8282351Test {
 
     @Test
-    public void test() throws IOException {
+    public void test() {
         Path appimageOutput = TKit.createTempDirectory("appimage");
 
         JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
                 .setFakeRuntime().setArgumentValue("--dest", appimageOutput);
 
-        String[] filesWithDollarCharsInNames = new String[]{
+        var filesWithDollarCharsInNames = Stream.of(
             "Pane$$anon$$greater$1.class",
             "$",
             "$$",
@@ -63,11 +65,11 @@ public class Win8282351Test {
             "$$$$$",
             "foo$.class",
             "1$b$$a$$$r$$$$.class"
-        };
+        ).map(Path::of).toList();
 
-        String[] dirsWithDollarCharsInNames = new String[]{
-            Path.of("foo", String.join("/", filesWithDollarCharsInNames)).toString()
-        };
+        var dirsWithDollarCharsInNames = List.of(
+                filesWithDollarCharsInNames.stream().reduce(Path.of("foo"), Path::resolve)
+        );
 
         String name = appImageCmd.name() + "$-$$-$$$";
 
@@ -75,7 +77,7 @@ public class Win8282351Test {
                 .addRunOnceInitializer(() -> {
                     appImageCmd.execute();
                     for (var path : filesWithDollarCharsInNames) {
-                        createImageFile(appImageCmd, Path.of(path));
+                        createImageFile(appImageCmd, path);
                     }
 
                     for (var path : dirsWithDollarCharsInNames) {
@@ -83,16 +85,15 @@ public class Win8282351Test {
                                 appImageCmd.outputBundle().resolve(path));
                     }
                 })
+                .usePredefinedAppImage(appImageCmd)
                 .addInitializer(cmd -> {
                     cmd.setArgumentValue("--name", name);
-                    cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                    cmd.removeArgumentWithValue("--input");
                     cmd.addArgument("--win-menu");
                     cmd.addArgument("--win-shortcut");
                 })
                 .addInstallVerifier(cmd -> {
                     for (var path : filesWithDollarCharsInNames) {
-                        verifyImageFile(appImageCmd, Path.of(path));
+                        verifyImageFile(appImageCmd, path);
                     }
 
                     for (var path : dirsWithDollarCharsInNames) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
 
     native void _displayMessage(String caption, String text, String messageType);
 
-    class IconObserver implements ImageObserver {
+    final class IconObserver implements ImageObserver {
         @Override
         public boolean imageUpdate(Image image, int flags, int x, int y, int width, int height) {
             if (image != ((TrayIcon)target).getImage() || // if the image has been changed

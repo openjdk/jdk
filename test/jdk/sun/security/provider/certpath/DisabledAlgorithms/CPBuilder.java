@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  *
  * @bug 6861062
  * @summary Disable MD2 support
+ * @enablePreview
  *
  * @run main/othervm CPBuilder trustAnchor_SHA1withRSA_1024 0 true
  * @run main/othervm CPBuilder trustAnchor_SHA1withRSA_512  0 true
@@ -48,13 +49,15 @@
  * @author Xuelei Fan
  */
 
-import java.io.*;
-import java.net.SocketException;
+import java.security.DEREncodable;
+import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
 
 public class CPBuilder {
+
+    private static final PEMDecoder PEM_DECODER = PEMDecoder.of();
 
     // SHA1withRSA 1024
     static String trustAnchor_SHA1withRSA_1024 =
@@ -321,35 +324,27 @@ public class CPBuilder {
 
     private static Set<TrustAnchor> generateTrustAnchors()
             throws CertificateException {
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+
         HashSet<TrustAnchor> anchors = new HashSet<TrustAnchor>();
 
-        ByteArrayInputStream is =
-            new ByteArrayInputStream(trustAnchor_SHA1withRSA_1024.getBytes());
-        Certificate cert = cf.generateCertificate(is);
-        TrustAnchor anchor = new TrustAnchor((X509Certificate)cert, null);
+        // generate certificate from certificate string
+        X509Certificate cert = PEM_DECODER.decode(trustAnchor_SHA1withRSA_1024, X509Certificate.class);
+        TrustAnchor anchor = new TrustAnchor(cert, null);
         anchors.add(anchor);
 
-        is = new ByteArrayInputStream(trustAnchor_SHA1withRSA_512.getBytes());
-        cert = cf.generateCertificate(is);
-        anchor = new TrustAnchor((X509Certificate)cert, null);
+        cert = PEM_DECODER.decode(trustAnchor_SHA1withRSA_512, X509Certificate.class);
+        anchor = new TrustAnchor(cert, null);
         anchors.add(anchor);
 
         return anchors;
     }
 
     private static CertStore generateCertificateStore() throws Exception {
-        Collection entries = new HashSet();
-
-        // generate certificate from certificate string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Collection<DEREncodable> entries = new HashSet<>();
 
         for (String key : certmap.keySet()) {
             String certStr = certmap.get(key);
-            ByteArrayInputStream is =
-                        new ByteArrayInputStream(certStr.getBytes());
-            Certificate cert = cf.generateCertificate(is);
+            DEREncodable cert = PEM_DECODER.decode(certStr, X509Certificate.class);
             entries.add(cert);
         }
 
@@ -367,9 +362,7 @@ public class CPBuilder {
         }
 
         // generate certificate from certificate string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        ByteArrayInputStream is = new ByteArrayInputStream(certStr.getBytes());
-        X509Certificate target = (X509Certificate)cf.generateCertificate(is);
+        X509Certificate target = PEM_DECODER.decode(certStr, X509Certificate.class);
 
         selector.setCertificate(target);
 
@@ -386,9 +379,7 @@ public class CPBuilder {
         }
 
         // generate certificate from certificate string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        ByteArrayInputStream is = new ByteArrayInputStream(certStr.getBytes());
-        X509Certificate target = (X509Certificate)cf.generateCertificate(is);
+        X509Certificate target = PEM_DECODER.decode(certStr, X509Certificate.class);
 
         return target.equals(cert);
     }

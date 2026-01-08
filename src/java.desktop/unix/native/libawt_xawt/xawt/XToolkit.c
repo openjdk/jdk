@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -692,7 +692,9 @@ void awt_output_flush() {
 static void wakeUp() {
     static char wakeUp_char = 'p';
     if (!isMainThread() && awt_pipe_inited) {
-        write ( AWT_WRITEPIPE, &wakeUp_char, 1 );
+        if (write(AWT_WRITEPIPE, &wakeUp_char, 1) < 0) {
+            DTRACE_PRINTLN("wakeUp(): write to AWT pipe failed");
+        }
     }
 }
 

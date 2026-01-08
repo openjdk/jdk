@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.resources:open
  *          jdk.compiler/com.sun.tools.javac.util
  * @build Example CheckExamples DocCommentProcessor
- * @run main/othervm CheckExamples
+ * @run main/othervm/timeout=480 CheckExamples
  */
 
 /*

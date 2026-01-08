@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,20 +32,21 @@
  */
 
 /*
- * @requires os.family != "windows" & os.family != "aix"
  * @test id=DetachThread
+ * @requires os.family != "windows" & os.family != "aix"
  * @run main/othervm/native MonitorWithDeadObjectTest 0
  */
 
 /*
- * @requires os.family != "windows" & os.family != "aix"
  * @test id=DumpThreadsBeforeDetach
+ * @comment Temporarily exclude on Musl-C debug until JDK-8366133 is fixed.
+ * @requires os.family != "windows" & os.family != "aix" & (!vm.musl | !vm.debug)
  * @run main/othervm/native MonitorWithDeadObjectTest 1
  */
 
 /*
- * @requires os.family != "windows" & os.family != "aix"
  * @test id=DumpThreadsAfterDetach
+ * @requires os.family != "windows" & os.family != "aix"
  * @run main/othervm/native MonitorWithDeadObjectTest 2
  */
 

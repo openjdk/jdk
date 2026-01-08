@@ -282,16 +282,6 @@ void NativeMovConstReg::set_pc_relative_offset(address addr, address pc) {
   }
 }
 
-void RawNativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
-}
-
-void RawNativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
-  int *a = (int *)verified_entry;
-  a[0] = not_entrant_illegal_instruction; // always illegal
-  ICache::invalidate_range((address)&a[0], sizeof a[0]);
-}
-
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   int offset = (int)(entry - code_pos - 8);
   assert(offset < 0x2000000 && offset > -0x2000000, "encoding constraint");

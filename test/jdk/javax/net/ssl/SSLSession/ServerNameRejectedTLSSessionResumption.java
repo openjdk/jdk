@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,20 @@ import javax.net.ssl.StandardConstants;
  *          between the server and the client happens correctly without any
  *          errors
  * @library /javax/net/ssl/templates
- * @run main/othervm -Djavax.net.debug=all
- *                   ServerNameRejectedTLSSessionResumption
+ * @run main/othervm ServerNameRejectedTLSSessionResumption
  */
 public class ServerNameRejectedTLSSessionResumption
         extends SSLContextTemplate {
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=all
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
 
     private static final String CLIENT_REQUESTED_SNI = "client.local";
     // dummy host, no connection is attempted in this test
@@ -56,6 +65,10 @@ public class ServerNameRejectedTLSSessionResumption
     private static final int PEER_PORT = 12345;
 
     public static void main(final String[] args) throws Exception {
+        if (debug) {
+            System.setProperty("javax.net.debug", "all");
+        }
+
         new ServerNameRejectedTLSSessionResumption().runTest();
     }
 

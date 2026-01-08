@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,15 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 entries = new StackMapDecoder(classReader, payloadStart, ctx, StackMapDecoder.initFrameLocals(method)).entries();
             }
             return entries;
+        }
+
+        @Override
+        public void writeTo(BufWriterImpl buf) {
+            if (buf.canWriteDirect(classReader) && buf.labelsMatch(ctx)) {
+                classReader.copyBytesTo(buf, payloadStart - NAME_AND_LENGTH_PREFIX, payloadLen() + NAME_AND_LENGTH_PREFIX);
+            } else {
+                attributeMapper().writeAttribute(buf, this);
+            }
         }
     }
 

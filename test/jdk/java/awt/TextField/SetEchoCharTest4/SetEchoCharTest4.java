@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.awt.Frame;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.InvocationTargetException;
 
 /*
  * @test
@@ -54,16 +53,17 @@ public class SetEchoCharTest4 extends Frame implements ActionListener {
 
                     Make sure the actual text matches what you typed in for each field.
                     Press Pass if everything's ok, otherwise Fail
-           """;
+                    """;
 
     public SetEchoCharTest4() {
+        super("SetEchoCharTest4");
         setLayout(new FlowLayout());
         tf1.setEchoChar('*');
         tf2.setEchoChar('$');
         tf3.setEchoChar('#');
         addStuff();
         b.addActionListener(this);
-        setSize (200,200);
+        setSize (300, 150);
     }
 
     private void addStuff() {
@@ -78,7 +78,6 @@ public class SetEchoCharTest4 extends Frame implements ActionListener {
         PassFailJFrame.log("TextField2 = " + tf2.getText());
         PassFailJFrame.log("TextField3 = " + tf3.getText());
         PassFailJFrame.log("--------------");
-        setVisible(false);
         remove(tf1);
         remove(tf2);
         remove(tf3);
@@ -86,16 +85,14 @@ public class SetEchoCharTest4 extends Frame implements ActionListener {
         addStuff();
     }
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
-                .title("Set Echo Character Test")
-                .testUI(SetEchoCharTest4::new)
-                .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 1)
-                .columns(40)
-                .logArea()
-                .build()
-                .awaitAndCheck();
+                      .title("Set Echo Character Test")
+                      .testUI(SetEchoCharTest4::new)
+                      .instructions(INSTRUCTIONS)
+                      .columns(40)
+                      .logArea()
+                      .build()
+                      .awaitAndCheck();
     }
 }

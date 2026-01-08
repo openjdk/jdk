@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,11 @@ record MemoryModuleFinder(Map<String, byte[]> classes,
                 try {
                     return Optional.of(path.toUri());
                 } catch (IOError error) {
-                    throw (IOException) error.getCause();
+                    Throwable cause = error.getCause();
+                    if (cause instanceof IOException e) {
+                        throw e;
+                    }
+                    throw new RuntimeException(cause);
                 }
             } else {
                 return Optional.empty();

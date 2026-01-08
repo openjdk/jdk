@@ -84,9 +84,7 @@ public final class FallbackLinker extends AbstractLinker {
         assertNotEmpty(function);
         MemorySegment cif = makeCif(inferredMethodType, function, options, Arena.ofAuto());
 
-        int capturedStateMask = options.capturedCallState()
-                .mapToInt(CapturableState::mask)
-                .reduce(0, (a, b) -> a | b);
+        int capturedStateMask = options.capturedCallStateMask();
         DowncallData invData = new DowncallData(cif, function.returnLayout().orElse(null),
                 function.argumentLayouts(), capturedStateMask, options.allowsHeapAccess());
 

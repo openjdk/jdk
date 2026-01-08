@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import jdk.internal.icu.text.UCharacterIterator;
  * @author ram
  */
 
-public class CharacterIteratorWrapper extends UCharacterIterator {
+public class CharacterIteratorWrapper extends UCharacterIterator implements Cloneable {
 
     private CharacterIterator iterator;
 
@@ -135,7 +135,7 @@ public class CharacterIteratorWrapper extends UCharacterIterator {
      * Creates a clone of this iterator.  Clones the underlying character iterator.
      * @see UCharacterIterator#clone()
      */
-    public Object clone(){
+    public CharacterIteratorWrapper clone(){
         try {
             CharacterIteratorWrapper result = (CharacterIteratorWrapper) super.clone();
             result.iterator = (CharacterIterator)this.iterator.clone();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,16 @@
  * @summary Tests for standard JDI connector (without failover) -- launching
  * @modules jdk.jshell/jdk.jshell.execution
  * @build KullaTesting ExecutionControlTestBase
- * @run testng JdiLaunchingExecutionControlTest
+ * @run junit JdiLaunchingExecutionControlTest
  * @key intermittent
  */
 
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+import org.junit.jupiter.api.BeforeEach;
 
-@Test
 public class JdiLaunchingExecutionControlTest extends ExecutionControlTestBase {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(builder -> builder.executionEngine("jdi:launch(true)"));

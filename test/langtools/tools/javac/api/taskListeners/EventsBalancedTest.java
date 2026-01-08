@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,9 @@ public class EventsBalancedTest {
 
         task.setTaskListener(listener);
 
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
 
         for (Entry<Kind, Integer> e : listener.kind2Count.entrySet()) {
             if (e.getValue() != null && e.getValue() != 0) {

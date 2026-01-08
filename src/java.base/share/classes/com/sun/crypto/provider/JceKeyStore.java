@@ -661,6 +661,10 @@ public final class JceKeyStore extends KeyStoreSpi {
                     dos.close();
                 }
             }
+
+            if (debug != null) {
+                emitWeakKeyStoreWarning();
+            }
         }
     }
 
@@ -862,6 +866,10 @@ public final class JceKeyStore extends KeyStoreSpi {
                         secretKeyCount);
                 }
 
+                if (debug != null) {
+                    emitWeakKeyStoreWarning();
+                }
+
                 /*
                  * If a password has been provided, we check the keyed digest
                  * at the end. If this check fails, the store has been tampered
@@ -977,5 +985,13 @@ public final class JceKeyStore extends KeyStoreSpi {
 
             return Status.UNDECIDED;
         }
+    }
+
+    private void emitWeakKeyStoreWarning() {
+        debug.println("WARNING: JCEKS uses outdated cryptographic "
+                + "algorithms and will be removed in a future "
+                + "release. Migrate to PKCS12 using:");
+        debug.println("keytool -importkeystore -srckeystore <keystore> "
+                + "-destkeystore <keystore> -deststoretype pkcs12");
     }
 }

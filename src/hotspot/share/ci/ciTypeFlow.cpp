@@ -2924,7 +2924,7 @@ void ciTypeFlow::flow_types() {
 
   // Continue flow analysis until fixed point reached
 
-  debug_only(int max_block = _next_pre_order;)
+  DEBUG_ONLY(int max_block = _next_pre_order;)
 
   while (!work_list_empty()) {
     Block* blk = work_list_next();

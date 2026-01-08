@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,15 +243,7 @@ public class crstepreq002 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-
-        BreakpointRequest bpRequest = settingBreakpoint(mainThread,
-                                             debuggeeClass,
-                                            bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -283,7 +275,7 @@ public class crstepreq002 extends JDIBase {
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ variable part
 
-            thread = debuggee.threadByNameOrThrow(threadName);
+            thread = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName);
 
             if (StepRequest.STEP_MIN > StepRequest.STEP_LINE) {
                 maxSize = StepRequest.STEP_MIN;

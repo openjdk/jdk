@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,11 @@ public class Tls13PacketSize extends SSLSocketTemplate {
         if (extra >= 16383) {    // 16383: 2^14 - 1 byte read above
             throw new Exception(
                     "Server record plaintext exceeds 2^14 octets: " + extra);
+        }
+
+        int drained = 1;
+        while (drained < appData.length) {
+            drained += sslIS.read(appData, drained, appData.length - drained);
         }
     }
 }

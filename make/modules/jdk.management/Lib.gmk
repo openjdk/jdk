@@ -38,14 +38,9 @@ ifeq ($(call isTargetOs, windows), true)
   LIBMANAGEMENT_EXT_CFLAGS := -DPSAPI_VERSION=1
 endif
 
-LIBMANAGEMENT_EXT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
-  LIBMANAGEMENT_EXT_OPTIMIZATION := LOW
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     NAME := management_ext, \
-    OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
+    OPTIMIZATION := HIGH, \
     DISABLED_WARNINGS_gcc_DiagnosticCommandImpl.c := unused-variable, \
     DISABLED_WARNINGS_clang_DiagnosticCommandImpl.c := unused-variable, \
     DISABLED_WARNINGS_clang_UnixOperatingSystem.c := format-nonliteral, \

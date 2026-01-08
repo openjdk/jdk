@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class ReferenceParser {
         Name member;
         List<JCTree> paramTypes;
 
-        Log.DeferredDiagnosticHandler dh = new Log.DeferredDiagnosticHandler(fac.log);
+        Log.DeferredDiagnosticHandler dh = fac.log.new DeferredDiagnosticHandler();
 
         try {
             int slash = sig.indexOf("/");
@@ -211,6 +211,11 @@ public class ReferenceParser {
             if (p.token().kind != TokenKind.EOF) {
                 throw new ParseException(beginIndex + p.token().pos, "dc.ref.unexpected.input");
             }
+            Tree typeAnno = new TypeAnnotationFinder().scan(tree, null);
+            if (typeAnno != null) {
+                int annoPos = ((JCTree) typeAnno).getStartPosition();
+                throw new ParseException(beginIndex + annoPos, "dc.ref.annotations.not.allowed");
+            }
             checkDiags(dh, beginIndex);
             return tree;
         } finally {
@@ -278,9 +283,10 @@ public class ReferenceParser {
     }
 
     private void checkDiags(Log.DeferredDiagnosticHandler h, int offset) throws ParseException {
-        JCDiagnostic d = h.getDiagnostics().peek();
-        if (d != null) {
-            throw new ParseException(offset + ((int) d.getPosition()), "dc.ref.syntax.error");
+        java.util.List<JCDiagnostic> diagnostics = h.getDiagnostics();
+        if (!diagnostics.isEmpty()) {
+            int pos = offset + (int)diagnostics.get(0).getPosition();
+            throw new ParseException(pos, "dc.ref.syntax.error");
         }
     }
 

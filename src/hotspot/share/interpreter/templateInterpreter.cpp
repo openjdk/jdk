@@ -22,9 +22,9 @@
  *
  */
 
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"

@@ -31,6 +31,7 @@ import java.util.Random;
 /*
  * @test
  * @bug 8323220
+ * @key randomness
  * @summary Test loop invariant code motion of add/sub through reassociation
  * @library /test/lib /
  * @run driver compiler.c2.loopopts.InvariantCodeMotionReassociateAddSub
@@ -345,7 +346,7 @@ public class InvariantCodeMotionReassociateAddSub {
 
     @Test
     @Arguments(setup = "setup")
-    @IR(counts = {IRNode.ADD_I, "3"})
+    @IR(counts = {IRNode.ADD_I, "2"})
     @IR(counts = {IRNode.SUB_I, "1"})
     public int addSubInt(int inv1, int inv2, int size) {
         int result = -1;
@@ -381,7 +382,7 @@ public class InvariantCodeMotionReassociateAddSub {
 
     @Test
     @Arguments(setup = "setup")
-    @IR(counts = {IRNode.ADD_I, "3"})
+    @IR(counts = {IRNode.ADD_I, "2"})
     @IR(counts = {IRNode.SUB_I, "1"})
     public int addSubInt2(int inv1, int inv2, int size) {
         int result = -1;
@@ -417,7 +418,7 @@ public class InvariantCodeMotionReassociateAddSub {
 
     @Test
     @Arguments(setup = "setup")
-    @IR(counts = {IRNode.ADD_I, "3"})
+    @IR(counts = {IRNode.ADD_I, "2"})
     @IR(counts = {IRNode.SUB_I, "1"})
     public int addSubInt3(int inv1, int inv2, int size) {
         int result = -1;
@@ -453,7 +454,7 @@ public class InvariantCodeMotionReassociateAddSub {
 
     @Test
     @Arguments(setup = "setup")
-    @IR(counts = {IRNode.ADD_I, "2"})
+    @IR(counts = {IRNode.ADD_I, "1"})
     @IR(counts = {IRNode.SUB_I, "2"})
     public int subSubInt(int inv1, int inv2, int size) {
         int result = -1;
@@ -489,7 +490,7 @@ public class InvariantCodeMotionReassociateAddSub {
 
     @Test
     @Arguments(setup = "setup")
-    @IR(counts = {IRNode.ADD_I, "2"})
+    @IR(counts = {IRNode.ADD_I, "1"})
     @IR(counts = {IRNode.SUB_I, "2"})
     public int subSubInt2(int inv1, int inv2, int size) {
         int result = -1;

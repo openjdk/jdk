@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "memory/arena.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 class outputStream;
 class NativeCallStack;
@@ -41,7 +41,7 @@ class NativeCallStackPrinter {
   // Cache-related data are mutable to be able to use NativeCallStackPrinter as
   // inline member in classes with const printing methods.
   mutable Arena _text_storage;
-  mutable ResourceHashtable<address, const char*, 293, AnyObj::C_HEAP, mtNMT> _cache;
+  mutable HashTable<address, const char*, 293, AnyObj::C_HEAP, mtNMT> _cache;
   outputStream* const _out;
 public:
   NativeCallStackPrinter(outputStream* out);

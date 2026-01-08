@@ -506,10 +506,10 @@ public class TestG1BarrierGeneration {
     @Test
     @IR(failOn = IRNode.SAFEPOINT)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, ">1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
-        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, ">1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
         failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
@@ -884,10 +884,30 @@ public class TestG1BarrierGeneration {
             Outer o = new Outer();
             Object oldVal = new Object();
             o.f = oldVal;
+            Object cmpVal = new Object();
+            Object newVal = new Object();
+            Object oldVal2 = testCompareAndExchange(o, cmpVal, newVal);
+            Asserts.assertEquals(oldVal2, oldVal);
+            Asserts.assertEquals(o.f, oldVal);
+        }
+        {
+            Outer o = new Outer();
+            Object oldVal = new Object();
+            o.f = oldVal;
             Object newVal = new Object();
             boolean b = testCompareAndSwap(o, oldVal, newVal);
             Asserts.assertTrue(b);
             Asserts.assertEquals(o.f, newVal);
+        }
+        {
+            Outer o = new Outer();
+            Object oldVal = new Object();
+            o.f = oldVal;
+            Object cmpVal = new Object();
+            Object newVal = new Object();
+            boolean b = testCompareAndSwap(o, cmpVal, newVal);
+            Asserts.assertFalse(b);
+            Asserts.assertEquals(o.f, oldVal);
         }
         {
             Outer o = new Outer();

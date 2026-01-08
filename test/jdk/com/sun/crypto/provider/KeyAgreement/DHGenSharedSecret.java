@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@ import jdk.test.lib.security.SecurityUtils;
 
 public class DHGenSharedSecret {
 
+    private static final String PROVIDER_NAME =
+            System.getProperty("test.provider.name", "SunJCE");
+
     public static void main(String[] args) throws Exception {
         DHGenSharedSecret test = new DHGenSharedSecret();
         test.run();
@@ -57,7 +60,7 @@ public class DHGenSharedSecret {
 
         // generate keyPairs using parameters
         KeyPairGenerator keyGen =
-            KeyPairGenerator.getInstance("DH", "SunJCE");
+            KeyPairGenerator.getInstance("DH", PROVIDER_NAME);
         keyGen.initialize(spec);
 
         // Alice generates her key pairs
@@ -77,11 +80,11 @@ public class DHGenSharedSecret {
         // bob uses it to generate Secret
         X509EncodedKeySpec x509Spec =
             new X509EncodedKeySpec(alicePubKeyEnc);
-        KeyFactory bobKeyFac = KeyFactory.getInstance("DH", "SunJCE");
+        KeyFactory bobKeyFac = KeyFactory.getInstance("DH", PROVIDER_NAME);
         PublicKey alicePubKey = bobKeyFac.generatePublic(x509Spec);
 
 
-        KeyAgreement bobAlice = KeyAgreement.getInstance("DH", "SunJCE");
+        KeyAgreement bobAlice = KeyAgreement.getInstance("DH", PROVIDER_NAME);
         start = System.currentTimeMillis();
         bobAlice.init(keyB.getPrivate());
         bobAlice.doPhase(alicePubKey, true);

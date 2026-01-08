@@ -52,6 +52,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.EllipticCurve;
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
@@ -259,7 +260,12 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
             throw new NoSuchAlgorithmException(
                     "Unsupported secret key algorithm: " + algorithm);
         }
-        return new SecretKeySpec(engineGenerateSecret(), algorithm);
+        byte[] bytes = engineGenerateSecret();
+        try {
+            return new SecretKeySpec(bytes, algorithm);
+        } finally {
+            Arrays.fill(bytes, (byte)0);
+        }
     }
 
     private static

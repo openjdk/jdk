@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1214,8 +1214,10 @@ public class GregorianCalendar extends Calendar {
                 d.setHours(hourOfDay);
                 time = calsys.getTime(d);
 
-                // If we stay on the same wall-clock time, try the next or previous hour.
-                if (internalGet(HOUR_OF_DAY) == d.getHours()) {
+                // If the rolled amount is not a full HOUR/HOUR_OF_DAY (12/24-hour) cycle and
+                // if we stay on the same wall-clock time, try the next or previous hour.
+                if (((field == HOUR_OF_DAY && amount % 24 != 0) || (field == HOUR && amount % 12 != 0))
+                        && internalGet(HOUR_OF_DAY) == d.getHours()) {
                     hourOfDay = getRolledValue(rolledValue, amount > 0 ? +1 : -1, min, max);
                     if (field == HOUR && internalGet(AM_PM) == PM) {
                         hourOfDay += 12;

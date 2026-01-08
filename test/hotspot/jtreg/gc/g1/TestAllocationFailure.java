@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,7 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   gc.g1.TestAllocationFailure
+ * @run driver gc.g1.TestAllocationFailure
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -59,7 +56,6 @@ public class TestAllocationFailure {
     }
 
     static class GCTestWithAllocationFailure {
-        private static byte[] garbage;
         private static byte[] largeObject;
         private static Object[] holder = new Object[200]; // Must be larger than G1GCAllocationFailureALotCount
 
@@ -70,7 +66,7 @@ public class TestAllocationFailure {
             // (Heap size is 32M, we use 17MB for the large object above)
             // which is larger than G1GCAllocationFailureALotInterval.
             for (int i = 0; i < 16 * 1024; i++) {
-                holder[i % holder.length] = new byte[1024];
+                holder[i % holder.length] = new Object[256];
             }
             System.out.println("Done");
         }

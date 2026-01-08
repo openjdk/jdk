@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestShort
  */
+
+import jtreg.SkippedException;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
@@ -90,12 +92,10 @@ public class TestShort extends PKCS11Test {
     @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyAgreement", "DH") == null) {
-            System.out.println("DH not supported, skipping");
-            return;
+            throw new SkippedException("DH not supported, skipping");
         }
+
         try {
-            DHPublicKeySpec publicSpec;
-            DHPrivateKeySpec privateSpec;
             KeyFactory kf = KeyFactory.getInstance("DH", provider);
             KeyAgreement ka = KeyAgreement.getInstance("DH", provider);
 
@@ -106,7 +106,7 @@ public class TestShort extends PKCS11Test {
             ka.init(pr1);
             ka.doPhase(pu2, true);
             byte[] n2 = ka.generateSecret();
-            if (Arrays.equals(s2, n2) == false) {
+            if (!Arrays.equals(s2, n2)) {
                 throw new Exception("mismatch 2");
             }
             System.out.println("short ok");
@@ -114,7 +114,7 @@ public class TestShort extends PKCS11Test {
             ka.init(pr1);
             ka.doPhase(pu3, true);
             byte[] n3 = ka.generateSecret();
-            if (Arrays.equals(s3, n3) == false) {
+            if (!Arrays.equals(s3, n3)) {
                 throw new Exception("mismatch 3");
             }
             System.out.println("normal ok");
@@ -123,27 +123,6 @@ public class TestShort extends PKCS11Test {
             ex.printStackTrace();
             throw ex;
         }
-
-/*
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", provider);
-        kpg.initialize(512);
-//        KeyPair kp1 = kpg.generateKeyPair();
-//      System.out.println(kp1.getPublic());
-//      System.out.println(kp1.getPrivate());
-        while (true) {
-            KeyAgreement ka = KeyAgreement.getInstance("DH", provider);
-            ka.init(pr1);
-            KeyPair kp2 = kpg.generateKeyPair();
-            ka.doPhase(kp2.getPublic(), true);
-            byte[] sec = ka.generateSecret();
-            if (sec.length == 64) {
-                System.out.println(kp2.getPrivate());
-                System.out.println(kp2.getPublic());
-                System.out.println(toString(sec));
-                break;
-            }
-        }
-/**/
     }
 
     public static void main(String[] args) throws Exception {

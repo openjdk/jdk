@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ class AdobeMarkerSegment extends MarkerSegment {
         updateFromNativeNode(node, true);
     }
 
+    @Override
     IIOMetadataNode getNativeNode() {
         IIOMetadataNode node = new IIOMetadataNode("app14Adobe");
         node.setAttribute("version", Integer.toString(version));
@@ -108,6 +109,7 @@ class AdobeMarkerSegment extends MarkerSegment {
      * Writes the data for this segment to the stream in
      * valid JPEG format.
      */
+    @Override
     void write(ImageOutputStream ios) throws IOException {
         length = 14;
         writeTag(ios);
@@ -124,6 +126,7 @@ class AdobeMarkerSegment extends MarkerSegment {
         (new AdobeMarkerSegment(transform)).write(ios);
     }
 
+    @Override
     void print () {
         printTag("Adobe APP14");
         System.out.print("Version: ");

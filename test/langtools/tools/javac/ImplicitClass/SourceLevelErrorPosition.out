@@ -1,2 +1,2 @@
-SourceLevelErrorPosition.java:8:1: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.implicit.classes)
+SourceLevelErrorPosition.java:8:1: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.implicit.classes), 24, 25
 1 error

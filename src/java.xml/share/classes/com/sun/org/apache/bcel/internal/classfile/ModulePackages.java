@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,20 +27,21 @@ import java.util.Arrays;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.util.Args;
+import jdk.xml.internal.Utils;
 
 /**
  * This class is derived from <em>Attribute</em> and represents the list of packages that are exported or opened by the
  * Module attribute. There may be at most one ModulePackages attribute in a ClassFile structure.
  *
  * @see Attribute
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public final class ModulePackages extends Attribute {
 
     private int[] packageIndexTable;
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
      * @param nameIndex Index in constant pool
      * @param length Content length in bytes
@@ -65,7 +66,7 @@ public final class ModulePackages extends Attribute {
      */
     public ModulePackages(final int nameIndex, final int length, final int[] packageIndexTable, final ConstantPool constantPool) {
         super(Const.ATTR_MODULE_PACKAGES, nameIndex, length, constantPool);
-        this.packageIndexTable = packageIndexTable != null ? packageIndexTable : Const.EMPTY_INT_ARRAY;
+        this.packageIndexTable = Utils.createEmptyArrayIfNull(packageIndexTable);
         Args.requireU2(this.packageIndexTable.length, "packageIndexTable.length");
     }
 
@@ -145,7 +146,7 @@ public final class ModulePackages extends Attribute {
      * @param packageIndexTable the list of package indexes Also redefines number_of_packages according to table length.
      */
     public void setPackageIndexTable(final int[] packageIndexTable) {
-        this.packageIndexTable = packageIndexTable != null ? packageIndexTable : Const.EMPTY_INT_ARRAY;
+        this.packageIndexTable = Utils.createEmptyArrayIfNull(packageIndexTable);
     }
 
     /**

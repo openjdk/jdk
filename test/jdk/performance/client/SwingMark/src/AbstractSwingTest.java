@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -85,15 +85,6 @@ public abstract class AbstractSwingTest {
           * It's up to you
           */
         public abstract void runTest();
-
-        /**
-          * This method is used to determine if a test can be run from within
-          * an applet.  If your test will cause security exceptions when run as
-          * an applet then you should return false from this method.
-          */
-        public boolean canRunInApplet() {
-                return true;
-        }
 
    public int getPaintCount() {
       return paintCount;

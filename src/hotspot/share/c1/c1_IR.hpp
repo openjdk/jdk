@@ -234,7 +234,7 @@ class IRScopeDebugInfo: public CompilationResourceObj {
   //Whether we should reexecute this bytecode for deopt
   bool should_reexecute();
 
-  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool reexecute, bool is_method_handle_invoke = false) {
+  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool reexecute) {
     if (caller() != nullptr) {
       // Order is significant:  Must record caller first.
       caller()->record_debug_info(recorder, pc_offset, false/*reexecute*/);
@@ -248,7 +248,7 @@ class IRScopeDebugInfo: public CompilationResourceObj {
     bool has_ea_local_in_scope = false;
     bool arg_escape = false;
     recorder->describe_scope(pc_offset, methodHandle(), scope()->method(), bci(),
-                             reexecute, rethrow_exception, is_method_handle_invoke, return_oop,
+                             reexecute, rethrow_exception, return_oop,
                              has_ea_local_in_scope, arg_escape, locvals, expvals, monvals);
   }
 };
@@ -262,7 +262,6 @@ class CodeEmitInfo: public CompilationResourceObj {
   XHandlers*        _exception_handlers;
   OopMap*           _oop_map;
   ValueStack*       _stack;                      // used by deoptimization (contains also monitors
-  bool              _is_method_handle_invoke;    // true if the associated call site is a MethodHandle call site.
   bool              _deoptimize_on_exception;
   bool              _force_reexecute;            // force the reexecute flag on, used for patching stub
 
@@ -287,9 +286,6 @@ class CodeEmitInfo: public CompilationResourceObj {
 
   void add_register_oop(LIR_Opr opr);
   void record_debug_info(DebugInformationRecorder* recorder, int pc_offset);
-
-  bool     is_method_handle_invoke() const { return _is_method_handle_invoke;     }
-  void set_is_method_handle_invoke(bool x) {        _is_method_handle_invoke = x; }
 
   bool     force_reexecute() const         { return _force_reexecute;             }
   void     set_force_reexecute()           { _force_reexecute = true;             }

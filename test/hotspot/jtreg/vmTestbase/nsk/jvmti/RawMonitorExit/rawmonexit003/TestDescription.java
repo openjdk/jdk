@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@
  *         4431533: TEST_BUG: destroyed raw monitor can be occasionally valid
  *     Ported from JVMDI.
  *
+ * @comment The test intentionally passes a bad argument to the function to verify error checking,
+            which causes a false positive from the ASAN lib
+ * @requires !vm.asan
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm/native -agentlib:rawmonexit003 nsk.jvmti.RawMonitorExit.rawmonexit003

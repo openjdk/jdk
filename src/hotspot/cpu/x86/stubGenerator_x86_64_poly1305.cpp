@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2022, 2025, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -910,21 +910,21 @@ void StubGenerator::poly1305_process_blocks_avx512(
 // and accumulator will point to the current accumulator value
 address StubGenerator::generate_poly1305_processBlocks() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::poly1305_processBlocks_id;
+  StubId stub_id = StubId::stubgen_poly1305_processBlocks_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();
 
   // Save all 'SOE' registers
-  __ push(rbx);
+  __ push_ppx(rbx);
   #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
   #endif
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
 
   // Register Map
   const Register input        = rdi; // msg
@@ -1016,15 +1016,15 @@ address StubGenerator::generate_poly1305_processBlocks() {
   // Write output
   poly1305_limbs_out(a0, a1, a2, accumulator, t0, t1);
 
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
   #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
   #endif
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 
   __ leave();
   __ ret(0);
@@ -1169,7 +1169,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   // Setup stack frame
   // Save rbp and rsp
-  __ push(rbp);
+  __ push_ppx(rbp);
   __ movq(rbp, rsp);
   // Align stack and reserve space
   __ andq(rsp, -32);
@@ -1483,7 +1483,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   // Save rbp and rsp; clear stack frame
     __ movq(rsp, rbp);
-    __ pop(rbp);
+    __ pop_ppx(rbp);
 
 }
 

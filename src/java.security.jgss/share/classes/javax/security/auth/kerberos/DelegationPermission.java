@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * latter service principal is specified to restrict the use of a
  * proxiable ticket.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */
 
+@Deprecated(since="25", forRemoval=true)
 public final class DelegationPermission extends BasicPermission
     implements java.io.Serializable {
 
@@ -249,6 +250,7 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      * the collection, false if not.
      */
     @Override
+    @SuppressWarnings("removal")
     public boolean implies(Permission permission) {
         if (! (permission instanceof DelegationPermission))
             return false;
@@ -270,6 +272,7 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      *                                has been marked readonly
      */
     @Override
+    @SuppressWarnings("removal")
     public void add(Permission permission) {
         if (! (permission instanceof DelegationPermission))
             throw new IllegalArgumentException("invalid permission: "+

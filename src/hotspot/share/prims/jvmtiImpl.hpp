@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,28 +275,6 @@ class VM_VirtualThreadGetReceiver : public VM_VirtualThreadGetOrSetLocal {
  public:
   VM_VirtualThreadGetReceiver(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread, jint depth, bool self);
   const char* name() const                       { return "virtual thread get receiver"; }
-};
-
-
-///////////////////////////////////////////////////////////////
-//
-// class JvmtiSuspendControl
-//
-// Convenience routines for suspending and resuming threads.
-//
-// All attempts by JVMTI to suspend and resume threads must go through the
-// JvmtiSuspendControl interface.
-//
-// methods return true if successful
-//
-class JvmtiSuspendControl : public AllStatic {
-public:
-  // suspend the thread, taking it to a safepoint
-  static bool suspend(JavaThread *java_thread);
-  // resume the thread
-  static bool resume(JavaThread *java_thread);
-
-  static void print();
 };
 
 

@@ -51,7 +51,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
         $(LIBMLIB_IMAGE_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
     DISABLED_WARNINGS_clang_mlib_ImageCreate.c := unused-function, \
-    LIBS_unix := $(LIBDL) $(LIBM), \
+    LIBS_unix := $(LIBM), \
 ))
 
 TARGETS += $(BUILD_LIBMLIB_IMAGE)
@@ -67,8 +67,6 @@ ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we can't include our own SRC path
   # as includes, instead the system headers should be used.
   LIBLCMS_HEADERS_FROM_SRC := false
-  # FIXME: Keep old behavior and reset LCMS_CFLAGS. This is likely a bug.
-  LCMS_CFLAGS :=
 endif
 
 ifeq ($(TOOLCHAIN_TYPE)+$(TOOLCHAIN_VERSION), clang+10.1)
@@ -89,7 +87,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
         libawt/java2d \
         java.base:libjvm, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation type-limits \
+    DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation \
         unused-variable, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
     JDK_LIBS := libawt java.base:libjava, \
@@ -166,6 +164,24 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/libpng
+    LIBSPLASHSCREEN_CFLAGS += -DPNG_NO_MMX_CODE -DPNG_ARM_NEON_OPT=0 \
+      -DPNG_ARM_NEON_IMPLEMENTATION=0 -DPNG_LOONGARCH_LSX_OPT=0
+
+    ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
+      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+    endif
+
+    # The libpng bundled with jdk is a reduced version which does not
+    # contain .png_init_filter_functions_vsx.
+    # Therefore we need to disable PNG_POWERPC_VSX_OPT explicitly by setting
+    # it to 0. If this define is not set, it would be automatically set to 2,
+    # because
+    #   "#if defined(__PPC64__) && defined(__ALTIVEC__) && defined(__VSX__)"
+    # expands to true. This would results in the fact that
+    # .png_init_filter_functions_vsx is needed in libpng.
+    ifeq ($(call isTargetOs, aix), true)
+      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+    endif
   else
     LIBSPLASHSCREEN_EXCLUDES += libpng
   endif
@@ -178,24 +194,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += $(LIBZIP_OBJS)
   endif
 
-  LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE \
-      -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_IMPLEMENTATION=0
-
-  ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
-    LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
-  endif
-
-  # The external libpng submitted in the jdk is a reduced version
-  # which does not contain .png_init_filter_functions_vsx.
-  # Therefore we need to disable PNG_POWERPC_VSX_OPT explicitly by setting
-  # it to 0. If this define is not set, it would be automatically set to 2,
-  # because
-  #   "#if defined(__PPC64__) && defined(__ALTIVEC__) && defined(__VSX__)"
-  # expands to true. This would results in the fact that
-  # .png_init_filter_functions_vsx is needed in libpng.
-  ifeq ($(call isTargetOs, aix), true)
-    LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
-  endif
+  LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN
 
   ifeq ($(call isTargetOs, macosx), true)
     # libsplashscreen on macosx does not use the unix code
@@ -227,10 +226,13 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := SIZE, \
+      LINK_TIME_OPTIMIZATION := true, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
-          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
+          $(ICONV_CFLAGS), \
       CXXFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
-          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
+          $(ICONV_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
@@ -256,19 +258,20 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
+      LDFLAGS := $(ICONV_LDFLAGS), \
       LDFLAGS_windows := -delayload:user32.dll, \
       JDK_LIBS_windows := java.base:libjava, \
       JDK_LIBS_macosx := libosxapp, \
-      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS), \
+      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS) $(ICONV_LIBS), \
       LIBS_unix := $(LIBM) $(LIBPTHREAD), \
-      LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
-      LIBS_macosx := -liconv \
+      LIBS_linux := $(X_LIBS) -lX11 -lXext, \
+      LIBS_macosx := \
           -framework ApplicationServices \
           -framework Cocoa \
           -framework Foundation \
           -framework Metal \
           -framework Security, \
-      LIBS_aix := $(LIBDL) -liconv $(X_LIBS) -lX11 -lXext, \
+      LIBS_aix := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
       LIBS_windows := delayimp.lib gdi32.lib kernel32.lib user32.lib, \
       STATIC_LIB_EXCLUDE_OBJS := $(LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS), \
   ))

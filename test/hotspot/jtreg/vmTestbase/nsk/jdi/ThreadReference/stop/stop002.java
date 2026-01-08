@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class stop002 {
     static final String DEBUGGEE_STOP_LOOP2_FIELD = "stopLooping2";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 88;
+    static final int DEBUGGEE_STOPATLINE = 90;
 
     static final int DELAY = 500; // in milliseconds
 
@@ -115,21 +115,22 @@ public class stop002 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef = debuggee.threadByName(DEBUGGEE_THRNAME);
-        if (thrRef == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-
         Field stopLoop1 = null;
         Field stopLoop2 = null;
         ObjectReference objRef = null;
         ObjectReference throwableRef = null;
+
         try {
             // debuggee main class
             mainClass = debuggee.classByName(DEBUGGEE_CLASS);
+
+            ThreadReference thrRef = debuggee.threadByFieldName(mainClass, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRNAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
 
             suspendAtBP(mainClass, DEBUGGEE_STOPATLINE);
             objRef = findObjRef(thrRef, DEBUGGEE_NON_THROWABLE_VAR);

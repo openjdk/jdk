@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,7 @@ public class Log1pTests {
             {0x1.7688bb5394bd3p325,     0x1.c34e8276daa48p7},
             {0x1.d42aea2878b45p328,     0x1.c7e96ee5c7f87p7},
             {0x1.249ad2594989p332,      0x1.cc845b54b54a6p7},
+            {0x1.300240b87b096p-4,      0x1.25417bd05ba95p-4}, // nextUp from Julia value
 
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM

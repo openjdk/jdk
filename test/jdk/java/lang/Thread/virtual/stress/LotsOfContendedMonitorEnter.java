@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,31 +24,35 @@
 /*
  * @test id=default
  * @summary Test virtual threads entering a lot of monitors with contention
- * @requires vm.opt.LockingMode != 1
  * @library /test/lib
- * @run main LotsOfContendedMonitorEnter
+ * @run main/timeout=480 LotsOfContendedMonitorEnter
  */
 
-/*
- * @test id=LM_LIGHTWEIGHT
- * @requires vm.opt.LockingMode != 1
- * @library /test/lib
- * @run main/othervm -XX:LockingMode=2 LotsOfContendedMonitorEnter
- */
-
+import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CountDownLatch;
 import jdk.test.lib.thread.VThreadRunner;
 
 public class LotsOfContendedMonitorEnter {
+    static int depth;
 
     public static void main(String[] args) throws Exception {
-        int depth;
         if (args.length > 0) {
             depth = Integer.parseInt(args[0]);
         } else {
             depth = 1024;
         }
-        VThreadRunner.run(() -> testContendedEnter(depth));
+
+        var exRef = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().start(() -> {
+            try {
+                testContendedEnter(depth);
+            } catch (Exception e) {
+                exRef.set(e);
+            }
+        });
+        thread.join();
+        assert exRef.get() == null;
     }
 
     /**
@@ -56,6 +60,7 @@ public class LotsOfContendedMonitorEnter {
      * attempts to enter around the same time, then repeat to the given depth.
      */
     private static void testContendedEnter(int depthRemaining) throws Exception {
+        boolean doLog = depthRemaining % 10 == 0;
         if (depthRemaining > 0) {
             var lock = new Object();
 
@@ -89,11 +94,17 @@ public class LotsOfContendedMonitorEnter {
                     // signal thread to enter monitor again, it should block
                     signal.countDown();
                     await(thread, Thread.State.BLOCKED);
+                    if (doLog) {
+                        System.out.println(Instant.now() + " => at depth: " + (depth - depthRemaining));
+                    }
                     testContendedEnter(depthRemaining - 1);
                 }
             } finally {
                 thread.join();
             }
+        }
+        if (doLog) {
+            System.out.println(Instant.now() + " => returning from depth: " + (depth - depthRemaining));
         }
     }
 

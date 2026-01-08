@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 6285901 6501089
  * @summary Check no data is written to wrong socket channel during async closing.
+ * @requires (os.family != "windows")
  */
 
 import java.io.IOException;
@@ -44,10 +45,6 @@ public class AsyncCloseChannel {
     static int targetPort;
 
     public static void main(String args[]) throws Exception {
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            System.err.println("WARNING: Still does not work on Windows!");
-            return;
-        }
         Thread ss = new SensorServer(); ss.start();
         Thread ts = new TargetServer(); ts.start();
 

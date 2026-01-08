@@ -42,26 +42,32 @@ template <typename T> class Array;
 //   - The list of all classes that are stored in the AOTConfiguration file.
 //   - The list of all classes that require AOT resolution of invokedynamic call sites.
 class FinalImageRecipes {
+  static constexpr int CP_RESOLVE_CLASS            = 0x1 << 0; // CP has preresolved class entries
+  static constexpr int CP_RESOLVE_FIELD_AND_METHOD = 0x1 << 1; // CP has preresolved field/method entries
+  static constexpr int CP_RESOLVE_INDY             = 0x1 << 2; // CP has preresolved indy entries
+  static constexpr int WAS_INITED                  = 0x1 << 3; // Class was initialized during training run
+
   // A list of all the archived classes from the preimage. We want to transfer all of these
   // into the final image.
   Array<Klass*>* _all_klasses;
 
-  // The classes who have resolved at least one indy CP entry during the training run.
-  // _indy_cp_indices[i] is a list of all resolved CP entries for _indy_klasses[i].
-  Array<InstanceKlass*>* _indy_klasses;
-  Array<Array<int>*>*    _indy_cp_indices;
+  // For each klass k _all_klasses->at(i): _cp_recipes->at(i) lists all the {klass,field,method,indy}
+  // cp indices that were resolved for k during the training run; _flags->at(i) has extra info about k.
+  Array<Array<int>*>* _cp_recipes;
+  Array<int>* _flags;
 
-  FinalImageRecipes() : _indy_klasses(nullptr), _indy_cp_indices(nullptr) {}
+  FinalImageRecipes() : _all_klasses(nullptr), _cp_recipes(nullptr), _flags(nullptr) {}
 
   void* operator new(size_t size) throw();
 
   // Called when dumping preimage
-  void record_recipes_impl();
+  void record_all_classes();
+  void record_recipes_for_constantpool();
 
   // Called when dumping final image
   void apply_recipes_impl(TRAPS);
   void load_all_classes(TRAPS);
-  void apply_recipes_for_invokedynamic(TRAPS);
+  void apply_recipes_for_constantpool(JavaThread* current);
 
 public:
   static void serialize(SerializeClosure* soc);

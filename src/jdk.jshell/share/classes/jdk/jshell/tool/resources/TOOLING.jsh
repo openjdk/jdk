@@ -8,9 +8,9 @@ void jmod(String... args) { run("jmod", args); }
 void jpackage(String... args) { run("jpackage", args); }
 
 void javap(Class<?> type) throws Exception {
+    if (type.isPrimitive() || type.isHidden() || type.isArray()) throw new IllegalArgumentException("Type has no class file: " + type);
     try {
-        var name = type.getCanonicalName();
-        if (name == null) throw new IllegalArgumentException("Type not supported: " + type);
+        var name = type.getName();
         if (type == Class.forName(name, false, ClassLoader.getSystemClassLoader())) {
             run("javap", "-c", "-v", "-s", name);
             return;

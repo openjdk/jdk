@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,39 @@
  * @test
  * @summary null test
  * @build KullaTesting TestingInputStream
- * @run testng EmptyTest
+ * @run junit EmptyTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class EmptyTest extends KullaTesting {
 
+    @Test
     public void testEmpty() {
         assertEvalEmpty("");
     }
 
+    @Test
     public void testSpace() {
         assertEvalEmpty("    ");
     }
 
+    @Test
     public void testSemicolon() {
         assertEval(";", "");
     }
 
+    @Test
     public void testSlashStarComment() {
         assertEvalEmpty("/*test*/");
     }
 
+    @Test
     public void testSlashStarCommentSemicolon() {
         assertEval("/*test*/;", "");
     }
 
+    @Test
     public void testSlashComment() {
         assertEvalEmpty("// test");
     }

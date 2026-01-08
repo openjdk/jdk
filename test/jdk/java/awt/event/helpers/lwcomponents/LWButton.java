@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,16 +116,8 @@ public class LWButton extends LWComponent {
         repaint();
       }
     }
-    try {
-      unClicker uc = new unClicker();
-      new Thread(uc).start();
-    } catch (Exception e) {
-      // In case we're in an applet and the security has not been
-      // turned off (in which case we can't start a new thread)
-      // we can catch that and set the flag back to how it should be.
-      isInClick = false;
-      repaint();
-    }
+    unClicker uc = new unClicker();
+    new Thread(uc).start();
   }
 
   /**

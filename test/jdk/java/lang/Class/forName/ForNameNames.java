@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8310242
+ * @bug 8310242 8328874
  * @run junit ForNameNames
  * @summary Verify class names for Class.forName
  */
@@ -37,6 +37,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ForNameNames {
+    //Max length in Modified UTF-8 bytes for class names.
+    private static final int JAVA_CLASSNAME_MAX_LEN = 65535;
+
+    private static final String ONE_BYTE = "A";                    // 1-byte UTF-8
+    private static final String TWO_BYTE = "\u0100";               // 2-byte UTF-8
+    private static final String THREE_BYTE = "\u2600";             // 3-byte UTF-8
+
+    private static final String ERR_MSG_IN_CORE = "Class name length exceeds limit of"; // check in corelib
+    private static final String ERR_MSG_IN_JVM = "Class name exceeds maximum length";   // check in jvm
+
     static class Inner {}
     static Stream<Arguments> testCases() {
         return Stream.of(
@@ -90,4 +100,78 @@ public class ForNameNames {
         assertNull(c);
     }
 
+    static Stream<Arguments> validLen() {
+        return Stream.of(
+                // 1-byte character
+                Arguments.of(ONE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN - 1)),
+                Arguments.of(ONE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN)),
+                Arguments.of(ONE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 3 - 1)),
+                Arguments.of(ONE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 3)),
+                Arguments.of(ONE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 3 + 1)),
+                // 2-byte characters
+                Arguments.of(TWO_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 2)),
+                Arguments.of(TWO_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 6)),
+                Arguments.of(TWO_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 6 + 1)),
+                // 3-byte characters
+                Arguments.of(THREE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 3 - 1)),
+                Arguments.of(THREE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 3)),
+                Arguments.of(THREE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 9)),
+                Arguments.of(THREE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 9 + 1))
+        );
+    }
+
+    /*
+     * Test class name length handling in 1-arg and 3-arg Class::forName
+     * with valid length.
+     */
+    @ParameterizedTest
+    @MethodSource("validLen")
+    void testValidLen(String cn) {
+        ClassLoader loader = ForNameNames.class.getClassLoader();
+        // 3-arg Class.forName
+        ClassNotFoundException ex = assertThrows(ClassNotFoundException.class,
+                                                 () -> Class.forName(cn, false, loader));
+        assertFalse(ex.getMessage().contains(ERR_MSG_IN_CORE)
+                    || ex.getMessage().contains(ERR_MSG_IN_JVM),
+                    "Unexpected exception message");
+
+        // 1-arg Class.forName
+        ex = assertThrows(ClassNotFoundException.class,
+                          () -> Class.forName(cn));
+        assertFalse(ex.getMessage().contains(ERR_MSG_IN_CORE)
+                    || ex.getMessage().contains(ERR_MSG_IN_JVM),
+                    "Unexpected exception message");
+    }
+
+    static Stream<Arguments> invalidLen() {
+        return Stream.of(
+                // 1-byte characters over the limit
+                Arguments.of(ONE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN + 1)),
+                // 2-byte characters over the limit
+                Arguments.of(TWO_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 2 + 1)),
+                // 3-byte characters over the limit
+                Arguments.of(THREE_BYTE.repeat(JAVA_CLASSNAME_MAX_LEN / 3 + 1))
+        );
+    }
+
+    /*
+     * Test class name length handling in 1-arg and 3-arg Class::forName
+     * with invalid (too long) length.
+     */
+    @ParameterizedTest
+    @MethodSource("invalidLen")
+    void testInvalidLen(String cn) {
+        ClassLoader loader = ForNameNames.class.getClassLoader();
+        // 3-arg Class.forName
+        ClassNotFoundException ex = assertThrows(ClassNotFoundException.class,
+                                                 () -> Class.forName(cn, false, loader));
+        assertTrue(ex.getMessage().contains(ERR_MSG_IN_CORE),
+                   "Unexpected exception message");
+
+        // 1-arg Class.forName
+        ex = assertThrows(ClassNotFoundException.class,
+                          () -> Class.forName(cn));
+        assertTrue(ex.getMessage().contains(ERR_MSG_IN_CORE),
+                   "Unexpected exception message");
+    }
 }

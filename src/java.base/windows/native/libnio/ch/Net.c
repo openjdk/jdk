@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,11 @@ Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
 }
 
 JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_shouldShutdownWriteBeforeClose0(JNIEnv *env, jclass clazz) {
+    return JNI_TRUE;
+}
+
+JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_shouldSetBothIPv4AndIPv6Options0(JNIEnv* env, jclass cl)
 {
     /* Set both IPv4 and IPv6 socket options when setting IPPROTO_IPV6 options */
@@ -209,6 +214,13 @@ Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jobject fdo, jboolean prefe
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_listen(JNIEnv *env, jclass cl, jobject fdo, jint backlog)
 {
+    /*
+     * Use SOMAXCONN_HINT when backlog larger than 200. It will adjust the value
+     * to be within the range (200, 65535).
+     */
+    if (backlog > 200) {
+        backlog = SOMAXCONN_HINT(backlog);
+    }
     if (listen(fdval(env,fdo), backlog) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "listen");
     }

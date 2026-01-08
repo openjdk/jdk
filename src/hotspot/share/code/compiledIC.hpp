@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ class CompiledICLocker: public StackObj {
 public:
   CompiledICLocker(nmethod* method);
   ~CompiledICLocker();
-  static bool is_safe(nmethod* method);
+  static bool is_safe(nmethod* nm);
   static bool is_safe(address code);
 };
 
@@ -192,13 +192,13 @@ private:
 
   static inline CompiledDirectCall* before(address return_addr) {
     CompiledDirectCall* st = new CompiledDirectCall(nativeCall_before(return_addr));
-    st->verify();
+    if (VerifyInlineCaches) st->verify();
     return st;
   }
 
   static inline CompiledDirectCall* at(address native_call) {
     CompiledDirectCall* st = new CompiledDirectCall(nativeCall_at(native_call));
-    st->verify();
+    if (VerifyInlineCaches) st->verify();
     return st;
   }
 

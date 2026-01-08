@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@ import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import org.testng.annotations.Test;
@@ -66,6 +69,7 @@ public class HttpRequestNewBuilderTest {
             new NamedAssertion("timeout", (r1, r2) -> assertEquals(r1.timeout(), r2.timeout())),
             new NamedAssertion("version", (r1, r2) -> assertEquals(r1.version(), r2.version())),
             new NamedAssertion("headers", (r1, r2) -> assertEquals(r1.headers(), r2.headers())),
+            new NamedAssertion("options", (r1, r2) -> assertEquals(r1.getOption(H3_DISCOVERY), r2.getOption(H3_DISCOVERY))),
             new NamedAssertion("expectContinue", (r1, r2) -> assertEquals(r1.expectContinue(), r2.expectContinue())),
             new NamedAssertion("method", (r1, r2) -> {
                 assertEquals(r1.method(), r2.method());
@@ -141,6 +145,9 @@ public class HttpRequestNewBuilderTest {
 
                 { HttpRequest.newBuilder(URI.create("https://all-fields-1/")).GET().expectContinue(true).version(HTTP_2)
                         .timeout(Duration.ofSeconds(1)).header("testName1", "testValue1").build() },
+                { HttpRequest.newBuilder(URI.create("https://all-fields-2/")).GET().expectContinue(true).version(HTTP_2)
+                        .timeout(Duration.ofSeconds(1)).header("testName1", "testValue1")
+                        .setOption(H3_DISCOVERY, ANY).build() },
         };
     }
 
@@ -314,6 +321,15 @@ public class HttpRequestNewBuilderTest {
     }
 
     @Test(dataProvider = "testRequests")
+    public void testSetOption(HttpRequest request) {
+        BiPredicate<String, String> filter = (n, v) -> true;
+
+        var r = HttpRequest.newBuilder(request, filter).setOption(H3_DISCOVERY, ALT_SVC).build();
+        assertEquals(r.getOption(H3_DISCOVERY).get(), ALT_SVC);
+        assertAllOtherElementsEqual(r, request, "options");
+    }
+
+    @Test(dataProvider = "testRequests")
     public void testRemoveHeader(HttpRequest request) {
         if(!request.headers().map().isEmpty()) {
             assertTrue(request.headers().map().containsKey("testName1"));
@@ -323,6 +339,18 @@ public class HttpRequestNewBuilderTest {
         var r = HttpRequest.newBuilder(request, filter).build();
         assertFalse(r.headers().map().containsKey("testName1"));
         assertEquals(r.headers().map(), HttpHeaders.of(request.headers().map(), filter).map());
+    }
+
+    @Test(dataProvider = "testRequests")
+    public void testRemoveOption(HttpRequest request) {
+        if(!request.getOption(H3_DISCOVERY).isEmpty()) {
+            assertEquals(request.getOption(H3_DISCOVERY).get(), ANY);
+        }
+
+        var r = HttpRequest.newBuilder(request, (a, b) -> true)
+                .setOption(H3_DISCOVERY, null).build();
+        assertTrue(r.getOption(H3_DISCOVERY).isEmpty());
+        assertAllOtherElementsEqual(r, request, "options");
     }
 
     @Test(dataProvider = "testRequests")

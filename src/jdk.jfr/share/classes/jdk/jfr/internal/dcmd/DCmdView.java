@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class DCmdView extends AbstractDCmd {
             return;
         }
         Configuration configuration = new Configuration();
+        configuration.verboseTimespan = true;
         configuration.output = getOutput();
         configuration.endTime = Instant.now().minusSeconds(1);
         String view = parser.getOption("view");

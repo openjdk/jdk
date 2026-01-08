@@ -22,23 +22,22 @@
  *
  */
 
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -130,10 +129,6 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       // Use optimized stub code for CRC32C methods.
       case vmIntrinsics::_updateBytesCRC32C: return java_util_zip_CRC32C_updateBytes;
       case vmIntrinsics::_updateDirectByteBufferCRC32C: return java_util_zip_CRC32C_updateDirectByteBuffer;
-      case vmIntrinsics::_intBitsToFloat:    return java_lang_Float_intBitsToFloat;
-      case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
-      case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
-      case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
       case vmIntrinsics::_float16ToFloat:    return java_lang_Float_float16ToFloat;
       case vmIntrinsics::_floatToFloat16:    return java_lang_Float_floatToFloat16;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
@@ -141,7 +136,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
       case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      case vmIntrinsics::_dsinh:             return java_lang_math_sinh;
       case vmIntrinsics::_dtanh:             return java_lang_math_tanh;
+      case vmIntrinsics::_dcbrt:             return java_lang_math_cbrt;
       case vmIntrinsics::_dabs:              return java_lang_math_abs;
       case vmIntrinsics::_dlog:              return java_lang_math_log;
       case vmIntrinsics::_dlog10:            return java_lang_math_log10;
@@ -151,7 +148,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_fmaF:              return java_lang_math_fmaF;
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
       case vmIntrinsics::_dsqrt_strict:      return java_lang_math_sqrt_strict;
-      case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
+      case vmIntrinsics::_Reference_get0:    return java_lang_ref_reference_get0;
       case vmIntrinsics::_Object_init:
         if (m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
@@ -202,7 +199,9 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_sin         : return vmIntrinsics::_dsin;
   case java_lang_math_cos         : return vmIntrinsics::_dcos;
   case java_lang_math_tan         : return vmIntrinsics::_dtan;
+  case java_lang_math_sinh        : return vmIntrinsics::_dsinh;
   case java_lang_math_tanh        : return vmIntrinsics::_dtanh;
+  case java_lang_math_cbrt        : return vmIntrinsics::_dcbrt;
   case java_lang_math_abs         : return vmIntrinsics::_dabs;
   case java_lang_math_log         : return vmIntrinsics::_dlog;
   case java_lang_math_log10       : return vmIntrinsics::_dlog10;
@@ -212,7 +211,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_exp         : return vmIntrinsics::_dexp;
   case java_lang_math_fmaD        : return vmIntrinsics::_fmaD;
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
-  case java_lang_ref_reference_get: return vmIntrinsics::_Reference_get;
+  case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
   case java_util_zip_CRC32_updateBytes
                                   : return vmIntrinsics::_updateBytesCRC32;
@@ -224,14 +223,6 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
                                   : return vmIntrinsics::_updateDirectByteBufferCRC32C;
   case java_lang_Thread_currentThread
                                   : return vmIntrinsics::_currentThread;
-  case java_lang_Float_intBitsToFloat
-                                  : return vmIntrinsics::_intBitsToFloat;
-  case java_lang_Float_floatToRawIntBits
-                                  : return vmIntrinsics::_floatToRawIntBits;
-  case java_lang_Double_longBitsToDouble
-                                  : return vmIntrinsics::_longBitsToDouble;
-  case java_lang_Double_doubleToRawLongBits
-                                  : return vmIntrinsics::_doubleToRawLongBits;
   case java_lang_Float_float16ToFloat
                                   : return vmIntrinsics::_float16ToFloat;
   case java_lang_Float_floatToFloat16
@@ -267,7 +258,8 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
       case Bytecodes::_invokedynamic: {
         assert(invoke_bc.has_index_u4(code), "sanity");
         int method_index = invoke_bc.get_index_u4(code);
-        return cpool->resolved_indy_entry_at(method_index)->is_resolved();
+        bool is_resolved = cpool->resolved_indy_entry_at(method_index)->is_resolved();
+        return !is_resolved;
       }
       case Bytecodes::_invokevirtual:   // fall-through
       case Bytecodes::_invokeinterface: // fall-through
@@ -314,7 +306,9 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
+    case java_lang_math_sinh    : tty->print("java_lang_math_sinh"    ); break;
     case java_lang_math_tanh    : tty->print("java_lang_math_tanh"    ); break;
+    case java_lang_math_cbrt    : tty->print("java_lang_math_cbrt"    ); break;
     case java_lang_math_abs     : tty->print("java_lang_math_abs"     ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;
@@ -329,12 +323,8 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;
     case java_util_zip_CRC32C_updateBytes     : tty->print("java_util_zip_CRC32C_updateBytes"); break;
     case java_util_zip_CRC32C_updateDirectByteBuffer: tty->print("java_util_zip_CRC32C_updateDirectByteByffer"); break;
-    case java_lang_ref_reference_get          : tty->print("java_lang_ref_reference_get"); break;
+    case java_lang_ref_reference_get0         : tty->print("java_lang_ref_reference_get0"); break;
     case java_lang_Thread_currentThread       : tty->print("java_lang_Thread_currentThread"); break;
-    case java_lang_Float_intBitsToFloat       : tty->print("java_lang_Float_intBitsToFloat"); break;
-    case java_lang_Float_floatToRawIntBits    : tty->print("java_lang_Float_floatToRawIntBits"); break;
-    case java_lang_Double_longBitsToDouble    : tty->print("java_lang_Double_longBitsToDouble"); break;
-    case java_lang_Double_doubleToRawLongBits : tty->print("java_lang_Double_doubleToRawLongBits"); break;
     case java_lang_Float_float16ToFloat       : tty->print("java_lang_Float_float16ToFloat"); break;
     case java_lang_Float_floatToFloat16       : tty->print("java_lang_Float_floatToFloat16"); break;
     default:

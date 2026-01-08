@@ -24,11 +24,12 @@
 package jdk.httpclient.test.lib.http2;
 
 import java.io.*;
+import java.net.http.HttpHeaders;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 public class EchoHandler implements Http2Handler {
     static final Path CWD = Paths.get(".");
@@ -41,8 +42,8 @@ public class EchoHandler implements Http2Handler {
         try {
             System.err.println("EchoHandler received request to " + t.getRequestURI());
             InputStream is = t.getRequestBody();
-            HttpHeadersImpl map = t.getRequestHeaders();
-            HttpHeadersImpl map1 = t.getResponseHeaders();
+            HttpHeaders map = t.getRequestHeaders();
+            HttpHeadersBuilder map1 = t.getResponseHeaders();
             map1.addHeader("X-Hello", "world");
             map1.addHeader("X-Bye", "universe");
             String fixedrequest = map.firstValue("XFixed").orElse(null);

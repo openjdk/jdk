@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,12 +29,10 @@ import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.*;
-import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
 import java.util.List;
@@ -513,38 +511,6 @@ public class BytecodeHelpers {
         return entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
                 : entry.index() > 0xff ? Opcode.LDC_W
                 : Opcode.LDC;
-    }
-
-    public static LoadableConstantEntry constantEntry(ConstantPoolBuilder constantPool,
-                                                      ConstantDesc constantValue) {
-        // this method is invoked during JVM bootstrap - cannot use pattern switch
-        if (constantValue instanceof Integer value) {
-            return constantPool.intEntry(value);
-        }
-        if (constantValue instanceof String value) {
-            return constantPool.stringEntry(value);
-        }
-        if (constantValue instanceof ClassDesc value && !value.isPrimitive()) {
-            return constantPool.classEntry(value);
-        }
-        if (constantValue instanceof Long value) {
-            return constantPool.longEntry(value);
-        }
-        if (constantValue instanceof Float value) {
-            return constantPool.floatEntry(value);
-        }
-        if (constantValue instanceof Double value) {
-            return constantPool.doubleEntry(value);
-        }
-        if (constantValue instanceof MethodTypeDesc value) {
-            return constantPool.methodTypeEntry(value);
-        }
-        if (constantValue instanceof DirectMethodHandleDesc value) {
-            return handleDescToHandleInfo(constantPool, value);
-        } if (constantValue instanceof DynamicConstantDesc<?> value) {
-            return handleConstantDescToHandleInfo(constantPool, value);
-        }
-        throw new UnsupportedOperationException("not yet: " + requireNonNull(constantValue));
     }
 
     public static ConstantDesc intrinsicConstantValue(Opcode opcode) {

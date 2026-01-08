@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@ package jdk.internal.math;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 
-import static java.math.BigInteger.*;
+import static jdk.internal.math.MathUtilsChecker.*;
 
 /*
  * A checker for the Javadoc specification.
@@ -50,32 +49,6 @@ abstract class ToDecimalChecker extends BasicChecker {
 
     ToDecimalChecker(String s) {
         this.s = s;
-    }
-
-    /*
-     * Returns e be such that 10^(e-1) <= v < 10^e
-     */
-    static int e(double v) {
-        /* floor(log10(v)) + 1 is a first good approximation of e */
-        int e = (int) Math.floor(Math.log10(v)) + 1;
-
-        /* Full precision search for e */
-        BigDecimal vp = new BigDecimal(v);
-        while (new BigDecimal(ONE, -(e - 1)).compareTo(vp) > 0) {
-            e -= 1;
-        }
-        while (vp.compareTo(new BigDecimal(ONE, -e)) >= 0) {
-            e += 1;
-        }
-        return e;
-    }
-
-    static long cTiny(int qMin, int kMin) {
-        BigInteger[] qr = ONE.shiftLeft(-qMin)
-                .divideAndRemainder(TEN.pow(-(kMin + 1)));
-        BigInteger cTiny = qr[1].signum() > 0 ? qr[0].add(ONE) : qr[0];
-        addOnFail(cTiny.bitLength() < Long.SIZE, "C_TINY");
-        return cTiny.longValue();
     }
 
     private boolean conversionError(String reason) {
@@ -254,7 +227,7 @@ abstract class ToDecimalChecker extends BasicChecker {
         }
 
         /* The exponent is bounded */
-        if (minExp() > q + l || q + l > maxExp()) {
+        if (eMin() > q + l || q + l > eMax()) {
             return conversionError("exponent is out-of-range");
         }
 
@@ -342,6 +315,91 @@ abstract class ToDecimalChecker extends BasicChecker {
         return false;
     }
 
+    static int size(int p) {
+        return 1 << -Integer.numberOfLeadingZeros(p);
+    }
+
+    static int w(int p) {
+        return (size(p) - 1) - (p - 1);
+    }
+
+    static int q_min(int p) {
+        return (-1 << (w(p) - 1)) - p + 3;
+    }
+
+    static int q_max(int p) {
+        return (1 << (w(p) - 1)) - p;
+    }
+
+    static long c_min(int p) {
+        return 1L << (p - 1);
+    }
+
+    static long c_max(int p) {
+        return (1L << p) - 1;
+    }
+
+    /* max{e : 10^(e-1) <= v */
+    static int e(BigDecimal v) {
+        return flog10(v) + 1;
+    }
+
+    static int e_min(int p) {
+        return e(min_value(p));
+    }
+
+    static int e_max(int p) {
+        return e(max_value(p));
+    }
+
+    static int e_thr_z(int p) {
+        BigDecimal THR_Z = pow2(q_min(p) - 1);
+        return flog10(THR_Z);
+    }
+
+    static int e_thr_i(int p) {
+        BigDecimal THR_I = BigDecimal.valueOf(2 * c_max(p) + 1)
+                .multiply(pow2(q_max(p) - 1));
+        return clog10(THR_I) + 1;
+    }
+
+    static int k_min(int p) {
+        return flog10pow2(q_min(p));
+    }
+
+    static int k_max(int p) {
+        return flog10pow2(q_max(p));
+    }
+
+    /* C_TINY = ceil(2^(-Q_MIN) 10^(K_MIN+1)) */
+    static int c_tiny(int p) {
+        return ceil(pow2(-q_min(p))
+                .multiply(pow10(k_min(p) + 1)))
+                .intValueExact();
+    }
+
+    static int h(int p) {
+        return flog10pow2(p) + 2;
+    }
+
+    static BigDecimal min_value(int p) {
+        return pow2(q_min(p));
+    }
+
+    static BigDecimal min_normal(int p) {
+        return BigDecimal.valueOf(c_min(p))
+                .multiply(pow2(q_min(p)));
+    }
+
+    static BigDecimal max_value(int p) {
+        return BigDecimal.valueOf(c_max(p))
+                .multiply(pow2(q_max(p)));
+    }
+
+    abstract int eMin();
+
+    abstract int eMax();
+
     abstract int h();
 
     abstract int maxStringLength();
@@ -353,10 +411,6 @@ abstract class ToDecimalChecker extends BasicChecker {
     abstract boolean recovers(String s);
 
     abstract String hexString();
-
-    abstract int minExp();
-
-    abstract int maxExp();
 
     abstract boolean isNegativeInfinity();
 

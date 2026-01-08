@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@
     "zh", "zh_CN",
 #ifdef __linux__
     "bokmal", "nb_NO",
-    "bokm\xE5l", "nb_NO",
+    "bokmål", "nb_NO",
     "catalan", "ca_ES",
     "croatian", "hr_HR",
     "czech", "cs_CZ",
@@ -98,7 +98,7 @@
     "eesti", "et_EE",
     "estonian", "et_EE",
     "finnish", "fi_FI",
-    "fran\xE7\x61is", "fr_FR",
+    "français", "fr_FR",
     "french", "fr_FR",
     "galego", "gl_ES",
     "galician", "gl_ES",
@@ -162,7 +162,7 @@ static char *language_names[] = {
     "deutsch", "de",
     "dutch", "nl",
     "finnish", "fi",
-    "fran\xE7\x61is", "fr",
+    "français", "fr",
     "french", "fr",
     "german", "de",
     "greek", "el",

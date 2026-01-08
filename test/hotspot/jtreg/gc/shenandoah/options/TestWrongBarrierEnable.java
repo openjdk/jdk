@@ -37,18 +37,30 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestWrongBarrierEnable {
 
     public static void main(String[] args) throws Exception {
-        String[] concurrent = { "ShenandoahSATBBarrier" };
+        String[] concurrent = {
+                "ShenandoahLoadRefBarrier",
+                "ShenandoahSATBBarrier",
+                "ShenandoahCASBarrier",
+                "ShenandoahCloneBarrier",
+                "ShenandoahStackWatermarkBarrier",
+        };
         String[] generational = { "ShenandoahCardBarrier" };
-        String[] all = { "ShenandoahSATBBarrier", "ShenandoahCardBarrier" };
+        String[] all = {
+                "ShenandoahLoadRefBarrier",
+                "ShenandoahSATBBarrier",
+                "ShenandoahCASBarrier",
+                "ShenandoahCloneBarrier",
+                "ShenandoahStackWatermarkBarrier",
+                "ShenandoahCardBarrier"
+        };
 
         shouldPassAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
-        shouldPassAll("-XX:ShenandoahGCMode=passive",          concurrent);
+        shouldPassAll("-XX:ShenandoahGCMode=passive",          all);
         shouldPassAll("-XX:ShenandoahGCMode=generational",     all);
         shouldFailAll("-XX:ShenandoahGCMode=satb",             generational);
-        shouldFailAll("-XX:ShenandoahGCMode=passive",          generational);
     }
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {

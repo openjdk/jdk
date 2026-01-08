@@ -54,7 +54,8 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Unlike most constant pool entries, a UTF-8 entry is of flexible length: it is
  * represented as an array structure, with an {@code u2} for the data length in
  * bytes, followed by that number of bytes of Modified UTF-8 data.  It can
- * represent at most 65535 bytes of data due to the physical restrictions.
+ * represent at most 65535 bytes of data due to the physical restrictions of
+ * {@link java.lang.classfile##u2 u2}.
  *
  * @jvms 4.4.7 The {@code CONSTANT_Utf8_info} Structure
  * @see DataInput##modified-utf-8 Modified UTF-8
@@ -84,4 +85,22 @@ public sealed interface Utf8Entry
      * @param s the string to compare to
      */
     boolean equalsString(String s);
+
+    /**
+     * {@return whether this entry describes the descriptor string of this
+     * field type}
+     *
+     * @param desc the field type
+     * @since 25
+     */
+    boolean isFieldType(ClassDesc desc);
+
+    /**
+     * {@return whether this entry describes the descriptor string of this
+     * method type}
+     *
+     * @param desc the method type
+     * @since 25
+     */
+    boolean isMethodType(MethodTypeDesc desc);
 }

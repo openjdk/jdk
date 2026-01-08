@@ -24,10 +24,9 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMT.hpp"
-#include "gc/z/zVirtualMemory.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/memoryFileTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
@@ -40,15 +39,35 @@ void ZNMT::reserve(zaddress_unsafe start, size_t size) {
   MemTracker::record_virtual_memory_reserve((address)untype(start), size, CALLER_PC, mtJavaHeap);
 }
 
-void ZNMT::commit(zoffset offset, size_t size) {
+void ZNMT::unreserve(zaddress_unsafe start, size_t size) {
+  precond(is_aligned(untype(start), ZGranuleSize));
+  precond(is_aligned(size, ZGranuleSize));
+
+  if (MemTracker::enabled()) {
+    // We are the owner of the reserved memory, and any failure to unreserve
+    // are fatal, so so we don't need to hold a lock while unreserving memory.
+
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
+    // The current NMT implementation does not support unreserving a memory
+    // region that was built up from smaller memory reservations. Workaround
+    // this problem by splitting the work up into granule-sized chunks, which
+    // is the smallest unit we ever reserve.
+    for (size_t i = 0; i < size; i += ZGranuleSize) {
+      MemTracker::record_virtual_memory_release((address)untype(start + i), ZGranuleSize);
+    }
+  }
+}
+
+void ZNMT::commit(zbacking_offset offset, size_t size) {
   MemTracker::allocate_memory_in(ZNMT::_device, untype(offset), size, CALLER_PC, mtJavaHeap);
 }
 
-void ZNMT::uncommit(zoffset offset, size_t size) {
+void ZNMT::uncommit(zbacking_offset offset, size_t size) {
   MemTracker::free_memory_in(ZNMT::_device, untype(offset), size);
 }
 
-void ZNMT::map(zaddress_unsafe addr, size_t size, zoffset offset) {
+void ZNMT::map(zaddress_unsafe addr, size_t size, zbacking_offset offset) {
   // NMT doesn't track mappings at the moment.
 }
 

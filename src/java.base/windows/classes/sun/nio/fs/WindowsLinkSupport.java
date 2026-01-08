@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ class WindowsLinkSupport {
             x.rethrowAsIOException(path);
         }
         try {
-            return readLinkImpl(path, handle);
+            return readLink(path, handle);
         } finally {
             CloseHandle(handle);
         }
@@ -289,9 +289,7 @@ class WindowsLinkSupport {
      * Returns target of a symbolic link given the handle of an open file
      * (that should be a link).
      */
-    private static String readLinkImpl(WindowsPath path, long handle)
-        throws IOException
-    {
+    static String readLink(WindowsPath path, long handle) throws IOException {
         int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
         try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             try {
@@ -356,7 +354,9 @@ class WindowsLinkSupport {
             if (target.isEmpty()) {
                 throw new IOException("Symbolic link target is invalid");
             }
-            return target;
+
+            // return normalized path string
+            return WindowsPathParser.parse(target).path();
         }
     }
 

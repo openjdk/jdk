@@ -136,7 +136,7 @@ public class SnippetTaglet extends BaseTaglet {
             if (styles.isEmpty()) {
                 code.add(text);
             } else {
-                Element e = null;
+                Element ref = null;
                 String linkTarget = null;
                 boolean markupEncountered = false;
                 Set<String> classes = new HashSet<>();
@@ -152,19 +152,21 @@ public class SnippetTaglet extends BaseTaglet {
                                         content.asCharSequence().toString().trim());
                             }
                             linkTarget = l.target();
-                            e = getLinkedElement(element, linkTarget);
-                            if (e == null) {
-                                // TODO: diagnostic output
+                            ref = getLinkedElement(element, linkTarget);
+                            if (ref == null) {
+                                messages.error(utils.getCommentHelper(element).getDocTreePath(tag),
+                                        "doclet.link.see.reference_not_found",
+                                        linkTarget);
                             }
                         }
                         case Style.Markup m -> markupEncountered = true;
                     }
                 }
-                Content c;
                 if (markupEncountered) {
                     return;
-                } else if (linkTarget != null) {
-                    assert e != null;
+                }
+                Content c = Text.of(text);
+                if (linkTarget != null) {
                     //disable preview tagging inside the snippets:
                     Utils.PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
@@ -172,16 +174,17 @@ public class SnippetTaglet extends BaseTaglet {
                         c = lt.linkSeeReferenceOutput(element,
                                 null,
                                 linkTarget,
-                                e,
-                                false, // TODO: for now
+                                ref,
+                                true,
                                 Text.of(sequence.toString()),
-                                (key, args) -> { /* TODO: report diagnostic */ },
+                                (key, args) -> { /* Error has already been reported above */ },
                                 tagletWriter);
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
                     }
-                } else {
-                    c = HtmlTree.SPAN(Text.of(text));
+                }
+                if (!classes.isEmpty()) {
+                    c = HtmlTree.SPAN(c);
                     classes.forEach(((HtmlTree) c)::addStyle);
                 }
                 code.add(c);
@@ -194,10 +197,9 @@ public class SnippetTaglet extends BaseTaglet {
                 HtmlTree.of(HtmlTag.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
-                        .add(HtmlTree.of(HtmlTag.IMG)
-                                .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
-                                                             .resolve(DocPaths.CLIPBOARD_SVG).getPath())
-                                .put(HtmlAttr.ALT, copySnippetText))
+                        .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                        .resolve(DocPaths.CLIPBOARD_SVG),
+                                copySnippetText))
                         .addStyle(HtmlStyles.copy)
                         .addStyle(HtmlStyles.snippetCopy)
                         .put(HtmlAttr.ARIA_LABEL, copySnippetText)
@@ -462,6 +464,7 @@ public class SnippetTaglet extends BaseTaglet {
                %s
                ----------------- external -----------------
                %s
+               --------------------------------------------
                """.formatted(inline, external);
     }
 

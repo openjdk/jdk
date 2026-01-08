@@ -57,6 +57,7 @@ public class TestGenerators {
         testUniformLongs();
         testAnyBits();
         testUniformFloat();
+        testUniformFloat16();
         testUniformDouble();
         testSingle();
         testMixed();
@@ -64,6 +65,7 @@ public class TestGenerators {
         specialInt();
         specialLong();
         testSpecialFloat();
+        testSpecialFloat16();
         testSpecialDouble();
         testSafeRestrict();
         testFill();
@@ -157,7 +159,7 @@ public class TestGenerators {
                 .enqueueInteger(0, 10, 3)
                 .enqueueDouble(0, 1, 3.4d)
                 .enqueueInteger(0, 10, 6)
-                .enqueueInteger(0, 9, 1);
+                .enqueueInteger(0, 10, 1);
         var g = mockGS.mixedWithSpecialDoubles(mockGS.uniformDoubles(), 5, 5);
         Asserts.assertEQ(g.next(), 3.4d);
         Asserts.assertEQ(g.next(), -1d);
@@ -169,10 +171,32 @@ public class TestGenerators {
                 .enqueueInteger(0, 10, 3)
                 .enqueueFloat(0, 1, 3.4f)
                 .enqueueInteger(0, 10, 6)
-                .enqueueInteger(0, 9, 1);
+                .enqueueInteger(0, 10, 1);
         var g = mockGS.mixedWithSpecialFloats(mockGS.uniformFloats(), 5, 5);
         Asserts.assertEQ(g.next(), 3.4f);
         Asserts.assertEQ(g.next(), -1f);
+    }
+
+    static void testSpecialFloat16() {
+        mockSource
+                .checkEmpty()
+                .enqueueInteger(0, 8, 2)
+                .enqueueFloat16((short)0, (short)15360, (short)17010)
+                .enqueueInteger(0, 8, 6)
+                .enqueueInteger(0, 8, 5)
+                .enqueueInteger(0, 8, 7)
+                .enqueueInteger(0, 8, 4);
+        var g = mockGS.mixedWithSpecialFloat16s(mockGS.uniformFloat16s(), 4, 4);
+        Asserts.assertEQ(g.next(), (short)17010);
+        Asserts.assertEQ(g.next(), (short)31743);
+        Asserts.assertEQ(g.next(), (short)1024);
+    }
+
+    static void testUniformFloat16() {
+        mockSource.checkEmpty().enqueueFloat16((short)0, (short)10, (short)17664);
+        Asserts.assertEQ(mockGS.uniformFloat16s((short)0, (short)10).next(), (short)17664);
+        mockSource.checkEmpty().enqueueFloat16((short)0, (short)5, (short)31744);
+        Asserts.assertEQ(mockGS.uniformFloat16s((short)0, (short)5).next(), (short)31744);
     }
 
     static void testUniformFloat() {
@@ -367,13 +391,13 @@ public class TestGenerators {
 
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformDoubles(1, 0));
         Asserts.assertNotNull(G.uniformDoubles(0, 1));
-        Asserts.assertNotNull(G.uniformDoubles(0, 0));
+        Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformDoubles(0, 0));
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformDoubles(0, 1).restricted(1.1d, 2.4d));
         Asserts.assertNotNull(G.uniformDoubles(0, 1).restricted(0.9d, 2.4d));
 
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformFloats(1, 0));
         Asserts.assertNotNull(G.uniformFloats(0, 1));
-        Asserts.assertNotNull(G.uniformFloats(0, 0));
+        Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformFloats(0, 0));
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.uniformFloats(0, 1).restricted(1.1f, 2.4f));
         Asserts.assertNotNull(G.uniformFloats(0, 1).restricted(0.9f, 2.4f));
 
@@ -568,8 +592,13 @@ public class TestGenerators {
 
         var floatBoundGen = G.uniformFloats();
         for (int j = 0; j < 500; j++) {
-            float a = floatBoundGen.next(), b = floatBoundGen.next();
-            float lo = Math.min(a, b), hi = Math.max(a, b);
+            float lo = 1, hi = 0;
+            // Failure of a single round is very rare, repeated failure even rarer.
+            while (lo >= hi) {
+                float a = floatBoundGen.next(), b = floatBoundGen.next();
+                lo = Math.min(a, b);
+                hi = Math.max(a, b);
+            }
             var gb = G.uniformFloats(lo, hi);
             for (int i = 0; i < 10_000; i++) {
                 float x = gb.next();
@@ -580,8 +609,13 @@ public class TestGenerators {
 
         var doubleBoundGen = G.uniformDoubles();
         for (int j = 0; j < 500; j++) {
-            double a = doubleBoundGen.next(), b = doubleBoundGen.next();
-            double lo = Math.min(a, b), hi = Math.max(a, b);
+            double lo = 1, hi = 0;
+            // Failure of a single round is very rare, repeated failure even rarer.
+            while (lo >= hi) {
+                double a = doubleBoundGen.next(), b = doubleBoundGen.next();
+                lo = Math.min(a, b);
+                hi = Math.max(a, b);
+            }
             var gb = G.uniformDoubles(lo, hi);
             for (int i = 0; i < 10_000; i++) {
                 double x = gb.next();

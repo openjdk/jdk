@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ class VerificationType {
           if (is_reference() && from.is_reference()) {
             return is_reference_assignable_from(from, context,
                                                 from_field_is_protected,
-                                                THREAD);
+                                                nullptr, THREAD);
           } else {
             return false;
           }
@@ -327,17 +327,24 @@ class VerificationType {
 
   void print_on(outputStream* st) const;
 
- private:
+  bool is_reference_assignable_from(const VerificationType& from, ClassVerifier* context,
+                                    bool from_field_is_protected, bool* this_is_interface, TRAPS) const;
 
-  bool is_reference_assignable_from(
-    const VerificationType&, ClassVerifier*, bool from_field_is_protected,
-    TRAPS) const;
-
- public:
-  static bool resolve_and_check_assignability(InstanceKlass* klass, Symbol* name,
+  static bool resolve_and_check_assignability(InstanceKlass* current_klass, Symbol* target_name,
                                               Symbol* from_name, bool from_field_is_protected,
                                               bool from_is_array, bool from_is_object,
+                                              TRAPS) {
+    return resolve_and_check_assignability(current_klass, target_name, from_name, from_field_is_protected,
+                                           from_is_array, from_is_object, nullptr, THREAD);
+  }
+
+ private:
+  static bool resolve_and_check_assignability(InstanceKlass* current_klass, Symbol* target_name,
+                                              Symbol* from_name, bool from_field_is_protected,
+                                              bool from_is_array, bool from_is_object,
+                                              bool* target_is_interface,
                                               TRAPS);
+
 };
 
 #endif // SHARE_CLASSFILE_VERIFICATIONTYPE_HPP

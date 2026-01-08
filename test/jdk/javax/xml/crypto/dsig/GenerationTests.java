@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  * @build jdk.test.lib.Asserts
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
- * @run main/othervm/timeout=300 -Dsun.net.httpserver.nodelay=true GenerationTests
+ * @run main/othervm/timeout=1200 -Dsun.net.httpserver.nodelay=true GenerationTests
  * @author Sean Mullan
  */
 
@@ -286,8 +286,8 @@ public class GenerationTests {
     private static boolean result = true;
 
     public static void main(String args[]) throws Exception {
-        // Re-enable sha1 algs
-        SecurityUtils.removeAlgsFromDSigPolicy("sha1");
+        // Re-enable sha1 and xpath algs
+        SecurityUtils.removeAlgsFromDSigPolicy("sha1", "xpath");
 
         setup();
         test_context_iterator();

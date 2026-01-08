@@ -26,12 +26,13 @@
 ################################################################################
 
 include GensrcCommon.gmk
+include GensrcProperties.gmk
+include GensrcStreamPreProcessing.gmk
 
 include gensrc/GensrcBuffer.gmk
 include gensrc/GensrcCharacterData.gmk
 include gensrc/GensrcCharsetCoder.gmk
 include gensrc/GensrcCharsetMapping.gmk
-include gensrc/GensrcExceptions.gmk
 include gensrc/GensrcMisc.gmk
 include gensrc/GensrcModuleLoaderMap.gmk
 include gensrc/GensrcRegex.gmk
@@ -46,6 +47,8 @@ CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
 TZ_DATA_DIR := $(MODULE_SRC)/share/data/tzdata
 ZONENAME_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/ZoneName.java.template
 
+# The `-utf8` option is used even for US English, as some names
+# may contain non-ASCII characters, such as “Türkiye”.
 $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
     $(wildcard $(CLDR_DATA_DIR)/main/en*.xml) \
     $(wildcard $(CLDR_DATA_DIR)/supplemental/*.xml) \
@@ -61,14 +64,13 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -basemodule \
 	    -year $(COPYRIGHT_YEAR) \
 	    -zntempfile $(ZONENAME_TEMPLATE) \
-	    -tzdatadir $(TZ_DATA_DIR))
+	    -tzdatadir $(TZ_DATA_DIR) \
+	    -utf8)
 	$(TOUCH) $@
 
 TARGETS += $(CLDR_GEN_DONE)
 
 ################################################################################
-
-include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, LIST_RESOURCE_BUNDLE, \
     SRC_DIRS := $(MODULE_SRC)/share/classes/sun/launcher/resources, \
@@ -116,5 +118,27 @@ $(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
 	$(TOUCH) $@
 
 TARGETS += $(INTPOLY_GEN_DONE)
+
+################################################################################
+
+RELEASE_FILE_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/resources/release.txt.template
+RELEASE_FILE_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jdk/internal/misc/resources/release.txt
+
+RELEASE_FILE_VARDEPS := $(COMPANY_NAME) $(VERSION_STRING) $(VERSION_DATE)
+RELEASE_FILE_VARDEPS_FILE := $(call DependOnVariable, RELEASE_FILE_VARDEPS, \
+    $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jlink_release_txt.vardeps)
+
+$(eval $(call SetupTextFileProcessing, BUILD_RELEASE_FILE, \
+    SOURCE_FILES := $(RELEASE_FILE_TEMPLATE), \
+    OUTPUT_FILE := $(RELEASE_FILE_TARGET), \
+    REPLACEMENTS := \
+        @@COMPANY_NAME@@ => $(COMPANY_NAME) ; \
+        @@VERSION_STRING@@ => $(VERSION_STRING) ; \
+        @@VERSION_DATE@@ => $(VERSION_DATE) , \
+))
+
+$(BUILD_RELEASE_FILE): $(RELEASE_FILE_VARDEPS_FILE)
+
+TARGETS += $(BUILD_RELEASE_FILE)
 
 ################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,18 @@
  *     jdk.jshell/jdk.jshell:open
  * @build UITesting
  * @build ToolMultilineSnippetHistoryTest
- * @run testng ToolMultilineSnippetHistoryTest
+ * @run junit ToolMultilineSnippetHistoryTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ToolMultilineSnippetHistoryTest extends UITesting {
 
     public ToolMultilineSnippetHistoryTest() {
         super(true);
     }
 
+    @Test
     public void testUpArrow() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("int x=\n44\n");

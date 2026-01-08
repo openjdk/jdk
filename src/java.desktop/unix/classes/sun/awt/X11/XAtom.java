@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,7 @@ public final class XAtom {
     void register() {
         register(this);
     }
+    @Override
     public String toString() {
         if (name != null) {
             return name + ":" + atom;
@@ -769,6 +770,7 @@ public final class XAtom {
         }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof XAtom)) {
             return false;
@@ -776,6 +778,7 @@ public final class XAtom {
         XAtom ot = (XAtom)o;
         return (atom == ot.atom && display == ot.display);
     }
+    @Override
     public int hashCode() {
         return (int)((atom ^ display)& 0xFFFFL);
     }

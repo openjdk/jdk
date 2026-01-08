@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ package com.sun.java.swing.plaf.windows;
  * @since 1.5
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class WindowsClassicLookAndFeel extends WindowsLookAndFeel {
+public final class WindowsClassicLookAndFeel extends WindowsLookAndFeel {
+    @Override
     public String getName() {
         return "Windows Classic";
     }

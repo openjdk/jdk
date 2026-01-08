@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_METHODFLAGS_HPP
 #define SHARE_OOPS_METHODFLAGS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -87,8 +87,8 @@ class MethodFlags {
 #undef M_STATUS_GET_SET
 
   int as_int() const { return _status; }
-  void atomic_set_bits(u4 bits)   { Atomic::fetch_then_or(&_status, bits); }
-  void atomic_clear_bits(u4 bits) { Atomic::fetch_then_and(&_status, ~bits); }
+  void atomic_set_bits(u4 bits)   { AtomicAccess::fetch_then_or(&_status, bits); }
+  void atomic_clear_bits(u4 bits) { AtomicAccess::fetch_then_and(&_status, ~bits); }
   void print_on(outputStream* st) const;
 };
 

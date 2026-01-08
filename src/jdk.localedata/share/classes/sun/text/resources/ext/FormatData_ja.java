@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,18 +76,18 @@
 
 package sun.text.resources.ext;
 
-import sun.util.resources.ParallelListResourceBundle;
+import sun.util.resources.OpenListResourceBundle;
 
-public class FormatData_ja extends ParallelListResourceBundle {
+public class FormatData_ja extends OpenListResourceBundle {
     /**
-     * Overrides ParallelListResourceBundle
+     * Overrides OpenListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
         return new Object[][] {
             { "japanese.FirstYear",
                 new String[] {  // first year name
-                    "\u5143",   // "Gan"-nen
+                    "元",       // "Gan"-nen
                 }
             },
         };

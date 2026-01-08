@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,5 +54,21 @@ public abstract class InvisibleParent<T extends InvisibleParent> implements Intf
      * @hidden
      */
     public static class InvisibleInner {}
+
+    /**
+     * An invisible interface.
+     * @hidden
+     */
+    public static interface InvisibleInterface {
+        /**
+         * Default method in invisible interface.
+         */
+        default void invisibleInterfaceDefaultMethod() {}
+
+        /**
+         * Interface method in invisible interface.
+         */
+        void invisibleInterfaceInterfaceMethod();
+    }
 
 }

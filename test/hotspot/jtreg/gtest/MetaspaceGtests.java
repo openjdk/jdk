@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,5 +58,5 @@
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @requires vm.debug
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UseCompactObjectHeaders
  */

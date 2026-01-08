@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,6 @@
  * @summary Test virtual thread entering (and reentering) a lot of monitors with no contention
  * @library /test/lib
  * @run main LotsOfUncontendedMonitorEnter
- */
-
-/*
- * @test id=LM_LEGACY
- * @library /test/lib
- * @run main/othervm -XX:LockingMode=1 LotsOfUncontendedMonitorEnter
- */
-
-/*
- * @test id=LM_LIGHTWEIGHT
- * @library /test/lib
- * @run main/othervm -XX:LockingMode=2 LotsOfUncontendedMonitorEnter
  */
 
 import java.util.ArrayList;

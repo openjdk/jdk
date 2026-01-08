@@ -206,7 +206,7 @@ public final class EventDirectoryStream extends AbstractEventStream {
                         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Unexpected chunk with 0 ns duration");
                     }
                 }
-                path = repositoryFiles.nextPath(currentChunkStartNanos + durationNanos, true);
+                path = repositoryFiles.nextPath(currentChunkStartNanos + durationNanos, getWaitForChunks());
                 if (path == null) {
                     logStreamEnd("no more chunk files found.");
                     return;
@@ -257,6 +257,11 @@ public final class EventDirectoryStream extends AbstractEventStream {
         }
         for (int i = 0; i < index; i++) {
             c.dispatch(sortedCache[i]);
+            sortedCache[i] = null;
+        }
+        // Shrink array
+        if (index > 100_000 && 4 * index < sortedCache.length) {
+            sortedCache = new RecordedEvent[2 * index];
         }
         onFlush();
         return;

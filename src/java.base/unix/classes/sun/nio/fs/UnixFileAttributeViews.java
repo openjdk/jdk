@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,12 @@ class UnixFileAttributeViews {
         @Override
         public BasicFileAttributes readAttributes() throws IOException {
             try {
-                 UnixFileAttributes attrs =
-                     UnixFileAttributes.get(file, followLinks);
+                 UnixFileAttributes attrs = UnixFileAttributes.get(file, followLinks);
                  return attrs.asBasicFileAttributes();
             } catch (UnixException x) {
+                if (x.errno() == ENOTDIR) {
+                    x.setError(ENOENT);
+                }
                 x.rethrowAsIOException(file);
                 return null;    // keep compiler happy
             }
@@ -209,6 +211,9 @@ class UnixFileAttributeViews {
             try {
                  return UnixFileAttributes.get(file, followLinks);
             } catch (UnixException x) {
+                if (x.errno() == ENOTDIR) {
+                    x.setError(ENOENT);
+                }
                 x.rethrowAsIOException(file);
                 return null;    // keep compiler happy
             }

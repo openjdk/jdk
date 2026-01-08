@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
         frame.setSize(200, 200);
-        frame.setVisible(true);
 
         cb = new JComboBox(petStrings);
         cb.setPreferredSize(new Dimension(frame.getContentPane().getWidth(), 20));
@@ -79,6 +78,7 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
 
         frame.add(cb);
         propagateAWTControls(frame);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

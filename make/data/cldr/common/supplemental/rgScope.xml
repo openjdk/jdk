@@ -8,21 +8,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 <supplementalData>
     <version number='$Revision$'/>
 	<rgScope>
-		<rgPath path="//supplementalData/currencyData/fractions/info[@iso4217='#'][@digits='*'][@rounding='*'][@cashDigits='*'][@cashRounding='*']" draft="provisional" />
-		<rgPath path="//supplementalData/currencyData/fractions/info[@iso4217='#'][@digits='*'][@rounding='*'][@cashRounding='*']" draft="provisional" />
-		<rgPath path="//supplementalData/currencyData/fractions/info[@iso4217='#'][@digits='*'][@rounding='*']" draft="provisional" />
-		<rgPath path="//supplementalData/calendarPreferenceData/calendarPreference[@territories='#'][@ordering='*']" draft="provisional" />
-		<rgPath path="//supplementalData/weekData/firstDay[@day='*'][@territories='#']" draft="provisional" />
-		<rgPath path="//supplementalData/weekData/minDays[@count='*'][@territories='#']" draft="provisional" />
-		<rgPath path="//supplementalData/weekData/weekendStart[@day='*'][@territories='#']" draft="provisional" />
-		<rgPath path="//supplementalData/weekData/weekendEnd[@day='*'][@territories='#']" draft="provisional" />
-		<rgPath path="//supplementalData/timeData/hours[@allowed='*'][@preferred='*'][@regions='#']" draft="provisional" />
-		<rgPath path="//supplementalData/measurementData/measurementSystem[@type='*'][@category='*'][@territories='#']" draft="provisional" />
-		<rgPath path="//supplementalData/measurementData/measurementSystem[@type='*'][@territories='#']" draft="provisional" />
-		<rgPath path="//supplementalData/measurementData/paperSize[@type='*'][@territories='#']" draft="provisional" />
-		<rgPath path="//supplementalData/unitPreferenceData/unitPreferences[@category='*'][@usage='*'][@scope='*']/unitPreference[@regions='#'][@alt='*']" draft="provisional" />
-		<rgPath path="//supplementalData/unitPreferenceData/unitPreferences[@category='*'][@usage='*'][@scope='*']/unitPreference[@regions='#']" draft="provisional" />
-		<rgPath path="//supplementalData/unitPreferenceData/unitPreferences[@category='*'][@usage='*']/unitPreference[@regions='#'][@alt='*']" draft="provisional" />
-		<rgPath path="//supplementalData/unitPreferenceData/unitPreferences[@category='*'][@usage='*']/unitPreference[@regions='#']" draft="provisional" />
+		<rgPath path="//supplementalData/currencyData/fractions/info[@iso4217='#'][@digits='*'][@rounding='*'][@cashDigits='*'][@cashRounding='*']"/>
+		<rgPath path="//supplementalData/currencyData/fractions/info[@iso4217='#'][@digits='*'][@rounding='*'][@cashRounding='*']"/>
+		<rgPath path="//supplementalData/currencyData/fractions/info[@iso4217='#'][@digits='*'][@rounding='*']"/>
+		<rgPath path="//supplementalData/calendarPreferenceData/calendarPreference[@territories='#'][@ordering='*']"/>
+		<rgPath path="//supplementalData/weekData/firstDay[@day='*'][@territories='#']"/>
+		<rgPath path="//supplementalData/weekData/minDays[@count='*'][@territories='#']"/>
+		<rgPath path="//supplementalData/weekData/weekendStart[@day='*'][@territories='#']"/>
+		<rgPath path="//supplementalData/weekData/weekendEnd[@day='*'][@territories='#']"/>
+		<rgPath path="//supplementalData/timeData/hours[@allowed='*'][@preferred='*'][@regions='#']"/>
+		<rgPath path="//supplementalData/measurementData/measurementSystem[@type='*'][@category='*'][@territories='#']"/>
+		<rgPath path="//supplementalData/measurementData/measurementSystem[@type='*'][@territories='#']"/>
+		<rgPath path="//supplementalData/measurementData/paperSize[@type='*'][@territories='#']"/>
+		<rgPath path="//supplementalData/unitPreferenceData/unitPreferences[@category='*'][@usage='*'][@scope='*']/unitPreference[@regions='#'][@alt='*']"/>
+		<rgPath path="//supplementalData/unitPreferenceData/unitPreferences[@category='*'][@usage='*'][@scope='*']/unitPreference[@regions='#']"/>
+		<rgPath path="//supplementalData/unitPreferenceData/unitPreferences[@category='*'][@usage='*']/unitPreference[@regions='#'][@alt='*']"/>
+		<rgPath path="//supplementalData/unitPreferenceData/unitPreferences[@category='*'][@usage='*']/unitPreference[@regions='#']"/>
 	</rgScope>
 </supplementalData>

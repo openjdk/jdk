@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,12 @@ public class SwitchBootstrapsTest {
         assertEquals(-1, (int) indy.invoke(null, start));
     }
 
+    private void testPrimitiveType(Object target, Class<?> targetType, int start, int result, Object... labels) throws Throwable {
+        MethodType switchType = MethodType.methodType(int.class, targetType, int.class);
+        MethodHandle indy = ((CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
+        assertEquals((int) indy.invoke(target, start), result);
+    }
+
     private void testEnum(Enum<?> target, int start, int result, Object... labels) throws Throwable {
         testEnum(target.getClass(), target, start, result, labels);
     }
@@ -132,20 +138,62 @@ public class SwitchBootstrapsTest {
         }, 0, 1, 1L);
     }
 
+    public void testPrimitiveTypes() throws Throwable {
+        testPrimitiveType((short) 1, short.class, 0, 1, String.class);
+        testPrimitiveType((byte) 1, byte.class,0, 1, String.class, byte.class);
+        testPrimitiveType(true, boolean.class,0, 1, false, boolean.class);
+        testPrimitiveType(1, int.class,0, 1, String.class);
+        testPrimitiveType(1, int.class,0, 1, true);
+        testPrimitiveType(true, boolean.class,0, 1, false);
+        testPrimitiveType((byte) 1, byte.class,0, 1, boolean.class, byte.class);
+        testPrimitiveType((byte) 1, byte.class,0, 1, Boolean.class, byte.class);
+        testPrimitiveType(true, boolean.class,0, 1, String.class, boolean.class);
+    }
+
     public void testEnums() throws Throwable {
         testEnum(E1.A, 0, 2, "B", "C", "A", E1.class);
         testEnum(E1.B, 0, 0, "B", "C", "A", E1.class);
         testEnum(E1.B, 1, 3, "B", "C", "A", E1.class);
         try {
-            testEnum(E1.B, 1, 3, "B", "C", "A", E2.class);
+            testEnum(E1.B, 0, -1, E2.class);
             fail("Didn't get the expected exception.");
         } catch (IllegalArgumentException ex) {
             //OK
         }
         try {
-            testEnum(E1.B, 1, 3, "B", "C", "A", String.class);
+            testEnum(E1.B, 0, -1, String.class);
             fail("Didn't get the expected exception.");
         } catch (IllegalArgumentException ex) {
+            //OK
+        }
+        try {
+            testEnum(E1.B, 0, -1, 10);
+            fail("Didn't get the expected exception.");
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+        try {
+            testEnum(E1.B, 0, -1, new Object());
+            fail("Didn't get the expected exception.");
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+        try {
+            testEnum(E1.B, 0, -1, new Object[] { null });
+            fail("Didn't get the expected exception.");
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+        try {
+            testEnum(E1.B, 0, -1, "");
+            fail("Didn't get the expected exception.");
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+        try {
+            testEnum(E1.B, 0, -1, (Object[]) null);
+            fail("Didn't get the expected exception.");
+        } catch (NullPointerException ex) {
             //OK
         }
         testEnum(E1.B, 0, 0, "B", "A");
@@ -154,6 +202,13 @@ public class SwitchBootstrapsTest {
         testEnum(E1.A, 1, 1, "A", "A", "B");
         testEnum(E1.A, 2, 3, "A", "A", "B");
         testEnum(E1.A, 0, 0);
+        testEnum(E1.B, 0, 2, "A", "OLD_REMOVED_CONSTANT", "B", E1.class);
+        testEnum(E1.B, 1, 2, "A", "OLD_REMOVED_CONSTANT", "B", E1.class);
+
+        //null invocation name:
+        MethodType switchType = MethodType.methodType(int.class, E1.class, int.class);
+        MethodHandle indy = ((CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), null, switchType)).dynamicInvoker();
+        assertEquals((int) indy.invoke(E1.A, 0), 0);
     }
 
     public void testEnumsWithConstants() throws Throwable {
@@ -179,6 +234,9 @@ public class SwitchBootstrapsTest {
         testEnum(E.class, E.A, 0, 0, "A", "B", "C");
         testEnum(E.class, E.B, 0, 1, "A", "B", "C");
         testEnum(E.class, E.C, 0, 2, "A", "B", "C");
+        testEnum(E.class, E.C, 0, 2, "A", "B");
+        testEnum(E.class, E.C, 1, 2, "A", "B");
+        testEnum(E.class, E.C, 2, 2, "A", "B");
     }
 
     public void testWrongSwitchTypes() throws Throwable {
@@ -261,6 +319,9 @@ public class SwitchBootstrapsTest {
         } catch (IllegalArgumentException ex) {
             //OK
         }
+        //null invocationName is OK:
+        BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), null, switchType,
+                               new Object[] {Object.class});
     }
 
     private static AtomicBoolean enumInitialized = new AtomicBoolean();

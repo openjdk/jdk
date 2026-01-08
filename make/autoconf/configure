@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,9 @@ fi
 export CONFIG_SHELL=$BASH
 export _as_can_reexec=no
 
-# Make sure all shell commands are executed with the C locale
+# Save user's current locale, but make sure all future shell commands are
+# executed with the C locale
+export USER_LOCALE=$LC_ALL
 export LC_ALL=C
 
 if test "x$CUSTOM_CONFIG_DIR" != x; then
@@ -364,7 +366,7 @@ EOT
 
     # Print additional help, e.g. a list of toolchains and JVM features.
     # This must be done by the autoconf script.
-    ( CONFIGURE_PRINT_ADDITIONAL_HELP=true . $generated_script PRINTF=printf )
+    ( CONFIGURE_PRINT_ADDITIONAL_HELP=true . $generated_script PRINTF=printf ECHO=echo )
 
     cat <<EOT
 

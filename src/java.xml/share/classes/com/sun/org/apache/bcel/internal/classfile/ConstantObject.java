@@ -29,7 +29,10 @@ package com.sun.org.apache.bcel.internal.classfile;
 public interface ConstantObject {
 
     /**
-     * @return object representing the constant, e.g., Long for ConstantLong
+     * Gets the object representing the constant, e.g., Long for ConstantLong.
+     *
+     * @param constantPool the constant.
+     * @return object representing the constant, e.g., Long for ConstantLong.
      */
-    Object getConstantValue(ConstantPool cp);
+    Object getConstantValue(ConstantPool constantPool);
 }

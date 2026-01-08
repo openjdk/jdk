@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.WinMsiBundler.WIN_APP_IMAGE;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,8 +36,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.WinMsiPackage;
 import jdk.jpackage.internal.util.XmlConsumer;
 
 
@@ -48,17 +48,19 @@ import jdk.jpackage.internal.util.XmlConsumer;
  */
 record OSVersionCondition(WindowsVersion version) {
 
-    static OSVersionCondition createFromAppImage(ApplicationLayout appLayout, Map<String, ? super Object> params) {
-        Objects.requireNonNull(appLayout);
+    static OSVersionCondition createFromAppImage(BuildEnv env, Application app) {
+        Objects.requireNonNull(env);
+        Objects.requireNonNull(app);
 
         final List<Path> executables = new ArrayList<>();
 
-        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
-            final var launcherName = StandardBundlerParam.APP_NAME.fetchFrom(params);
-            executables.add(appLayout.launchersDirectory().resolve(launcherName + ".exe"));
-        }
+        final var appImageLayout = app.imageLayout().resolveAt(env.appImageDir());
 
-        executables.add(appLayout.runtimeDirectory().resolve("bin\\java.dll"));
+        app.mainLauncher().map(mainLauncher -> {
+            return ((ApplicationLayout)appImageLayout).launchersDirectory().resolve(mainLauncher.executableNameWithSuffix());
+        }).ifPresent(executables::add);
+
+        executables.add(appImageLayout.runtimeDirectory().resolve("bin\\java.dll"));
 
         final var lowestOsVersion = executables.stream()
                 .filter(Files::isRegularFile)
@@ -176,21 +178,10 @@ record OSVersionCondition(WindowsVersion version) {
             }
 
             @Override
-            void initFromParams(Map<String, ? super Object> params) {
-                super.initFromParams(params);
+            void initFromParams(BuildEnv env, WinMsiPackage pkg) {
+                super.initFromParams(env, pkg);
 
-                final Path appImageRoot = WIN_APP_IMAGE.fetchFrom(params);
-
-                ApplicationLayout appImageLayout;
-                if (StandardBundlerParam.isRuntimeInstaller(params)) {
-                    appImageLayout = ApplicationLayout.javaRuntime();
-                } else {
-                    appImageLayout = ApplicationLayout.platformAppImage();
-                }
-
-                appImageLayout = appImageLayout.resolveAt(appImageRoot);
-
-                final var cond = OSVersionCondition.createFromAppImage(appImageLayout, params);
+                final var cond = OSVersionCondition.createFromAppImage(env, pkg.app());
 
                 setWixVariable("JpExecutableMajorOSVersion", String.valueOf(cond.version().majorOSVersion));
                 setWixVariable("JpExecutableMinorOSVersion", String.valueOf(cond.version().minorOSVersion));

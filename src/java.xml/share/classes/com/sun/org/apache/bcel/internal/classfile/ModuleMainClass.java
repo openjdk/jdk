@@ -39,7 +39,7 @@ public final class ModuleMainClass extends Attribute {
     private int mainClassIndex;
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
      * @param nameIndex Index in constant pool
      * @param length Content length in bytes

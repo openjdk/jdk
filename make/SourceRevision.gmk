@@ -55,7 +55,7 @@ ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
   SCM_DIR := .git
   ID_COMMAND := $(PRINTF) "git:%s%s\n" \
       "$$($(GIT) log -n1 --format=%H | cut -c1-12)" \
-      "$$(if test -n "$$($(GIT) status --porcelain)"; then printf '+'; fi)"
+      "$$(if test -n "$$($(GIT) status --porcelain)"; then $(PRINTF) '+'; fi)"
 endif
 
 ifeq ($(USE_SCM), true)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1CardSet.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -151,7 +151,7 @@ protected:
 public:
   G1CardSetContainer() : _ref_count(3) { }
 
-  uintptr_t refcount() const { return Atomic::load_acquire(&_ref_count); }
+  uintptr_t refcount() const { return AtomicAccess::load_acquire(&_ref_count); }
 
   bool try_increment_refcount();
 
@@ -192,7 +192,7 @@ private:
     }
 
     ~G1CardSetArrayLocker() {
-      Atomic::release_store(_num_entries_addr, _local_num_entries);
+      AtomicAccess::release_store(_num_entries_addr, _local_num_entries);
     }
   };
 

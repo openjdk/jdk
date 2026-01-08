@@ -97,12 +97,12 @@ public class PackageTestTest extends JUnitAdapter {
         private final int tickCount;
     }
 
-    private final static int ERROR_EXIT_CODE_JPACKAGE = 35;
-    private final static int ERROR_EXIT_CODE_INSTALL = 27;
+    private static final int ERROR_EXIT_CODE_JPACKAGE = 35;
+    private static final int ERROR_EXIT_CODE_INSTALL = 27;
 
-    private final static CallbackFactory NEVER = new CallbackFactory(0);
-    private final static CallbackFactory ONCE = new CallbackFactory(1);
-    private final static CallbackFactory TWICE = new CallbackFactory(2);
+    private static final CallbackFactory NEVER = new CallbackFactory(0);
+    private static final CallbackFactory ONCE = new CallbackFactory(1);
+    private static final CallbackFactory TWICE = new CallbackFactory(2);
 
     enum BundleVerifier {
         ONCE_SUCCESS(ONCE),
@@ -168,7 +168,7 @@ public class PackageTestTest extends JUnitAdapter {
         protected final int expectedTicks;
     }
 
-    private static class CountingConsumer extends TickCounter implements ThrowingConsumer<JPackageCommand> {
+    private static class CountingConsumer extends TickCounter implements ThrowingConsumer<JPackageCommand, RuntimeException> {
 
         @Override
         public void accept(JPackageCommand cmd) {
@@ -188,7 +188,7 @@ public class PackageTestTest extends JUnitAdapter {
         private final String label;
     }
 
-    private static class CountingRunnable extends TickCounter implements ThrowingRunnable {
+    private static class CountingRunnable extends TickCounter implements ThrowingRunnable<RuntimeException> {
 
         @Override
         public void run() {
@@ -208,7 +208,7 @@ public class PackageTestTest extends JUnitAdapter {
         private final String label;
     }
 
-    private static class CountingBundleVerifier extends TickCounter implements ThrowingBiConsumer<JPackageCommand, Executor.Result> {
+    private static class CountingBundleVerifier extends TickCounter implements ThrowingBiConsumer<JPackageCommand, Executor.Result, RuntimeException> {
 
         @Override
         public void accept(JPackageCommand cmd, Executor.Result result) {
@@ -238,7 +238,7 @@ public class PackageTestTest extends JUnitAdapter {
         private final int expectedJPackageExitCode;
     }
 
-    private final static class CountingInstaller extends TickCounter implements Function<JPackageCommand, Integer> {
+    private static final class CountingInstaller extends TickCounter implements Function<JPackageCommand, Integer> {
 
         @Override
         public Integer apply(JPackageCommand cmd) {
@@ -341,7 +341,7 @@ public class PackageTestTest extends JUnitAdapter {
                     }
 
                     @Override
-                    JPackageCommand assertAppLayout() {
+                    JPackageCommand runStandardAsserts() {
                         return this;
                     }
 
@@ -351,7 +351,8 @@ public class PackageTestTest extends JUnitAdapter {
                     }
 
                     @Override
-                    public void verifyIsOfType(PackageType ... types) {
+                    public JPackageCommand verifyIsOfType(Set<PackageType> types) {
+                        return this;
                     }
 
                     @Override
@@ -370,13 +371,13 @@ public class PackageTestTest extends JUnitAdapter {
                         } catch (IOException ex) {
                             throw new UncheckedIOException(ex);
                         }
-                        return new Executor.Result(actualJPackageExitCode, null,
+                        return new Executor.Result(actualJPackageExitCode,
                                 this::getPrintableCommandLine).assertExitCodeIs(expectedExitCode);
                     }
                 };
             }).setExpectedExitCode(expectedJPackageExitCode)
                     .setExpectedInstallExitCode(handlersSpec.installExitCode)
-                    .isPackageTypeSupported(type -> true)
+                    .isPackageTypeEnabled(type -> true)
                     .forTypes().packageHandlers(handlers);
         }
 
@@ -439,7 +440,7 @@ public class PackageTestTest extends JUnitAdapter {
         }
     }
 
-    private final static class TestSpecBuilder {
+    private static final class TestSpecBuilder {
 
         TestSpecBuilder type(PackageType v) {
             type = Objects.requireNonNull(v);

@@ -27,7 +27,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * <PRE>
  * Stack: ..., value1.word1, value1.word2, value2.word1, value2.word2 -&gt; ..., result &lt;= -1, 0, 1&gt;
  * </PRE>
- *
  */
 public class LCMP extends Instruction implements TypedInstruction, StackProducer, StackConsumer {
 

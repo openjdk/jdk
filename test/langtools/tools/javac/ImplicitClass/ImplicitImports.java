@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8325324
+ * @bug 8325324 8344706
  * @summary Verify behavior w.r.t. implicit imports
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -82,7 +82,6 @@ public class ImplicitImports extends TestRunner {
 
         {//with --release:
             new JavacTask(tb)
-                .options("--enable-preview", "--release", SOURCE_VERSION)
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Task.Expect.SUCCESS)
@@ -91,7 +90,6 @@ public class ImplicitImports extends TestRunner {
             var out = new JavaTask(tb)
                     .classpath(classes.toString())
                     .className("Test")
-                    .vmOptions("--enable-preview")
                     .run()
                     .writeAll()
                     .getOutputLines(Task.OutputKind.STDOUT);
@@ -107,7 +105,6 @@ public class ImplicitImports extends TestRunner {
 
         {//with --source:
             new JavacTask(tb)
-                .options("--enable-preview", "--source", SOURCE_VERSION)
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Task.Expect.SUCCESS)
@@ -116,7 +113,6 @@ public class ImplicitImports extends TestRunner {
             var out = new JavaTask(tb)
                     .classpath(classes.toString())
                     .className("Test")
-                    .vmOptions("--enable-preview")
                     .run()
                     .writeAll()
                     .getOutputLines(Task.OutputKind.STDOUT);
@@ -132,10 +128,8 @@ public class ImplicitImports extends TestRunner {
     }
 
     @Test
-    public void testImplicitSimpleIOImport(Path base) throws Exception {
+    public void testNoImplicitSimpleIOImport(Path base) throws Exception {
         Path current = base.resolve(".");
-
-        Path patchClasses = prepareIOPatch(current);
 
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
@@ -148,28 +142,21 @@ public class ImplicitImports extends TestRunner {
 
         Files.createDirectories(classes);
 
-        new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION,
-                     "--patch-module", "java.base=" + patchClasses)
-            .outdir(classes)
-            .files(tb.findJavaFiles(src))
-            .run(Task.Expect.SUCCESS)
-            .writeAll();
-
-        var out = new JavaTask(tb)
-                .classpath(classes.toString())
-                .className("Test")
-                .vmOptions("--enable-preview",
-                           "--patch-module", "java.base=" + patchClasses)
-                .run()
+        var log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(Task.OutputKind.STDOUT);
+                .getOutputLines(OutputKind.DIRECT);
 
-        var expectedOut = List.of("Hello, World!");
+        var expectedLog = List.of(
+            "Test.java:2:5: compiler.err.cant.resolve.location.args: kindname.method, println, , java.lang.String, (compiler.misc.location: kindname.class, Test, null)",
+            "1 error");
 
-        if (!Objects.equals(expectedOut, out)) {
-            throw new AssertionError("Incorrect Output, expected: " + expectedOut +
-                                      ", actual: " + out);
+        if (!Objects.equals(expectedLog, log)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedLog +
+                                      ", actual: " + log);
 
         }
     }
@@ -177,9 +164,6 @@ public class ImplicitImports extends TestRunner {
     @Test
     public void testNoImplicitImportsForOrdinaryClasses(Path base) throws Exception {
         Path current = base.resolve(".");
-
-        Path patchClasses = prepareIOPatch(current);
-
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
         tb.writeFile(src.resolve("Test.java"),
@@ -195,9 +179,7 @@ public class ImplicitImports extends TestRunner {
         Files.createDirectories(classes);
 
         var log = new JavacTask(tb)
-                .options("--enable-preview", "--release", SOURCE_VERSION,
-                        "--patch-module", "java.base=" + patchClasses,
-                        "-XDrawDiagnostics")
+                .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -218,31 +200,6 @@ public class ImplicitImports extends TestRunner {
         }
     }
 
-    private Path prepareIOPatch(Path base) throws IOException {
-        Path patchSrc = base.resolve("patch-src");
-        Path patchClasses = base.resolve("patch-classes");
-        tb.writeJavaFiles(patchSrc,
-                          """
-                          package java.io;
-                          public class IO {
-                              public static void println(Object o) {
-                                  System.out.println(o);
-                              }
-                          }
-                          """);
-
-        Files.createDirectories(patchClasses);
-
-        new JavacTask(tb)
-            .options("--patch-module", "java.base=" + patchSrc)
-            .outdir(patchClasses)
-            .files(tb.findJavaFiles(patchSrc))
-            .run(Task.Expect.SUCCESS)
-            .writeAll();
-
-        return patchClasses;
-    }
-
     @Test
     public void testWithExplicitImport(Path base) throws Exception {
         Path current = base.resolve(".");
@@ -260,7 +217,6 @@ public class ImplicitImports extends TestRunner {
         Files.createDirectories(classes);
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.SUCCESS)
@@ -269,7 +225,6 @@ public class ImplicitImports extends TestRunner {
         var out = new JavaTask(tb)
                 .classpath(classes.toString())
                 .className("Test")
-                .vmOptions("--enable-preview")
                 .run()
                 .writeAll()
                 .getOutputLines(Task.OutputKind.STDOUT);

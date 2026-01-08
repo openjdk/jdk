@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public class ProductionParams {
         disableExternalSymbols = optionResolver.addBooleanOption("disable-external-symbols", "Don\'t use external symbols");
         addExternalSymbols = optionResolver.addStringOption("add-external-symbols", "all", "Add symbols for listed classes (comma-separated list)");
         disableInheritance = optionResolver.addBooleanOption("disable-inheritance", "Disable inheritance");
-        disableDowncasts = optionResolver.addBooleanOption("disable-downcasts", "Disable downcasting of objects");
+        disableDowncasts = optionResolver.addBooleanOption(null, "disable-downcasts", true, "Disable downcasting of objects");
         disableStatic = optionResolver.addBooleanOption("disable-static", "Disable generation of static objects and functions");
         disableInterfaces = optionResolver.addBooleanOption("disable-interfaces", "Disable generation of interfaces");
         disableClasses = optionResolver.addBooleanOption("disable-classes", "Disable generation of classes");

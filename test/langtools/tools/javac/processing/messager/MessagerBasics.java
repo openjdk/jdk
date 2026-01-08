@@ -2,7 +2,6 @@
  * @test    /nodynamiccopyright/
  * @bug     6341173 6341072
  * @summary Test presence of Messager methods
- * @author  Joseph D. Darcy
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler

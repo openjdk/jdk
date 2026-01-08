@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,16 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
 public class StubCallableStatement  extends StubPreparedStatement
 implements CallableStatement{
+
+    public StubCallableStatement(StubConnection con) {
+        super(con);
+    }
 
     @Override
     public void registerOutParameter(int parameterIndex, int sqlType) throws SQLException {
@@ -608,5 +601,4 @@ implements CallableStatement{
     public <T> T getObject(String parameterName, Class<T> type) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
 }

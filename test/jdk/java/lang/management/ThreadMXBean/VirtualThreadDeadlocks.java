@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 
@@ -55,6 +56,8 @@ public class VirtualThreadDeadlocks {
     private static final Object LOCK2 = new Object();
 
     private static final CyclicBarrier barrier = new CyclicBarrier(2);
+    private static final AtomicBoolean reached1 = new AtomicBoolean();
+    private static final AtomicBoolean reached2 = new AtomicBoolean();
 
     /**
      * PP = test deadlock with two platform threads
@@ -72,6 +75,7 @@ public class VirtualThreadDeadlocks {
         Thread thread1 = builder1.start(() -> {
             synchronized (LOCK1) {
                 try { barrier.await(); } catch (Exception ie) {}
+                reached1.set(true);
                 synchronized (LOCK2) { }
             }
         });
@@ -84,14 +88,15 @@ public class VirtualThreadDeadlocks {
         Thread thread2 = builder2.start(() -> {
             synchronized (LOCK2) {
                 try { barrier.await(); } catch (Exception ie) {}
+                reached2.set(true);
                 synchronized (LOCK1) { }
             }
         });
         System.out.println("thread2 => " + thread2);
 
         System.out.println("Waiting for thread1 and thread2 to deadlock ...");
-        awaitBlocked(thread1);
-        awaitBlocked(thread2);
+        awaitTrueAndBlocked(thread1, reached1);
+        awaitTrueAndBlocked(thread2, reached2);
 
         ThreadMXBean bean = ManagementFactory.getPlatformMXBean(ThreadMXBean.class);
         long[] deadlockedThreads = sorted(bean.findMonitorDeadlockedThreads());
@@ -108,8 +113,8 @@ public class VirtualThreadDeadlocks {
             throw new RuntimeException("Unexpected result");
     }
 
-    private static void awaitBlocked(Thread thread) throws InterruptedException {
-        while (thread.getState() != Thread.State.BLOCKED) {
+    private static void awaitTrueAndBlocked(Thread thread, AtomicBoolean flag) throws InterruptedException {
+        while (!flag.get() || thread.getState() != Thread.State.BLOCKED) {
             Thread.sleep(10);
             if (!thread.isAlive()) {
                 throw new RuntimeException("Thread " + thread + " is terminated.");

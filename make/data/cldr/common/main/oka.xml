@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="oka"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="oka">n̓səl̓xcin̓</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aá {aˤ}{áˤ} c{c̓}č ə ɣ h ií ɪ{ɪ́} k{k̓} {kʷ}{k̓ʷ} l{l̓} ɬ {ƛ̓} m{m̓} n{n̓} p{p̓} q{q̓} {qʷ}{q̓ʷ} r s t{t̓} uú w{w̓} x{x̌} {xʷ}{x̌ʷ} y{y̓} ʔ ʕ{ʕ̓} {ʕʷ}{ʕ̓ʷ}]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[b d e f g j o v z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . '‘’ &quot;“” ( ) \[ \] @ * / \&amp; #]</exemplarCharacters>
+	</characters>
+</ldml>

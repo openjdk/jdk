@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,12 +149,12 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
                 long clen = responseLength > 0 ? responseLength : 0;
             rspheadersBuilder.setHeader("Content-length", Long.toString(clen));
         }
-
-        rspheadersBuilder.setHeader(":status", Integer.toString(rCode));
-        HttpHeaders headers = rspheadersBuilder.build();
-
+        final HttpHeadersBuilder pseudoHeadersBuilder = new HttpHeadersBuilder();
+        pseudoHeadersBuilder.setHeader(":status", Integer.toString(rCode));
+        final HttpHeaders pseudoHeaders = pseudoHeadersBuilder.build();
+        final HttpHeaders headers = rspheadersBuilder.build();
         ResponseHeaders response
-                = new ResponseHeaders(headers, insertionPolicy);
+                = new ResponseHeaders(pseudoHeaders, headers, insertionPolicy);
         response.streamid(streamid);
         response.setFlag(HeaderFrame.END_HEADERS);
 
@@ -185,6 +185,13 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     }
 
     @Override
+    public void resetStream(long code) throws IOException {
+        // will close the os if not closed.
+        // reset will be sent only if the os is not closed.
+        os.sendReset((int) code);
+    }
+
+    @Override
     public InetSocketAddress getRemoteAddress() {
         return (InetSocketAddress) conn.socket.getRemoteSocketAddress();
     }
@@ -210,18 +217,18 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     }
 
     @Override
-    public void serverPush(URI uri, HttpHeaders headers, InputStream content) {
+    public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content) {
         HttpHeadersBuilder headersBuilder = new HttpHeadersBuilder();
         headersBuilder.setHeader(":method", "GET");
         headersBuilder.setHeader(":scheme", uri.getScheme());
         headersBuilder.setHeader(":authority", uri.getAuthority());
         headersBuilder.setHeader(":path", uri.getPath());
-        for (Map.Entry<String,List<String>> entry : headers.map().entrySet()) {
+        for (Map.Entry<String,List<String>> entry : reqHeaders.map().entrySet()) {
             for (String value : entry.getValue())
                 headersBuilder.addHeader(entry.getKey(), value);
         }
         HttpHeaders combinedHeaders = headersBuilder.build();
-        OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, content);
+        OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, rspHeaders, content);
         pp.setFlag(HeaderFrame.END_HEADERS);
 
         try {

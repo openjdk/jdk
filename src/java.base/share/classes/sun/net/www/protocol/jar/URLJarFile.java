@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class URLJarFile extends JarFile {
     private Map<String, Attributes> superEntries;
 
     static JarFile getJarFile(URL url, URLJarFileCloseController closeController) throws IOException {
-        if (isFileURL(url)) {
+        if (ParseUtil.isLocalFileURL(url)) {
             Runtime.Version version = "runtime".equals(url.getRef())
                     ? JarFile.runtimeVersion()
                     : JarFile.baseVersion();
@@ -69,20 +69,6 @@ public class URLJarFile extends JarFile {
             throws IOException {
         super(new File(ParseUtil.decode(url.getFile())), true, ZipFile.OPEN_READ, version);
         this.closeController = closeController;
-    }
-
-    static boolean isFileURL(URL url) {
-        if (url.getProtocol().equalsIgnoreCase("file")) {
-            /*
-             * Consider this a 'file' only if it's a LOCAL file, because
-             * 'file:' URLs can be accessible through ftp.
-             */
-            String host = url.getHost();
-            if (host == null || host.isEmpty() || host.equals("~") ||
-                host.equalsIgnoreCase("localhost"))
-                return true;
-        }
-        return false;
     }
 
     /**

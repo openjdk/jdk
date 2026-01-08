@@ -85,7 +85,11 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
     }
   } else {
     Register rreg = right->as_register();
-    __ corrected_idivl(dreg, lreg, rreg, is_irem, /* is_signed */ true);
+    if (is_irem) {
+      __ remw(dreg, lreg, rreg);
+    } else {
+      __ divw(dreg, lreg, rreg);
+    }
   }
 }
 
@@ -171,12 +175,8 @@ void LIR_Assembler::arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
       case lir_add: __ add(dest->as_register_lo(), lreg_lo, rreg_lo); break;
       case lir_sub: __ sub(dest->as_register_lo(), lreg_lo, rreg_lo); break;
       case lir_mul: __ mul(dest->as_register_lo(), lreg_lo, rreg_lo); break;
-      case lir_div: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo,
-                                       /* want_remainder */ false, /* is_signed */ true);
-                    break;
-      case lir_rem: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo,
-                                       /* want_remainder */ true, /* is_signed */ true);
-                    break;
+      case lir_div: __ div(dest->as_register_lo(), lreg_lo, rreg_lo); break;
+      case lir_rem: __ rem(dest->as_register_lo(), lreg_lo, rreg_lo); break;
       default:
         ShouldNotReachHere();
     }
@@ -265,7 +265,7 @@ void LIR_Assembler::arith_op_double_fpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
 }
 
 void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest,
-                             CodeEmitInfo* info, bool pop_fpu_stack) {
+                             CodeEmitInfo* info) {
   assert(info == nullptr, "should never be used, idiv/irem and ldiv/lrem not handled by this method");
 
   if (left->is_single_cpu()) {

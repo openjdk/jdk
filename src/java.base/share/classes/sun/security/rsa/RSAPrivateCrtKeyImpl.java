@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger qe;      // prime exponent q
     private BigInteger coeff;   // CRT coefficient
 
+    // RSA or RSA-PSS KeyType
     private final transient KeyType type;
 
     // Optional parameters associated with this RSA key
@@ -101,7 +102,7 @@ public final class RSAPrivateCrtKeyImpl
             }
         case "PKCS#1":
             try {
-                BigInteger[] comps = parseASN1(encoded);
+                BigInteger[] comps = parsePKCS1(encoded);
                 if ((comps[1].signum() == 0) || (comps[3].signum() == 0) ||
                     (comps[4].signum() == 0) || (comps[5].signum() == 0) ||
                     (comps[6].signum() == 0) || (comps[7].signum() == 0)) {
@@ -237,7 +238,7 @@ public final class RSAPrivateCrtKeyImpl
         Arrays.fill(nbytes[6], (byte) 0);
         Arrays.fill(nbytes[7], (byte) 0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        key = val.toByteArray();
+        privKeyMaterial = val.toByteArray();
         val.clear();
     }
 
@@ -304,7 +305,7 @@ public final class RSAPrivateCrtKeyImpl
     // utility method for parsing DER encoding of RSA private keys in PKCS#1
     // format as defined in RFC 8017 Appendix A.1.2, i.e. SEQ of version, n,
     // e, d, p, q, pe, qe, and coeff, and return the parsed components.
-    private static BigInteger[] parseASN1(byte[] raw) throws IOException {
+    private static BigInteger[] parsePKCS1(byte[] raw) throws IOException {
         DerValue derValue = new DerValue(raw);
         try {
             if (derValue.tag != DerValue.tag_Sequence) {
@@ -337,7 +338,7 @@ public final class RSAPrivateCrtKeyImpl
 
     private void parseKeyBits() throws InvalidKeyException {
         try {
-            BigInteger[] comps = parseASN1(key);
+            BigInteger[] comps = parsePKCS1(privKeyMaterial);
             n = comps[0];
             e = comps[1];
             d = comps[2];
@@ -351,6 +352,30 @@ public final class RSAPrivateCrtKeyImpl
         }
     }
 
+    /**
+     * With a given PKCS#1/slleay/OpenSSL old default RSA binary encoding,
+     * decode and return the proper RSA encoded KeySpec
+     * @param encoded RSA binary encoding
+     * @return KeySpec
+     * @throws InvalidKeyException on decoding failure
+     */
+    public static KeySpec getKeySpec(byte[] encoded) throws
+        InvalidKeyException {
+        try {
+            BigInteger[] comps = parsePKCS1(encoded);
+            if ((comps[1].signum() == 0) || (comps[3].signum() == 0) ||
+                (comps[4].signum() == 0) || (comps[5].signum() == 0) ||
+                (comps[6].signum() == 0) || (comps[7].signum() == 0)) {
+                return new RSAPrivateKeySpec(comps[0], comps[2]);
+            } else {
+                return new RSAPrivateCrtKeySpec(comps[0],
+                    comps[1], comps[2], comps[3], comps[4], comps[5],
+                    comps[6], comps[7]);
+            }
+        } catch (IOException ioe) {
+            throw new InvalidKeyException("Invalid PKCS#1 encoding", ioe);
+        }
+    }
     /**
      * Restores the state of this object from the stream.
      * <p>

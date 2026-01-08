@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,9 @@ public class T7086261 {
         try (JavaFileManager jfm = javac.getStandardFileManager(null, null, null)) {
             JavaCompiler.CompilationTask task =
                     javac.getTask(null, jfm, new DiagnosticChecker(), null, null, Arrays.asList(new ErroneousSource()));
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
         }
     }
 

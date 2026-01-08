@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -23,7 +23,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bs" draft="unconfirmed">Se-bosnia</language>
 			<language type="ca" draft="unconfirmed">Se-catalia</language>
 			<language type="cs" draft="unconfirmed">Se-czech</language>
-			<language type="cy" draft="unconfirmed">Se-welsh</language>
+			<language type="cy">Sewelsh</language>
 			<language type="da" draft="unconfirmed">Se-dutch</language>
 			<language type="de" draft="unconfirmed">Se-jeremane</language>
 			<language type="el" draft="unconfirmed">Se-greek</language>
@@ -137,7 +137,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<monthWidth type="abbreviated">
 							<month type="1">Phe</month>
 							<month type="2">Kol</month>
-							<month type="3">Ube</month>
+							<month type="3">Hlb</month>
 							<month type="4">Mme</month>
 							<month type="5">Mot</month>
 							<month type="6">Jan</month>

@@ -80,6 +80,7 @@ friend class ciObjectFactory; \
 // Any more access must be given explicitly.
 #define CI_PACKAGE_ACCESS_TO           \
 friend class ciObjectFactory;          \
+friend class VMStructs;                \
 friend class ciCallSite;               \
 friend class ciConstantPoolCache;      \
 friend class ciField;                  \

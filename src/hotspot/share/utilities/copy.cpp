@@ -22,7 +22,6 @@
  *
  */
 
-#include "utilities/copy.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/byteswap.hpp"

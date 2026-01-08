@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -59,9 +59,9 @@ class JfrHashtableBucket : public CHeapObj<mtTracing> {
   TableEntry* _entry;
 
   TableEntry* get_entry() const {
-    return (TableEntry*)Atomic::load_acquire(&_entry);
+    return (TableEntry*)AtomicAccess::load_acquire(&_entry);
   }
-  void set_entry(TableEntry* entry) { Atomic::release_store(&_entry, entry);}
+  void set_entry(TableEntry* entry) { AtomicAccess::release_store(&_entry, entry);}
   TableEntry** entry_addr() { return &_entry; }
 };
 

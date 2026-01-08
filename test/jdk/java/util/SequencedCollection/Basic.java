@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,11 @@ public class Basic {
         return Collections.unmodifiableSequencedCollection(coll);
     }
 
-    static SequencedCollection<String> ulist(List<String> list) {
+    static List<String> sylist(List<String> list) {
+        return Collections.synchronizedList(list);
+    }
+
+    static List<String> ulist(List<String> list) {
         return Collections.unmodifiableList(list);
     }
 
@@ -116,6 +120,7 @@ public class Basic {
             new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "TreeSet", new TreeSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL }
@@ -139,6 +144,7 @@ public class Basic {
             new Object[] { "SimpleDeque", new SimpleDeque<>(), List.of() },
             new Object[] { "SimpleList", new SimpleList<>(), List.of() },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(), List.of() },
+            new Object[] { "SynchList", sylist(new ArrayList<>()), List.of() },
             new Object[] { "TreeSet", new TreeSet<>(), List.of() },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>()), List.of() },
             new Object[] { "UnmodSet", uset(new LinkedHashSet<>()), List.of() }
@@ -155,7 +161,8 @@ public class Basic {
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SetFromMap", setFromMap(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
-            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL }
+            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)), ORIGINAL }
         ).iterator();
     }
 
@@ -178,6 +185,7 @@ public class Basic {
             new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "TreeSet", new TreeSet<>(ORIGINAL), ORIGINAL }
         ).iterator();
     }
@@ -194,6 +202,7 @@ public class Basic {
             new Object[] { "SimpleDeque", new SimpleDeque<>(), List.of() },
             new Object[] { "SimpleList", new SimpleList<>(), List.of() },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(), List.of() },
+            new Object[] { "SynchList", sylist(new ArrayList<>()), List.of() },
             new Object[] { "TreeSet", new TreeSet<>(), List.of() }
         ).iterator();
     }
@@ -209,6 +218,7 @@ public class Basic {
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL), ORIGINAL },
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
             new Object[] { "SetFromMap", setFromMap(ORIGINAL), ORIGINAL },
+            new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "TreeSet", new TreeSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL }
@@ -226,6 +236,7 @@ public class Basic {
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL).reversed() },
             new Object[] { "ListOf", ORIGINAL.reversed() },
             new Object[] { "SetFromMap", setFromMap(ORIGINAL).reversed() },
+            new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)).reversed() },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)).reversed() },
             new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)).reversed() }
         ).iterator();
@@ -243,7 +254,8 @@ public class Basic {
             new Object[] { "ListOf", ORIGINAL },
             new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL) },
             new Object[] { "SimpleList", new SimpleList<>(ORIGINAL) },
-            new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL) }
+            new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL) },
+            new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)) }
         ).iterator();
     }
 
@@ -279,6 +291,20 @@ public class Basic {
     public Iterator<Object[]> checkedSortedSet() {
         return Arrays.<Object[]>asList(
             new Object[] { "ChkSorted", cksorted(new TreeSet<>(ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
+    // These Lists don't all implement RandomAccess; they're Lists that should be
+    // tested for proper propagation of the RandomAccess markers.
+    @DataProvider(name="randomAccessLists")
+    public Iterator<Object[]> randomAccessLists() {
+        return Arrays.asList(
+            new Object[] { "ArrayList", new ArrayList<>(ORIGINAL) },
+            new Object[] { "AsList", Arrays.asList(ORIGINAL.toArray()) },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(ORIGINAL) },
+            new Object[] { "LinkedList", new LinkedList<>(ORIGINAL) },
+            new Object[] { "ListOf", ORIGINAL },
+            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL) }
         ).iterator();
     }
 
@@ -853,5 +879,23 @@ public class Basic {
         assertEquals(it.next(), "d");
         checkContents(sub, refSub);
         checkContents(list, refList);
+    }
+
+    @Test
+    public void testSynchListReversedAlwaysReturnsSameObject() {
+        var list = sylist(ORIGINAL);
+        var rev1 = list.reversed();
+        var rev2 = list.reversed();
+        assertSame(rev1, rev2);
+    }
+
+    @Test(dataProvider="randomAccessLists")
+    public void testRandomAccess(String label, List<String> list) {
+        assertEquals(list.reversed() instanceof RandomAccess, list instanceof RandomAccess);
+
+        // Collections.synchronizedList() preservation of RandomAccess is somewhat
+        // tested by java/util/Collection/MOAT.java but it might not have all these cases.
+        assertEquals(sylist(list) instanceof RandomAccess, list instanceof RandomAccess);
+        assertEquals(sylist(list).reversed() instanceof RandomAccess, sylist(list) instanceof RandomAccess);
     }
 }

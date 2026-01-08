@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
      * operation.
      */
     @SuppressWarnings("serial") // JDK-implementation class
-    static class ScrollEvent extends PeerEvent {
+    static final class ScrollEvent extends PeerEvent {
         ScrollEvent(Object source, Runnable runnable) {
             super(source, runnable, 0L);
         }
@@ -187,7 +187,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
     /*
      * Runnable for the ScrollEvent that performs the adjustment.
      */
-    class Adjustor implements Runnable {
+    final class Adjustor implements Runnable {
         int orient;             // selects scrollbar
         int type;               // adjustment type
         int pos;                // new position (only used for absolute)

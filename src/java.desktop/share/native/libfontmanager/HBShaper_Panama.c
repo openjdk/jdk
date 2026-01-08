@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ JDKEXPORT void jdk_hb_shape(
 
      buffer = hb_buffer_create();
      hb_buffer_set_script(buffer, getHBScriptCode(script));
+     hb_buffer_set_invisible_glyph(buffer, INVISIBLE_GLYPH_ID);
      hb_buffer_set_language(buffer,
                             hb_ot_tag_to_language(HB_OT_TAG_DEFAULT_LANGUAGE));
      if ((flags & TYPO_RTL) != 0) {

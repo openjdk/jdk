@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,7 @@ public class BufferedImage extends java.awt.Image
      * Represents an image with 8-bit RGBA color components packed into
      * integer pixels.  The image has a {@code DirectColorModel}
      * with alpha. The color data in this image is considered not to be
-     * premultiplied with alpha.  When this type is used as the
-     * {@code imageType} argument to a {@code BufferedImage}
-     * constructor, the created image is consistent with images
-     * created in the JDK1.1 and earlier releases.
+     * premultiplied with alpha.
      */
     public static final int TYPE_INT_ARGB = 2;
 

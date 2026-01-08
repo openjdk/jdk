@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,12 @@ public class breakpoint001a {
     static final String COMMAND_GO    = "go";
     static final String COMMAND_DONE  = "done";
 
-    public static final int breakpointLineNumber = 86;
+    public static final int breakpointLineNumber = 90;
 
     static private int counter = 0;
     static private final int LIMIT = 10;
+
+    static Thread mainThread = null;
 
     public static void main(String args[]) {
         breakpoint001a _breakpoint001a = new breakpoint001a();
@@ -53,6 +55,8 @@ public class breakpoint001a {
     int run( String args[]) {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
+
+        mainThread = Thread.currentThread();
 
         // notify debugger about ready to execute
         pipe.println(COMMAND_READY);

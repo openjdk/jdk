@@ -2304,7 +2304,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // Get oop result if there is one and reset the value in the thread.
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result);
+    get_vm_result_oop(oop_result);
   }
 
   _last_calls_return_pc = return_pc;  // Wipe out other (error handling) calls.
@@ -3679,9 +3679,6 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     r_array_index  = r_temp3,
     r_bitmap       = noreg; // unused
 
-  const Register r_one = Z_R0_scratch;
-  z_lghi(r_one, 1); // for locgr down there, to a load result for failure
-
   BLOCK_COMMENT("verify_secondary_supers_table {");
 
   Label L_passed, L_failure;
@@ -3697,7 +3694,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 
   const Register r_linear_result = r_array_index; // reuse
   z_chi(r_array_length, 0);
-  z_locgr(r_linear_result, r_one, bcondNotHigh); // load failure if array_length <= 0
+  load_on_condition_imm_32(r_linear_result, 1, bcondNotHigh); // load failure if array_length <= 0
   z_brc(bcondNotHigh, L_failure);
   repne_scan(r_array_base, r_super_klass, r_array_length, r_linear_result);
   bind(L_failure);
@@ -3705,13 +3702,20 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   z_cr(r_result, r_linear_result);
   z_bre(L_passed);
 
-  assert_different_registers(Z_ARG1, r_sub_klass, r_linear_result, r_result);
-  lgr_if_needed(Z_ARG1, r_super_klass);
-  assert_different_registers(Z_ARG2, r_linear_result, r_result);
-  lgr_if_needed(Z_ARG2, r_sub_klass);
-  assert_different_registers(Z_ARG3, r_result);
-  z_lgr(Z_ARG3, r_linear_result);
+  // report fatal error and terminate VM
+
+  // Argument shuffle
+  // Z_F1, Z_F3, Z_F5 are volatile regs
+  z_ldgr(Z_F1, r_super_klass);
+  z_ldgr(Z_F3, r_sub_klass);
+  z_ldgr(Z_F5, r_linear_result);
+
   z_lgr(Z_ARG4, r_result);
+
+  z_lgdr(Z_ARG1, Z_F1); // r_super_klass
+  z_lgdr(Z_ARG2, Z_F3); // r_sub_klass
+  z_lgdr(Z_ARG3, Z_F5); // r_linear_result
+
   const char* msg = "mismatch";
   load_const_optimized(Z_ARG5, (address)msg);
 
@@ -3760,211 +3764,6 @@ void MacroAssembler::increment_counter_eq(address counter_address, Register tmp1
   add2mem_32(Address(tmp1_reg), 1, tmp2_reg);
   z_cr(tmp1_reg, tmp1_reg); // Set cc to eq.
   bind(l);
-}
-
-// "The box" is the space on the stack where we copy the object mark.
-void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2) {
-
-  assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_lock_lightweight");
-  assert_different_registers(oop, box, temp1, temp2, Z_R0_scratch);
-
-  Register displacedHeader = temp1;
-  Register currentHeader   = temp1;
-  Register temp            = temp2;
-
-  NearLabel done, object_has_monitor;
-
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
-  BLOCK_COMMENT("compiler_fast_lock_object {");
-
-  // Load markWord from oop into mark.
-  z_lg(displacedHeader, hdr_offset, oop);
-
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(temp, oop);
-    z_tm(Address(temp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    z_brne(done);
-  }
-
-  // Handle existing monitor.
-  // The object has an existing monitor iff (mark & monitor_value) != 0.
-  guarantee(Immediate::is_uimm16(markWord::monitor_value), "must be half-word");
-  z_tmll(displacedHeader, markWord::monitor_value);
-  z_brnaz(object_has_monitor);
-
-  if (LockingMode == LM_MONITOR) {
-    // Set NE to indicate 'failure' -> take slow-path
-    // From loading the markWord, we know that oop != nullptr
-    z_ltgr(oop, oop);
-    z_bru(done);
-  } else {
-    assert(LockingMode == LM_LEGACY, "must be");
-    // Set mark to markWord | markWord::unlocked_value.
-    z_oill(displacedHeader, markWord::unlocked_value);
-
-    // Load Compare Value application register.
-
-    // Initialize the box (must happen before we update the object mark).
-    z_stg(displacedHeader, BasicLock::displaced_header_offset_in_bytes(), box);
-
-    // Compare object markWord with mark and if equal, exchange box with object markWork.
-    // If the compare-and-swap succeeds, then we found an unlocked object and have now locked it.
-    z_csg(displacedHeader, box, hdr_offset, oop);
-    assert(currentHeader == displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
-    z_bre(done);
-
-    // We did not see an unlocked object
-    // currentHeader contains what is currently stored in the oop's markWord.
-    // We might have a recursive case. Verify by checking if the owner is self.
-    // To do so, compare the value in the markWord (currentHeader) with the stack pointer.
-    z_sgr(currentHeader, Z_SP);
-    load_const_optimized(temp, (~(os::vm_page_size() - 1) | markWord::lock_mask_in_place));
-
-    z_ngr(currentHeader, temp);
-
-    // result zero: owner is self -> recursive lock. Indicate that by storing 0 in the box.
-    // result not-zero: attempt failed. We don't hold the lock -> go for slow case.
-
-    z_stg(currentHeader/*==0 or not 0*/, BasicLock::displaced_header_offset_in_bytes(), box);
-
-    z_bru(done);
-  }
-
-  bind(object_has_monitor);
-
-  Register zero = temp;
-  Register monitor_tagged = displacedHeader; // Tagged with markWord::monitor_value.
-
-  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
-  // If csg succeeds then CR=EQ, otherwise, register zero is filled
-  // with the current owner.
-  z_lghi(zero, 0);
-  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
-  z_csg(zero, Z_R0_scratch, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
-
-  // Store a non-null value into the box.
-  z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
-
-  z_bre(done); // acquired the lock for the first time.
-
-  BLOCK_COMMENT("fast_path_recursive_lock {");
-  // Check if we are already the owner (recursive lock)
-  z_cgr(Z_R0_scratch, zero); // owner is stored in zero by "z_csg" above
-  z_brne(done); // not a recursive lock
-
-  // Current thread already owns the lock. Just increment recursion count.
-  z_agsi(Address(monitor_tagged, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1ll);
-  z_cgr(zero, zero); // set the CC to EQUAL
-  BLOCK_COMMENT("} fast_path_recursive_lock");
-  bind(done);
-
-  BLOCK_COMMENT("} compiler_fast_lock_object");
-  // If locking was successful, CR should indicate 'EQ'.
-  // The compiler or the native wrapper generates a branch to the runtime call
-  // _complete_monitor_locking_Java.
-}
-
-void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2) {
-
-  assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_unlock_lightweight");
-  assert_different_registers(oop, box, temp1, temp2, Z_R0_scratch);
-
-  Register displacedHeader = temp1;
-  Register currentHeader   = temp2;
-  Register temp            = temp1;
-
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
-  Label done, object_has_monitor, not_recursive;
-
-  BLOCK_COMMENT("compiler_fast_unlock_object {");
-
-  if (LockingMode == LM_LEGACY) {
-    // Find the lock address and load the displaced header from the stack.
-    // if the displaced header is zero, we have a recursive unlock.
-    load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-    z_bre(done);
-  }
-
-  // Handle existing monitor.
-  // The object has an existing monitor iff (mark & monitor_value) != 0.
-  z_lg(currentHeader, hdr_offset, oop);
-  guarantee(Immediate::is_uimm16(markWord::monitor_value), "must be half-word");
-
-  z_tmll(currentHeader, markWord::monitor_value);
-  z_brnaz(object_has_monitor);
-
-  if (LockingMode == LM_MONITOR) {
-    // Set NE to indicate 'failure' -> take slow-path
-    z_ltgr(oop, oop);
-    z_bru(done);
-  } else {
-    assert(LockingMode == LM_LEGACY, "must be");
-    // Check if it is still a lightweight lock, this is true if we see
-    // the stack address of the basicLock in the markWord of the object
-    // copy box to currentHeader such that csg does not kill it.
-    z_lgr(currentHeader, box);
-    z_csg(currentHeader, displacedHeader, hdr_offset, oop);
-    z_bru(done); // csg sets CR as desired.
-  }
-
-  // In case of LM_LIGHTWEIGHT, we may reach here with (temp & ObjectMonitor::ANONYMOUS_OWNER) != 0.
-  // This is handled like owner thread mismatches: We take the slow path.
-
-  // Handle existing monitor.
-  bind(object_has_monitor);
-
-  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
-  z_cg(Z_R0_scratch, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-  z_brne(done);
-
-  BLOCK_COMMENT("fast_path_recursive_unlock {");
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-  z_bre(not_recursive); // if 0 then jump, it's not recursive locking
-
-  // Recursive inflated unlock
-  z_agsi(Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), -1ll);
-  z_cgr(currentHeader, currentHeader); // set the CC to EQUAL
-  BLOCK_COMMENT("} fast_path_recursive_unlock");
-  z_bru(done);
-
-  bind(not_recursive);
-
-  NearLabel set_eq_unlocked;
-
-  // Set owner to null.
-  // Release to satisfy the JMM
-  z_release();
-  z_lghi(temp, 0);
-  z_stg(temp, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
-  // We need a full fence after clearing owner to avoid stranding.
-  z_fence();
-
-  // Check if the entry_list is empty.
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(entry_list)));
-  z_bre(done); // If so we are done.
-
-  // Check if there is a successor.
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)));
-  z_brne(set_eq_unlocked); // If so we are done.
-
-  // Save the monitor pointer in the current thread, so we can try to
-  // reacquire the lock in SharedRuntime::monitor_exit_helper().
-  z_xilf(currentHeader, markWord::monitor_value);
-  z_stg(currentHeader, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
-
-  z_ltgr(oop, oop); // Set flag = NE
-  z_bru(done);
-
-  bind(set_eq_unlocked);
-  z_cr(temp, temp); // Set flag = EQ
-
-  bind(done);
-
-  BLOCK_COMMENT("} compiler_fast_unlock_object");
-  // flag == EQ indicates success
-  // flag == NE indicates failure
 }
 
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
@@ -4063,22 +3862,22 @@ void MacroAssembler::set_thread_state(JavaThreadState new_state) {
   store_const(Address(Z_thread, JavaThread::thread_state_offset()), new_state, Z_R0, false);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result) {
-  z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
-  clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(void*));
+void MacroAssembler::get_vm_result_oop(Register oop_result) {
+  z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_oop_offset()));
+  clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(void*));
 
   verify_oop(oop_result, FILE_AND_LINE);
 }
 
-void MacroAssembler::get_vm_result_2(Register result) {
-  z_lg(result, Address(Z_thread, JavaThread::vm_result_2_offset()));
-  clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(void*));
+void MacroAssembler::get_vm_result_metadata(Register result) {
+  z_lg(result, Address(Z_thread, JavaThread::vm_result_metadata_offset()));
+  clear_mem(Address(Z_thread, JavaThread::vm_result_metadata_offset()), sizeof(void*));
 }
 
 // We require that C code which does not return a value in vm_result will
 // leave it undisturbed.
 void MacroAssembler::set_vm_result(Register oop_result) {
-  z_stg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
+  z_stg(oop_result, Address(Z_thread, JavaThread::vm_result_oop_offset()));
 }
 
 // Explicit null checks (used for method handle code).
@@ -6339,13 +6138,12 @@ void MacroAssembler::zap_from_to(Register low, Register high, Register val, Regi
 }
 #endif // !PRODUCT
 
-// Implements lightweight-locking.
+// Implements fast-locking.
 //  - obj: the object to be locked, contents preserved.
 //  - temp1, temp2: temporary registers, contents destroyed.
 //  Note: make sure Z_R1 is not manipulated here when C2 compiler is in play
-void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register temp1, Register temp2, Label& slow) {
+void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1, Register temp2, Label& slow) {
 
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(basic_lock, obj, temp1, temp2);
 
   Label push;
@@ -6359,9 +6157,15 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   z_lg(mark, Address(obj, mark_offset));
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
     z_mvghi(om_cache_addr, 0);
+  }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(temp1, obj);
+    z_tm(Address(temp1, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+    z_brne(slow);
   }
 
   // First we need to check if the lock-stack has room for pushing the object reference.
@@ -6399,13 +6203,12 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   z_alsi(in_bytes(ls_top_offset), Z_thread, oopSize);
 }
 
-// Implements lightweight-unlocking.
+// Implements fast-unlocking.
 // - obj: the object to be unlocked
 // - temp1, temp2: temporary registers, will be destroyed
 // - Z_R1_scratch: will be killed in case of Interpreter & C1 Compiler
-void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register temp2, Label& slow) {
+void MacroAssembler::fast_unlock(Register obj, Register temp1, Register temp2, Label& slow) {
 
-  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, temp1, temp2);
 
   Label unlocked, push_and_slow;
@@ -6461,7 +6264,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   NearLabel not_unlocked;
   z_tmll(mark, markWord::unlocked_value);
   z_braz(not_unlocked);
-  stop("lightweight_unlock already unlocked");
+  stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif // ASSERT
 
@@ -6486,7 +6289,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   bind(unlocked);
 }
 
-void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
+void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Register tmp1, Register tmp2) {
   assert_different_registers(obj, box, tmp1, tmp2, Z_R0_scratch);
 
   // Handle inflated monitor.
@@ -6497,7 +6300,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   NearLabel slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     z_mvghi(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
   }
 
@@ -6511,8 +6314,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   const int mark_offset        = oopDesc::mark_offset_in_bytes();
   const ByteSize ls_top_offset = JavaThread::lock_stack_top_offset();
 
-  BLOCK_COMMENT("compiler_fast_lightweight_locking {");
-  { // lightweight locking
+  BLOCK_COMMENT("compiler_fast_locking {");
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST reach to with flag == EQ
     NearLabel push;
@@ -6559,9 +6362,9 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     z_cgr(obj, obj); // set the CC to EQ, as it could be changed by alsi
     z_bru(locked);
   }
-  BLOCK_COMMENT("} compiler_fast_lightweight_locking");
+  BLOCK_COMMENT("} compiler_fast_locking");
 
-  BLOCK_COMMENT("handle_inflated_monitor_lightweight_locking {");
+  BLOCK_COMMENT("handle_inflated_monitor_locking {");
   { // Handle inflated monitor.
     bind(inflated);
 
@@ -6638,7 +6441,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     // set the CC now
     z_cgr(obj, obj);
   }
-  BLOCK_COMMENT("} handle_inflated_monitor_lightweight_locking");
+  BLOCK_COMMENT("} handle_inflated_monitor_locking");
 
   bind(locked);
 
@@ -6661,7 +6464,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   // C2 uses the value of flag (NE vs EQ) to determine the continuation.
 }
 
-void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
+void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Register tmp1, Register tmp2) {
   assert_different_registers(obj, box, tmp1, tmp2);
 
   // Handle inflated monitor.
@@ -6676,8 +6479,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
   const int mark_offset        = oopDesc::mark_offset_in_bytes();
   const ByteSize ls_top_offset = JavaThread::lock_stack_top_offset();
 
-  BLOCK_COMMENT("compiler_fast_lightweight_unlock {");
-  { // Lightweight Unlock
+  BLOCK_COMMENT("compiler_fast_unlock {");
+  { // Fast Unlock
     NearLabel push_and_slow_path;
 
     // Check if obj is top of lock-stack.
@@ -6722,7 +6525,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     NearLabel not_unlocked;
     z_tmll(mark, markWord::unlocked_value);
     z_braz(not_unlocked);
-    stop("lightweight_unlock already unlocked");
+    stop("fast_unlock already unlocked");
     bind(not_unlocked);
 #endif // ASSERT
 
@@ -6743,7 +6546,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     z_ltgr(obj, obj); // object is not null here
     z_bru(slow_path);
   }
-  BLOCK_COMMENT("} compiler_fast_lightweight_unlock");
+  BLOCK_COMMENT("} compiler_fast_unlock");
 
   { // Handle inflated monitor.
 
@@ -6943,4 +6746,30 @@ void MacroAssembler::pop_count_int_with_ext3(Register r_dst, Register r_src) {
   z_popcnt(r_dst, r_dst, 8);
 
   BLOCK_COMMENT("} pop_count_int_with_ext3");
+}
+
+// LOAD HALFWORD IMMEDIATE ON CONDITION (32 <- 16)
+void MacroAssembler::load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc) {
+  if (VM_Version::has_LoadStoreConditional2()) { // z_lochi works on z13 or above
+    assert(Assembler::is_simm16(i2), "sanity");
+    z_lochi(dst, i2, cc);
+  } else {
+    NearLabel done;
+    z_brc(Assembler::inverse_condition(cc), done);
+    z_lhi(dst, i2);
+    bind(done);
+  }
+}
+
+// LOAD HALFWORD IMMEDIATE ON CONDITION (64 <- 16)
+void MacroAssembler::load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc) {
+  if (VM_Version::has_LoadStoreConditional2()) { // z_locghi works on z13 or above
+    assert(Assembler::is_simm16(i2), "sanity");
+    z_locghi(dst, i2, cc);
+  } else {
+    NearLabel done;
+    z_brc(Assembler::inverse_condition(cc), done);
+    z_lghi(dst, i2);
+    bind(done);
+  }
 }

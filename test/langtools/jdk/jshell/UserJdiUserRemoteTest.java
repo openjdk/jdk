@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,46 +26,48 @@
  * @bug 8160128 8159935 8168615
  * @summary Tests for Aux channel, custom remote agents, custom JDI implementations.
  * @build KullaTesting ExecutionControlTestBase MyExecutionControl MyRemoteExecutionControl MyExecutionControlProvider
- * @run testng UserJdiUserRemoteTest
+ * @run junit UserJdiUserRemoteTest
  * @key intermittent
  */
 import java.io.ByteArrayOutputStream;
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
 import jdk.jshell.Snippet;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.Status.VALID;
 import jdk.jshell.VarSnippet;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class UserJdiUserRemoteTest extends ExecutionControlTestBase {
 
     ExecutionControl currentEC;
     ByteArrayOutputStream auxStream;
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         auxStream = new ByteArrayOutputStream();
         setUp(builder -> builder.executionEngine(new MyExecutionControlProvider(this), null));
     }
 
+    @Test
     public void testVarValue() {
         VarSnippet dv = varKey(assertEval("double aDouble = 1.5;"));
         String vd = getState().varValue(dv);
-        assertEquals(vd, "1.5");
-        assertEquals(auxStream.toString(), "aDouble");
+        assertEquals("1.5", vd);
+        assertEquals("aDouble", auxStream.toString());
     }
 
+    @Test
     public void testExtension() throws ExecutionControlException {
         assertEval("42;");
         Object res = currentEC.extensionCommand("FROG", "test");
-        assertEquals(res, "ribbit");
+        assertEquals("ribbit", res);
     }
 
+    @Test
     public void testRedefine() {
         Snippet vx = varKey(assertEval("int x;"));
         Snippet mu = methodKey(assertEval("int mu() { return x * 4; }"));

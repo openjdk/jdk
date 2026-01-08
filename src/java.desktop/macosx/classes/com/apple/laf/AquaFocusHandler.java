@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
 
     protected static final String FRAME_ACTIVE_PROPERTY = "Frame.active";
 
+    @Override
     public void focusGained(final FocusEvent ev) {
         // If we gained focus and it wasn't due to a previous temporary focus loss
         // or the frame became active again, then repaint the border on the component.
@@ -65,6 +66,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         wasTemporary = false;
     }
 
+    @Override
     public void focusLost(final FocusEvent ev) {
         wasTemporary = ev.isTemporary();
 
@@ -74,6 +76,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent ev) {
         if (!FRAME_ACTIVE_PROPERTY.equals(ev.getPropertyName())) return;
 

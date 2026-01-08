@@ -51,31 +51,36 @@ import java.io.Serial;
  * <li>{@link #TRAILING TRAILING}
  * </ul>
  * <p>
- * For example, the following picture shows an applet using the flow
+ * For example, the following picture shows a window using the flow
  * layout manager (its default layout manager) to position three buttons:
  * <p>
- * <img src="doc-files/FlowLayout-1.gif"
+ * <img src="doc-files/FlowLayout-1.png"
  * ALT="Graphic of Layout for Three Buttons"
- * style="margin: 7px 10px;">
+ * >
  * <p>
- * Here is the code for this applet:
+ * Here is the code for this program:
  *
- * <hr><blockquote><pre>
- * import java.awt.*;
- * import java.applet.Applet;
+ * {@snippet lang='java':
+ * import java.awt.Button;
+ * import java.awt.EventQueue;
+ * import java.awt.FlowLayout;
+ * import java.awt.Frame;
  *
- * public class myButtons extends Applet {
- *     Button button1, button2, button3;
- *     public void init() {
- *         button1 = new Button("Ok");
- *         button2 = new Button("Open");
- *         button3 = new Button("Close");
- *         add(button1);
- *         add(button2);
- *         add(button3);
+ * public class FlowLayoutExample {
+ *
+ *     public static void main(String[] args) throws Exception {
+ *         EventQueue.invokeAndWait(() -> {
+ *             Frame frame = new Frame("FlowLayout");
+ *             frame.setLayout(new FlowLayout());
+ *             frame.add(new Button("OK"));
+ *             frame.add(new Button("Open"));
+ *             frame.add(new Button("Close"));
+ *             frame.pack();
+ *             frame.setVisible(true);
+ *         });
  *     }
  * }
- * </pre></blockquote><hr>
+ * }
  * <p>
  * A flow layout lets each component assume its natural (preferred) size.
  *

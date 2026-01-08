@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.security.util;
 
+import jdk.internal.util.StaticProperty;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.ConfirmationCallback;
@@ -36,6 +38,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
 /**
  * A {@code CallbackHandler} that prompts and reads from the command line
@@ -130,8 +133,9 @@ public class ConsoleCallbackHandler implements CallbackHandler {
 
     /* Reads a line of input */
     private String readLine() throws IOException {
-        String result = new BufferedReader
-            (new InputStreamReader(System.in)).readLine();
+        Charset charset = Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset());
+        InputStreamReader reader = new InputStreamReader(System.in, charset);
+        String result = new BufferedReader(reader).readLine();
         if (result == null) {
             throw new IOException("Cannot read from System.in");
         }

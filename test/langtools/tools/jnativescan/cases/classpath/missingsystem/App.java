@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,5 +28,6 @@ public class App {
         // if we compile with --release 20, but run jnativescan
         // with --release 21, we should get an error
         java.lang.Compiler.enable();
+        java.lang.Compiler.enable(); // should be de-duplicated in the error logs
     }
 }

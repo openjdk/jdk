@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@
  * @summary converted from VM Testbase nsk/monitoring/GarbageCollectorMXBean/CollectionCounters/CollectionCounters001.
  * VM Testbase keywords: [monitoring]
  *
+ * @requires vm.opt.DisableExplicitGC != "true"
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm
+ * @run main/othervm -XX:-UseGCOverheadLimit
  *      nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001.CollectionCounters001
  *      -testMode=directly
+ *      -iterations=5
  */
 
 package nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001;
@@ -60,6 +62,7 @@ import nsk.share.runner.RunParamsAware;
  * time. It may be false with -XX:+DisableExplicitGC.
  */
 public class CollectionCounters001 extends MonitoringTestBase implements RunParamsAware, Initializable {
+
         private List<GarbageCollectorMXBean> gcBeans;
         private MemoryMXBean memory;
         Stresser stresser;
@@ -76,48 +79,42 @@ public class CollectionCounters001 extends MonitoringTestBase implements RunPara
 
         private void runOne(ExecutionController stresser) {
                 updateCounters();
-                validate();
+                validate(false /* don't check gc count increases */);
                 Algorithms.eatMemory(stresser);
-                        if(stresser.continueExecution()) {
-                    updateCounters();
-                    validateNonTrivial();
-                    System.gc();
-                    updateCounters();
-                    validateNonTrivial();
-                    memory.gc();
-                    updateCounters();
-                    validateNonTrivial();
-                        }
+                updateCounters();
+                validate(true);
+                System.gc();
+                updateCounters();
+                validate(true);
+                memory.gc();
+                updateCounters();
+                validate(true);
         }
 
         public void run() {
                 stresser = new Stresser(runParams.getStressOptions());
                 stresser.start(runParams.getIterations());
-                while (stresser.iteration()) {
+                do {
+                    System.out.println("=========== stresser iter: " + (stresser.getIteration()) + " ===========");
                     runOne(stresser);
-                }
+                } while (stresser.iteration());
         }
 
-        private void validate() {
+
+        private void validate(boolean gcCountMustIncrease) {
                 if (collectionCount < 0)
-                        throw new TestFailure("collectionCount negative: " + collectionCount);
+                    throw new TestFailure("collectionCount negative: " + collectionCount);
                 if (collectionTime < 0)
-                        throw new TestFailure("collectionTime negative: " + collectionTime);
-                if (collectionCount < collectionCountOld)
+                    throw new TestFailure("collectionTime negative: " + collectionTime);
+                if (collectionTime < collectionTimeOld)
+                    throw new TestFailure("collectionTime decreased: " + collectionTime + " -> " + collectionTimeOld);
+                if (!gcCountMustIncrease) {
+                    if (collectionCount < collectionCountOld)
                         throw new TestFailure("collectionCount decreased: " + collectionCount + " -> " + collectionCountOld);
-                if (collectionTime < collectionTimeOld)
-                        throw new TestFailure("collectionTime decreased: " + collectionTime + " -> " + collectionTimeOld);
-        }
-
-        private void validateNonTrivial() {
-                if (collectionCount < 0)
-                        throw new TestFailure("collectionCount negative: " + collectionCount);
-                if (collectionTime < 0)
-                        throw new TestFailure("collectionTime negative: " + collectionTime);
-                if (collectionCount <= collectionCountOld)
+                } else {
+                    if (collectionCount <= collectionCountOld)
                         throw new TestFailure("collectionCount not increased: " + collectionCount + " -> " + collectionCountOld);
-                if (collectionTime < collectionTimeOld)
-                        throw new TestFailure("collection time became smaller: " + collectionTime + " -> " + collectionTimeOld);
+                }
         }
 
         private void updateCounters() {
@@ -126,8 +123,8 @@ public class CollectionCounters001 extends MonitoringTestBase implements RunPara
                 collectionCount = 0;
                 collectionTime = 0;
                 for (GarbageCollectorMXBean gcBean : gcBeans) {
-                        collectionCount += gcBean.getCollectionCount();
-                        collectionTime += gcBean.getCollectionTime();
+                    collectionCount += gcBean.getCollectionCount();
+                    collectionTime += gcBean.getCollectionTime();
                 }
         }
 

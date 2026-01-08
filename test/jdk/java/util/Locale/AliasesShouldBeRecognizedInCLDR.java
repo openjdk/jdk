@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8179071 8202537 8231273 8251317
  * @summary Test that language aliases of CLDR supplemental metadata are handled correctly.
  * @modules jdk.localedata
- * @run junit/othervm -Djava.locale.providers=CLDR AliasesShouldBeRecognizedInCLDR
+ * @run junit AliasesShouldBeRecognizedInCLDR
  */
 
 /*

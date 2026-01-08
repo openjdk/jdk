@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8345766
+ * @key randomness
  * @summary Test that Ideal transformations of ModFNode are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.ModFNodeTests
@@ -62,17 +63,29 @@ public class ModFNodeTests {
         Asserts.assertEQ(unusedResultAfterLoopOpt3(1.1f, 2.2f), 0.f);
     }
 
+    // Note: we used to check for ConF nodes in the IR. But that is a bit brittle:
+    // Constant nodes can appear during IR transformations, and then lose their outputs.
+    // During IGNV, the constants stay in the graph even if they lose the inputs. But
+    // CCP cleans them out because they are not in the useful set. So for now, we do not
+    // rely on any constant counting, just on counting the operation nodes.
+
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_F, "1"})
+    @IR(counts = {IRNode.MOD_F, "2"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public float constant() {
         // All constants available during parsing
         return q % 72.0f % 30.0f;
     }
 
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_F, "1"})
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.PHASEIDEALLOOP1) // Only constant fold after some loop opts
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public float alsoConstant() {
         // Make sure value is only available after second loop opts round
         float val = 0;
@@ -85,8 +98,12 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_F, "1"})
+    @IR(counts = {IRNode.MOD_F, "2"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "2"},
+        phase = CompilePhase.PHASEIDEALLOOP1) // Only constant fold after some loop opts
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public float nanLeftConstant() {
         // Make sure value is only available after second loop opts round
         float val = 134.18f;
@@ -99,8 +116,12 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_F, "1"})
+    @IR(counts = {IRNode.MOD_F, "2"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "2"},
+        phase = CompilePhase.PHASEIDEALLOOP1) // Only constant fold after some loop opts
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public float nanRightConstant() {
         // Make sure value is only available after second loop opts round
         float val = 134.18f;
@@ -113,29 +134,41 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(counts = {"frem", "1"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_F, "1"})
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {".*CallLeaf.*frem.*", "1"},
+        phase = CompilePhase.BEFORE_MATCHING) // no constant folding
     public float notConstant(float x) {
         return x % 32.0f;
     }
 
     @Test
-    @IR(counts = {"frem", "2"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_F, "1"})
+    @IR(counts = {IRNode.MOD_F, "2"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {".*CallLeaf.*frem.*", "2"},
+        phase = CompilePhase.BEFORE_MATCHING) // no constant folding
     public float veryNotConstant(float x, float y) {
         return x % 32.0f % y;
     }
 
     @Test
-    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.ITER_GVN1)
-    @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "0"},
+        phase = CompilePhase.ITER_GVN1) // IGVN removes unused nodes
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public void unusedResult(float x, float y) {
         float unused = x % y;
     }
 
     @Test
-    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.ITER_GVN1)
-    @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "0"},
+        phase = CompilePhase.ITER_GVN1) // IGVN removes unused nodes
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public void repeatedlyUnused(float x, float y) {
         float unused = 1.f;
         for (int i = 0; i < 100_000; i++) {
@@ -148,8 +181,14 @@ public class ModFNodeTests {
     // and thus a different execution path. In unusedResultAfterLoopOpt1 the modulo is
     // used in the traps of the parse predicates. In unusedResultAfterLoopOpt2, it is not.
     @Test
-    @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.ITER_GVN2)
-    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.ITER_GVN2)
+    @IR(counts = {IRNode.MOD_F, "0"},
+        phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public float unusedResultAfterLoopOpt1(float x, float y) {
         float unused = x % y;
 
@@ -167,8 +206,14 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.AFTER_CLOOPS)
-    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.PHASEIDEALLOOP1)
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "1"},
+        phase = CompilePhase.AFTER_CLOOPS)
+    @IR(counts = {IRNode.MOD_F, "0"},
+        phase = CompilePhase.PHASEIDEALLOOP1)
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public float unusedResultAfterLoopOpt2(float x, float y) {
         int a = 77;
         int b = 0;
@@ -186,8 +231,14 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(counts = {IRNode.MOD_F, "2"}, phase = CompilePhase.AFTER_CLOOPS)
-    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.PHASEIDEALLOOP1)
+    @IR(counts = {IRNode.MOD_F, "3"},
+        phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.MOD_F, "2"},
+        phase = CompilePhase.AFTER_CLOOPS) // drop the useless one
+    @IR(counts = {IRNode.MOD_F, "0"},
+        phase = CompilePhase.PHASEIDEALLOOP1) // drop the rest
+    @IR(counts = {".*CallLeaf.*frem.*", "0"},
+        phase = CompilePhase.BEFORE_MATCHING)
     public float unusedResultAfterLoopOpt3(float x, float y) {
         float unused = x % y;
 

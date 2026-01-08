@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8293177 8324774
+ * @bug 8293177 8324774 8357458
  * @summary Verify version numbers in legal files
  * @library /test/lib
  * @build jtreg.SkippedException
@@ -47,7 +47,7 @@ import jtreg.SkippedException;
 public class CheckLibraryVersions {
     static class SourceDirNotFound extends Error {}
     // Regex pattern for library name and version in legal Markdown file
-    static final Pattern versionPattern = Pattern.compile("## ([\\w\\s]+) v(\\d+(\\.\\d+){1,2})");
+    static final Pattern versionPattern = Pattern.compile("## ([\\w\\s.]+) v(\\d+(\\.\\d+){1,2})");
 
     // Map of 3rd party libraries. The keys are the names of files in the legal directory,
     // the values are lists of templates for library files with the following placeholders:
@@ -56,7 +56,8 @@ public class CheckLibraryVersions {
     static final Map<String, List<String>> libraries = Map.of(
             "jquery.md", List.of("jquery/jquery-%V%M.js"),
             "jqueryUI.md", List.of("jquery/jquery-ui%M.js", "jquery/jquery-ui%M.css"),
-            "dejavufonts.md", List.of("fonts/dejavu.css")
+            "dejavufonts.md", List.of("fonts/dejavu.css"),
+            "highlightjs.md", List.of("highlight.js")
     );
 
     public static void main(String... args) throws Exception {

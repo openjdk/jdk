@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
         DerValue val = new DerValue(DerValue.tag_OctetString, rawBytes);
         try {
-            this.key = val.toByteArray();
+            this.privKeyMaterial = val.toByteArray();
         } finally {
             val.clear();
         }
@@ -90,7 +90,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
             if (algid.getEncodedParams() != null) {
                 throw new InvalidKeyException("algorithm identifier has params");
             }
-            rawBytes = new DerInputStream(key).getOctetString();
+            rawBytes = new DerInputStream(privKeyMaterial).getOctetString();
         } catch (IOException e) {
             throw new InvalidKeyException("Cannot parse input", e);
         }
@@ -129,7 +129,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
     @Override
     public void destroy() throws DestroyFailedException {
         Arrays.fill(rawBytes, (byte)0);
-        Arrays.fill(key, (byte)0);
+        Arrays.fill(privKeyMaterial, (byte)0);
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);
         }

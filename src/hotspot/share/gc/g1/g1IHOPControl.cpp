@@ -28,14 +28,63 @@
 #include "gc/g1/g1Trace.hpp"
 #include "logging/log.hpp"
 
-G1IHOPControl::G1IHOPControl(double initial_ihop_percent,
-                             G1OldGenAllocationTracker const* old_gen_alloc_tracker) :
-  _initial_ihop_percent(initial_ihop_percent),
-  _target_occupancy(0),
-  _last_allocation_time_s(0.0),
-  _old_gen_alloc_tracker(old_gen_alloc_tracker)
-{
-  assert(_initial_ihop_percent >= 0.0 && _initial_ihop_percent <= 100.0, "Initial IHOP value must be between 0 and 100 but is %.3f", initial_ihop_percent);
+double G1IHOPControl::predict(const TruncatedSeq* seq) const {
+  assert(_is_adaptive, "precondition");
+  assert(_predictor != nullptr, "precondition");
+
+  return  _predictor->predict_zero_bounded(seq);
+}
+
+bool G1IHOPControl::have_enough_data_for_prediction() const {
+  assert(_is_adaptive, "precondition");
+
+  return ((size_t)_marking_times_s.num() >= G1AdaptiveIHOPNumInitialSamples) &&
+         ((size_t)_allocation_rate_s.num() >= G1AdaptiveIHOPNumInitialSamples);
+}
+
+double G1IHOPControl::last_marking_length_s() const {
+  return _marking_times_s.last();
+}
+
+size_t G1IHOPControl::actual_target_threshold() const {
+  assert(_is_adaptive, "precondition");
+
+  // The actual target threshold takes the heap reserve and the expected waste in
+  // free space  into account.
+  // _heap_reserve is that part of the total heap capacity that is reserved for
+  // eventual promotion failure.
+  // _heap_waste is the amount of space will never be reclaimed in any
+  // heap, so can not be used for allocation during marking and must always be
+  // considered.
+  double safe_total_heap_percentage =
+    MIN2((double)(_heap_reserve_percent + _heap_waste_percent), 100.0);
+
+  return (size_t)MIN2(
+    G1CollectedHeap::heap()->max_capacity() * (100.0 - safe_total_heap_percentage) / 100.0,
+    _target_occupancy * (100.0 - _heap_waste_percent) / 100.0
+  );
+}
+
+G1IHOPControl::G1IHOPControl(double ihop_percent,
+                             const G1OldGenAllocationTracker* old_gen_alloc_tracker,
+                             bool adaptive,
+                             const G1Predictions* predictor,
+                             size_t heap_reserve_percent,
+                             size_t heap_waste_percent)
+  : _is_adaptive(adaptive),
+    _initial_ihop_percent(ihop_percent),
+    _target_occupancy(0),
+    _heap_reserve_percent(heap_reserve_percent),
+    _heap_waste_percent(heap_waste_percent),
+    _last_allocation_time_s(0.0),
+    _old_gen_alloc_tracker(old_gen_alloc_tracker),
+    _predictor(predictor),
+    _marking_times_s(10, 0.05),
+    _allocation_rate_s(10, 0.05),
+    _last_unrestrained_young_size(0) {
+  assert(_initial_ihop_percent >= 0.0 && _initial_ihop_percent <= 100.0,
+         "IHOP percent out of range: %.3f", ihop_percent);
+  assert(!_is_adaptive || _predictor != nullptr, "precondition");
 }
 
 void G1IHOPControl::update_target_occupancy(size_t new_target_occupancy) {
@@ -44,150 +93,90 @@ void G1IHOPControl::update_target_occupancy(size_t new_target_occupancy) {
   _target_occupancy = new_target_occupancy;
 }
 
-void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t additional_buffer_size) {
-  assert(allocation_time_s >= 0.0, "Allocation time must be positive but is %.3f", allocation_time_s);
-
-  _last_allocation_time_s = allocation_time_s;
+void G1IHOPControl::report_statistics(G1NewTracer* new_tracer, size_t non_young_occupancy) {
+  print_log(non_young_occupancy);
+  send_trace_event(new_tracer, non_young_occupancy);
 }
 
-void G1IHOPControl::print() {
+void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t additional_buffer_size) {
+  assert(allocation_time_s > 0, "Invalid allocation time: %.3f", allocation_time_s);
+  _last_allocation_time_s = allocation_time_s;
+  double alloc_rate = _old_gen_alloc_tracker->last_period_old_gen_growth() / allocation_time_s;
+  _allocation_rate_s.add(alloc_rate);
+  _last_unrestrained_young_size = additional_buffer_size;
+}
+
+void G1IHOPControl::update_marking_length(double marking_length_s) {
+  assert(marking_length_s >= 0.0, "Invalid marking length: %.3f", marking_length_s);
+  _marking_times_s.add(marking_length_s);
+}
+
+size_t G1IHOPControl::get_conc_mark_start_threshold() {
+  guarantee(_target_occupancy > 0, "Target occupancy must be initialized");
+
+  if (!_is_adaptive || !have_enough_data_for_prediction()) {
+    return (size_t)(_initial_ihop_percent * _target_occupancy / 100.0);
+  }
+
+  double pred_marking_time = predict(&_marking_times_s);
+  double pred_rate = predict(&_allocation_rate_s);
+  size_t pred_bytes = (size_t)(pred_marking_time * pred_rate);
+  size_t predicted_needed = pred_bytes + _last_unrestrained_young_size;
+  size_t internal_threshold = actual_target_threshold();
+
+  return predicted_needed < internal_threshold
+         ? internal_threshold - predicted_needed
+         : 0;
+}
+
+void G1IHOPControl::print_log(size_t non_young_occupancy) {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   size_t cur_conc_mark_start_threshold = get_conc_mark_start_threshold();
-  log_debug(gc, ihop)("Basic information (value update), threshold: %zuB (%1.2f), target occupancy: %zuB, current occupancy: %zuB, "
+  log_debug(gc, ihop)("Basic information (value update), threshold: %zuB (%1.2f), target occupancy: %zuB, non-young occupancy: %zuB, "
                       "recent allocation size: %zuB, recent allocation duration: %1.2fms, recent old gen allocation rate: %1.2fB/s, recent marking phase length: %1.2fms",
                       cur_conc_mark_start_threshold,
                       percent_of(cur_conc_mark_start_threshold, _target_occupancy),
                       _target_occupancy,
-                      G1CollectedHeap::heap()->used(),
+                      non_young_occupancy,
                       _old_gen_alloc_tracker->last_period_old_gen_bytes(),
                       _last_allocation_time_s * 1000.0,
                       _last_allocation_time_s > 0.0 ? _old_gen_alloc_tracker->last_period_old_gen_bytes() / _last_allocation_time_s : 0.0,
                       last_marking_length_s() * 1000.0);
-}
 
-void G1IHOPControl::send_trace_event(G1NewTracer* tracer) {
-  assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
-  tracer->report_basic_ihop_statistics(get_conc_mark_start_threshold(),
-                                       _target_occupancy,
-                                       G1CollectedHeap::heap()->used(),
-                                       _old_gen_alloc_tracker->last_period_old_gen_bytes(),
-                                       _last_allocation_time_s,
-                                       last_marking_length_s());
-}
-
-G1StaticIHOPControl::G1StaticIHOPControl(double ihop_percent,
-                                         G1OldGenAllocationTracker const* old_gen_alloc_tracker) :
-  G1IHOPControl(ihop_percent, old_gen_alloc_tracker),
-  _last_marking_length_s(0.0) {
-}
-
-G1AdaptiveIHOPControl::G1AdaptiveIHOPControl(double ihop_percent,
-                                             G1OldGenAllocationTracker const* old_gen_alloc_tracker,
-                                             G1Predictions const* predictor,
-                                             size_t heap_reserve_percent,
-                                             size_t heap_waste_percent) :
-  G1IHOPControl(ihop_percent, old_gen_alloc_tracker),
-  _heap_reserve_percent(heap_reserve_percent),
-  _heap_waste_percent(heap_waste_percent),
-  _predictor(predictor),
-  _marking_times_s(10, 0.05),
-  _allocation_rate_s(10, 0.05),
-  _last_unrestrained_young_size(0)
-{
-}
-
-size_t G1AdaptiveIHOPControl::actual_target_threshold() const {
-  guarantee(_target_occupancy > 0, "Target occupancy still not updated yet.");
-  // The actual target threshold takes the heap reserve and the expected waste in
-  // free space  into account.
-  // _heap_reserve is that part of the total heap capacity that is reserved for
-  // eventual promotion failure.
-  // _heap_waste is the amount of space will never be reclaimed in any
-  // heap, so can not be used for allocation during marking and must always be
-  // considered.
-
-  double safe_total_heap_percentage = MIN2((double)(_heap_reserve_percent + _heap_waste_percent), 100.0);
-
-  return (size_t)MIN2(
-    G1CollectedHeap::heap()->max_capacity() * (100.0 - safe_total_heap_percentage) / 100.0,
-    _target_occupancy * (100.0 - _heap_waste_percent) / 100.0
-    );
-}
-
-double G1AdaptiveIHOPControl::predict(TruncatedSeq const* seq) const {
-  return _predictor->predict_zero_bounded(seq);
-}
-
-bool G1AdaptiveIHOPControl::have_enough_data_for_prediction() const {
-  return ((size_t)_marking_times_s.num() >= G1AdaptiveIHOPNumInitialSamples) &&
-         ((size_t)_allocation_rate_s.num() >= G1AdaptiveIHOPNumInitialSamples);
-}
-
-size_t G1AdaptiveIHOPControl::get_conc_mark_start_threshold() {
-  if (have_enough_data_for_prediction()) {
-    double pred_marking_time = predict(&_marking_times_s);
-    double pred_promotion_rate = predict(&_allocation_rate_s);
-    size_t pred_promotion_size = (size_t)(pred_marking_time * pred_promotion_rate);
-
-    size_t predicted_needed_bytes_during_marking =
-      pred_promotion_size +
-      // In reality we would need the maximum size of the young gen during
-      // marking. This is a conservative estimate.
-      _last_unrestrained_young_size;
-
-    size_t internal_threshold = actual_target_threshold();
-    size_t predicted_initiating_threshold = predicted_needed_bytes_during_marking < internal_threshold ?
-                                            internal_threshold - predicted_needed_bytes_during_marking :
-                                            0;
-    return predicted_initiating_threshold;
-  } else {
-    // Use the initial value.
-    return (size_t)(_initial_ihop_percent * _target_occupancy / 100.0);
+  if (!_is_adaptive) {
+    return;
   }
-}
 
-double G1AdaptiveIHOPControl::last_mutator_period_old_allocation_rate() const {
-  assert(_last_allocation_time_s > 0, "This should not be called when the last GC is full");
-
-  return _old_gen_alloc_tracker->last_period_old_gen_growth() / _last_allocation_time_s;
-}
-
-void G1AdaptiveIHOPControl::update_allocation_info(double allocation_time_s,
-                                                   size_t additional_buffer_size) {
-  G1IHOPControl::update_allocation_info(allocation_time_s, additional_buffer_size);
-  _allocation_rate_s.add(last_mutator_period_old_allocation_rate());
-
-  _last_unrestrained_young_size = additional_buffer_size;
-}
-
-void G1AdaptiveIHOPControl::update_marking_length(double marking_length_s) {
-   assert(marking_length_s >= 0.0, "Marking length must be larger than zero but is %.3f", marking_length_s);
-  _marking_times_s.add(marking_length_s);
-}
-
-void G1AdaptiveIHOPControl::print() {
-  G1IHOPControl::print();
-  size_t actual_target = actual_target_threshold();
-  log_debug(gc, ihop)("Adaptive IHOP information (value update), threshold: %zuB (%1.2f), internal target occupancy: %zuB, "
-                      "occupancy: %zuB, additional buffer size: %zuB, predicted old gen allocation rate: %1.2fB/s, "
+  size_t actual_threshold = actual_target_threshold();
+  log_debug(gc, ihop)("Adaptive IHOP information (value update), threshold: %zuB (%1.2f), internal target threshold: %zuB, "
+                      "non-young occupancy: %zuB, additional buffer size: %zuB, predicted old gen allocation rate: %1.2fB/s, "
                       "predicted marking phase length: %1.2fms, prediction active: %s",
-                      get_conc_mark_start_threshold(),
-                      percent_of(get_conc_mark_start_threshold(), actual_target),
-                      actual_target,
-                      G1CollectedHeap::heap()->used(),
+                      cur_conc_mark_start_threshold,
+                      percent_of(cur_conc_mark_start_threshold, actual_threshold),
+                      actual_threshold,
+                      non_young_occupancy,
                       _last_unrestrained_young_size,
                       predict(&_allocation_rate_s),
                       predict(&_marking_times_s) * 1000.0,
                       have_enough_data_for_prediction() ? "true" : "false");
 }
 
-void G1AdaptiveIHOPControl::send_trace_event(G1NewTracer* tracer) {
-  G1IHOPControl::send_trace_event(tracer);
-  tracer->report_adaptive_ihop_statistics(get_conc_mark_start_threshold(),
-                                          actual_target_threshold(),
-                                          G1CollectedHeap::heap()->used(),
-                                          _last_unrestrained_young_size,
-                                          predict(&_allocation_rate_s),
-                                          predict(&_marking_times_s),
-                                          have_enough_data_for_prediction());
+void G1IHOPControl::send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy) {
+  assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
+  tracer->report_basic_ihop_statistics(get_conc_mark_start_threshold(),
+                                       _target_occupancy,
+                                       non_young_occupancy,
+                                       _old_gen_alloc_tracker->last_period_old_gen_bytes(),
+                                       _last_allocation_time_s,
+                                       last_marking_length_s());
+
+  if (_is_adaptive) {
+    tracer->report_adaptive_ihop_statistics(get_conc_mark_start_threshold(),
+                                            actual_target_threshold(),
+                                            non_young_occupancy,
+                                            _last_unrestrained_young_size,
+                                            predict(&_allocation_rate_s),
+                                            predict(&_marking_times_s),
+                                            have_enough_data_for_prediction());
+  }
 }

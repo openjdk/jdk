@@ -29,15 +29,20 @@
 // constants required by the Serviceability Agent. This file is
 // referenced by vmStructs.cpp.
 
-#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field)            \
-  volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
+#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
+  volatile_nonstatic_field(JavaFrameAnchor,         _last_Java_fp,                  intptr_t*)               \
+              static_field(VM_Version,              _features,                      VM_Version::VM_Features) \
+           nonstatic_field(VM_Version::VM_Features, _features_bitmap[0],            uint64_t)                \
+              static_field(VM_Version::VM_Features, _features_bitmap_size,          int)
 
 #define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type) \
+  declare_toplevel_type(VM_Version::VM_Features)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant) \
-  LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \
-  declare_constant(frame::interpreter_frame_sender_sp_offset)       \
-  declare_constant(frame::interpreter_frame_last_sp_offset)
+  declare_constant(frame::arg_reg_save_area_bytes)            \
+  declare_constant(frame::interpreter_frame_sender_sp_offset) \
+  declare_constant(frame::interpreter_frame_last_sp_offset)   \
+  declare_constant(frame::entry_frame_call_wrapper_offset)
 
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant)
 

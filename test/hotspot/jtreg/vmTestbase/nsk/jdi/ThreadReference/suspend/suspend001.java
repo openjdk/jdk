@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +167,7 @@ public class suspend001 {
         }
 
         vm = debuggee.VM();
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
 
     //------------------------------------------------------  testing section
 
@@ -205,9 +206,6 @@ public class suspend001 {
             String bpLine2 = "breakpointLineNumber2";
             //String bpLine3 = "breakpointLineNumber3";
 
-
-            List            allThreads   = null;
-            ListIterator    listIterator = null;
             List            classes      = null;
 
             BreakpointRequest breakpRequest1 = null;
@@ -219,7 +217,6 @@ public class suspend001 {
 
                 log2("getting ThreadReference objects and setting up breakponts");
                 try {
-                    allThreads  = vm.allThreads();
                     classes     = vm.classesByName(testedClassName);
                     testedclass = (ReferenceType) classes.get(0);
                 } catch ( Exception e) {
@@ -228,19 +225,7 @@ public class suspend001 {
                     break label0;
                 }
 
-                listIterator = allThreads.listIterator();
-                for (;;) {
-                    try {
-                        thread2 = (ThreadReference) listIterator.next();
-                        if (thread2.name().equals(threadName))
-                            break ;
-                    } catch ( NoSuchElementException e ) {
-                        log3("ERROR: NoSuchElementException for listIterator.next()");
-                        log3("ERROR: NO THREAD2 ?????????!!!!!!!");
-                        expresult = returnCode1;
-                        break label0;
-                    }
-                }
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, "test_thread", threadName);
 
                 log2("setting up breakpoints");
 

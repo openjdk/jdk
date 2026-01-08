@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,18 +27,19 @@
 #define SHARE_GC_G1_G1MONOTONICARENA_INLINE_HPP
 
 #include "gc/g1/g1MonotonicArena.hpp"
-#include "runtime/atomic.hpp"
+
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
 inline void* G1MonotonicArena::Segment::allocate_slot() {
   if (_next_allocate >= _num_slots) {
     return nullptr;
   }
-  uint result = Atomic::fetch_then_add(&_next_allocate, 1u, memory_order_relaxed);
+  uint result = AtomicAccess::fetch_then_add(&_next_allocate, 1u, memory_order_relaxed);
   if (result >= _num_slots) {
     return nullptr;
   }
-  void* r = _bottom + (size_t)result * _slot_size;
+  void* r = payload(static_cast<size_t>(result) * _slot_size);
   return r;
 }
 
@@ -47,8 +48,8 @@ inline G1MonotonicArena::Segment* G1MonotonicArena::SegmentFreeList::get() {
 
   Segment* result = _list.pop();
   if (result != nullptr) {
-    Atomic::dec(&_num_segments, memory_order_relaxed);
-    Atomic::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
+    AtomicAccess::dec(&_num_segments, memory_order_relaxed);
+    AtomicAccess::sub(&_mem_size, result->mem_size(), memory_order_relaxed);
   }
   return result;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         rootIFD.addTIFFField(field);
     }
 
+    @Override
     public boolean isReadOnly() {
         return false;
     }
@@ -149,6 +150,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         return IFDRoot;
     }
 
+    @Override
     public Node getAsTree(String formatName) {
         if (formatName.equals(nativeMetadataFormatName)) {
             return getNativeTree();
@@ -181,6 +183,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         "Lab", // ICCLab
     };
 
+    @Override
     public IIOMetadataNode getStandardChromaNode() {
         IIOMetadataNode chroma_node = new IIOMetadataNode("Chroma");
         IIOMetadataNode node = null; // scratch node
@@ -278,6 +281,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         return chroma_node;
     }
 
+    @Override
     public IIOMetadataNode getStandardCompressionNode() {
         IIOMetadataNode compression_node = new IIOMetadataNode("Compression");
         IIOMetadataNode node = null; // scratch node
@@ -336,6 +340,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         return sb.toString();
     }
 
+    @Override
     public IIOMetadataNode getStandardDataNode() {
         IIOMetadataNode data_node = new IIOMetadataNode("Data");
         IIOMetadataNode node = null; // scratch node
@@ -476,6 +481,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         "Rotate90",
     };
 
+    @Override
     public IIOMetadataNode getStandardDimensionNode() {
         IIOMetadataNode dimension_node = new IIOMetadataNode("Dimension");
         IIOMetadataNode node = null; // scratch node
@@ -604,6 +610,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         return dimension_node;
     }
 
+    @Override
     public IIOMetadataNode getStandardDocumentNode() {
         IIOMetadataNode document_node = new IIOMetadataNode("Document");
         IIOMetadataNode node = null; // scratch node
@@ -669,6 +676,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         return document_node;
     }
 
+    @Override
     public IIOMetadataNode getStandardTextNode() {
         IIOMetadataNode text_node = null;
         IIOMetadataNode node = null; // scratch node
@@ -705,6 +713,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         return text_node;
     }
 
+    @Override
     public IIOMetadataNode getStandardTransparencyNode() {
         IIOMetadataNode transparency_node =
             new IIOMetadataNode("Transparency");
@@ -1579,6 +1588,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         }
     }
 
+    @Override
     public void mergeTree(String formatName, Node root)
         throws IIOInvalidTreeException{
         if (formatName.equals(nativeMetadataFormatName)) {
@@ -1597,6 +1607,7 @@ public class TIFFImageMetadata extends IIOMetadata {
         }
     }
 
+    @Override
     public void reset() {
         rootIFD = new TIFFIFD(tagSets);
     }

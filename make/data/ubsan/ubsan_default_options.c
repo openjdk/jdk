@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,18 @@
 #define ATTRIBUTE_USED
 #endif
 
+// On AIX, the llvm_symbolizer is not found out of the box, so we have to provide the
+// full qualified llvm_symbolizer path in the __ubsan_default_options() function.
+// To get it here we compile our sources with an additional define LLVM_SYMBOLIZER
+// containing the path, which we set in make/autoconf/jdk-options.m4.
+#ifdef LLVM_SYMBOLIZER
+#define _LLVM_SYMBOLIZER(X) ",external_symbolizer_path=" X_LLVM_SYMBOLIZER(X)
+#define X_LLVM_SYMBOLIZER(X) #X
+#else
+#define LLVM_SYMBOLIZER
+#define _LLVM_SYMBOLIZER(X)
+#endif
+
 // Override weak symbol exposed by UBSan to override default options. This is called by UBSan
 // extremely early during library loading, before main is called. We need to override the default
 // options because by default UBSan only prints a warning for each occurrence. We want jtreg tests
@@ -50,5 +62,8 @@
 // thread so it is easier to track down. You can override these options by setting the environment
 // variable UBSAN_OPTIONS.
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __ubsan_default_options() {
-  return "halt_on_error=1,print_stacktrace=1";
+  return "halt_on_error=1,"
+         "handle_segv=0,"
+         "handle_sigbus=0,"
+         "print_stacktrace=1" _LLVM_SYMBOLIZER(LLVM_SYMBOLIZER);
 }

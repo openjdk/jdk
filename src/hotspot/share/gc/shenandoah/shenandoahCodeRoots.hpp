@@ -26,9 +26,9 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP
 
 #include "code/codeCache.hpp"
-#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"

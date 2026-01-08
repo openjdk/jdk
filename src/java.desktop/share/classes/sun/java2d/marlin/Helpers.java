@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,18 @@ import sun.java2d.marlin.stats.StatLong;
 
 final class Helpers implements MarlinConst {
 
+    private final static double T_ERR = 1e-4;
+    private final static double T_A = T_ERR;
+    private final static double T_B = 1.0 - T_ERR;
+
     private static final double EPS = 1e-9d;
 
     private Helpers() {
         throw new Error("This is a non instantiable class");
     }
+
+    /** use lower precision like former Pisces and Marlin (float-precision) */
+    static double ulp(final double value) { return Math.ulp((float)value); }
 
     static boolean within(final double x, final double y) {
         return within(x, y, EPS);
@@ -322,10 +329,10 @@ final class Helpers implements MarlinConst {
 
         // now we must subdivide at points where one of the offset curves will have
         // a cusp. This happens at ts where the radius of curvature is equal to w.
-        ret += c.rootsOfROCMinusW(ts, ret, w2, 0.0001d);
+        ret += c.rootsOfROCMinusW(ts, ret, w2, T_A, T_B);
 
-        ret = filterOutNotInAB(ts, 0, ret, 0.0001d, 0.9999d);
-        isort(ts, ret);
+        ret = filterOutNotInAB(ts, 0, ret, T_A, T_B);
+        isort(ts, 0, ret);
         return ret;
     }
 
@@ -354,7 +361,7 @@ final class Helpers implements MarlinConst {
         if ((outCodeOR & OUTCODE_BOTTOM) != 0) {
             ret += curve.yPoints(ts, ret, clipRect[1]);
         }
-        isort(ts, ret);
+        isort(ts, 0, ret);
         return ret;
     }
 
@@ -374,11 +381,11 @@ final class Helpers implements MarlinConst {
         }
     }
 
-    static void isort(final double[] a, final int len) {
-        for (int i = 1, j; i < len; i++) {
+    static void isort(final double[] a, final int off, final int len) {
+        for (int i = off + 1, j; i < len; i++) {
             final double ai = a[i];
             j = i - 1;
-            for (; j >= 0 && a[j] > ai; j--) {
+            for (; j >= off && a[j] > ai; j--) {
                 a[j + 1] = a[j];
             }
             a[j + 1] = ai;

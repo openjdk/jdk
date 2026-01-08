@@ -33,9 +33,9 @@
 
 class ZPhysicalMemoryBackingImpl : public CHeapObj<mtGC> {
 public:
-  virtual size_t commit(zoffset offset, size_t size) = 0;
-  virtual size_t uncommit(zoffset offset, size_t size) = 0;
-  virtual void map(zaddress_unsafe addr, size_t size, zoffset offset) const = 0;
+  virtual size_t commit(zbacking_offset offset, size_t size) = 0;
+  virtual size_t uncommit(zbacking_offset offset, size_t size) = 0;
+  virtual void map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const = 0;
   virtual void unmap(zaddress_unsafe addr, size_t size) const = 0;
 };
 
@@ -50,21 +50,29 @@ class ZPhysicalMemoryBackingSmallPages : public ZPhysicalMemoryBackingImpl {
 private:
   ZGranuleMap<HANDLE> _handles;
 
-  HANDLE get_handle(zoffset offset) const {
-    HANDLE const handle = _handles.get(offset);
+  static zoffset to_zoffset(zbacking_offset offset) {
+    // A zbacking_offset is always a valid zoffset
+    return zoffset(untype(offset));
+  }
+
+  HANDLE get_handle(zbacking_offset offset) const {
+    const zoffset z_offset = to_zoffset(offset);
+    HANDLE const handle = _handles.get(z_offset);
     assert(handle != 0, "Should be set");
     return handle;
   }
 
-  void put_handle(zoffset offset, HANDLE handle) {
+  void put_handle(zbacking_offset offset, HANDLE handle) {
+    const zoffset z_offset = to_zoffset(offset);
     assert(handle != INVALID_HANDLE_VALUE, "Invalid handle");
-    assert(_handles.get(offset) == 0, "Should be cleared");
-    _handles.put(offset, handle);
+    assert(_handles.get(z_offset) == 0, "Should be cleared");
+    _handles.put(z_offset, handle);
   }
 
-  void clear_handle(zoffset offset) {
-    assert(_handles.get(offset) != 0, "Should be set");
-    _handles.put(offset, 0);
+  void clear_handle(zbacking_offset offset) {
+    const zoffset z_offset = to_zoffset(offset);
+    assert(_handles.get(z_offset) != 0, "Should be set");
+    _handles.put(z_offset, 0);
   }
 
 public:
@@ -72,7 +80,7 @@ public:
     : ZPhysicalMemoryBackingImpl(),
       _handles(max_capacity) {}
 
-  size_t commit(zoffset offset, size_t size) {
+  size_t commit(zbacking_offset offset, size_t size) {
     for (size_t i = 0; i < size; i += ZGranuleSize) {
       HANDLE const handle = ZMapper::create_and_commit_paging_file_mapping(ZGranuleSize);
       if (handle == 0) {
@@ -85,7 +93,7 @@ public:
     return size;
   }
 
-  size_t uncommit(zoffset offset, size_t size) {
+  size_t uncommit(zbacking_offset offset, size_t size) {
     for (size_t i = 0; i < size; i += ZGranuleSize) {
       HANDLE const handle = get_handle(offset + i);
       clear_handle(offset + i);
@@ -95,7 +103,7 @@ public:
     return size;
   }
 
-  void map(zaddress_unsafe addr, size_t size, zoffset offset) const {
+  void map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const {
     assert(is_aligned(untype(offset), ZGranuleSize), "Misaligned");
     assert(is_aligned(untype(addr), ZGranuleSize), "Misaligned");
     assert(is_aligned(size, ZGranuleSize), "Misaligned");
@@ -149,7 +157,7 @@ public:
     : ZPhysicalMemoryBackingImpl(),
       _page_array(alloc_page_array(max_capacity)) {}
 
-  size_t commit(zoffset offset, size_t size) {
+  size_t commit(zbacking_offset offset, size_t size) {
     const size_t index = untype(offset) >> ZGranuleSizeShift;
     const size_t npages = size >> ZGranuleSizeShift;
 
@@ -167,7 +175,7 @@ public:
     return npages_res << ZGranuleSizeShift;
   }
 
-  size_t uncommit(zoffset offset, size_t size) {
+  size_t uncommit(zbacking_offset offset, size_t size) {
     const size_t index = untype(offset) >> ZGranuleSizeShift;
     const size_t npages = size >> ZGranuleSizeShift;
 
@@ -181,7 +189,7 @@ public:
     return npages_res << ZGranuleSizeShift;
   }
 
-  void map(zaddress_unsafe addr, size_t size, zoffset offset) const {
+  void map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const {
     const size_t npages = size >> ZGranuleSizeShift;
     const size_t index = untype(offset) >> ZGranuleSizeShift;
 
@@ -222,21 +230,21 @@ void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
   // Does nothing
 }
 
-size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) {
+size_t ZPhysicalMemoryBacking::commit(zbacking_offset offset, size_t length, uint32_t /* numa_id - ignored */) {
   log_trace(gc, heap)("Committing memory: %zuM-%zuM (%zuM)",
-                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
+                      untype(offset) / M, untype(to_zbacking_offset_end(offset, length)) / M, length / M);
 
   return _impl->commit(offset, length);
 }
 
-size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) {
+size_t ZPhysicalMemoryBacking::uncommit(zbacking_offset offset, size_t length) {
   log_trace(gc, heap)("Uncommitting memory: %zuM-%zuM (%zuM)",
-                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
+                      untype(offset) / M, untype(to_zbacking_offset_end(offset, length)) / M, length / M);
 
   return _impl->uncommit(offset, length);
 }
 
-void ZPhysicalMemoryBacking::map(zaddress_unsafe addr, size_t size, zoffset offset) const {
+void ZPhysicalMemoryBacking::map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const {
   assert(is_aligned(untype(offset), ZGranuleSize), "Misaligned: " PTR_FORMAT, untype(offset));
   assert(is_aligned(untype(addr), ZGranuleSize), "Misaligned: " PTR_FORMAT, addr);
   assert(is_aligned(size, ZGranuleSize), "Misaligned: " PTR_FORMAT, size);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,6 +462,10 @@ public class LambdaToMethod extends TreeTranslator {
         ListBuffer<Attribute.TypeCompound> lambdaTypeAnnos = new ListBuffer<>();
 
         for (Attribute.TypeCompound tc : source.get()) {
+            if (tc.hasUnknownPosition()) {
+                // Handle container annotations
+                tc.tryFixPosition();
+            }
             if (tc.position.onLambda == tree) {
                 lambdaTypeAnnos.append(tc);
             } else {
@@ -1148,7 +1152,7 @@ public class LambdaToMethod extends TreeTranslator {
                     propagateAnnos = false;
                     break;
                 case LOCAL_VAR:
-                    ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym);
+                    ret = new VarSymbol(sym.flags(), sym.name, sym.type, translatedSym);
                     ret.pos = sym.pos;
                     // If sym.data == ElementKind.EXCEPTION_PARAMETER,
                     // set ret.data = ElementKind.EXCEPTION_PARAMETER too.
@@ -1160,7 +1164,8 @@ public class LambdaToMethod extends TreeTranslator {
                     }
                     break;
                 case PARAM:
-                    ret = new VarSymbol((sym.flags() & FINAL) | PARAMETER, sym.name, types.erasure(sym.type), translatedSym);
+                    Assert.check((sym.flags() & PARAMETER) != 0);
+                    ret = new VarSymbol(sym.flags(), sym.name, types.erasure(sym.type), translatedSym);
                     ret.pos = sym.pos;
                     break;
                 default:

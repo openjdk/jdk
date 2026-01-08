@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                               Fuzz
+ * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                                Fuzz
  */
 
 /*
@@ -51,9 +51,9 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                               -XX:+PreserveFramePointer
- *                               Fuzz
+ * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                                -XX:+PreserveFramePointer
+ *                                Fuzz
  */
 
 import jdk.internal.vm.Continuation;
@@ -84,8 +84,7 @@ public class Fuzz implements Runnable {
     static final boolean RANDOM  = true;
     static final boolean VERBOSE = false;
 
-    static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-    static int COMPILATION_TIMEOUT = (int)(5_000 * timeoutFactor); // ms
+    static int COMPILATION_TIMEOUT = (int)(5_000 * Utils.TIMEOUT_FACTOR); // ms
 
     static final Path TEST_DIR = Path.of(System.getProperty("test.src", "."));
 
@@ -95,6 +94,9 @@ public class Fuzz implements Runnable {
                                        + "on macosx-aarch64");
         }
         if (Platform.isPPC()) {
+            COMPILATION_TIMEOUT = COMPILATION_TIMEOUT * 2;
+        }
+        if (Platform.isDebugBuild()) {
             COMPILATION_TIMEOUT = COMPILATION_TIMEOUT * 2;
         }
         warmup();
@@ -473,7 +475,8 @@ public class Fuzz implements Runnable {
     }
 
     boolean shouldPin() {
-        return traceHas(Op.PIN::contains) && legacyLockingMode();
+        // Returns false since we never pin after we removed legacy locking.
+        return traceHas(Op.PIN::contains) && false;
     }
 
     void verifyPin(boolean yieldResult) {
@@ -1031,10 +1034,5 @@ public class Fuzz implements Runnable {
         }
 
         return log((int)res);
-    }
-
-    static boolean legacyLockingMode() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                    .getVMOption("LockingMode").getValue().equals("1");
     }
 }

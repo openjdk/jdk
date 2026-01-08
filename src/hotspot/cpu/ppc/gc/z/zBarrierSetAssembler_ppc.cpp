@@ -114,7 +114,6 @@ public:
   }
 };
 
-
 void ZBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                    Register base, RegisterOrConstant ind_or_offs, Register dst,
                                    Register tmp1, Register tmp2,
@@ -561,7 +560,6 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   copy_store_at_slow(masm, R4_ARG2, tmp, store_bad, store_good, dest_uninitialized);
 }
 
-
 // Verify a colored pointer.
 void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const char* msg) {
   if (!VerifyOops) {
@@ -582,7 +580,6 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const c
   __ verify_oop(R0, msg);
   __ bind(done);
 }
-
 
 void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                                          Register obj, Register tmp, Label& slowpath) {

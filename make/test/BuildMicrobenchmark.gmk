@@ -92,6 +92,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
@@ -119,7 +120,6 @@ $(JMH_UNPACKED_JARS_DONE): $(JMH_RUNTIME_JARS)
 	$(foreach jar, $(JMH_RUNTIME_JARS), \
             $$($(UNZIP) -oq $(jar) -d $(JMH_UNPACKED_DIR)))
 	$(RM) -r $(JMH_UNPACKED_DIR)/META-INF
-	$(RM) $(JMH_UNPACKED_DIR)/*.xml
 	$(TOUCH) $@
 
 # Copy dependency files for inclusion in the benchmark JARs

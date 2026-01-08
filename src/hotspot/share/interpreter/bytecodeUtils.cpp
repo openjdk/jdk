@@ -28,8 +28,8 @@
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeUtils.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/signature.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 

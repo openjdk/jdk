@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.awt.TextArea;
 public class TextScrollTest extends Frame {
     private static final String INSTRUCTIONS = """
             1. A TextArea whose content starts with the text ",
-               'Scroll till the' will appear on the applet ",
+               'Scroll till the' will appear on the window ",
             2. Use the Horizontal thumb button of the TextArea to view the entire",
                content of the TextArea",
             3. While scrolling, if the text 'Scroll till the' appears repeatedly, Click Fail  ",

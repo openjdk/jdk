@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,7 +366,11 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
 
         } else {
 
-            if (length > 0) {
+            /*
+             * seed could be NULL here when SecureRandom.generateSeed() is
+             * called with a length of zero.
+             */
+            if ((length > 0) || (seed == NULL)) {
                 seed = env->NewByteArray(length);
                 if (seed == NULL) {
                     __leave;
@@ -1313,6 +1317,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     EXPORT_BLOB(NCRYPT_PKCS7_ENVELOPE_BLOB);
     //EXPORT_BLOB(NCRYPTBUFFER_CERT_BLOB);
     //EXPORT_BLOB(NCRYPT_PKCS8_PRIVATE_KEY_BLOB);
+    /*
     BCryptBuffer bb;
     bb.BufferType = NCRYPTBUFFER_PKCS_SECRET;
     bb.cbBuffer = 18;
@@ -1321,6 +1326,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     bbd.ulVersion = 0;
     bbd.cBuffers = 1;
     bbd.pBuffers = &bb;
+    */
     if(::NCryptExportKey(hKey, NULL, NCRYPT_PKCS8_PRIVATE_KEY_BLOB, NULL,
             (PBYTE)buffer, 8192, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) {
         snprintf(header, sizeof(header), "NCRYPT_PKCS8_PRIVATE_KEY_BLOB %ls", NCRYPT_PKCS8_PRIVATE_KEY_BLOB);

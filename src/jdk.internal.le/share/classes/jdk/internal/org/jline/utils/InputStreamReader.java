@@ -22,8 +22,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 
-/**
- *
+/*
  * NOTE for JLine: the default InputStreamReader that comes from the JRE
  * usually read more bytes than needed from the input stream, which
  * is not usable in a character per character model used in the terminal.

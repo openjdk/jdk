@@ -22,18 +22,17 @@
  *
  */
 
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"

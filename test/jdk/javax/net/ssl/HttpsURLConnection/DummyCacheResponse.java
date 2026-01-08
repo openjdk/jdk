@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.test.lib.net.SimpleSSLContext;
 import com.sun.net.httpserver.*;
 
 public class DummyCacheResponse extends SecureCacheResponse {
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private final SSLSession cachedSession;
     private final Map<String, List<String>> rqstHeaders;
 
@@ -61,7 +61,6 @@ public class DummyCacheResponse extends SecureCacheResponse {
             executor = Executors.newCachedThreadPool();
             httpsServer.setExecutor(executor);
 
-            sslContext = new SimpleSSLContext().get();
             httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
             httpsServer.start();
 

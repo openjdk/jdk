@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.GraphicsDevice;
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.VolatileImage;
@@ -45,10 +46,16 @@ public final class CPrinterGraphicsConfig extends GraphicsConfiguration {
 
     private final GraphicsDevice device;
     private final PageFormat pf;
+    private final AffineTransform deviceTransform;
 
     public CPrinterGraphicsConfig(PageFormat pf) {
+        this(pf, null);
+    }
+
+    CPrinterGraphicsConfig(PageFormat pf, AffineTransform deviceTransform) {
         this.device = new CPrinterDevice(this);
         this.pf = pf;
+        this.deviceTransform = deviceTransform;
     }
 
     public PageFormat getPageFormat() {
@@ -178,7 +185,8 @@ public final class CPrinterGraphicsConfig extends GraphicsConfiguration {
      */
     @Override
     public AffineTransform getDefaultTransform() {
-        return new AffineTransform();
+        return deviceTransform == null ?
+                new AffineTransform() : new AffineTransform(deviceTransform);
     }
 
     /**
@@ -224,6 +232,10 @@ public final class CPrinterGraphicsConfig extends GraphicsConfiguration {
      */
     @Override
     public Rectangle getBounds() {
-        return new Rectangle(0, 0, (int)pf.getWidth(), (int)pf.getHeight());
+        Point2D.Double pt = new Point2D.Double(pf.getWidth(), pf.getHeight());
+        Point2D.Double transformedPt = new Point2D.Double();
+        getDefaultTransform().transform(pt, transformedPt);
+        return new Rectangle(0, 0,
+                (int)transformedPt.getX(), (int)transformedPt.getY());
     }
 }

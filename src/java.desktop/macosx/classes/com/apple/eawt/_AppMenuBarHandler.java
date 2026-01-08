@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.lwawt.macosx.CMenuBar;
 
 import com.apple.laf.AquaMenuBarUI;
 
-class _AppMenuBarHandler {
+final class _AppMenuBarHandler {
     private static final int MENU_ABOUT = 1;
     private static final int MENU_PREFS = 2;
 

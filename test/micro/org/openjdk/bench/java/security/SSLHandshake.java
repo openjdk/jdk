@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.nio.ByteBuffer;
@@ -50,13 +49,17 @@ import javax.net.ssl.TrustManagerFactory;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 5, time = 5)
 @Measurement(iterations = 5, time = 5)
 @Fork(value = 3)
 public class SSLHandshake {
 
-    private SSLContext sslc;
+    // one global server context
+    private static final SSLContext sslServerCtx = getServerContext();
+
+    // per-thread client contexts
+    private SSLContext sslClientCtx;
 
     private SSLEngine clientEngine;
     private ByteBuffer clientOut = ByteBuffer.allocate(5);
@@ -75,22 +78,33 @@ public class SSLHandshake {
     @Param({"TLSv1.2", "TLS"})
     String tlsVersion;
 
+    private static SSLContext getServerContext() {
+        try {
+            KeyStore ks = TestCertificates.getKeyStore();
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ks, new char[0]);
+
+            SSLContext sslCtx = SSLContext.getInstance("TLS");
+            sslCtx.init(kmf.getKeyManagers(), null, null);
+            return sslCtx;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Setup(Level.Trial)
     public void init() throws Exception {
-        KeyStore ks = TestCertificates.getKeyStore();
         KeyStore ts = TestCertificates.getTrustStore();
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-                KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(ks, new char[0]);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(
                 TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ts);
 
         SSLContext sslCtx = SSLContext.getInstance(tlsVersion);
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        sslc = sslCtx;
+        sslCtx.init(null, tmf.getTrustManagers(), null);
+        sslClientCtx = sslCtx;
     }
 
     private HandshakeStatus checkResult(SSLEngine engine, SSLEngineResult result) {
@@ -173,13 +187,13 @@ public class SSLHandshake {
          * Configure the serverEngine to act as a server in the SSL/TLS
          * handshake.
          */
-        serverEngine = sslc.createSSLEngine();
+        serverEngine = sslServerCtx.createSSLEngine();
         serverEngine.setUseClientMode(false);
 
         /*
          * Similar to above, but using client mode instead.
          */
-        clientEngine = sslc.createSSLEngine("client", 80);
+        clientEngine = sslClientCtx.createSSLEngine("client", 80);
         clientEngine.setUseClientMode(true);
     }
 }

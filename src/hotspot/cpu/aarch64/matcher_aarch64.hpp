@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,6 @@
   // C code as the Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
-
   // Are floats converted to double when stored to stack during
   // deoptimization?
   static constexpr bool float_in_double() { return false; }
@@ -203,4 +200,8 @@
     return false;
   }
 
+  // Is FEAT_FP16 supported for this CPU?
+  static bool is_feat_fp16_supported() {
+    return (VM_Version::supports_fphp() && VM_Version::supports_asimdhp());
+  }
 #endif // CPU_AARCH64_MATCHER_AARCH64_HPP

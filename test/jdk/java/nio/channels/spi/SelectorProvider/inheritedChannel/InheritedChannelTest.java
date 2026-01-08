@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
  * @key intermittent
  */
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -59,14 +58,8 @@ import static java.util.Arrays.asList;
 
 public class InheritedChannelTest {
 
-    private static final String TEST_SRC = System.getProperty("test.src");
     private static final String TEST_CLASSPATH = System.getProperty("test.class.path");
     private static final String TEST_CLASSES = System.getProperty("test.classes");
-
-    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
-
-    private static final String ARCH = System.getProperty("os.arch");
-    private static final String OS_ARCH = ARCH.equals("i386") ? "i586" : ARCH;
 
     private static final Path libraryPath
             = Paths.get(System.getProperty("java.library.path"));
@@ -83,7 +76,7 @@ public class InheritedChannelTest {
         };
     }
 
-    @Test(dataProvider = "testCases", timeOut=30000)
+    @Test(dataProvider = "testCases")
     public void test(String desc, List<String> opts) throws Throwable {
         String pathVar = Platform.sharedLibraryPathVariableName();
         System.out.println(pathVar + "=" + libraryPath);

@@ -27,12 +27,11 @@
  * @test
  * @bug 8257736
  * @library /test/jdk/java/net/httpclient/lib
+ * @library /test/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm StreamCloseTest
  */
-
-import com.sun.net.httpserver.HttpServer;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -42,11 +41,8 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;

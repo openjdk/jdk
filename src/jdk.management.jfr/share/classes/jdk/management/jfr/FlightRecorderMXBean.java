@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.management.jfr;
 
 import java.io.IOException;
 import java.lang.management.PlatformManagedObject;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ import jdk.jfr.Recording;
  * Specify how long a recording should last, and where and when data
  * should be dumped.</li>
  * <li><b>Settings</b><br>
- * Specify which events should be enabled and what kind information each
+ * Specify which events should be enabled and what kind of information each
  * event should capture.</li>
  * <li><b>Configurations</b><br>
  * Predefined sets of settings, typically derived from a settings file,
@@ -59,7 +60,7 @@ import jdk.jfr.Recording;
  *
  * <h2>Recording options</h2>
  * <p>
- * The following table shows the options names to use with {@link #setRecordingOptions(long, Map)}
+ * The following table shows the option names to use with {@link #setRecordingOptions(long, Map)}
  * and {@link #getRecordingOptions(long)}.
  *
  * <table class="striped">
@@ -67,7 +68,7 @@ import jdk.jfr.Recording;
  * <thead>
  * <tr>
  * <th scope="col">Name</th>
- * <th scope="col">Descripion</th>
+ * <th scope="col">Description</th>
  * <th scope="col">Default value</th>
  * <th scope="col">Format</th>
  * <th scope="col">Example values</th>
@@ -107,7 +108,7 @@ import jdk.jfr.Recording;
  * </tr>
  * <tr>
  * <th scope="row">{@code maxSize}</th>
- * <td>Specifies the size, measured in bytes, at which data is kept in disk
+ * <td>Specifies the size, measured in bytes, at which data is kept in the disk
  * repository. Only works if
  * {@code disk=true}, otherwise this parameter is ignored.</td>
  * <td>{@code "0"} (no limit)</td>
@@ -131,8 +132,8 @@ import jdk.jfr.Recording;
  * <td>See {@code Paths#getPath} for format. <br>
  * If this method is invoked from another process, the data is written on the
  * machine where the target JVM is running. If destination is a relative path, it
- * is relative to the working directory where the target JVM was started.}</td>
- * <td>{@code "c:\recording\recotding.jfr"},<br>
+ * is relative to the working directory where the target JVM was started.</td>
+ * <td>{@code "c:\recording\recording.jfr"},<br>
  * {@code "/recordings/recording.jfr"}, {@code "recording.jfr"}</td>
  * </tr>
  * <tr>
@@ -145,7 +146,7 @@ import jdk.jfr.Recording;
  * {@code "false"}</td>
  * <tr>
  * <th scope="row">{@code duration}</th>
- * <td>Sets how long the recording should be running</td>
+ * <td>Specifies the duration of the recording.</td>
  * <td>{@code "0"} (no limit, continuous)</td>
  * <td>{@code "0"} if no limit should be imposed, otherwise a string
  * representation of a positive {@code Long} followed by an empty space and one
@@ -287,7 +288,7 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * <thead>
      * <tr>
      * <th scope="col">Name</th>
-     * <th scope="col">Descripion</th>
+     * <th scope="col">Description</th>
      * <th scope="col">Default value</th>
      * <th scope="col">Format</th>
      * <th scope="col">Example values</th>
@@ -337,7 +338,7 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * <td>{@code "1.0"}</td>
      * <td>A version number with a major and minor.<br>
      * <br>
-     * To be able to read from a running recording the value must be set</td>
+     * To be able to read from a running recording the value must be set to</td>
      * <td>{@code "1.0"}
      * </tr>
      * </tbody>
@@ -355,7 +356,7 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      *
      * @return a unique ID for the stream.
      *
-     * @throws IllegalArgumentException if a recording with the iD doesn't
+     * @throws IllegalArgumentException if a recording with the ID doesn't
      *         exist, or if {@code options} contains invalid values
      *
      * @throws IOException if the recording is closed, an I/O error occurs, or
@@ -425,7 +426,7 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * is a textual representation of the settings value (for example,
      * {@code "60 s"}).
      *
-     * @param recordingId the ID of the recordings to get settings for
+     * @param recordingId the ID of the recording to get settings for
      *
      * @return a map that describes the recording settings, not {@code null}
      *
@@ -522,7 +523,7 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
     void setRecordingOptions(long recordingId, Map<String, String> options) throws IllegalArgumentException;
 
     /**
-     * Returns the list of the available recordings, not necessarily running.
+     * Returns the list of available recordings, not necessarily running.
      * <p>
      * <b>MBeanServer access</b>:<br>
      * The mapped type of {@code RecordingInfo} is {@code CompositeData} with

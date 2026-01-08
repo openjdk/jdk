@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.api.metadata.settingdescriptor.TestGetDescription
+ * @run main/othervm jdk.jfr.api.metadata.settingdescriptor.TestGetContentType
  */
 public class TestGetContentType {
 
@@ -49,7 +49,7 @@ public class TestGetContentType {
         Asserts.assertNull(plain.getContentType());
 
         SettingDescriptor annotatedType = Events.getSetting(type, "annotatedType");
-        Asserts.assertNull(annotatedType.getContentType(), Timestamp.class.getName());
+        Asserts.assertEquals(annotatedType.getContentType(), Timestamp.class.getName());
 
         SettingDescriptor newName = Events.getSetting(type, "newName");
         Asserts.assertEquals(newName.getContentType(), Timespan.class.getName());
@@ -58,7 +58,7 @@ public class TestGetContentType {
         Asserts.assertNull(overridden.getContentType());
 
         SettingDescriptor protectedBase = Events.getSetting(type, "protectedBase");
-        Asserts.assertEquals(protectedBase.getContentType(), Frequency.class);
+        Asserts.assertEquals(protectedBase.getContentType(), Frequency.class.getName());
 
         SettingDescriptor publicBase = Events.getSetting(type, "publicBase");
         Asserts.assertEquals(publicBase.getContentType(), Timestamp.class.getName());

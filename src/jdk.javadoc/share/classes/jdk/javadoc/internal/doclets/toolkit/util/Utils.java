@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,7 +384,7 @@ public class Utils {
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
-                    || hasHiddenTag(enclosingTypeElement))
+                    || isHidden(enclosingTypeElement))
                 && !isLinkable(enclosingTypeElement);
     }
 
@@ -786,7 +786,7 @@ public class Utils {
                 if (!visited.add(e)) {
                     continue; // seen it before
                 }
-                if (isPublic(e) || isLinkable(e)) {
+                if (isVisible(e)) {
                     results.add(t);
                 }
                 addSuperInterfaces(t, results, visited);
@@ -849,7 +849,7 @@ public class Utils {
         return
             typeElem != null &&
             ((isIncluded(typeElem) && configuration.isGeneratedDoc(typeElem) &&
-                    !hasHiddenTag(typeElem)) ||
+                    !isHidden(typeElem)) ||
             (configuration.extern.isExternal(typeElem) &&
                     (isPublic(typeElem) || isProtected(typeElem))));
     }
@@ -874,7 +874,7 @@ public class Utils {
             return isLinkable((TypeElement) elem); // defer to existing behavior
         }
 
-        if (isIncluded(elem) && !hasHiddenTag(elem)) {
+        if (isIncluded(elem) && !isHidden(elem)) {
             return true;
         }
 
@@ -1006,7 +1006,7 @@ public class Utils {
             t = supertypes.get(0); // if non-empty, the first element is always the superclass
             var te = asTypeElement(t);
             assert alreadySeen.add(te); // it should be the first time we see `te`
-            if (!hasHiddenTag(te) && (isPublic(te) || isLinkable(te))) {
+            if (isVisible(te)) {
                 return t;
             }
         }
@@ -1133,6 +1133,15 @@ public class Utils {
     }
 
     /**
+     * Replaces each group of one or more whitespace characters with a single canonical space
+     * @param s the string to be normalized
+     * @return normalized string
+     */
+    public String normalizeWhitespace(String s) {
+        return s.replaceAll("\\s+", " ");
+    }
+
+    /**
      * Returns a locale independent lower cased String. That is, it
      * always uses US locale, this is a clone of the one in StringUtils.
      * @param s to convert
@@ -1228,16 +1237,32 @@ public class Utils {
     }
 
     /**
-     * Returns true if the element is included or selected, contains &#64;hidden tag,
-     * or if javafx flag is present and element contains &#64;treatAsPrivate
-     * tag.
-     * @param e the queried element
-     * @return true if it exists, false otherwise
+     * Returns {@code true} if the type element is visible. This means that it is not hidden,
+     * and is either public or linkable (either internally or externally).
+     *
+     * @param typeElement the type element
+     * @return {@code true} if the type element is visible
      */
-    public boolean hasHiddenTag(Element e) {
-        // Non-included elements may still be visible via "transclusion" from undocumented enclosures,
-        // but we don't want to run doclint on them, possibly causing warnings or errors.
+    public boolean isVisible(TypeElement typeElement) {
+        return !isHidden(typeElement) && (isPublic(typeElement) || isLinkable(typeElement));
+    }
+
+    /**
+     * Returns true if the element is hidden. An element is hidden if it contains a
+     * &#64;hidden tag, or if javafx flag is present and the element contains a
+     * &#64;treatAsPrivate tag, or the element is a type and is not included and
+     * not exported unconditionally by its module.
+     * @param e the queried element
+     * @return true if element is hidden, false otherwise
+     */
+    public boolean isHidden(Element e) {
+        // Non-included elements may still be visible through the type hierarchy
         if (!isIncluded(e)) {
+            // Treat types that are not included and not unconditionally exported as hidden
+            if (isClassOrInterface(e) && isUnexportedType((TypeElement) e)) {
+                return true;
+            }
+            // Use unchecked method to avoid running doclint, causing warnings or errors.
             return hasBlockTagUnchecked(e, HIDDEN);
         }
         if (options.javafx() &&
@@ -1245,6 +1270,21 @@ public class Utils {
             return true;
         }
         return hasBlockTag(e, DocTree.Kind.HIDDEN);
+    }
+
+    /**
+     * {@return true if typeElement is in a package that is not unconditionally exported
+     * by its module}
+     * @param typeElement a type element
+     */
+    private boolean isUnexportedType(TypeElement typeElement) {
+        var pkg = elementUtils.getPackageOf(typeElement);
+        var mdl = elementUtils.getModuleOf(typeElement);
+        return mdl != null && !mdl.isUnnamed()
+                && mdl.getDirectives().stream()
+                .filter(d -> d.getKind() == ModuleElement.DirectiveKind.EXPORTS)
+                .map(d -> (ModuleElement.ExportsDirective) d)
+                .noneMatch(e -> e.getPackage().equals(pkg) && e.getTargetModules() == null);
     }
 
     /*
@@ -1284,14 +1324,14 @@ public class Utils {
                 new TreeSet<>(comparators.generalPurposeComparator());
         if (!javafx) {
             for (TypeElement te : classlist) {
-                if (!hasHiddenTag(te)) {
+                if (!isHidden(te)) {
                     filteredOutClasses.add(te);
                 }
             }
             return filteredOutClasses;
         }
         for (TypeElement e : classlist) {
-            if (isPrivate(e) || isPackagePrivate(e) || hasHiddenTag(e)) {
+            if (isPrivate(e) || isPackagePrivate(e) || isHidden(e)) {
                 continue;
             }
             filteredOutClasses.add(e);
@@ -2638,6 +2678,10 @@ public class Utils {
                 parentPreviewAPI = configuration.workArounds.isPreviewAPI(enclosing);
             }
         }
+        String previewFeatureTag = configuration.getOptions().previewFeatureTag();
+        if (previewFeatureTag != null && hasBlockTag(el, UNKNOWN_BLOCK_TAG, previewFeatureTag)) {
+            return true;
+        }
         boolean previewAPI = configuration.workArounds.isPreviewAPI(el);
         return !parentPreviewAPI && previewAPI;
     }
@@ -2714,6 +2758,7 @@ public class Utils {
         public boolean isPreview(Element el) {
             PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
             Element enclosing = el.getEnclosingElement();
+            String previewFeatureTag = configuration.getOptions().previewFeatureTag();
 
             return    (   !previewLanguageFeaturesUsed(el).isEmpty()
                        || configuration.workArounds.isPreviewAPI(el)
@@ -2721,7 +2766,9 @@ public class Utils {
                            && configuration.workArounds.isPreviewAPI(enclosing))
                        || !previewAPIs.previewAPI.isEmpty()
                        || !previewAPIs.reflectivePreviewAPI.isEmpty()
-                       || !previewAPIs.declaredUsingPreviewFeature.isEmpty())
+                       || !previewAPIs.declaredUsingPreviewFeature.isEmpty()
+                       || (   previewFeatureTag != null
+                           && hasBlockTag(el, Kind.UNKNOWN_BLOCK_TAG, previewFeatureTag)))
                    && !hasNoPreviewAnnotation(el);
         }
     };
@@ -2822,7 +2869,7 @@ public class Utils {
                     next = null; // end-of-hierarchy
                     break;
                 }
-                if (isPlainInterface(peek) && !isPublic(peek) && !isLinkable(peek)) {
+                if (isPlainInterface(peek) && !isVisible(peek)) {
                     // we don't consider such interfaces directly, but may consider
                     // their supertypes (subject to this check for each of them)
                     continue;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,7 @@ package jdk.internal.classfile.impl.verifier;
 
 import java.util.Arrays;
 
-/**
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/stackMapFrame.hpp">hotspot/share/classfile/stackMapFrame.hpp</a>
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/stackMapFrame.cpp">hotspot/share/classfile/stackMapFrame.cpp</a>
- */
+/// From `stackMapFrame.cpp`.
 class VerificationFrame {
 
     public static final int FLAG_THIS_UNINIT = 0x01;

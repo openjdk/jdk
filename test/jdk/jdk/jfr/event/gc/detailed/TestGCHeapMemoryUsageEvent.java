@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class TestGCHeapMemoryUsageEvent {
             List<RecordedEvent> events = Events.fromRecording(recording);
             System.out.println(events);
             assertFalse(events.isEmpty());
-            RecordedEvent event = events.getFirst();
+            RecordedEvent event = events.getLast();
             Events.assertField(event, "used").above(0L);
             Events.assertField(event, "committed").above(0L);
             Events.assertField(event, "max").above(0L);

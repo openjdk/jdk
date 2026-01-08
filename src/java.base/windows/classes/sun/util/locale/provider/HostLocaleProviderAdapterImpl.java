@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,22 +116,18 @@ public class HostLocaleProviderAdapterImpl {
     private static final String nativeDisplayLanguage;
     static {
         Set<Locale> tmpSet = new HashSet<>();
-        if (initialize()) {
-            // Assuming the default locales do not include any extensions, so
-            // no stripping is needed here.
-            Control c = Control.getNoFallbackControl(Control.FORMAT_DEFAULT);
-            String displayLocale = getDefaultLocale(CAT_DISPLAY);
-            Locale l = Locale.forLanguageTag(displayLocale.replace('_', '-'));
-            tmpSet.addAll(c.getCandidateLocales("", l));
-            nativeDisplayLanguage = l.getLanguage();
+        // Assuming the default locales do not include any extensions, so
+        // no stripping is needed here.
+        Control c = Control.getNoFallbackControl(Control.FORMAT_DEFAULT);
+        String displayLocale = getDefaultLocale(CAT_DISPLAY);
+        Locale l = Locale.forLanguageTag(displayLocale.replace('_', '-'));
+        tmpSet.addAll(c.getCandidateLocales("", l));
+        nativeDisplayLanguage = l.getLanguage();
 
-            String formatLocale = getDefaultLocale(CAT_FORMAT);
-            if (!formatLocale.equals(displayLocale)) {
-                l = Locale.forLanguageTag(formatLocale.replace('_', '-'));
-                tmpSet.addAll(c.getCandidateLocales("", l));
-            }
-        } else {
-            nativeDisplayLanguage = "";
+        String formatLocale = getDefaultLocale(CAT_FORMAT);
+        if (!formatLocale.equals(displayLocale)) {
+            l = Locale.forLanguageTag(formatLocale.replace('_', '-'));
+            tmpSet.addAll(c.getCandidateLocales("", l));
         }
         supportedLocaleSet = Collections.unmodifiableSet(tmpSet);
     }
@@ -850,7 +846,6 @@ public class HostLocaleProviderAdapterImpl {
     // native methods
 
     // initialize
-    private static native boolean initialize();
     private static native String getDefaultLocale(int cat);
 
     // For DateFormatProvider

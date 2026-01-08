@@ -42,8 +42,8 @@ static bool compare_limits(const malloclimit* a, const malloclimit* b) {
 static bool compare_sets(const MallocLimitSet* a, const MallocLimitSet* b) {
   if (compare_limits(a->global_limit(), b->global_limit())) {
     for (int i = 0; i < mt_number_of_tags; i++) {
-      if (!compare_limits(a->category_limit(NMTUtil::index_to_tag(i)),
-                          b->category_limit(NMTUtil::index_to_tag(i)))) {
+      if (!compare_limits(a->mem_tag_limit(NMTUtil::index_to_tag(i)),
+                          b->mem_tag_limit(NMTUtil::index_to_tag(i)))) {
         return false;
       }
     }
@@ -92,7 +92,7 @@ TEST(NMT, MallocLimitPerCategory) {
   test("metaspace:1m,compiler:2m:oom,thread:3m:oom,threadstack:4m:oom,class:5m,classshared:6m", expected);
 }
 
-TEST(NMT, MallocLimitCategoryEnumNames) {
+TEST(NMT, MallocLimitMemTagEnumNames) {
   MallocLimitSet expected;
   stringStream option;
   for (int i = 0; i < mt_number_of_tags; i++) {

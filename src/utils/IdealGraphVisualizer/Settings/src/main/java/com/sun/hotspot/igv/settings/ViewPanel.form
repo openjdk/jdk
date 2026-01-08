@@ -28,7 +28,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="jPanel1" min="-2" max="-2" attributes="0"/>
-              <EmptySpace pref="29" max="32767" attributes="0"/>
+              <EmptySpace pref="15" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -47,14 +47,16 @@
                       <Component id="jLabel2" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel6" alignment="0" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace min="-2" pref="39" max="-2" attributes="0"/>
+                  <EmptySpace type="separate" min="-2" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" max="-2" attributes="0">
                       <Component id="nodeShortTextField" max="32767" attributes="0"/>
-                      <Component id="jScrollPane1" pref="470" max="32767" attributes="0"/>
+                      <Component id="jScrollPane1" pref="663" max="32767" attributes="0"/>
                       <Component id="portSpinner" alignment="0" max="32767" attributes="0"/>
-                      <Component id="nodeTinyTextField" alignment="0" max="32767" attributes="0"/>
                       <Component id="defaultViewComboBox" alignment="0" max="32767" attributes="0"/>
+                      <Component id="graphNameSuffixField" alignment="0" max="32767" attributes="0"/>
+                      <Component id="nodeTinyTextField" alignment="0" max="32767" attributes="0"/>
                   </Group>
                   <EmptySpace max="32767" attributes="0"/>
               </Group>
@@ -70,24 +72,30 @@
                   </Group>
                   <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
                       <Component id="nodeShortTextField" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel4" min="-2" pref="18" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace pref="27" max="32767" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="jLabel5" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel5" alignment="3" min="-2" pref="24" max="-2" attributes="0"/>
                       <Component id="nodeTinyTextField" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="defaultViewComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Component id="graphNameSuffixField" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel6" min="-2" pref="18" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="27" max="32767" attributes="0"/>
-                  <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="portSpinner" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jLabel3" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Component id="defaultViewComboBox" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel2" min="-2" pref="18" max="-2" attributes="0"/>
                   </Group>
+                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Component id="portSpinner" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel3" min="-2" pref="18" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -133,9 +141,6 @@
         </Component>
         <Component class="javax.swing.JTextField" name="nodeShortTextField">
           <Properties>
-            <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-              <Color blue="ff" green="ff" red="ff" type="rgb"/>
-            </Property>
             <Property name="toolTipText" type="java.lang.String" value="Single-line format string for nodes in edge tooltips, slot tooltips, and node search bar. Properties are specified with brackets  (example: &quot;[idx]&quot;)."/>
           </Properties>
           <AuxValues>
@@ -149,9 +154,6 @@
         </Component>
         <Component class="javax.swing.JTextField" name="nodeTinyTextField">
           <Properties>
-            <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-              <Color blue="ff" green="ff" red="ff" type="rgb"/>
-            </Property>
             <Property name="toolTipText" type="java.lang.String" value="Single-line format string for node input lists. Properties are specified with brackets  (example: &quot;[idx]&quot;)."/>
           </Properties>
           <AuxValues>
@@ -172,6 +174,19 @@
           <AuxValues>
             <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
           </AuxValues>
+        </Component>
+        <Component class="javax.swing.JTextField" name="graphNameSuffixField">
+          <Properties>
+            <Property name="toolTipText" type="java.lang.String" value="Single-line format string for node input lists. Properties are specified with brackets (example: &quot;[method]&quot;)."/>
+          </Properties>
+          <AuxValues>
+            <AuxValue name="JavaCodeGenerator_SerializeTo" type="java.lang.String" value="ViewPanel_graphNameSuffixField"/>
+          </AuxValues>
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel6">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Graph Name Suffix"/>
+          </Properties>
         </Component>
       </SubComponents>
     </Container>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  */
 
 import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Joiner;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
@@ -53,8 +54,7 @@ class StructuredThreadDumpTest {
      */
     @Test
     void testTree() throws Exception {
-        ThreadFactory factory = Thread.ofVirtual().factory();
-        try (var scope = new StructuredTaskScope<>("scope", factory)) {
+        try (var scope = StructuredTaskScope.open(Joiner.awaitAll(), cf -> cf.withName("scope"))) {
             Thread thread1 = fork(scope, "child-scope-A");
             Thread thread2 = fork(scope, "child-scope-B");
             try {
@@ -83,7 +83,8 @@ class StructuredThreadDumpTest {
                 container1.findThread(thread2.threadId()).orElseThrow();
 
             } finally {
-                scope.shutdown();
+                LockSupport.unpark(thread1);
+                LockSupport.unpark(thread2);
                 scope.join();
             }
         }
@@ -95,11 +96,10 @@ class StructuredThreadDumpTest {
      */
     @Test
     void testNested() throws Exception {
-        ThreadFactory factory = Thread.ofVirtual().factory();
-        try (var scope1 = new StructuredTaskScope<>("scope-A", factory)) {
+        try (var scope1 = StructuredTaskScope.open(Joiner.awaitAll(), cf -> cf.withName("scope-A"))) {
             Thread thread1 = fork(scope1);
 
-            try (var scope2 = new StructuredTaskScope<>("scope-B", factory)) {
+            try (var scope2 = StructuredTaskScope.open(Joiner.awaitAll(), cf -> cf.withName("scope-B"))) {
                 Thread thread2 = fork(scope2);
                 try {
                     ThreadDump threadDump = threadDump();
@@ -127,11 +127,11 @@ class StructuredThreadDumpTest {
                     container2.findThread(thread2.threadId()).orElseThrow();
 
                 } finally {
-                    scope2.shutdown();
+                    LockSupport.unpark(thread2);
                     scope2.join();
                 }
             } finally {
-                scope1.shutdown();
+                LockSupport.unpark(thread1);
                 scope1.join();
             }
         }
@@ -160,7 +160,7 @@ class StructuredThreadDumpTest {
      * Forks a subtask in the given scope that parks, returning the Thread that executes
      * the subtask.
      */
-    private static Thread fork(StructuredTaskScope<Object> scope) throws Exception {
+    private static Thread fork(StructuredTaskScope<Object, Void> scope) throws Exception {
         var ref = new AtomicReference<Thread>();
         scope.fork(() -> {
             ref.set(Thread.currentThread());
@@ -178,16 +178,15 @@ class StructuredThreadDumpTest {
      * Forks a subtask in the given scope. The subtask creates a new child scope with
      * the given name, then parks. This method returns Thread that executes the subtask.
      */
-    private static Thread fork(StructuredTaskScope<Object> scope,
+    private static Thread fork(StructuredTaskScope<Object, Void> scope,
                                String childScopeName) throws Exception {
         var ref = new AtomicReference<Thread>();
         scope.fork(() -> {
-            ThreadFactory factory = Thread.ofVirtual().factory();
-            try (var childScope = new StructuredTaskScope<Object>(childScopeName, factory)) {
+            try (var childScope = StructuredTaskScope.open(Joiner.awaitAll(),
+                    cf -> cf.withName(childScopeName))) {
                 ref.set(Thread.currentThread());
                 LockSupport.park();
             }
-            return null;
         });
         Thread thread;
         while ((thread = ref.get()) == null) {

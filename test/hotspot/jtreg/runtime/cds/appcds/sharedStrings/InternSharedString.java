@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,18 @@
 /*
  * @test
  * @summary Test shared strings together with string intern operation
- * @requires vm.cds.write.archived.java.heap
  * @requires vm.gc == null
- * @comment CDS archive heap mapping is not supported with large pages
- * @requires vm.opt.UseLargePages == null | !vm.opt.UseLargePages
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @compile InternStringTest.java
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver InternSharedString
  */
+
+// This test requires the vm.cds.write.mapped.java.heap specifically as it has expectations
+// about using the mechanism for dumping the entire string table, which the streaming solution
+// does not do.
 
 public class InternSharedString {
     public static void main(String[] args) throws Exception {
@@ -45,7 +47,7 @@ public class InternSharedString {
         SharedStringsUtils.buildJarAndWhiteBox("InternStringTest");
 
         SharedStringsUtils.dumpWithWhiteBox(TestCommon.list("InternStringTest"),
-            "ExtraSharedInput.txt", "-Xlog:cds,cds+hashtables");
+            "ExtraSharedInput.txt", "-Xlog:cds,aot+hashtables");
 
         String[] extraMatches = new String[]   {
             InternStringTest.passed_output1,

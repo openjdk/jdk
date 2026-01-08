@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,14 @@ import javax.lang.model.type.TypeKind;
  * parameter, local variable, resource variable, or exception
  * parameter.
  *
+ * @jls 8.3 Field Declaration
+ * @jls 8.9.1 Enum Constants
+ * @jls 8.4.1 Formal Parameters
+ * @jls 8.8.1 Formal Parameters
+ * @jls 14.4 Local Variable Declarations
+ * @jls 14.20 The {@code try} statement
+ * @jls 14.20.3 {@code try}-with-resources
+
  * @since 1.6
  */
 public interface VariableElement extends Element {

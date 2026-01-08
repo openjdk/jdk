@@ -52,8 +52,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "sanitizers/ub.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
@@ -480,25 +480,31 @@ UNSAFE_LEAF (void, Unsafe_WriteBackPostSync0(JNIEnv *env, jobject unsafe)) {
 
 ////// Random queries
 
-static jlong find_field_offset(jclass clazz, jstring name, TRAPS) {
+// Finds the object field offset of a field with the matching name, or an error code
+// Error code -1 is not found, -2 is static field
+static jlong find_known_instance_field_offset(jclass clazz, jstring name, TRAPS) {
   assert(clazz != nullptr, "clazz must not be null");
   assert(name != nullptr, "name must not be null");
 
   ResourceMark rm(THREAD);
   char *utf_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
 
-  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  InstanceKlass* k = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(clazz));
 
-  jint offset = -1;
+  jint offset = -1; // Not found
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     Symbol *name = fs.name();
     if (name->equals(utf_name)) {
-      offset = fs.offset();
+      if (!fs.access_flags().is_static()) {
+        offset = fs.offset();
+      } else {
+        offset = -2; // A static field
+      }
       break;
     }
   }
   if (offset < 0) {
-    THROW_0(vmSymbols::java_lang_InternalError());
+    return offset; // Error code
   }
   return field_offset_from_byte_offset(offset);
 }
@@ -527,8 +533,8 @@ UNSAFE_ENTRY(jlong, Unsafe_ObjectFieldOffset0(JNIEnv *env, jobject unsafe, jobje
   return find_field_offset(field, 0, THREAD);
 } UNSAFE_END
 
-UNSAFE_ENTRY(jlong, Unsafe_ObjectFieldOffset1(JNIEnv *env, jobject unsafe, jclass c, jstring name)) {
-  return find_field_offset(c, name, THREAD);
+UNSAFE_ENTRY(jlong, Unsafe_KnownObjectFieldOffset0(JNIEnv *env, jobject unsafe, jclass c, jstring name)) {
+  return find_known_instance_field_offset(c, name, THREAD);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jlong, Unsafe_StaticFieldOffset0(JNIEnv *env, jobject unsafe, jobject field)) {
@@ -731,13 +737,13 @@ UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeReference(JNIEnv *env, jobject un
 UNSAFE_ENTRY_SCOPED(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
-  return Atomic::cmpxchg(addr, e, x);
+  return AtomicAccess::cmpxchg(addr, e, x);
 } UNSAFE_END
 
 UNSAFE_ENTRY_SCOPED(jlong, Unsafe_CompareAndExchangeLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
-  return Atomic::cmpxchg(addr, e, x);
+  return AtomicAccess::cmpxchg(addr, e, x);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject e_h, jobject x_h)) {
@@ -752,13 +758,13 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe
 UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
-  return Atomic::cmpxchg(addr, e, x) == e;
+  return AtomicAccess::cmpxchg(addr, e, x) == e;
 } UNSAFE_END
 
 UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
-  return Atomic::cmpxchg(addr, e, x) == e;
+  return AtomicAccess::cmpxchg(addr, e, x) == e;
 } UNSAFE_END
 
 static void post_thread_park_event(EventThreadPark* event, const oop obj, jlong timeout_nanos, jlong until_epoch_millis) {
@@ -882,7 +888,7 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "freeMemory0",        CC "(" ADR ")V",           FN_PTR(Unsafe_FreeMemory0)},
 
     {CC "objectFieldOffset0", CC "(" FLD ")J",           FN_PTR(Unsafe_ObjectFieldOffset0)},
-    {CC "objectFieldOffset1", CC "(" CLS LANG "String;)J", FN_PTR(Unsafe_ObjectFieldOffset1)},
+    {CC "knownObjectFieldOffset0", CC "(" CLS LANG "String;)J", FN_PTR(Unsafe_KnownObjectFieldOffset0)},
     {CC "staticFieldOffset0", CC "(" FLD ")J",           FN_PTR(Unsafe_StaticFieldOffset0)},
     {CC "staticFieldBase0",   CC "(" FLD ")" OBJ,        FN_PTR(Unsafe_StaticFieldBase0)},
     {CC "ensureClassInitialized0", CC "(" CLS ")V",      FN_PTR(Unsafe_EnsureClassInitialized0)},

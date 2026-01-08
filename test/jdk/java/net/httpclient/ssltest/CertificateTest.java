@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ import jdk.test.lib.security.SSLContextBuilder;
 
 /*
  * @test
- * @library /test/lib
- * @build Server CertificateTest
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build Server CertificateTest jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @modules java.net.http/jdk.internal.net.http.common
  * @run main/othervm CertificateTest GOOD_CERT expectSuccess
  * @run main/othervm CertificateTest BAD_CERT expectFailure
  * @run main/othervm

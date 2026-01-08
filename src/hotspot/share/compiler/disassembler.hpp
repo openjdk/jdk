@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 #ifndef SHARE_COMPILER_DISASSEMBLER_HPP
 #define SHARE_COMPILER_DISASSEMBLER_HPP
 
-#include "utilities/globalDefinitions.hpp"
-
 #include "asm/assembler.hpp"
 #include "code/codeBlob.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/abstractDisassembler.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 class decode_env;

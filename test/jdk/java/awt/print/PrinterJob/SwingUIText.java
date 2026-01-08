@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,44 +21,70 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6488219 6560738 7158350 8017469
  * @key printer
  * @summary Test that text printed in Swing UI measures and looks OK.
- * @run main/manual=yesno PrintTextTest
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
+ * @run main/manual SwingUIText
  */
 
-import java.awt.*;
-import javax.swing.*;
-import java.awt.print.*;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterJob;
+import javax.swing.JButton;
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import jtreg.SkippedException;
 
 public class SwingUIText implements Printable {
+    private static JFrame frame;
+    private static final String INSTRUCTIONS = """
+            This test checks that when a Swing UI is printed,
+            the text in each component aligns with the component’s length as seen on-screen.
+            It also ensures the text spacing is reasonably even, though this is subjective.
+            The comparison should be made with JDK 1.5 GA or JDK 1.6 GA.
 
-    static String[] instructions = {
-        "This tests that when a Swing UI is printed, that the text",
-        "in each component properly matches the length of the component",
-        "as seen on-screen, and that the spacing of the text is of",
-        "reasonable even-ness. This latter part is very subjective and",
-        "the comparison has to be with JDK1.5 GA, or JDK 1.6 GA",
-    };
+            Steps:
+            1. Press the "Print" or "OK" button on the Print dialog.
+                This will print the content of the "Swing UI Text Printing Test" JFrame.
+            2. Compare the printout with the content of the JFrame.
+            3. If they match, press Pass; otherwise, press Fail.
+            """;
 
-    static JFrame frame;
+    public static void main(String args[])  throws Exception {
+        PrinterJob job = PrinterJob.getPrinterJob();
+        if (job.getPrintService() == null) {
+            throw new SkippedException("Printer not configured or available.");
+        }
 
-    public static void main(String args[]) {
-        SwingUtilities.invokeLater(new Runnable() {
-          public void run() {
-              createUI();
-          }
-      });
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .columns(45)
+                .testUI(SwingUIText::createTestUI)
+                .build();
+
+        job.setPrintable(new SwingUIText());
+        if (job.printDialog()) {
+            job.print();
+        }
+
+        passFailJFrame.awaitAndCheck();
     }
 
-    public static void createUI() {
-
-        Sysout.createDialogWithInstructions(instructions);
-
+    public static JFrame createTestUI() {
+        frame = new JFrame();
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(4,1));
+        panel.setLayout(new GridLayout(4, 1));
 
         String text = "marvelous suspicious solving";
         displayText(panel, text);
@@ -89,24 +115,12 @@ public class SwingUIText implements Printable {
         frame = new JFrame("Swing UI Text Printing Test");
         frame.getContentPane().add(panel);
         frame.pack();
-        frame.setVisible(true);
-
-        PrinterJob job = PrinterJob.getPrinterJob();
-        PageFormat pf = job.defaultPage();
-        job.setPrintable(new SwingUIText(), pf);
-        if (job.printDialog()) {
-            try { job.print(); }
-            catch (Exception e) {
-              e.printStackTrace();
-              throw new RuntimeException(e);
-            }
-        }
+        return frame;
     }
-
 
     static void displayText(JPanel p, String text) {
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(2,1));
+        panel.setLayout(new GridLayout(2, 1));
         JPanel row = new JPanel();
         Font font = new Font("Dialog", Font.PLAIN, 12);
 
@@ -114,7 +128,7 @@ public class SwingUIText implements Printable {
         label.setFont(font);
         row.add(label);
 
-        JButton button = new JButton("Print "+text);
+        JButton button = new JButton("Print " + text);
         button.setMnemonic('P');
         button.setFont(font);
         row.add(button);
@@ -133,132 +147,14 @@ public class SwingUIText implements Printable {
         p.add(panel);
     }
 
-    public int print(Graphics g, PageFormat pf, int pageIndex)
-        throws PrinterException {
-
+    public int print(Graphics g, PageFormat pf, int pageIndex) {
         if (pageIndex >= 1) {
             return Printable.NO_SUCH_PAGE;
         }
+
         g.translate((int)pf.getImageableX(), (int)pf.getImageableY());
         frame.printAll(g);
-
         return Printable.PAGE_EXISTS;
     }
 
 }
-
-class Sysout
- {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
- }// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog
- {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 10, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("South", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-     //chop up each into pieces maxSringLength long
-     remainingStr = instructions[ i ];
-     while( remainingStr.length() > 0 )
-      {
-        //if longer than max then chop off first max chars to print
-        if( remainingStr.length() >= maxStringLength )
-         {
-           //Try to chop on a word boundary
-           int posOfSpace = remainingStr.
-          lastIndexOf( ' ', maxStringLength - 1 );
-
-           if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-           printStr = remainingStr.substring( 0, posOfSpace + 1 );
-           remainingStr = remainingStr.substring( posOfSpace + 1 );
-         }
-        //else just print
-        else
-         {
-           printStr = remainingStr;
-           remainingStr = "";
-         }
-
-            instructionsText.append( printStr + "\n" );
-
-      }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
-}// TestDialog  class

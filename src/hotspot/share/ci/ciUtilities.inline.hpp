@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
   ThreadInVMfromNative __tiv(thread);       \
   HandleMarkCleaner __hm(thread);           \
   JavaThread* THREAD = thread; /* For exception macros. */ \
-  debug_only(VMNativeEntryWrapper __vew;)
+  DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
 
 
@@ -49,10 +49,10 @@
  * [TODO] The NoHandleMark line does nothing but declare a function prototype \
  * The NoHandkeMark constructor is NOT executed. If the ()'s are   \
  * removed, causes the NoHandleMark assert to trigger. \
- * debug_only(NoHandleMark __hm();)         \
+ * DEBUG_ONLY(NoHandleMark __hm();)         \
  */                                         \
   JavaThread* THREAD = thread; /* For exception macros. */ \
-  debug_only(VMNativeEntryWrapper __vew;)
+  DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
 
 #define EXCEPTION_CONTEXT \

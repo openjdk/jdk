@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,6 +263,7 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     // on other platforms like Linux/Solaris/AIX where the uid comes from the
     // same source like the command line info.
     unix_getUserInfo(env, jinfo, getUID(pid));
+    JNU_CHECK_EXCEPTION(env);
 
     // Get the maximum size of the arguments
     mib[0] = CTL_KERN;

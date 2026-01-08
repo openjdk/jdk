@@ -47,7 +47,7 @@ public:
   typedef OopStorage::ActiveArray ActiveArray;
 
   static ActiveArray& active_array(const OopStorage& storage) {
-    return *storage._active_array;
+    return *storage._active_array.load_relaxed();
   }
 
   static AllocationList& allocation_list(OopStorage& storage) {
@@ -90,7 +90,7 @@ public:
   }
 
   static void block_array_set_block_count(ActiveArray* blocks, size_t count) {
-    blocks->_block_count = count;
+    blocks->_block_count.store_relaxed(count);
   }
 
   static const oop* get_block_pointer(const Block& block, unsigned index) {

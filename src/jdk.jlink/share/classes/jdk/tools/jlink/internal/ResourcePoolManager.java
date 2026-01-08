@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.internal.jimage.decompressor.CompressedResourceHeader;
-import jdk.internal.module.Resources;
+import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleTarget;
@@ -67,11 +67,16 @@ public class ResourcePoolManager {
     }
 
     /**
-     * Returns true if a resource has an effective package.
+     * Returns true if a resource is located in a named package.
      */
-    public static boolean isNamedPackageResource(String path) {
-        return (path.endsWith(".class") && !path.endsWith("module-info.class")) ||
-                Resources.canEncapsulate(path);
+    public static boolean isNamedPackageResource(String name) {
+        int index = name.lastIndexOf("/");
+        if (index == -1) {
+            return false;
+        } else {
+            String pn = name.substring(0, index).replace('/', '.');
+            return Checks.isPackageName(pn);
+        }
     }
 
     static class ResourcePoolModuleImpl implements ResourcePoolModule {

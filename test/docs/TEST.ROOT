@@ -38,7 +38,7 @@
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=7.5.1+1
+requiredVersion=8.1+1
 
 # Use new module options
 useNewOptions=true

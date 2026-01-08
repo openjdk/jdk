@@ -43,6 +43,11 @@ void* GrowableArrayArenaAllocator::allocate(int max, int element_size, Arena* ar
 
 void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MemTag mem_tag) {
   assert(max >= 0, "integer overflow");
+
+  if (max == 0) {
+    return nullptr;
+  }
+
   size_t byte_size = element_size * (size_t) max;
 
   // memory tag has to be specified for C heap allocation

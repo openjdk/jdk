@@ -62,7 +62,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * therefore methods, which is using this id should be ready to it.
      */
     private volatile int screen;
-    Map<SurfaceType, SurfaceManager.ProxyCache> x11ProxyCacheMap = Collections.synchronizedMap(new HashMap<>());
+    Map<SurfaceType, SurfaceManager.ProxyCache> x11ProxyCacheMap =
+            Collections.synchronizedMap(new HashMap<>());
 
     private static Boolean xrandrExtSupported;
     private SunDisplayChanger topLevels = new SunDisplayChanger();
@@ -95,7 +96,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
     }
 
     public SurfaceManager.ProxyCache getProxyCacheFor(SurfaceType st) {
-        return x11ProxyCacheMap.computeIfAbsent(st, unused -> new SurfaceManager.ProxyCache());
+        return x11ProxyCacheMap.computeIfAbsent(st,
+                unused -> new SurfaceManager.ProxyCache());
     }
 
     /**
@@ -331,7 +333,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     private static native void enterFullScreenExclusive(long window);
     private static native void exitFullScreenExclusive(long window);
-    private static native boolean initXrandrExtension();
+    private static native boolean initXrandrExtension(boolean useOldConfigDisplayMode);
     private static native DisplayMode getCurrentDisplayMode(int screen);
     private static native void enumDisplayModes(int screen,
                                                 ArrayList<DisplayMode> modes);
@@ -348,10 +350,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
      */
     private static synchronized boolean isXrandrExtensionSupported() {
         if (xrandrExtSupported == null) {
-            xrandrExtSupported =
-                Boolean.valueOf(initXrandrExtension());
+            boolean useOldConfigDisplayMode =
+                    Boolean.getBoolean("awt.x11useOldConfigDisplayMode");
+            xrandrExtSupported = initXrandrExtension(useOldConfigDisplayMode);
         }
-        return xrandrExtSupported.booleanValue();
+        return xrandrExtSupported;
     }
 
     @Override
@@ -603,6 +606,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
         topLevels.remove(client);
     }
 
+    @Override
     public String toString() {
         return ("X11GraphicsDevice[screen="+screen+"]");
     }

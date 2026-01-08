@@ -131,13 +131,13 @@ bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
 void ScavengableNMethods::nmethods_do_and_prune(NMethodToOopClosure* cl) {
   assert_locked_or_safepoint(CodeCache_lock);
 
-  debug_only(mark_on_list_nmethods());
+  DEBUG_ONLY(mark_on_list_nmethods());
 
   nmethod* prev = nullptr;
   nmethod* cur = _head;
   while (cur != nullptr) {
     ScavengableNMethodsData data = gc_data(cur);
-    debug_only(data.clear_marked());
+    DEBUG_ONLY(data.clear_marked());
     assert(data.on_list(), "else shouldn't be on this list");
 
     if (cl != nullptr) {
@@ -156,7 +156,7 @@ void ScavengableNMethods::nmethods_do_and_prune(NMethodToOopClosure* cl) {
   }
 
   // Check for stray marks.
-  debug_only(verify_nmethods());
+  DEBUG_ONLY(verify_nmethods());
 }
 
 void ScavengableNMethods::prune_nmethods_not_into_young() {
@@ -166,13 +166,13 @@ void ScavengableNMethods::prune_nmethods_not_into_young() {
 void ScavengableNMethods::prune_unlinked_nmethods() {
   assert_locked_or_safepoint(CodeCache_lock);
 
-  debug_only(mark_on_list_nmethods());
+  DEBUG_ONLY(mark_on_list_nmethods());
 
   nmethod* prev = nullptr;
   nmethod* cur = _head;
   while (cur != nullptr) {
     ScavengableNMethodsData data = gc_data(cur);
-    debug_only(data.clear_marked());
+    DEBUG_ONLY(data.clear_marked());
     assert(data.on_list(), "else shouldn't be on this list");
 
     nmethod* const next = data.next();
@@ -187,7 +187,7 @@ void ScavengableNMethods::prune_unlinked_nmethods() {
   }
 
   // Check for stray marks.
-  debug_only(verify_nmethods());
+  DEBUG_ONLY(verify_nmethods());
 }
 
 // Walk the list of methods which might contain oops to the java heap.

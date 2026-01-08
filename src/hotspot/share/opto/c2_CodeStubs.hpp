@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 
-class C2FastUnlockLightweightStub : public C2CodeStub {
+class C2FastUnlockStub : public C2CodeStub {
 private:
   Register _obj;
   Register _mark;
@@ -107,8 +107,8 @@ private:
   Label _push_and_slow_path;
   Label _unlocked_continuation;
 public:
-  C2FastUnlockLightweightStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
-    _obj(obj), _mark(mark), _t(t), _thread(thread) {}
+  C2FastUnlockStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
+                   _obj(obj), _mark(mark), _t(t), _thread(thread) {}
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
   Label& slow_path() { return _slow_path; }

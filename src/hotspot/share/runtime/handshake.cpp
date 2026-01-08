@@ -28,22 +28,25 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/formatBuffer.hpp"
 #include "utilities/filterQueue.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
+#include "utilities/vmError.hpp"
 
 class HandshakeOperation : public CHeapObj<mtThread> {
   friend class HandshakeState;
@@ -72,12 +75,12 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   void prepare(JavaThread* current_target, Thread* executing_thread);
   void do_handshake(JavaThread* thread);
   bool is_completed() {
-    int32_t val = Atomic::load(&_pending_threads);
+    int32_t val = AtomicAccess::load(&_pending_threads);
     assert(val >= 0, "_pending_threads=%d cannot be negative", val);
     return val == 0;
   }
-  void add_target_count(int count) { Atomic::add(&_pending_threads, count); }
-  int32_t pending_threads()        { return Atomic::load(&_pending_threads); }
+  void add_target_count(int count) { AtomicAccess::add(&_pending_threads, count); }
+  int32_t pending_threads()        { return AtomicAccess::load(&_pending_threads); }
   const char* name()               { return _handshake_cl->name(); }
   bool is_async()                  { return _handshake_cl->is_async(); }
   bool is_suspend()                { return _handshake_cl->is_suspend(); }
@@ -200,6 +203,7 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
   }
 
   if (target != nullptr) {
+    VMError::set_handshake_timed_out_thread(target);
     if (os::signal_thread(target, SIGILL, "cannot be handshaked")) {
       // Give target a chance to report the error and terminate the VM.
       os::naked_sleep(3000);
@@ -207,7 +211,11 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
   } else {
     log_error(handshake)("No thread with an unfinished handshake op(" INTPTR_FORMAT ") found.", p2i(op));
   }
-  fatal("Handshake timeout");
+  if (target != nullptr) {
+    fatal("Thread " PTR_FORMAT " has not cleared handshake op %s, and failed to terminate the JVM", p2i(target), op->name());
+  } else {
+    fatal("Handshake timeout");
+  }
 }
 
 static void check_handshake_timeout(jlong start_time, HandshakeOperation* op, JavaThread* target = nullptr) {
@@ -341,7 +349,7 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
   // here to make sure memory operations executed in the handshake
   // closure are visible to the VMThread/Handshaker after it reads
   // that the operation has completed.
-  Atomic::dec(&_pending_threads);
+  AtomicAccess::dec(&_pending_threads);
   // Trailing fence, used to make sure removal of the operation strictly
   // happened after we completed the operation.
 
@@ -352,6 +360,27 @@ void Handshake::execute(HandshakeClosure* hs_cl) {
   HandshakeOperation cto(hs_cl, nullptr, Thread::current());
   VM_HandshakeAllThreads handshake(&cto);
   VMThread::execute(&handshake);
+}
+
+void Handshake::execute(HandshakeClosure* hs_cl, oop vthread) {
+  assert(java_lang_VirtualThread::is_instance(vthread), "");
+  Handle vth(JavaThread::current(), vthread);
+
+  MountUnmountDisabler md(vthread);
+  oop carrier_thread = java_lang_VirtualThread::carrier_thread(vth());
+  if (carrier_thread != nullptr) {
+    JavaThread* target = java_lang_Thread::thread(carrier_thread);
+    assert(target != nullptr, "");
+    // Technically there is no need for a ThreadsListHandle since the target
+    // will block if it tries to unmount the vthread, so it can never exit.
+    ThreadsListHandle tlh(JavaThread::current());
+    assert(tlh.includes(target), "");
+    execute(hs_cl, &tlh, target);
+    assert(target->threadObj() == java_lang_VirtualThread::carrier_thread(vth()), "");
+  } else {
+    // unmounted vthread, execute closure with the current thread
+    hs_cl->do_thread(nullptr);
+  }
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
@@ -464,9 +493,7 @@ HandshakeState::HandshakeState(JavaThread* target) :
   _queue(),
   _lock(Monitor::nosafepoint, "HandshakeState_lock"),
   _active_handshaker(),
-  _async_exceptions_blocked(false),
-  _suspended(false),
-  _async_suspend_handshake(false) {
+  _async_exceptions_blocked(false) {
 }
 
 HandshakeState::~HandshakeState() {
@@ -698,122 +725,15 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
   return op == match_op ? HandshakeState::_succeeded : HandshakeState::_processed;
 }
 
-void HandshakeState::do_self_suspend() {
-  assert(Thread::current() == _handshakee, "should call from _handshakee");
-  assert(_lock.owned_by_self(), "Lock must be held");
-  assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
-  assert(_handshakee->thread_state() == _thread_blocked, "Caller should have transitioned to _thread_blocked");
-
-  while (is_suspended()) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_handshakee));
-    _lock.wait_without_safepoint_check();
-  }
-  log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " resumed", p2i(_handshakee));
-}
-
-// This is the closure that prevents a suspended JavaThread from
-// escaping the suspend request.
-class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
- public:
-  ThreadSelfSuspensionHandshake() : AsyncHandshakeClosure("ThreadSelfSuspensionHandshake") {}
-  void do_thread(Thread* thr) {
-    JavaThread* current = JavaThread::cast(thr);
-    assert(current == Thread::current(), "Must be self executed.");
-    JavaThreadState jts = current->thread_state();
-
-    current->set_thread_state(_thread_blocked);
-    current->handshake_state()->do_self_suspend();
-    current->set_thread_state(jts);
-    current->handshake_state()->set_async_suspend_handshake(false);
-  }
-  virtual bool is_suspend() { return true; }
-};
-
-bool HandshakeState::suspend_with_handshake() {
-  assert(_handshakee->threadObj() != nullptr, "cannot suspend with a null threadObj");
-  if (_handshakee->is_exiting()) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
-    return false;
-  }
-  if (has_async_suspend_handshake()) {
-    if (is_suspended()) {
-      // Target is already suspended.
-      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(_handshakee));
-      return false;
-    } else {
-      // Target is going to wake up and leave suspension.
-      // Let's just stop the thread from doing that.
-      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(_handshakee));
-      set_suspended(true);
-      return true;
-    }
-  }
-  // no suspend request
-  assert(!is_suspended(), "cannot be suspended without a suspend request");
-  // Thread is safe, so it must execute the request, thus we can count it as suspended
-  // from this point.
-  set_suspended(true);
-  set_async_suspend_handshake(true);
-  log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
-  ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
-  Handshake::execute(ts, _handshakee);
-  return true;
-}
-
-// This is the closure that synchronously honors the suspend request.
-class SuspendThreadHandshake : public HandshakeClosure {
-  bool _did_suspend;
-public:
-  SuspendThreadHandshake() : HandshakeClosure("SuspendThread"), _did_suspend(false) {}
-  void do_thread(Thread* thr) {
-    JavaThread* target = JavaThread::cast(thr);
-    _did_suspend = target->handshake_state()->suspend_with_handshake();
-  }
-  bool did_suspend() { return _did_suspend; }
-};
-
-bool HandshakeState::suspend() {
-  JVMTI_ONLY(assert(!_handshakee->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
-  JavaThread* self = JavaThread::current();
-  if (_handshakee == self) {
-    // If target is the current thread we can bypass the handshake machinery
-    // and just suspend directly
-    ThreadBlockInVM tbivm(self);
-    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    set_suspended(true);
-    do_self_suspend();
-    return true;
-  } else {
-    SuspendThreadHandshake st;
-    Handshake::execute(&st, _handshakee);
-    return st.did_suspend();
-  }
-}
-
-bool HandshakeState::resume() {
-  if (!is_suspended()) {
-    return false;
-  }
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  if (!is_suspended()) {
-    assert(!_handshakee->is_suspended(), "cannot be suspended without a suspend request");
-    return false;
-  }
-  // Resume the thread.
-  set_suspended(false);
-  _lock.notify();
-  return true;
-}
-
 void HandshakeState::handle_unsafe_access_error() {
-  if (is_suspended()) {
+  if (_handshakee->is_suspended()) {
     // A suspend handshake was added to the queue after the
     // unsafe access error. Since the suspender has already
     // considered this JT as suspended and assumes it won't go
     // back to Java until resumed we cannot create the exception
     // object yet. Add a new unsafe access error operation to
     // the end of the queue and try again in the next attempt.
-    Handshake::execute(new UnsafeAccessErrorHandshake(), _handshakee);
+    Handshake::execute(new UnsafeAccessErrorHandshakeClosure(), _handshakee);
     log_info(handshake)("JavaThread " INTPTR_FORMAT " skipping unsafe access processing due to suspend.", p2i(_handshakee));
     return;
   }
@@ -824,6 +744,8 @@ void HandshakeState::handle_unsafe_access_error() {
   MutexUnlocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   // We may be at method entry which requires we save the do-not-unlock flag.
   UnlockFlagSaver fs(_handshakee);
+  // Tell code inspecting handshakee's stack what we are doing
+  ThrowingUnsafeAccessError tuae(_handshakee);
   Handle h_exception = Exceptions::new_exception(_handshakee, vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
   if (h_exception()->is_a(vmClasses::InternalError_klass())) {
     java_lang_InternalError::set_during_unsafe_access(h_exception());

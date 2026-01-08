@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ abstract class Builder {
      * cert's certificate policies extension in order for a cert to be selected.
      */
     Set<String> getMatchingPolicies() {
-        if (matchingPolicies != null) {
+        if (matchingPolicies == null) {
             Set<String> initialPolicies = buildParams.initialPolicies();
             if ((!initialPolicies.isEmpty()) &&
                 (!initialPolicies.contains(PolicyChecker.ANY_POLICY)) &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ public class NTLMAuthSequence {
 
     private native long getCredentialsHandle (String user, String domain, String password);
 
-    private native byte[] getNextToken (long crdHandle, byte[] lastToken, Status returned);
+    private native byte[] getNextToken (long crdHandle, byte[] lastToken, Status returned)
+            throws IOException;
 }
 

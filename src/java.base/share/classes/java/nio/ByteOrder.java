@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,28 +35,19 @@ import jdk.internal.misc.Unsafe;
  * @since 1.4
  */
 
-public final class ByteOrder {
-
-    private final String name;
-
-    private ByteOrder(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Constant denoting big-endian byte order.  In this order, the bytes of a
-     * multibyte value are ordered from most significant to least significant.
-     */
-    public static final ByteOrder BIG_ENDIAN
-        = new ByteOrder("BIG_ENDIAN");
-
+public enum ByteOrder  {
     /**
      * Constant denoting little-endian byte order.  In this order, the bytes of
      * a multibyte value are ordered from least significant to most
      * significant.
      */
-    public static final ByteOrder LITTLE_ENDIAN
-        = new ByteOrder("LITTLE_ENDIAN");
+    LITTLE_ENDIAN,
+    /**
+     * Constant denoting big-endian byte order.  In this order, the bytes of a
+     * multibyte value are ordered from most significant to least significant.
+     */
+    BIG_ENDIAN;
+
 
     // Retrieve the native byte order. It's used early during bootstrap, and
     // must be initialized after BIG_ENDIAN and LITTLE_ENDIAN.
@@ -78,18 +69,4 @@ public final class ByteOrder {
     public static ByteOrder nativeOrder() {
         return NATIVE_ORDER;
     }
-
-    /**
-     * Constructs a string describing this object.
-     *
-     * <p> This method returns the string
-     * {@code "BIG_ENDIAN"} for {@link #BIG_ENDIAN} and
-     * {@code "LITTLE_ENDIAN"} for {@link #LITTLE_ENDIAN}.
-     *
-     * @return  The specified string
-     */
-    public String toString() {
-        return name;
-    }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,21 +59,20 @@
  */
 package test.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.chrono.Chronology;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests that a custom Chronology is available via the ServiceLoader.
  * The CopticChronology is configured via META-INF/services/java.time.chrono.Chronology.
  */
-@Test
 public class TestServiceLoader {
 
     @Test
@@ -85,7 +84,7 @@ public class TestServiceLoader {
         }
         var coptic = chronos.get("Coptic");
         assertNotNull(coptic, "CopticChronology not found");
-        assertEquals(coptic.isIsoBased(), false);
+        assertEquals(false, coptic.isIsoBased());
     }
 
 }

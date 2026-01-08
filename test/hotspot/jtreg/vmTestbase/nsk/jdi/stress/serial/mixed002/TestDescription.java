@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@
  *        nsk.share.jdi.MonitorEventsDebuggee
  *
  * @build nsk.share.jdi.SerialExecutionDebugger
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=480
  *      nsk.share.jdi.SerialExecutionDebugger
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -76,4 +76,3 @@
  *      -configFile ${test.src}/mixed002.tests
  *      -testWorkDir .
  */
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,12 @@ public class SwallowedInterruptedException {
 
                     if (!Thread.currentThread().isInterrupted()) {
                         fail.set(new AssertionError(
-                            "Future.get completed with interrupt status not set"));
+                            "Future.get completed with interrupted status not set"));
                     }
                 } catch (InterruptedException ex) {
                     if (Thread.currentThread().isInterrupted()) {
                         fail.set(new AssertionError(
-                            "InterruptedException with interrupt status set"));
+                            "InterruptedException with interrupted status set"));
                     }
                 } catch (Throwable ex) {
                     fail.set(ex);

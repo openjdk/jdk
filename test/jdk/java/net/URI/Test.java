@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 /* @test
  * @summary Unit test for java.net.URI
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
- *      7171415 6339649 6933879 8037396 8272072 8051627 8297687
+ *      7171415 6339649 6933879 8037396 8272072 8051627 8297687 8353013
  * @author Mark Reinhold
+ * @run main/othervm Test
  */
 
 import java.io.ByteArrayInputStream;
@@ -1620,6 +1621,7 @@ public class Test {
         b8051627();
         b8272072();
         b8297687();
+        b8353013();
     }
 
     private static void b8297687() {
@@ -1784,6 +1786,39 @@ public class Test {
         } catch (URISyntaxException e) {
             throw new AssertionError("shouldn't ever happen", e);
         }
+    }
+
+    // 8353013 - Increase test coverage for cases where the authority component of a hierarchical
+    // URI has a host component that starts with a number.
+    private static void b8353013() {
+        testCreate("https://0.0.0.1").s("https").h("0.0.0.1").p("").z();
+        testCreate("https://00.0.0.2").s("https").h("00.0.0.2").p("").z();
+        testCreate("https://000.0.0.3").s("https").h("000.0.0.3").p("").z();
+        testCreate("https://0000.0.0.4").s("https").h("0000.0.0.4").p("").z();
+
+        testCreate("https://00000.0.0.5").s("https").h("00000.0.0.5").p("").z();
+        testCreate("https://00001.0.0.6").s("https").h("00001.0.0.6").p("").z();
+
+        testCreate("https://01.0.0.1").s("https").h("01.0.0.1").p("").z();
+
+        testCreate("https://111111.2.3.com").s("https").h("111111.2.3.com").p("").z();
+
+        testCreate("https://1.example.com").s("https").h("1.example.com").p("").z();
+        testCreate("https://12.example.com").s("https").h("12.example.com").p("").z();
+        testCreate("https://123.example.com").s("https").h("123.example.com").p("").z();
+        testCreate("https://1234.example.com").s("https").h("1234.example.com").p("").z();
+        testCreate("https://12345.example.com").s("https").h("12345.example.com").p("").z();
+
+        testCreate("https://98765432101.example.com").s("https").h("98765432101.example.com").p("").z();
+        testCreate("https://98765432101.www.example.com/").s("https").h("98765432101.www.example.com").p("/").z();
+        testCreate("https://98765432101.www.example.com").s("https").h("98765432101.www.example.com").p("").z();
+
+        testCreate("https://9223372036854775808.example.com").s("https").h("9223372036854775808.example.com").p("").z();
+        testCreate("https://9223372036854775808.www.example.com").s("https").h("9223372036854775808.www.example.com").p("").z();
+        testCreate("https://9223372036854775808.xyz.abc.com").s("https").h("9223372036854775808.xyz.abc.com").p("").z();
+        testCreate("https://9223372036854775808.xyz.abc.pqr.com").s("https").h("9223372036854775808.xyz.abc.pqr.com").p("").z();
+
+        testCreate("https://256.example.com").s("https").h("256.example.com").p("").z();
     }
 
     public static void main(String[] args) throws Exception {

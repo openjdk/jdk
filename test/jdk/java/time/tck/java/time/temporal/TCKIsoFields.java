@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,9 @@ import static java.time.DayOfWeek.TUESDAY;
 import static java.time.DayOfWeek.WEDNESDAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -80,16 +81,18 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKIsoFields {
 
-    @DataProvider(name="quarter")
     Object[][] data_quarter() {
         return new Object[][] {
                 {LocalDate.of(1969, 12, 29), 90, 4},
@@ -121,35 +124,40 @@ public class TCKIsoFields {
     //-----------------------------------------------------------------------
     // DAY_OF_QUARTER
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "quarter")
+    @ParameterizedTest
+    @MethodSource("data_quarter")
     public void test_DOQ(LocalDate date, int doq, int qoy) {
-        assertEquals(IsoFields.DAY_OF_QUARTER.getFrom(date), doq);
-        assertEquals(date.get(IsoFields.DAY_OF_QUARTER), doq);
+        assertEquals(doq, IsoFields.DAY_OF_QUARTER.getFrom(date));
+        assertEquals(doq, date.get(IsoFields.DAY_OF_QUARTER));
     }
 
+    @Test
     public void test_DOQ_basics() {
-        assertEquals(IsoFields.DAY_OF_QUARTER.isDateBased(), true);
-        assertEquals(IsoFields.DAY_OF_QUARTER.isTimeBased(), false);
+        assertEquals(true, IsoFields.DAY_OF_QUARTER.isDateBased());
+        assertEquals(false, IsoFields.DAY_OF_QUARTER.isTimeBased());
     }
 
     //-----------------------------------------------------------------------
     // QUARTER_OF_YEAR
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "quarter")
+    @ParameterizedTest
+    @MethodSource("data_quarter")
     public void test_QOY(LocalDate date, int doq, int qoy) {
-        assertEquals(IsoFields.QUARTER_OF_YEAR.getFrom(date), qoy);
-        assertEquals(date.get(IsoFields.QUARTER_OF_YEAR), qoy);
+        assertEquals(qoy, IsoFields.QUARTER_OF_YEAR.getFrom(date));
+        assertEquals(qoy, date.get(IsoFields.QUARTER_OF_YEAR));
     }
 
+    @Test
     public void test_QOY_basics() {
-        assertEquals(IsoFields.QUARTER_OF_YEAR.isDateBased(), true);
-        assertEquals(IsoFields.QUARTER_OF_YEAR.isTimeBased(), false);
+        assertEquals(true, IsoFields.QUARTER_OF_YEAR.isDateBased());
+        assertEquals(false, IsoFields.QUARTER_OF_YEAR.isTimeBased());
     }
 
     //-----------------------------------------------------------------------
     // parse quarters
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "quarter")
+    @ParameterizedTest
+    @MethodSource("data_quarter")
     public void test_parse_quarters(LocalDate date, int doq, int qoy) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(YEAR).appendLiteral('-')
@@ -157,10 +165,11 @@ public class TCKIsoFields {
                 .appendValue(IsoFields.DAY_OF_QUARTER)
                 .toFormatter().withResolverStyle(ResolverStyle.STRICT);
         LocalDate parsed = LocalDate.parse(date.getYear() + "-" + qoy + "-" + doq, f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
-    @Test(dataProvider = "quarter")
+    @ParameterizedTest
+    @MethodSource("data_quarter")
     public void test_parse_quarters_SMART(LocalDate date, int doq, int qoy) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(YEAR).appendLiteral('-')
@@ -168,10 +177,11 @@ public class TCKIsoFields {
                 .appendValue(IsoFields.DAY_OF_QUARTER)
                 .toFormatter().withResolverStyle(ResolverStyle.SMART);
         LocalDate parsed = LocalDate.parse(date.getYear() + "-" + qoy + "-" + doq, f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
-    @Test(dataProvider = "quarter")
+    @ParameterizedTest
+    @MethodSource("data_quarter")
     public void test_parse_quarters_LENIENT(LocalDate date, int doq, int qoy) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(YEAR).appendLiteral('-')
@@ -179,11 +189,10 @@ public class TCKIsoFields {
                 .appendValue(IsoFields.DAY_OF_QUARTER)
                 .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
         LocalDate parsed = LocalDate.parse(date.getYear() + "-" + qoy + "-" + doq, f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseLenientQuarter")
     Object[][] data_parseLenientQuarter() {
         return new Object[][] {
                 {"2012:0:1", LocalDate.of(2011, 10, 1), false},
@@ -206,17 +215,21 @@ public class TCKIsoFields {
         };
     }
 
-    @Test(dataProvider = "parseLenientQuarter", expectedExceptions = DateTimeParseException.class)
+    @ParameterizedTest
+    @MethodSource("data_parseLenientQuarter")
     public void test_parse_parseLenientQuarter_STRICT(String str, LocalDate expected, boolean smart) {
-        DateTimeFormatter f = new DateTimeFormatterBuilder()
-                .appendValue(YEAR).appendLiteral(':')
-                .appendValue(IsoFields.QUARTER_OF_YEAR).appendLiteral(':')
-                .appendValue(IsoFields.DAY_OF_QUARTER)
-                .toFormatter().withResolverStyle(ResolverStyle.STRICT);
-        LocalDate.parse(str, f);
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(IsoFields.QUARTER_OF_YEAR).appendLiteral(':')
+                    .appendValue(IsoFields.DAY_OF_QUARTER)
+                    .toFormatter().withResolverStyle(ResolverStyle.STRICT);
+            LocalDate.parse(str, f);
+        });
     }
 
-    @Test(dataProvider = "parseLenientQuarter")
+    @ParameterizedTest
+    @MethodSource("data_parseLenientQuarter")
     public void test_parse_parseLenientQuarter_SMART(String str, LocalDate expected, boolean smart) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(YEAR).appendLiteral(':')
@@ -225,7 +238,7 @@ public class TCKIsoFields {
                 .toFormatter().withResolverStyle(ResolverStyle.SMART);
         if (smart) {
             LocalDate parsed = LocalDate.parse(str, f);
-            assertEquals(parsed, expected);
+            assertEquals(expected, parsed);
         } else {
             try {
                 LocalDate.parse(str, f);
@@ -236,7 +249,8 @@ public class TCKIsoFields {
         }
     }
 
-    @Test(dataProvider = "parseLenientQuarter")
+    @ParameterizedTest
+    @MethodSource("data_parseLenientQuarter")
     public void test_parse_parseLenientQuarter_LENIENT(String str, LocalDate expected, boolean smart) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(YEAR).appendLiteral(':')
@@ -244,13 +258,12 @@ public class TCKIsoFields {
                 .appendValue(IsoFields.DAY_OF_QUARTER)
                 .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
         LocalDate parsed = LocalDate.parse(str, f);
-        assertEquals(parsed, expected);
+        assertEquals(expected, parsed);
     }
 
     //-----------------------------------------------------------------------
     // quarters between
     //-----------------------------------------------------------------------
-    @DataProvider(name="quartersBetween")
     Object[][] data_quartersBetween() {
         return new Object[][] {
                 {LocalDate.of(2000, 1, 1), LocalDate.of(2000, 1, 1), 0},
@@ -284,20 +297,21 @@ public class TCKIsoFields {
         };
     }
 
-    @Test(dataProvider="quartersBetween")
+    @ParameterizedTest
+    @MethodSource("data_quartersBetween")
     public void test_quarters_between(LocalDate start, Temporal end, long expected) {
-        assertEquals(IsoFields.QUARTER_YEARS.between(start, end), expected);
+        assertEquals(expected, IsoFields.QUARTER_YEARS.between(start, end));
     }
 
-    @Test(dataProvider="quartersBetween")
+    @ParameterizedTest
+    @MethodSource("data_quartersBetween")
     public void test_quarters_between_until(LocalDate start, Temporal end, long expected) {
-        assertEquals(start.until(end, IsoFields.QUARTER_YEARS), expected);
+        assertEquals(expected, start.until(end, IsoFields.QUARTER_YEARS));
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name="week")
     Object[][] data_week() {
         return new Object[][] {
                 {LocalDate.of(1969, 12, 29), MONDAY, 1, 1970},
@@ -318,37 +332,42 @@ public class TCKIsoFields {
     //-----------------------------------------------------------------------
     // WEEK_OF_WEEK_BASED_YEAR
     //-----------------------------------------------------------------------
-    @Test(dataProvider="week")
+    @ParameterizedTest
+    @MethodSource("data_week")
     public void test_WOWBY(LocalDate date, DayOfWeek dow, int week, int wby) {
-        assertEquals(date.getDayOfWeek(), dow);
-        assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), week);
-        assertEquals(date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR), week);
+        assertEquals(dow, date.getDayOfWeek());
+        assertEquals(week, IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date));
+        assertEquals(week, date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR));
     }
 
+    @Test
     public void test_WOWBY_basics() {
-        assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.isDateBased(), true);
-        assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.isTimeBased(), false);
+        assertEquals(true, IsoFields.WEEK_OF_WEEK_BASED_YEAR.isDateBased());
+        assertEquals(false, IsoFields.WEEK_OF_WEEK_BASED_YEAR.isTimeBased());
     }
 
     //-----------------------------------------------------------------------
     // WEEK_BASED_YEAR
     //-----------------------------------------------------------------------
-    @Test(dataProvider="week")
+    @ParameterizedTest
+    @MethodSource("data_week")
     public void test_WBY(LocalDate date, DayOfWeek dow, int week, int wby) {
-        assertEquals(date.getDayOfWeek(), dow);
-        assertEquals(IsoFields.WEEK_BASED_YEAR.getFrom(date), wby);
-        assertEquals(date.get(IsoFields.WEEK_BASED_YEAR), wby);
+        assertEquals(dow, date.getDayOfWeek());
+        assertEquals(wby, IsoFields.WEEK_BASED_YEAR.getFrom(date));
+        assertEquals(wby, date.get(IsoFields.WEEK_BASED_YEAR));
     }
 
+    @Test
     public void test_WBY_basics() {
-        assertEquals(IsoFields.WEEK_BASED_YEAR.isDateBased(), true);
-        assertEquals(IsoFields.WEEK_BASED_YEAR.isTimeBased(), false);
+        assertEquals(true, IsoFields.WEEK_BASED_YEAR.isDateBased());
+        assertEquals(false, IsoFields.WEEK_BASED_YEAR.isTimeBased());
     }
 
     //-----------------------------------------------------------------------
     // parse weeks
     //-----------------------------------------------------------------------
-    @Test(dataProvider="week")
+    @ParameterizedTest
+    @MethodSource("data_week")
     public void test_parse_weeks_STRICT(LocalDate date, DayOfWeek dow, int week, int wby) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral('-')
@@ -356,10 +375,11 @@ public class TCKIsoFields {
                 .appendValue(DAY_OF_WEEK)
                 .toFormatter().withResolverStyle(ResolverStyle.STRICT);
         LocalDate parsed = LocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
-    @Test(dataProvider="week")
+    @ParameterizedTest
+    @MethodSource("data_week")
     public void test_parse_weeks_SMART(LocalDate date, DayOfWeek dow, int week, int wby) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral('-')
@@ -367,10 +387,11 @@ public class TCKIsoFields {
                 .appendValue(DAY_OF_WEEK)
                 .toFormatter().withResolverStyle(ResolverStyle.SMART);
         LocalDate parsed = LocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
-    @Test(dataProvider="week")
+    @ParameterizedTest
+    @MethodSource("data_week")
     public void test_parse_weeks_LENIENT(LocalDate date, DayOfWeek dow, int week, int wby) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral('-')
@@ -378,11 +399,10 @@ public class TCKIsoFields {
                 .appendValue(DAY_OF_WEEK)
                 .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
         LocalDate parsed = LocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseLenientWeek")
     Object[][] data_parseLenientWeek() {
         return new Object[][] {
                 {"2012:52:-1", LocalDate.of(2012, 12, 22), false},
@@ -398,17 +418,21 @@ public class TCKIsoFields {
         };
     }
 
-    @Test(dataProvider = "parseLenientWeek", expectedExceptions = DateTimeParseException.class)
+    @ParameterizedTest
+    @MethodSource("data_parseLenientWeek")
     public void test_parse_parseLenientWeek_STRICT(String str, LocalDate expected, boolean smart) {
-        DateTimeFormatter f = new DateTimeFormatterBuilder()
-                .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral(':')
-                .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral(':')
-                .appendValue(DAY_OF_WEEK)
-                .toFormatter().withResolverStyle(ResolverStyle.STRICT);
-        LocalDate.parse(str, f);
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral(':')
+                    .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral(':')
+                    .appendValue(DAY_OF_WEEK)
+                    .toFormatter().withResolverStyle(ResolverStyle.STRICT);
+            LocalDate.parse(str, f);
+        });
     }
 
-    @Test(dataProvider = "parseLenientWeek")
+    @ParameterizedTest
+    @MethodSource("data_parseLenientWeek")
     public void test_parse_parseLenientWeek_SMART(String str, LocalDate expected, boolean smart) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral(':')
@@ -417,7 +441,7 @@ public class TCKIsoFields {
                 .toFormatter().withResolverStyle(ResolverStyle.SMART);
         if (smart) {
             LocalDate parsed = LocalDate.parse(str, f);
-            assertEquals(parsed, expected);
+            assertEquals(expected, parsed);
         } else {
             try {
                 LocalDate.parse(str, f);
@@ -428,7 +452,8 @@ public class TCKIsoFields {
         }
     }
 
-    @Test(dataProvider = "parseLenientWeek")
+    @ParameterizedTest
+    @MethodSource("data_parseLenientWeek")
     public void test_parse_parseLenientWeek_LENIENT(String str, LocalDate expected, boolean smart) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral(':')
@@ -436,13 +461,12 @@ public class TCKIsoFields {
                 .appendValue(DAY_OF_WEEK)
                 .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
         LocalDate parsed = LocalDate.parse(str, f);
-        assertEquals(parsed, expected);
+        assertEquals(expected, parsed);
     }
 
     //-----------------------------------------------------------------------
     // rangeRefinedBy
     //-----------------------------------------------------------------------
-    @DataProvider(name="isofields")
     Object[][] data_isofields() {
         return new Object[][] {
                {IsoFields.DAY_OF_QUARTER, 49, ValueRange.of(1, 91)},
@@ -453,32 +477,37 @@ public class TCKIsoFields {
         };
     }
 
-    @Test(dataProvider = "isofields")
+    @ParameterizedTest
+    @MethodSource("data_isofields")
     public void test_isofields_rangerefinedby(TemporalField field, int value, ValueRange valueRange) {
         LocalDate date = LocalDate.of(2016, 5, 19);
-        assertEquals(field.rangeRefinedBy(date), valueRange);
+        assertEquals(valueRange, field.rangeRefinedBy(date));
     }
 
-    @Test(dataProvider = "isofields", expectedExceptions = UnsupportedTemporalTypeException.class)
+    @ParameterizedTest
+    @MethodSource("data_isofields")
     public void test_nonisofields_rangerefinedby(TemporalField field, int value, ValueRange valueRange) {
-        field.rangeRefinedBy(HijrahDate.now());
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> field.rangeRefinedBy(HijrahDate.now()));
     }
 
     //-----------------------------------------------------------------------
     // getFrom
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "isofields")
+    @ParameterizedTest
+    @MethodSource("data_isofields")
     public void test_isofields_getFrom(TemporalField field, int value, ValueRange valueRange) {
         LocalDate date = LocalDate.of(2016, 5, 19);
-        assertEquals(field.getFrom(date), value);
+        assertEquals(value, field.getFrom(date));
     }
 
-    @Test(dataProvider = "isofields", expectedExceptions = UnsupportedTemporalTypeException.class)
+    @ParameterizedTest
+    @MethodSource("data_isofields")
     public void test_nonisofields_getFrom(TemporalField field, int value, ValueRange valueRange) {
-        field.getFrom(HijrahDate.now());
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> field.getFrom(HijrahDate.now()));
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_loop() {
         // loop round at least one 400 year cycle, including before 1970
         LocalDate date = LocalDate.of(1960, 1, 5);  // Tuseday of week 1 1960
@@ -501,11 +530,11 @@ public class TCKIsoFields {
                     wby++;
                 }
             }
-            assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.rangeRefinedBy(date), ValueRange.of(1, weekLen), "Failed on " + date + " " + date.getDayOfWeek());
-            assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), week, "Failed on " + date + " " + date.getDayOfWeek());
-            assertEquals(date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR), week, "Failed on " + date + " " + date.getDayOfWeek());
-            assertEquals(IsoFields.WEEK_BASED_YEAR.getFrom(date), wby, "Failed on " + date + " " + date.getDayOfWeek());
-            assertEquals(date.get(IsoFields.WEEK_BASED_YEAR), wby, "Failed on " + date + " " + date.getDayOfWeek());
+            assertEquals(ValueRange.of(1, weekLen), IsoFields.WEEK_OF_WEEK_BASED_YEAR.rangeRefinedBy(date), "Failed on " + date + " " + date.getDayOfWeek());
+            assertEquals(week, IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), "Failed on " + date + " " + date.getDayOfWeek());
+            assertEquals(week, date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR), "Failed on " + date + " " + date.getDayOfWeek());
+            assertEquals(wby, IsoFields.WEEK_BASED_YEAR.getFrom(date), "Failed on " + date + " " + date.getDayOfWeek());
+            assertEquals(wby, date.get(IsoFields.WEEK_BASED_YEAR), "Failed on " + date + " " + date.getDayOfWeek());
             date = date.plusDays(1);
         }
     }

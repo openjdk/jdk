@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ inline oop WeakHandle::peek() const {
 }
 
 inline void WeakHandle::replace(oop with_obj) {
+  assert(!is_empty(), "Must not use replace on empty handle");
   NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, with_obj);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import static java.net.Proxy.NO_PROXY;
 
-/**
+/*
  * @test
  * @bug 8230526
  * @summary Verifies that PlainProxyConnections are cached and reused properly. We do this by
@@ -60,8 +60,7 @@ import static java.net.Proxy.NO_PROXY;
  *          diagnosis of intermittent failures.
  * @library /test/lib
  *          /test/jdk/java/net/httpclient/lib
- * @run main/othervm -Djdk.tracePinnedThreads=full
- *      -Djdk.httpclient.HttpClient.log=headers,requests,trace
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=headers,requests,trace
  *      -Djdk.internal.httpclient.debug=true
  *      PlainProxyConnectionTest
  */

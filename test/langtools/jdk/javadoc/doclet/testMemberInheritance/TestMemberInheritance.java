@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,7 +216,7 @@ public class TestMemberInheritance extends JavadocTester {
                     </dd>""");
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField","k":"1"}""",
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         // Search tags from inherited doc comments are not added to the index (8341904).
@@ -265,7 +265,7 @@ public class TestMemberInheritance extends JavadocTester {
                     </dd>""");
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField","k":"1"}""",
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         // Search tags from inherited doc comments are not added to the index (8341904).

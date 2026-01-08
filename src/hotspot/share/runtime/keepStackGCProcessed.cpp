@@ -22,10 +22,10 @@
  *
  */
 
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/keepStackGCProcessed.hpp"
 
 KeepStackGCProcessedMark::KeepStackGCProcessedMark(JavaThread* jt) :
   _active(true),

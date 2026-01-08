@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 package jdk.jpackage.internal.util;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 public final class PathUtils {
 
@@ -47,7 +49,28 @@ public final class PathUtils {
         return parent != null ? parent.resolve(filename) : Path.of(filename);
     }
 
-    public static Path resolveNullablePath(Path base, Path path) {
-        return Optional.ofNullable(path).map(base::resolve).orElse(null);
+    public static Path mapNullablePath(UnaryOperator<Path> mapper, Path path) {
+        Objects.requireNonNull(mapper);
+        if (path != null) {
+            return mapper.apply(path);
+        } else {
+            return null;
+        }
+    }
+
+    public static Path normalizedAbsolutePath(Path path) {
+        if (path != null) {
+            return path.normalize().toAbsolutePath();
+        } else {
+            return null;
+        }
+    }
+
+    public static String normalizedAbsolutePathString(Path path) {
+        if (path != null) {
+            return normalizedAbsolutePath(path).toString();
+        } else {
+            return null;
+        }
     }
 }
