@@ -444,8 +444,9 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", R14=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R14]);
   st->print(", R15=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R15]);
   st->cr();
+  // Dump APX EGPRs (R16-R31)
   apx_state* apx = get_apx_state(uc);
-  if (apx != nullptr) {
+  if (UseAPX && apx != nullptr) {
     st->print(  "R16=" INTPTR_FORMAT, (intptr_t)apx->regs[0]);
     st->print(", R17=" INTPTR_FORMAT, (intptr_t)apx->regs[1]);
     st->print(", R18=" INTPTR_FORMAT, (intptr_t)apx->regs[2]);
@@ -493,15 +494,18 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = 16 + (UseAPX ? 16 : 0);
-  int n = continuation;
-  assert(n >= 0 && n <= register_count, "Invalid continuation value");
-  if (context == nullptr || n == register_count) {
+  if (context == nullptr) {
     return;
   }
-
   const ucontext_t *uc = (const ucontext_t*)context;
-  apx_state* apx = get_apx_state(uc);
+  apx_state* apx = UseAPX ? get_apx_state(uc) : nullptr;
+
+  const int register_count = 16 + (apx != nullptr ? 16 : 0);
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (n == register_count) {
+    return;
+  }
 
   while (n < register_count) {
     // Update continuation with next index before printing location
