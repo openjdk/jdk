@@ -28,9 +28,11 @@ package javax.lang.model.element;
 /**
  * Represents a value of an annotation interface element.
  * A value is of one of the following types (JLS {@jls 9.6.1}):
- * <ul><li> a wrapper class, such as {@link Integer} to represent a primitive type
+ * <ul><li> a {@linkplain java.lang##wrapperClass wrapper class} to hold a
+ *          primitive type, such as an {@link Integer} object to hold an
+ *          {@code int}
  *     <li> {@code String} representing a {@code String}
- *     <li> {@code TypeMirror} representing a {@code Class}
+ *     <li> {@code TypeMirror} representing a {@code Class} literal
  *     <li> {@code VariableElement} representing an enum constant
  *     <li> {@code AnnotationMirror} representing an annotation
  *     <li> {@code List<? extends AnnotationValue>}
