@@ -664,3 +664,32 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   fn_scalar_op(opcode, dst, iSrc, R0);    // dst   <- op(iSrc, R0)
 }
 
+void C2_MacroAssembler::cmovF(int cc, VectorSRegister dst, VectorSRegister op1, VectorSRegister op2,
+                              VectorSRegister src1, VectorSRegister src2, VectorSRegister tmp) {
+  VectorSRegister first  = src1;
+  VectorSRegister second = src2;
+  int exchange = (~cc) & 8;
+  if (exchange) {
+    first  = src2;
+    second = src1;
+  }
+
+  auto cmp = (Assembler::Condition)(cc & 3);
+  switch(cmp) {
+  case Assembler::Condition::equal:
+    xscmpeqdp(tmp, op1, op2);
+    xxsel(dst, first, second, tmp);
+    break;
+  case Assembler::Condition::less:
+    xscmpgedp(tmp, op1, op2);
+    xxsel(dst, second, first, tmp);
+    break;
+  case Assembler::Condition::greater:
+    xscmpgtdp(tmp, op1, op2);
+    xxsel(dst, first, second, tmp);
+    break;
+  default:
+    assert(false, "unsupported compare condition: %d", cmp);
+    ShouldNotReachHere();
+  }
+}

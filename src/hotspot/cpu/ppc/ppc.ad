@@ -3024,7 +3024,6 @@ encode %{
   %}
 
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
-    // use isel instruction with Power 7
     cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
     encodeP_subNode    *n_sub_base = new encodeP_subNode();
     encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
@@ -3099,7 +3098,6 @@ encode %{
     n_shift->_opnds[1] = op_src;
     n_shift->_bottom_type = _bottom_type;
 
-    // use isel instruction with Power 7
     decodeN_addNode *n_add_base = new decodeN_addNode();
     n_add_base->add_req(n_region, n_shift);
     n_add_base->_opnds[0] = op_dst;
@@ -6618,7 +6616,6 @@ instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Power 7 can use isel instruction
 instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   // The match rule is needed to make it a 'MachTypeNode'!
   match(Set dst (EncodeP (Binary crx src1)));
@@ -7322,6 +7319,66 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
     __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
     __ fmr($dst$$FloatRegister, $src$$FloatRegister);
     __ bind(done);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovF_cmpF(cmpOp cop, regF dst, regF src1, regF src2, regF op1, regF op2, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpF op1 op2)) (Binary src1 src2)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovF_cmpD(cmpOp cop, regF dst, regF src1, regF src2, regD op1, regD op2, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpD op1 op2)) (Binary src1 src2)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovD_cmpD(cmpOp cop, regD dst, regD src1, regD src2, regD op1, regD op2, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpD op1 op2)) (Binary src1 src2)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovD_cmpF(cmpOp cop, regD dst, regD src1, regD src2, regF op1, regF op2, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpF op1 op2)) (Binary src1 src2)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
