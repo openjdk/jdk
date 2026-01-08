@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1FULLGCMARKER_HPP
 #define SHARE_GC_G1_G1FULLGCMARKER_HPP
 
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
@@ -47,8 +46,8 @@ class G1CMBitMap;
 class G1FullCollector;
 class TaskTerminator;
 
-typedef G1ScannerTasksQueue    G1MarkTasksQueue;
-typedef G1ScannerTasksQueueSet G1MarkTasksQueueSet;
+typedef OverflowTaskQueue<ScannerTask, mtGC>        G1MarkTasksQueue;
+typedef GenericTaskQueueSet<G1MarkTasksQueue, mtGC> G1MarkTasksQueueSet;
 
 class G1FullGCMarker : public CHeapObj<mtGC> {
   G1FullCollector*   _collector;
@@ -74,11 +73,13 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   inline bool mark_object(oop obj);
 
   // Marking helpers
-  inline void follow_object(oop obj);
+  inline void follow_array(objArrayOop obj, size_t start, size_t end);
   inline void dispatch_task(const ScannerTask& task, bool stolen);
-  inline void follow_array(objArrayOop array, size_t start, size_t end);
-  void follow_partial_array(PartialArrayState* state, bool stolen);
-  void follow_array(objArrayOop array);
+  // Start processing the given objArrayOop by first pushing its continuations and
+  // then scanning the first chunk.
+  void start_partial_objArray(objArrayOop obj);
+  // Process the given continuation.
+  void follow_partial_objArray(PartialArrayState* state, bool stolen);
 
   inline void publish_and_drain_oop_tasks();
 public:
@@ -93,7 +94,7 @@ public:
   template <class T> inline void mark_and_push(T* p);
 
   inline void follow_marking_stacks();
-  void complete_marking(G1ScannerTasksQueueSet* task_queues,
+  void complete_marking(G1MarkTasksQueueSet* task_queues,
                         TaskTerminator* terminator);
 
   // Closure getters

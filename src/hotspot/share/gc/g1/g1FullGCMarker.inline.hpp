@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,37 +81,26 @@ inline bool G1FullGCMarker::task_queue_empty() {
   return _task_queue.is_empty();
 }
 
-inline void G1FullGCMarker::follow_array(objArrayOop array, size_t start, size_t end) {
-  array->oop_iterate_range(mark_closure(),
-                           checked_cast<int>(start),
-                           checked_cast<int>(end));
+inline void G1FullGCMarker::follow_array(objArrayOop obj, size_t start, size_t end) {
+  obj->oop_iterate_range(mark_closure(),
+                         checked_cast<int>(start),
+                         checked_cast<int>(end));
 }
 
 inline void G1FullGCMarker::dispatch_task(const ScannerTask& task, bool stolen) {
   if (task.is_partial_array_state()) {
     assert(_bitmap->is_marked(task.to_partial_array_state()->source()), "should be marked");
-    follow_partial_array(task.to_partial_array_state(), stolen);
+    follow_partial_objArray(task.to_partial_array_state(), stolen);
   } else {
     oop obj = task.to_oop();
-    assert(_bitmap->is_marked(obj), "must be marked");
+    assert(_bitmap->is_marked(obj), "should be marked");
     if (obj->is_objArray()) {
       // Handle object arrays explicitly to allow them to
       // be split into chunks if needed.
-      follow_array((objArrayOop)obj);
+      start_partial_objArray((objArrayOop)obj);
     } else {
       obj->oop_iterate(mark_closure());
     }
-  }
-}
-
-inline void G1FullGCMarker::follow_object(oop obj) {
-  assert(_bitmap->is_marked(obj), "should be marked");
-  if (obj->is_objArray()) {
-    // Handle object arrays explicitly to allow them to
-    // be split into chunks if needed.
-    follow_array((objArrayOop)obj);
-  } else {
-    obj->oop_iterate(mark_closure());
   }
 }
 
