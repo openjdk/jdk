@@ -202,6 +202,11 @@ public class GZIPInputStream extends InflaterInputStream {
 
         int magic;
         if (!failOnEOF) {
+            // read an unsigned short value representing the GZIP magic header.
+            // this is the same as calling readUShort(in), except that here,
+            // when reading the first byte, we don't raise an EOFException
+            // if the stream has already reached EOF.
+
             // read unsigned byte
             int b = in.read();
             if (b == -1) { // EOF
