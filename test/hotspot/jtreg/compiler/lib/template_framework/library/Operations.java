@@ -725,7 +725,10 @@ public final class Operations {
 
             ops.add(Expression.make(type.shuffleType, "", type, ".toShuffle()"));
 
-            // TODO: rest of the ops from ShuffleVector.
+            // ----------------- MaskVector --------------------
+            // TODO: ops
+
+            // ----------------- ShuffleVector --------------------
             for (var type2 : CodeGenerationDataNameType.VECTOR_VECTOR_TYPES) {
                 var shuffle = type.shuffleType;
                 var shuffle2 = type2.shuffleType;
@@ -733,7 +736,28 @@ public final class Operations {
                     ops.add(Expression.make(shuffle, "((" + shuffle.name() + ")", shuffle2 , ".cast(" + type.speciesName + "))"));
                 }
             }
-            // TODO: wrapIndex ...
+            ops.add(Expression.make(INTS, "", type.shuffleType , ".checkIndex(", INTS, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
+            ops.add(Expression.make(INTS, "", type.shuffleType , ".wrapIndex(", INTS, ")"));
+            ops.add(Expression.make(type.shuffleType, "", type.shuffleType , ".checkIndexes()", WITH_OUT_OF_BOUNDS_EXCEPTION));
+            ops.add(Expression.make(type.shuffleType, "", type.shuffleType , ".wrapIndexes()"));
+            ops.add(Expression.make(type.maskType, "", type.shuffleType , ".laneIsValid()"));
+            // skip fromValues, too many inputs
+            // skip fromArray
+            // skip fromMemorySegment
+            // skip fromOp
+            // skip iota
+            // skip makeZip
+            // skip makeUnzip
+            // skip toArray
+            // skip intoArray
+            // skip intoMemorySegment
+            ops.add(Expression.make(type, "", type.shuffleType , ".toVector()"));
+            ops.add(Expression.make(INTS, "", type.shuffleType , ".laneSource(", INTS,")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
+            ops.add(Expression.make(INTS, "", type.shuffleType , ".laneSource(", INTS," & " + (type.length-1) + ")"));
+            ops.add(Expression.make(type.shuffleType, "", type.shuffleType, ".rearrange(", type.shuffleType, ")"));
+            // skip toString
+            // skip equals
+            // skip hashCode
         }
 
         // Make sure the list is not modifiable.
