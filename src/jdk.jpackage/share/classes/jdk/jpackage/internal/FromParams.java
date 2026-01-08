@@ -120,7 +120,7 @@ final class FromParams {
 
                 final var runtimeBuilderBuilder = new RuntimeBuilderBuilder();
 
-                MODULE_PATH.copyInto(params, runtimeBuilderBuilder::modulePath);
+                runtimeBuilderBuilder.modulePath(MODULE_PATH.fetchFrom(params));
 
                 predefinedRuntimeDirectory.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
                     final var startupInfos = launchers.asList().stream()
@@ -130,7 +130,7 @@ final class FromParams {
                     ADD_MODULES.copyInto(params, jlinkOptionsBuilder::addModules);
                     LIMIT_MODULES.copyInto(params, jlinkOptionsBuilder::limitModules);
                     JLINK_OPTIONS.copyInto(params, jlinkOptionsBuilder::options);
-                    jlinkOptionsBuilder.appy();
+                    jlinkOptionsBuilder.apply();
                 });
 
                 appBuilder.launchers(launchers).runtimeBuilder(runtimeBuilderBuilder.create());

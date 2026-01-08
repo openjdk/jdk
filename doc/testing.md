@@ -387,7 +387,7 @@ The `TIMEOUT_FACTOR` is forwarded to JTReg framework itself
 (`-timeoutFactor`). Also, some test cases that programmatically wait a
 certain amount of time will apply this factor. If we run in forced
 compilation mode (`-Xcomp`), the build system will automatically
-adjust this factor to compensate for less performance. Defaults to 1.
+adjust this factor to compensate for less performance. Defaults to 4.
 
 #### FAILURE_HANDLER_TIMEOUT
 

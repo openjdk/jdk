@@ -902,7 +902,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       if (clazz == nullptr) {
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nothing to expand (as field)");
       }
-      InstanceKlass* defc = InstanceKlass::cast(java_lang_Class::as_Klass(clazz));
+      InstanceKlass* defc = java_lang_Class::as_InstanceKlass(clazz);
       DEBUG_ONLY(clazz = nullptr);  // safety
       intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
       bool is_static = ((flags & JVM_ACC_STATIC) != 0);

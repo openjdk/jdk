@@ -453,21 +453,6 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
-     * Get the string concat initial coder
-     */
-    long stringConcatInitialCoder();
-
-    /**
-     * Update lengthCoder for constant
-     */
-    long stringConcatMix(long lengthCoder, String constant);
-
-    /**
-     * Mix value length and coder into current length and coder.
-     */
-    long stringConcatMix(long lengthCoder, char value);
-
-    /**
      * Creates helper for string concatenation.
      * <p>
      * <b>WARNING: The caller of this method shall relinquish and transfer the

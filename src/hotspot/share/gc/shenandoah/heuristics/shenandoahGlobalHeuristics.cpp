@@ -42,8 +42,6 @@ void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(Shenandoa
   QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage);
 
   choose_global_collection_set(cset, data, size, actual_free, 0 /* cur_young_garbage */);
-
-  log_cset_composition(cset);
 }
 
 

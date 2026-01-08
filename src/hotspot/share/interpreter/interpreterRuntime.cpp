@@ -703,7 +703,7 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
 
   Bytecodes::Code get_code = (Bytecodes::Code)0;
   Bytecodes::Code put_code = (Bytecodes::Code)0;
-  if (!uninitialized_static) {
+  if (!uninitialized_static || VM_Version::supports_fast_class_init_checks()) {
     get_code = ((is_static) ? Bytecodes::_getstatic : Bytecodes::_getfield);
     if ((is_put && !has_initialized_final_update) || !info.access_flags().is_final()) {
       put_code = ((is_static) ? Bytecodes::_putstatic : Bytecodes::_putfield);

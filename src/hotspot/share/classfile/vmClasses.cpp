@@ -101,7 +101,11 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
 void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
   assert((int)start_id <= (int)limit_id, "IDs are out of order!");
   for (auto id : EnumRange<vmClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
-    resolve(id, CHECK);
+    if (CDSConfig::is_using_aot_linked_classes()) {
+      precond(klass_at(id)->is_loaded());
+    } else {
+      resolve(id, CHECK);
+    }
   }
 
   // move the starting value forward to the limit:
@@ -109,11 +113,17 @@ void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
 }
 
 void vmClasses::resolve_all(TRAPS) {
-  assert(!Object_klass_loaded(), "well-known classes should only be initialized once");
+  assert(!Object_klass_is_loaded(), "well-known classes should only be initialized once");
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
   ClassLoader::classLoader_init2(THREAD);
+
+#if INCLUDE_CDS
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    AOTLinkedClassBulkLoader::preload_classes(THREAD);
+  }
+#endif
 
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;
@@ -210,9 +220,6 @@ void vmClasses::resolve_all(TRAPS) {
 #endif
 
   InstanceStackChunkKlass::init_offset_of_stack();
-  if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::load_javabase_classes(THREAD);
-  }
 }
 
 #if INCLUDE_CDS

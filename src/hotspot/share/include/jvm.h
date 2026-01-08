@@ -433,12 +433,10 @@ JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
  *  init:   whether initialization is done
  *  loader: class loader to look up the class. This may not be the same as the caller's
  *          class loader.
- *  caller: initiating class. The initiating class may be null when a security
- *          manager is not installed.
  */
 JNIEXPORT jclass JNICALL
-JVM_FindClassFromCaller(JNIEnv *env, const char *name, jboolean init,
-                        jobject loader, jclass caller);
+JVM_FindClassFromLoader(JNIEnv *env, const char *name, jboolean init,
+                        jobject loader);
 
 /*
  * Find a class from a given class.

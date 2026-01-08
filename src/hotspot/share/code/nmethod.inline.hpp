@@ -31,14 +31,10 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/frame.hpp"
 
-inline bool nmethod::is_deopt_pc(address pc) { return is_deopt_entry(pc) || is_deopt_mh_entry(pc); }
+inline bool nmethod::is_deopt_pc(address pc) { return is_deopt_entry(pc); }
 
 inline bool nmethod::is_deopt_entry(address pc) {
   return pc == deopt_handler_begin();
-}
-
-inline bool nmethod::is_deopt_mh_entry(address pc) {
-  return pc == deopt_mh_handler_begin();
 }
 
 // class ExceptionCache methods

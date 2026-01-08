@@ -24,7 +24,6 @@
  */
 
 #include "asm/assembler.inline.hpp"
-#include "atomic_bsd_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -36,6 +35,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"

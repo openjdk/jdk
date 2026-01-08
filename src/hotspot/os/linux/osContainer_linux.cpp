@@ -84,8 +84,8 @@ void OSContainer::init() {
     // We can be in one of two cases:
     //  1.) On a physical Linux system without any limit
     //  2.) On a physical Linux system with a limit enforced by other means (like systemd slice)
-    any_mem_cpu_limit_present = cgroup_subsystem->memory_limit_in_bytes() > 0 ||
-                                     os::Linux::active_processor_count() != cgroup_subsystem->active_processor_count();
+    any_mem_cpu_limit_present = memory_limit_in_bytes() > 0 ||
+                                os::Linux::active_processor_count() != active_processor_count();
     if (any_mem_cpu_limit_present) {
       reason = " because either a cpu or a memory limit is present";
     } else {
@@ -103,24 +103,47 @@ const char * OSContainer::container_type() {
   return cgroup_subsystem->container_type();
 }
 
+bool OSContainer::available_memory_in_container(julong& value) {
+  jlong mem_limit = memory_limit_in_bytes();
+  jlong mem_usage = memory_usage_in_bytes();
+
+  if (mem_limit > 0 && mem_usage <= 0) {
+    log_debug(os, container)("container memory usage failed: " JLONG_FORMAT, mem_usage);
+  }
+
+  if (mem_limit <= 0 || mem_usage <= 0) {
+    return false;
+  }
+
+  value = mem_limit > mem_usage ? static_cast<julong>(mem_limit - mem_usage) : 0;
+
+  return true;
+}
+
 jlong OSContainer::memory_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_limit_in_bytes();
+  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
+  return cgroup_subsystem->memory_limit_in_bytes(phys_mem);
 }
 
 jlong OSContainer::memory_and_swap_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_and_swap_limit_in_bytes();
+  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
+  julong host_swap = os::Linux::host_swap();
+  return cgroup_subsystem->memory_and_swap_limit_in_bytes(phys_mem, host_swap);
 }
 
 jlong OSContainer::memory_and_swap_usage_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_and_swap_usage_in_bytes();
+  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
+  julong host_swap = os::Linux::host_swap();
+  return cgroup_subsystem->memory_and_swap_usage_in_bytes(phys_mem, host_swap);
 }
 
 jlong OSContainer::memory_soft_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->memory_soft_limit_in_bytes();
+  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
+  return cgroup_subsystem->memory_soft_limit_in_bytes(phys_mem);
 }
 
 jlong OSContainer::memory_throttle_limit_in_bytes() {
@@ -150,7 +173,8 @@ jlong OSContainer::cache_usage_in_bytes() {
 
 void OSContainer::print_version_specific_info(outputStream* st) {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  cgroup_subsystem->print_version_specific_info(st);
+  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
+  cgroup_subsystem->print_version_specific_info(st, phys_mem);
 }
 
 char * OSContainer::cpu_cpuset_cpus() {

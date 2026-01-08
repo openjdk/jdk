@@ -1410,11 +1410,12 @@ ZStatWorkersStats ZStatWorkers::stats() {
 //
 void ZStatLoad::print() {
   double loadavg[3] = {};
-  os::loadavg(loadavg, ARRAY_SIZE(loadavg));
-  log_info(gc, load)("Load: %.2f (%.0f%%) / %.2f (%.0f%%) / %.2f (%.0f%%)",
-                     loadavg[0], percent_of(loadavg[0], (double) ZCPU::count()),
-                     loadavg[1], percent_of(loadavg[1], (double) ZCPU::count()),
-                     loadavg[2], percent_of(loadavg[2], (double) ZCPU::count()));
+  if (os::loadavg(loadavg, ARRAY_SIZE(loadavg)) != -1) {
+    log_info(gc, load)("Load: %.2f (%.0f%%) / %.2f (%.0f%%) / %.2f (%.0f%%)",
+                       loadavg[0], percent_of(loadavg[0], (double) ZCPU::count()),
+                       loadavg[1], percent_of(loadavg[1], (double) ZCPU::count()),
+                       loadavg[2], percent_of(loadavg[2], (double) ZCPU::count()));
+  }
 }
 
 //

@@ -382,7 +382,6 @@ public:
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
   bool gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read_only);
   void remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref);
-  static void serialize_dynamic_archivable_items(SerializeClosure* soc);
 
   DumpRegion* pz_region() { return &_pz_region; }
   DumpRegion* rw_region() { return &_rw_region; }

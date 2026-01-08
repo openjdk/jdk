@@ -3710,7 +3710,7 @@ public final class String
         if (len < 0L || (len <<= coder) != (int) len) {
             throw new OutOfMemoryError("Requested string length exceeds VM limit");
         }
-        byte[] value = StringConcatHelper.newArray(len);
+        byte[] value = StringConcatHelper.newArray((int) len);
 
         int off = 0;
         prefix.getBytes(value, off, coder); off += prefix.length();

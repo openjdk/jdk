@@ -104,8 +104,8 @@ inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRe
          "Region %zu, bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(old_tams), p2i(new_tams));
 
-  log_debug(gc)("Capturing TAMS for %s Region %zu, was: " PTR_FORMAT ", now: " PTR_FORMAT,
-                r->affiliation_name(), idx, p2i(old_tams), p2i(new_tams));
+  log_debug(gc, mark)("Capturing TAMS for %s Region %zu, was: " PTR_FORMAT ", now: " PTR_FORMAT,
+                      r->affiliation_name(), idx, p2i(old_tams), p2i(new_tams));
 
   _top_at_mark_starts_base[idx] = new_tams;
   _top_bitmaps[idx] = new_tams;

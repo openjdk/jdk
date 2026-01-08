@@ -131,18 +131,20 @@ public final class WindowsMenuUI extends BasicMenuUI {
         hotTrackingOn = (obj instanceof Boolean) ? (Boolean)obj : true;
     }
 
-    /**
-     * Paint MenuItem.
-     */
+    @Override
     protected void paintMenuItem(Graphics g, JComponent c,
-                              Icon checkIcon, Icon arrowIcon,
-                              Color background, Color foreground,
-                              int defaultTextIconGap) {
+                                 Icon checkIcon, Icon arrowIcon,
+                                 Color background, Color foreground,
+                                 int defaultTextIconGap) {
+        assert c == menuItem : "menuItem passed as 'c' must be the same";
         if (WindowsMenuItemUI.isVistaPainting()) {
-            WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon, arrowIcon,
+            WindowsMenuItemUI.paintMenuItem(accessor, g, c,
+                                            checkIcon, arrowIcon,
                                             background, foreground,
-                                            disabledForeground, acceleratorSelectionForeground,
-                                            acceleratorForeground, defaultTextIconGap, menuItem,
+                                            disabledForeground,
+                                            acceleratorSelectionForeground,
+                                            acceleratorForeground,
+                                            defaultTextIconGap, menuItem,
                                             getPropertyPrefix());
             return;
         }

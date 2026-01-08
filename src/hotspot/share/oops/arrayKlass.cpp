@@ -41,10 +41,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-void* ArrayKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, true, THREAD);
-}
-
 ArrayKlass::ArrayKlass() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
@@ -185,16 +181,6 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
   set_secondary_supers(Universe::the_array_interfaces_array(),
                        Universe::the_array_interfaces_bitmap());
   return nullptr;
-}
-
-objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_ARRAY), CHECK_NULL);
-  size_t size = objArrayOopDesc::object_size(length);
-  ArrayKlass* ak = array_klass(n + dimension(), CHECK_NULL);
-  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
-                                                                /* do_zero */ true, CHECK_NULL);
-  // initialization to null not necessary, area already cleared
-  return o;
 }
 
 // JVMTI support

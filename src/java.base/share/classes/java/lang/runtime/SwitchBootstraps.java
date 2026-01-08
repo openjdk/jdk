@@ -165,22 +165,22 @@ public final class SwitchBootstraps {
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller.  When used with {@code invokedynamic},
      *               this is stacked automatically by the VM.
-     * @param invocationName unused
+     * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a reference type, an {@code int}, and {@code int} as a return type.
      * @param labels case labels - {@code String} and {@code Integer} constants
      *               and {@code Class} and {@code EnumDesc} instances, in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
-     * @throws NullPointerException     if any argument is {@code null}
+     * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
      * @throws IllegalArgumentException if any element in the labels array is null
      * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a reference type,
-     *                                  second parameter of type {@code int} and with {@code int} as its return type,
+     *                                  second parameter of type {@code int} and with {@code int} as its return type
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
      *                                  {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
-     *                                  {@code Class} or {@code EnumDesc}.
+     *                                  {@code Class} or {@code EnumDesc}
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code Boolean}
-     *                                  when {@code target} is a {@code Boolean.class}.
+     *                                  when {@code target} is a {@code Boolean.class}
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -255,29 +255,36 @@ public final class SwitchBootstraps {
      *       enum constant's {@link Enum#name()}.</li>
      * </ul>
      * <p>
-     * If no element in the {@code labels} array matches the target, then
-     * the method of the call site return the length of the {@code labels} array.
+     * If for a given {@code target} there is no element in the {@code labels}
+     * fulfilling one of the above conditions, then the method of the call
+     * site returns the length of the {@code labels} array.
      * <p>
      * The value of the {@code restart} index must be between {@code 0} (inclusive) and
      * the length of the {@code labels} array (inclusive),
-     * both  or an {@link IndexOutOfBoundsException} is thrown.
+     * or an {@link IndexOutOfBoundsException} is thrown.
+     *
+     * @apiNote It is permissible for the {@code labels} array to contain {@code String}
+     * values that do not represent any enum constants at runtime.
      *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller. When used with {@code invokedynamic},
      *               this is stacked automatically by the VM.
-     * @param invocationName unused
+     * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       an enum type, an {@code int}, and {@code int} as a return type.
      * @param labels case labels - {@code String} constants and {@code Class} instances,
      *               in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
-     * @throws NullPointerException if any argument is {@code null}
-     * @throws IllegalArgumentException if any element in the labels array is null, if the
-     * invocation type is not a method type whose first parameter type is an enum type,
-     * second parameter of type {@code int} and whose return type is {@code int},
-     * or if {@code labels} contains an element that is not of type {@code String} or
-     * {@code Class} of the target enum type.
+     * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
+     * @throws IllegalArgumentException if any element in the labels array is null
+     * @throws IllegalArgumentException if any element in the labels array is an empty {@code String}
+     * @throws IllegalArgumentException if the invocation type is not a method type
+     *                                  whose first parameter type is an enum type,
+     *                                  second parameter of type {@code int} and
+     *                                  whose return type is {@code int}
+     * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String} or
+     *                                  {@code Class} equal to the target enum type
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */

@@ -311,7 +311,7 @@ public final class LauncherAsServiceVerifier {
 
         var servicePlist = MacHelper.readPList(servicePlistFile);
 
-        var args = servicePlist.queryArrayValue("ProgramArguments");
+        var args = servicePlist.queryStringArrayValue("ProgramArguments");
         TKit.assertEquals(1, args.size(),
                 "Check number of array elements in 'ProgramArguments' property in the property file");
         TKit.assertEquals(installedLauncherPath.toString(), args.get(0),

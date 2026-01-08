@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +68,7 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final List<String> REPLACEMENT_STRING_IDS = List.of(
             COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS, COMMON_SCRIPTS);
 
-    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
+    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) {
 
         associations = launcher.fileAssociations().stream().map(
                 LinuxFileAssociation::create).toList();
@@ -88,10 +89,14 @@ final class DesktopIntegration extends ShellCustomAction {
             // This is additional launcher with explicit `no icon` configuration.
             withDesktopFile = false;
         } else {
-            final Path nullPath = null;
-            if (curIconResource.get().saveToFile(nullPath) != OverridableResource.Source.DefaultResource) {
-                // This launcher has custom icon configured.
-                withDesktopFile = true;
+            try {
+                if (curIconResource.get().saveToFile((Path)null) != OverridableResource.Source.DefaultResource) {
+                    // This launcher has custom icon configured.
+                    withDesktopFile = true;
+                }
+            } catch (IOException ex) {
+                // Should never happen as `saveToFile((Path)null)` should not perform any actual I/O operations.
+                throw new UncheckedIOException(ex);
             }
         }
 
@@ -135,13 +140,13 @@ final class DesktopIntegration extends ShellCustomAction {
                 return (LinuxLauncher)v;
             }).filter(l -> {
                 return toRequest(l.shortcut()).orElse(true);
-            }).map(toFunction(l -> {
+            }).map(l -> {
                 return new DesktopIntegration(env, pkg, l);
-            })).toList();
+            }).toList();
         }
     }
 
-    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
+    static ShellCustomAction create(BuildEnv env, Package pkg) {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }

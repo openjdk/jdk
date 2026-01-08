@@ -28,7 +28,9 @@ package jdk.jpackage.internal;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackagerException;
 
 public class MacPkgBundler extends MacBaseInstallerBundler {
@@ -49,7 +51,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         try {
             Objects.requireNonNull(params);
 
-            final var pkgPkg = MacFromParams.PKG_PACKAGE.fetchFrom(params);
+            final var pkg = MacFromParams.PKG_PACKAGE.fetchFrom(params);
 
             // run basic validation to ensure requirements are met
             // we are not interested in return code, only possible exception
@@ -72,12 +74,16 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     public Path execute(Map<String, ? super Object> params,
             Path outputParentDir) throws PackagerException {
 
-        final var pkg = MacFromParams.PKG_PACKAGE.fetchFrom(params);
-        var env = MacBuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+        var pkg = MacFromParams.PKG_PACKAGE.fetchFrom(params);
 
-        final var packager = MacPkgPackager.build().outputDir(outputParentDir).pkg(pkg).env(env);
+        Log.verbose(I18N.format("message.building-pkg", pkg.app().name()));
 
-        return packager.execute();
+        return Packager.<MacPkgPackage>build().outputDir(outputParentDir)
+                .pkg(pkg)
+                .env(MacBuildEnvFromParams.BUILD_ENV.fetchFrom(params))
+                .pipelineBuilderMutatorFactory((env, _, outputDir) -> {
+                    return new MacPkgPackager(env, pkg, outputDir);
+                }).execute(MacPackagingPipeline.build(Optional.of(pkg)));
     }
 
     @Override

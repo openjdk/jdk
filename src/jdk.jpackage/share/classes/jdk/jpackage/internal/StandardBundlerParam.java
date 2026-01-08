@@ -43,7 +43,6 @@ import java.util.stream.Stream;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
 import static jdk.jpackage.internal.ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
-import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
 
 /**
  * Standard bundler parameters.
@@ -56,7 +55,6 @@ import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
  */
 final class StandardBundlerParam {
 
-    private static final String JAVABASEJMOD = "java.base.jmod";
     private static final String DEFAULT_VERSION = "1.0";
     private static final String DEFAULT_RELEASE = "1";
     private static final String[] DEFAULT_JLINK_OPTIONS = {
@@ -415,46 +413,13 @@ final class StandardBundlerParam {
             new BundlerParamInfo<>(
                     Arguments.CLIOptions.MODULE_PATH.getId(),
                     (Class<List<Path>>) (Object)List.class,
-                    p -> getDefaultModulePath(),
+                    p -> JLinkRuntimeBuilder.ensureBaseModuleInModulePath(List.of()),
                     (s, p) -> {
                         List<Path> modulePath = Stream.of(s.split(File.pathSeparator))
                                 .map(Path::of)
                                 .toList();
-                        Path javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
-
-                        // Add the default JDK module path to the module path.
-                        if (javaBasePath == null) {
-                            List<Path> jdkModulePath = getDefaultModulePath();
-
-                            if (jdkModulePath != null) {
-                                modulePath = Stream.concat(modulePath.stream(),
-                                        jdkModulePath.stream()).toList();
-                                javaBasePath = findPathOfModule(modulePath, JAVABASEJMOD);
-                            }
-                        }
-
-                        if (javaBasePath == null ||
-                                !Files.exists(javaBasePath)) {
-                            Log.error(String.format(I18N.getString(
-                                    "warning.no.jdk.modules.found")));
-                        }
-
-                        return modulePath;
+                        return JLinkRuntimeBuilder.ensureBaseModuleInModulePath(modulePath);
                     });
-
-    // Returns the path to the JDK modules in the user defined module path.
-    private static Path findPathOfModule( List<Path> modulePath, String moduleName) {
-
-        for (Path path : modulePath) {
-            Path moduleNamePath = path.resolve(moduleName);
-
-            if (Files.exists(moduleNamePath)) {
-                return path;
-            }
-        }
-
-        return null;
-    }
 
     static final BundlerParamInfo<String> MODULE =
             new BundlerParamInfo<>(

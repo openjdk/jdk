@@ -683,12 +683,12 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
-  address i2c_entry = __ pc();
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+  entry_address[AdapterBlob::I2C] = __ pc();
 
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
-  address c2i_unverified_entry = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified] = __ pc();
   Label skip_fixup;
 
   Register data = rscratch2;
@@ -718,10 +718,10 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
     __ block_comment("} c2i_unverified_entry");
   }
 
-  address c2i_entry = __ pc();
+  entry_address[AdapterBlob::C2I] = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = nullptr;
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
   if (VM_Version::supports_fast_class_init_checks()) {
     Label L_skip_barrier;
 
@@ -736,15 +736,13 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
     __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
     __ bind(L_skip_barrier);
-    c2i_no_clinit_check_entry = __ pc();
+    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
   }
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm);
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
-
-  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
   return;
 }
 
@@ -987,11 +985,8 @@ static void fill_continuation_entry(MacroAssembler* masm) {
 
   __ ldr(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
   __ str(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ ldr(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
-  __ str(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
 
   __ str(zr, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ str(zr, Address(rthread, JavaThread::held_monitor_count_offset()));
 }
 
 // on entry, sp points to the ContinuationEntry
@@ -1007,50 +1002,6 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 #endif
   __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ str(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
-
-  if (CheckJNICalls) {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ ldrw(rscratch1, Address(sp, ContinuationEntry::flags_offset()));
-    __ cbzw(rscratch1, L_skip_vthread_code);
-
-    // If the held monitor count is > 0 and this vthread is terminating then
-    // it failed to release a JNI monitor. So we issue the same log message
-    // that JavaThread::exit does.
-    __ ldr(rscratch1, Address(rthread, JavaThread::jni_monitor_count_offset()));
-    __ cbz(rscratch1, L_skip_vthread_code);
-
-    // Save return value potentially containing the exception oop in callee-saved R19.
-    __ mov(r19, r0);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    // Restore potential return value.
-    __ mov(r0, r19);
-
-    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
-    // on termination. The held count is implicitly zeroed below when we restore from
-    // the parent held count (which has to be zero).
-    __ str(zr, Address(rthread, JavaThread::jni_monitor_count_offset()));
-
-    __ bind(L_skip_vthread_code);
-  }
-#ifdef ASSERT
-  else {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ ldrw(rscratch1, Address(sp, ContinuationEntry::flags_offset()));
-    __ cbzw(rscratch1, L_skip_vthread_code);
-
-    // See comment just above. If not checking JNI calls the JNI count is only
-    // needed for assertion checking.
-    __ str(zr, Address(rthread, JavaThread::jni_monitor_count_offset()));
-
-    __ bind(L_skip_vthread_code);
-  }
-#endif
-
-  __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ str(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
-
   __ ldr(rscratch2, Address(sp, ContinuationEntry::parent_offset()));
   __ str(rscratch2, Address(rthread, JavaThread::cont_entry_offset()));
   __ add(rfp, sp, (int)ContinuationEntry::size());
@@ -1763,9 +1714,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label lock_done;
 
   if (method->is_synchronized()) {
-    Label count;
-    const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
-
     // Get the handle (the 2nd argument)
     __ mov(oop_handle_reg, c_rarg1);
 

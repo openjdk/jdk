@@ -162,6 +162,11 @@
           "a single expand attempt.")                                       \
           range(0, 100)                                                     \
                                                                             \
+  product(size_t, G1PerThreadPendingCardThreshold, 256, DIAGNOSTIC,         \
+          "Number of pending cards allowed on the card table per GC "       \
+          "worker thread before considering starting refinement.")          \
+          range(0, UINT_MAX)                                                \
+                                                                            \
   product(uint, G1ShrinkByPercentOfAvailable, 50, DIAGNOSTIC,               \
           "When shrinking, maximum % of free space to free for a single "   \
           "shrink attempt.")                                                \
@@ -187,10 +192,6 @@
           "is decremented when short-term GC CPU usage is below the lower " \
           "bound of acceptable deviation range.")                           \
           constraint(G1CPUUsageShrinkConstraintFunc, AfterErgo)             \
-                                                                            \
-  product(size_t, G1UpdateBufferSize, 256,                                  \
-          "Size of an update buffer")                                       \
-          constraint(G1UpdateBufferSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(uint, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \

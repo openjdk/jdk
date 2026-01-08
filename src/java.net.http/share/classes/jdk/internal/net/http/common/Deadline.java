@@ -89,6 +89,24 @@ public final class Deadline implements Comparable<Deadline> {
     }
 
     /**
+     * Returns a copy of this deadline with the specified amount subtracted.
+     * <p>
+     * This returns a {@code Deadline}, based on this one, with the specified amount subtracted.
+     * The amount is typically {@link Duration} but may be any other type implementing
+     * the {@link TemporalAmount} interface.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param amountToSubtract  the amount to subtract, not null
+     * @return a {@code Deadline} based on this deadline with the subtraction made, not null
+     * @throws DateTimeException if the subtraction cannot be made
+     * @throws ArithmeticException if numeric overflow occurs
+     */
+    public Deadline minus(TemporalAmount amountToSubtract) {
+        return Deadline.of(deadline.minus(amountToSubtract));
+    }
+
+    /**
      * Returns a copy of this deadline with the specified amount added.
      * <p>
      * This returns a {@code Deadline}, based on this one, with the amount
@@ -124,6 +142,21 @@ public final class Deadline implements Comparable<Deadline> {
     public Deadline plusSeconds(long secondsToAdd) {
         if (secondsToAdd == 0) return this;
         return Deadline.of(deadline.plusSeconds(secondsToAdd));
+    }
+
+    /**
+     * Returns a copy of this deadline with the specified duration in milliseconds added.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param millisToAdd  the milliseconds to add, positive or negative
+     * @return a {@code Deadline} based on this deadline with the specified milliseconds added, not null
+     * @throws DateTimeException if the result exceeds the maximum or minimum deadline
+     * @throws ArithmeticException if numeric overflow occurs
+     */
+    public Deadline plusMillis(long millisToAdd) {
+        if (millisToAdd ==  0) return this;
+        return Deadline.of(deadline.plusMillis(millisToAdd));
     }
 
     /**
@@ -183,7 +216,7 @@ public final class Deadline implements Comparable<Deadline> {
     /**
      * Checks if this deadline is before the specified deadline.
      * <p>
-     * The comparison is based on the time-line position of the deadines.
+     * The comparison is based on the time-line position of the deadlines.
      *
      * @param otherDeadline  the other deadine to compare to, not null
      * @return true if this deadline is before the specified deadine
@@ -217,7 +250,26 @@ public final class Deadline implements Comparable<Deadline> {
         return deadline.hashCode();
     }
 
+    Instant asInstant() {
+        return deadline;
+    }
+
     static Deadline of(Instant instant) {
         return new Deadline(instant);
+    }
+
+    /**
+     * Obtains a {@code Duration} representing the duration between two deadlines.
+     * <p>
+     * The result of this method can be a negative period if the end is before the start.
+     *
+     * @param startInclusive  the start deadline, inclusive, not null
+     * @param endExclusive  the end deadline, exclusive, not null
+     * @return a {@code Duration}, not null
+     * @throws DateTimeException if the seconds between the deadline cannot be obtained
+     * @throws ArithmeticException if the calculation exceeds the capacity of {@code Duration}
+     */
+    public static Duration between(Deadline startInclusive, Deadline endExclusive) {
+        return Duration.between(startInclusive.deadline, endExclusive.deadline);
     }
 }

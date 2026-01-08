@@ -96,6 +96,7 @@ class WindowsConstants {
     public static final int ERROR_NOT_SAME_DEVICE       = 17;
     public static final int ERROR_NOT_READY             = 21;
     public static final int ERROR_SHARING_VIOLATION     = 32;
+    public static final int ERROR_NETWORK_ACCESS_DENIED = 65;
     public static final int ERROR_FILE_EXISTS           = 80;
     public static final int ERROR_INVALID_PARAMETER     = 87;
     public static final int ERROR_DISK_FULL             = 112;
@@ -110,6 +111,7 @@ class WindowsConstants {
     public static final int ERROR_PRIVILEGE_NOT_HELD    = 1314;
     public static final int ERROR_NONE_MAPPED           = 1332;
     public static final int ERROR_CANT_ACCESS_FILE      = 1920;
+    public static final int ERROR_CANT_RESOLVE_FILENAME = 1921;
     public static final int ERROR_NOT_A_REPARSE_POINT   = 4390;
     public static final int ERROR_INVALID_REPARSE_DATA  = 4392;
 

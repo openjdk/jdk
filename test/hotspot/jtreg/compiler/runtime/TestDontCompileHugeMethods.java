@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8366118
+ * @bug 8366118 8367613
  * @summary Check that a huge method is not compiled under -XX:+DontCompileHugeMethods.
  * @library /test/lib
  * @run main compiler.runtime.TestDontCompileHugeMethods
@@ -99,6 +99,10 @@ public class TestDontCompileHugeMethods {
 
     private static void runTest(Path workDir, List jvmArgs) throws Exception {
         ArrayList<String> command = new ArrayList<>();
+        // Disable inlining for shortMethod().
+        // Otherwise under "-Xcomp -XX:TieredStopAtLevel=1", shortMethod() is inlined into main(),
+        // and is not directly executed or compiled.
+        command.add("-XX:CompileCommand=dontinline,HugeSwitch::shortMethod");
         command.add("-XX:+PrintCompilation");
         command.add("-Xbatch");
         command.addAll(jvmArgs);

@@ -102,8 +102,6 @@ class PSPromotionManager {
   void process_array_chunk(PartialArrayState* state, bool stolen);
   void push_objArray(oop old_obj, oop new_obj);
 
-  void push_depth(ScannerTask task);
-
   inline void promotion_trace_event(oop new_obj, Klass* klass, size_t obj_size,
                                     uint age, bool tenured,
                                     const PSPromotionLAB* lab);

@@ -64,7 +64,6 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
   _mark_in_progress(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
-  _terminating(false),
   _gc_succeeded(false)
 {}
 
@@ -83,19 +82,10 @@ void VM_G1TryInitiateConcMark::doit() {
 
   GCCauseSetter x(g1h, _gc_cause);
 
-  // Record for handling by caller.
-  _terminating = g1h->concurrent_mark_is_terminating();
-
   _mark_in_progress = g1h->collector_state()->mark_in_progress();
   _cycle_already_in_progress = g1h->concurrent_mark()->cm_thread()->in_progress();
 
-  if (_terminating && GCCause::is_user_requested_gc(_gc_cause)) {
-    // When terminating, the request to initiate a concurrent cycle will be
-    // ignored by do_collection_pause_at_safepoint; instead it will just do
-    // a young-only or mixed GC (depending on phase).  For a user request
-    // there's no point in even doing that much, so done.  For some non-user
-    // requests the alternative GC might still be needed.
-  } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
+  if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
     // there is already a concurrent marking cycle in progress. Flags to indicate
     // that were already set, so return immediately.
@@ -119,7 +109,6 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
   g1h->do_collection_pause_at_safepoint();
@@ -156,6 +145,14 @@ void VM_G1PauseConcurrent::doit() {
 
 bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (g1h->is_shutting_down()) {
+    Heap_lock->unlock();
+    // JVM shutdown has started. This ensures that any further operations will be properly aborted
+    // and will not interfere with the shutdown process.
+    g1h->concurrent_mark()->abort_marking_threads();
+    return false;
+  }
   return true;
 }
 

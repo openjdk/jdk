@@ -27,12 +27,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.TreeMap;
 import jdk.jpackage.internal.util.PathUtils;
 
 
@@ -44,7 +43,7 @@ public final class FileAssociations {
     }
 
     private void createFile() {
-        Map<String, String> entries = new HashMap<>(Map.of(
+        Map<String, String> entries = new TreeMap<>(Map.of(
             "extension", suffixName,
             "mime-type", getMime()
         ));

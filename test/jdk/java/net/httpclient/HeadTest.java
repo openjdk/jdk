@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,12 @@
 /*
  * @test
  * @bug 8203433 8276559
- * @summary (httpclient) Add tests for HEAD and 304 responses.
+ * @summary Tests Client handles HEAD and 304 responses correctly.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm
- *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
- *       HeadTest
+ * @build jdk.test.lib.net.SimpleSSLContext
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=trace,headers,requests HeadTest
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -44,20 +39,22 @@ import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import java.io.PrintStream;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
-import static java.lang.System.out;
-import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
+import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderForH3;
 import static org.testng.Assert.assertEquals;
 
 public class HeadTest implements HttpServerAdapters {
@@ -67,10 +64,10 @@ public class HeadTest implements HttpServerAdapters {
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
+    HttpTestServer https3TestServer;      // HTTP/3
+    String httpURI, httpsURI;
+    String http2URI, https2URI;
+    String https3URI;
 
     static final String CONTENT_LEN = "300";
 
@@ -81,7 +78,7 @@ public class HeadTest implements HttpServerAdapters {
      */
     static final int HTTP_NOT_MODIFIED = 304;
     static final int HTTP_OK = 200;
-
+    static final PrintStream out = System.out;
 
     @DataProvider(name = "positive")
     public Object[][] positive() {
@@ -96,28 +93,33 @@ public class HeadTest implements HttpServerAdapters {
                 { httpURI + "transfer/", "HEAD", HTTP_OK, HTTP_1_1  },
                 { httpsURI + "transfer/", "HEAD", HTTP_OK, HTTP_1_1  },
                 // HTTP/2
-                { http2URI, "GET", HTTP_NOT_MODIFIED, HttpClient.Version.HTTP_2  },
-                { https2URI, "GET", HTTP_NOT_MODIFIED, HttpClient.Version.HTTP_2  },
-                { http2URI, "HEAD", HTTP_OK, HttpClient.Version.HTTP_2  },
-                { https2URI, "HEAD", HTTP_OK, HttpClient.Version.HTTP_2  },
-                // HTTP2 forbids transfer-encoding
+                { http2URI, "GET", HTTP_NOT_MODIFIED, HTTP_2  },
+                { https2URI, "GET", HTTP_NOT_MODIFIED, HTTP_2  },
+                { http2URI, "HEAD", HTTP_OK, HTTP_2  },
+                { https2URI, "HEAD", HTTP_OK, HTTP_2  },
+                // HTTP/3
+                { https3URI, "GET", HTTP_NOT_MODIFIED, HTTP_3  },
+                { https3URI, "HEAD", HTTP_OK, HTTP_3  },
         };
     }
 
     @Test(dataProvider = "positive")
     void test(String uriString, String method,
-                        int expResp, HttpClient.Version version) throws Exception {
+                        int expResp, Version version) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
         URI uri = URI.create(uriString);
+        Http3DiscoveryMode config = version.equals(HTTP_3) ? HTTP_3_URI_ONLY : null;
         HttpRequest.Builder requestBuilder = HttpRequest
                 .newBuilder(uri)
                 .version(version)
+                .setOption(H3_DISCOVERY, config)
                 .method(method, HttpRequest.BodyPublishers.noBody());
         doTest(requestBuilder.build(), expResp);
         // repeat the test this time by building the request using convenience
         // GET and HEAD methods
         requestBuilder = HttpRequest.newBuilder(uri)
-                .version(version);
+                .version(version)
+                .setOption(H3_DISCOVERY, config);
         switch (method) {
             case "GET" -> requestBuilder.GET();
             case "HEAD" -> requestBuilder.HEAD();
@@ -128,31 +130,26 @@ public class HeadTest implements HttpServerAdapters {
 
     // issue a request with no body and verify the response code is the expected response code
     private void doTest(HttpRequest request, int expResp) throws Exception {
-        HttpClient client = HttpClient.newBuilder()
-                .followRedirects(Redirect.ALWAYS)
-                .sslContext(sslContext)
-                .build();
-        out.println("Initial request: " + request.uri());
+        try (var client = createClientBuilderForH3().followRedirects(Redirect.ALWAYS).sslContext(sslContext).build()) {
+            out.println("Initial request: " + request.uri());
+            HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 
-        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+            out.println("  Got response: " + response);
 
-        out.println("  Got response: " + response);
-
-        assertEquals(response.statusCode(), expResp);
-        assertEquals(response.body(), "");
-        assertEquals(response.headers().firstValue("Content-length").get(), CONTENT_LEN);
-        assertEquals(response.version(), request.version().get());
+            assertEquals(response.statusCode(), expResp);
+            assertEquals(response.body(), "");
+            assertEquals(response.headers().firstValue("Content-length").get(), CONTENT_LEN);
+            assertEquals(response.version(), request.version().get());
+        }
     }
 
     // -- Infrastructure
-
+    // TODO: See if test performs better with Vthreads, see H3SimplePost and H3SimpleGet
     @BeforeTest
     public void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
-
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new HeadHandler(), "/");
@@ -168,11 +165,16 @@ public class HeadTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HeadHandler(), "/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/";
 
+        https3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        https3TestServer.addHandler(new HeadHandler(), "/");
+        https3URI = "https://" + https3TestServer.serverAuthority() + "/";
+
 
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        https3TestServer.start();
     }
 
     @AfterTest
@@ -181,6 +183,7 @@ public class HeadTest implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        https3TestServer.stop();
     }
 
     static class HeadHandler implements HttpTestHandler {

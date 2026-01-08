@@ -778,7 +778,6 @@ protected:
 
   ciMethod* _method;               // Method being direct called
   bool    _optimized_virtual;
-  bool    _method_handle_invoke;
   bool    _override_symbolic_info; // Override symbolic call site info from bytecode
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
@@ -786,7 +785,6 @@ public:
     : CallNode(tf, addr, TypePtr::BOTTOM),
       _method(method),
       _optimized_virtual(false),
-      _method_handle_invoke(false),
       _override_symbolic_info(false),
       _arg_escape(false)
   {
@@ -798,8 +796,6 @@ public:
   void  set_method(ciMethod *m)            { _method = m; }
   void  set_optimized_virtual(bool f)      { _optimized_virtual = f; }
   bool  is_optimized_virtual() const       { return _optimized_virtual; }
-  void  set_method_handle_invoke(bool f)   { _method_handle_invoke = f; }
-  bool  is_method_handle_invoke() const    { return _method_handle_invoke; }
   void  set_override_symbolic_info(bool f) { _override_symbolic_info = f; }
   bool  override_symbolic_info() const     { return _override_symbolic_info; }
   void  set_arg_escape(bool f)             { _arg_escape = f; }

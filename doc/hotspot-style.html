@@ -86,8 +86,9 @@ values</a></li>
 <li><a href="#thread_local" id="toc-thread_local">thread_local</a></li>
 <li><a href="#nullptr" id="toc-nullptr">nullptr</a></li>
 <li><a href="#atomic" id="toc-atomic">&lt;atomic&gt;</a></li>
-<li><a href="#inline-variables" id="toc-inline-variables">Inline
-Variables</a></li>
+<li><a href="#variable-templates-and-inline-variables"
+id="toc-variable-templates-and-inline-variables">Variable Templates and
+Inline Variables</a></li>
 <li><a href="#initializing-variables-with-static-storage-duration"
 id="toc-initializing-variables-with-static-storage-duration">Initializing
 variables with static storage duration</a></li>
@@ -937,12 +938,18 @@ differ from what the Java compilers implement.</p>
 "conservative" memory ordering, which may differ from (may be stronger
 than) sequentially consistent. There are algorithms in HotSpot that are
 believed to rely on that ordering.</p>
-<h3 id="inline-variables">Inline Variables</h3>
-<p>Variables with static storage duration may be declared
-<code>inline</code> (<a href="https://wg21.link/p0386r2">p0386r2</a>).
-This has similar effects as for declaring a function inline: it can be
-defined, identically, in multiple translation units, must be defined in
-every translation unit in which it is <a
+<h3 id="variable-templates-and-inline-variables">Variable Templates and
+Inline Variables</h3>
+<p>The use of variable templates (including static data member
+templates) (<a href="https://wg21.link/N3651">N3651</a>) is permitted.
+They provide parameterized variables and constants in a simple and
+direct form, instead of requiring the use of various workarounds.</p>
+<p>Variables with static storage duration and variable templates may be
+declared <code>inline</code> (<a
+href="https://wg21.link/p0386r2">p0386r2</a>), and this usage is
+permitted. This has similar effects as for declaring a function inline:
+it can be defined, identically, in multiple translation units, must be
+defined in every translation unit in which it is <a
 href="https://en.cppreference.com/w/cpp/language/definition"
 title="One Definition Rule">ODR used</a>, and the behavior of the
 program is as if there is exactly one variable.</p>
@@ -955,16 +962,17 @@ initializations can make initialization order problems worse. The few
 ordering constraints that exist for non-inline variables don't apply, as
 there isn't a single program-designated translation unit containing the
 definition.</p>
-<p>A <code>constexpr</code> static data member is implicitly
-<code>inline</code>. As a consequence, an <a
+<p>A <code>constexpr</code> static data member or static data member
+template is implicitly <code>inline</code>. As a consequence, an <a
 href="https://en.cppreference.com/w/cpp/language/definition"
-title="One Definition Rule">ODR use</a> of such a variable doesn't
-require a definition in some .cpp file. (This is a change from
-pre-C++17. Beginning with C++17, such a definition is considered a
-duplicate definition, and is deprecated.)</p>
-<p>Declaring a <code>thread_local</code> variable <code>inline</code> is
-forbidden for HotSpot code. <a href="#thread_local">The use of
-<code>thread_local</code></a> is already heavily restricted.</p>
+title="One Definition Rule">ODR use</a> of such a member doesn't require
+a definition in some .cpp file. (This is a change from pre-C++17.
+Beginning with C++17, such a definition is considered a duplicate
+definition, and is deprecated.)</p>
+<p>Declaring a <code>thread_local</code> variable template or
+<code>inline</code> variable is forbidden in HotSpot code. <a
+href="#thread_local">The use of <code>thread_local</code></a> is already
+heavily restricted.</p>
 <h3
 id="initializing-variables-with-static-storage-duration">Initializing
 variables with static storage duration</h3>
@@ -1851,11 +1859,6 @@ difference.</p>
 <h3 id="additional-undecided-features">Additional Undecided
 Features</h3>
 <ul>
-<li><p>Trailing return type syntax for functions (<a
-href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm">n2541</a>)</p></li>
-<li><p>Variable templates (<a
-href="https://isocpp.org/files/papers/N3651.pdf">n3651</a>, <a
-href="http://wg21.link/p0127r2">p0127r2</a>)</p></li>
 <li><p>Member initializers and aggregates (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html">n3653</a>)</p></li>
 <li><p>Rvalue references and move semantics</p></li>

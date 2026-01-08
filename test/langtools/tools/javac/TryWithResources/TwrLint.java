@@ -1,7 +1,6 @@
 /*
  * @test  /nodynamiccopyright/
  * @bug 6911256 6964740 6965277 6967065
- * @author Joseph D. Darcy
  * @summary Check that -Xlint:twr warnings are generated as expected
  * @compile/ref=TwrLint.out -Xlint:try,deprecation -XDrawDiagnostics TwrLint.java
  */

@@ -52,7 +52,7 @@ jint EpsilonHeap::initialize() {
   initialize_reserved_region(heap_rs);
 
   _space = new ContiguousSpace();
-  _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
+  _space->initialize(committed_region, /* clear_space = */ true);
 
   // Precompute hot fields
   _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(EpsilonMaxTLABSize / HeapWordSize));

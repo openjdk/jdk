@@ -24,7 +24,6 @@
 
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
-#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
@@ -656,12 +655,10 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
   address src = src_info->source_addr();
-  int bytes = src_info->size_in_bytes();
-  char* dest;
-  char* oldtop;
-  char* newtop;
+  int bytes = src_info->size_in_bytes(); // word-aligned
+  size_t alignment = SharedSpaceObjectAlignment; // alignment for the dest pointer
 
-  oldtop = dump_region->top();
+  char* oldtop = dump_region->top();
   if (src_info->msotype() == MetaspaceObj::ClassType) {
     // Allocate space for a pointer directly in front of the future InstanceKlass, so
     // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
@@ -672,21 +669,19 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
       SystemDictionaryShared::validate_before_archiving(InstanceKlass::cast(klass));
       dump_region->allocate(sizeof(address));
     }
-    // Allocate space for the future InstanceKlass with proper alignment
-    const size_t alignment =
 #ifdef _LP64
-      UseCompressedClassPointers ?
-        nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()) :
-        SharedSpaceObjectAlignment;
-#else
-      SharedSpaceObjectAlignment;
+    // More strict alignments needed for UseCompressedClassPointers
+    if (UseCompressedClassPointers) {
+      alignment = nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
+    }
 #endif
-    dest = dump_region->allocate(bytes, alignment);
-  } else {
-    dest = dump_region->allocate(bytes);
+  } else if (src_info->msotype() == MetaspaceObj::SymbolType) {
+    // Symbols may be allocated by using AllocateHeap, so their sizes
+    // may be less than size_in_bytes() indicates.
+    bytes = ((Symbol*)src)->byte_size();
   }
-  newtop = dump_region->top();
 
+  char* dest = dump_region->allocate(bytes, alignment);
   memcpy(dest, src, bytes);
 
   // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
@@ -714,6 +709,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   log_trace(aot)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
   src_info->set_buffered_addr((address)dest);
 
+  char* newtop = dump_region->top();
   _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
 
   DEBUG_ONLY(_alloc_stats.verify((int)dump_region->used(), src_info->read_only()));
@@ -1013,13 +1009,6 @@ void ArchiveBuilder::make_training_data_shareable() {
     }
   };
   _src_obj_table.iterate_all(clean_td);
-}
-
-void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
-  SymbolTable::serialize_shared_table_header(soc, false);
-  SystemDictionaryShared::serialize_dictionary_headers(soc, false);
-  DynamicArchive::serialize_array_klasses(soc);
-  AOTLinkedClassBulkLoader::serialize(soc, false);
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {

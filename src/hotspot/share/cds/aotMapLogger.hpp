@@ -33,8 +33,11 @@
 #include "utilities/growableArray.hpp"
 
 class ArchiveHeapInfo;
+class CompileTrainingData;
 class DumpRegion;
 class FileMapInfo;
+class KlassTrainingData;
+class MethodTrainingData;
 class outputStream;
 
 // Write detailed info to a mapfile to analyze contents of the AOT cache/CDS archive.
@@ -98,9 +101,16 @@ class AOTMapLogger : AllStatic {
   static void log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
                                       const char* type_name, int bytes, Thread* current);
   static void log_const_method(ConstMethod* cm, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_method_counters(MethodCounters* mc, address requested_addr, const char* type_name, int bytes,
+  Thread* current);
+  static void log_method_data(MethodData* md, address requested_addr, const char* type_name, int bytes,
+  Thread* current);
   static void log_klass(Klass* k, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method(Method* m, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_symbol(Symbol* s, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_compile_training_data(CompileTrainingData* ctd, address requested_addr, const char* type_name, int bytes, Thread* current);
 
 
 #if INCLUDE_CDS_JAVA_HEAP

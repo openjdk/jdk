@@ -448,6 +448,11 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         }
       }
     }
+    if (n->adr_type() != nullptr) {
+      stringStream adr_type_stream;
+      n->adr_type()->dump_on(&adr_type_stream);
+      print_prop("adr_type", adr_type_stream.freeze());
+    }
 
     if (C->cfg() != nullptr) {
       Block* block = C->cfg()->get_block_for_node(node);

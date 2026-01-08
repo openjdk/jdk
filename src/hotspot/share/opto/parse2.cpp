@@ -2779,7 +2779,7 @@ void Parse::do_one_bytecode() {
   if (C->should_print_igv(perBytecode)) {
     IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];
-    jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
+    jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s, map: %d", bci(), Bytecodes::name(bc()), map() == nullptr ? -1 : map()->_idx);
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
     printer->print_graph(buffer);

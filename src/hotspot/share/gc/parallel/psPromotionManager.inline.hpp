@@ -50,10 +50,6 @@ inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   return &_manager_array[index];
 }
 
-inline void PSPromotionManager::push_depth(ScannerTask task) {
-  claimed_stack_depth()->push(task);
-}
-
 template <class T>
 inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
@@ -62,7 +58,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(!PSScavenge::is_obj_in_to_space(obj), "revisiting object?");
     Prefetch::write(obj->base_addr(), oopDesc::mark_offset_in_bytes());
-    push_depth(ScannerTask(p));
+    claimed_stack_depth()->push(ScannerTask(p));
   }
 }
 

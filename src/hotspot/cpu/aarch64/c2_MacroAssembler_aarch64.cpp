@@ -2203,114 +2203,117 @@ void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t l
 // Pack active elements of src, under the control of mask, into the lowest-numbered elements of dst.
 // Any remaining elements of dst will be filled with zero.
 // Clobbers: rscratch1
-// Preserves: src, mask
+// Preserves: mask, vzr
 void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                                           FloatRegister vtmp1, FloatRegister vtmp2,
-                                           PRegister pgtmp) {
+                                           FloatRegister vzr, FloatRegister vtmp,
+                                           PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
-  assert_different_registers(dst, src, vtmp1, vtmp2);
+  // When called by sve_compress_byte, src and vtmp may be the same register.
+  assert_different_registers(dst, src, vzr);
+  assert_different_registers(dst, vtmp, vzr);
   assert_different_registers(mask, pgtmp);
-
-  // Example input:   src   = 8888 7777 6666 5555 4444 3333 2222 1111
-  //                  mask  = 0001 0000 0000 0001 0001 0000 0001 0001
-  // Expected result: dst   = 0000 0000 0000 8888 5555 4444 2222 1111
-  sve_dup(vtmp2, H, 0);
+  // high <-- low
+  // Example input:   src   = hh gg ff ee dd cc bb aa, one character is 8 bits.
+  //                  mask  = 01 00 00 01 01 00 01 01, one character is 1 bit.
+  // Expected result: dst   = 00 00 00 hh ee dd bb aa
 
   // Extend lowest half to type INT.
-  // dst = 00004444 00003333 00002222 00001111
+  // dst   =  00dd  00cc  00bb  00aa
   sve_uunpklo(dst, S, src);
-  // pgtmp = 00000001 00000000 00000001 00000001
+  // pgtmp =  0001  0000  0001  0001
   sve_punpklo(pgtmp, mask);
   // Pack the active elements in size of type INT to the right,
   // and fill the remainings with zero.
-  // dst = 00000000 00004444 00002222 00001111
+  // dst   =  0000  00dd  00bb  00aa
   sve_compact(dst, S, dst, pgtmp);
   // Narrow the result back to type SHORT.
-  // dst = 0000 0000 0000 0000 0000 4444 2222 1111
-  sve_uzp1(dst, H, dst, vtmp2);
+  // dst   = 00 00 00 00 00 dd bb aa
+  sve_uzp1(dst, H, dst, vzr);
+
+  // Return if the vector length is no more than MaxVectorSize/2, since the
+  // highest half is invalid.
+  if (vector_length_in_bytes <= (MaxVectorSize >> 1)) {
+    return;
+  }
+
   // Count the active elements of lowest half.
   // rscratch1 = 3
   sve_cntp(rscratch1, S, ptrue, pgtmp);
 
   // Repeat to the highest half.
-  // pgtmp = 00000001 00000000 00000000 00000001
+  // pgtmp =  0001  0000  0000  0001
   sve_punpkhi(pgtmp, mask);
-  // vtmp1 = 00008888 00007777 00006666 00005555
-  sve_uunpkhi(vtmp1, S, src);
-  // vtmp1 = 00000000 00000000 00008888 00005555
-  sve_compact(vtmp1, S, vtmp1, pgtmp);
-  // vtmp1 = 0000 0000 0000 0000 0000 0000 8888 5555
-  sve_uzp1(vtmp1, H, vtmp1, vtmp2);
+  // vtmp  =  00hh  00gg  00ff  00ee
+  sve_uunpkhi(vtmp, S, src);
+  // vtmp  =  0000  0000  00hh  00ee
+  sve_compact(vtmp, S, vtmp, pgtmp);
+  // vtmp  = 00 00 00 00 00 00 hh ee
+  sve_uzp1(vtmp, H, vtmp, vzr);
 
-  // Compressed low:   dst   = 0000 0000 0000 0000 0000 4444 2222 1111
-  // Compressed high:  vtmp1 = 0000 0000 0000 0000 0000 0000 8888  5555
-  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
-  // TRUE_CNT is the number of active elements in the compressed low.
-  neg(rscratch1, rscratch1);
-  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
-  sve_index(vtmp2, H, rscratch1, 1);
-  // vtmp1 = 0000 0000 0000 8888 5555 0000 0000 0000
-  sve_tbl(vtmp1, H, vtmp1, vtmp2);
-
-  // Combine the compressed high(after shifted) with the compressed low.
-  // dst = 0000 0000 0000 8888 5555 4444 2222 1111
-  sve_orr(dst, dst, vtmp1);
+  // pgtmp = 00 00 00 00 00 01 01 01
+  sve_whilelt(pgtmp, H, zr, rscratch1);
+  // Compressed low:  dst  = 00 00 00 00 00 dd bb aa
+  // Compressed high: vtmp = 00 00 00 00 00 00 hh ee
+  // Combine the compressed low with the compressed high:
+  //                  dst  = 00 00 00 hh ee dd bb aa
+  sve_splice(dst, H, pgtmp, vtmp);
 }
 
 // Clobbers: rscratch1, rscratch2
 // Preserves: src, mask
 void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
-                                          FloatRegister vtmp1, FloatRegister vtmp2,
-                                          FloatRegister vtmp3, FloatRegister vtmp4,
-                                          PRegister ptmp, PRegister pgtmp) {
+                                          FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                                          PRegister ptmp, PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
-  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3, vtmp4);
+  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3);
   assert_different_registers(mask, ptmp, pgtmp);
-  // Example input:   src   = 88 77 66 55 44 33 22 11
-  //                  mask  = 01 00 00 01 01 00 01 01
-  // Expected result: dst   = 00 00 00 88 55 44 22 11
+  // high <-- low
+  // Example input:   src   = q p n m l k j i h g f e d c b a, one character is 8 bits.
+  //                  mask  = 0 1 0 0 0 0 0 1 0 1 0 0 0 1 0 1, one character is 1 bit.
+  // Expected result: dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  FloatRegister vzr = vtmp3;
+  sve_dup(vzr, B, 0);
 
-  sve_dup(vtmp4, B, 0);
   // Extend lowest half to type SHORT.
-  // vtmp1 = 0044 0033 0022 0011
+  // vtmp1 =  0h  0g  0f  0e  0d  0c  0b  0a
   sve_uunpklo(vtmp1, H, src);
-  // ptmp = 0001 0000 0001 0001
+  // ptmp  =  00  01  00  00  00  01  00  01
   sve_punpklo(ptmp, mask);
+  // Pack the active elements in size of type SHORT to the right,
+  // and fill the remainings with zero.
+  // dst   =  00  00  00  00  00  0g  0c  0a
+  unsigned extended_size = vector_length_in_bytes << 1;
+  sve_compress_short(dst, vtmp1, ptmp, vzr, vtmp2, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize : extended_size);
+  // Narrow the result back to type BYTE.
+  // dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  sve_uzp1(dst, B, dst, vzr);
+
+  // Return if the vector length is no more than MaxVectorSize/2, since the
+  // highest half is invalid.
+  if (vector_length_in_bytes <= (MaxVectorSize >> 1)) {
+    return;
+  }
   // Count the active elements of lowest half.
   // rscratch2 = 3
   sve_cntp(rscratch2, H, ptrue, ptmp);
-  // Pack the active elements in size of type SHORT to the right,
-  // and fill the remainings with zero.
-  // dst = 0000 0044 0022 0011
-  sve_compress_short(dst, vtmp1, ptmp, vtmp2, vtmp3, pgtmp);
-  // Narrow the result back to type BYTE.
-  // dst = 00 00 00 00 00 44 22 11
-  sve_uzp1(dst, B, dst, vtmp4);
 
   // Repeat to the highest half.
-  // ptmp = 0001 0000 0000 0001
+  // ptmp  =  00  01  00  00  00  00  00  01
   sve_punpkhi(ptmp, mask);
-  // vtmp1 = 0088 0077 0066 0055
+  // vtmp2 =  0q  0p  0n  0m  0l  0k  0j  0i
   sve_uunpkhi(vtmp2, H, src);
-  // vtmp1 = 0000 0000 0088 0055
-  sve_compress_short(vtmp1, vtmp2, ptmp, vtmp3, vtmp4, pgtmp);
+  // vtmp1 =  00  00  00  00  00  00  0p  0i
+  sve_compress_short(vtmp1, vtmp2, ptmp, vzr, vtmp2, pgtmp, extended_size - MaxVectorSize);
+  // vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  sve_uzp1(vtmp1, B, vtmp1, vzr);
 
-  sve_dup(vtmp4, B, 0);
-  // vtmp1 = 00 00 00 00 00 00 88 55
-  sve_uzp1(vtmp1, B, vtmp1, vtmp4);
-
-  // Compressed low:   dst   = 00 00 00 00 00 44 22 11
-  // Compressed high:  vtmp1 = 00 00 00 00 00 00 88 55
-  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
-  // TRUE_CNT is the number of active elements in the compressed low.
-  neg(rscratch2, rscratch2);
-  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
-  sve_index(vtmp2, B, rscratch2, 1);
-  // vtmp1 = 00 00 00 88 55 00 00 00
-  sve_tbl(vtmp1, B, vtmp1, vtmp2);
-  // Combine the compressed high(after shifted) with the compressed low.
-  // dst = 00 00 00 88 55 44 22 11
-  sve_orr(dst, dst, vtmp1);
+  // ptmp  = 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1
+  sve_whilelt(ptmp, B, zr, rscratch2);
+  // Compressed low:  dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  // Compressed high: vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  // Combine the compressed low with the compressed high:
+  //                  dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  sve_splice(dst, B, ptmp, vtmp1);
 }
 
 void C2_MacroAssembler::neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ) {
@@ -2770,4 +2773,91 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
                                 // to select a set of 2B/4B
     select_from_two_vectors_neon(dst, src1, src2, dst, tmp, vector_length_in_bytes);
   }
+}
+
+// Vector expand implementation. Elements from the src vector are expanded into
+// the dst vector under the control of the vector mask.
+// Since there are no native instructions directly corresponding to expand before
+// SVE2p2, the following implementations mainly leverages the TBL instruction to
+// implement expand. To compute the index input for TBL, the prefix sum algorithm
+// (https://en.wikipedia.org/wiki/Prefix_sum) is used. The same algorithm is used
+// for NEON and SVE, but with different instructions where appropriate.
+
+// Vector expand implementation for NEON.
+//
+// An example of 128-bit Byte vector:
+//   Data direction: high <== low
+//   Input:
+//         src   = g  f  e  d  c  b  a  9  8  7  6  5  4  3  2  1
+//         mask  = 0  0 -1 -1  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1
+//   Expected result:
+//         dst   = 0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+void C2_MacroAssembler::vector_expand_neon(FloatRegister dst, FloatRegister src, FloatRegister mask,
+                                           FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                                           int vector_length_in_bytes) {
+  assert(vector_length_in_bytes <= 16, "the vector length in bytes for NEON must be <= 16");
+  assert_different_registers(dst, src, mask, tmp1, tmp2);
+  // Since the TBL instruction only supports byte table, we need to
+  // compute indices in byte type for all types.
+  SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
+  // tmp1 =  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  dup(tmp1, size, zr);
+  // dst  =  0  0  1  1  0  0  1  1  0  0  1  1  0  0  1  1
+  negr(dst, size, mask);
+  // Calculate vector index for TBL with prefix sum algorithm.
+  // dst  =  8  8  8  7  6  6  6  5  4  4  4  3  2  2  2  1
+  for (int i = 1; i < vector_length_in_bytes; i <<= 1) {
+    ext(tmp2, size, tmp1, dst, vector_length_in_bytes - i);
+    addv(dst, size, tmp2, dst);
+  }
+  // tmp2 =  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1
+  orr(tmp2, size, mask, mask);
+  // tmp2 =  0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+  bsl(tmp2, size, dst, tmp1);
+  // tmp1 =  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+  movi(tmp1, size, 1);
+  // dst  = -1 -1  7  6 -1 -1  5  4 -1 -1  3  2 -1 -1  1  0
+  subv(dst, size, tmp2, tmp1);
+  // dst  =  0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+  tbl(dst, size, src, 1, dst);
+}
+
+// Vector expand implementation for SVE.
+//
+// An example of 128-bit Short vector:
+//   Data direction: high <== low
+//   Input:
+//         src   = gf ed cb a9 87 65 43 21
+//         pg    = 00 01 00 01 00 01 00 01
+//   Expected result:
+//         dst   = 00 87 00 65 00 43 00 21
+void C2_MacroAssembler::vector_expand_sve(FloatRegister dst, FloatRegister src, PRegister pg,
+                                          FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                                          int vector_length_in_bytes) {
+  assert(UseSVE > 0, "expand implementation only for SVE");
+  assert_different_registers(dst, src, tmp1, tmp2);
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
+
+  // tmp1 = 00 00 00 00 00 00 00 00
+  sve_dup(tmp1, size, 0);
+  sve_movprfx(tmp2, tmp1);
+  // tmp2 = 00 01 00 01 00 01 00 01
+  sve_cpy(tmp2, size, pg, 1, true);
+  // Calculate vector index for TBL with prefix sum algorithm.
+  // tmp2 = 04 04 03 03 02 02 01 01
+  for (int i = type2aelembytes(bt); i < vector_length_in_bytes; i <<= 1) {
+    sve_movprfx(dst, tmp1);
+    // The EXT instruction operates on the full-width sve register. The correct
+    // index calculation method is:
+    // vector_length_in_bytes - i + MaxVectorSize - vector_length_in_bytes =>
+    // MaxVectorSize - i.
+    sve_ext(dst, tmp2, MaxVectorSize - i);
+    sve_add(tmp2, size, dst, tmp2);
+  }
+  // dst  = 00 04 00 03 00 02 00 01
+  sve_sel(dst, size, pg, tmp2, tmp1);
+  // dst  = -1 03 -1 02 -1 01 -1 00
+  sve_sub(dst, size, 1);
+  // dst  = 00 87 00 65 00 43 00 21
+  sve_tbl(dst, size, src, dst);
 }

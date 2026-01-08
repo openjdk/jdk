@@ -852,13 +852,6 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
     print_event(bci == InvocationEntryBci ? CALL : LOOP, method(), inlinee(), bci, comp_level);
   }
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI && UseJVMCICompiler &&
-      comp_level == CompLevel_full_optimization CDS_ONLY(&& !AOTLinkedClassBulkLoader::class_preloading_finished())) {
-    return nullptr;
-  }
-#endif
-
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events() &&
       THREAD->is_interp_only_mode()) {
@@ -1350,17 +1343,24 @@ CompLevel CompilationPolicy::standard_transition(const methodHandle& method, Com
   return next_level;
 }
 
+template<typename Predicate> static inline bool apply_predicate(const methodHandle& method, CompLevel cur_level, int i, int b, bool delay_profiling, double delay_profiling_scale) {
+  if (delay_profiling) {
+    return Predicate::apply_scaled(method, cur_level, i, b, delay_profiling_scale);
+  } else {
+    return Predicate::apply(method, cur_level, i, b);
+  }
+}
+
 template<typename Predicate>
 CompLevel CompilationPolicy::transition_from_none(const methodHandle& method, CompLevel cur_level, bool delay_profiling, bool disable_feedback) {
   precond(cur_level == CompLevel_none);
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
-  double scale = delay_profiling ? Tier0ProfileDelayFactor : 1.0;
   // If we were at full profile level, would we switch to full opt?
   if (transition_from_full_profile<Predicate>(method, CompLevel_full_profile) == CompLevel_full_optimization) {
     next_level = CompLevel_full_optimization;
-  } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply_scaled(method, cur_level, i, b, scale)) {
+  } else if (!CompilationModeFlag::disable_intermediate() && apply_predicate<Predicate>(method, cur_level, i, b, delay_profiling, Tier0ProfileDelayFactor)) {
     // C1-generated fully profiled code is about 30% slower than the limited profile
     // code that has only invocation and backedge counters. The observation is that
     // if C2 queue is large enough we can spend too much time in the fully profiled code
@@ -1402,13 +1402,12 @@ CompLevel CompilationPolicy::transition_from_limited_profile(const methodHandle&
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
-  double scale = delay_profiling ? Tier2ProfileDelayFactor : 1.0;
   MethodData* mdo = method->method_data();
   if (mdo != nullptr) {
     if (mdo->would_profile()) {
       if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                               Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                              Predicate::apply_scaled(method, cur_level, i, b, scale))) {
+                              apply_predicate<Predicate>(method, cur_level, i, b, delay_profiling, Tier2ProfileDelayFactor))) {
         next_level = CompLevel_full_profile;
       }
     } else {
@@ -1418,7 +1417,7 @@ CompLevel CompilationPolicy::transition_from_limited_profile(const methodHandle&
     // If there is no MDO we need to profile
     if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                             Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                            Predicate::apply_scaled(method, cur_level, i, b, scale))) {
+                            apply_predicate<Predicate>(method, cur_level, i, b, delay_profiling, Tier2ProfileDelayFactor))) {
       next_level = CompLevel_full_profile;
     }
   }
@@ -1446,12 +1445,7 @@ CompLevel CompilationPolicy::call_event(const methodHandle& method, CompLevel cu
   } else {
     next_level = MAX2(osr_level, next_level);
   }
-#if INCLUDE_JVMCI
-  if (EnableJVMCI && UseJVMCICompiler &&
-      next_level == CompLevel_full_optimization CDS_ONLY(&& !AOTLinkedClassBulkLoader::class_preloading_finished())) {
-    next_level = cur_level;
-  }
-#endif
+
   return next_level;
 }
 

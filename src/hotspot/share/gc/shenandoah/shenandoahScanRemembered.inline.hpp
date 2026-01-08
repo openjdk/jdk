@@ -343,9 +343,9 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
     }
   }
 
-  log_debug(gc)("Remembered set scan processing Region %zu, from " PTR_FORMAT " to " PTR_FORMAT ", using %s table",
-                region->index(), p2i(start_of_range), p2i(end_of_range),
-                use_write_table? "read/write (updating)": "read (marking)");
+  log_debug(gc, remset)("Remembered set scan processing Region %zu, from " PTR_FORMAT " to " PTR_FORMAT ", using %s table",
+                        region->index(), p2i(start_of_range), p2i(end_of_range),
+                        use_write_table? "read/write (updating)": "read (marking)");
 
   // Note that end_of_range may point to the middle of a cluster because we limit scanning to
   // region->top() or region->get_update_watermark(). We avoid processing past end_of_range.

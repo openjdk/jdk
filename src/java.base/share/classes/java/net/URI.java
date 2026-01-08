@@ -43,6 +43,8 @@ import java.text.Normalizer;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Exceptions;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import sun.nio.cs.UTF_8;
 
 import static jdk.internal.util.Exceptions.filterNonSocketInfo;
@@ -516,6 +518,7 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * @see <a href="URISyntaxException.html">URISyntaxException</a>
  */
 
+@AOTSafeClassInitializer
 public final class URI
     implements Comparable<URI>, Serializable
 {
@@ -3726,7 +3729,13 @@ public final class URI
         }
 
     }
+
     static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
         SharedSecrets.setJavaNetUriAccess(
             new JavaNetUriAccess() {
                 public URI create(String scheme, String path) {

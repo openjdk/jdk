@@ -74,8 +74,8 @@ void ShenandoahMarkingContext::initialize_top_at_mark_start(ShenandoahHeapRegion
   _top_at_mark_starts_base[idx] = bottom;
   _top_bitmaps[idx] = bottom;
 
-  log_debug(gc)("SMC:initialize_top_at_mark_start for Region %zu, TAMS: " PTR_FORMAT ", TopOfBitMap: " PTR_FORMAT,
-                r->index(), p2i(bottom), p2i(r->end()));
+  log_debug(gc, mark)("SMC:initialize_top_at_mark_start for Region %zu, TAMS: " PTR_FORMAT ", TopOfBitMap: " PTR_FORMAT,
+                      r->index(), p2i(bottom), p2i(r->end()));
 }
 
 HeapWord* ShenandoahMarkingContext::top_bitmap(ShenandoahHeapRegion* r) {
@@ -86,8 +86,8 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
   HeapWord* bottom = r->bottom();
   HeapWord* top_bitmap = _top_bitmaps[r->index()];
 
-  log_debug(gc)("SMC:clear_bitmap for %s Region %zu, top_bitmap: " PTR_FORMAT,
-                r->affiliation_name(), r->index(), p2i(top_bitmap));
+  log_debug(gc, mark)("SMC:clear_bitmap for %s Region %zu, top_bitmap: " PTR_FORMAT,
+                      r->affiliation_name(), r->index(), p2i(top_bitmap));
 
   if (top_bitmap > bottom) {
     _mark_bit_map.clear_range_large(MemRegion(bottom, top_bitmap));

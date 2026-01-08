@@ -65,7 +65,11 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
   // Use lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
-  ChunkPoolLocker lock;
+  ChunkPoolLocker::LockStrategy ls = ChunkPoolLocker::LockStrategy::Lock;
+  if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
+    ls = ChunkPoolLocker::LockStrategy::Try;
+  }
+  ChunkPoolLocker cpl(ls);
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;

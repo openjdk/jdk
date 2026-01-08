@@ -36,7 +36,7 @@
 //=============================================================================
 //------------------------------MultiNode--------------------------------------
 const RegMask &MultiNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->clone(); }
@@ -185,7 +185,7 @@ const Type* ProjNode::Value(PhaseGVN* phase) const {
 //------------------------------out_RegMask------------------------------------
 // Pass the buck uphill
 const RegMask &ProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //------------------------------ideal_reg--------------------------------------

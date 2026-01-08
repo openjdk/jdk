@@ -420,9 +420,15 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
         // Coredump stores value of p_memsz elf field
         // rounded up to page boundary.
 
+        // Account for the PH being at some vaddr offset from mapping in core file.
+        uint64_t lib_memsz = lib_php->p_memsz;
+        if (target_vaddr > existing_map->vaddr) {
+            lib_memsz += target_vaddr - existing_map->vaddr;
+        }
+
         if ((existing_map->memsz != page_size) &&
             (existing_map->fd != lib_fd) &&
-            (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_php->p_memsz, page_size))) {
+            (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_memsz, page_size))) {
 
           print_error("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
                         target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);

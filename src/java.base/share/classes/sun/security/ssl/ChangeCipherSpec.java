@@ -232,7 +232,8 @@ final class ChangeCipherSpec {
             tc.consumers.remove(ContentType.CHANGE_CIPHER_SPEC.id);
 
             // parse
-            if (message.remaining() != 1 || message.get() != 1) {
+            if (message.remaining() != 1 || message.get() != 1
+                    || tc.isNegotiated) {
                 throw tc.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Malformed or unexpected ChangeCipherSpec message");
             }

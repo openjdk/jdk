@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,39 @@
  * questions.
  */
 
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+
 import java.nio.file.Path;
-import jdk.jpackage.test.ApplicationLayout;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacHelper.SignKeyOption;
+import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSignVerify;
+import jdk.jpackage.test.PackageFile;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.MacHelper;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.TKit;
 
 /**
- * Note: Testing unsgined app image is done to verify support for per-user
- * configuration by checking for PackageFile.
- * Tests generation of dmg and pkg from signed or unsigned predefined app image.
- * Test will generate pkg and verifies its signature. It verifies that dmg
- * is not signed, but app image inside dmg is signed or unsigned. This test
- * requires that the machine is configured with test certificate for
- * "Developer ID Installer: jpackage.openjdk.java.net" in
- * jpackagerTest keychain with
- * always allowed access to this keychain for user which runs test.
- * note:
- * "jpackage.openjdk.java.net" can be over-ridden by system property
- * "jpackage.mac.signing.key.user.name", and
- * "jpackagerTest" can be over-ridden by system property
- * "jpackage.mac.signing.keychain"
+ * Tests packaging of a signed/unsigned predefined app image into a
+ * signed/unsigned .pkg or .dmg package.
+ *
+ * <p>
+ * Prerequisites: A keychain with self-signed certificates as specified in
+ * {@link SigningBase.StandardKeychain#MAIN}.
  */
 
 /*
@@ -64,100 +72,180 @@ import jdk.jpackage.test.Annotations.Parameter;
  */
 public class SigningPackageTwoStepTest {
 
-    private static void verifyPKG(JPackageCommand cmd) {
-        if (!cmd.hasArgument("--mac-sign")) {
-            return; // Nothing to check if not signed
-        }
-
-        Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle, true, SigningBase.DEFAULT_INDEX);
-        SigningBase.verifySpctl(outputBundle, "install", SigningBase.DEFAULT_INDEX);
-    }
-
-    private static void verifyDMG(JPackageCommand cmd) {
-        // DMG always unsigned, so we will check it
-        Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyDMG(outputBundle);
-    }
-
-    private static void verifyAppImageInDMG(JPackageCommand cmd) {
-        MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            // We will be called with all folders in DMG since JDK-8263155, but
-            // we only need to verify app.
-            if (dmgImage.endsWith(cmd.name() + ".app")) {
-                boolean isSigned = cmd.hasArgument("--mac-sign");
-                Path launcherPath = ApplicationLayout.platformAppImage()
-                    .resolveAt(dmgImage).launchersDirectory().resolve(cmd.name());
-                SigningBase.verifyCodesign(launcherPath, isSigned, SigningBase.DEFAULT_INDEX);
-                SigningBase.verifyCodesign(dmgImage, isSigned, SigningBase.DEFAULT_INDEX);
-                if (isSigned) {
-                    SigningBase.verifySpctl(dmgImage, "exec", SigningBase.DEFAULT_INDEX);
-                }
-            }
-        });
-    }
-
     @Test
-    // (Signed, "signing-key or sign-identity"})
-    // Signed and signing-key
-    @Parameter({"true", "true"})
-    // Signed and signing-identity
-    @Parameter({"true", "false"})
-    // Unsigned
-    @Parameter({"false", "true"})
-    public static void test(boolean signAppImage, boolean signingKey) throws Exception {
-        Path appimageOutput = TKit.createTempDirectory("appimage");
+    @ParameterSupplier
+    public static void test(TestSpec spec) {
+        MacSign.withKeychain(toConsumer(keychain -> {
+            spec.test(keychain);
+        }), SigningBase.StandardKeychain.MAIN.keychain());
+    }
 
-        JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
-                .setArgumentValue("--dest", appimageOutput);
-        if (signAppImage) {
-            appImageCmd.addArguments("--mac-sign")
-                       .addArguments("--mac-signing-keychain",
-                                     SigningBase.getKeyChain());
-            if (signingKey) {
-                appImageCmd.addArguments("--mac-signing-key-user-name",
-                                SigningBase.getDevName(SigningBase.DEFAULT_INDEX));
-            } else {
-                appImageCmd.addArguments("--mac-app-image-sign-identity",
-                                SigningBase.getAppCert(SigningBase.DEFAULT_INDEX));
+    public record TestSpec(Optional<SignKeyOption> signAppImage, Map<PackageType, SignKeyOption> signPackage) {
+
+        public TestSpec {
+            Objects.requireNonNull(signAppImage);
+            Objects.requireNonNull(signPackage);
+
+            if ((signAppImage.isEmpty() && signPackage.isEmpty()) || !PackageType.MAC.containsAll(signPackage.keySet())) {
+                // Unexpected package types.
+                throw new IllegalArgumentException();
+            }
+
+            // Ensure stable result of toString() call.
+            if (!SortedMap.class.isInstance(signPackage)) {
+                signPackage = new TreeMap<>(signPackage);
             }
         }
 
-        new PackageTest()
-                .addRunOnceInitializer(() -> appImageCmd.execute())
-                .forTypes(PackageType.MAC)
-                .addInitializer(cmd -> {
-                    cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                    cmd.removeArgumentWithValue("--input");
-                    if (signAppImage) {
-                        cmd.addArguments("--mac-sign",
-                                "--mac-signing-keychain",
-                                SigningBase.getKeyChain());
-                        if (signingKey) {
-                            cmd.addArguments("--mac-signing-key-user-name",
-                                    SigningBase.getDevName(SigningBase.DEFAULT_INDEX));
-                        } else {
-                            cmd.addArguments("--mac-installer-sign-identity",
-                                    SigningBase.getInstallerCert(SigningBase.DEFAULT_INDEX));
-                        }
-                    }
-                })
-                .forTypes(PackageType.MAC_PKG)
-                .addBundleVerifier(SigningPackageTwoStepTest::verifyPKG)
-                .forTypes(PackageType.MAC_DMG)
-                .addInitializer(cmd -> {
-                    if (signAppImage && !signingKey) {
-                        // jpackage throws expected error with
-                        // --mac-installer-sign-identity and DMG type
-                        cmd.removeArgumentWithValue("--mac-installer-sign-identity");
-                        // It will do nothing, but it signals test that app
-                        // image itself is signed for verification.
-                        cmd.addArguments("--mac-app-image-sign-identity",
-                                SigningBase.getAppCert(SigningBase.DEFAULT_INDEX));
-                    }
-                })
-                .addBundleVerifier(SigningPackageTwoStepTest::verifyDMG)
-                .addBundleVerifier(SigningPackageTwoStepTest::verifyAppImageInDMG)
-                .run();
+        @Override
+        public String toString() {
+            var sb = new StringBuilder();
+
+            signAppImage.ifPresent(signOption -> {
+                sb.append(String.format("app-image=%s", signOption));
+            });
+
+            if (!sb.isEmpty() && !signPackage.isEmpty()) {
+                sb.append("; ");
+            }
+
+            if (!signPackage.isEmpty()) {
+                sb.append(signPackage);
+            }
+
+            return sb.toString();
+        }
+
+        boolean signNativeBundle() {
+            return signPackage.isEmpty();
+        }
+
+        static Builder build() {
+            return new Builder();
+        }
+
+        static class Builder {
+
+            TestSpec create() {
+                return new TestSpec(Optional.ofNullable(signAppImage), signPackage);
+            }
+
+            Builder certRequest(SigningBase.StandardCertificateRequest v) {
+                return certRequest(v.spec());
+            }
+
+            Builder certRequest(MacSign.CertificateRequest v) {
+                certRequest = Objects.requireNonNull(v);
+                return this;
+            }
+
+            Builder signIdentityType(SignKeyOption.Type v) {
+                signIdentityType = Objects.requireNonNull(v);
+                return this;
+            }
+
+            Builder signAppImage() {
+                signAppImage = createSignKeyOption();
+                return this;
+            }
+
+            Builder signPackage(PackageType type) {
+                Objects.requireNonNull(type);
+                signPackage.put(type, createSignKeyOption());
+                return this;
+            }
+
+            Builder signPackage() {
+                PackageType.MAC.forEach(this::signPackage);
+                return this;
+            }
+
+            private SignKeyOption createSignKeyOption() {
+                return new SignKeyOption(signIdentityType, certRequest);
+            }
+
+            private MacSign.CertificateRequest certRequest = SigningBase.StandardCertificateRequest.CODESIGN.spec();
+            private SignKeyOption.Type signIdentityType = SignKeyOption.Type.SIGN_KEY_IDENTITY;
+
+            private SignKeyOption signAppImage;
+            private Map<PackageType, SignKeyOption> signPackage = new HashMap<>();
+        }
+
+        void test(MacSign.ResolvedKeychain keychain) {
+
+            var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
+            MacHelper.useKeychain(appImageCmd, keychain);
+            signAppImage.ifPresent(signOption -> {
+                signOption.setTo(appImageCmd);
+            });
+
+            var test = new PackageTest();
+
+            signAppImage.map(SignKeyOption::certRequest).ifPresent(certRequest -> {
+                // The predefined app image is signed, verify bundled app image is signed too.
+                test.addInstallVerifier(cmd -> {
+                    MacSignVerify.verifyAppImageSigned(cmd, certRequest, keychain);
+                });
+            });
+
+            Optional.ofNullable(signPackage.get(PackageType.MAC_PKG)).map(SignKeyOption::certRequest).ifPresent(certRequest -> {
+                test.forTypes(PackageType.MAC_PKG, () -> {
+                    test.addBundleVerifier(cmd -> {
+                        MacSignVerify.verifyPkgSigned(cmd, certRequest, keychain);
+                    });
+                });
+            });
+
+            test.forTypes(signPackage.keySet()).addRunOnceInitializer(() -> {
+                appImageCmd.setArgumentValue("--dest", TKit.createTempDirectory("appimage")).execute(0);
+            }).addInitializer(cmd -> {
+                MacHelper.useKeychain(cmd, keychain);
+                cmd.addArguments("--app-image", appImageCmd.outputBundle());
+                cmd.removeArgumentWithValue("--input");
+                Optional.ofNullable(signPackage.get(cmd.packageType())).ifPresent(signOption -> {
+                    signOption.setTo(cmd);
+                });
+
+                if (signAppImage.isPresent()) {
+                    // Predefined app image is signed. Expect a warning.
+                    cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
+                            "warning.per.user.app.image.signed",
+                            PackageFile.getPathInAppImage(Path.of(""))));
+                } else if (cmd.packageType() == PackageType.MAC_PKG && signPackage.containsKey(cmd.packageType())) {
+                    // Create signed ".pkg" bundle from the unsigned predefined app image. Expect a warning.
+                    cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString("warning.unsigned.app.image", "pkg"));
+                }
+            })
+            .run();
+        }
+    }
+
+    public static Collection<Object[]> test() {
+
+        List<TestSpec.Builder> data = new ArrayList<>();
+
+        Stream.of(SignKeyOption.Type.values()).flatMap(signIdentityType -> {
+            return Stream.of(
+                    // Sign both predefined app image and native package.
+                    TestSpec.build().signIdentityType(signIdentityType)
+                            .signAppImage()
+                            .signPackage()
+                            .certRequest(SigningBase.StandardCertificateRequest.PKG)
+                            .signPackage(PackageType.MAC_PKG),
+
+                    // Don't sign predefined app image, sign native package.
+                    TestSpec.build().signIdentityType(signIdentityType)
+                            .signPackage()
+                            .certRequest(SigningBase.StandardCertificateRequest.PKG)
+                            .signPackage(PackageType.MAC_PKG),
+
+                    // Sign predefined app image, don't sign native package.
+                    TestSpec.build().signIdentityType(signIdentityType).signAppImage()
+            );
+        }).forEach(data::add);
+
+        return data.stream().map(TestSpec.Builder::create).map(v -> {
+            return new Object[] {v};
+        }).toList();
     }
 }

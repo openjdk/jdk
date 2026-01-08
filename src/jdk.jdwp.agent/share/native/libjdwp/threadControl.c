@@ -2317,8 +2317,9 @@ threadControl_setPendingInterrupt(jthread thread)
     debugMonitorEnter(threadLock);
 
     node = findRunningThread(thread);
-    JDI_ASSERT(node != NULL);
-    node->pendingInterrupt = JNI_TRUE;
+    if (node != NULL) {
+        node->pendingInterrupt = JNI_TRUE;
+    }
 
     debugMonitorExit(threadLock);
 }

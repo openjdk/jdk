@@ -1668,6 +1668,30 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   loop->record_for_igvn();
 }
 
+Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop) {
+  assert(store != nullptr && store->is_Store(), "starting point should be a store node");
+  // Follow the memory uses until we get out of the loop.
+  // Store nodes in the outer loop body were moved by PhaseIdealLoop::try_move_store_after_loop.
+  // Because of the conditions in try_move_store_after_loop (no other usage in the loop body
+  // except for the phi node associated with the loop head), we have the guarantee of a
+  // linear memory subgraph within the outer loop body.
+  Node* last = store;
+  Node* unique_next = store;
+  do {
+    last = unique_next;
+    for (DUIterator_Fast imax, l = last->fast_outs(imax); l < imax; l++) {
+      Node* use = last->fast_out(l);
+      if (use->is_Store() && use->in(MemNode::Memory) == last) {
+        if (is_member(outer_loop, get_ctrl(use))) {
+          assert(unique_next == last, "memory node should only have one usage in the loop body");
+          unique_next = use;
+        }
+      }
+    }
+  } while (last != unique_next);
+  return last;
+}
+
 //------------------------------insert_post_loop-------------------------------
 // Insert post loops.  Add a post loop to the given loop passed.
 Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
@@ -1756,6 +1780,26 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                                             visited, clones);
       _igvn.hash_delete(cur_phi);
       cur_phi->set_req(LoopNode::EntryControl, fallnew);
+    }
+  }
+  // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
+  // do not have an associated Phi node. Such nodes are attached to the false projection of the CountedLoopEnd node,
+  // right after the execution of the inner CountedLoop.
+  // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
+  // The moved store node is always attached right after the inner loop exit, and just before the safepoint
+  const Node* if_false = main_end->proj_out(false);
+  for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
+    Node* store = if_false->out(j);
+    if (store->is_Store()) {
+      // We only make changes if the memory input of the store is outside the outer loop body,
+      // as this is when we would normally expect a Phi as input. If the memory input
+      // is in the loop body as well, then we can safely assume it is still correct as the entire
+      // body was cloned as a unit
+      if (!is_member(outer_loop, get_ctrl(store->in(MemNode::Memory)))) {
+        Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
+        Node* store_new = old_new[store->_idx];
+        store_new->set_req(MemNode::Memory, mem_out);
+      }
     }
   }
 

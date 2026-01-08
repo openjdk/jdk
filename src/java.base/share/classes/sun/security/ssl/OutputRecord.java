@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
+
+import jdk.internal.net.quic.QuicTLSEngine;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 
 /**
@@ -151,6 +153,16 @@ abstract class OutputRecord
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
 
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to QuicEngine only
+    byte[] getHandshakeMessage() {
+        throw new UnsupportedOperationException();
+    }
+
+    // apply to QuicEngine only
+    QuicTLSEngine.KeySpace getHandshakeMessageKeySpace() {
         throw new UnsupportedOperationException();
     }
 

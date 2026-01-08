@@ -205,6 +205,10 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
+  bool is_trace_optimization() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
+  }
+
   bool is_trace_speculative_runtime_checks() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
   }
@@ -380,37 +384,6 @@ private:
 };
 
 // Submodule of VLoopAnalyzer.
-// Find the memory slices in the loop.
-class VLoopMemorySlices : public StackObj {
-private:
-  const VLoop& _vloop;
-
-  GrowableArray<PhiNode*> _heads;
-  GrowableArray<MemNode*> _tails;
-
-public:
-  VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
-    _vloop(vloop),
-    _heads(arena, 8, 0, nullptr),
-    _tails(arena, 8, 0, nullptr) {};
-  NONCOPYABLE(VLoopMemorySlices);
-
-  void find_memory_slices();
-
-  const GrowableArray<PhiNode*>& heads() const { return _heads; }
-  const GrowableArray<MemNode*>& tails() const { return _tails; }
-
-  // Get all memory nodes of a slice, in reverse order
-  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
-
-  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
-
-#ifndef PRODUCT
-  void print() const;
-#endif
-};
-
-// Submodule of VLoopAnalyzer.
 // Finds all nodes in the body, and creates a mapping node->_idx to a body_idx.
 // This mapping is used so that subsequent datastructures sizes only grow with
 // the body size, and not the number of all nodes in the compilation.
@@ -459,6 +432,73 @@ private:
   void set_bb_idx(Node* n, int i) {
     _body_idx.at_put_grow(n->_idx, i);
   }
+};
+
+// Submodule of VLoopAnalyzer.
+// Find the memory slices in the loop. There are 3 kinds of slices:
+// 1. no use in loop:                     inputs(i) = nullptr,   heads(i) = nullptr
+// 2. stores in loop:                     inputs(i) = entry_mem, heads(i) = phi_mem
+//
+//    <mem state before loop> = entry_mem
+//                      |
+//         CountedLoop  |  +-----------------------+
+//                   |  v  v                       |
+//                   phi_mem                       |
+//                     |                           |
+//                   <stores (and maybe loads)>    |
+//                     |                           |
+//                     +---------------------------+
+//                     |
+//    <mem uses after loop>
+//
+//    Note: the mem uses after the loop are dependent on the last store in the loop.
+//          Once we vectorize, we may reorder the loads and stores, and replace
+//          scalar mem ops with vector mem ops. We will have to make sure that all
+//          uses after the loop use the new last store.
+//          See: VTransformApplyState::fix_memory_state_uses_after_loop
+//
+// 3. only loads but no stores in loop:   inputs(i) = entry_mem, heads(i) = nullptr
+//
+//    <mem state before loop> = entry_mem
+//     |                 |
+//     |   CountedLoop   |
+//     |             |   |
+//     |            <loads in loop>
+//     |
+//    <mem uses after loop>
+//
+//    Note: the mem uses after the loop are NOT dependent any mem ops in the loop,
+//          since there are no stores.
+//
+class VLoopMemorySlices : public StackObj {
+private:
+  const VLoop& _vloop;
+  const VLoopBody& _body;
+
+  GrowableArray<Node*>    _inputs;
+  GrowableArray<PhiNode*> _heads;
+
+public:
+  VLoopMemorySlices(Arena* arena, const VLoop& vloop, const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _inputs(arena, num_slices(), num_slices(), nullptr),
+    _heads(arena, num_slices(), num_slices(), nullptr) {};
+  NONCOPYABLE(VLoopMemorySlices);
+
+  const GrowableArray<Node*>& inputs() const { return _inputs; }
+  const GrowableArray<PhiNode*>& heads() const { return _heads; }
+
+  void find_memory_slices();
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
+  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
+
+private:
+#ifndef PRODUCT
+  void print() const;
+#endif
+
+  int num_slices() const { return _vloop.phase()->C->num_alias_types(); }
 };
 
 // Submodule of VLoopAnalyzer.
@@ -737,8 +777,8 @@ private:
 
   // Submodules
   VLoopReductions      _reductions;
-  VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
+  VLoopMemorySlices    _memory_slices;
   VLoopTypes           _types;
   VLoopVPointers       _vpointers;
   VLoopDependencyGraph _dependency_graph;
@@ -749,8 +789,8 @@ public:
     _arena(mtCompiler, Arena::Tag::tag_superword),
     _success(false),
     _reductions      (&_arena, vloop),
-    _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
+    _memory_slices   (&_arena, vloop, _body),
     _types           (&_arena, vloop, _body),
     _vpointers       (&_arena, vloop, _body),
     _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)

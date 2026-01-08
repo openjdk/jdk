@@ -3277,8 +3277,12 @@ class StubGenerator: public StubCodeGenerator {
     // register the stub as the default exit with class UnsafeMemoryAccess
     UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
 
-    // Note: the disjoint stubs must be generated first, some of
-    // the conjoint stubs use them.
+    // Note: the disjoint stubs must be generated first, some of the
+    //       conjoint stubs use them.
+
+    // Note: chaining of stubs does not rely on branching to an
+    //       auxiliary post-push entry because none of the stubs
+    //       push/pop a frame.
 
     // non-aligned disjoint versions
     StubRoutines::_jbyte_disjoint_arraycopy       = generate_disjoint_byte_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id);

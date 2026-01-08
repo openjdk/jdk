@@ -22,6 +22,7 @@
 		// Java extension
 		"jdk.project.jdkhome": "{{OUTPUTDIR}}/jdk",
 		"jdk.java.onSave.organizeImports": false, // prevents unnecessary changes
+		"jdk.serverVmOptions": ["-Xmx2G"], // prevent out of memory
 
 		// Additional conventions
 		"files.associations": {

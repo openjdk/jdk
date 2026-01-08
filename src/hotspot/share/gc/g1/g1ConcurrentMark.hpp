@@ -580,6 +580,8 @@ public:
   // TARS for the given region during remembered set rebuilding.
   inline HeapWord* top_at_rebuild_start(G1HeapRegion* r) const;
 
+  uint worker_id_offset() const { return _worker_id_offset; }
+
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
   void clear_statistics(G1HeapRegion* r);

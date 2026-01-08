@@ -856,14 +856,19 @@ ordering, which may differ from (may be stronger than) sequentially
 consistent.  There are algorithms in HotSpot that are believed to rely
 on that ordering.
 
-### Inline Variables
+### Variable Templates and Inline Variables
 
-Variables with static storage duration may be declared `inline`
-([p0386r2](https://wg21.link/p0386r2)). This has similar effects as for
-declaring a function inline: it can be defined, identically, in multiple
-translation units, must be defined in every translation unit in which it is
-[ODR used][ODR], and the behavior of the program is as if there is exactly one
-variable.
+The use of variable templates (including static data member templates)
+([N3651](https://wg21.link/N3651)) is permitted. They provide parameterized
+variables and constants in a simple and direct form, instead of requiring the
+use of various workarounds.
+
+Variables with static storage duration and variable templates may be declared
+`inline` ([p0386r2](https://wg21.link/p0386r2)), and this usage is
+permitted. This has similar effects as for declaring a function inline: it can
+be defined, identically, in multiple translation units, must be defined in
+every translation unit in which it is [ODR used][ODR], and the behavior of the
+program is as if there is exactly one variable.
 
 Declaring a variable inline allows the complete definition to be in a header
 file, rather than having a declaration in a header and the definition in a
@@ -874,13 +879,15 @@ make initialization order problems worse. The few ordering constraints
 that exist for non-inline variables don't apply, as there isn't a single
 program-designated translation unit containing the definition.
 
-A `constexpr` static data member is implicitly `inline`. As a consequence, an
-[ODR use][ODR] of such a variable doesn't require a definition in some .cpp
+A `constexpr` static data member or static data member template
+is implicitly `inline`. As a consequence, an
+[ODR use][ODR] of such a member doesn't require a definition in some .cpp
 file. (This is a change from pre-C++17. Beginning with C++17, such a
 definition is considered a duplicate definition, and is deprecated.)
 
-Declaring a `thread_local` variable `inline` is forbidden for HotSpot code.
-[The use of `thread_local`](#thread_local) is already heavily restricted.
+Declaring a `thread_local` variable template or `inline` variable is forbidden
+in HotSpot code.  [The use of `thread_local`](#thread_local) is already
+heavily restricted.
 
 ### Initializing variables with static storage duration
 
@@ -1845,13 +1852,6 @@ implementations of prior versions take advantage of the difference.
 See Object Lifetime: C++17 6.8/8, C++20 6.7.3/8
 
 ### Additional Undecided Features
-
-* Trailing return type syntax for functions
-([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))
-
-* Variable templates
-([n3651](https://isocpp.org/files/papers/N3651.pdf),
-[p0127r2](http://wg21.link/p0127r2))
 
 * Member initializers and aggregates
 ([n3653](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html))

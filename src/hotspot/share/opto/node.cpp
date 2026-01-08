@@ -549,6 +549,14 @@ Node *Node::clone() const {
       to[i] = from[i]->clone();
     }
   }
+  if (this->is_MachProj()) {
+    // MachProjNodes contain register masks that may contain pointers to
+    // externally allocated memory. Make sure to use a proper constructor
+    // instead of just shallowly copying.
+    MachProjNode* mach = n->as_MachProj();
+    MachProjNode* mthis = this->as_MachProj();
+    new (&mach->_rout) RegMask(mthis->_rout);
+  }
   if (n->is_Call()) {
     // CallGenerator is linked to the original node.
     CallGenerator* cg = n->as_Call()->generator();
@@ -1215,6 +1223,9 @@ bool Node::has_special_unique_user() const {
     return true;
   } else if ((is_IfFalse() || is_IfTrue()) && n->is_If()) {
     // See IfNode::fold_compares
+    return true;
+  } else if (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) {
+    // Condition for XorVMask(VectorMaskCmp(x,y,cond), MaskAll(true)) ==> VectorMaskCmp(x,y,ncond)
     return true;
   } else {
     return false;
@@ -2789,12 +2800,12 @@ uint Node::match_edge(uint idx) const {
 // Register classes are defined for specific machines
 const RegMask &Node::out_RegMask() const {
   ShouldNotCallThis();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 const RegMask &Node::in_RegMask(uint) const {
   ShouldNotCallThis();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 void Node_Array::grow(uint i) {

@@ -53,6 +53,7 @@ import sun.security.x509.KeyUsageExtension;
 import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.URIName;
 import sun.security.x509.KeyIdentifier;
+import sun.security.x509.X500Name;
 
 
 /**
@@ -90,7 +91,7 @@ import sun.security.x509.KeyIdentifier;
 public class CertificateBuilder {
     private final CertificateFactory factory;
 
-    private X500Principal subjectName = null;
+    private X500Name subjectName = null;
     private BigInteger serialNumber = null;
     private PublicKey publicKey = null;
     private Date notBefore = null;
@@ -199,7 +200,7 @@ public class CertificateBuilder {
      * on this certificate.
      */
     public CertificateBuilder setSubjectName(X500Principal name) {
-        subjectName = name;
+        subjectName = X500Name.asX500Name(name);
         return this;
     }
 
@@ -209,7 +210,23 @@ public class CertificateBuilder {
      * @param name The subject name in RFC 2253 format
      */
     public CertificateBuilder setSubjectName(String name) {
-        subjectName = new X500Principal(name);
+        try {
+            subjectName = new X500Name(name);
+        } catch (IOException ioe) {
+            throw new IllegalArgumentException(ioe);
+        }
+        return this;
+    }
+
+    /**
+     * Set the subject name for the certificate. This method is useful when
+     * you need more control over the contents of the subject name.
+     *
+     * @param name an {@code X500Name} to be used as the subject name
+     * on this certificate
+     */
+    public CertificateBuilder setSubjectName(X500Name name) {
+        subjectName = name;
         return this;
     }
 

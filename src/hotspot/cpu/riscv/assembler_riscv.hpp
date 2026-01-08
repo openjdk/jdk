@@ -914,6 +914,17 @@ protected:
 
  public:
 
+  static uint32_t encode_csrrw(Register Rd, const uint32_t csr, Register Rs1) {
+    guarantee(is_uimm12(csr), "csr is invalid");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1110011);
+    patch((address)&insn, 14, 12, 0b001);
+    patch_reg((address)&insn, 7, Rd);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 31, 20, csr);
+    return insn;
+  }
+
   static uint32_t encode_jal(Register Rd, const int32_t offset) {
     guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");
     uint32_t insn = 0;
@@ -3693,19 +3704,15 @@ public:
 // --------------------------
 // Upper Immediate Instruction
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, int32_t imm) {                                                      \
-    /* lui -> c.lui */                                                                       \
-    if (do_compress() && (Rd != x0 && Rd != x2 && imm != 0 && is_simm18(imm))) {             \
-      c_lui(Rd, imm);                                                                        \
-      return;                                                                                \
-    }                                                                                        \
-    _lui(Rd, imm);                                                                           \
+  void lui(Register Rd, int32_t imm) {
+    /* lui -> c.lui */
+    if (do_compress() && (Rd != x0 && Rd != x2 && imm != 0 && is_simm18(imm))) {
+      c_lui(Rd, imm);
+      return;
+    }
+    _lui(Rd, imm);
   }
 
-  INSN(lui);
-
-#undef INSN
 
 // Cache Management Operations
 // These instruction may be turned off for user space.

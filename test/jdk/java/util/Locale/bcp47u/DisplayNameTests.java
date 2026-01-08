@@ -27,21 +27,20 @@
  * @bug 8176841 8202537
  * @summary Tests the display names for BCP 47 U extensions
  * @modules jdk.localedata
- * @run testng DisplayNameTests
+ * @run junit DisplayNameTests
  */
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test Locale.getDisplayName() with BCP47 U extensions. Note that the
  * result may change depending on the CLDR releases.
  */
-@Test
 public class DisplayNameTests {
     private static final Locale loc1 = Locale.forLanguageTag("en-Latn-US-u" +
                                                              "-ca-japanese" +
@@ -75,8 +74,7 @@ public class DisplayNameTests {
                                             .build();
     private static final Locale loc6 = Locale.forLanguageTag( "zh-CN-u-ca-dddd-nu-ddd-cu-ddd-fw-moq-tz-unknown-rg-twzz");
 
-    @DataProvider(name="locales")
-    Object[][] tz() {
+    static Object[][] locales() {
         return new Object[][] {
             // Locale for display, Test Locale, Expected output,
             {Locale.US, loc1,
@@ -101,9 +99,10 @@ public class DisplayNameTests {
         };
     }
 
-    @Test(dataProvider="locales")
-    public void test_locales(Locale inLocale, Locale testLocale, String expected) {
+    @MethodSource("locales")
+    @ParameterizedTest
+    void test_locales(Locale inLocale, Locale testLocale, String expected) {
         String result = testLocale.getDisplayName(inLocale);
-        assertEquals(result, expected);
+        assertEquals(expected, result);
     }
 }
