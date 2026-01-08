@@ -102,7 +102,9 @@ final class Transform implements CodeTransform {
         //     new Bar();
         //   }
         // }
-        this.simplifiedInstrumentation = method.constructor() && constructorInvocations(model.elementList()) > 1;
+        //
+        // java.lang.Object::<init> with zero constructor invocations should use simplified instrumentation
+        this.simplifiedInstrumentation = method.constructor() && constructorInvocations(model.elementList()) != 1;
     }
 
     private int constructorInvocations(List<CodeElement> elementList) {
