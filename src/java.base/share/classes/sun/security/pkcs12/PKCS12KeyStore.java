@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.time.Instant;
 import java.util.*;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -179,7 +180,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
     // A keystore entry and associated attributes
     private static class Entry {
-        Date date; // the creation date of this entry
+        Instant date; // the creation date of this entry
         String alias;
         byte[] keyId;
         Set<KeyStore.Entry.Attribute> attributes;
@@ -212,7 +213,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         CertEntry(X509Certificate cert, byte[] keyId, String alias,
                 ObjectIdentifier[] trustedKeyUsage,
                 Set<? extends KeyStore.Entry.Attribute> attributes) {
-            this.date = new Date();
+            this.date = Instant.now();
             this.cert = cert;
             this.keyId = keyId;
             this.alias = alias;
@@ -541,9 +542,26 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-        Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        final Instant instant = this.engineGetCreationTimestamp(alias);
+        if (instant == null){
+            return null;
+        }
+        return Date.from(instant);
+    }
+
+    /**
+     * Returns the creation timestamp (Instant) of the entry identified
+     * by the given alias.
+     *
+     * @param alias the alias name
+     *
+     * @return the creation date of this entry, or null if the given alias does
+     * not exist
+     */
+    public Instant engineGetCreationTimestamp(String alias) {
+        final Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (entry != null) {
-            return new Date(entry.date.getTime());
+            return entry.date;
         } else {
             return null;
         }
@@ -606,7 +624,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 checkX509Certs(chain);
 
                 PrivateKeyEntry keyEntry = new PrivateKeyEntry();
-                keyEntry.date = new Date();
+                keyEntry.date = Instant.now();
 
                 if ((key.getFormat().equals("PKCS#8")) ||
                     (key.getFormat().equals("PKCS8"))) {
@@ -651,7 +669,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
             } else if (key instanceof SecretKey) {
                 SecretKeyEntry keyEntry = new SecretKeyEntry();
-                keyEntry.date = new Date();
+                keyEntry.date = Instant.now();
 
                 // Encode secret key in a PKCS#8
                 DerOutputStream secretKeyInfo = new DerOutputStream();
@@ -690,7 +708,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 entry.attributes.addAll(attributes);
             }
             // set the keyId to current date
-            entry.keyId = ("Time " + (entry.date).getTime()).getBytes(UTF_8);
+            entry.keyId = ("Time " + entry.date.toEpochMilli()).getBytes(UTF_8);
             // set the alias
             entry.alias = alias.toLowerCase(Locale.ENGLISH);
             // add the entry
@@ -745,7 +763,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         PrivateKeyEntry entry = new PrivateKeyEntry();
-        entry.date = new Date();
+        entry.date = Instant.now();
 
         if (debug != null) {
             debug.println("Setting a protected private key at alias '" +
@@ -753,7 +771,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         // set the keyId to current date
-        entry.keyId = ("Time " + (entry.date).getTime()).getBytes(UTF_8);
+        entry.keyId = ("Time " + entry.date.toEpochMilli()).getBytes(UTF_8);
         // set the alias
         entry.alias = alias.toLowerCase(Locale.ENGLISH);
 
@@ -2411,21 +2429,21 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     }
                 }
                 entry.keyId = keyId;
-                // restore date if it exists
+                // restore timestamp if it exists
                 String keyIdStr = new String(keyId, UTF_8);
-                Date date = null;
+                Instant timestamp = null;
                 if (keyIdStr.startsWith("Time ")) {
                     try {
-                        date = new Date(
+                        timestamp = Instant.ofEpochMilli(
                                 Long.parseLong(keyIdStr.substring(5)));
                     } catch (Exception e) {
-                        // date has been initialized to null
+                        // timestamp has been initialized to null
                     }
                 }
-                if (date == null) {
-                    date = new Date();
+                if (timestamp == null) {
+                    timestamp = Instant.now();
                 }
-                entry.date = date;
+                entry.date = timestamp;
 
                 if (bagItem instanceof PrivateKeyEntry) {
                     keyList.add(entry);

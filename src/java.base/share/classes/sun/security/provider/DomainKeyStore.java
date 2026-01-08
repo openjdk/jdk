@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.net.*;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.time.Instant;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -232,6 +233,36 @@ abstract class DomainKeyStore extends KeyStoreSpi {
         }
 
         return date;
+    }
+
+    /**
+     * Returns the creation timestamp (instant) of the entry identified
+     * by the given alias.
+     *
+     * @param alias the alias name
+     *
+     * @return the creation instant of this entry, or null if the given
+     * alias does not exist
+     */
+    public Instant engineGetCreationTimestamp(String alias) {
+
+        AbstractMap.SimpleEntry<String, Collection<KeyStore>> pair =
+            getKeystoresForReading(alias);
+        Instant instant = null;
+
+        try {
+            String entryAlias = pair.getKey();
+            for (KeyStore keystore : pair.getValue()) {
+                instant = keystore.getCreationTimestamp(entryAlias);
+                if (instant != null) {
+                    break;
+                }
+            }
+        } catch (KeyStoreException e) {
+            throw new IllegalStateException(e);
+        }
+
+        return instant;
     }
 
     @Override

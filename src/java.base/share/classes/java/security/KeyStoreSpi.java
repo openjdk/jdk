@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.security;
 
 import java.io.*;
+import java.time.Instant;
 import java.util.*;
 
 import java.security.KeyStore.*;
@@ -126,6 +127,19 @@ public abstract class KeyStoreSpi {
      * if the given alias does not exist
      */
     public abstract Date engineGetCreationDate(String alias);
+
+    /**
+     * Returns the creation timestamp (Instant) of the entry identified
+     * by the given alias.
+     *
+     * @param alias the alias name
+     *
+     * @return the creation instant of this entry, or {@code null}
+     * if the given alias does not exist
+     */
+    public Instant engineGetCreationTimestamp(String alias) {
+        return engineGetCreationDate(alias).toInstant();
+    }
 
     /**
      * Assigns the given key to the given alias, protecting it with the given

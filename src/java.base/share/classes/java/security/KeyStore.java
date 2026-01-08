@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.time.Instant;
 import java.util.*;
 import javax.crypto.SecretKey;
 
@@ -1199,6 +1200,30 @@ public class KeyStore {
         }
         return keyStoreSpi.engineGetCreationDate(alias);
     }
+
+
+    /**
+     * Returns the creation timestamp (Instant) of the entry identified
+     * by the given alias.
+     *
+     * @param alias the alias name
+     *
+     * @return the creation instant of this entry, or {@code null} if the given
+     * alias does not exist
+     *
+     * @throws    KeyStoreException if the keystore has not been initialized
+     * (loaded).
+     */
+    public final Instant getCreationTimestamp(String alias)
+            throws KeyStoreException
+    {
+        if (!initialized) {
+            throw new KeyStoreException("Uninitialized keystore");
+        }
+        return keyStoreSpi.engineGetCreationTimestamp(alias);
+    }
+
+
 
     /**
      * Assigns the given key to the given alias, protecting it with the given
