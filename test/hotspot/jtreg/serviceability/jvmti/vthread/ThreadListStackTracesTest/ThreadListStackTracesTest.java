@@ -126,7 +126,7 @@ public class ThreadListStackTracesTest {
         int jvmtiExpState = (expState == Thread.State.WAITING) ?
                             JVMTI_THREAD_STATE_WAITING :
                             JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
-	Thread.State state = vt.getState();
+        Thread.State state = vt.getState();
 
         System.out.printf("State: expected: %s, vt.getState(): %s, jvmtiExpState: %x single: %x multi: %x\n",
                           expState, state, jvmtiExpState, singleState, multiState);
