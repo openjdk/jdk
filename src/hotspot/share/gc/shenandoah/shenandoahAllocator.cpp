@@ -123,7 +123,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_slow(Shenando
   uint regions_ready_for_refresh = 0u;
   // Attempt to allocate in shared alloc regions after taking heap lock,
   // because other mutator may have refreshed shared alloc regions
-  HeapWord* obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
+  HeapWord* obj = attempt_allocation_in_alloc_regions<true /*holding heap lock*/>(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
   if (obj != nullptr) {
     return obj;
   }
@@ -182,6 +182,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_from_free_set
 }
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
+template<bool HOLDING_HEAP_LOCK>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_in_alloc_regions(ShenandoahAllocRequest &req,
                                                                                     bool &in_new_region,
                                                                                     uint const alloc_start_index,
@@ -189,7 +190,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_in_alloc_regi
   assert(regions_ready_for_refresh == 0u && in_new_region == false && alloc_start_index < _alloc_region_count, "Sanity check");
   uint i = alloc_start_index;
   do {
-    if (ShenandoahHeapRegion* r = nullptr; (r = AtomicAccess::load(&_alloc_regions[i].address)) != nullptr) {
+    if (ShenandoahHeapRegion* r = nullptr; (r = HOLDING_HEAP_LOCK ? _alloc_regions[i].address : AtomicAccess::load(&_alloc_regions[i].address)) != nullptr) {
       bool ready_for_retire = false;
       HeapWord* obj = allocate_in<true>(r, true, req, in_new_region, ready_for_retire);
       if (ready_for_retire) {
