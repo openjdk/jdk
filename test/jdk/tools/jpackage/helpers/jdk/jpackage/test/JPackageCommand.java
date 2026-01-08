@@ -779,6 +779,30 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         defaultToolProvider.set(Optional.empty());
     }
 
+    /**
+     * Starts a new thread. In this thread calls
+     * {@link #useToolProviderByDefault(ToolProvider)} with the specified
+     * {@code jpackageToolProvider} and then calls {@code workload.run()}. Joins the
+     * thread.
+     * <p>
+     * The idea is to run the {@code workload} in the context of the specified
+     * jpackage {@code ToolProvider} without altering the global variable holding
+     * the default jpackage {@code ToolProvider}. The global variable is
+     * thread-local; setting its value in a new thread doesn't alter its copy in the
+     * calling thread.
+     *
+     * @param jpackageToolProvider jpackage {@code ToolProvider}
+     * @param workload             the workload to run
+     */
+    public static void withToolProvider(ToolProvider jpackageToolProvider, Runnable workload) {
+        Objects.requireNonNull(jpackageToolProvider);
+        Objects.requireNonNull(workload);
+        ThrowingRunnable.toRunnable(Thread.ofVirtual().start(() -> {
+            useToolProviderByDefault(jpackageToolProvider);
+            workload.run();
+        })::join).run();
+    }
+
     public JPackageCommand useToolProvider(boolean v) {
         verifyMutable();
         withToolProvider = v;

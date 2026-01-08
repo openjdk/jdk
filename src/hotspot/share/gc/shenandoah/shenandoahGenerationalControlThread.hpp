@@ -135,12 +135,15 @@ private:
   // Return printable name for the given gc mode.
   static const char* gc_mode_name(GCMode mode);
 
-  // These notify the control thread after updating _requested_gc_cause and (optionally) _requested_generation.
-  // Updating the requested generation is not necessary for allocation failures nor when stopping the thread.
-  void notify_control_thread(GCCause::Cause cause);
-  void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause);
+  // Takes the request lock and updates the requested cause and generation, then notifies the control thread.
+  // The overloaded variant should be used when the _control_lock is already held.
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
+
+  // Notifies the control thread, but does not update the requested cause or generation.
+  // The overloaded variant should be used when the _control_lock is already held.
+  void notify_cancellation(GCCause::Cause cause);
+  void notify_cancellation(MonitorLocker& ml, GCCause::Cause cause);
 
   // Configure the heap to age objects and regions if the aging period has elapsed.
   void maybe_set_aging_cycle();
