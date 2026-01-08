@@ -481,6 +481,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.CAST_II, ">0" })
+    @Warmup(0)
     public Object[] testCastII() {
         byte[] bytes = new byte[400];
         intField = 6;
@@ -506,7 +507,6 @@ public class TestSubwordTruncation {
 
     public static void main(String[] args) {
         TestFramework.run();
-        TestFramework.runWithFlags("-Xcomp", "-XX:CompileCommand=compileonly,*TestSubwordTruncation::*");
     }
 }
 
