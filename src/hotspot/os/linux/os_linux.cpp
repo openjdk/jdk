@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "hugepages.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -96,7 +97,6 @@
 # include <signal.h>
 # include <stdint.h>
 # include <stdio.h>
-# include <stdlib.h>
 # include <string.h>
 # include <sys/ioctl.h>
 # include <sys/ipc.h>
