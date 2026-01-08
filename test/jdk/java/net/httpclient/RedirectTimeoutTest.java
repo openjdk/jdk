@@ -66,7 +66,7 @@ import static jdk.test.lib.Utils.adjustTimeout;
 
 public class RedirectTimeoutTest implements HttpServerAdapters {
 
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static HttpTestServer h1TestServer, h2TestServer, h3TestServer;
     static URI h1Uri, h1RedirectUri, h2Uri, h2RedirectUri,
             h3Uri, h3RedirectUri, h2WarmupUri, h3WarmupUri, testRedirectURI;
@@ -77,10 +77,6 @@ public class RedirectTimeoutTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws IOException {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         h1TestServer = HttpTestServer.create(HTTP_1_1);
         h2TestServer = HttpTestServer.create(HTTP_2);
         h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
