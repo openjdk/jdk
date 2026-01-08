@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -852,8 +852,10 @@ private:
 
   template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry);
 public:
-  // Apply the closure on the given area of the objArray. Return the number of words
-  // scanned.
+  // Apply the closure on the metadata of the objArray only.
+  inline void scan_objArray_metadata(objArrayOop obj);
+  // Apply the closure on the given area of the objArray. Does not process its
+  // metadata. Returns the number of words scanned.
   inline size_t scan_objArray(objArrayOop obj, MemRegion mr);
   // Resets the task; should be called right at the beginning of a marking phase.
   void reset(G1CMBitMap* mark_bitmap);

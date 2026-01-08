@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,10 @@
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/devirtualizer.hpp"
 
 inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
   // Check whether the passed in object is null. During discovery the referent
@@ -179,8 +182,14 @@ inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
   check_limits();
 }
 
+inline void G1CMTask::scan_objArray_metadata(objArrayOop obj) {
+  Devirtualizer::do_klass(_cm_oop_closure, obj->klass());
+}
+
 inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
-  obj->oop_iterate(_cm_oop_closure, mr);
+  int start = checked_cast<int>(pointer_delta(MAX2(mr.start(), obj->base()), obj->base(), heapOopSize));
+  int end = checked_cast<int>(pointer_delta(mr.end(), obj->base(), heapOopSize));
+  obj->oop_iterate_range(_cm_oop_closure, start, end);
   return mr.word_size();
 }
 
