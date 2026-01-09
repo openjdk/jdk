@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,9 +341,33 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 Arguments.of("abc", List.of("abc")),
                 Arguments.of("a b c", List.of("a", "b", "c")),
                 Arguments.of("a=10 -Dorg.acme.name='John Smith' c=\\\"foo\\\"", List.of("a=10", "-Dorg.acme.name=John Smith", "c=\"foo\"")),
+                Arguments.of("  foo \"a b c\" v=' John Smith ' 'H e ll o' ", List.of("foo", "a b c", "v= John Smith ", "H e ll o")),
                 Arguments.of("\"\"", List.of("")),
                 Arguments.of(" ", List.of()),
-                Arguments.of("", List.of())
+                Arguments.of("   ", List.of()),
+                Arguments.of(" foo  ", List.of("foo")),
+                Arguments.of("", List.of()),
+                Arguments.of("'fo\"o'\\ buzz \"b a r\"", List.of("fo\"o\\ buzz", "b a r")),
+                Arguments.of("a\\ 'b\"c'\\ d", List.of("a\\ b\"c\\ d")),
+                Arguments.of("\"a 'bc' d\"", List.of("a 'bc' d")),
+                Arguments.of("\'a 'bc' d\'", List.of("a bc d")),
+                Arguments.of("\"a \\'bc\\' d\"", List.of("a 'bc' d")),
+                Arguments.of("\'a \\'bc\\' d\'", List.of("a 'bc' d")),
+                Arguments.of("'a b c' 'd e f'", List.of("a b c", "d e f")),
+                Arguments.of("'a b c' \"'d e f'  h", List.of("a b c", "'d e f'  h")),
+                Arguments.of("'a b c' \"'d e f' \t  ", List.of("a b c", "'d e f'")),
+                Arguments.of(" a='' '' \t '\\'\\'' \"\" \"\\\"\\\"\" ", List.of("a=", "", "\'\'", "", "\"\"")),
+                Arguments.of("' \'foo '", List.of(" foo", "")),
+                Arguments.of("' \'foo ' bar", List.of(" foo", " bar")),
+                Arguments.of("' \'foo\\ '", List.of(" foo\\ ")),
+                Arguments.of("'fo\"o buzz \"b a r\"", List.of("fo\"o buzz \"b a r\"")),
+                Arguments.of("'", List.of("")),
+                Arguments.of("' f g  ", List.of(" f g")),
+                Arguments.of("' f g", List.of(" f g")),
+                Arguments.of("'\\'", List.of("'")),
+                Arguments.of("'\\'  ", List.of("'")),
+                Arguments.of("'\\' a ", List.of("' a")),
+                Arguments.of("\"" + "\\\"".repeat(10000) + "A", List.of("\"".repeat(10000) + "A"))
         );
     }
 
