@@ -377,7 +377,7 @@ public:
 // all the behavior of addition on a ring.
 class MaxINode : public MinMaxNode {
 public:
-  MaxINode( Node *in1, Node *in2 ) : MinMaxNode(in1,in2) {}
+  MaxINode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::make(min_jint); }
@@ -394,7 +394,7 @@ public:
 // all the behavior of addition on a ring.
 class MinINode : public MinMaxNode {
 public:
-  MinINode( Node *in1, Node *in2 ) : MinMaxNode(in1,in2) {}
+  MinINode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::make(max_jint); }
@@ -448,7 +448,7 @@ public:
 // Maximum of 2 floats.
 class MaxFNode : public MinMaxNode {
 public:
-  MaxFNode(Node *in1, Node *in2) : MinMaxNode(in1, in2) {}
+  MaxFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeF::NEG_INF; }
@@ -462,7 +462,7 @@ public:
 // Minimum of 2 floats.
 class MinFNode : public MinMaxNode {
 public:
-  MinFNode(Node *in1, Node *in2) : MinMaxNode(in1, in2) {}
+  MinFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeF::POS_INF; }
@@ -504,7 +504,7 @@ public:
 // Maximum of 2 doubles.
 class MaxDNode : public MinMaxNode {
 public:
-  MaxDNode(Node *in1, Node *in2) : MinMaxNode(in1, in2) {}
+  MaxDNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeD::NEG_INF; }
@@ -518,7 +518,7 @@ public:
 // Minimum of 2 doubles.
 class MinDNode : public MinMaxNode {
 public:
-  MinDNode(Node *in1, Node *in2) : MinMaxNode(in1, in2) {}
+  MinDNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeD::POS_INF; }
