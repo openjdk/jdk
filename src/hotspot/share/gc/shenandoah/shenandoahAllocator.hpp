@@ -26,10 +26,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 
-#include "gc/shenandoah/shenandoahFreeSetPartitionId.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
+#include "gc/shenandoah/shenandoahFreeSetPartitionId.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahFreeSet;
