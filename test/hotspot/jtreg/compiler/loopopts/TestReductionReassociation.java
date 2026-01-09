@@ -72,8 +72,10 @@ public class TestReductionReassociation {
         final List<Integer> batchSizes = List.of(4, 5);
 
         for (Integer batchSize : batchSizes) {
-            testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, batchSize, size).generate());
+            testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, batchSize, false, size).generate());
         }
+
+        testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, batchSizes.getFirst(), true, size).generate());
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
@@ -98,7 +100,7 @@ public class TestReductionReassociation {
         }
     }
 
-    record TestGenerator(AddOp add, int batchSize, int size) {
+    record TestGenerator(AddOp add, int batchSize, boolean useIntermediate, int size) {
         public TemplateToken generate() {
             var testTemplate = Template.make(() -> {
                 String test = $("test");
@@ -163,7 +165,9 @@ public class TestReductionReassociation {
                 """
                 @Test
                 """,
-                "@IR(counts = {IRNode.#irNodeName, \"= ", batchSize, "\"}, phase = CompilePhase.AFTER_LOOP_OPTS)",
+                "@IR(counts = {IRNode.#irNodeName, \"= ",
+                useIntermediate ? batchSize * 2 : batchSize,
+                "\"}, phase = CompilePhase.AFTER_LOOP_OPTS)",
                 """
                 public Object[] #test() {
                     #type result = Integer.MIN_VALUE;
@@ -173,6 +177,7 @@ public class TestReductionReassociation {
                 IntStream.range(0, batchSize).mapToObj(i ->
                     List.of("long v", i, " = #input[i + ", i, "];\n")
                 ).toList(),
+                useIntermediate ? List.of("if (v", batchSize - 1," == #input.hashCode()) { System.out.print(\"\"); }") : "",
                 "long u0 = ", generateOp("v0", "result"), ";",
                 IntStream.range(1, batchSize).mapToObj(i ->
                     List.of("long u", i, " = ", generateOp("v" + i, "u" + (i - 1)), ";\n")
