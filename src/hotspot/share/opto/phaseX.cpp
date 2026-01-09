@@ -2602,7 +2602,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  // Check for max(a, max(b, c)) patterns
+  // Check for Max/Min(A, Max/Min(B, C)) where A == B or A == C
   if (use->is_MinMax()) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
