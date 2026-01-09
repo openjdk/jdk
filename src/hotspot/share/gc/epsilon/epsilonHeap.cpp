@@ -155,7 +155,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   // Allocation successful, update counters and print status.
   // At this point, some diagnostic subsystems might not yet be initialized.
   // We pretend the printout happened either way. This keeps allocation path
-  // from obscessively checking the subsystems status on every allocation.
+  // from obsessively checking the subsystems' status on every allocation.
   size_t last_counter = AtomicAccess::load(&_last_counter_update);
   if ((used - last_counter >= _step_counter_update) &&
       AtomicAccess::cmpxchg(&_last_counter_update, last_counter, used) == last_counter) {
