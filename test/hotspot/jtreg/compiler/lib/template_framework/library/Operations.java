@@ -761,7 +761,7 @@ public final class Operations {
             ops.add(Expression.make(type.maskType, "", type.maskType , ".not()"));
             ops.add(Expression.make(type.maskType, "", type.maskType , ".indexInRange(", INTS, ", ", INTS,")"));
             ops.add(Expression.make(type.maskType, "", type.maskType , ".indexInRange(", LONGS, ", ", LONGS,")"));
-            ops.add(Expression.make(type, "", type.maskType , ".toVector()"));
+            ops.add(Expression.make(type, "((" + type.name() + ")", type.maskType , ".toVector())"));
             ops.add(Expression.make(BOOLEANS, "", type.maskType , ".laneIsSet(", INTS, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
             ops.add(Expression.make(BOOLEANS, "", type.maskType , ".laneIsSet(", INTS, " & " + (type.length-1) + ")"));
             // skip check
@@ -793,7 +793,7 @@ public final class Operations {
             // skip toArray
             // skip intoArray
             // skip intoMemorySegment
-            ops.add(Expression.make(type, "", type.shuffleType , ".toVector()"));
+            ops.add(Expression.make(type, "((" + type.name() + ")", type.shuffleType , ".toVector())"));
             ops.add(Expression.make(INTS, "", type.shuffleType , ".laneSource(", INTS,")", WITH_ILLEGAL_ARGUMENT_EXCEPTION));
             ops.add(Expression.make(INTS, "", type.shuffleType , ".laneSource(", INTS," & " + (type.length-1) + ")"));
             ops.add(Expression.make(type.shuffleType, "", type.shuffleType, ".rearrange(", type.shuffleType, ")"));
