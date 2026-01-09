@@ -163,6 +163,21 @@ final class AppImageFile {
         final var relativeAppImageFilePath = appImageDir.relativize(appImageFilePath);
 
         try {
+            //
+            // Use javax.xml.parsers.DocumentBuilder#parse(java.io.InputStream).
+            // Don't use javax.xml.parsers.DocumentBuilder#parse(java.io.File) as this will introduce
+            // dependency on how the XML parser reports filesystem I/O errors.
+            // E.g.: the default JDK XML parser throws java.io.FileNotFoundException if the supplied
+            // directory is not found and throws org.xml.sax.SAXParseException if the supplied file is a directory.
+            // Another DOM XML parser (a different version of Xerces?) may behave differently.
+            //
+            // The use of javax.xml.parsers.DocumentBuilder#parse(java.io.InputStream) eliminates
+            // differences in how XML parsers handle file system I/O errors.
+            // Filesystem I/O is delegated to java.nio.file.Files#readAllBytes(java.nio.file.Path),
+            // XML parser deals with the byte stream in memory and the error handling code
+            // doesn't depend on how XML parser reports filesystem I/O errors because
+            // it reads data from memory, not from the filesystem.
+            //
             final Document doc = XmlUtils.initDocumentBuilder().parse(
                     new ByteArrayInputStream(Files.readAllBytes(appImageFilePath)));
 
