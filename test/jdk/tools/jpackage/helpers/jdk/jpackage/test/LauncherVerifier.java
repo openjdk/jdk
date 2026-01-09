@@ -39,7 +39,6 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.xml.parsers.ParserConfigurationException;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
@@ -367,7 +366,7 @@ public final class LauncherVerifier {
         }
     }
 
-    private void verifyMacEntitlements(JPackageCommand cmd) throws ParserConfigurationException, SAXException, IOException {
+    private void verifyMacEntitlements(JPackageCommand cmd) throws SAXException, IOException {
         Path launcherPath = cmd.appLauncherPath(name);
         var entitlements = MacSignVerify.findEntitlements(launcherPath);
 
