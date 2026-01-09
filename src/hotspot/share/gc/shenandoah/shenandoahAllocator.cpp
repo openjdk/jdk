@@ -132,7 +132,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_slow(Shenando
 
   if (regions_ready_for_refresh > 0u) {
     int refreshed = refresh_alloc_regions(&req, &in_new_region, &obj);
-    if (refreshed > 0) {
+    if (refreshed > 0 || obj != nullptr) {
       accounting_updater._need_update = true;
     }
     if (obj != nullptr) {
@@ -267,11 +267,6 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
         if (region->is_active_alloc_region()) {
           region->unset_active_alloc_region();
         }
-        if (ALLOC_PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
-          if (free_bytes > 0) {
-            _free_set->increase_bytes_allocated(free_bytes);
-          }
-        }
         log_debug(gc, alloc)("%sAllocator: Removing heap region %li from alloc region %i.",
           _alloc_partition_name, region->index(), alloc_region->alloc_region_index);
         AtomicAccess::store(&alloc_region->address, static_cast<ShenandoahHeapRegion*>(nullptr));
@@ -285,8 +280,7 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
   if (refreshable_alloc_regions > 0) {
     // Step 2: allocate region from FreeSets to fill the alloc regions or satisfy the alloc request.
     ShenandoahHeapRegion* reserved[MAX_ALLOC_REGION_COUNT];
-    int reserved_regions = _free_set->reserve_alloc_regions(ALLOC_PARTITION, refreshable_alloc_regions,
-      ALLOC_PARTITION == ShenandoahFreeSetPartitionId::Mutator ? PLAB::max_size() : PLAB::min_size(), reserved);
+    int reserved_regions = _free_set->reserve_alloc_regions(ALLOC_PARTITION, refreshable_alloc_regions, PLAB::min_size(), reserved);
     assert(reserved_regions <= refreshable_alloc_regions, "Sanity check");
     log_debug(gc, alloc)("%sAllocator: Reserved %i regions for allocation.", _alloc_partition_name, reserved_regions);
 
@@ -299,8 +293,9 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
         if (satisfy_alloc_req_first && reserved[i]->free_words() >= min_req_size) {
           bool ready_for_retire = false;
           *obj = allocate_in<false>(reserved[i], true, *req, *in_new_region, ready_for_retire);
-          satisfy_alloc_req_first = *obj == nullptr;
-          if (ready_for_retire && reserved[i]->free_words() == 0) {
+          assert(*obj != nullptr, "Should always succeed");
+          satisfy_alloc_req_first = false;
+          if (ready_for_retire) {
             log_debug(gc, alloc)("%sAllocator: heap region %li has no space left after satisfying alloc req.",
               _alloc_partition_name, reserved[i]->index());
             reserved[i]->unset_active_alloc_region();
