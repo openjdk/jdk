@@ -117,7 +117,15 @@ public:
 
   // Handle the allocation request - entry point of memory allocation, including humongous allocation.
   virtual HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // Caller must hold the heap lock at safepoint. This causes all directly allocatable regions to be placed into
+  // the appropriate ShenandoahFreeSet partition.
+  // Collector calls this in preparation for choosing a collection set and/or rebuilding the freeset.
   virtual void release_alloc_regions();
+
+  // Caller must hold the heap lock at safepoint. This causes us to set aside N regions as directly allocatable
+  // by removing these regions from the relevant ShenandoahFreeSet partitions.
+  // Collector calls this after rebuilding the freeset.
   virtual void reserve_alloc_regions();
 };
 
