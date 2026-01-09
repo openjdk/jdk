@@ -66,27 +66,45 @@ public class CodeSourceNoInputs {
 
         cs = new CodeSource(null, (Certificate[]) null);
         if (cs.getCodeSigners() != null || cs.getCertificates() != null) {
-            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return null for new CodeSource(null, (Certificate[]) null)");
+
+            throw new SecurityException("Both CodeSource.getCodeSigners() " +
+                "and CodeSource.getCertificates() should return null for " +
+                "new CodeSource(null, (Certificate[]) null)");
         }
 
         cs = new CodeSource(null, (CodeSigner[]) null);
         if (cs.getCodeSigners() != null || cs.getCertificates() != null) {
-            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return null for new CodeSource(null, (CodeSigners[]) null)");
+
+            throw new SecurityException("Both CodeSource.getCodeSigners() " +
+                "and CodeSource.getCertificates() should return null for " +
+                "new CodeSource(null, (CodeSigners[]) null)");
         }
 
         cs = new CodeSource(null, new Certificate[0]);
-        if (cs.getCodeSigners().length != 0 || cs.getCertificates().length != 0) {
-            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return empty arrays for new CodeSource(null, new Certificate[0])");
+        if (cs.getCodeSigners().length != 0
+            || cs.getCertificates().length != 0) {
+
+            throw new SecurityException("Both CodeSource.getCodeSigners()" +
+                "and CodeSource.getCertificates() should return empty arrays " +
+                "for new CodeSource(null, new Certificate[0])");
+
         }
 
         cs = new CodeSource(null, new CodeSigner[0]);
-        if (cs.getCodeSigners().length != 0 || cs.getCertificates().length != 0) {
-            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return empty arrays for new CodeSource(null, new CodeSigners[0])");
+        if (cs.getCodeSigners().length != 0
+            || cs.getCertificates().length != 0) {
+
+            throw new SecurityException("Both CodeSource.getCodeSigners() and" +
+                " CodeSource.getCertificates() should return empty arrays for" +
+                " new CodeSource(null, new CodeSigners[0])");
         }
 
         cs = new CodeSource(null, new Certificate[]{NON_X509_CERT});
         if (cs.getCodeSigners().length != 0 || cs.getCertificates() == null) {
-            throw new SecurityException("Both CodeSource.getCodeSigners() and CodeSource.getCertificates() should return arrays for new CodeSource(null, new CodeSigners[1]{ A-NON-X509-CERTIFICATE })");
+
+            throw new SecurityException("Both CodeSource.getCodeSigners() and" +
+                " CodeSource.getCertificates() should return arrays for new" +
+                " CodeSource(null, new CodeSigners[1]{NON-X509-CERTIFICATE})");
         }
     }
 }
