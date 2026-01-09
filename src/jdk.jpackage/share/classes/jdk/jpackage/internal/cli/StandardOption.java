@@ -737,14 +737,6 @@ public final class StandardOption {
             return String.format("(?:%s(?:\\\\%s|[^%s])*+(?:%s|$))", str, str, str, str);
         }
 
-        private static Pattern pattern = Pattern.compile(
-                "(?:(?:([\"'])(?:\\\\\\1|.)*?(?:\\1|$))|(?:\\\\[\"'\\s]|[^\\s]))++");
-
-        static {
-            System.out.println("OLD: " + pattern);
-            System.out.println("NEW: " + PATTERN);
-        }
-
         static List<String> getArgumentList(String inputString) {
             Objects.requireNonNull(inputString);
 
