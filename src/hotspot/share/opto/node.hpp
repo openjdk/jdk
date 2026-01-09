@@ -176,6 +176,7 @@ class SafePointNode;
 class SafePointScalarObjectNode;
 class SafePointScalarMergeNode;
 class SaturatingVectorNode;
+class SCMemProjNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -774,6 +775,7 @@ public:
       DEFINE_CLASS_ID(Parm,      Proj, 4)
       DEFINE_CLASS_ID(MachProj,  Proj, 5)
       DEFINE_CLASS_ID(NarrowMemProj, Proj, 6)
+      DEFINE_CLASS_ID(SCMemProj, Proj, 7)
 
     DEFINE_CLASS_ID(Mem, Node, 4)
       DEFINE_CLASS_ID(Load, Mem, 0)
@@ -1019,6 +1021,7 @@ public:
   DEFINE_CLASS_QUERY(SafePoint)
   DEFINE_CLASS_QUERY(SafePointScalarObject)
   DEFINE_CLASS_QUERY(SafePointScalarMerge)
+  DEFINE_CLASS_QUERY(SCMemProj)
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
