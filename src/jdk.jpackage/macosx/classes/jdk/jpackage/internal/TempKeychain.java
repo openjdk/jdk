@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,17 @@ package jdk.jpackage.internal;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import jdk.internal.util.OSVersion;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 final class TempKeychain implements Closeable {
 
-    static void withKeychains(ThrowingConsumer<List<Keychain>, ? extends Exception> keychainConsumer, List<Keychain> keychains) throws Exception {
+    static void withKeychains(Consumer<List<Keychain>> keychainConsumer, List<Keychain> keychains) {
+
         keychains.forEach(Objects::requireNonNull);
         if (keychains.isEmpty() || OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             keychainConsumer.accept(keychains);
@@ -43,11 +45,14 @@ final class TempKeychain implements Closeable {
             // we need this for OS X 10.12+
             try (var tempKeychain = new TempKeychain(keychains)) {
                 keychainConsumer.accept(tempKeychain.keychains);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
             }
         }
     }
 
-    static void withKeychain(ThrowingConsumer<Keychain, ? extends Exception> keychainConsumer, Keychain keychain) throws Exception {
+    static void withKeychain(Consumer<Keychain> keychainConsumer, Keychain keychain) {
+
         Objects.requireNonNull(keychainConsumer);
         withKeychains(keychains -> {
             keychainConsumer.accept(keychains.getFirst());
@@ -78,7 +83,7 @@ final class TempKeychain implements Closeable {
 
             args.addAll(missingKeychains.stream().map(Keychain::asCliArg).toList());
 
-            Executor.of(args.toArray(String[]::new)).executeExpectSuccess();
+            Executor.of(args).executeExpectSuccess();
         }
     }
 
@@ -89,7 +94,7 @@ final class TempKeychain implements Closeable {
     @Override
     public void close() throws IOException {
         if (!restoreKeychainsCmd.isEmpty()) {
-            Executor.of(restoreKeychainsCmd.toArray(String[]::new)).executeExpectSuccess();
+            Executor.of(restoreKeychainsCmd).executeExpectSuccess();
         }
     }
 

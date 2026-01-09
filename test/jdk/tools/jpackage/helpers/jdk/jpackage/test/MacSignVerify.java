@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public final class MacSignVerify {
     public static Optional<PListReader> findEntitlements(Path path) {
         final var exec = Executor.of("/usr/bin/codesign", "-d", "--entitlements", "-", "--xml", path.toString()).saveOutput().dumpOutput();
         final var result = exec.execute();
-        var xml = result.stdout().getOutput();
+        var xml = result.stdout();
         if (xml.isEmpty()) {
             return Optional.empty();
         } else {
@@ -137,7 +137,7 @@ public final class MacSignVerify {
     public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path) {
         final var exec = Executor.of("/usr/sbin/spctl", "-vv", "--raw", "--assess", "--type", type.value(), path.toString()).saveOutput().discardStderr();
         final var result = exec.executeWithoutExitCodeCheck();
-        TKit.assertTrue(Set.of(0, 3).contains(result.exitCode()),
+        TKit.assertTrue(Set.of(0, 3).contains(result.getExitCode()),
                 String.format("Check exit code of command %s is either 0 or 3", exec.getPrintableCommandLine()));
         return toSupplier(() -> {
             try {
@@ -173,7 +173,7 @@ public final class MacSignVerify {
         } else if (result.getExitCode() == 1 && result.getFirstLineOfOutput().endsWith("code object is not signed at all")) {
             return Optional.empty();
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
             return null; // Unreachable
         }
     }
@@ -205,7 +205,7 @@ public final class MacSignVerify {
                 TKit.trace("Try /usr/bin/codesign again with `sudo`");
                 assertSigned(path, true);
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
         }
     }
 
@@ -264,13 +264,13 @@ public final class MacSignVerify {
                 return signIdentities;
             } catch (Exception ex) {
                 ex.printStackTrace();
-                reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+                reportUnexpectedCommandOutcome(result);
                 return null; // Unreachable
             }
         } else if (result.getExitCode() == 1 && result.getOutput().getLast().endsWith("Status: no signature")) {
             return List.of();
         } else {
-            reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
+            reportUnexpectedCommandOutcome(result);
             return null; // Unreachable
         }
     }
@@ -282,14 +282,13 @@ public final class MacSignVerify {
         }
     }
 
-    private static void reportUnexpectedCommandOutcome(String printableCommandLine, Executor.Result result) {
-        Objects.requireNonNull(printableCommandLine);
+    private static void reportUnexpectedCommandOutcome(Executor.Result result) {
         Objects.requireNonNull(result);
         TKit.trace(String.format("Command %s exited with exit code %d and the following output:",
-                printableCommandLine, result.getExitCode()));
+                result.getPrintableCommandLine(), result.getExitCode()));
         result.getOutput().forEach(TKit::trace);
         TKit.trace("Done");
-        TKit.assertUnexpected(String.format("Outcome of command %s", printableCommandLine));
+        TKit.assertUnexpected(String.format("Outcome of command %s", result.getPrintableCommandLine()));
     }
 
     private static final Pattern SIGN_IDENTITY_NAME_REGEXP = Pattern.compile("^\\s+\\d+\\.\\s+(.*)$");

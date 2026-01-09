@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.Optional;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.util.Result;
 
 public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
 
@@ -45,7 +44,7 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
                 .defaultOperation(CREATE_MAC_DMG)
                 .bundler(SIGN_MAC_APP_IMAGE, MacBundlingEnvironment::signAppImage)
                 .bundler(CREATE_MAC_APP_IMAGE, MacBundlingEnvironment::createAppImage)
-                .bundler(CREATE_MAC_DMG, LazyLoad::dmgSysEnv, MacBundlingEnvironment::createDmdPackage)
+                .bundler(CREATE_MAC_DMG, MacDmgSystemEnvironment::create, MacBundlingEnvironment::createDmdPackage)
                 .bundler(CREATE_MAC_PKG, MacBundlingEnvironment::createPkgPackage));
     }
 
@@ -97,14 +96,5 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
         return new BuildEnvFromOptions()
                 .predefinedAppImageLayout(APPLICATION_LAYOUT)
                 .predefinedRuntimeImageLayout(MacPackage::guessRuntimeLayout);
-    }
-
-    private static final class LazyLoad {
-
-        static Result<MacDmgSystemEnvironment> dmgSysEnv() {
-            return DMG_SYS_ENV;
-        }
-
-        private static final Result<MacDmgSystemEnvironment> DMG_SYS_ENV = MacDmgSystemEnvironment.create();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,16 +81,16 @@ public class WindowsHelper {
             msiLog.ifPresent(v -> misexec.clearArguments().addArguments(origArgs).addArgument("/L*v").addArgument(v));
             result = misexec.executeWithoutExitCodeCheck();
 
-            if (result.exitCode() == 1605) {
+            if (result.getExitCode() == 1605) {
                 // ERROR_UNKNOWN_PRODUCT, attempt to uninstall not installed
                 // package
-                return result.exitCode();
+                return result.getExitCode();
             }
 
             // The given Executor may either be of an msiexec command or an
             // unpack.bat script containing the msiexec command. In the later
             // case, when misexec returns 1618, the unpack.bat may return 1603
-            if ((result.exitCode() == 1618) || (result.exitCode() == 1603 && isUnpack)) {
+            if ((result.getExitCode() == 1618) || (result.getExitCode() == 1603 && isUnpack)) {
                 // Another installation is already in progress.
                 // Wait a little and try again.
                 Long timeout = 1000L * (attempt + 3); // from 3 to 10 seconds
@@ -100,7 +100,7 @@ public class WindowsHelper {
             break;
         }
 
-        return result.exitCode();
+        return result.getExitCode();
     }
 
     static PackageHandlers createMsiPackageHandlers(boolean createMsiLog) {
@@ -462,7 +462,7 @@ public class WindowsHelper {
         var status = Executor.of("reg", "query", keyPath, "/v", valueName)
                 .saveOutput()
                 .executeWithoutExitCodeCheck();
-        if (status.exitCode() == 1) {
+        if (status.getExitCode() == 1) {
             // Should be the case of no such registry value or key
             String lookupString = "ERROR: The system was unable to find the specified registry key or value.";
             TKit.assertTextStream(lookupString)
