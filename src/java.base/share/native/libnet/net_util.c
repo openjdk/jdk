@@ -81,7 +81,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
      * supporting socket APIs are available
      */
     IPv4_available = IPv4_supported();
-    IPv6_available = IPv6_supported() & (!preferIPv4Stack);
+    IPv6_available = IPv6_supported() && !preferIPv4Stack;
 
     /* check if SO_REUSEPORT is supported on this platform */
     REUSEPORT_available = reuseport_supported(IPv6_available);

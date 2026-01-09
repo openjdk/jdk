@@ -53,9 +53,32 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
     CREATE_LINUX_DEB(StandardPackageType.LINUX_DEB, "^(?!(win-|mac-|linux-rpm-))", OperatingSystem.LINUX),
     CREATE_MAC_PKG(StandardPackageType.MAC_PKG, "^(?!(linux-|win-|mac-dmg-))", OperatingSystem.MACOS),
     CREATE_MAC_DMG(StandardPackageType.MAC_DMG, "^(?!(linux-|win-|mac-pkg-))", OperatingSystem.MACOS),
-    SIGN_MAC_APP_IMAGE(APP_IMAGE, OperatingSystem.MACOS, "sign");
+    SIGN_MAC_APP_IMAGE(APP_IMAGE, OperatingSystem.MACOS, Verb.SIGN);
 
-    StandardBundlingOperation(PackageType packageType, String optionNameRegexp, OperatingSystem os, String descriptorVerb) {
+    /**
+     * Supported values of the {@link BundlingOperationDescriptor#verb()} property.
+     */
+    private enum Verb {
+        CREATE(BundlingOperationDescriptor.VERB_CREATE_BUNDLE),
+        SIGN("sign"),
+        ;
+
+        Verb(String value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
+        String value() {
+            return value;
+        }
+
+        boolean createBundle() {
+            return this == CREATE;
+        }
+
+        private final String value;
+    }
+
+    StandardBundlingOperation(PackageType packageType, String optionNameRegexp, OperatingSystem os, Verb descriptorVerb) {
         this.packageType = Objects.requireNonNull(packageType);
         optionNamePredicate = Pattern.compile(optionNameRegexp).asPredicate();
         this.os = Objects.requireNonNull(os);
@@ -63,17 +86,17 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
     }
 
     StandardBundlingOperation(PackageType packageType, String optionNameRegexp, OperatingSystem os) {
-        this(packageType, optionNameRegexp, os, "create");
+        this(packageType, optionNameRegexp, os, Verb.CREATE);
     }
 
-    StandardBundlingOperation(PackageType packageType, OperatingSystem os, String descriptorVerb) {
+    StandardBundlingOperation(PackageType packageType, OperatingSystem os, Verb descriptorVerb) {
         this.packageType = Objects.requireNonNull(packageType);
         optionNamePredicate = v -> false;
         this.os = Objects.requireNonNull(os);
         this.descriptorVerb = Objects.requireNonNull(descriptorVerb);
     }
 
-    OperatingSystem os() {
+    public OperatingSystem os() {
         return os;
     }
 
@@ -89,9 +112,17 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
         return packageType;
     }
 
+    /**
+     * Returns {@code true} if this bundling operation will create a new bundle and
+     * {@code false} otherwise.
+     */
+    public boolean isCreateBundle() {
+        return descriptorVerb.createBundle();
+    }
+
     @Override
     public BundlingOperationDescriptor descriptor() {
-        return new BundlingOperationDescriptor(os(), packageTypeValue(), descriptorVerb);
+        return new BundlingOperationDescriptor(os(), packageTypeValue(), descriptorVerb.value());
     }
 
     public static Optional<StandardBundlingOperation> valueOf(BundlingOperationDescriptor descriptor) {
@@ -101,8 +132,15 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
         }).findFirst();
     }
 
-    static Stream<StandardBundlingOperation> ofPlatform(OperatingSystem os) {
+    public static Stream<StandardBundlingOperation> ofPlatform(OperatingSystem os) {
         return Stream.of(values()).filter(platform(os));
+    }
+
+    public static Predicate<StandardBundlingOperation> platform(OperatingSystem os) {
+        Objects.requireNonNull(os);
+        return op -> {
+            return  op.os() == os;
+        };
     }
 
     static Set<BundlingOperationOptionScope> fromOptionName(String optionName) {
@@ -110,13 +148,6 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
         return Stream.of(StandardBundlingOperation.values()).filter(v -> {
             return v.optionNamePredicate.test(optionName);
         }).collect(Collectors.toUnmodifiableSet());
-    }
-
-    static Predicate<StandardBundlingOperation> platform(OperatingSystem os) {
-        Objects.requireNonNull(os);
-        return op -> {
-            return  op.os() == os;
-        };
     }
 
     static Stream<StandardBundlingOperation> narrow(Stream<OptionScope> scope) {
@@ -145,8 +176,8 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
 
     static final Set<BundlingOperationOptionScope> LINUX = LINUX_CREATE_BUNDLE;
 
-    static final Set<BundlingOperationOptionScope> MACOS = SetBuilder.build(
-            BundlingOperationOptionScope.class).add(MACOS_CREATE_BUNDLE).add(SIGN_MAC_APP_IMAGE).create();
+    static final Set<BundlingOperationOptionScope> MACOS = SetBuilder.<BundlingOperationOptionScope>build(
+            ).add(MACOS_CREATE_BUNDLE).add(SIGN_MAC_APP_IMAGE).create();
 
     static final Set<BundlingOperationOptionScope> MACOS_APP_IMAGE = Set.of(
             SIGN_MAC_APP_IMAGE, CREATE_MAC_APP_IMAGE);
@@ -169,5 +200,5 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
     private final Predicate<String> optionNamePredicate;
     private final OperatingSystem os;
     private final PackageType packageType;
-    private final String descriptorVerb;
+    private final Verb descriptorVerb;
 }
