@@ -392,6 +392,7 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   assert(current != nullptr, "invariant");
   drain_enqueued_requests(now, tl, jt, current);
   if (tl->has_cpu_time_jfr_requests()) {
+    MutexUnlocker unlocker(tl->sample_monitor(), Monitor::_no_safepoint_check_flag);
     drain_enqueued_cpu_time_requests(now, tl, jt, current, true);
   }
 }

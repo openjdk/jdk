@@ -154,6 +154,14 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
 #endif
 
   static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, const void* user_data);
+
+  static void jvmti_report_stack_trace(bool biased,
+                                       jvmtiBeginStackTraceCallback begin_stack_trace_callback,
+                                       jvmtiEndStackTraceCallback end_stack_trace_callback,
+                                       jvmtiStackFrameCallback stack_frame_callback,
+                                       JfrStackTrace &stacktrace,
+                                       const void *user_data);
+
   static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, JfrStackTrace& stacktrace, const void* user_data);
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 

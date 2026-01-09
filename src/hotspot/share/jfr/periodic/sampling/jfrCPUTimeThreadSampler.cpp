@@ -34,6 +34,7 @@
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -442,6 +443,21 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, trac
 
 static volatile size_t biased_count = 0;
 
+void JfrCPUTimeThreadSampling::jvmti_report_stack_trace(bool biased, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, JfrStackTrace &stacktrace, const void *user_data) {
+  begin_stack_trace_callback(false, biased, user_data);
+  JfrStackFrames* frames = stacktrace._frames;
+  int num_frames = frames->length();
+  for (int i = 0; i < num_frames; i++) {
+    JfrStackFrame frame = frames->at(i);
+    jvmtiFrameType type = frame._type == JfrStackFrame::FRAME_NATIVE ? JVMTI_NATIVE_FRAME : JVMTI_JAVA_FRAME;
+    jlocation loc = frame._bci;
+    Method* method = JfrMethodLookup::lookup(frame._klass, frame._methodid);
+    jmethodID method_id = method->jmethod_id();
+    stack_frame_callback(type, method_id, loc, user_data);
+  }
+  end_stack_trace_callback(user_data);
+}
+
 void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased, bool jvmti, jvmtiBeginStackTraceCallback begin_stack_trace_callback, jvmtiEndStackTraceCallback end_stack_trace_callback, jvmtiStackFrameCallback stack_frame_callback, JfrStackTrace& stacktrace, const void* user_data) {
   if (!jvmti) {
     EventCPUTimeSample event(UNTIMED);
@@ -460,18 +476,17 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid si
       log_debug(jfr)("CPU thread sampler sent %zu events, lost %d, biased %zu\n", AtomicAccess::load(&count), AtomicAccess::load(&_lost_samples_sum), AtomicAccess::load(&biased_count));
     }
   } else {
-    begin_stack_trace_callback(false, biased, user_data);
-    JfrStackFrames* frames = stacktrace._frames;
-    int num_frames = frames->length();
-    for (int i = 0; i < num_frames; i++) {
-      JfrStackFrame frame = frames->at(i);
-      jvmtiFrameType type = frame._type == JfrStackFrame::FRAME_NATIVE ? JVMTI_NATIVE_FRAME : JVMTI_JAVA_FRAME;
-      jlocation loc = frame._bci;
-      Method* method = JfrMethodLookup::lookup(frame._klass, frame._methodid);
-      jmethodID method_id = method->jmethod_id();
-      stack_frame_callback(type, method_id, loc, user_data);
+    Thread* thread = Thread::current();
+    if (thread->is_Java_thread()) {
+      // A Java thread needs to transition to native (from ) before we can call into a callback.
+      // Notice that this involves a safepoint-check.
+      ThreadToNativeFromVM transition(JavaThread::current());
+      jvmti_report_stack_trace(biased, begin_stack_trace_callback, end_stack_trace_callback, stack_frame_callback, stacktrace,
+                               user_data);
+    } else {
+      jvmti_report_stack_trace(biased, begin_stack_trace_callback, end_stack_trace_callback, stack_frame_callback, stacktrace,
+                               user_data);
     }
-    end_stack_trace_callback(user_data);
   }
 }
 
