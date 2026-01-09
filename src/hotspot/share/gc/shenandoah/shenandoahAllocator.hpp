@@ -27,6 +27,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 
 #include "gc/shenandoah/shenandoahFreeSetPartitionId.hpp"
+#include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -34,7 +35,6 @@
 class ShenandoahFreeSet;
 class ShenandoahRegionPartitions;
 class ShenandoahHeapRegion;
-class ShenandoahAllocRequest;
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 class ShenandoahAllocator : public CHeapObj<mtGC> {
