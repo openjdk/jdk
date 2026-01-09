@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8354244
+ * @bug 8373134
  * @summary Verify that min/max add identity optimizations get applied correctly
  * @modules java.base/jdk.internal.misc
  * @modules jdk.incubator.vector
