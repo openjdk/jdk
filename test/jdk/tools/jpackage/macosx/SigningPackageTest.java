@@ -63,7 +63,8 @@ import jdk.jpackage.test.PackageType;
  * @requires (jpackage.test.SQETest != null)
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTest.test
- *  --jpt-before-run=SigningPackageTest.testSQE
+ *  --jpt-space-subst=*
+ *  --jpt-include=SigningPackageTest.test({--mac-signing-key-user-name:*CODESIGN},*{--mac-signing-key-user-name:*PKG},*MAC_DMG+MAC_PKG))
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 
@@ -84,42 +85,15 @@ import jdk.jpackage.test.PackageType;
 public class SigningPackageTest {
 
     @Test
-    @ParameterSupplier("allTestCases")
-    @ParameterSupplier("sqeTestCases")
+    @ParameterSupplier
     public static void test(TestSpec spec) {
         MacSign.withKeychain(_ -> {
             spec.test();
         }, spec.keychain());
     }
 
-    public static void testSQE() {
-        testSQE = true;
-    }
-
-    public static Collection<Object[]> allTestCases() {
-
-        if (testSQE) {
-            return List.of();
-        } else {
-            return TestSpec.testCases(true).stream().map(v -> {
-                return new Object[] {v};
-            }).toList();
-        }
-    }
-
-    public static Collection<Object[]> sqeTestCases() {
-
-        if (!testSQE) {
-            return List.of();
-        }
-
-        var signIdentityType = SignKeyOption.Type.SIGN_KEY_USER_NAME;
-        var appImageSignKeyOption = new SignKeyOption(signIdentityType,
-                SigningBase.StandardCertificateRequest.CODESIGN.resolveIn(SigningBase.StandardKeychain.MAIN));
-        var pkgSignKeyOption = new SignKeyOption(signIdentityType,
-                SigningBase.StandardCertificateRequest.PKG.resolveIn(SigningBase.StandardKeychain.MAIN));
-
-        return Stream.of(new TestSpec(Optional.of(appImageSignKeyOption), Optional.of(pkgSignKeyOption))).map(v -> {
+    public static Collection<Object[]> test() {
+        return TestSpec.testCases(true).stream().map(v -> {
             return new Object[] {v};
         }).toList();
     }
@@ -293,6 +267,4 @@ public class SigningPackageTest {
             }
         }
     }
-
-    private static boolean testSQE;
 }
