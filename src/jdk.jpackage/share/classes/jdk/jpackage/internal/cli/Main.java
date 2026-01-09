@@ -255,6 +255,7 @@ public final class Main {
         private void printExternalCommandError(UnexpectedResultException ex) {
             var result = ex.getResult();
             var commandOutput = ((ExecutableAttributesWithCapturedOutput)result.execAttrs()).printableOutput();
+            var printableCommandLine = result.execAttrs().printableCommandLine();
 
             if (verbose) {
                 stackTracePrinter.accept(ex);
@@ -262,11 +263,11 @@ public final class Main {
 
             String msg;
             if (ex instanceof UnexpectedExitCodeException) {
-                msg = I18N.format("error.command-failed-unexpected-exit-code", result.getExitCode(), result.execAttrs());
+                msg = I18N.format("error.command-failed-unexpected-exit-code", result.getExitCode(), printableCommandLine);
             } else if (result.exitCode().isPresent()) {
-                msg = I18N.format("error.command-failed-unexpected-output", result.execAttrs());
+                msg = I18N.format("error.command-failed-unexpected-output", printableCommandLine);
             } else {
-                msg = I18N.format("error.command-failed-timed-out", result.execAttrs());
+                msg = I18N.format("error.command-failed-timed-out", printableCommandLine);
             }
 
             messagePrinter.accept(I18N.format("message.error-header", msg));

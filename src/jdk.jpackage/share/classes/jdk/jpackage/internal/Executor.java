@@ -305,7 +305,7 @@ final class Executor {
         pid.ifPresent(p -> {
             sb.append(" [PID: ").append(p).append("]");
         });
-        sb.append(":\n    ").append(result.execAttrs());
+        sb.append(":\n    ").append(result.execAttrs().printableCommandLine());
         Log.verbose(sb.toString());
 
         if (!printableOutput.isEmpty()) {

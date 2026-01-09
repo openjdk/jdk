@@ -135,7 +135,8 @@ public class MainTest extends JUnitAdapter {
                     assertEquals(jpackageExitCode, result.exitCode());
                     assertEquals(List.of(), result.stdout());
                     assertEquals(List.of(
-                            I18N.format("message.error-header", I18N.format("error.command-failed-unexpected-exit-code", jlinkMockExitCode, jlinkMockAttrs)),
+                            I18N.format("message.error-header", I18N.format("error.command-failed-unexpected-exit-code",
+                                    jlinkMockExitCode, jlinkMockAttrs.printableCommandLine())),
                             I18N.format("message.failed-command-output-header"),
                             "It", "fell", "apart"), result.stderr());
 
@@ -523,15 +524,16 @@ public class MainTest extends JUnitAdapter {
 
             String getMessage(Exception ex) {
                 var result = failedCommandResult(ex);
+                var printableCommandLine = result.execAttrs().printableCommandLine();
                 switch (this) {
                     case TIMEDOUT -> {
-                        return I18N.format("error.command-failed-timed-out", result.execAttrs());
+                        return I18N.format("error.command-failed-timed-out", printableCommandLine);
                     }
                     case UNEXPECTED_EXIT_CODE -> {
-                        return I18N.format("error.command-failed-unexpected-exit-code", result.getExitCode(), result.execAttrs());
+                        return I18N.format("error.command-failed-unexpected-exit-code", result.getExitCode(), printableCommandLine);
                     }
                     case UNEXPECTED_OUTPUT -> {
-                        return I18N.format("error.command-failed-unexpected-output", result.execAttrs());
+                        return I18N.format("error.command-failed-unexpected-output", printableCommandLine);
                     }
                     default -> {
                         // Unreachable

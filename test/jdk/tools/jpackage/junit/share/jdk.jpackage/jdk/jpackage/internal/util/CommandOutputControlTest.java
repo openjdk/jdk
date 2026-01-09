@@ -277,13 +277,8 @@ public class CommandOutputControlTest {
 
         var execAttrs = new CommandOutputControl.ExecutableAttributes() {
             @Override
-            public String toString() {
-                return "foo";
-            }
-
-            @Override
             public List<String> commandLine() {
-                return List.of();
+                return List.of("foo");
             }
         };
 

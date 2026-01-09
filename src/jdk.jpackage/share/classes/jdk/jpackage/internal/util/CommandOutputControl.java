@@ -796,6 +796,10 @@ public final class CommandOutputControl {
 
     public interface ExecutableAttributes {
         List<String> commandLine();
+
+        default String printableCommandLine() {
+            return CommandLineFormat.DEFAULT.apply(commandLine());
+        }
     }
 
     public sealed interface Executable {
@@ -812,22 +816,12 @@ public final class CommandOutputControl {
             Objects.requireNonNull(pid);
             commandLine.forEach(Objects::requireNonNull);
         }
-
-        @Override
-        public String toString() {
-            return CommandLineFormat.DEFAULT.apply(commandLine());
-        }
     }
 
     public record ToolProviderAttributes(String name, List<String> args) implements ExecutableAttributes {
         public ToolProviderAttributes {
             Objects.requireNonNull(name);
             args.forEach(Objects::requireNonNull);
-        }
-
-        @Override
-        public String toString() {
-            return CommandLineFormat.DEFAULT.apply(commandLine());
         }
 
         @Override
@@ -838,13 +832,8 @@ public final class CommandOutputControl {
 
     public static ExecutableAttributes EMPTY_EXECUTABLE_ATTRIBUTES = new ExecutableAttributes() {
         @Override
-        public String toString() {
-            return "<unknown>";
-        }
-
-        @Override
         public List<String> commandLine() {
-            return List.of();
+            return List.of("<unknown>");
         }
     };
 
@@ -1064,7 +1053,8 @@ public final class CommandOutputControl {
         }
 
         private UnexpectedResultException(Result value) {
-            this(value, String.format("Unexpected result from executing the command %s", value.execAttrs()));
+            this(value, String.format("Unexpected result from executing the command %s",
+                    value.execAttrs().printableCommandLine()));
         }
 
         public Result getResult() {
@@ -1084,7 +1074,7 @@ public final class CommandOutputControl {
 
         public UnexpectedExitCodeException(Result value) {
             this(value, String.format("Unexpected exit code %d from executing the command %s",
-                    requireExitCode(value).getExitCode(), value.execAttrs()));
+                    requireExitCode(value).getExitCode(), value.execAttrs().printableCommandLine()));
         }
 
         private static Result requireExitCode(Result v) {

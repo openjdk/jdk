@@ -42,11 +42,6 @@ public record ExecutableAttributesWithCapturedOutput(ExecutableAttributes execAt
     }
 
     @Override
-    public String toString() {
-        return execAttrs.toString();
-    }
-
-    @Override
     public List<String> commandLine() {
         return execAttrs.commandLine();
     }
