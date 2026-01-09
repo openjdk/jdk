@@ -620,10 +620,24 @@ public final class MacHelper {
         }
 
         public enum Type {
-            SIGN_KEY_USER_NAME,
+            /**
+             * "--mac-signing-key-user-name" option with the short user name, e.g.:
+             * {@code --mac-signing-key-user-name foo}
+             */
+            SIGN_KEY_USER_SHORT_NAME,
+
+            /**
+             * "--mac-installer-sign-identity" or "--mac-app-image-sign-identity" option
+             * with the signing identity name, e.g.:
+             * {@code --mac-app-image-sign-identity 'Developer ID Application: foo'}
+             */
             SIGN_KEY_IDENTITY,
-            SIGN_KEY_IMPLICIT,
-            ;
+
+            /**
+             * No explicit option specifying signing identity. jpackage will pick one from
+             * the specified keychain.
+             */
+            SIGN_KEY_IMPLICIT,;
         }
 
         @Override
@@ -670,7 +684,7 @@ public final class MacHelper {
                             sink.accept("--mac-installer-sign-identity", certRequest.name());
                             return;
                         }
-                        case SIGN_KEY_USER_NAME -> {
+                        case SIGN_KEY_USER_SHORT_NAME -> {
                             sink.accept("--mac-signing-key-user-name", certRequest.shortName());
                             return;
                         }
@@ -686,7 +700,7 @@ public final class MacHelper {
                             sink.accept("--mac-app-image-sign-identity", certRequest.name());
                             return;
                         }
-                        case SIGN_KEY_USER_NAME -> {
+                        case SIGN_KEY_USER_SHORT_NAME -> {
                             sink.accept("--mac-signing-key-user-name", certRequest.shortName());
                             return;
                         }

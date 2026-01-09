@@ -245,7 +245,7 @@ public class SigningPackageTest {
                             data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.empty(), PackageType.MAC));
                             data.add(new TestSpec(Optional.empty(), Optional.of(pkgSignKeyOption), PackageType.MAC_PKG));
                         }
-                        case SIGN_KEY_USER_NAME, SIGN_KEY_IMPLICIT -> {
+                        case SIGN_KEY_USER_SHORT_NAME, SIGN_KEY_IMPLICIT -> {
                             // Use "--mac-signing-key-user-name" signing option or implicit signing option.
                             // It signs both the packaged app image and the installer (.pkg).
                             // Thus, if the installer is not signed, it can be used only with .dmg packaging.

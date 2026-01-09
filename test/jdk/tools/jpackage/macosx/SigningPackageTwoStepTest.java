@@ -85,7 +85,7 @@ public class SigningPackageTwoStepTest {
                 // This way we can test if jpackage keeps or replaces the signature of
                 // the predefined app image bundle when backing it in the pkg or dmg installer.
                 appImageSignOption = Optional.of(new SignKeyOption(
-                        SignKeyOption.Type.SIGN_KEY_USER_NAME,
+                        SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
                         SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.resolveIn(SigningBase.StandardKeychain.MAIN)));
             } else {
                 appImageSignOption = Optional.empty();
