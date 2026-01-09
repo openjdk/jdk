@@ -41,7 +41,6 @@ public:
   void do_thread(Thread* thr) {
     JavaThread* current = JavaThread::cast(thr);
     assert(current == Thread::current(), "Must be self executed.");
-    assert(!current->is_vthread_transition_disabler(), "DBG-TMP");
     JavaThreadState jts = current->thread_state();
 
     current->set_thread_state(_thread_blocked);
@@ -134,6 +133,7 @@ void SuspendResumeManager::do_owner_suspend() {
 
   while (is_suspended()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_target));
+    assert(!_target->is_vthread_transition_disabler(), "attempt to suspend a vthread transition disabler");
     _state_lock->wait_without_safepoint_check();
   }
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " resumed", p2i(_target));
