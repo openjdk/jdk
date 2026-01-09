@@ -189,7 +189,6 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   }
 
   ShenandoahOldGeneration* const old_gen = _heap->old_generation();
-  ShenandoahYoungGeneration* const young_gen = _heap->young_generation();
 
   // Rebuild the remembered set information and mark the entire range as DIRTY.  We do NOT scan the content of this
   // range to determine which cards need to be DIRTY.  That would force us to scan the region twice, once now, and

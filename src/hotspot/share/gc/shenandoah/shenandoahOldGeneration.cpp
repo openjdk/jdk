@@ -632,8 +632,9 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
 
 void ShenandoahOldGeneration::update_card_table() {
   for_each_region([this](ShenandoahHeapRegion* region) {
-    if (region->is_regular()) {
+    if (region->is_regular() && region->get_top_before_promote() == nullptr) {
       // Humongous regions are promoted in place, remembered set maintenance is handled there
+      // Regular regions that are promoted in place also have their rset maintenance handled elsewhere
       _card_scan->update_card_table(region->get_top_at_evac_start(), region->top());
     }
   });
