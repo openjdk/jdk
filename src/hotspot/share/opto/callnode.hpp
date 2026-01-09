@@ -758,6 +758,7 @@ public:
   virtual uint match_edge(uint idx) const;
 
   bool is_call_to_arraycopystub() const;
+  bool is_call_to_multianewarray_stub() const;
 
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
