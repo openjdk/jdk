@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,14 @@ import java.util.stream.IntStream;
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
 import compiler.lib.ir_framework.Test;
-
 import compiler.lib.compile_framework.*;
 import compiler.lib.generators.Generators;
-
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
+import compiler.lib.template_framework.library.TestFrameworkClass;
+
 import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
-
-import compiler.lib.template_framework.library.TestFrameworkClass;
 
 public class TestConstantMultiplier {
 
@@ -75,6 +73,7 @@ public class TestConstantMultiplier {
                 public static Random RANDOM = new Random(1023);
                 public static int [] memI;
                 public static long [] memL;
+                public static int ITER = 15000;
 
                 static {
                     memL = new long[512];
@@ -96,10 +95,14 @@ public class TestConstantMultiplier {
                             return num * #{multiplier};
                         }
 
-                        @Run(test = "testMultBy#{multiplier}I")
+                        @Run(test = "testMultBy#{multiplier}I", mode = RunMode.STANDALONE)
                         private static void runMultBy#{multiplier}I() {
                             int multiplicand = RANDOM.nextInt();
-                            Verify.checkEQ(#{multiplier} * multiplicand, testMultBy#{multiplier}I(multiplicand));
+                            int res = 0;
+                            for (int i = 0; i < ITER; i++) {
+                                res += testMultBy#{multiplier}I(multiplicand);
+                            }
+                            Verify.checkEQ(#{multiplier} * multiplicand * ITER, res);
                         }
 
                         @Test
@@ -108,10 +111,14 @@ public class TestConstantMultiplier {
                             return num * #{multiplier};
                         }
 
-                        @Run(test = "testMultBy#{multiplier}L")
+                        @Run(test = "testMultBy#{multiplier}L", mode = RunMode.STANDALONE)
                         private static void runMultBy#{multiplier}L() {
                             long multiplicand = RANDOM.nextInt();
-                            Verify.checkEQ(#{multiplier} * multiplicand, testMultBy#{multiplier}L(multiplicand));
+                            long res = 0;
+                            for (int i = 0; i < ITER; i++) {
+                                res += testMultBy#{multiplier}L(multiplicand);
+                            }
+                            Verify.checkEQ(#{multiplier} * multiplicand * ITER, res);
                         }
                     """
             )).toList()
@@ -128,10 +135,14 @@ public class TestConstantMultiplier {
                             return memI[index] * #{multiplier};
                         }
 
-                        @Run(test = "testMultBy#{multiplier}I_mem")
+                        @Run(test = "testMultBy#{multiplier}I_mem", mode = RunMode.STANDALONE)
                         private static void runMultBy#{multiplier}I_mem() {
                             int index = RANDOM.nextInt(memI.length);
-                            Verify.checkEQ(#{multiplier} * memI[index], testMultBy#{multiplier}I_mem(index));
+                            int res = 0;
+                            for (int i = 0; i < ITER; i++) {
+                                res += testMultBy#{multiplier}I_mem(index);
+                            }
+                            Verify.checkEQ(#{multiplier} * memI[index] * ITER, res);
                         }
 
                         @Test
@@ -140,10 +151,14 @@ public class TestConstantMultiplier {
                             return memL[index] * #{multiplier};
                         }
 
-                        @Run(test = "testMultBy#{multiplier}L_mem")
+                        @Run(test = "testMultBy#{multiplier}L_mem", mode = RunMode.STANDALONE)
                         private static void runMultBy#{multiplier}L_mem() {
                             int index = RANDOM.nextInt(memL.length);
-                            Verify.checkEQ(#{multiplier} * memL[index], testMultBy#{multiplier}L_mem(index));
+                            long res = 0;
+                            for (int i = 0; i < ITER; i++) {
+                                res += testMultBy#{multiplier}L_mem(index);
+                            }
+                            Verify.checkEQ(#{multiplier} * memL[index] * ITER, res);
                         }
                     """
             )).toList()
