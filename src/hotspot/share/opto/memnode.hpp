@@ -793,7 +793,9 @@ public:
 class SCMemProjNode : public ProjNode {
 public:
   enum {SCMEMPROJCON = (uint)-2};
-  SCMemProjNode( Node *src) : ProjNode( src, SCMEMPROJCON) { }
+  SCMemProjNode( Node *src) : ProjNode( src, SCMEMPROJCON) {
+    init_class_id(Class_SCMemProj);
+  }
   virtual int Opcode() const;
   virtual bool      is_CFG() const  { return false; }
   virtual const Type *bottom_type() const {return Type::MEMORY;}

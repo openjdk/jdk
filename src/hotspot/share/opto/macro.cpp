@@ -261,6 +261,12 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   }
 }
 
+bool may_alias_at_offset(const TypePtr* ptr_ty, const int alias_idx, const intptr_t offset, const PhaseGVN* phase) {
+  const int ptr_alias_idx = phase->C->get_alias_index(ptr_ty);
+  return (offset == Type::OffsetBot || ptr_ty->offset() == Type::OffsetBot) ||
+         (alias_idx == ptr_alias_idx && offset == ptr_ty->offset());
+}
+
 // Scan the memory graph upwards from a starting node to an arraycopy. Given an elemnt from the destination array,
 // check whether the element from the source array that was copied into the given destination element is modified
 // after the arraycopy. This assumes that the destination array is scalar replacable but the source is not.
@@ -294,6 +300,9 @@ bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* 
       }
 
       return false;
+    } else if (proj->in(0)->is_MemBar()) {
+      // Step through projections after mem bars.
+      return src_elem_not_modified_after_arraycopy(ac, start, proj->in(0), offset, phase, phis, level);
     }
   } else if (const MergeMemNode* mm = mem->isa_MergeMem(); mm != nullptr) {
     return src_elem_not_modified_after_arraycopy(ac, start, mm->memory_at(src_alias_idx), offset, phase, phis, level) &&
@@ -301,7 +310,8 @@ bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* 
   } else if (const StoreNode* store = mem->isa_Store(); store != nullptr) {
     const TypePtr* store_ptr_ty = store->adr_type();
     const int store_alias_idx = phase->C->get_alias_index(store_ptr_ty);
-    if (store_alias_idx != src_alias_idx || offset == Type::OffsetBot || store_ptr_ty->offset() == Type::OffsetBot || offset != store_ptr_ty->offset()) {
+    //if (store_alias_idx != src_alias_idx || offset == Type::OffsetBot || store_ptr_ty->offset() == Type::OffsetBot || offset != store_ptr_ty->offset()) {
+    if (!may_alias_at_offset(store_ptr_ty, src_alias_idx, offset, phase)) {
       return src_elem_not_modified_after_arraycopy(ac, start, store->in(StoreNode::Memory), offset, phase, phis, level);
     }
 
@@ -320,9 +330,19 @@ bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* 
       result &= src_elem_not_modified_after_arraycopy(ac, start, phi->in(i), offset, phase, phis, level - 1);
     }
     return result;
+  } else if (const LoadStoreNode* ls = mem->isa_LoadStore(); ls != nullptr) {
+    if (!may_alias_at_offset(ls->adr_type(), src_alias_idx, offset, phase)) {
+      return src_elem_not_modified_after_arraycopy(ac, start, ls->in(MemNode::Memory), offset, phase, phis, level);
+    }
+  } else if (const MemBarNode* mbar = mem->isa_MemBar(); mbar != nullptr) {
+    // step trough
+    return src_elem_not_modified_after_arraycopy(ac, start, mbar->in(2), offset, phase, phis, level);
+  } else if (const SCMemProjNode* scmem = proj->isa_SCMemProj(); scmem != nullptr) {
+    // Step through because it does not have the correct adr_type.
+    return src_elem_not_modified_after_arraycopy(ac, start, scmem->in(0), offset, phase, phis, level);
   }
+
   // TODO: clear array nodes
-  // TODO: SCMemProj nodes
   // TODO: StrInflatedCopy
 
   return false;
