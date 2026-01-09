@@ -807,6 +807,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             } finally {
                 defaultToolProvider.set(oldValue);
             }
+            // Run the future in a new native thread. Don't run it in a virtual/pooled thread.
+            // Pooled and/or virtual threads are problematic when used with inheritable thread-local variables.
+            // TKit class depends on such a variable, which results in intermittent test failures
+            // if the default executor runs this future.
         }, Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())).join();
     }
 
