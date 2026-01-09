@@ -43,6 +43,7 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -337,9 +338,9 @@ bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* 
   } else if (const MemBarNode* mbar = mem->isa_MemBar(); mbar != nullptr) {
     // step trough
     return src_elem_not_modified_after_arraycopy(ac, start, mbar->in(2), offset, phase, phis, level);
-  } else if (const SCMemProjNode* scmem = proj->isa_SCMemProj(); scmem != nullptr) {
+  } else if (mem->Opcode() == Op_SCMemProj) {
     // Step through because it does not have the correct adr_type.
-    return src_elem_not_modified_after_arraycopy(ac, start, scmem->in(0), offset, phase, phis, level);
+    return src_elem_not_modified_after_arraycopy(ac, start, mem->in(0), offset, phase, phis, level);
   }
 
   // TODO: clear array nodes
