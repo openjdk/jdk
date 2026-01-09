@@ -262,12 +262,6 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   }
 }
 
-bool may_alias_at_offset(const TypePtr* ptr_ty, const int alias_idx, const intptr_t offset, const PhaseGVN* phase) {
-  const int ptr_alias_idx = phase->C->get_alias_index(ptr_ty);
-  return (offset == Type::OffsetBot || ptr_ty->offset() == Type::OffsetBot) ||
-         (alias_idx == ptr_alias_idx && offset == ptr_ty->offset());
-}
-
 // Scan the memory graph breadth first from a starting node up to an arraycopy. Given an elemnt from the destination array,
 // check whether the element from the source array that was copied into the given destination element is modified after the
 // arraycopy. This assumes that the destination array is scalar replacable but makes no assumption for the source.
@@ -318,7 +312,10 @@ bool src_elem_modified_after_arraycopy(const ArrayCopyNode* ac, Node* start, con
       to_visit.push(call->memory());
     } else if (mem->is_Store() || mem->isa_LoadStore()) {
       // Step through (load)store if it does not modify the source element.
-      if (may_alias_at_offset(mem->adr_type(), src_alias_idx, src_offset, phase)) {
+      const TypePtr* ptr_ty = mem->adr_type();
+      const int ptr_alias_idx = phase->C->get_alias_index(ptr_ty);
+      if (src_offset == Type::OffsetBot || ptr_ty->offset() == Type::OffsetBot ||
+          (src_alias_idx == ptr_alias_idx && src_offset == ptr_ty->offset())) {
         return true;
       }
       to_visit.push(mem->in(MemNode::Memory));
