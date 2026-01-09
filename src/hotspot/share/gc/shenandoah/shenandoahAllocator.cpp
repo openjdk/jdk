@@ -122,7 +122,7 @@ template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region, uint regions_ready_for_refresh, uint32_t old_epoch_id) {
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
   HeapWord* obj = nullptr;
-  if (old_epoch_id != AtomicAccess::load(&_epoch_id)) {
+  if (old_epoch_id != _epoch_id) {
     // After taking heap lock, attempt to allocate in shared alloc regions again
     // if alloc regions have been refreshed by other thread while current thread waits to take heap lock.
     regions_ready_for_refresh = 0u; //reset regions_ready_for_refresh to 0.
@@ -203,7 +203,8 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_in_alloc_regi
       if (obj != nullptr) {
         return obj;
       }
-    } else if (r == nullptr || !r->is_active_alloc_region()) {
+    } else {
+      // Empty shared alloc region slot is always ready for refresh
       regions_ready_for_refresh++;
     }
     if (++i == _alloc_region_count) {
@@ -266,11 +267,9 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
     ShenandoahAllocRegion* alloc_region = &_alloc_regions[i];
     ShenandoahHeapRegion* region = alloc_region->address;
     const size_t free_bytes = region == nullptr ? 0 : region->free();
-    if (region == nullptr ||  !region->is_active_alloc_region() || free_bytes / HeapWordSize < PLAB::min_size()) {
+    if (region == nullptr || free_bytes / HeapWordSize < PLAB::min_size()) {
       if (region != nullptr) {
-        if (region->is_active_alloc_region()) {
-          region->unset_active_alloc_region();
-        }
+        region->unset_active_alloc_region();
         log_debug(gc, alloc)("%sAllocator: Removing heap region %li from alloc region %i.",
           _alloc_partition_name, region->index(), alloc_region->alloc_region_index);
         AtomicAccess::store(&alloc_region->address, static_cast<ShenandoahHeapRegion*>(nullptr));
@@ -353,10 +352,8 @@ void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
     if (r != nullptr) {
       log_debug(gc, alloc)("%sAllocator: Releasing heap region %li from alloc region %i",
         _alloc_partition_name, r->index(), i);
-      if (r->is_active_alloc_region()) {
-        r->unset_active_alloc_region();
-      }
-      AtomicAccess::store(&alloc_region.address, static_cast<ShenandoahHeapRegion*>(nullptr));
+      r->unset_active_alloc_region();
+      alloc_region.address = nullptr;
       size_t free_bytes = r->free();
       if (free_bytes >= PLAB::min_size_bytes()) {
         total_free_bytes += free_bytes;

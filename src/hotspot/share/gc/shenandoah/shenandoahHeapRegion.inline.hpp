@@ -170,7 +170,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
   assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
 
   ShenandoahHeapRegionReadyForRetireChecker retire_checker(ready_for_retire);
-  for (;;) {
+  for (;/*Always return in the loop*/;) {
     HeapWord* obj = top();
     size_t free_words = pointer_delta( end(), obj);
     if (free_words >= size) {
@@ -193,7 +193,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
   assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
 
   ShenandoahHeapRegionReadyForRetireChecker retire_checker(ready_for_retire);
-  for (;;) {
+  for (;/*Always return in the loop*/;) {
     size_t adjusted_size = req.size();
     HeapWord* obj = top();
     size_t free_words = pointer_delta(end(), obj);
