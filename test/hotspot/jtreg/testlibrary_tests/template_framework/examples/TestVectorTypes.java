@@ -101,8 +101,8 @@ public class TestVectorTypes {
                     Verify.checkEQ(vector.length(), #length);
                     Verify.checkEQ(vector.lane(#length-1), scalar);
 
-                    #type v1 = zeros.add(vector, mask);
-                    #type v2 = zeros.blend(vector, mask);
+                    #type v1 = zeros.blend(vector, mask);
+                    #type v2 = vector.blend(zeros, mask.not());
                     Verify.checkEQ(v1, v2);
 
                     #type iota = zeros.addIndex(1);
