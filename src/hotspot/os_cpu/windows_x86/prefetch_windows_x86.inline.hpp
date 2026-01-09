@@ -25,6 +25,7 @@
 #ifndef OS_CPU_WINDOWS_X86_PREFETCH_WINDOWS_X86_INLINE_HPP
 #define OS_CPU_WINDOWS_X86_PREFETCH_WINDOWS_X86_INLINE_HPP
 
+// Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read (const void *loc, intx interval) {}
 inline void Prefetch::write(void *loc, intx interval) {}

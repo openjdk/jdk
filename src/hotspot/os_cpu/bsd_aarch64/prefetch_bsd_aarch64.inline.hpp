@@ -27,6 +27,7 @@
 #ifndef OS_CPU_BSD_AARCH64_PREFETCH_BSD_AARCH64_INLINE_HPP
 #define OS_CPU_BSD_AARCH64_PREFETCH_BSD_AARCH64_INLINE_HPP
 
+// Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read (const void *loc, intx interval) {
   if (interval >= 0)

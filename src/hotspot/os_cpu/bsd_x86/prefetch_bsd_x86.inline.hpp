@@ -25,6 +25,7 @@
 #ifndef OS_CPU_BSD_X86_PREFETCH_BSD_X86_INLINE_HPP
 #define OS_CPU_BSD_X86_PREFETCH_BSD_X86_INLINE_HPP
 
+// Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read (const void *loc, intx interval) {
   __asm__ ("prefetcht0 (%0,%1,1)" : : "r" (loc), "r" (interval));

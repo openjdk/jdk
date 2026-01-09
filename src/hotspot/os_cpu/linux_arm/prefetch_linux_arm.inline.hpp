@@ -25,6 +25,7 @@
 #ifndef OS_CPU_LINUX_ARM_PREFETCH_LINUX_ARM_INLINE_HPP
 #define OS_CPU_LINUX_ARM_PREFETCH_LINUX_ARM_INLINE_HPP
 
+// Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read (const void *loc, intx interval) {
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_6__) || defined(__ARM_ARCH_5TE__)
