@@ -5429,8 +5429,7 @@ void PhaseIdealLoop::build_and_optimize() {
   if (!C->major_progress()) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      // todo do I need is_counted?
-      if (lpt->is_innermost() && lpt->is_counted()) {
+      if (lpt->is_innermost()) {
         Node* loop_head = lpt->head();
 
         // Look for loop head uses that are Phi
