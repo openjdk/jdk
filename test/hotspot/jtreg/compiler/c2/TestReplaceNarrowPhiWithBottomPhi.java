@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @bug 8370200
+ * @bug 8370200 8374195
+ * @requires (os.arch != "ppc64") & (os.arch != "ppc64le")
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
