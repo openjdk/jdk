@@ -96,9 +96,11 @@ public:
 EpsilonMonitoringSupport::EpsilonMonitoringSupport(EpsilonHeap* heap) {
   _heap_counters  = new EpsilonGenerationCounters(heap);
   _space_counters = new EpsilonSpaceCounters("Heap", 0, heap->max_capacity(), 0, _heap_counters);
+  _ready = false;
 }
 
 void EpsilonMonitoringSupport::update_counters() {
+  assert(is_ready(), "Must be ready");
   MemoryService::track_memory_usage();
 
   if (UsePerfData) {
@@ -109,4 +111,12 @@ void EpsilonMonitoringSupport::update_counters() {
     _space_counters->update_all(capacity, used);
     MetaspaceCounters::update_performance_counters();
   }
+}
+
+bool EpsilonMonitoringSupport::is_ready() {
+  return AtomicAccess::load_acquire(&_ready);
+}
+
+void EpsilonMonitoringSupport::mark_ready() {
+  return AtomicAccess::release_store(&_ready, true);
 }
