@@ -66,9 +66,10 @@ import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.ParsePosition;
 import java.time.LocalDate;
@@ -95,19 +96,22 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test DateTimeFormatterBuilder.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDateTimeFormatterBuilder {
 
     private DateTimeFormatterBuilder builder;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         builder = new DateTimeFormatterBuilder();
     }
@@ -116,7 +120,7 @@ public class TestDateTimeFormatterBuilder {
     @Test
     public void test_toFormatter_empty() throws Exception {
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "");
+        assertEquals("", f.toString());
     }
 
     //-----------------------------------------------------------------------
@@ -124,14 +128,14 @@ public class TestDateTimeFormatterBuilder {
     public void test_parseCaseSensitive() throws Exception {
         builder.parseCaseSensitive();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ParseCaseSensitive(true)");
+        assertEquals("ParseCaseSensitive(true)", f.toString());
     }
 
     @Test
     public void test_parseCaseInsensitive() throws Exception {
         builder.parseCaseInsensitive();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ParseCaseSensitive(false)");
+        assertEquals("ParseCaseSensitive(false)", f.toString());
     }
 
     //-----------------------------------------------------------------------
@@ -139,14 +143,14 @@ public class TestDateTimeFormatterBuilder {
     public void test_parseStrict() throws Exception {
         builder.parseStrict();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ParseStrict(true)");
+        assertEquals("ParseStrict(true)", f.toString());
     }
 
     @Test
     public void test_parseLenient() throws Exception {
         builder.parseLenient();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ParseStrict(false)");
+        assertEquals("ParseStrict(false)", f.toString());
     }
 
     //-----------------------------------------------------------------------
@@ -154,12 +158,12 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendValue_1arg() throws Exception {
         builder.appendValue(DAY_OF_MONTH);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(DayOfMonth)");
+        assertEquals("Value(DayOfMonth)", f.toString());
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendValue_1arg_null() throws Exception {
-        builder.appendValue(null);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValue(null));
     }
 
     //-----------------------------------------------------------------------
@@ -167,22 +171,22 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendValue_2arg() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 3);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(DayOfMonth,3)");
+        assertEquals("Value(DayOfMonth,3)", f.toString());
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendValue_2arg_null() throws Exception {
-        builder.appendValue(null, 3);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValue(null, 3));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendValue_2arg_widthTooSmall() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 0);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 0));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendValue_2arg_widthTooBig() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 20);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 20));
     }
 
     //-----------------------------------------------------------------------
@@ -190,42 +194,42 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendValue_3arg() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 2, 3, SignStyle.NORMAL);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(DayOfMonth,2,3,NORMAL)");
+        assertEquals("Value(DayOfMonth,2,3,NORMAL)", f.toString());
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendValue_3arg_nullField() throws Exception {
-        builder.appendValue(null, 2, 3, SignStyle.NORMAL);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValue(null, 2, 3, SignStyle.NORMAL));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendValue_3arg_minWidthTooSmall() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 0, 2, SignStyle.NORMAL);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 0, 2, SignStyle.NORMAL));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendValue_3arg_minWidthTooBig() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 20, 2, SignStyle.NORMAL);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 20, 2, SignStyle.NORMAL));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendValue_3arg_maxWidthTooSmall() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 2, 0, SignStyle.NORMAL);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 2, 0, SignStyle.NORMAL));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendValue_3arg_maxWidthTooBig() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 2, 20, SignStyle.NORMAL);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 2, 20, SignStyle.NORMAL));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendValue_3arg_maxWidthMinWidth() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 4, 2, SignStyle.NORMAL);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendValue(DAY_OF_MONTH, 4, 2, SignStyle.NORMAL));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendValue_3arg_nullSignStyle() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 2, 3, null);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValue(DAY_OF_MONTH, 2, 3, null));
     }
 
     //-----------------------------------------------------------------------
@@ -233,30 +237,30 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendValue_subsequent2_parse3() throws Exception {
         builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValue(DAY_OF_MONTH, 2);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)");
+        assertEquals("Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)", f.toString());
         TemporalAccessor parsed = f.parseUnresolved("123", new ParsePosition(0));
-        assertEquals(parsed.getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(parsed.getLong(DAY_OF_MONTH), 23L);
+        assertEquals(1L, parsed.getLong(MONTH_OF_YEAR));
+        assertEquals(23L, parsed.getLong(DAY_OF_MONTH));
     }
 
     @Test
     public void test_appendValue_subsequent2_parse4() throws Exception {
         builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValue(DAY_OF_MONTH, 2);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)");
+        assertEquals("Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)", f.toString());
         TemporalAccessor parsed = f.parseUnresolved("0123", new ParsePosition(0));
-        assertEquals(parsed.getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(parsed.getLong(DAY_OF_MONTH), 23L);
+        assertEquals(1L, parsed.getLong(MONTH_OF_YEAR));
+        assertEquals(23L, parsed.getLong(DAY_OF_MONTH));
     }
 
     @Test
     public void test_appendValue_subsequent2_parse5() throws Exception {
         builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValue(DAY_OF_MONTH, 2).appendLiteral('4');
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)'4'");
+        assertEquals("Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)'4'", f.toString());
         TemporalAccessor parsed = f.parseUnresolved("01234", new ParsePosition(0));
-        assertEquals(parsed.getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(parsed.getLong(DAY_OF_MONTH), 23L);
+        assertEquals(1L, parsed.getLong(MONTH_OF_YEAR));
+        assertEquals(23L, parsed.getLong(DAY_OF_MONTH));
     }
 
     @Test
@@ -266,38 +270,38 @@ public class TestDateTimeFormatterBuilder {
             .appendValue(MONTH_OF_YEAR, 2)
             .appendValue(DAY_OF_MONTH, 2);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(Year,4,10,EXCEEDS_PAD)Value(MonthOfYear,2)Value(DayOfMonth,2)");
+        assertEquals("Value(Year,4,10,EXCEEDS_PAD)Value(MonthOfYear,2)Value(DayOfMonth,2)", f.toString());
         TemporalAccessor parsed = f.parseUnresolved("20090630", new ParsePosition(0));
-        assertEquals(parsed.getLong(YEAR), 2009L);
-        assertEquals(parsed.getLong(MONTH_OF_YEAR), 6L);
-        assertEquals(parsed.getLong(DAY_OF_MONTH), 30L);
+        assertEquals(2009L, parsed.getLong(YEAR));
+        assertEquals(6L, parsed.getLong(MONTH_OF_YEAR));
+        assertEquals(30L, parsed.getLong(DAY_OF_MONTH));
     }
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendValueReduced_null() throws Exception {
-        builder.appendValueReduced(null, 2, 2, 2000);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendValueReduced(null, 2, 2, 2000));
     }
 
     @Test
     public void test_appendValueReduced() throws Exception {
         builder.appendValueReduced(YEAR, 2, 2, 2000);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ReducedValue(Year,2,2,2000)");
+        assertEquals("ReducedValue(Year,2,2,2000)", f.toString());
         TemporalAccessor parsed = f.parseUnresolved("12", new ParsePosition(0));
-        assertEquals(parsed.getLong(YEAR), 2012L);
+        assertEquals(2012L, parsed.getLong(YEAR));
     }
 
     @Test
     public void test_appendValueReduced_subsequent_parse() throws Exception {
         builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValueReduced(YEAR, 2, 2, 2000);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)ReducedValue(Year,2,2,2000)");
+        assertEquals("Value(MonthOfYear,1,2,NORMAL)ReducedValue(Year,2,2,2000)", f.toString());
         ParsePosition ppos = new ParsePosition(0);
         TemporalAccessor parsed = f.parseUnresolved("123", ppos);
         assertNotNull(parsed, "Parse failed: " + ppos.toString());
-        assertEquals(parsed.getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(parsed.getLong(YEAR), 2023L);
+        assertEquals(1L, parsed.getLong(MONTH_OF_YEAR));
+        assertEquals(2023L, parsed.getLong(YEAR));
     }
 
     //-----------------------------------------------------------------------
@@ -307,42 +311,42 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendFraction_4arg() throws Exception {
         builder.appendFraction(MINUTE_OF_HOUR, 1, 9, false);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Fraction(MinuteOfHour,1,9)");
+        assertEquals("Fraction(MinuteOfHour,1,9)", f.toString());
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendFraction_4arg_nullRule() throws Exception {
-        builder.appendFraction(null, 1, 9, false);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendFraction(null, 1, 9, false));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendFraction_4arg_invalidRuleNotFixedSet() throws Exception {
-        builder.appendFraction(DAY_OF_MONTH, 1, 9, false);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(DAY_OF_MONTH, 1, 9, false));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendFraction_4arg_minTooSmall() throws Exception {
-        builder.appendFraction(MINUTE_OF_HOUR, -1, 9, false);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, -1, 9, false));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendFraction_4arg_minTooBig() throws Exception {
-        builder.appendFraction(MINUTE_OF_HOUR, 10, 9, false);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, 10, 9, false));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendFraction_4arg_maxTooSmall() throws Exception {
-        builder.appendFraction(MINUTE_OF_HOUR, 0, -1, false);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, 0, -1, false));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendFraction_4arg_maxTooBig() throws Exception {
-        builder.appendFraction(MINUTE_OF_HOUR, 1, 10, false);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, 1, 10, false));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_appendFraction_4arg_maxWidthMinWidth() throws Exception {
-        builder.appendFraction(MINUTE_OF_HOUR, 9, 3, false);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendFraction(MINUTE_OF_HOUR, 9, 3, false));
     }
 
     //-----------------------------------------------------------------------
@@ -352,12 +356,12 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendText_1arg() throws Exception {
         builder.appendText(MONTH_OF_YEAR);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Text(MonthOfYear)");
+        assertEquals("Text(MonthOfYear)", f.toString());
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendText_1arg_null() throws Exception {
-        builder.appendText(null);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(null));
     }
 
     //-----------------------------------------------------------------------
@@ -365,17 +369,17 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendText_2arg() throws Exception {
         builder.appendText(MONTH_OF_YEAR, TextStyle.SHORT);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Text(MonthOfYear,SHORT)");
+        assertEquals("Text(MonthOfYear,SHORT)", f.toString());
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendText_2arg_nullRule() throws Exception {
-        builder.appendText(null, TextStyle.SHORT);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(null, TextStyle.SHORT));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendText_2arg_nullStyle() throws Exception {
-        builder.appendText(MONTH_OF_YEAR, (TextStyle) null);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(MONTH_OF_YEAR, (TextStyle) null));
     }
 
     //-----------------------------------------------------------------------
@@ -396,17 +400,17 @@ public class TestDateTimeFormatterBuilder {
         map.put(12L, "DBR");
         builder.appendText(MONTH_OF_YEAR, map);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Text(MonthOfYear)");  // TODO: toString should be different?
+        assertEquals("Text(MonthOfYear)", f.toString());  // TODO: toString should be different?
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendTextMap_nullRule() throws Exception {
-        builder.appendText(null, new HashMap<Long, String>());
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(null, new HashMap<Long, String>()));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendTextMap_nullStyle() throws Exception {
-        builder.appendText(MONTH_OF_YEAR, (Map<Long, String>) null);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendText(MONTH_OF_YEAR, (Map<Long, String>) null));
     }
 
     //-----------------------------------------------------------------------
@@ -416,10 +420,9 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendOffsetId() throws Exception {
         builder.appendOffsetId();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Offset(+HH:MM:ss,'Z')");
+        assertEquals("Offset(+HH:MM:ss,'Z')", f.toString());
     }
 
-    @DataProvider(name="offsetPatterns")
     Object[][] data_offsetPatterns() {
         return new Object[][] {
                 {"+HH", 2, 0, 0, "+02"},
@@ -466,24 +469,25 @@ public class TestDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="offsetPatterns")
+    @ParameterizedTest
+    @MethodSource("data_offsetPatterns")
     public void test_appendOffset_format(String pattern, int h, int m, int s, String expected) throws Exception {
         builder.appendOffset(pattern, "Z");
         DateTimeFormatter f = builder.toFormatter();
         ZoneOffset offset = ZoneOffset.ofHoursMinutesSeconds(h, m, s);
-        assertEquals(f.format(offset), expected);
+        assertEquals(expected, f.format(offset));
     }
 
-    @Test(dataProvider="offsetPatterns")
+    @ParameterizedTest
+    @MethodSource("data_offsetPatterns")
     public void test_appendOffset_parse(String pattern, int h, int m, int s, String expected) throws Exception {
         builder.appendOffset(pattern, "Z");
         DateTimeFormatter f = builder.toFormatter();
         ZoneOffset offset = ZoneOffset.ofHoursMinutesSeconds(h, m, s);
         ZoneOffset parsed = f.parse(expected, ZoneOffset::from);
-        assertEquals(f.format(parsed), expected);
+        assertEquals(expected, f.format(parsed));
     }
 
-    @DataProvider(name="badOffsetPatterns")
     Object[][] data_badOffsetPatterns() {
         return new Object[][] {
             {"HH"},
@@ -498,19 +502,20 @@ public class TestDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="badOffsetPatterns", expectedExceptions=IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("data_badOffsetPatterns")
     public void test_appendOffset_badPattern(String pattern) throws Exception {
-        builder.appendOffset(pattern, "Z");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.appendOffset(pattern, "Z"));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendOffset_3arg_nullText() throws Exception {
-        builder.appendOffset("+HH:MM", null);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendOffset("+HH:MM", null));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendOffset_3arg_nullPattern() throws Exception {
-        builder.appendOffset(null, "Z");
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendOffset(null, "Z"));
     }
 
     //-----------------------------------------------------------------------
@@ -520,19 +525,19 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendZoneId() throws Exception {
         builder.appendZoneId();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ZoneId()");
+        assertEquals("ZoneId()", f.toString());
     }
 
     @Test
     public void test_appendZoneText_1arg() throws Exception {
         builder.appendZoneText(TextStyle.FULL);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ZoneText(FULL)");
+        assertEquals("ZoneText(FULL)", f.toString());
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendZoneText_1arg_nullText() throws Exception {
-        builder.appendZoneText(null);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendZoneText(null));
     }
 
     //-----------------------------------------------------------------------
@@ -542,15 +547,14 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendDayPeriodText_1arg() throws Exception {
         builder.appendDayPeriodText(TextStyle.FULL);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "DayPeriod(FULL)");
+        assertEquals("DayPeriod(FULL)", f.toString());
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_appendDayPeriodText_1arg_nullText() throws Exception {
-        builder.appendDayPeriodText(null);
+        Assertions.assertThrows(NullPointerException.class, () -> builder.appendDayPeriodText(null));
     }
 
-    @DataProvider(name="dayPeriodFormat")
     Object[][] data_dayPeriodFormat() {
         return new Object[][] {
             {0, 0, TextStyle.FULL, Locale.US, "midnight"},
@@ -588,15 +592,15 @@ public class TestDateTimeFormatterBuilder {
             {23, 0, TextStyle.NARROW, Locale.JAPAN, "\u591c\u4e2d"},
         };
     }
-    @Test (dataProvider="dayPeriodFormat")
+    @ParameterizedTest
+    @MethodSource("data_dayPeriodFormat")
     public void test_dayPeriodFormat(int hod, int moh, TextStyle ts, Locale l, String expected) throws Exception {
         builder.appendDayPeriodText(ts);
         LocalTime t = LocalTime.of(hod, moh);
         DateTimeFormatter f = builder.toFormatter().withLocale(l);
-        assertEquals(f.format(t), expected);
+        assertEquals(expected, f.format(t));
     }
 
-    @DataProvider(name="dayPeriodParse")
     Object[][] data_dayPeriodParse() {
         return new Object[][] {
                 {TextStyle.FULL, Locale.US, 0, 0, "midnight"},
@@ -638,16 +642,16 @@ public class TestDateTimeFormatterBuilder {
                 {TextStyle.NARROW, Locale.JAPAN, 21, 0, "\u591c"},
         };
     }
-    @Test (dataProvider="dayPeriodParse")
+    @ParameterizedTest
+    @MethodSource("data_dayPeriodParse")
     public void test_dayPeriodParse(TextStyle ts, Locale l, long hod, long moh, String dayPeriod) throws Exception {
         builder.appendDayPeriodText(ts);
         DateTimeFormatter f = builder.toFormatter().withLocale(l);
         var p = f.parse(dayPeriod);
-        assertEquals(p.getLong(HOUR_OF_DAY), hod);
-        assertEquals(p.getLong(MINUTE_OF_HOUR), moh);
+        assertEquals(hod, p.getLong(HOUR_OF_DAY));
+        assertEquals(moh, p.getLong(MINUTE_OF_HOUR));
     }
 
-    @DataProvider(name="dayPeriodParsePattern")
     Object[][] data_dayPeriodParsePattern() {
         return new Object[][] {
             {"H B", "23 at night", 23},
@@ -663,15 +667,15 @@ public class TestDateTimeFormatterBuilder {
         };
     }
 
-    @Test (dataProvider="dayPeriodParsePattern")
+    @ParameterizedTest
+    @MethodSource("data_dayPeriodParsePattern")
     public void test_dayPeriodParsePattern(String pattern, String hourDayPeriod, long expected) throws Exception {
         builder.appendPattern(pattern);
         DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US);
         var p = f.parse(hourDayPeriod);
-        assertEquals(p.getLong(HOUR_OF_DAY), expected);
+        assertEquals(expected, p.getLong(HOUR_OF_DAY));
     }
 
-    @DataProvider(name="dayPeriodParseMidnight")
     Object[][] data_dayPeriodParseMidnight() {
         return new Object[][] {
             {"u-M-d H:m B", "2020-11-07 00:00 midnight", 7, 0},
@@ -679,16 +683,16 @@ public class TestDateTimeFormatterBuilder {
         };
     }
 
-    @Test (dataProvider="dayPeriodParseMidnight")
+    @ParameterizedTest
+    @MethodSource("data_dayPeriodParseMidnight")
     public void test_dayPeriodParseMidnight(String pattern, String dateTime, long expectedDOM, long expectedHOD) throws Exception {
         builder.appendPattern(pattern);
         DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US);
         var p = f.parse(dateTime);
-        assertEquals(p.getLong(DAY_OF_MONTH), expectedDOM);
-        assertEquals(p.getLong(HOUR_OF_DAY), expectedHOD);
+        assertEquals(expectedDOM, p.getLong(DAY_OF_MONTH));
+        assertEquals(expectedHOD, p.getLong(HOUR_OF_DAY));
     }
 
-    @DataProvider(name="dayPeriodParseInvalid")
     Object[][] data_dayPeriodParseInvalid() {
         return new Object[][] {
                 {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "00:01 midnight", "00:00"},
@@ -748,7 +752,8 @@ public class TestDateTimeFormatterBuilder {
                 {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.JAPAN, "23:00 \u591c", "19:00-23:00"},
         };
     }
-    @Test (dataProvider="dayPeriodParseInvalid")
+    @ParameterizedTest
+    @MethodSource("data_dayPeriodParseInvalid")
     public void test_dayPeriodParseInvalid(TextStyle ts, ResolverStyle rs, Locale l, String dayPeriod, String periodRange) throws Exception {
         try {
             builder.append(ISO_LOCAL_TIME).appendLiteral(' ').appendDayPeriodText(ts)
@@ -759,13 +764,11 @@ public class TestDateTimeFormatterBuilder {
                 throw new RuntimeException("DateTimeParseException should be thrown");
             }
         } catch (DateTimeParseException e) {
-            assertEquals(e.getCause().getMessage(),
-                    "Conflict found: Resolved time " + dayPeriod.substring(0, 5) + " conflicts with " +
-                    "DayPeriod(" + periodRange + ")");
+            assertEquals("Conflict found: Resolved time " + dayPeriod.substring(0, 5) + " conflicts with " +
+                    "DayPeriod(" + periodRange + ")", e.getCause().getMessage());
         }
     }
 
-    @DataProvider(name="dayPeriodParsePatternInvalid")
     Object[][] data_dayPeriodParsePatternInvalid() {
         return new Object[][] {
                 {"H B", ResolverStyle.SMART, "47 at night", 23, null},
@@ -794,7 +797,8 @@ public class TestDateTimeFormatterBuilder {
         };
     }
 
-    @Test (dataProvider="dayPeriodParsePatternInvalid")
+    @ParameterizedTest
+    @MethodSource("data_dayPeriodParsePatternInvalid")
     public void test_dayPeriodParsePatternInvalid(String pattern, ResolverStyle rs, String hourDayPeriod, long expected, Period expectedExcessDays) throws Exception {
         try {
             builder.appendPattern(pattern);
@@ -803,18 +807,20 @@ public class TestDateTimeFormatterBuilder {
             if (rs != ResolverStyle.LENIENT) {
                 throw new RuntimeException("DateTimeParseException should be thrown");
             }
-            assertEquals(p.getLong(HOUR_OF_DAY), expected);
-            assertEquals(p.query(DateTimeFormatter.parsedExcessDays()), expectedExcessDays);
+            assertEquals(expected, p.getLong(HOUR_OF_DAY));
+            assertEquals(expectedExcessDays, p.query(DateTimeFormatter.parsedExcessDays()));
         } catch (DateTimeParseException e) {
             // exception successfully thrown
         }
     }
 
-    @Test (expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_dayPeriodParseStrictNoTime() {
-        builder.appendPattern("B");
-        DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US).withResolverStyle(ResolverStyle.STRICT);
-        LocalTime.parse("at night", f);
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            builder.appendPattern("B");
+            DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US).withResolverStyle(ResolverStyle.STRICT);
+            LocalTime.parse("at night", f);
+        });
     }
 
     @Test
@@ -880,7 +886,7 @@ public class TestDateTimeFormatterBuilder {
                 .appendPattern(" B")
                 .toFormatter()
                 .withLocale(Locale.US);
-        assertEquals((long)dtf.parse("0 in the morning").getLong(ChronoField.HOUR_OF_DAY), 6L);
+        assertEquals(6L, (long)dtf.parse("0 in the morning").getLong(ChronoField.HOUR_OF_DAY));
         try {
             dtf.parse("0 at night");
             fail("DateTimeParseException should be thrown");
@@ -895,24 +901,24 @@ public class TestDateTimeFormatterBuilder {
     @Test
     public void test_padNext_1arg() {
         builder.appendValue(MONTH_OF_YEAR).appendLiteral(':').padNext(2).appendValue(DAY_OF_MONTH);
-        assertEquals(builder.toFormatter().format(LocalDate.of(2013, 2, 1)), "2: 1");
+        assertEquals("2: 1", builder.toFormatter().format(LocalDate.of(2013, 2, 1)));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_padNext_1arg_invalidWidth() throws Exception {
-        builder.padNext(0);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.padNext(0));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_padNext_2arg_dash() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).appendLiteral(':').padNext(2, '-').appendValue(DAY_OF_MONTH);
-        assertEquals(builder.toFormatter().format(LocalDate.of(2013, 2, 1)), "2:-1");
+        assertEquals("2:-1", builder.toFormatter().format(LocalDate.of(2013, 2, 1)));
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test
     public void test_padNext_2arg_invalidWidth() throws Exception {
-        builder.padNext(0, '-');
+        Assertions.assertThrows(IllegalArgumentException.class, () -> builder.padNext(0, '-'));
     }
 
     //-----------------------------------------------------------------------
@@ -921,8 +927,8 @@ public class TestDateTimeFormatterBuilder {
         builder.appendValue(MONTH_OF_YEAR).appendLiteral(':')
                 .padNext(5).optionalStart().appendValue(DAY_OF_MONTH).optionalEnd()
                 .appendLiteral(':').appendValue(YEAR);
-        assertEquals(builder.toFormatter().format(LocalDate.of(2013, 2, 1)), "2:    1:2013");
-        assertEquals(builder.toFormatter().format(YearMonth.of(2013, 2)), "2:     :2013");
+        assertEquals("2:    1:2013", builder.toFormatter().format(LocalDate.of(2013, 2, 1)));
+        assertEquals("2:     :2013", builder.toFormatter().format(YearMonth.of(2013, 2)));
     }
 
     //-----------------------------------------------------------------------
@@ -932,21 +938,21 @@ public class TestDateTimeFormatterBuilder {
     public void test_optionalStart_noEnd() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).optionalStart().appendValue(DAY_OF_MONTH).appendValue(DAY_OF_WEEK);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[Value(DayOfMonth)Value(DayOfWeek)]");
+        assertEquals("Value(MonthOfYear)[Value(DayOfMonth)Value(DayOfWeek)]", f.toString());
     }
 
     @Test
     public void test_optionalStart2_noEnd() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).optionalStart().appendValue(DAY_OF_MONTH).optionalStart().appendValue(DAY_OF_WEEK);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[Value(DayOfMonth)[Value(DayOfWeek)]]");
+        assertEquals("Value(MonthOfYear)[Value(DayOfMonth)[Value(DayOfWeek)]]", f.toString());
     }
 
     @Test
     public void test_optionalStart_doubleStart() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).optionalStart().optionalStart().appendValue(DAY_OF_MONTH);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[[Value(DayOfMonth)]]");
+        assertEquals("Value(MonthOfYear)[[Value(DayOfMonth)]]", f.toString());
     }
 
     //-----------------------------------------------------------------------
@@ -954,7 +960,7 @@ public class TestDateTimeFormatterBuilder {
     public void test_optionalEnd() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).optionalStart().appendValue(DAY_OF_MONTH).optionalEnd().appendValue(DAY_OF_WEEK);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[Value(DayOfMonth)]Value(DayOfWeek)");
+        assertEquals("Value(MonthOfYear)[Value(DayOfMonth)]Value(DayOfWeek)", f.toString());
     }
 
     @Test
@@ -962,39 +968,38 @@ public class TestDateTimeFormatterBuilder {
         builder.appendValue(MONTH_OF_YEAR).optionalStart().appendValue(DAY_OF_MONTH)
             .optionalStart().appendValue(DAY_OF_WEEK).optionalEnd().appendValue(DAY_OF_MONTH).optionalEnd();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[Value(DayOfMonth)[Value(DayOfWeek)]Value(DayOfMonth)]");
+        assertEquals("Value(MonthOfYear)[Value(DayOfMonth)[Value(DayOfWeek)]Value(DayOfMonth)]", f.toString());
     }
 
     @Test
     public void test_optionalEnd_doubleStartSingleEnd() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).optionalStart().optionalStart().appendValue(DAY_OF_MONTH).optionalEnd();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[[Value(DayOfMonth)]]");
+        assertEquals("Value(MonthOfYear)[[Value(DayOfMonth)]]", f.toString());
     }
 
     @Test
     public void test_optionalEnd_doubleStartDoubleEnd() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).optionalStart().optionalStart().appendValue(DAY_OF_MONTH).optionalEnd().optionalEnd();
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[[Value(DayOfMonth)]]");
+        assertEquals("Value(MonthOfYear)[[Value(DayOfMonth)]]", f.toString());
     }
 
     @Test
     public void test_optionalStartEnd_immediateStartEnd() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).optionalStart().optionalEnd().appendValue(DAY_OF_MONTH);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)Value(DayOfMonth)");
+        assertEquals("Value(MonthOfYear)Value(DayOfMonth)", f.toString());
     }
 
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test
     public void test_optionalEnd_noStart() throws Exception {
-        builder.optionalEnd();
+        Assertions.assertThrows(IllegalStateException.class, () -> builder.optionalEnd());
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name="validPatterns")
     Object[][] dataValid() {
         return new Object[][] {
             {"'a'", "'a'"},
@@ -1162,15 +1167,15 @@ public class TestDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="validPatterns")
+    @ParameterizedTest
+    @MethodSource("dataValid")
     public void test_appendPattern_valid(String input, String expected) throws Exception {
         builder.appendPattern(input);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), expected);
+        assertEquals(expected, f.toString());
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="invalidPatterns")
     Object[][] dataInvalid() {
         return new Object[][] {
             {"'"},
@@ -1241,17 +1246,19 @@ public class TestDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="invalidPatterns", expectedExceptions=IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("dataInvalid")
     public void test_appendPattern_invalid(String input) throws Exception {
-        try {
-            builder.appendPattern(input);
-        } catch (IllegalArgumentException ex) {
-            throw ex;
-        }
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            try {
+                builder.appendPattern(input);
+            } catch (IllegalArgumentException ex) {
+                throw ex;
+            }
+        });
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="localePatterns")
     Object[][] localizedDateTimePatterns() {
         return new Object[][] {
             {FormatStyle.FULL, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.US, "EEEE, MMMM d, y, h:mm:ss\u202fa zzzz"},
@@ -1269,26 +1276,27 @@ public class TestDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="localePatterns")
+    @ParameterizedTest
+    @MethodSource("localizedDateTimePatterns")
     public void test_getLocalizedDateTimePattern(FormatStyle dateStyle, FormatStyle timeStyle,
             Chronology chrono, Locale locale, String expected) {
         String actual = DateTimeFormatterBuilder.getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale);
-        assertEquals(actual, expected, "Pattern " + convertNonAscii(actual));
+        assertEquals(expected, actual, "Pattern " + convertNonAscii(actual));
     }
 
-    @Test(expectedExceptions=java.lang.IllegalArgumentException.class)
+    @Test
     public void test_getLocalizedDateTimePatternIAE() {
-        DateTimeFormatterBuilder.getLocalizedDateTimePattern(null, null, IsoChronology.INSTANCE, Locale.US);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> DateTimeFormatterBuilder.getLocalizedDateTimePattern(null, null, IsoChronology.INSTANCE, Locale.US));
     }
 
-    @Test(expectedExceptions=java.lang.NullPointerException.class)
+    @Test
     public void test_getLocalizedChronoNPE() {
-        DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, null, Locale.US);
+        Assertions.assertThrows(NullPointerException.class, () -> DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, null, Locale.US));
     }
 
-    @Test(expectedExceptions=java.lang.NullPointerException.class)
+    @Test
     public void test_getLocalizedLocaleNPE() {
-        DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, null);
+        Assertions.assertThrows(NullPointerException.class, () -> DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, null));
     }
 
     /**
