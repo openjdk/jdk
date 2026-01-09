@@ -132,13 +132,19 @@ public abstract class KeyStoreSpi {
      * Returns the creation timestamp (Instant) of the entry identified
      * by the given alias.
      *
+     * @implSpec This method simply performs
+     * {@code engineGetCreationDate(alias)} which returns a {@code Date}.
+     * If the result is not @{code null} returns
+     * Instance equivalent to received {@code Date}.
+     *
      * @param alias the alias name
      *
      * @return the creation instant of this entry, or {@code null}
      * if the given alias does not exist
      */
     public Instant engineGetCreationTimestamp(String alias) {
-        return engineGetCreationDate(alias).toInstant();
+        final Date date = engineGetCreationDate(alias);
+        return date == null? null : date.toInstant();
     }
 
     /**

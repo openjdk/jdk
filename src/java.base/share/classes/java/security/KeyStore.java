@@ -1183,6 +1183,8 @@ public class KeyStore {
 
     /**
      * Returns the creation date of the entry identified by the given alias.
+     * <p>
+     * Please consider using {@code getCreationTimestamp} instead.
      *
      * @param alias the alias name
      *
