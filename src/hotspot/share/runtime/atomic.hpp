@@ -270,7 +270,7 @@ public:
 
   bool compare_set(T compare_value, T new_value,
                    atomic_memory_order order = memory_order_conservative) {
-    return AtomicAccess::cmpxchg(value_ptr(), compare_value, new_value, order) == compare_value;
+    return compare_exchange(compare_value, new_value, order) == compare_value;
   }
 
   T exchange(T new_value,
