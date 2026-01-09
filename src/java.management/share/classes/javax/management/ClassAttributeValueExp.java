@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.management;
 
+import java.io.Serial;
+
 /**
  * This class represents the name of the Java implementation class of
  * the MBean. It is used for performing queries based on the class of
@@ -37,6 +39,7 @@ package javax.management;
  */
 class ClassAttributeValueExp extends AttributeValueExp {
 
+    @Serial
     private static final long serialVersionUID = -1081892073854801359L;
 
     /**

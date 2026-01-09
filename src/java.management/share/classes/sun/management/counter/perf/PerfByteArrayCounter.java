@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.management.counter.perf;
 
 import sun.management.counter.*;
+
+import java.io.Serial;
 import java.nio.*;
 
 public class PerfByteArrayCounter extends AbstractCounter
@@ -81,6 +83,7 @@ public class PerfByteArrayCounter extends AbstractCounter
     /**
      * Serialize as a snapshot object.
      */
+    @Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
        return new ByteArrayCounterSnapshot(getName(),
                                            getUnits(),
@@ -90,5 +93,6 @@ public class PerfByteArrayCounter extends AbstractCounter
                                            byteArrayValue());
     }
 
+    @Serial
     private static final long serialVersionUID = 2545474036937279921L;
 }

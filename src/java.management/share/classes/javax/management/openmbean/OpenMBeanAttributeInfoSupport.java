@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 package javax.management.openmbean;
 
-
+import java.io.Serial;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -55,7 +55,8 @@ public class OpenMBeanAttributeInfoSupport
     implements OpenMBeanAttributeInfo {
 
     /* Serial version */
-    static final long serialVersionUID = -4867215622149721849L;
+    @Serial
+    private static final long serialVersionUID = -4867215622149721849L;
 
     /**
      * @serial The open mbean attribute's <i>open type</i>
@@ -435,6 +436,7 @@ public class OpenMBeanAttributeInfoSupport
      * where the Descriptors reflect the same values of openType, defaultValue,
      * etc.
      **/
+    @Serial
     private Object readResolve() {
         if (getDescriptor().getFieldNames().length == 0) {
             OpenType<Object> xopenType = cast(openType);

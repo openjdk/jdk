@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.management.openmbean;
 
 import java.io.ObjectStreamException;
+import java.io.Serial;
 import java.lang.reflect.Array;
 
 /**
@@ -116,7 +117,8 @@ import java.lang.reflect.Array;
 public class ArrayType<T> extends OpenType<T> {
 
     /* Serial version */
-    static final long serialVersionUID = 720504429830309770L;
+    @Serial
+    private static final long serialVersionUID = 720504429830309770L;
 
     /**
      * @serial The dimension of arrays described by this {@link ArrayType}
@@ -950,6 +952,7 @@ public class ArrayType<T> extends OpenType<T> {
      *
      * @since 1.6
      */
+    @Serial
     private Object readResolve() throws ObjectStreamException {
         if (primitiveArray) {
             return convertFromWrapperToPrimitiveTypes();
@@ -1018,6 +1021,7 @@ public class ArrayType<T> extends OpenType<T> {
      *
      * @since 1.6
      */
+    @Serial
     private Object writeReplace() throws ObjectStreamException {
         if (primitiveArray) {
             return convertFromPrimitiveToWrapperTypes();

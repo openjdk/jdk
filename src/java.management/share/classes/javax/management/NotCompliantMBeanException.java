@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management;
 
+import java.io.Serial;
 
 /**
  * Exception which occurs when trying to register an  object in the MBean server that is not a JMX compliant MBean.
@@ -35,6 +36,7 @@ public class NotCompliantMBeanException  extends OperationsException {
 
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = 5175579583207963577L;
 
     /**

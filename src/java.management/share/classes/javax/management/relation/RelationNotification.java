@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,6 +57,7 @@ import static com.sun.jmx.mbeanserver.Util.cast;
  */
 public class RelationNotification extends Notification {
 
+    @Serial
     private static final long serialVersionUID = -6871117877523310399L;
     /**
      * @serialField relationId String Relation identifier of
@@ -74,6 +76,7 @@ public class RelationNotification extends Notification {
      * @serialField newRoleValue List New role value ({@link
      * ArrayList} of {@link ObjectName}s) (only for role update)
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields =
     {
         new ObjectStreamField("newRoleValue", List.class),
@@ -479,6 +482,7 @@ public class RelationNotification extends Notification {
     /**
      * Deserializes a {@link RelationNotification} from an {@link ObjectInputStream}.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
 
@@ -525,6 +529,7 @@ public class RelationNotification extends Notification {
     /**
      * Serializes a {@link RelationNotification} to an {@link ObjectOutputStream}.
      */
+    @Serial
     private void writeObject(ObjectOutputStream out)
             throws IOException {
       out.defaultWriteObject();

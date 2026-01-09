@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package javax.management.relation;
 
 import com.sun.jmx.mbeanserver.Util;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -59,6 +61,7 @@ import java.util.List;
 public class RoleUnresolvedList extends ArrayList<Object> {
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = 4054902803091433324L;
 
     //

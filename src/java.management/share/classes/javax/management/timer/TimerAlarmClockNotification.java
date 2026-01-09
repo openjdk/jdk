@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.management.timer;
 
+import java.io.Serial;
+
 /**
  * <p>Definitions of the notifications sent by TimerAlarmClock
  * MBeans.</p>
@@ -33,6 +35,7 @@ class TimerAlarmClockNotification
     extends javax.management.Notification {
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = -4841061275673620641L;
 
     /*

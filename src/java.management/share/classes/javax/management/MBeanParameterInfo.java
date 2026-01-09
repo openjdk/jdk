@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management;
 
+import java.io.Serial;
 import java.util.Objects;
 
 
@@ -38,7 +39,8 @@ import java.util.Objects;
 public class MBeanParameterInfo extends MBeanFeatureInfo implements Cloneable {
 
     /* Serial version */
-    static final long serialVersionUID = 7432616882776782338L;
+    @Serial
+    private static final long serialVersionUID = 7432616882776782338L;
 
     /* All zero-length arrays are interchangeable. */
     static final MBeanParameterInfo[] NO_PARAMS = new MBeanParameterInfo[0];

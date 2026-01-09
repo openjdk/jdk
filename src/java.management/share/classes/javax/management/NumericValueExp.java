@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 
 /**
  * This class represents numbers that are arguments to relational constraints.
@@ -42,12 +43,14 @@ import java.io.ObjectStreamField;
  */
 class NumericValueExp extends QueryEval implements ValueExp {
 
+    @Serial
     private static final long serialVersionUID = -4679739485102359104L;
     /**
      * @serialField val Number The numeric value
      *
      * <p>The <b>serialVersionUID</b> of this class is <code>-4679739485102359104L</code>.
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("val", Number.class)
     };
@@ -133,6 +136,7 @@ class NumericValueExp extends QueryEval implements ValueExp {
     /**
      * Deserializes a {@link NumericValueExp} from an {@link ObjectInputStream}.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
       in.defaultReadObject();
@@ -142,6 +146,7 @@ class NumericValueExp extends QueryEval implements ValueExp {
     /**
      * Serializes a {@link NumericValueExp} to an {@link ObjectOutputStream}.
      */
+    @Serial
     private void writeObject(ObjectOutputStream out)
             throws IOException {
       out.defaultWriteObject();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management;
 
+import java.io.Serial;
 
 /**
  * Thrown when an invalid expression is passed to a method for
@@ -38,6 +39,7 @@ public class BadBinaryOpValueExpException extends Exception   {
 
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = 5068475589449021227L;
 
     /**

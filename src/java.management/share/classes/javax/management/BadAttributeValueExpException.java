@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package javax.management;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-
+import java.io.Serial;
 
 /**
  * Thrown when an invalid MBean attribute is passed to a query
@@ -41,6 +41,7 @@ public class BadAttributeValueExpException extends Exception   {
 
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = -3105272988410493376L;
 
     /**
@@ -77,6 +78,7 @@ public class BadAttributeValueExpException extends Exception   {
      * @throws IOException thrown if an error occurs
      * @throws ClassNotFoundException if a class can not be found
      */
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField gf = ois.readFields();
         Object valObj = gf.get("val", null);

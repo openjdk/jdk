@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.management;
 
+import java.io.Serial;
 import java.lang.management.ThreadInfo;
 import java.lang.management.MonitorInfo;
 import java.lang.management.LockInfo;
@@ -430,5 +431,6 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
             }
         }
     }
+    @Serial
     private static final long serialVersionUID = 2464378539119753175L;
 }
