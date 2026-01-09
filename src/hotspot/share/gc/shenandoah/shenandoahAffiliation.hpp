@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHAFFILIATION_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHAFFILIATION_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
 enum ShenandoahAffiliation {
   FREE,
   YOUNG_GENERATION,
