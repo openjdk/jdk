@@ -400,21 +400,6 @@ uint ShenandoahMutatorAllocator::alloc_start_index() {
   return _alloc_start_index;
 }
 
-#ifdef ASSERT
-void ShenandoahMutatorAllocator::verify(ShenandoahAllocRequest& req) {
-  assert(req.is_mutator_alloc(), "Must be mutator alloc request.");
-}
-
-void ShenandoahCollectorAllocator::verify(ShenandoahAllocRequest& req) {
-  assert(req.is_gc_alloc() && req.affiliation() == YOUNG_GENERATION, "Must be gc alloc request in young gen.");
-}
-
-void ShenandoahOldCollectorAllocator::verify(ShenandoahAllocRequest& req) {
-  assert(req.is_gc_alloc() && req.affiliation() == OLD_GENERATION, "Must be gc alloc request in young gen.");
-}
-#endif // ASSERT
-
-
 ShenandoahCollectorAllocator::ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set) :
   ShenandoahAllocator((uint) ShenandoahCollectorAllocRegions, free_set) {
   _yield_to_safepoint = false;
@@ -441,7 +426,7 @@ HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req,
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
   // Make sure the old generation has room for either evacuations or promotions before trying to allocate.
   auto old_gen = ShenandoahHeap::heap()->old_generation();
-  if (req.is_old() && !old_gen->can_allocate(req)) {
+  if (!old_gen->can_allocate(req)) {
     return nullptr;
   }
 

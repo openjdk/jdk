@@ -81,8 +81,24 @@ protected:
 
   // Refresh new alloc regions, allocate the object in the new alloc region before making the new alloc region visible to other mutators.
   int refresh_alloc_regions(ShenandoahAllocRequest* req = nullptr, bool* in_new_region = nullptr, HeapWord** obj = nullptr);
+
 #ifdef ASSERT
-  virtual void verify(ShenandoahAllocRequest& req) { }
+  void verify(ShenandoahAllocRequest& req) {
+    switch (ALLOC_PARTITION) {
+      case ShenandoahFreeSetPartitionId::Mutator:
+        assert(req.is_mutator_alloc(), "Must be mutator alloc request");
+        assert(Thread::current()->is_Java_thread(), "Must be Java thread");
+        break;
+      case ShenandoahFreeSetPartitionId::Collector:
+        assert(req.is_gc_alloc() && req.affiliation() == YOUNG_GENERATION, "Must be gc alloc request in young gen");
+        break;
+      case ShenandoahFreeSetPartitionId::OldCollector:
+        assert(req.is_gc_alloc() && req.affiliation() == OLD_GENERATION, "Must be gc alloc request in old gen");
+        break;
+      default:
+        assert(false, "Should not be here");
+    }
+  }
 #endif
 
 public:
@@ -91,7 +107,7 @@ public:
   ShenandoahAllocator(uint alloc_region_count, ShenandoahFreeSet* free_set);
   virtual ~ShenandoahAllocator() { }
 
-  // Handle the allocation request.
+  // Handle the allocation request - entry point of memory allocation, including humongous allocation.
   virtual HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
   virtual void release_alloc_regions();
   virtual void reserve_alloc_regions();
@@ -103,31 +119,21 @@ public:
 class ShenandoahMutatorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::Mutator> {
   static THREAD_LOCAL uint _alloc_start_index;
   uint alloc_start_index() override;
-#ifdef ASSERT
-  void verify(ShenandoahAllocRequest& req) override;
-#endif // ASSERT
-
 public:
   ShenandoahMutatorAllocator(ShenandoahFreeSet* free_set);
 };
 
 class ShenandoahCollectorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::Collector> {
   uint alloc_start_index() override;
-#ifdef ASSERT
-  void verify(ShenandoahAllocRequest& req) override;
-#endif // ASSERT
 public:
   ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set);
 };
 
 // Currently ShenandoahOldCollectorAllocator delegate allocation handling to ShenandoahFreeSet,
-// because of the complexity in plab allocation where we have specialised logic to handle card table size alignment.
+// because of the complexity in plab allocation where we have specialized logic to handle card table size alignment.
 // We will make ShenandoahOldCollectorAllocator use compare-and-swap/atomic operation later.
 class ShenandoahOldCollectorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::OldCollector> {
   uint alloc_start_index() override;
-#ifdef ASSERT
-  void verify(ShenandoahAllocRequest& req) override;
-#endif // ASSERT
 public:
   ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set);
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) override;
