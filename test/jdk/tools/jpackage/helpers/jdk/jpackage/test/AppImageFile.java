@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -132,7 +131,7 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     public static AppImageFile load(Path appImageDir) {
         return toSupplier(() -> {
             Document doc = XmlUtils.initDocumentBuilder().parse(
-                    Files.newInputStream(getPathInAppImage(appImageDir)));
+                    getPathInAppImage(appImageDir).toFile());
 
             XPath xPath = XPathFactory.newInstance().newXPath();
 
