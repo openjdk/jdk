@@ -141,7 +141,7 @@ public class EntitlementsTest {
 
         cmd.mutate(MacHelper.useKeychain(keychain)).mutate(new SignKeyOption(
                 SignKeyOption.Type.SIGN_KEY_IDENTITY,
-                SigningBase.StandardCertificateRequest.CODESIGN.spec()
+                SigningBase.StandardCertificateRequest.CODESIGN.resolveIn(keychain)
         )::addTo);
 
         cmd.mutate(new AdditionalLauncher("x")::applyTo);

@@ -93,7 +93,9 @@ public class SigningAppImageTest {
                 }
 
                 data.add(new SignKeyOptionWithKeychain(
-                        signIdentityType, certRequest.spec(), keychain.keychain()));
+                        signIdentityType,
+                        certRequest.resolveIn(keychain.keychain()),
+                        keychain.keychain()));
             }
         }
 

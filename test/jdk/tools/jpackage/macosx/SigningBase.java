@@ -25,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
@@ -74,6 +75,21 @@ public class SigningBase {
 
         StandardCertificateRequest(CertificateRequest.Builder specBuilder) {
             this.spec = specBuilder.create();
+        }
+
+        public ResolvableCertificateRequest resolveIn(ResolvedKeychain keychain) {
+            Objects.requireNonNull(keychain);
+            if (!keychain.spec().certificateRequests().contains(spec)) {
+                throw new IllegalArgumentException(String.format(
+                        "Certificate request %s not found in [%s] keychain",
+                        name(), keychain.spec().keychain().name()));
+            }
+
+            return new ResolvableCertificateRequest(spec, keychain, name());
+        }
+
+        public ResolvableCertificateRequest resolveIn(StandardKeychain keychain) {
+            return resolveIn(keychain.keychain());
         }
 
         public CertificateRequest spec() {

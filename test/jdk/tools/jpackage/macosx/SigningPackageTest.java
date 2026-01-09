@@ -29,12 +29,12 @@ import java.util.Optional;
 import java.util.SequencedSet;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacHelper.SignKeyOption;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSignVerify;
@@ -87,7 +87,9 @@ public class SigningPackageTest {
     @ParameterSupplier("allTestCases")
     @ParameterSupplier("sqeTestCases")
     public static void test(TestSpec spec) {
-        MacSign.withKeychain(spec::test, chooseKeychain(spec.signKeyOptions()).keychain());
+        MacSign.withKeychain(_ -> {
+            spec.test();
+        }, spec.keychain());
     }
 
     public static void testSQE() {
@@ -112,8 +114,10 @@ public class SigningPackageTest {
         }
 
         var signIdentityType = SignKeyOption.Type.SIGN_KEY_USER_NAME;
-        var appImageSignKeyOption = new SignKeyOption(signIdentityType, SigningBase.StandardCertificateRequest.CODESIGN.spec());
-        var pkgSignKeyOption = new SignKeyOption(signIdentityType, SigningBase.StandardCertificateRequest.PKG.spec());
+        var appImageSignKeyOption = new SignKeyOption(signIdentityType,
+                SigningBase.StandardCertificateRequest.CODESIGN.resolveIn(SigningBase.StandardKeychain.MAIN));
+        var pkgSignKeyOption = new SignKeyOption(signIdentityType,
+                SigningBase.StandardCertificateRequest.PKG.resolveIn(SigningBase.StandardKeychain.MAIN));
 
         return Stream.of(new TestSpec(Optional.of(appImageSignKeyOption), Optional.of(pkgSignKeyOption))).map(v -> {
             return new Object[] {v};
@@ -166,7 +170,10 @@ public class SigningPackageTest {
             }
         }
 
-        TestSpec(Optional<SignKeyOption> appImageSignOption, Optional<SignKeyOption> packageSignOption, PackageType... packageTypes) {
+        TestSpec(
+                Optional<SignKeyOption> appImageSignOption,
+                Optional<SignKeyOption> packageSignOption,
+                PackageType... packageTypes) {
             this(appImageSignOption, packageSignOption, Set.of(packageTypes));
         }
 
@@ -182,7 +189,7 @@ public class SigningPackageTest {
             return Stream.concat(appImageSignOption.stream(), packageSignOption.stream());
         }
 
-        Optional<MacSign.CertificateRequest> bundleSignIdentity(PackageType type) {
+        Optional<ResolvableCertificateRequest> bundleSignIdentity(PackageType type) {
             switch (type) {
                 case MAC_DMG -> {
                     return Optional.empty();
@@ -196,15 +203,15 @@ public class SigningPackageTest {
             }
         }
 
-        void test(MacSign.ResolvedKeychain keychain) {
-            initTest(keychain).configureHelloApp().addInstallVerifier(cmd -> {
+        void test() {
+            initTest().configureHelloApp().addInstallVerifier(cmd -> {
                 appImageSignOption.map(SignKeyOption::certRequest).ifPresent(signIdentity -> {
                     MacSignVerify.verifyAppImageSigned(cmd, signIdentity);
                 });
             }).run();
         }
 
-        PackageTest initTest(MacSign.ResolvedKeychain keychain) {
+        PackageTest initTest() {
             return new PackageTest().forTypes(packageTypes).mutate(test -> {
                 appImageSignOption.ifPresent(signOption -> {
                     test.addInitializer(signOption::setTo);
@@ -216,9 +223,16 @@ public class SigningPackageTest {
                 });
             }).addBundleVerifier(cmd -> {
                 bundleSignIdentity(cmd.packageType()).ifPresent(signIdentity -> {
-                    MacSignVerify.verifyPkgSigned(cmd, signIdentity, keychain);
+                    MacSignVerify.verifyPkgSigned(cmd, signIdentity);
                 });
-            }).addInitializer(MacHelper.useKeychain(keychain)::accept);
+            }).addInitializer(MacHelper.useKeychain(keychain())::accept);
+        }
+
+        MacSign.ResolvedKeychain keychain() {
+            return chooseKeychain(Stream.of(
+                    appImageSignOption.stream(),
+                    packageSignOption.stream()
+            ).flatMap(x -> x).map(SignKeyOption::type).findFirst().orElseThrow()).keychain();
         }
 
         static List<TestSpec> testCases(boolean withUnicode) {
@@ -246,8 +260,9 @@ public class SigningPackageTest {
                         break;
                     }
 
-                    var appImageSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getFirst().spec());
-                    var pkgSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getLast().spec());
+                    var keychain = chooseKeychain(signIdentityType);
+                    var appImageSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getFirst().resolveIn(keychain));
+                    var pkgSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getLast().resolveIn(keychain));
 
                     switch (signIdentityType) {
                         case SIGN_KEY_IDENTITY -> {
@@ -269,13 +284,13 @@ public class SigningPackageTest {
 
             return data;
         }
-    }
 
-    static SigningBase.StandardKeychain chooseKeychain(Stream<SignKeyOption> certRequests) {
-        if (certRequests.map(SignKeyOption::type).anyMatch(Predicate.isEqual(SignKeyOption.Type.SIGN_KEY_IMPLICIT))) {
-            return SigningBase.StandardKeychain.SINGLE;
-        } else {
-            return SigningBase.StandardKeychain.MAIN;
+        private static SigningBase.StandardKeychain chooseKeychain(SignKeyOption.Type signIdentityType) {
+            if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
+                return SigningBase.StandardKeychain.SINGLE;
+            } else {
+                return SigningBase.StandardKeychain.MAIN;
+            }
         }
     }
 

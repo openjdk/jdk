@@ -46,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -75,6 +76,7 @@ import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSign.ResolvedKeychain;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 import jdk.jpackage.test.RunnablePackageTest.Action;
@@ -542,7 +544,75 @@ public final class MacHelper {
         return cmd;
     }
 
-    public record SignKeyOption(Type type, CertificateRequest certRequest) {
+    public static final class ResolvableCertificateRequest {
+
+        public ResolvableCertificateRequest(
+                CertificateRequest certRequest,
+                Function<CertificateRequest, X509Certificate> certResolver,
+                String label) {
+
+            Objects.requireNonNull(certRequest);
+            Objects.requireNonNull(certResolver);
+            Objects.requireNonNull(label);
+            if (label.isBlank()) {
+                throw new IllegalArgumentException();
+            }
+
+            this.certRequest = certRequest;
+            this.certResolver = certResolver;
+            this.label = label;
+        }
+
+        public ResolvableCertificateRequest(
+                CertificateRequest certRequest,
+                ResolvedKeychain keychain,
+                String label) {
+            this(certRequest, keychain.asCertificateResolver(), label);
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+
+        public CertificateRequest certRequest() {
+            return certRequest;
+        }
+
+        public X509Certificate cert() {
+            return certResolver.apply(certRequest);
+        }
+
+        public CertificateType type() {
+            return certRequest.type();
+        }
+
+        public String name() {
+            return certRequest.name();
+        }
+
+        public String shortName() {
+            return certRequest.shortName();
+        }
+
+        public int days() {
+            return certRequest.days();
+        }
+
+        public boolean expired() {
+            return certRequest.expired();
+        }
+
+        public boolean trusted() {
+            return certRequest.trusted();
+        }
+
+        private final CertificateRequest certRequest;
+        private final Function<CertificateRequest, X509Certificate> certResolver;
+        private final String label;
+    }
+
+    public record SignKeyOption(Type type, ResolvableCertificateRequest certRequest) {
 
         public SignKeyOption {
             Objects.requireNonNull(type);
@@ -577,6 +647,19 @@ public final class MacHelper {
         public JPackageCommand setTo(JPackageCommand cmd) {
             applyTo(cmd::setArgumentValue);
             return sign(cmd);
+        }
+
+        public List<String> asCmdlineArgs() {
+            if (type == Type.SIGN_KEY_IMPLICIT) {
+                return List.of();
+            } else {
+                String[] args = new String[2];
+                applyTo((optionName, optionValue) -> {
+                    args[0] = optionName;
+                    args[1] = optionValue;
+                });
+                return List.of(args);
+            }
         }
 
         private void applyTo(BiConsumer<String, String> sink) {
@@ -626,7 +709,7 @@ public final class MacHelper {
             Objects.requireNonNull(keychain);
         }
 
-        public SignKeyOptionWithKeychain(SignKeyOption.Type type, CertificateRequest certRequest, ResolvedKeychain keychain) {
+        public SignKeyOptionWithKeychain(SignKeyOption.Type type, ResolvableCertificateRequest certRequest, ResolvedKeychain keychain) {
             this(new SignKeyOption(type, certRequest), keychain);
         }
 
@@ -639,7 +722,7 @@ public final class MacHelper {
             return signKeyOption.type();
         }
 
-        public CertificateRequest certRequest() {
+        public ResolvableCertificateRequest certRequest() {
             return signKeyOption.certRequest();
         }
 

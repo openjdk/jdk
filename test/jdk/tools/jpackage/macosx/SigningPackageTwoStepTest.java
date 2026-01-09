@@ -33,6 +33,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacHelper.SignKeyOption;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSignVerify;
@@ -85,7 +86,7 @@ public class SigningPackageTwoStepTest {
                 // the predefined app image bundle when backing it in the pkg or dmg installer.
                 appImageSignOption = Optional.of(new SignKeyOption(
                         SignKeyOption.Type.SIGN_KEY_USER_NAME,
-                        SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.spec()));
+                        SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.resolveIn(SigningBase.StandardKeychain.MAIN)));
             } else {
                 appImageSignOption = Optional.empty();
             }
@@ -117,7 +118,7 @@ public class SigningPackageTwoStepTest {
             return tokens.stream().map(Objects::toString).collect(Collectors.joining("; "));
         }
 
-        Optional<MacSign.CertificateRequest> packagedAppImageSignIdentity() {
+        Optional<ResolvableCertificateRequest> packagedAppImageSignIdentity() {
             return signAppImage.map(SignKeyOption::certRequest);
         }
 
@@ -128,12 +129,10 @@ public class SigningPackageTwoStepTest {
                 MacSign.withKeychain(keychain -> {
                     MacHelper.useKeychain(appImageCmd, keychain);
                     signOption.setTo(appImageCmd);
-                }, SigningPackageTest.chooseKeychain(signAppImage.stream()).keychain());
+                }, SigningBase.StandardKeychain.MAIN.keychain());
             });
 
-            var keychain = SigningPackageTest.chooseKeychain(signPackage.signKeyOptions()).keychain();
-
-            var test = signPackage.initTest(keychain).addRunOnceInitializer(() -> {
+            var test = signPackage.initTest().addRunOnceInitializer(() -> {
                 appImageCmd.setArgumentValue("--dest", TKit.createTempDirectory("appimage")).execute(0);
                 signAppImage.map(SignKeyOption::certRequest).ifPresent(certRequest -> {
                     // The predefined app image is signed, verify that.
@@ -157,7 +156,7 @@ public class SigningPackageTwoStepTest {
 
             MacSign.withKeychain(_ -> {
                 test.run();
-            }, keychain);
+            }, signPackage.keychain());
         }
     }
 }

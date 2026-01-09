@@ -119,7 +119,8 @@ public class SigningAppImageTwoStepsTest {
             }
 
             private SignKeyOptionWithKeychain createSignKeyOption() {
-                return new SignKeyOptionWithKeychain(signIdentityType, certRequest.spec(), keychain.keychain());
+                return new SignKeyOptionWithKeychain(
+                        signIdentityType, certRequest.resolveIn(keychain.keychain()), keychain.keychain());
             }
 
             private SigningBase.StandardKeychain keychain = SigningBase.StandardKeychain.MAIN;

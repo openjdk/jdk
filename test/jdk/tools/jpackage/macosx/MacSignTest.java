@@ -38,7 +38,6 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacSign;
-import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.PackageType;
@@ -188,16 +187,26 @@ public class MacSignTest {
     @Test
     @ParameterSupplier
     @ParameterSupplier("testSelectSigningIdentity_JDK_8371094")
-    public static void testSelectSigningIdentity(String signingKeyUserName, CertificateRequest certRequest) {
+    public static void testSelectSigningIdentity(boolean shortName, SigningBase.StandardCertificateRequest certRequest) {
 
         MacSign.withKeychain(keychain -> {
+
+            var resolvableCertRequest = certRequest.resolveIn(keychain);
+
+            String signingKeyUserName;
+            if (shortName) {
+                signingKeyUserName = resolvableCertRequest.shortName();
+            } else {
+                signingKeyUserName = resolvableCertRequest.name();
+            }
+
             final var cmd = MacHelper.useKeychain(JPackageCommand.helloAppImage(), keychain)
                     .setFakeRuntime()
                     .addArguments("--mac-signing-key-user-name", signingKeyUserName);
 
             cmd.executeAndAssertImageCreated();
 
-            MacSignVerify.verifyAppImageSigned(cmd, certRequest);
+            MacSignVerify.verifyAppImageSigned(cmd, resolvableCertRequest);
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
     }
 
@@ -205,9 +214,9 @@ public class MacSignTest {
         return Stream.of(
                 SigningBase.StandardCertificateRequest.CODESIGN,
                 SigningBase.StandardCertificateRequest.CODESIGN_UNICODE
-        ).map(SigningBase.StandardCertificateRequest::spec).<Object[]>mapMulti((certRequest, acc) -> {
-            acc.accept(new Object[] {certRequest.shortName(), certRequest});
-            acc.accept(new Object[] {certRequest.name(), certRequest});
+        ).<Object[]>mapMulti((certRequest, acc) -> {
+            acc.accept(new Object[] {true, certRequest});
+            acc.accept(new Object[] {false, certRequest});
         }).toList();
     }
 

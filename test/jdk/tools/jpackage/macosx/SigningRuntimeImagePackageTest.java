@@ -35,10 +35,11 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacHelper.SignKeyOption;
-import jdk.jpackage.test.MacSignVerify.SpctlType;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSignVerify;
+import jdk.jpackage.test.MacSignVerify.SpctlType;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -92,7 +93,7 @@ public class SigningRuntimeImagePackageTest {
                     // the predefined runtime bundle when backing it in the pkg or dmg installer.
                     runtimeSignOption = Optional.of(new SignKeyOption(
                             SignKeyOption.Type.SIGN_KEY_USER_NAME,
-                            SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.spec()));
+                            SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.resolveIn(SigningBase.StandardKeychain.MAIN)));
                 } else {
                     runtimeSignOption = Optional.empty();
                 }
@@ -133,7 +134,7 @@ public class SigningRuntimeImagePackageTest {
             return Stream.of(runtimeToken, signPackage).map(Objects::toString).collect(Collectors.joining("; "));
         }
 
-        Optional<MacSign.CertificateRequest> packagedAppImageSignIdentity() {
+        Optional<ResolvableCertificateRequest> packagedAppImageSignIdentity() {
             if (runtimeType == RuntimeType.IMAGE) {
                 return signPackage.appImageSignOption().map(SignKeyOption::certRequest);
             } else {
@@ -145,9 +146,7 @@ public class SigningRuntimeImagePackageTest {
 
             Slot<Path> predefinedRuntime = Slot.createEmpty();
 
-            var keychain = SigningPackageTest.chooseKeychain(signPackage.signKeyOptions()).keychain();
-
-            var test = signPackage.initTest(keychain).addRunOnceInitializer(() -> {
+            var test = signPackage.initTest().addRunOnceInitializer(() -> {
                 predefinedRuntime.set(createRuntime());
             }).addInitializer(cmd -> {
                 cmd.ignoreDefaultRuntime(true);
@@ -161,7 +160,7 @@ public class SigningRuntimeImagePackageTest {
 
             MacSign.withKeychain(_ -> {
                 test.run();
-            }, keychain);
+            }, signPackage.keychain());
         }
 
         private Path createRuntime() {
