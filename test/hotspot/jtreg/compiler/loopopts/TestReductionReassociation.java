@@ -69,8 +69,11 @@ public class TestReductionReassociation {
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
         final int size = 10_000;
+        final List<Integer> batchSizes = List.of(4, 5);
 
-        testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, size).generate());
+        for (Integer batchSize : batchSizes) {
+            testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, batchSize, size).generate());
+        }
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
@@ -95,7 +98,7 @@ public class TestReductionReassociation {
         }
     }
 
-    record TestGenerator(AddOp add, int size) {
+    record TestGenerator(AddOp add, int batchSize, int size) {
         public TemplateToken generate() {
             var testTemplate = Template.make(() -> {
                 String test = $("test");
@@ -159,26 +162,28 @@ public class TestReductionReassociation {
                 let("type", add.type.name()),
                 """
                 @Test
-                @IR(counts = {IRNode.#irNodeName, "= 4"}, phase = CompilePhase.AFTER_LOOP_OPTS)
+                """,
+                "@IR(counts = {IRNode.#irNodeName, \"= ", batchSize, "\"}, phase = CompilePhase.AFTER_LOOP_OPTS)",
+                """
                 public Object[] #test() {
                     #type result = Integer.MIN_VALUE;
                     #type result2 = Integer.MIN_VALUE;
-                    for (int i = 0; i < #input.length; i += 4) {
-                        long v0 = #input[i + 0];
-                        long v1 = #input[i + 1];
-                        long v2 = #input[i + 2];
-                        long v3 = #input[i + 3];
                 """,
+                "for (int i = 0; i < #input.length; i += ", batchSize, ") {",
+                IntStream.range(0, batchSize).mapToObj(i ->
+                    List.of("long v", i, " = #input[i + ", i, "];\n")
+                ).toList(),
                 "long u0 = ", generateOp("v0", "result"), ";",
-                "long u1 = ", generateOp("v1", "u0"), ";",
-                "long u2 = ", generateOp("v2", "u1"), ";",
-                "long u3 = ", generateOp("v3", "u2"), ";",
-                "result = u3;",
+                IntStream.range(1, batchSize).mapToObj(i ->
+                    List.of("long u", i, " = ", generateOp("v" + i, "u" + (i - 1)), ";\n")
+                ).toList(),
+                "result = u", batchSize - 1,";",
                 "long t0 = ", generateOp("v0", "v1"), ";",
-                "long t1 = ", generateOp("v2", "t0"), ";",
-                "long t2 = ", generateOp("v3", "t1"), ";",
-                "long t3 = ", generateOp("result", "t2"), ";",
-                "result2 = t3;",
+                IntStream.range(1, batchSize - 1).mapToObj(i ->
+                    List.of("long t", i, " = ", generateOp("v" + (i + 1), "t" + (i - 1)), ";\n")
+                ).toList(),
+                "long t", batchSize - 1, " = ", generateOp("result", "t" + (batchSize - 2)), ";",
+                "result2 = t", batchSize - 1,";",
                 """
                     }
                     return new Object[]{result, result2};
