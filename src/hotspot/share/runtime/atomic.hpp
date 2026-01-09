@@ -269,7 +269,7 @@ public:
   }
 
   bool compare_set(T compare_value, T new_value,
-                atomic_memory_order order = memory_order_conservative) {
+                   atomic_memory_order order = memory_order_conservative) {
     return AtomicAccess::cmpxchg(value_ptr(), compare_value, new_value, order) == compare_value;
   }
 
@@ -486,7 +486,7 @@ public:
   }
 
   bool compare_set(T compare_value, T new_value,
-                     atomic_memory_order order = memory_order_conservative) {
+                   atomic_memory_order order = memory_order_conservative) {
     return _value.compare_set(decay(compare_value),
                               decay(new_value),
                               order);
