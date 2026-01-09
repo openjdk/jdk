@@ -1046,25 +1046,28 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
 
   Label DONE_LABEL;
 
+  // Handle special cases +0.0/-0.0 and NaN, if argument is +0.0/-0.0 or NaN, return argument
+  // If AVX10.2 (or newer) floating point comparison instructions used, SF=1 for equal and unordered cases
+  // If other floating point comparison instructions used, ZF=1 for equal and unordered cases
   if (opcode == Op_SignumF) {
     if (VM_Version::supports_avx10_2()) {
       ucomxss(dst, zero);
+      jcc(Assembler::negative, DONE_LABEL);
     } else {
       ucomiss(dst, zero);
+      jcc(Assembler::equal, DONE_LABEL);
     }
-    jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
-    jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
     movflt(dst, one);
     jcc(Assembler::above, DONE_LABEL);
     xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), noreg);
   } else if (opcode == Op_SignumD) {
     if (VM_Version::supports_avx10_2()) {
       ucomxsd(dst, zero);
+      jcc(Assembler::negative, DONE_LABEL);
     } else {
       ucomisd(dst, zero);
+      jcc(Assembler::equal, DONE_LABEL);
     }
-    jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
-    jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
     movdbl(dst, one);
     jcc(Assembler::above, DONE_LABEL);
     xorpd(dst, ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), noreg);

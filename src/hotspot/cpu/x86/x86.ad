@@ -1699,17 +1699,12 @@ static void emit_cmpfp_fixup(MacroAssembler* masm) {
 }
 
 static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
+  // If any floating point comparison instruction is used, unordered case never triggers jump
+  // For above equal condition, CF=0 is false when at least one input is NaN
   Label done;
-  if (VM_Version::supports_avx10_2()) {
-    __ setcc(Assembler::above, dst);
-    __ jcc(Assembler::aboveEqual, done);
-    __ movl(dst, -1);
-  } else {
-    __ movl(dst, -1);
-    __ jcc(Assembler::parity, done);
-    __ jcc(Assembler::below, done);
-    __ setcc(Assembler::notEqual, dst);
-  }
+  __ setcc(Assembler::above, dst);
+  __ jcc(Assembler::aboveEqual, done);
+  __ movl(dst, -1);
   __ bind(done);
 }
 
