@@ -996,7 +996,6 @@ public class JavacParser implements Parser {
                 e = unannotatedType(allowVar, TYPE | NOLAMBDA);
                 if (var) {
                     varTypePos = e.pos;
-                    e = null;
                 }
             } else {
                 e = parsedType;
@@ -1015,7 +1014,7 @@ public class JavacParser implements Parser {
                     nextToken();
                 }
                 accept(RPAREN);
-                pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
+                pattern = toP(F.at(pos).RecordPattern(e, nested.toList())); //TODO: verify var(var v) is rejected properly
                 if (mods.annotations.nonEmpty()) {
                     log.error(mods.annotations.head.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
                 }
@@ -1034,6 +1033,7 @@ public class JavacParser implements Parser {
                     name = names.empty;
                 }
                 JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null,
+                  //TODO: cleanup the DeclKind:
                   varTypePos != Position.NOPOS ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT,
                   varTypePos));
                 if (e == null) {
@@ -2189,7 +2189,6 @@ public class JavacParser implements Parser {
                     checkSourceLevel(param.pos, Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS);
                     param.declKind = JCVariableDecl.DeclKind.VAR;
                     param.typePos = TreeInfo.getStartPos(param.vartype);
-                    param.vartype = null;
                 }
             }
         }
@@ -3844,8 +3843,6 @@ public class JavacParser implements Parser {
                     if (compound)
                         //error - 'var' in compound local var decl
                         reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
-                    //implicit type
-                    type = null;
                 }
             }
         }

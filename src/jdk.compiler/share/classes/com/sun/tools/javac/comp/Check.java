@@ -5598,7 +5598,7 @@ public class Check {
                      * a canonical record constructor, we don't want to issue a warning as we will warn the
                      * corresponding compiler generated private record field anyways
                      */
-                    checkIfIdentityIsExpected(variableDecl.vartype.pos(), variableDecl.vartype.type, lint);
+                    checkIfIdentityIsExpected(variableDecl.vartype != null ? variableDecl.vartype.pos() : variableDecl.pos(), variableDecl.type, lint);
                 }
             }
             case JCTypeCast typeCast -> checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);

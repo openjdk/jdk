@@ -276,9 +276,11 @@ public class MemberEnter extends JCTree.Visitor {
             tree.vartype.type = atype.makeVarargs();
         }
         WriteableScope enclScope = enter.enterScope(env);
-        Type vartype = tree.isImplicitlyTyped()
-                ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
-                : tree.vartype.type;
+        Type vartype = switch (tree.declKind) {
+            case IMPLICIT -> tree.type;
+            case EXPLICIT -> tree.vartype.type;
+            case VAR -> tree.type != null ? tree.type : env.info.scope.owner.kind == MTH ? Type.noType : syms.errType;
+        };
         Name name = tree.name;
         VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.mods.flags, v, tree);

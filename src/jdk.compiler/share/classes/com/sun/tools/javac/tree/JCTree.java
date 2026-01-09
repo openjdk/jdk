@@ -1023,7 +1023,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public VarSymbol sym;
         /** how the variable's type was declared */
         public DeclKind declKind;
-        /** a source code position to use for "vartype" when null (can happen if declKind != EXPLICIT) */
+        /** a source code position to use for "vartype" when null (can happen if declKind == IMPLICIT) */
         public int typePos;
 
         protected JCVariableDecl(JCModifiers mods,
@@ -1064,7 +1064,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
 
         public boolean isImplicitlyTyped() {
-            return vartype == null;
+            return declKind != DeclKind.EXPLICIT;
         }
 
         public boolean declaredUsingVar() {
@@ -2032,7 +2032,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.params = params;
             this.body = body;
             if (params.isEmpty() ||
-                params.head.vartype != null) {
+                !params.head.isImplicitlyTyped()) {
                 paramKind = ParameterKind.EXPLICIT;
             } else {
                 paramKind = ParameterKind.IMPLICIT;
