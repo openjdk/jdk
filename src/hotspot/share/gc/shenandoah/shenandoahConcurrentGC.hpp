@@ -61,6 +61,8 @@ public:
 
   void entry_concurrent_update_refs_prepare(ShenandoahHeap* heap);
 
+  void entry_update_card_table();
+
   // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
 

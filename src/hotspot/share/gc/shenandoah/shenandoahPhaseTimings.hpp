@@ -109,6 +109,7 @@ class outputStream;
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
+  f(conc_update_card_table,                         "Concurrent Update Cards")         \
   f(conc_final_roots,                               "Concurrent Final Roots")          \
   f(promote_in_place,                               "  Promote Regions")               \
   f(final_roots_gross,                              "Pause Verify Final Roots (G)")    \
@@ -254,7 +255,7 @@ public:
   void flush_cycle_to_global();
 
   static const char* phase_name(Phase phase) {
-    assert(phase >= 0 && phase < _num_phases, "Out of bound");
+    assert(phase >= 0 && phase < _num_phases, "Out of bound: %d", phase);
     return _phase_names[phase];
   }
 
