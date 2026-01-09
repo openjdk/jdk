@@ -64,7 +64,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 public class H3SimplePost implements HttpServerAdapters {
     static HttpTestServer httpsServer;
     static HttpClient client = null;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static String httpsURIString;
     static ExecutorService serverExec =
             Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
@@ -72,8 +72,6 @@ public class H3SimplePost implements HttpServerAdapters {
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
 
             httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, serverExec);
@@ -90,9 +88,6 @@ public class H3SimplePost implements HttpServerAdapters {
     }
 
     private static void warmup() throws Exception {
-        SimpleSSLContext sslct = new SimpleSSLContext();
-        var sslContext = sslct.get();
-
         // warmup server
         try (var client2 = createClient(sslContext, Executors.newVirtualThreadPerTaskExecutor())) {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))

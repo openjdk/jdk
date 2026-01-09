@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -727,8 +727,15 @@ public final class StandardOption {
         //
 
         // regexp for parsing args (for example, for additional launchers)
-        private static Pattern pattern = Pattern.compile(
-              "(?:(?:([\"'])(?:\\\\\\1|.)*?(?:\\1|$))|(?:\\\\[\"'\\s]|[^\\s]))++");
+        private static Pattern PATTERN = Pattern.compile(String.format(
+                "(?:(?:%s|%s)|(?:\\\\[\"'\\s]|\\S))++",
+                createPatternComponent('\''),
+                createPatternComponent('\"')));
+
+        private static String createPatternComponent(char quoteChar) {
+            var str = Character.toString(quoteChar);
+            return String.format("(?:%s(?:\\\\%s|[^%s])*+(?:%s|$))", str, str, str, str);
+        }
 
         static List<String> getArgumentList(String inputString) {
             Objects.requireNonNull(inputString);
@@ -741,7 +748,7 @@ public final class StandardOption {
             // The "pattern" regexp attempts to abide to the rule that
             // strings are delimited by whitespace unless surrounded by
             // quotes, then it is anything (including spaces) in the quotes.
-            Matcher m = pattern.matcher(inputString);
+            Matcher m = PATTERN.matcher(inputString);
             while (m.find()) {
                 String s = inputString.substring(m.start(), m.end()).trim();
                 // Ensure we do not have an empty string. trim() will take care of
