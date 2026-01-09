@@ -94,14 +94,11 @@ public:
     virtual void execute(DCmdSource source, TRAPS);
 };
 
-class PrintPropertiesDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<bool> _system;
-  DCmdArgument<bool> _security;
+class PrintSecurityPropertiesDCmd : public DCmd {
 public:
-    PrintPropertiesDCmd(outputStream* output, bool heap);
-    static const char* name() { return "VM.properties"; }
-    static const char* description() { return "Print -system or -security properties. (VM.properties -arg)"; }
+    PrintSecurityPropertiesDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+    static const char* name() { return "VM.security_properties"; }
+    static const char* description() { return "Print security properties."; }
     static const char* impact() { return "Low"; }
     virtual void execute(DCmdSource source, TRAPS);
 };

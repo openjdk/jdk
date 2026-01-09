@@ -305,12 +305,6 @@ static jint get_system_properties(AttachOperation* op, attachStream* out) {
   return get_properties(op, out, vmSymbols::serializePropertiesToByteArray_name());
 }
 
-// Implementation of "properties -security" command.
-// See also: PrintSecurityPropertiesDCmd class
-static jint get_security_properties(AttachOperation* op, attachStream* out) {
-  return get_properties(op, out, vmSymbols::serializeSecurityPropertiesToByteArray_name());
-}
-
 // Implementation of "agent_properties" command.
 static jint get_agent_properties(AttachOperation* op, attachStream* out) {
   return get_properties(op, out, vmSymbols::serializeAgentPropertiesToByteArray_name());
