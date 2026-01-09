@@ -25,7 +25,6 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
-
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -221,7 +220,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
               assert(addr_t->make_oopptr()->isa_aryptr(), "");
               uint phi_idx = 0;
               for (phi_idx = 0; phi_idx < stack.size() && !stack.node_at(phi_idx)->is_Phi(); ++phi_idx);
-              if (phi_idx < stack.size()) {
+              if (phi_idx < stack.size() && 0) {
                 ShouldNotReachHere();
                 PhiNode* phi = stack.node_at(phi_idx)->as_Phi();
                 const Type* phi_t = phase->type(phi);
@@ -304,6 +303,10 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                       assert(prev_before == n->in(AddPNode::Offset), "");
                       break;
                     }
+                    if (n->is_Phi()) {
+                      prev_before = n;
+                      continue;
+                    }
                     Node* clone = n->clone();
                     int nb = clone->replace_edge(prev_before, prev_after);
                     assert(nb > 0, "");
@@ -331,16 +334,16 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   Node* cmp = phase->transform(new CmpULNode(offset, range));
                   if (phase->type(cmp) == TypeInt::CC_LT) {
                     safe_mem_access = true;
-                  } else {
-                    if (cmp->outcnt() == 0) {
-                      igvn->remove_dead_node(cmp);
-                    }
+                  }
+                  if (cmp->outcnt() == 0) {
+                    igvn->remove_dead_node(cmp);
                   }
                 }
                 if (safe_mem_access) {
                   clones.clear();
                   continue;
                 }
+                ShouldNotReachHere();
                 Node* new_cast = igvn->register_new_node_with_optimizer(new CastPPNode(in(0), base, phase->type(base), DependencyType::NonFloatingNonNarrowing));
                 Node* prev = nullptr;
                 while (clones.size() > 0) {
@@ -356,14 +359,13 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   clone = igvn->register_new_node_with_optimizer(clone);
                   prev = clone;
                 }
-                ShouldNotReachHere();
                 phase->is_IterGVN()->replace_input_of(use, MemNode::Address, prev);
               }
               continue;
             }
-            if (use->is_Phi()) {
-              continue;
-            }
+            // if (use->is_Phi()) {
+            //   continue;
+            // }
             int op = use->Opcode();
             // if (op == Op_DivI || op == Op_DivL || op == Op_ModI || op == Op_ModL) {
             //   if (use->in(2) != node) {

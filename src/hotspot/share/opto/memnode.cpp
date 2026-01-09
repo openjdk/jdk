@@ -2088,6 +2088,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           ctl = IfNode::up_one_dom(ctl);
           if (ctl == use->in(0)) {
             set_req(0, use->in(0));
+            _control_dependency = use->as_Load()->_control_dependency;
             return this;
           }
         }
