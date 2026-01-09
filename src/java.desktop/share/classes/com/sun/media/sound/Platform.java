@@ -60,10 +60,7 @@ final class Platform {
      * Determine whether the system is big-endian.
      */
     static boolean isBigEndian() {
-        if (java.nio.ByteOrder.nativeOrder().equals(java.nio.ByteOrder.BIG_ENDIAN)) {
-            return true;
-        }
-        return false;
+        return java.nio.ByteOrder.nativeOrder().equals(java.nio.ByteOrder.BIG_ENDIAN);
     }
 
     /**
