@@ -1150,12 +1150,10 @@ bool LibraryCallKit::inline_countPositives() {
   Node* offset     = argument(1);
   Node* len        = argument(2);
 
-  if (VerifyIntrinsicChecks) {
-    ba = must_be_not_null(ba, true);
-    generate_string_range_check(ba, offset, len, false, true);
-    if (stopped()) {
-      return true;
-    }
+  ba = must_be_not_null(ba, true);
+  generate_string_range_check(ba, offset, len, false, true, !VerifyIntrinsicChecks);
+  if (stopped()) {
+    return true;
   }
 
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
@@ -6206,12 +6204,10 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   Node *length      = argument(4);
 
   // Cast source & target arrays to not-null
-  if (VerifyIntrinsicChecks) {
-    src = must_be_not_null(src, true);
-    dst = must_be_not_null(dst, true);
-    if (stopped()) {
-      return true;
-    }
+  src = must_be_not_null(src, true);
+  dst = must_be_not_null(dst, true);
+  if (stopped()) {
+    return true;
   }
 
   const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
@@ -6230,12 +6226,10 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   }
 
   // Check source & target bounds
-  if (VerifyIntrinsicChecks) {
-    generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, true);
-    generate_string_range_check(dst, dst_offset, length, false, true);
-    if (stopped()) {
-      return true;
-    }
+  generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, true, !VerifyIntrinsicChecks);
+  generate_string_range_check(dst, dst_offset, length, false, true, !VerifyIntrinsicChecks);
+  if (stopped()) {
+    return true;
   }
 
   Node* src_start = array_element_address(src, src_offset, T_CHAR);
