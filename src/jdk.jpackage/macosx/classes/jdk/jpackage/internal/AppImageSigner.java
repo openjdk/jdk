@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -45,6 +46,7 @@ import jdk.jpackage.internal.Codesign.CodesignException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Logger;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.PathUtils;
@@ -83,6 +85,14 @@ final class AppImageSigner {
 
         @Override
         public boolean test(Path path) {
+            boolean result = testInternal(path);
+            if (!result) {
+                LOGGER.log(Level.TRACE, "{0}: {1}", path, "Will be skipped from signing");
+            }
+            return result;
+        }
+
+        private boolean testInternal(Path path) {
             if (!Files.isRegularFile(path) || otherExcludePaths.contains(path)) {
                 return false;
             }
@@ -114,8 +124,8 @@ final class AppImageSigner {
             content.filter(fileFilter).forEach(toConsumer(path -> {
                 final var origPerms = ensureCanWrite(path);
                 try {
-                    unsign(path);
-                    sign(path);
+                    removeSignature(path);
+                    codesigners.accept(path);
                 } finally {
                     if (!origPerms.isEmpty()) {
                         Files.setPosixFilePermissions(path, origPerms);
@@ -138,7 +148,7 @@ final class AppImageSigner {
         if (Files.isDirectory(frameworkPath)) {
             try (var content = Files.list(frameworkPath)) {
                 content.forEach(toConsumer(path -> {
-                    codesigners.codesignDir().accept(path);
+                    codesigners.accept(path);
                 }));
             }
         }
@@ -191,19 +201,18 @@ final class AppImageSigner {
         try {
             return Executor.of("/usr/bin/xcrun", "--help").setQuiet(true).execute() == 0;
         } catch (IOException ex) {
+            LOGGER.log(Level.ERROR, ex);
             return false;
         }
     }
 
-    private static void unsign(Path path) throws IOException {
+    private static void removeSignature(Path path) throws IOException {
         // run quietly
         Executor.of("/usr/bin/codesign", "--remove-signature", path.toString())
                 .setQuiet(true)
+                .setLogger(LOGGER)
+                .setLoggerLevel(Level.TRACE)
                 .executeExpectSuccess();
-    }
-
-    private void sign(Path path) {
-        codesigners.accept(path);
     }
 
     private AppImageSigner(Codesigners codesigners) {
@@ -220,7 +229,8 @@ final class AppImageSigner {
         @Override
         public void accept(Path path) {
             findCodesigner(path).orElseThrow(() -> {
-                return new IllegalArgumentException(String.format("No codesigner for %s path", PathUtils.normalizedAbsolutePathString(path)));
+                return new IllegalArgumentException(String.format("No codesigner for %s path",
+                        PathUtils.normalizedAbsolutePathString(path)));
             }).accept(path);
         }
 
@@ -263,4 +273,5 @@ final class AppImageSigner {
     }
 
     private final Codesigners codesigners;
+    private final static System.Logger LOGGER = Logger.MAC_SIGN.get();
 }

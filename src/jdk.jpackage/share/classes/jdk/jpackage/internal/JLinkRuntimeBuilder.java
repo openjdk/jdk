@@ -75,7 +75,8 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         String jlinkOut = writer.toString();
 
         args.add(0, "jlink");
-        Log.verbose(args, List.of(jlinkOut), retVal, -1);
+        Log.verbose(Executor.createExecutionResultLogMessage(
+                args, List.of(jlinkOut), retVal, -1));
         if (retVal != 0) {
             throw new JPackageException(I18N.format("error.jlink.failed", jlinkOut));
         }
