@@ -331,7 +331,7 @@ private:
   Node* extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands);
 
 public:
-  MinMaxNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {
+  MinMaxNode(Node* in1, Node* in2) : AddNode(in1, in2) {
     init_class_id(Class_MinMax);
   }
   virtual int Opcode() const = 0;
