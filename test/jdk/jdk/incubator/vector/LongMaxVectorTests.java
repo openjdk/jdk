@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1110,6 +1110,12 @@ public class LongMaxVectorTests extends AbstractVectorTest {
                     .flatMap(pair -> LONG_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f)))
                     .collect(Collectors.toList());
 
+    @DataProvider
+    public Object[][] boolUnaryOpProvider() {
+        return BOOL_ARRAY_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
 
     static final List<List<IntFunction<long[]>>> LONG_GENERATOR_TRIPLES =
         LONG_GENERATOR_PAIRS.stream().
@@ -4574,7 +4580,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    @Test(dataProvider = "boolUnaryOpProvider")
     static void anyTrueLongMaxVectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());
@@ -4598,7 +4604,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    @Test(dataProvider = "boolUnaryOpProvider")
     static void allTrueLongMaxVectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());

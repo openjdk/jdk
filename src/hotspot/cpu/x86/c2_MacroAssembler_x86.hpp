@@ -347,13 +347,13 @@ public:
                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5,
                           AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
 
-  void vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
+  void vector_castF2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
 
-  void vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);
+  void vector_castF2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);
 
-  void vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
+  void vector_castD2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
 
-  void vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);
+  void vector_castD2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);
 
   void vector_cast_double_to_int_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                                    XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, Register rscratch,

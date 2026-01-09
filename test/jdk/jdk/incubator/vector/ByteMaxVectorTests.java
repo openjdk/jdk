@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1130,6 +1130,12 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
                     .flatMap(pair -> BYTE_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f)))
                     .collect(Collectors.toList());
 
+    @DataProvider
+    public Object[][] boolUnaryOpProvider() {
+        return BOOL_ARRAY_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
 
     static final List<List<IntFunction<byte[]>>> BYTE_GENERATOR_TRIPLES =
         BYTE_GENERATOR_PAIRS.stream().
@@ -4508,7 +4514,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    @Test(dataProvider = "boolUnaryOpProvider")
     static void anyTrueByteMaxVectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());
@@ -4532,7 +4538,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         return res;
     }
 
-    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    @Test(dataProvider = "boolUnaryOpProvider")
     static void allTrueByteMaxVectorTests(IntFunction<boolean[]> fm) {
         boolean[] mask = fm.apply(SPECIES.length());
         boolean[] r = fmr.apply(SPECIES.length());

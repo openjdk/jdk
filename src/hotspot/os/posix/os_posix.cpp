@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoader.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -1350,6 +1351,10 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
 
 bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
+}
+
+bool os::Posix::is_current_user_root(){
+    return is_root(geteuid());
 }
 
 bool os::Posix::matches_effective_uid_or_root(uid_t uid) {
