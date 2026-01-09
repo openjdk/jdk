@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,8 +366,14 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             Collection<CipherSuite> allowedCipherSuites,
             List<ProtocolVersion> protocols) {
         LinkedHashSet<CipherSuite> suites = new LinkedHashSet<>();
-        List<String> disabledSuites = new ArrayList<>();
-        List<String> unAvailableSuites = new ArrayList<>();
+        List<String> disabledSuites = null;
+        List<String> unAvailableSuites = null;
+
+        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
+            disabledSuites = new ArrayList<>();
+            unAvailableSuites = new ArrayList<>();
+        }
+
         if (protocols != null && (!protocols.isEmpty())) {
             for (CipherSuite suite : allowedCipherSuites) {
                 if (!suite.isAvailable()) {
@@ -398,11 +404,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         }
 
         if(SSLLogger.isOn() && SSLLogger.isOn("ssl,sslctx")) {
-            logSuites("Ignore disabled cipher suites for protocols:",
+            logSuites("Ignore disabled cipher suites for protocols: ",
                     protocols, disabledSuites);
-            logSuites("Ignore unavailable cipher suites for protocols:",
+            logSuites("Ignore unavailable cipher suites for protocols: ",
                     protocols, unAvailableSuites);
-            logSuites("Available cipher suites for protocols:",
+            logSuites("Available cipher suites for protocols: ",
                     protocols, suites);
 
         }
