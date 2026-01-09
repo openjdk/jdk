@@ -52,7 +52,6 @@ import jdk.test.whitebox.WhiteBox;
 import nsk.share.TestFailure;
 import nsk.share.test.*;
 import nsk.monitoring.share.*;
-import nsk.share.gc.Algorithms;
 import nsk.share.runner.RunParams;
 import nsk.share.runner.RunParamsAware;
 
