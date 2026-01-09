@@ -268,84 +268,67 @@ bool may_alias_at_offset(const TypePtr* ptr_ty, const int alias_idx, const intpt
          (alias_idx == ptr_alias_idx && offset == ptr_ty->offset());
 }
 
-// Scan the memory graph upwards from a starting node to an arraycopy. Given an elemnt from the destination array,
-// check whether the element from the source array that was copied into the given destination element is modified
-// after the arraycopy. This assumes that the destination array is scalar replacable but the source is not.
-bool src_elem_not_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* start, const Node* mem, const intptr_t offset, PhaseGVN* phase, Node_Stack* phis, const int level) {
-  assert(mem != nullptr, "sanity");
-  if (mem == ac) {
-    return true;
-  }
-
-  // Loop in the memory graph
-  if (mem == start) {
-    return false;
-  }
-
-  // Recursion too deep
-  if (level == 0) {
+// Scan the memory graph breadth first from a starting node up to an arraycopy. Given an elemnt from the destination array,
+// check whether the element from the source array that was copied into the given destination element is modified after the
+// arraycopy. This assumes that the destination array is scalar replacable but makes no assumption for the source.
+bool src_elem_modified_after_arraycopy(const ArrayCopyNode* ac, Node* start, const intptr_t src_offset, PhaseGVN* phase) {
+  assert(ac != nullptr && start != nullptr, "sanity");
+  if (start == ac) {
     return false;
   }
 
   const TypeOopPtr* src_ptr_ty = ac->get_src_adr_type(phase)->is_oopptr();
   const int src_alias_idx = phase->C->get_alias_index(src_ptr_ty);
 
-  if (const ProjNode* proj = mem->isa_Proj(); proj != nullptr && proj->_con == TypeFunc::Memory) {
-    if (proj->in(0) == ac) {
-      // base case
-      return true;
-    }
-    if (const CallNode* call = proj->in(0)->isa_Call(); call != nullptr) {
-      if (!call->may_modify(src_ptr_ty, phase)) {
-        return src_elem_not_modified_after_arraycopy(ac, start, call->memory(), offset, phase, phis, level);
-      }
+  ResourceMark rm;
+  Unique_Node_List to_visit;
+  to_visit.push(start);
 
-      return false;
-    } else if (proj->in(0)->is_MemBar()) {
-      // Step through projections after mem bars.
-      return src_elem_not_modified_after_arraycopy(ac, start, proj->in(0), offset, phase, phis, level);
-    }
-  } else if (const MergeMemNode* mm = mem->isa_MergeMem(); mm != nullptr) {
-    return src_elem_not_modified_after_arraycopy(ac, start, mm->memory_at(src_alias_idx), offset, phase, phis, level) &&
-           src_elem_not_modified_after_arraycopy(ac, start, mm->base_memory(), offset, phase, phis, level); // TODO: really needed?
-  } else if (const StoreNode* store = mem->isa_Store(); store != nullptr) {
-    const TypePtr* store_ptr_ty = store->adr_type();
-    const int store_alias_idx = phase->C->get_alias_index(store_ptr_ty);
-    //if (store_alias_idx != src_alias_idx || offset == Type::OffsetBot || store_ptr_ty->offset() == Type::OffsetBot || offset != store_ptr_ty->offset()) {
-    if (!may_alias_at_offset(store_ptr_ty, src_alias_idx, offset, phase)) {
-      return src_elem_not_modified_after_arraycopy(ac, start, store->in(StoreNode::Memory), offset, phase, phis, level);
+  for (uint i = 0; i < to_visit.size(); i++) {
+    const Node* mem = to_visit[i];
+
+    if (mem == ac) {
+      // Reached the target, so visit what is left.
+      continue;
     }
 
-    return false;
-  } else if (PhiNode* phi = mem->isa_Phi(); phi != nullptr) {
-    if (phis->find(phi->_idx) != nullptr) {
-      // Looped back to a previously encountered phi without modification on the memory slice.
+    if (mem->is_Proj()) {
+      // Step through projections.
+      to_visit.push(mem->in(0));
+    } else if (mem->is_MemBar()) {
+      // Step through membars
+      to_visit.push(mem->in(2));
+    } else if (const MergeMemNode* mm = mem->isa_MergeMem(); mm != nullptr) {
+      // Step through mergemems at the alias index of interest.
+      to_visit.push(mm->memory_at(src_alias_idx));
+    } else if (mem->is_Phi()) {
+      assert(mem->bottom_type() == Type::MEMORY, "left memory graph");
+      // Add all non-control inputs of phis to be visited.
+      for (uint phi_in = 1; phi_in < mem->len(); phi_in++) {
+        Node* input = mem->in(phi_in);
+        if (input != nullptr) {
+          to_visit.push(input);
+        }
+      }
+    } else if (const CallNode* call = mem->isa_Call(); call != nullptr) {
+      // Step through call if it does not modify the source element.
+      if (call->may_modify(src_ptr_ty, phase)) {
+        return true;
+      }
+      to_visit.push(call->memory());
+    } else if (mem->is_Store() || mem->isa_LoadStore()) {
+      // Step through (load)store if it does not modify the source element.
+      if (may_alias_at_offset(mem->adr_type(), src_alias_idx, src_offset, phase)) {
+        return true;
+      }
+      to_visit.push(mem->in(MemNode::Memory));
+    } else {
+      // Unhandled or unexpected node: assume it modifies the element.
       return true;
     }
-    bool result = true;
-    for (uint i = 1; i < phi->len(); i++) {
-      if (phi->in(i) == nullptr) {
-        continue;
-      }
-      phis->push(phi, phi->_idx);
-      result &= src_elem_not_modified_after_arraycopy(ac, start, phi->in(i), offset, phase, phis, level - 1);
-    }
-    return result;
-  } else if (const LoadStoreNode* ls = mem->isa_LoadStore(); ls != nullptr) {
-    if (!may_alias_at_offset(ls->adr_type(), src_alias_idx, offset, phase)) {
-      return src_elem_not_modified_after_arraycopy(ac, start, ls->in(MemNode::Memory), offset, phase, phis, level);
-    }
-  } else if (const MemBarNode* mbar = mem->isa_MemBar(); mbar != nullptr) {
-    // step trough
-    return src_elem_not_modified_after_arraycopy(ac, start, mbar->in(2), offset, phase, phis, level);
-  } else if (mem->Opcode() == Op_SCMemProj) {
-    // Step through because it does not have the correct adr_type.
-    return src_elem_not_modified_after_arraycopy(ac, start, mem->in(0), offset, phase, phis, level);
   }
 
-  // TODO: clear array nodes
-  // TODO: StrInflatedCopy
-
+  // Did not find modification of source element in memory graph.
   return false;
 }
 
@@ -407,8 +390,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, Node* sfpt, intpt
       // Ensure that pinning rematerialization load inside the uncommon path is safe.
       Node_Stack stack(8);
       if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() &&
-          !src_elem_not_modified_after_arraycopy(ac, sfpt, mem, adr_type->offset(), &_igvn, &stack, 10)) {
-        tty->print_cr("used not safe path, offset = %lx", offset);
+          src_elem_modified_after_arraycopy(ac, mem, adr_type->offset(), &_igvn)) {
         // Not safe: use control and memory from the arraycopy to ensure correct memory state.
         return make_arraycopy_load(ac, sfpt, offset, ac->control(), ac->memory(), ft, ftype, alloc);
       }
