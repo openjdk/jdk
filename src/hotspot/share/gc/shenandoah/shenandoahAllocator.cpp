@@ -107,25 +107,29 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation(ShenandoahAll
     return obj;
   }
 
-  uint dummy = 0;
+  uint regions_ready_for_refresh = 0u;
+  uint32_t old_epoch_id = AtomicAccess::load(&_epoch_id);
   // Fast path: start the attempt to allocate in alloc regions right away
-  HeapWord* obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), dummy);
+  HeapWord* obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
   if (obj != nullptr) {
     return obj;
   }
   // Slow path under heap lock
-  return attempt_allocation_slow(req, in_new_region);
+  return attempt_allocation_slow(req, in_new_region, regions_ready_for_refresh, old_epoch_id);
 }
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
-HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region) {
+HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region, uint regions_ready_for_refresh, uint32_t old_epoch_id) {
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
-  uint regions_ready_for_refresh = 0u;
-  // Attempt to allocate in shared alloc regions after taking heap lock,
-  // because other mutator may have refreshed shared alloc regions
-  HeapWord* obj = attempt_allocation_in_alloc_regions<true /*holding heap lock*/>(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
-  if (obj != nullptr) {
-    return obj;
+  HeapWord* obj = nullptr;
+  if (old_epoch_id != AtomicAccess::load(&_epoch_id)) {
+    // After taking heap lock, attempt to allocate in shared alloc regions again
+    // if alloc regions have been refreshed by other thread while current thread waits to take heap lock.
+    regions_ready_for_refresh = 0u; //reset regions_ready_for_refresh to 0.
+    obj = attempt_allocation_in_alloc_regions<true /*holding heap lock*/>(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
+    if (obj != nullptr) {
+      return obj;
+    }
   }
 
   ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
@@ -287,6 +291,7 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
     ShenandoahAffiliation affiliation = ALLOC_PARTITION == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
     // Step 3: Install the new reserved alloc regions
     if (reserved_regions > 0) {
+      int refreshed_regions = 0;
       for (int i = 0; i < reserved_regions; i++) {
         assert(reserved[i]->affiliation() == affiliation, "Affiliation of reserved region must match, invalid affiliation: %s", shenandoah_affiliation_name(reserved[i]->affiliation()));
         assert(_free_set->membership(reserved[i]->index()) == ShenandoahFreeSetPartitionId::NotFree, "Reserved heap region must have been retired from free set.");
@@ -305,6 +310,12 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
         log_debug(gc, alloc)("%sAllocator: Storing heap region %li to alloc region %i",
           _alloc_partition_name, reserved[i]->index(), refreshable[i]->alloc_region_index);
         AtomicAccess::store(&refreshable[i]->address, reserved[i]);
+        refreshed_regions++;
+      }
+
+      if (refreshed_regions > 0) {
+        // Increase _epoch_id by 1 when any of alloc regions has been refreshed.
+        AtomicAccess::inc(&_epoch_id);
       }
     }
     return reserved_regions;

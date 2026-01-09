@@ -28,6 +28,7 @@
 
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSetPartitionId.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "runtime/thread.hpp"
@@ -50,6 +51,10 @@ protected:
   ShenandoahFreeSet* const           _free_set;
   const char*                        _alloc_partition_name;
   bool                               _yield_to_safepoint = false;
+  shenandoah_padding(0);
+  volatile uint32_t                  _epoch_id = 0u; // epoch id of _alloc_regions, increase by 1 whenever refresh _alloc_regions.
+  shenandoah_padding(1);
+
 
   // start index of the shared alloc regions where the allocation will start from.
   virtual uint alloc_start_index() { return 0u; }
@@ -63,10 +68,12 @@ protected:
 
   // Slow path of allocation attempt. When fast path trying to allocate in shared alloc regions fails attempt_allocation_slow will
   // be called to refresh shared alloc regions and allocate memory for the alloc request.
-  HeapWord* attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region);
+  HeapWord* attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region, uint regions_ready_for_refresh, uint32_t old_epoch_id);
 
-  // Attempt to allocate from a region in free set, rather than from any of shared alloc regions.
-  // Caller have to hold heap lock.
+  // Attempt to allocate from a region in free set, rather than from any of shared alloc regions, it might be called in the conditions below:
+  //   1. _alloc_region_count is explicitly set to 0 to disable CAS allocator;
+  //   2. all the shared alloc regions are not ready to retire, nor have enough space for allocation.
+  // Caller has to hold heap lock.
   HeapWord* attempt_allocation_from_free_set(ShenandoahAllocRequest& req, bool& in_new_region);
 
   // Attempt to allocate in a shared alloc region using atomic operation without holding the heap lock.
