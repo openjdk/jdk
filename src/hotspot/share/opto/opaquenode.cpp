@@ -112,6 +112,10 @@ const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 
+const Type* OpaqueGuardNode::Value(PhaseGVN* phase) const {
+  return phase->type(in(1));
+}
+
 OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol,  CountedLoopNode* loop_node)
     : Node(nullptr, bol),
       _loop_node(loop_node),

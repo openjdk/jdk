@@ -143,6 +143,7 @@ class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
 class OpaqueMultiversioningNode;
 class OpaqueNotNullNode;
+class OpaqueGuardNode;
 class OpaqueInitializedAssertionPredicateNode;
 class OpaqueTemplateAssertionPredicateNode;
 class OuterStripMinedLoopNode;
@@ -822,6 +823,7 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 20)
     DEFINE_CLASS_ID(LShift,   Node, 21)
     DEFINE_CLASS_ID(Neg,      Node, 22)
+    DEFINE_CLASS_ID(OpaqueGuard,  Node, 23)
 
     _max_classes  = ClassMask_Neg
   };
@@ -997,6 +999,7 @@ public:
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(OpaqueNotNull)
+  DEFINE_CLASS_QUERY(OpaqueGuard)
   DEFINE_CLASS_QUERY(OpaqueInitializedAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueTemplateAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)

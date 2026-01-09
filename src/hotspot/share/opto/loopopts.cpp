@@ -1705,6 +1705,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_MergeMem() &&
       !n->is_CMove() &&
       !n->is_OpaqueNotNull() &&
+      !n->is_OpaqueGuard() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
       !is_raw_to_oop_cast && // don't extend live ranges of raw oops
@@ -2228,7 +2229,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // split if to break.
       assert(!use->is_OpaqueTemplateAssertionPredicate(),
              "should not clone a Template Assertion Predicate which should be removed once it's useless");
-      if (use->is_If() || use->is_CMove() || use->is_OpaqueNotNull() || use->is_OpaqueInitializedAssertionPredicate() ||
+      if (use->is_If() || use->is_CMove() || use->is_OpaqueGuard() || use->is_OpaqueNotNull() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.

@@ -148,6 +148,31 @@ class OpaqueNotNullNode : public Node {
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
+// Similar to OpaqueNotNullNode but for guards. Sometimes we know that a size or limit guard is checked
+// (e.g. there is already a guard in the caller) but the compiler cannot prove it. We could in principle avoid
+// adding a guard in the intrinsic but in some cases (e.g. when the input is a constant that breaks the guard
+// and the caller guard is not inlined) the input of the intrinsic can become top and the data path is folded.
+// Similar to OpaqueNotNullNode to ensure that the control path is also properly folded, we insert a
+// OpaqueGuardNode before the If node in the guard. During macro expansion, we replace the OpaqueGuardNode with
+// the corresponding constant (true/false) in product builds such that the actually unneeded guards
+// are folded and do not end up in the emitted code. In debug builds, we keep the actual checks as additional
+// verification code (i.e. removing OpaqueGuardNode and use the BoolNode inputs instead).
+class OpaqueGuardNode : public Node {
+ private:
+    bool _is_positive;
+ public:
+  OpaqueGuardNode(Compile* C, Node* tst, bool is_positive) : Node(nullptr, tst), _is_positive(is_positive) {
+    init_class_id(Class_OpaqueGuard);
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
+
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+  bool is_positive() const { return _is_positive; }
+};
+
 // This node is used for Template Assertion Predicate BoolNodes. A Template Assertion Predicate is always removed
 // after loop opts and thus is never converted to actual code. In the post loop opts IGVN phase, the
 // OpaqueTemplateAssertionPredicateNode is replaced by true in order to fold the Template Assertion Predicate away.
