@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class FlowTest extends AbstractRandomTest {
         executor = Executors.newCachedThreadPool();
         srcPublisher = new SubmissionPublisher<>(executor, 20,
                                                  this::handlePublisherException);
-        SSLContext ctx = (new SimpleSSLContext()).get();
+        SSLContext ctx = SimpleSSLContextWhiteboxAdapter.findSSLContext();
         SSLEngine engineClient = ctx.createSSLEngine();
         SSLParameters params = ctx.getSupportedSSLParameters();
         params.setApplicationProtocols(new String[]{"proto1", "proto2"}); // server will choose proto2
