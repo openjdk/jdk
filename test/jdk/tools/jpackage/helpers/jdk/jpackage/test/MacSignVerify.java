@@ -262,8 +262,8 @@ public final class MacSignVerify {
                     signIdentities.add(new SignIdentity(name, fingerprint));
                 } while (lineIt.hasNext());
                 return signIdentities;
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (Exception ex) {
+                ex.printStackTrace();
                 reportUnexpectedCommandOutcome(exec.getPrintableCommandLine(), result);
                 return null; // Unreachable
             }

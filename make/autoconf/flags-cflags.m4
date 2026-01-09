@@ -69,6 +69,23 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   # Debug prefix mapping if supported by compiler
   DEBUG_PREFIX_CFLAGS=
 
+  UTIL_ARG_WITH(NAME: native-debug-symbols-level, TYPE: string,
+    DEFAULT: "",
+    RESULT: DEBUG_SYMBOLS_LEVEL,
+    DESC: [set the native debug symbol level (GCC and Clang only)],
+    DEFAULT_DESC: [toolchain default])
+  AC_SUBST(DEBUG_SYMBOLS_LEVEL)
+
+  if test "x${TOOLCHAIN_TYPE}" = xgcc || \
+     test "x${TOOLCHAIN_TYPE}" = xclang; then
+    DEBUG_SYMBOLS_LEVEL_FLAGS="-g"
+    if test "x${DEBUG_SYMBOLS_LEVEL}" != "x"; then
+      DEBUG_SYMBOLS_LEVEL_FLAGS="-g${DEBUG_SYMBOLS_LEVEL}"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_SYMBOLS_LEVEL_FLAGS}],
+          IF_FALSE: AC_MSG_ERROR("Debug info level ${DEBUG_SYMBOLS_LEVEL} is not supported"))
+    fi
+  fi
+
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
@@ -93,8 +110,9 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4"
-    ASFLAGS_DEBUG_SYMBOLS="-g"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 ${DEBUG_SYMBOLS_LEVEL_FLAGS}"
+    ASFLAGS_DEBUG_SYMBOLS="${DEBUG_SYMBOLS_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
       # Check if compiler supports -fdebug-prefix-map. If so, use that to make
@@ -113,8 +131,9 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
         IF_FALSE: [GDWARF_FLAGS=""])
 
-    CFLAGS_DEBUG_SYMBOLS="-g ${GDWARF_FLAGS}"
-    ASFLAGS_DEBUG_SYMBOLS="-g"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} ${DEBUG_SYMBOLS_LEVEL_FLAGS}"
+    ASFLAGS_DEBUG_SYMBOLS="${DEBUG_SYMBOLS_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
   fi
