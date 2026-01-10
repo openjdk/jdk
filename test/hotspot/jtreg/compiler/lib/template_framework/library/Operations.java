@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,8 +229,8 @@ public final class Operations {
         // ------------ Float -------------
         ops.add(Expression.make(INTS, "Float.compare(", FLOATS, ", ", FLOATS, ")"));
         ops.add(Expression.make(INTS, "Float.floatToIntBits(", FLOATS, ")"));
-        ops.add(Expression.make(INTS, "Float.floatToRawIntBits(", FLOATS, ")", WITH_NONDETERMINISTIC_RESULT));
         // Note: there are multiple NaN values with different bit representations.
+        ops.add(Expression.make(INTS, "Float.floatToRawIntBits(", FLOATS, ")", WITH_NONDETERMINISTIC_RESULT));
         ops.add(Expression.make(FLOATS, "Float.float16ToFloat(", SHORTS, ")"));
         ops.add(Expression.make(FLOATS, "Float.intBitsToFloat(", INTS, ")"));
         ops.add(Expression.make(BOOLEANS, "Float.isFinite(", FLOATS, ")"));
@@ -297,7 +297,8 @@ public final class Operations {
         ops.add(Expression.make(FLOAT16, "Float16.copySign(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(FLOAT16, "Float16.divide(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(BOOLEANS, "", FLOAT16, ".equals(", FLOAT16, ")"));
-        ops.add(Expression.make(SHORTS, "Float16.float16ToRawShortBits(", FLOAT16, ")"));
+        // Note: there are multiple NaN values with different bit representations.
+        ops.add(Expression.make(SHORTS, "Float16.float16ToRawShortBits(", FLOAT16, ")", WITH_NONDETERMINISTIC_RESULT));
         ops.add(Expression.make(SHORTS, "Float16.float16ToShortBits(", FLOAT16, ")"));
         ops.add(Expression.make(FLOAT16, "Float16.fma(", FLOAT16, ",", FLOAT16, ", ", FLOAT16, ")"));
         ops.add(Expression.make(INTS, "Float16.getExponent(", FLOAT16, ")"));
