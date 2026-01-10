@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.function.Supplier;
 import java.util.spi.ToolProvider;
 import jdk.internal.opt.CommandLine;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.Globals;
 import jdk.jpackage.internal.Log;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
@@ -56,7 +57,15 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  */
 public final class Main {
 
-    public static final class Provider implements ToolProvider {
+    public record Provider(Supplier<CliBundlingEnvironment> bundlingEnvSupplier) implements ToolProvider {
+
+        public Provider {
+            Objects.requireNonNull(bundlingEnvSupplier);
+        }
+
+        public Provider() {
+            this(Main::loadBundlingEnvironment);
+        }
 
         @Override
         public String name() {
@@ -65,7 +74,7 @@ public final class Main {
 
         @Override
         public int run(PrintWriter out, PrintWriter err, String... args) {
-            return Main.run(out, err, args);
+            return Main.run(bundlingEnvSupplier, out, err, args);
         }
 
         @Override
@@ -94,7 +103,23 @@ public final class Main {
         System.exit(run(out, err, args));
     }
 
-    public static int run(PrintWriter out, PrintWriter err, String... args) {
+    static int run(PrintWriter out, PrintWriter err, String... args) {
+        return run(Main::loadBundlingEnvironment, out, err, args);
+    }
+
+    static int run(Supplier<CliBundlingEnvironment> bundlingEnvSupplier, PrintWriter out, PrintWriter err, String... args) {
+        return Globals.main(() -> {
+            return runWithGlobals(bundlingEnvSupplier, out, err, args);
+        });
+    }
+
+    private static int runWithGlobals(
+            Supplier<CliBundlingEnvironment> bundlingEnvSupplier,
+            PrintWriter out,
+            PrintWriter err,
+            String... args) {
+
+        Objects.requireNonNull(bundlingEnvSupplier);
         Objects.requireNonNull(args);
         for (String arg : args) {
             Objects.requireNonNull(arg);
@@ -128,8 +153,7 @@ public final class Main {
                 return preprocessStatus;
             }
 
-            final var bundlingEnv = ServiceLoader.load(CliBundlingEnvironment.class,
-                    CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();
+            final var bundlingEnv = bundlingEnvSupplier.get();
 
             final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(mappedArgs.get());
 
@@ -284,5 +308,11 @@ public final class Main {
 
     private static String getVersion() {
         return System.getProperty("java.version");
+    }
+
+    private static CliBundlingEnvironment loadBundlingEnvironment() {
+        return ServiceLoader.load(
+                CliBundlingEnvironment.class,
+                CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();
     }
 }

@@ -79,7 +79,7 @@ class BufferSize1Test implements HttpServerAdapters {
     void test(Version version, boolean secure) throws Exception {
 
         // Create the server
-        var sslContext = secure || HTTP_3.equals(version) ? new SimpleSSLContext().get() : null;
+        var sslContext = secure || HTTP_3.equals(version) ? SimpleSSLContext.findSSLContext() : null;
         try (var server = switch (version) {
             case HTTP_1_1, HTTP_2 -> HttpTestServer.create(version, sslContext);
             case HTTP_3 -> HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
