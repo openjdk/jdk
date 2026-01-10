@@ -31,15 +31,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.Slot;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacHelper.SignKeyOption;
+import jdk.jpackage.test.MacHelper.SignKeyOptionWithKeychain;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.MacSignVerify.SpctlType;
+import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -80,20 +83,40 @@ public class SigningRuntimeImagePackageTest {
         spec.test();
     }
 
+    @Test
+    @Parameter("IMAGE")
+    @Parameter("BUNDLE")
+    public static void testBundleSignedRuntime(RuntimeType runtimeType) {
+
+        Slot<Path> predefinedRuntime = Slot.createEmpty();
+
+        var signRuntime = runtimeImageSignOption();
+
+        new PackageTest().addRunOnceInitializer(() -> {
+            predefinedRuntime.set(createRuntime(Optional.of(signRuntime), runtimeType));
+        }).addInitializer(cmd -> {
+            cmd.ignoreDefaultRuntime(true);
+            cmd.removeArgumentWithValue("--input");
+            cmd.setArgumentValue("--runtime-image", predefinedRuntime.get());
+        }).addInstallVerifier(cmd -> {
+            if (runtimeType == RuntimeType.BUNDLE) {
+                MacSignVerify.verifyAppImageSigned(cmd, signRuntime.certRequest());
+            }
+        }).run();
+    }
+
     public static Collection<Object[]> test() {
 
         List<RuntimeTestSpec> data = new ArrayList<>();
 
-        for (var runtimeType : RuntimeTestSpec.RuntimeType.values()) {
+        for (var runtimeType : RuntimeType.values()) {
             for (var signRuntime : List.of(true, false)) {
-                Optional<SignKeyOption> runtimeSignOption;
+                Optional<SignKeyOptionWithKeychain> runtimeSignOption;
                 if (signRuntime) {
                     // Sign the runtime bundle with the key not used in the jpackage command line being tested.
                     // This way we can test if jpackage keeps or replaces the signature of
                     // the predefined runtime bundle when backing it in the pkg or dmg installer.
-                    runtimeSignOption = Optional.of(new SignKeyOption(
-                            SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
-                            SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.resolveIn(SigningBase.StandardKeychain.MAIN)));
+                    runtimeSignOption = Optional.of(runtimeImageSignOption());
                 } else {
                     runtimeSignOption = Optional.empty();
                 }
@@ -109,18 +132,21 @@ public class SigningRuntimeImagePackageTest {
         }).toList();
     }
 
-    record RuntimeTestSpec(Optional<SignKeyOption> signRuntime, RuntimeType runtimeType, SigningPackageTest.TestSpec signPackage) {
+    enum RuntimeType {
+        IMAGE,
+        BUNDLE,
+        ;
+    }
+
+    record RuntimeTestSpec(
+            Optional<SignKeyOptionWithKeychain> signRuntime,
+            RuntimeType runtimeType,
+            SigningPackageTest.TestSpec signPackage) {
 
         RuntimeTestSpec {
             Objects.requireNonNull(signRuntime);
             Objects.requireNonNull(runtimeType);
             Objects.requireNonNull(signPackage);
-        }
-
-        enum RuntimeType {
-            IMAGE,
-            BUNDLE,
-            ;
         }
 
         @Override
@@ -138,7 +164,9 @@ public class SigningRuntimeImagePackageTest {
             if (runtimeType == RuntimeType.IMAGE) {
                 return signPackage.appImageSignOption().map(SignKeyOption::certRequest);
             } else {
-                return signPackage.appImageSignOption().or(this::signRuntime).map(SignKeyOption::certRequest);
+                return signPackage.appImageSignOption().or(() -> {
+                    return signRuntime.map(SignKeyOptionWithKeychain::signKeyOption);
+                }).map(SignKeyOption::certRequest);
             }
         }
 
@@ -147,7 +175,7 @@ public class SigningRuntimeImagePackageTest {
             Slot<Path> predefinedRuntime = Slot.createEmpty();
 
             var test = signPackage.initTest().addRunOnceInitializer(() -> {
-                predefinedRuntime.set(createRuntime());
+                predefinedRuntime.set(createRuntime(signRuntime, runtimeType));
             }).addInitializer(cmd -> {
                 cmd.ignoreDefaultRuntime(true);
                 cmd.removeArgumentWithValue("--input");
@@ -162,33 +190,43 @@ public class SigningRuntimeImagePackageTest {
                 test.run();
             }, signPackage.keychain());
         }
+    }
 
-        private Path createRuntime() {
-            if (runtimeType == RuntimeType.IMAGE && signRuntime.isEmpty()) {
-                return JPackageCommand.createInputRuntimeImage();
+    private static SignKeyOptionWithKeychain runtimeImageSignOption() {
+        // Sign the runtime bundle with the key not used in the jpackage command line being tested.
+        // This way we can test if jpackage keeps or replaces the signature of
+        // the predefined runtime bundle when backing it in the pkg or dmg installer.
+        return new SignKeyOptionWithKeychain(
+                SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
+                SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD,
+                SigningBase.StandardKeychain.MAIN.keychain());
+    }
+
+    private static Path createRuntime(Optional<SignKeyOptionWithKeychain> signRuntime, RuntimeType runtimeType) {
+        if (runtimeType == RuntimeType.IMAGE && signRuntime.isEmpty()) {
+            return JPackageCommand.createInputRuntimeImage();
+        } else {
+            Slot<Path> runtimeBundle = Slot.createEmpty();
+
+            MacSign.withKeychain(keychain -> {
+                runtimeBundle.set(MacHelper.createRuntimeBundle(signRuntime.map(signingOption -> {
+                    return signingOption::setTo;
+                })));
+            }, SigningBase.StandardKeychain.MAIN.keychain());
+
+            if (runtimeType == RuntimeType.IMAGE) {
+                return MacBundle.fromPath(runtimeBundle.get()).orElseThrow().homeDir();
             } else {
-                Slot<Path> runtimeBundle = Slot.createEmpty();
-
-                MacSign.withKeychain(keychain -> {
-                    runtimeBundle.set(MacHelper.createRuntimeBundle(signRuntime.map(signingOption -> {
-                        return new MacHelper.SignKeyOptionWithKeychain(signingOption, keychain)::setTo;
-                    })));
-                }, SigningBase.StandardKeychain.MAIN.keychain());
-
-                if (runtimeType == RuntimeType.IMAGE) {
-                    return MacBundle.fromPath(runtimeBundle.get()).orElseThrow().homeDir();
-                } else {
-                    // Verify the runtime bundle is properly signed/unsigned.
-                    signRuntime.map(MacHelper.SignKeyOption::certRequest).ifPresentOrElse(certRequest -> {
-                        MacSignVerify.assertSigned(runtimeBundle.get(), certRequest);
-                        var signOrigin = MacSignVerify.findSpctlSignOrigin(SpctlType.EXEC, runtimeBundle.get()).orElse(null);
-                        TKit.assertEquals(certRequest.name(), signOrigin,
-                                String.format("Check [%s] has sign origin as expected", runtimeBundle.get()));
-                    }, () -> {
-                        MacSignVerify.assertAdhocSigned(runtimeBundle.get());
-                    });
-                    return runtimeBundle.get();
-                }
+                // Verify the runtime bundle is properly signed/unsigned.
+                signRuntime.map(SignKeyOptionWithKeychain::certRequest).ifPresentOrElse(certRequest -> {
+                    MacSignVerify.assertSigned(runtimeBundle.get(), certRequest);
+                    var signOrigin = MacSignVerify.findSpctlSignOrigin(SpctlType.EXEC, runtimeBundle.get()).orElse(null);
+                    TKit.assertEquals(certRequest.name(), signOrigin,
+                            String.format("Check [%s] has sign origin as expected", runtimeBundle.get()));
+                }, () -> {
+                    MacSignVerify.assertAdhocSigned(runtimeBundle.get());
+                });
+                return runtimeBundle.get();
             }
         }
     }

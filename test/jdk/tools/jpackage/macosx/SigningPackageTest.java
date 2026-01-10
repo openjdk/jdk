@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.MacHelper;
@@ -226,7 +227,7 @@ public class SigningPackageTest {
             }
 
             for (var certRequests : certRequestGroups) {
-                for (var signIdentityType : SignKeyOption.Type.values()) {
+                for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
                     if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT
                             && !SigningBase.StandardKeychain.SINGLE.contains(certRequests.getFirst())) {
                         // Skip invalid test case: the keychain for testing signing without
@@ -234,9 +235,9 @@ public class SigningPackageTest {
                         break;
                     }
 
-                    var keychain = chooseKeychain(signIdentityType);
-                    var appImageSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getFirst().resolveIn(keychain));
-                    var pkgSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getLast().resolveIn(keychain));
+                    var keychain = chooseKeychain(signIdentityType).keychain();
+                    var appImageSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getFirst(), keychain);
+                    var pkgSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getLast(), keychain);
 
                     switch (signIdentityType) {
                         case SIGN_KEY_IDENTITY -> {
@@ -246,10 +247,24 @@ public class SigningPackageTest {
                             data.add(new TestSpec(Optional.empty(), Optional.of(pkgSignKeyOption), PackageType.MAC_PKG));
                         }
                         case SIGN_KEY_USER_SHORT_NAME, SIGN_KEY_IMPLICIT -> {
-                            // Use "--mac-signing-key-user-name" signing option or implicit signing option.
+                            // Use "--mac-signing-key-user-name" signing option with short user name or implicit signing option.
                             // It signs both the packaged app image and the installer (.pkg).
                             // Thus, if the installer is not signed, it can be used only with .dmg packaging.
                             data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.empty(), PackageType.MAC_DMG));
+                        }
+                        case SIGN_KEY_USER_FULL_NAME -> {
+                            // Use "--mac-signing-key-user-name" signing option with the full user name.
+                            // Like SIGN_KEY_USER_SHORT_NAME, jpackage will try to use it to sign both
+                            // the packaged app image and the installer (.pkg).
+                            // It will fail to sign the installer, though, because the signing identity is unsuitable.
+                            // That is why, use it with .dmg packaging only and not with .pkg packaging.
+                            data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.empty(), PackageType.MAC_DMG));
+                            continue;
+                        }
+                        default -> {
+                            // SignKeyOption.Type.defaultValues() should return
+                            // such a sequence that makes this code location unreachable.
+                            throw ExceptionBox.reachedUnreachable();
                         }
                     }
                     data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.of(pkgSignKeyOption), PackageType.MAC));

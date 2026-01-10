@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
@@ -75,12 +77,10 @@ public class SigningAppImageTwoStepsTest {
 
         @Override
         public String toString() {
-            var sb = new StringBuilder();
-            signAppImage.ifPresent(signOption -> {
-                sb.append("app-image=").append(signOption).append("; ");
-            });
-            sb.append(sign);
-            return sb.toString();
+            return Stream.of(
+                    String.format("app-image=%s", signAppImage.map(Objects::toString).orElse("unsigned")),
+                    sign.toString()
+            ).collect(Collectors.joining("; "));
         }
 
         static Builder build() {
@@ -119,8 +119,7 @@ public class SigningAppImageTwoStepsTest {
             }
 
             private SignKeyOptionWithKeychain createSignKeyOption() {
-                return new SignKeyOptionWithKeychain(
-                        signIdentityType, certRequest.resolveIn(keychain.keychain()), keychain.keychain());
+                return new SignKeyOptionWithKeychain(signIdentityType, certRequest, keychain.keychain());
             }
 
             private SigningBase.StandardKeychain keychain = SigningBase.StandardKeychain.MAIN;
@@ -171,7 +170,7 @@ public class SigningAppImageTwoStepsTest {
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD)
                         .signAppImage();
             });
-            for (var signIdentityType : SignKeyOption.Type.values()) {
+            for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
                 builder.signIdentityType(signIdentityType)
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN);
                 if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {

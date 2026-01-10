@@ -81,7 +81,7 @@ public class SigningAppImageTest {
                 SigningBase.StandardCertificateRequest.CODESIGN,
                 SigningBase.StandardCertificateRequest.CODESIGN_UNICODE
         )) {
-            for (var signIdentityType : SignKeyOption.Type.values()) {
+            for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
                 SigningBase.StandardKeychain keychain;
                 if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
                     keychain = SigningBase.StandardKeychain.SINGLE;
@@ -92,10 +92,7 @@ public class SigningAppImageTest {
                     keychain = SigningBase.StandardKeychain.MAIN;
                 }
 
-                data.add(new SignKeyOptionWithKeychain(
-                        signIdentityType,
-                        certRequest.resolveIn(keychain.keychain()),
-                        keychain.keychain()));
+                data.add(new SignKeyOptionWithKeychain(signIdentityType, certRequest, keychain.keychain()));
             }
         }
 

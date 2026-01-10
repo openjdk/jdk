@@ -28,16 +28,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
-import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacHelper.SignKeyOption;
+import jdk.jpackage.test.MacHelper.SignKeyOptionWithKeychain;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.PackageFile;
+import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -74,19 +77,33 @@ public class SigningPackageTwoStepTest {
         spec.test();
     }
 
+    @Test
+    public static void testBundleSignedAppImage() {
+
+        var appImageCmd = JPackageCommand.helloAppImage();
+
+        var predefinedAppImageSignOption = predefinedAppImageSignOption();
+
+        new PackageTest().addRunOnceInitializer(() -> {
+            createPredefinedAppImage(appImageCmd, Optional.of(predefinedAppImageSignOption));
+        }).usePredefinedAppImage(appImageCmd).addInitializer(cmd -> {
+            configureOutputValidator(cmd, true, false);
+        }).addInstallVerifier(cmd -> {
+            MacSignVerify.verifyAppImageSigned(cmd, predefinedAppImageSignOption.certRequest());
+        }).run();
+    }
+
     public static Collection<Object[]> test() {
 
         List<TwoStepsTestSpec> data = new ArrayList<>();
 
         for (var signAppImage : List.of(true, false)) {
-            Optional<SignKeyOption> appImageSignOption;
+            Optional<SignKeyOptionWithKeychain> appImageSignOption;
             if (signAppImage) {
                 // Sign the predefined app image bundle with the key not used in the jpackage command line being tested.
                 // This way we can test if jpackage keeps or replaces the signature of
                 // the predefined app image bundle when backing it in the pkg or dmg installer.
-                appImageSignOption = Optional.of(new SignKeyOption(
-                        SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
-                        SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.resolveIn(SigningBase.StandardKeychain.MAIN)));
+                appImageSignOption = Optional.of(predefinedAppImageSignOption());
             } else {
                 appImageSignOption = Optional.empty();
             }
@@ -101,7 +118,7 @@ public class SigningPackageTwoStepTest {
         }).toList();
     }
 
-    record TwoStepsTestSpec(Optional<SignKeyOption> signAppImage, SigningPackageTest.TestSpec signPackage) {
+    record TwoStepsTestSpec(Optional<SignKeyOptionWithKeychain> signAppImage, SigningPackageTest.TestSpec signPackage) {
 
         TwoStepsTestSpec {
             Objects.requireNonNull(signAppImage);
@@ -110,44 +127,26 @@ public class SigningPackageTwoStepTest {
 
         @Override
         public String toString() {
-            var tokens = new ArrayList<>();
-            signAppImage.ifPresent(v -> {
-                tokens.add(String.format("app-image=%s", v));
-            });
-            tokens.add(signPackage);
-            return tokens.stream().map(Objects::toString).collect(Collectors.joining("; "));
+            return Stream.of(
+                    String.format("app-image=%s", signAppImage.map(Objects::toString).orElse("unsigned")),
+                    signPackage.toString()
+            ).collect(Collectors.joining("; "));
         }
 
         Optional<ResolvableCertificateRequest> packagedAppImageSignIdentity() {
-            return signAppImage.map(SignKeyOption::certRequest);
+            return signAppImage.map(SignKeyOptionWithKeychain::certRequest);
         }
 
         void test() {
 
-            var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
-            signAppImage.ifPresent(signOption -> {
-                MacSign.withKeychain(keychain -> {
-                    MacHelper.useKeychain(appImageCmd, keychain);
-                    signOption.setTo(appImageCmd);
-                }, SigningBase.StandardKeychain.MAIN.keychain());
-            });
+            var appImageCmd = JPackageCommand.helloAppImage();
 
             var test = signPackage.initTest().addRunOnceInitializer(() -> {
-                appImageCmd.setArgumentValue("--dest", TKit.createTempDirectory("appimage")).execute(0);
-                signAppImage.map(SignKeyOption::certRequest).ifPresent(certRequest -> {
-                    // The predefined app image is signed, verify that.
-                    MacSignVerify.verifyAppImageSigned(appImageCmd, certRequest);
-                });
+                createPredefinedAppImage(appImageCmd, signAppImage);
             }).usePredefinedAppImage(appImageCmd).addInitializer(cmd -> {
-                if (signAppImage.isPresent()) {
-                    // Predefined app image is signed. Expect a warning.
-                    cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
-                            "warning.per.user.app.image.signed",
-                            PackageFile.getPathInAppImage(Path.of(""))));
-                } else if (cmd.packageType() == PackageType.MAC_PKG && signPackage.packageSignOption().isPresent()) {
-                    // Create signed ".pkg" bundle from the unsigned predefined app image. Expect a warning.
-                    cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString("warning.unsigned.app.image", "pkg"));
-                }
+                configureOutputValidator(cmd,
+                        signAppImage.isPresent(),
+                        (cmd.packageType() == PackageType.MAC_PKG) && signPackage.packageSignOption().isPresent());
             }).addInstallVerifier(cmd -> {
                 packagedAppImageSignIdentity().ifPresent(certRequest -> {
                     MacSignVerify.verifyAppImageSigned(cmd, certRequest);
@@ -158,5 +157,64 @@ public class SigningPackageTwoStepTest {
                 test.run();
             }, signPackage.keychain());
         }
+    }
+
+    private static SignKeyOptionWithKeychain predefinedAppImageSignOption() {
+        // Sign the predefined app image bundle with the key not used in the jpackage command line being tested.
+        // This way we can test if jpackage keeps or replaces the signature of the input app image bundle.
+        return new SignKeyOptionWithKeychain(
+                SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
+                SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD,
+                SigningBase.StandardKeychain.MAIN.keychain());
+    }
+
+    private static void createPredefinedAppImage(JPackageCommand appImageCmd, Optional<SignKeyOptionWithKeychain> signAppImage) {
+        Objects.requireNonNull(appImageCmd);
+        Objects.requireNonNull(signAppImage);
+
+        appImageCmd.setFakeRuntime().setArgumentValue("--dest", TKit.createTempDirectory("appimage"));
+
+        signAppImage.ifPresentOrElse(signOption -> {
+            signOption.setTo(appImageCmd);
+
+            MacSign.withKeychain(_ -> {
+                appImageCmd.execute(0);
+            }, signOption.keychain());
+
+            // Verify that the predefined app image is signed.
+            MacSignVerify.verifyAppImageSigned(appImageCmd, signOption.certRequest());
+        }, () -> {
+            appImageCmd.execute(0);
+        });
+    }
+
+    private static void configureOutputValidator(JPackageCommand cmd, boolean signAppImage, boolean signPackage) {
+        var signedPredefinedAppImageWarning = JPackageStringBundle.MAIN.cannedFormattedString(
+                "warning.per.user.app.image.signed",
+                PackageFile.getPathInAppImage(Path.of("")));
+
+        var signedInstallerFromUnsignedPredefinedAppImageWarning =
+                JPackageStringBundle.MAIN.cannedFormattedString("warning.unsigned.app.image", "pkg");
+
+        // The warnings are mutual exclusive
+        final Optional<CannedFormattedString> expected;
+        final List<CannedFormattedString> unexpected = new ArrayList<>();
+
+        if (signAppImage) {
+            expected = Optional.of(signedPredefinedAppImageWarning);
+        } else {
+            unexpected.add(signedPredefinedAppImageWarning);
+            if (signPackage) {
+                expected = Optional.of(signedInstallerFromUnsignedPredefinedAppImageWarning);
+            } else {
+                expected = Optional.empty();
+                unexpected.add(signedInstallerFromUnsignedPredefinedAppImageWarning);
+            }
+        }
+
+        expected.ifPresent(cmd::validateOutput);
+        unexpected.forEach(str -> {
+            cmd.validateOutput(TKit.assertTextStream(cmd.getValue(str)).negate());
+        });
     }
 }

@@ -25,7 +25,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
-import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
+import jdk.jpackage.test.MacHelper.NamedCertificateRequestSupplier;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
@@ -62,7 +62,7 @@ import jdk.jpackage.test.TKit;
 
 public class SigningBase {
 
-    public enum StandardCertificateRequest {
+    public enum StandardCertificateRequest implements NamedCertificateRequestSupplier {
         CODESIGN(cert().userName(NAME_ASCII)),
         CODESIGN_COPY(cert().days(100).userName(NAME_ASCII)),
         CODESIGN_ACME_TECH_LTD(cert().days(100).userName("ACME Technologies Limited (ABC12345)")),
@@ -77,22 +77,8 @@ public class SigningBase {
             this.spec = specBuilder.create();
         }
 
-        public ResolvableCertificateRequest resolveIn(ResolvedKeychain keychain) {
-            Objects.requireNonNull(keychain);
-            if (!keychain.spec().certificateRequests().contains(spec)) {
-                throw new IllegalArgumentException(String.format(
-                        "Certificate request %s not found in [%s] keychain",
-                        name(), keychain.spec().keychain().name()));
-            }
-
-            return new ResolvableCertificateRequest(spec, keychain, name());
-        }
-
-        public ResolvableCertificateRequest resolveIn(StandardKeychain keychain) {
-            return resolveIn(keychain.keychain());
-        }
-
-        public CertificateRequest spec() {
+        @Override
+        public CertificateRequest certRequest() {
             return spec;
         }
 
@@ -141,7 +127,9 @@ public class SigningBase {
         ;
 
         StandardKeychain(String keychainName, StandardCertificateRequest... certs) {
-            this(keychainName, certs[0].spec(), Stream.of(certs).skip(1).map(StandardCertificateRequest::spec).toArray(CertificateRequest[]::new));
+            this(keychainName,
+                    certs[0].certRequest(),
+                    Stream.of(certs).skip(1).map(StandardCertificateRequest::certRequest).toArray(CertificateRequest[]::new));
         }
 
         StandardKeychain(String keychainName, CertificateRequest cert, CertificateRequest... otherCerts) {
