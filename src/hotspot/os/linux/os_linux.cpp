@@ -4882,8 +4882,12 @@ int os::open(const char *path, int oflag, int mode) {
   oflag |= O_CLOEXEC;
 
   int fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
-
+  // No further checking is needed if the file is not a
+  // directory or open returned an error
+  if (fd == -1 || ((oflag & O_ACCMODE) != O_RDONLY) != 0) {
+    return fd;
+  }
+  
   //If the open succeeded, the file might still be a directory
   {
     struct stat buf;
