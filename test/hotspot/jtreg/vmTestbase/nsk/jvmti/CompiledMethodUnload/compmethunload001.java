@@ -109,7 +109,7 @@ public class compmethunload001 {
         int num = unloaded();
         int iter = 0;
         while (num == 0) {
-            // The unload is delayed because it happens asyns
+            // The unload is delayed because it happens async
             Thread.sleep(1000);
             num = unloaded();
             iter++;
