@@ -4887,7 +4887,7 @@ int os::open(const char *path, int oflag, int mode) {
   if (fd == -1 || ((oflag & O_ACCMODE) != O_RDONLY) != 0) {
     return fd;
   }
-  
+
   //If the open succeeded, the file might still be a directory
   {
     struct stat buf;
