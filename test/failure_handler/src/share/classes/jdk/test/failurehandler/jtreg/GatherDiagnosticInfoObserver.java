@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,9 +105,7 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
 
     private void gatherCoreInfo(Path workDir, String name, Path core, PrintWriter log,
                                CoreInfoGatherer gatherer) {
-        File output = workDir.resolve(CORES_OUTPUT).toFile();
-        try (HtmlPage html = new HtmlPage(new PrintWriter(
-                new FileWriter(output, true), true))) {
+        try (HtmlPage html = new HtmlPage(workDir, CORES_OUTPUT, true)) {
             try (ElapsedTimePrinter timePrinter
                          = new ElapsedTimePrinter(new Stopwatch(), name, log)) {
                 gatherer.gatherCoreInfo(html.getRootSection(), core);
@@ -121,9 +119,7 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
 
     private void gatherEnvInfo(Path workDir, String name, PrintWriter log,
                                EnvironmentInfoGatherer gatherer) {
-        File output = workDir.resolve(ENVIRONMENT_OUTPUT).toFile();
-        try (HtmlPage html = new HtmlPage(new PrintWriter(
-                new FileWriter(output, true), true))) {
+        try (HtmlPage html = new HtmlPage(workDir, ENVIRONMENT_OUTPUT, true)) {
             try (ElapsedTimePrinter timePrinter
                          = new ElapsedTimePrinter(new Stopwatch(), name, log)) {
                 gatherer.gatherEnvironmentInfo(html.getRootSection());
