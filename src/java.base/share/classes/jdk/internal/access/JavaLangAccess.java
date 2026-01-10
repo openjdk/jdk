@@ -448,19 +448,15 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes as many ASCII codepoints as possible from the source
-     * character array into the destination byte array, assuming that
-     * the encoding is ASCII compatible.
+     * Encodes as many ASCII codepoints as possible from the source array into
+     * the destination byte array, assuming that the encoding is ASCII
+     * compatible.
+     * <p>
+     * <b>WARNING: This method does not perform any bound checks.</b>
      *
-     * @param sa the source character array
-     * @param sp the index of the source array to start reading from
-     * @param da the target byte array
-     * @param dp the index of the target array to start writing to
-     * @param len the total number of characters to be encoded
-     * @return the total number of characters successfully encoded
-     * @throws NullPointerException if any of the provided arrays is null
+     * @return the number of bytes successfully encoded, or 0 if none
      */
-    int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
+    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
 
     /**
      * Set the cause of Throwable

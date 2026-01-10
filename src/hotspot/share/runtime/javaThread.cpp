@@ -1052,7 +1052,11 @@ void JavaThread::set_exception_oop(oop o) {
 }
 
 void JavaThread::handle_special_runtime_exit_condition() {
-  if (is_obj_deopt_suspend()) {
+  // We mustn't block for object deopt if the thread is
+  // currently executing in a JNI critical region, as that
+  // can cause deadlock because allocation may be locked out
+  // and the object deopt suspender may try to allocate.
+  if (is_obj_deopt_suspend() && !in_critical()) {
     frame_anchor()->make_walkable();
     wait_for_object_deoptimization();
   }
