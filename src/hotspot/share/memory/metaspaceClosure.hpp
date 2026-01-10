@@ -205,6 +205,88 @@ private:
     }
   };
 
+  //---------------------
+  // Support for Array<T>
+  //---------------------
+
+  // Abstract base class for MSOArrayRef, MSOPointerArrayRef and OtherArrayRef.
+  // These are used for iterating Array<T>.
+  template <class T> class ArrayRef : public Ref {
+    Array<T>** _mpp;
+  protected:
+    Array<T>* dereference() const {
+      return strip_tags(*_mpp);
+    }
+    virtual void** mpp() const {
+      return (void**)_mpp;
+    }
+
+    ArrayRef(Array<T>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
+
+    // all Arrays are read-only by default
+    virtual bool is_read_only_by_default() const { return true; }
+    virtual bool not_null()                const { return dereference() != nullptr;  }
+    virtual int size()                     const { return dereference()->size(); }
+    virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::array_type(sizeof(T)); }
+  };
+
+  // OtherArrayRef -- iterate an instance of Array<T>, where T does NOT have metaspace_pointer_do().
+  // T can be a primitive type, such as int, or a structure. However, we do not scan
+  // the fields inside T, so you should not embed any pointers inside T.
+  template <class T> class OtherArrayRef : public ArrayRef<T> {
+  public:
+    OtherArrayRef(Array<T>** mpp, Writability w) : ArrayRef<T>(mpp, w) {}
+
+    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
+      Array<T>* array = ArrayRef<T>::dereference();
+      log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
+    }
+  };
+
+  // MSOArrayRef -- iterate an instance of Array<T>, where T has metaspace_pointer_do().
+  // We recursively call T::metaspace_pointers_do() for each element in this array.
+  template <class T> class MSOArrayRef : public ArrayRef<T> {
+  public:
+    MSOArrayRef(Array<T>** mpp, Writability w) : ArrayRef<T>(mpp, w) {}
+
+    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
+      metaspace_pointers_do_at_impl(it, ArrayRef<T>::dereference());
+    }
+  private:
+    void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T>* array) const {
+      log_trace(aot)("Iter(MSOArray): %p [%d]", array, array->length());
+      for (int i = 0; i < array->length(); i++) {
+        T* elm = array->adr_at(i);
+        elm->metaspace_pointers_do(it);
+      }
+    }
+  };
+
+  // MSOPointerArrayRef -- iterate an instance of Array<T*>, where T has metaspace_pointer_do().
+  // We recursively call MetaspaceClosure::push() for each pointer in this array.
+  template <class T> class MSOPointerArrayRef : public ArrayRef<T*> {
+  public:
+    MSOPointerArrayRef(Array<T*>** mpp, Writability w) : ArrayRef<T*>(mpp, w) {}
+
+    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
+      metaspace_pointers_do_at_impl(it, ArrayRef<T*>::dereference());
+    }
+  private:
+    void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T*>* array) const {
+      log_trace(aot)("Iter(MSOPointerArray): %p [%d]", array, array->length());
+      for (int i = 0; i < array->length(); i++) {
+        T** mpp = array->adr_at(i);
+        it->push(mpp);
+      }
+    }
+  };
+
+  //--------------------------------
+  // Support for AOTGrowableArray<T>
+  //--------------------------------
+
+  // Abstract base class for MSOCArrayRef, MSOPointerCArrayRef and OtherCArrayRef.
+  // These are used for iterating the buffer held by AOTGrowableArray<T>.
   template <class T> class CArrayRef : public Ref {
     T** _mpp;
     int _num_elems; // Number of elements
@@ -236,6 +318,9 @@ private:
     virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::CArrayType; }
   };
 
+  // OtherCArrayRef -- iterate a C array of type T, where T does NOT have metaspace_pointer_do().
+  // T can be a primitive type, such as int, or a structure. However, we do not scan
+  // the fields inside T, so you should not embed any pointers inside T.
   template <class T> class OtherCArrayRef : public CArrayRef<T> {
   public:
     OtherCArrayRef(T** mpp, int num_elems, Writability w) : CArrayRef<T>(mpp, num_elems, w) {}
@@ -246,6 +331,15 @@ private:
     }
   };
 
+  // MSOCArrayRef<T> -- iterate a C array of type T, where T has metaspace_pointer_do().
+  // We recursively call T::metaspace_pointers_do() for each element in this array.
+  // This is for supporting AOTGrowableArray<T>.
+  //
+  // E.g., PackageEntry* _pkg_entry_pointers[2]; // a buffer that has 2 PackageEntry objects
+  //       ...
+  //       it->push(&_pkg_entry_pointers, 2);
+  //           /* calls _pkg_entry_pointers[0].metaspace_pointers_do(it); */
+  //           /* calls _pkg_entry_pointers[1].metaspace_pointers_do(it); */
   template <class T> class MSOCArrayRef : public CArrayRef<T> {
   public:
     MSOCArrayRef(T** mpp, int num_elems, Writability w) : CArrayRef<T>(mpp, num_elems, w) {}
@@ -260,13 +354,15 @@ private:
     }
   };
 
-  // MSOPointerCArrayRef<T> -- iterate a C array of pointer type T*, where T has metaspace_pointer_do()
-  // We recursively call MetaspaceClosure::push() for each pointer in this array. This is for iterating
-  // AOTGrowableArray<T*>.
+  // MSOPointerCArrayRef<T> -- iterate a C array of type T*, where T has metaspace_pointer_do().
+  // We recursively call MetaspaceClosure::push() for each pointer in this array.
+  // This is for supporting AOTGrowableArray<T*>.
   //
-  // E.g., PackageEntry** _pkg_entry_pointers[10];
+  // E.g., PackageEntry** _pkg_entry_pointers[2]; // a buffer that has 2 PackageEntry pointers
   //       ...
-  //       it->push(&_pkg_entry_pointers, 10);
+  //       it->push(&_pkg_entry_pointers, 2);
+  //           /* calls _pkg_entry_pointers[0]->metaspace_pointers_do(it); */
+  //           /* calls _pkg_entry_pointers[1]->metaspace_pointers_do(it); */
   template <class T> class MSOPointerCArrayRef : public CArrayRef<T*> {
   public:
     MSOPointerCArrayRef(T*** mpp, int num_elems, Writability w) : CArrayRef<T*>(mpp, num_elems, w) {}
@@ -276,78 +372,6 @@ private:
       log_trace(aot)("Iter(MSOPointerCArray): %p [%d]", array, CArrayRef<T*>::num_elems());
       for (int i = 0; i < CArrayRef<T*>::num_elems(); i++) {
         T** mpp = array + i;
-        it->push(mpp);
-      }
-    }
-  };
-
-  // Abstract base class for MSOArrayRef, MSOPointerArrayRef and OtherArrayRef.
-  // These are used for iterating Array<T>.
-  template <class T> class ArrayRef : public Ref {
-    Array<T>** _mpp;
-  protected:
-    Array<T>* dereference() const {
-      return strip_tags(*_mpp);
-    }
-    virtual void** mpp() const {
-      return (void**)_mpp;
-    }
-
-    ArrayRef(Array<T>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
-
-    // all Arrays are read-only by default
-    virtual bool is_read_only_by_default() const { return true; }
-    virtual bool not_null()                const { return dereference() != nullptr;  }
-    virtual int size()                     const { return dereference()->size(); }
-    virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::array_type(sizeof(T)); }
-  };
-
-  // OtherArrayRef -- iterate an instance of Array<T>, where T has metaspace_pointer_do()
-  // T can be a primitive type, such as int, or a structure. However, we do not scan
-  // the fields inside T, so you should not embed any pointers inside T.
-  template <class T> class OtherArrayRef : public ArrayRef<T> {
-  public:
-    OtherArrayRef(Array<T>** mpp, Writability w) : ArrayRef<T>(mpp, w) {}
-
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      Array<T>* array = ArrayRef<T>::dereference();
-      log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
-    }
-  };
-
-  // MSOArrayRef -- iterate an instance of Array<T>, where T has metaspace_pointer_do()
-  // We recursively call T::metaspace_pointers_do() for each element in this array.
-  template <class T> class MSOArrayRef : public ArrayRef<T> {
-  public:
-    MSOArrayRef(Array<T>** mpp, Writability w) : ArrayRef<T>(mpp, w) {}
-
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      metaspace_pointers_do_at_impl(it, ArrayRef<T>::dereference());
-    }
-  private:
-    void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T>* array) const {
-      log_trace(aot)("Iter(MSOArray): %p [%d]", array, array->length());
-      for (int i = 0; i < array->length(); i++) {
-        T* elm = array->adr_at(i);
-        elm->metaspace_pointers_do(it);
-      }
-    }
-  };
-
-  // MSOPointerArrayRef -- iterate an instance of Array<T*>, where T has metaspace_pointer_do()
-  // We recursively call MetaspaceClosure::push() for each pointer in this array.
-  template <class T> class MSOPointerArrayRef : public ArrayRef<T*> {
-  public:
-    MSOPointerArrayRef(Array<T*>** mpp, Writability w) : ArrayRef<T*>(mpp, w) {}
-
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      metaspace_pointers_do_at_impl(it, ArrayRef<T*>::dereference());
-    }
-  private:
-    void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T*>* array) const {
-      log_trace(aot)("Iter(MSOPointerArray): %p [%d]", array, array->length());
-      for (int i = 0; i < array->length(); i++) {
-        T** mpp = array->adr_at(i);
         it->push(mpp);
       }
     }
@@ -395,18 +419,26 @@ public:
   // Array<Array<Klass*>*>* a4 = ...;  it->push(&a4);    => MSOPointerArrayRef
   // Array<Annotation*>*    a5 = ...;  it->push(&a5);    => MSOPointerArrayRef
   //
-  // Note that the following will fail to compile.
+  // AOTGrowableArrays have a separate "C array" buffer, so they are scanned in two steps:
+  //
+  // AOTGrowableArray<jlong>*      ga1 = ...;  it->push(&ga1);  => MSORef => OtherCArrayRef
+  // AOTGrowableArray<Annotation>* ga2 = ...;  it->push(&ga2);  => MSORef => MSOCArrayRef
+  // AOTGrowableArray<Klass*>*     ga3 = ...;  it->push(&ga3);  => MSORef => MSOPointerCArrayRef
+  //
+  // Note that the following will fail to compile:
   //
   // MemoryPool*            p  = ...;  it->push(&p);     => MemoryPool doesn't have metaspace_pointers_do
   // Array<MemoryPool*>*    a6 = ...;  it->push(&a6);    => MemoryPool doesn't have metaspace_pointers_do
   // Array<int*>*           a7 = ...;  it->push(&a7);    => int doesn't have metaspace_pointers_do
 
+  // --- Regular iterable objects
   template <typename T>
   void push(T** mpp, Writability w = _default) {
     static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push pointers of arbitrary types");
     push_with_ref<MSORef<T>>(mpp, w);
   }
 
+  // --- Array<T>
   template <typename T, ENABLE_IF(!HAS_METASPACE_POINTERS_DO(T))>
   void push(Array<T>** mpp, Writability w = _default) {
     push_with_ref<OtherArrayRef<T>>(mpp, w);
@@ -423,6 +455,7 @@ public:
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
   }
 
+  // --- The buffer of AOTGrowableArray<T>
   template <typename T, ENABLE_IF(!HAS_METASPACE_POINTERS_DO(T))>
   void push_c_array(T** mpp, int num_elems, Writability w = _default) {
     push_impl(new OtherCArrayRef<T>(mpp, num_elems, w));
@@ -433,7 +466,6 @@ public:
     push_impl(new MSOCArrayRef<T>(mpp, num_elems, w));
   }
 
-  // Support for AOTGrowableArray<T*>::_data, where T has metaspace_pointer_do()
   template <typename T>
   void push_c_array(T*** mpp, int num_elems, Writability w = _default) {
     static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push C arrays of arbitrary pointer types");
