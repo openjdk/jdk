@@ -921,12 +921,8 @@ void VM_Version::get_processor_features() {
 
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
-    (_model == 0x97 /* 12 Gen Core (Alder Lake) (hybrid) */ ||
-     _model == 0xAA /* Core Ultra 7 (Meteor Lake) (hybdid) */ ||
-     _model == 0xAC /* Meteor Lake-U/H (hybrid) ? */ ||
-     _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ ||
-     _model == 0xCC /* Lunar Lake (hybrid) ? */ ||
-     _model == 0xDD /* Pahther Lake (hybrid) ?*/ )) {
+    (supports_hybrid() ||
+     _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ )) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
