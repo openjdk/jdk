@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "cds/aotGrowableArray.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -115,6 +116,51 @@ TEST_VM(MetaspaceClosure, MSOArrayRef) {
   JavaThread* THREAD = JavaThread::current();
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
   Array<MyMetaData>* array = MetadataFactory::new_array<MyMetaData>(cld, 4, THREAD);
+  for (int i = 0; i < array->length(); i++) {
+    EXPECT_TRUE(array->at(i)._a == nullptr) << "should be initialized to null";
+    EXPECT_TRUE(array->at(i)._b == nullptr) << "should be initialized to null";
+  }
+
+  MyMetaData x;
+  MyMetaData y;
+  MyMetaData z;
+
+  array->adr_at(0)->_a = &x;
+  array->adr_at(2)->_b = &y;
+  y._a = &z;
+
+  MyUniqueMetaspaceClosure closure;
+  closure.push(&array);
+
+  EXPECT_TRUE(closure.has_visited(&x)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&y)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&z)) << "must be";
+}
+
+// iterate an AOTGrowableArray<MyMetaData*>
+TEST_VM(MetaspaceClosure, GrowableArray_MSOPointer) {
+  AOTGrowableArray<MyMetaData*>* array = new(mtClass) AOTGrowableArray<MyMetaData*>(2, mtClass);
+
+  MyMetaData x;
+  MyMetaData y;
+  MyMetaData z;
+
+  array->push(&x);
+  array->push(&y);
+  y._a = &z;
+
+  MyUniqueMetaspaceClosure closure;
+  closure.push(&array);
+
+  EXPECT_TRUE(closure.has_visited(&x)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&y)) << "must be";
+  EXPECT_TRUE(closure.has_visited(&z)) << "must be";
+}
+
+// iterate an AOTGrowableArray<MyMetaData>
+TEST_VM(MetaspaceClosure, GrowableArray_MSO) {
+  AOTGrowableArray<MyMetaData>* array = new(mtClass) AOTGrowableArray<MyMetaData>(4, mtClass);
+
   for (int i = 0; i < array->length(); i++) {
     EXPECT_TRUE(array->at(i)._a == nullptr) << "should be initialized to null";
     EXPECT_TRUE(array->at(i)._b == nullptr) << "should be initialized to null";

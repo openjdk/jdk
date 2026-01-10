@@ -77,6 +77,24 @@ bool PackageEntry::is_qexported_to(ModuleEntry* m) const {
   }
 }
 
+struct FooFoo {
+  int _i;
+  PackageEntry *_ptr;
+
+  FooFoo() : _i(0), _ptr(nullptr) {}
+  FooFoo(int i, PackageEntry* ptr) : _i(i), _ptr(ptr) {}
+
+
+  // methods required by MetaspaceClosure
+  void metaspace_pointers_do(MetaspaceClosure* it) {
+    it->push(&_ptr);
+  }
+
+  int size_in_heapwords() const { return (int)heap_word_size(sizeof(*this)); }
+  MetaspaceObj::Type type() const { return MetaspaceObj::ModuleEntryType; }
+  static bool is_read_only_by_default() { return false; }
+};
+
 // Add a module to the package's qualified export list.
 void PackageEntry::add_qexport(ModuleEntry* m) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
@@ -84,6 +102,14 @@ void PackageEntry::add_qexport(ModuleEntry* m) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
     _qualified_exports = new (mtModule) AOTGrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, mtModule);
+    _test = new (mtModule) AOTGrowableArray<jlong>(QUAL_EXP_SIZE, mtModule);
+    for (int i = 0; i < 25; i++) {
+      _test->push(i);
+    }
+    _test2 = new (mtModule) AOTGrowableArray<FooFoo>(QUAL_EXP_SIZE, mtModule);
+    for (int i = 0; i < 25; i++) {
+      _test2->push(FooFoo(i, this));
+    }
   }
 
   // Determine, based on this newly established export to module m,
@@ -201,6 +227,8 @@ void PackageEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_name);
   it->push(&_module);
   it->push(&_qualified_exports);
+  it->push(&_test);
+  it->push(&_test2);
 }
 
 PackageEntryTable::PackageEntryTable() { }
