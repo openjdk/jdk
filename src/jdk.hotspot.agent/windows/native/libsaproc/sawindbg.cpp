@@ -917,6 +917,9 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebugger
   IDebugControl* ptrIDebugControl = (IDebugControl*)env->GetLongField(obj, ptrIDebugControl_ID);
   CHECK_EXCEPTION_(nullptr);
 
+  // GetStackTrace() returns call frames from specified fp, sp, and pc.
+  // The top of frame would point current frame, hence we refer 2nd frame
+  // as a sender and get registers from it.
   DEBUG_STACK_FRAME frames[2];
   ULONG filled;
   HRESULT dbg_result = ptrIDebugControl->GetStackTrace(fp, sp, pc, frames, 2, &filled);
