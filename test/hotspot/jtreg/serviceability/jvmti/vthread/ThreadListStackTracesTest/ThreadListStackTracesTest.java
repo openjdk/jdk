@@ -45,7 +45,7 @@ abstract class TestTask implements Runnable {
     }
 
     public void ensureReadyAndWaiting(Thread vt, Thread.State expState, ReentrantLock rlock) {
-        sleep(50); // reliability: wait for a potential ReentrantLock class loading to complete
+        sleep(50); // reliability: wait for a potential class loading to complete
         // wait while the thread is not ready or thread state is unexpected
         while (!threadReady || (vt.getState() != expState) || !rlock.hasQueuedThread(vt)) {
             sleep(1);
