@@ -650,7 +650,6 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   private native String consoleExecuteCommand0(String cmd);
   private native long lookupByName0(String objName, String symName);
   private native ClosestSymbol lookupByAddress0(long address);
-  private native long getFrameBase0(long sp, long pc);
   private native long[] getSenderRegs0(long sp, long fp, long pc);
 
   // helper called lookupByAddress0
