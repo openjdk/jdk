@@ -22,7 +22,6 @@
  * questions.
  *
  */
-#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -31,7 +30,6 @@
 #include "memory/padded.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
@@ -91,8 +89,44 @@ public:
       }
     }
   }
-
 };
+
+template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
+uint ShenandoahAllocator<ALLOC_PARTITION>::alloc_start_index() {
+  uint alloc_start_index = 0u;
+  switch (ALLOC_PARTITION) {
+    case ShenandoahFreeSetPartitionId::Mutator:
+      alloc_start_index = ShenandoahThreadLocalData::mutator_allocator_start_index();
+      break;
+    case ShenandoahFreeSetPartitionId::Collector:
+      alloc_start_index = ShenandoahThreadLocalData::collector_allocator_start_index();
+      break;
+    default:
+      break;
+  }
+  if (alloc_start_index == UINT_MAX) {
+    if (_alloc_region_count <= 1u) {
+      alloc_start_index = 0u;
+    } else {
+      if (ALLOC_PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
+        alloc_start_index = abs(os::random()) % _alloc_region_count;
+      } else {
+        alloc_start_index = (Thread::current()->is_Worker_thread() ? WorkerThread::worker_id() : abs(os::random())) % _alloc_region_count;
+      }
+    }
+    switch (ALLOC_PARTITION) {
+      case ShenandoahFreeSetPartitionId::Mutator:
+        ShenandoahThreadLocalData::set_mutator_allocator_start_index(alloc_start_index);
+        break;
+      case ShenandoahFreeSetPartitionId::Collector:
+        ShenandoahThreadLocalData::set_collector_allocator_start_index(alloc_start_index);
+        break;
+      default:
+        break;
+    }
+  }
+  return alloc_start_index;
+}
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
@@ -384,23 +418,9 @@ void ShenandoahAllocator<ALLOC_PARTITION>::reserve_alloc_regions() {
   }
 }
 
-THREAD_LOCAL uint ShenandoahMutatorAllocator::_alloc_start_index = UINT_MAX;
-
 ShenandoahMutatorAllocator::ShenandoahMutatorAllocator(ShenandoahFreeSet* free_set) :
   ShenandoahAllocator((uint) ShenandoahMutatorAllocRegions, free_set) {
   _yield_to_safepoint = true;
-}
-
-uint ShenandoahMutatorAllocator::alloc_start_index() {
-  if (_alloc_start_index == UINT_MAX) {
-    if (_alloc_region_count <= 1u) {
-      _alloc_start_index = 0u;
-    } else {
-      _alloc_start_index = abs(os::random()) % _alloc_region_count;
-      assert(_alloc_start_index < _alloc_region_count, "alloc_start_index out of range");
-    }
-  }
-  return _alloc_start_index;
 }
 
 ShenandoahCollectorAllocator::ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set) :
@@ -408,17 +428,9 @@ ShenandoahCollectorAllocator::ShenandoahCollectorAllocator(ShenandoahFreeSet* fr
   _yield_to_safepoint = false;
 }
 
-uint ShenandoahCollectorAllocator::alloc_start_index() {
-  return Thread::current()->is_Worker_thread() ? WorkerThread::worker_id() % _alloc_region_count : 0u;
-}
-
 ShenandoahOldCollectorAllocator::ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set) :
   ShenandoahAllocator(0u, free_set) {
   _yield_to_safepoint = false;
-}
-
-uint ShenandoahOldCollectorAllocator::alloc_start_index() {
-  return Thread::current()->is_Worker_thread() ? WorkerThread::worker_id() % _alloc_region_count : 0u;
 }
 
 HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {

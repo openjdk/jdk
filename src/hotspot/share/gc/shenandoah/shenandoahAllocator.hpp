@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSetPartitionId.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "runtime/thread.hpp"
@@ -57,7 +58,7 @@ protected:
 
 
   // start index of the shared alloc regions where the allocation will start from.
-  virtual uint alloc_start_index() { return 0u; }
+  uint alloc_start_index();
 
   // Attempt to allocate memory to satisfy alloc request.
   // If _alloc_region_count is not 0, it will try to allocate in shared alloc regions first with atomic operations w/o
@@ -133,14 +134,11 @@ public:
  * Allocator impl for mutator
  */
 class ShenandoahMutatorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::Mutator> {
-  static THREAD_LOCAL uint _alloc_start_index;
-  uint alloc_start_index() override;
 public:
   ShenandoahMutatorAllocator(ShenandoahFreeSet* free_set);
 };
 
 class ShenandoahCollectorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::Collector> {
-  uint alloc_start_index() override;
 public:
   ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set);
 };
@@ -149,7 +147,6 @@ public:
 // because of the complexity in plab allocation where we have specialized logic to handle card table size alignment.
 // We will make ShenandoahOldCollectorAllocator use compare-and-swap/atomic operation later.
 class ShenandoahOldCollectorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::OldCollector> {
-  uint alloc_start_index() override;
 public:
   ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set);
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) override;
