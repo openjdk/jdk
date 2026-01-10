@@ -109,8 +109,8 @@ public class WindowsAMD64CFrame extends BasicCFrame {
 
   @Override
   public Frame toFrame() {
-    // Find top of JavaVFrame relates to this CFrame because FP cannot be get
-    // from GetStackTrace DbgHelp API on Windows.
+    // Find the top of JavaVFrame related to this CFrame. The Windows  GetStackTrace DbgHelp API
+    // cannot get FP for java frames.
     for (JavaVFrame vf = ownerThread.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
       Frame f = vf.getFrame();
       if (f.getSP().equals(rsp) && f.getPC().equals(pc)) {
