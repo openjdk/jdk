@@ -64,7 +64,7 @@ public final class Main {
         }
 
         public Provider() {
-            this(Main::loadBundlingEnvironment);
+            this(DefaultBundlingEnvironmentLoader.INSTANCE);
         }
 
         @Override
@@ -104,7 +104,7 @@ public final class Main {
     }
 
     static int run(PrintWriter out, PrintWriter err, String... args) {
-        return run(Main::loadBundlingEnvironment, out, err, args);
+        return run(DefaultBundlingEnvironmentLoader.INSTANCE, out, err, args);
     }
 
     static int run(Supplier<CliBundlingEnvironment> bundlingEnvSupplier, PrintWriter out, PrintWriter err, String... args) {
@@ -310,9 +310,14 @@ public final class Main {
         return System.getProperty("java.version");
     }
 
-    private static CliBundlingEnvironment loadBundlingEnvironment() {
-        return ServiceLoader.load(
-                CliBundlingEnvironment.class,
-                CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();
+    private enum DefaultBundlingEnvironmentLoader implements Supplier<CliBundlingEnvironment> {
+        INSTANCE;
+
+        @Override
+        public CliBundlingEnvironment get() {
+            return ServiceLoader.load(
+                    CliBundlingEnvironment.class,
+                    CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();
+        }
     }
 }
