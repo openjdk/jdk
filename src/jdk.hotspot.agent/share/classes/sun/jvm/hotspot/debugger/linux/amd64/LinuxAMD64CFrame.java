@@ -37,6 +37,10 @@ import sun.jvm.hotspot.runtime.amd64.*;
 
 public final class LinuxAMD64CFrame extends BasicCFrame {
 
+   // This string will be set as function symbol in symtab.c if the frame is
+   //  signal handler. Don't forget update it if you want to make change.
+   private static String SIGHANDLER_DESC = "<signal handler called>";
+
    private static LinuxAMD64CFrame getFrameFromReg(LinuxDebugger dbg, Function<Integer, Address> getreg) {
       Address rip = getreg.apply(AMD64ThreadContext.RIP);
       Address rsp = getreg.apply(AMD64ThreadContext.RSP);
@@ -188,7 +192,7 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
 
        // Check whether caller is signal trampoline
        var sym = dbg.lookup(dbg.getAddressValue(senderPC));
-       isSigTrampoline = sym != null && sym.getName().equals("<signal handler called>");
+       isSigTrampoline = sym != null && sym.getName().equals(SIGHANDLER_DESC);
      }
 
      // Sanity check for next CFA address
@@ -214,7 +218,7 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
      }
 
      var sym = closestSymbolToPC();
-     if (sym != null && sym.getName().equals("<signal handler called>")) {
+     if (sym != null && sym.getName().equals(SIGHANDLER_DESC)) {
        // RSP points signal context
        //   https://github.com/torvalds/linux/blob/v6.17/arch/x86/kernel/signal.c#L94
        return getFrameFromReg(dbg, r -> LinuxAMD64ThreadContext.getRegFromSignalTrampoline(this.rsp, r.intValue()));

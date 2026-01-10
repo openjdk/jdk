@@ -564,6 +564,10 @@ const char* nearest_symbol(struct symtab* symtab, uintptr_t offset,
        // Size of signal trampoline might be zero.
        if (strcmp("__restore_rt", sym->name) == 0 && offset == sym->offset) {
          if (poffset) *poffset = 0;
+
+         // "<signal handler called>" is used in LinuxAMD64CFrame to detect
+         // whether the frame is signal handler or not. Don't forget update it
+         // if you want to make change.
          static const char *sighandler_desc = "<signal handler called>";
          return sighandler_desc;
        } else if (offset < sym->offset + sym->size) {

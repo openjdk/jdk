@@ -46,7 +46,7 @@ public class LinuxAMD64ThreadContext extends AMD64ThreadContext {
   }
 
   public static Address getRegFromSignalTrampoline(Address sp, int index) {
-    // ucontext_t locates at top of stack.
+    // ucontext_t is located at top of stack.
     // See definition of rt_sigframe in arch/x86/include/asm/sigframe.h
     // in Linux Kernel.
     Address addrUCMContext = sp.addOffsetTo(40); // offsetof(ucontext_t, uc_mcontext) = 40
