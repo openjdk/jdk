@@ -57,22 +57,11 @@
 
 
 #ifndef PRODUCT
-struct FooFoo {
-  int _i;
-  PackageEntry *_ptr;
-
-  FooFoo() : _i(0), _ptr(nullptr) {}
-  FooFoo(int i, PackageEntry* ptr) : _i(i), _ptr(ptr) {}
-};
 
 using GrowableArray_ModuleEntry_ptr = AOTGrowableArray<ModuleEntry*>;
-using GrowableArray_jlong = AOTGrowableArray<jlong>;
-using GrowableArray_FooFoo = AOTGrowableArray<FooFoo>;
 
 #define DEBUG_CPP_VTABLE_TYPES_DO(f) \
   f(GrowableArray_ModuleEntry_ptr) \
-  f(GrowableArray_jlong) \
-  f(GrowableArray_FooFoo) \
 
 #endif
 

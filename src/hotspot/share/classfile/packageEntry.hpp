@@ -100,8 +100,6 @@ class ModuleEntry;
 #define PKG_EXP_ALLUNNAMED   0x0002
 #define PKG_EXP_UNQUALIFIED_OR_ALL_UNAMED (PKG_EXP_UNQUALIFIED | PKG_EXP_ALLUNNAMED)
 
-struct FooFoo;
-
 class PackageEntry : public CHeapObj<mtModule> {
 private:
   Symbol*      _name;
@@ -119,9 +117,6 @@ private:
   // to this list is protected by the Module_lock.
   AOTGrowableArray<ModuleEntry*>* _qualified_exports;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
-
-  AOTGrowableArray<jlong>* _test;
-  AOTGrowableArray<FooFoo>* _test2;
 
   // Initial size of a package entry's list of qualified exports.
   enum {QUAL_EXP_SIZE = 43};
