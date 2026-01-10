@@ -106,6 +106,15 @@ public interface Types {
      * {@code TypeMirror} objects can have different annotations and
      * still be considered the same.
      *
+     * @apiNote The identity of a {@code TypeMirror} involves implicit
+     * state not directly accessible from its methods, including state
+     * about the presence of unrelated types. {@code TypeMirror}
+     * objects created by different implementations of these
+     * interfaces should <i>not</i> be expected to compare as equal
+     * even if &quot;the same&quot; type is being modeled; this is
+     * analogous to the inequality of {@code Class} objects for the
+     * same class file loaded through different class loaders.
+     *
      * @param t1  the first type
      * @param t2  the second type
      * @return {@code true} if and only if the two types are the same
