@@ -873,6 +873,7 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
     __ lea(perms, ExternalAddress(kyberAvx512_12To16AndAddr()));
     __ evmovdquq(xmm22, Address(perms), Assembler::AVX_512bit);
 
+    __ align(OptoLoopAlignment);
     __ BIND(VBMILoop);
 
       __ evmovdqub(xmm0, k1, Address(condensed, 0), false,
