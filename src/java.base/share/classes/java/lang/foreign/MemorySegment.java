@@ -1348,12 +1348,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException  if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
-     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - length}
+     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - byteLength}
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code isAccessibleBy(T) == false}
-     * @throws IllegalArgumentException if {@code length < 0}
+     * @throws IllegalArgumentException if {@code byteLength < 0}
      */
     String getString(long offset, Charset charset, long byteLength);
 
