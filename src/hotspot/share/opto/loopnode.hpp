@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1682,7 +1682,7 @@ public:
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
   void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool pin_array_access_nodes = false);
-  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool pin_array_access_nodes);
+  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool dominator_not_imply_source);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
@@ -1965,7 +1965,7 @@ public:
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
 
-  void pin_array_access_nodes_dependent_on(Node* ctrl);
+  void pin_nodes_dependent_on(Node* ctrl);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
 

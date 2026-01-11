@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1055,14 +1055,125 @@ public:
 
   virtual bool is_CFG() const { return false; }
 
-  // If this node is control-dependent on a test, can it be
-  // rerouted to a dominating equivalent test?  This is usually
-  // true of non-CFG nodes, but can be false for operations which
-  // depend for their correct sequencing on more than one test.
-  // (In that case, hoisting to a dominating test may silently
-  // skip some other important test.)
-  virtual bool depends_only_on_test() const { assert(!is_CFG(), ""); return true; };
+  // If this node is control-dependent on a test, can it be rerouted to a dominating equivalent
+  // test? This means that the node can be executed safely as long as it happens after the test
+  // that is its control input without worrying about the whole control flow. On the contrary, if
+  // the node depends on a test that is not its control input, or if it depends on more than one
+  // tests, then this method must return false.
+  //
+  // Pseudocode examples:
+  // 1. if (y != 0) {
+  //      x / y;
+  //    }
+  // The division depends only on the test y != 0 and can be executed anywhere y != 0 holds true.
+  // As a result, depends_only_on_test returns true.
+  // 2. if (y != 0) {
+  //      if (x > 1) {
+  //        x / y;
+  //      }
+  //    }
+  // If the division x / y has its control input being the IfTrueNode of the test y != 0, then
+  // depends_only_on_test returns true. Otherwise, if the division has its control input being the
+  // IfTrueNode of the test x > 1, then depends_only_on_test returns false.
+  // 3. if (y > z) {
+  //      if (z > 0) {
+  //        x / y
+  //      }
+  //    }
+  // The division depends on both tests y > z and z > 0. As a result, depends_only_on_test returns
+  // false.
+  //
+  // This method allows more freedom in certain nodes with regards to scheduling, for example it
+  // allows nodes to float out of loops together with its test.
+  //
+  // This method is pessimistic, this means that it may return false even if the node satisfy the
+  // requirements. However, it must return false if the node does not satisfy the requirements.
+  // When a test is decomposed into multiple tests, all nodes that depend on the decomposed test
+  // must be pinned at the lowest dominating test of those. For example, when a zero check of a
+  // division is split through a region but the division itself is not, it must be pinned at the
+  // merge point by returning false when calling this method.
+  bool depends_only_on_test() const {
+    if (is_CFG() || pinned()) {
+      return false;
+    }
+    assert(in(0) != nullptr, "must have a control input");
+    return depends_only_on_test_impl();
+  }
 
+  // Return a clone of the current node that's pinned. The current node must return true for
+  // depends_only_on_test, and the retuned node must return false. This method is called when the
+  // node is disconnected from its test.
+  //
+  // Examples:
+  // 1. for (int i = start; i <= limit; i++) {
+  //      if (!rangecheck(i, a)) {
+  //        trap;
+  //      }
+  //      a[i];
+  //    }
+  // Loop predication can then hoist the range check out of the loop:
+  //    if (!rangecheck(start, a)) {
+  //      trap;
+  //    }
+  //    if (!rangecheck(limit, a)) {
+  //      trap;
+  //    }
+  //    for (int i = start; i <= limit; i++) {
+  //      a[i];
+  //    }
+  // As the load a[i] now depends on both tests rangecheck(start, a) and rangecheck(limit, a), it
+  // must be pinned at the lowest dominating test of those.
+  //
+  // 2. if (y > x) {
+  //      if (x >= 0) {
+  //        if (y != 0) {
+  //          x / y;
+  //        }
+  //      }
+  //    }
+  // The test (y != 0) == true can be deduced from (y > x) == true and (x >= 0) == true, so we may
+  // choose to elide it. In such cases, the division x / y now depends on both tests
+  // (y > x) == true and (x >= 0) == true, so it must be pinned at the lowest dominating test of
+  // those.
+  //
+  // 3. if (b) {
+  //      ...
+  //    } else {
+  //      ...
+  //    }
+  //    if (y == 0) {
+  //      trap;
+  //    }
+  //    x / y;
+  // The division x / y depends only on the test (y == 0) == false, but if we split the test
+  // through the merge point but not the division:
+  //    if (b) {
+  //      ...
+  //      if (y == 0) {
+  //        trap;
+  //      }
+  //    } else {
+  //      ...
+  //      if (y == 0) {
+  //        trap;
+  //      }
+  //    }
+  //    x / y;
+  // The division now has the control input being the RegionNode merge the branches of if(b)
+  // instead of a test that proves y != 0. As a result, it must be pinned at that node.
+  Node* pin_node_under_control() const {
+    assert(depends_only_on_test(), "must be a depends_only_on_test node");
+    Node* res = pin_node_under_control_impl();
+    assert(res != nullptr, "must not return null");
+    assert(!res->depends_only_on_test(), "the result must not depends_only_on_test");
+    return res;
+  }
+
+private:
+  virtual bool depends_only_on_test_impl() const { assert(false, "%s", Name()); return false; }
+  virtual Node* pin_node_under_control_impl() const { assert(false, "%s", Name()); return nullptr; }
+
+public:
   // When building basic blocks, I need to have a notion of block beginning
   // Nodes, next block selector Nodes (block enders), and next block
   // projections.  These calls need to work on their machine equivalents.  The
@@ -1196,13 +1307,6 @@ public:
   // definition appears after the complete type definition of Node_List.
   template <typename Callback, typename Check>
   void visit_uses(Callback callback, Check is_boundary) const;
-
-  // Returns a clone of the current node that's pinned (if the current node is not) for nodes found in array accesses
-  // (Load and range check CastII nodes).
-  // This is used when an array access is made dependent on 2 or more range checks (range check smearing or Loop Predication).
-  virtual Node* pin_array_access_node() const {
-    return nullptr;
-  }
 
   //----------------- Code Generation
 
