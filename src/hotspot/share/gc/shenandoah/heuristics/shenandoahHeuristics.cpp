@@ -243,7 +243,7 @@ void ShenandoahHeuristics::record_success_concurrent() {
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_success_degenerated() {
+void ShenandoahHeuristics::record_degenerated() {
   adjust_penalty(Degenerated_Penalty);
 }
 

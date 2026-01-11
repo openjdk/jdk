@@ -114,7 +114,7 @@ public:
 
   virtual void record_cycle_start() override;
   virtual void record_success_concurrent() override;
-  virtual void record_success_degenerated() override;
+  virtual void record_degenerated() override;
   virtual void record_success_full() override;
 
   virtual bool should_start_gc() override;

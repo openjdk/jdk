@@ -247,7 +247,7 @@ public:
 
   void record_success_concurrent() override;
 
-  void record_success_degenerated() override;
+  void record_degenerated() override;
 
   void record_success_full() override;
 
