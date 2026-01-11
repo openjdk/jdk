@@ -406,8 +406,8 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_degenerated() {
-  ShenandoahHeuristics::record_success_degenerated();
+void ShenandoahAdaptiveHeuristics::record_degenerated() {
+  ShenandoahHeuristics::record_degenerated();
   add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
   // Adjust both trigger's parameters in the case of a degenerated GC because
   // either of them should have triggered earlier to avoid this case.

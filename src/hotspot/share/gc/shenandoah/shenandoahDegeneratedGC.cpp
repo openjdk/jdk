@@ -314,10 +314,13 @@ void ShenandoahDegenGC::op_degenerated() {
   if (progress) {
     heap->notify_gc_progress();
     heap->shenandoah_policy()->record_success_degenerated(_generation->is_young(), _abbreviated);
-    _generation->heuristics()->record_success_degenerated();
+    _generation->heuristics()->record_degenerated();
     heap->start_idle_span();
   } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
+    // Upgrade to full GC, register full-GC impact on heuristics.
     op_degenerated_futile();
+  } else {
+    _generation->heuristics()->record_degenerated();
   }
 }
 
