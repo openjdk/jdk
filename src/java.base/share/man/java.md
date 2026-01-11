@@ -1084,7 +1084,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     The existing heap related flags (such as `-Xmx` and `-Xms`) and
     garbage-collection related flags continue to work as before.
 
-[`-XX:-CompactStrings`]{#-XX_-CompactStrings}
+[`-XX:-CompactStrings`]{#-XX__CompactStrings}
 :   Disables the Compact Strings feature. By default, this option is enabled.
     When this option is enabled, Java Strings containing only single-byte
     characters are internally represented and stored as
@@ -1237,7 +1237,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     -XX:MaxDirectMemorySize=1048576
     ```
 
-[`-XX:-MaxFDLimit`]{#-XX_-MaxFDLimit}
+[`-XX:-MaxFDLimit`]{#-XX__MaxFDLimit}
 :   Disables the attempt to set the soft limit for the number of open file
     descriptors to the hard limit. By default, this option is enabled on all
     platforms, but is ignored on Windows. The only time that you may need to
@@ -1538,7 +1538,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     In a future release it is expected to be enabled by default, and
     eventually will be the only mode of operation.
 
-[`-XX:-UseCompressedOops`]{#-XX_-UseCompressedOops}
+[`-XX:-UseCompressedOops`]{#-XX__UseCompressedOops}
 :   Disables the use of compressed pointers. By default, this option is
     enabled, and compressed pointers are used. This will automatically limit
     the maximum ergonomically determined Java heap size to the maximum amount
@@ -1553,7 +1553,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     It's possible to use compressed pointers with Java heap sizes greater than
     32 GB. See the `-XX:ObjectAlignmentInBytes` option.
 
-[`-XX:-UseContainerSupport`]{#-XX_-UseContainerSupport}
+[`-XX:-UseContainerSupport`]{#-XX__UseContainerSupport}
 :   **Linux only:** The VM now provides automatic container detection support, which allows the
     VM to determine the amount of memory and number of processors that are
     available to a Java process running in docker containers. It uses this
@@ -2023,7 +2023,7 @@ performed by the Java HotSpot VM.
     when only the given percentage of the code cache is free. The default value
     is 10%.
 
-[`-XX:-TieredCompilation`]{#-XX_-TieredCompilation}
+[`-XX:-TieredCompilation`]{#-XX__TieredCompilation}
 :   Disables the use of tiered compilation. By default, this option is enabled.
 
 [`-XX:UseSSE=`]{#-XX_UseSSE}*version*
@@ -2718,7 +2718,7 @@ Java HotSpot VM.
 
     `-XX:SoftRefLRUPolicyMSPerMB=2500`
 
-[`-XX:-ShrinkHeapInSteps`]{#-XX_-ShrinkHeapInSteps}
+[`-XX:-ShrinkHeapInSteps`]{#-XX__ShrinkHeapInSteps}
 :   Incrementally reduces the Java heap to the target size, specified by the
     option `-XX:MaxHeapFreeRatio`. This option is enabled by default. If
     disabled, then it immediately reduces the Java heap to the target size
