@@ -923,19 +923,24 @@ public interface List<E> extends SequencedCollection<E> {
     static <E> List<E> of() {
         return (List<E>) ImmutableCollections.EMPTY_LIST;
     }
-
     /**
-     * Returns an unmodifiable list containing one element.
-     *
-     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
-     *
-     * @param <E> the {@code List}'s element type
-     * @param e1 the single element
-     * @return a {@code List} containing the specified element
-     * @throws NullPointerException if the element is {@code null}
-     *
+    * Returns an immutable list containing the given elements.
+    *
+    * <p>The returned list is immutable: it does not support
+    * {@code add}, {@code remove}, or {@code set} operations.
+    * Any attempt to modify the list will result in
+    * {@link UnsupportedOperationException}.
+    *
+    * <p>Unlike {@link Collections#unmodifiableList(List)},
+    * this method does not return a view backed by another list.
+    * The returned list is guaranteed to be immutable.
+    *
+    * <p>Null elements are not permitted. If any element is null,
+    * this method throws {@link NullPointerException}.
+    *
+    * @throws NullPointerException if an element is null
      * @since 9
-     */
+    */
     static <E> List<E> of(E e1) {
         return new ImmutableCollections.List12<>(e1);
     }
