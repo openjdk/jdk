@@ -1255,11 +1255,11 @@ public class ForkJoinPool extends AbstractExecutorService
                 growAndPush(task, pool, unlock);
             else {
                 top = s + 1;
-                U.putReferenceVolatile(a, slotOffset(m & s), task);
+                U.getAndSetReference(a, slotOffset(m & s), task);
+                Object pred = U.getReferenceAcquire(a, slotOffset(m & (s - 1)));
                 if (unlock != 1)              // release external lock
-                    U.putInt(this, PHASE, unlock);
-                if (U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null &&
-                    pool != null)
+                    phase = unlock;
+                if (pred == null && pool != null)
                     pool.signalWork(this, s); // may have appeared empty
             }
         }
@@ -1316,13 +1316,16 @@ public class ForkJoinPool extends AbstractExecutorService
             if (a != null && s - b >= 0 && (cap = a.length) > 0) {
                 if (fifo == 0) {
                     if ((t = (ForkJoinTask<?>)U.getAndSetReference(
-                             a, slotOffset((cap - 1) & s), null)) != null)
+                             a, slotOffset((cap - 1) & s), null)) != null) {
                         top = s;
+                        U.storeFence();
+                    }
                 } else {
                     do {
                         if ((t = (ForkJoinTask<?>)U.getAndSetReference(
                                  a, slotOffset((cap - 1) & b), null)) != null) {
                             base = b + 1;
+                            U.storeFence();
                             break;
                         }
                         if (b == s)
@@ -1339,10 +1342,7 @@ public class ForkJoinPool extends AbstractExecutorService
          * Takes next task, if one exists, using configured mode.
          */
         final ForkJoinTask<?> nextLocalTask() {
-            U.loadFence();  // ensure ordering for external callers
-            ForkJoinTask<?> t = nextLocalTask(config & FIFO);
-            U.storeFence();
-            return t;
+            return nextLocalTask(config & FIFO);
         }
 
         /**
@@ -1359,7 +1359,8 @@ public class ForkJoinPool extends AbstractExecutorService
                 (internal || (lock = tryLockPhase()) != 1)) {
                 if (top == p && U.compareAndSetReference(a, k, task, null)) {
                     taken = true;
-                    U.putIntOpaque(this, TOP, s);
+                    top = s;
+                    U.storeFence();
                 }
                 if (!internal)
                     phase = lock + NEXTIDLE;
@@ -1371,7 +1372,6 @@ public class ForkJoinPool extends AbstractExecutorService
          * Returns next task, if one exists, in order specified by mode.
          */
         final ForkJoinTask<?> peek() {
-            U.loadFence();  // ensure ordering for external callers
             ForkJoinTask<?>[] a = array;
             int b = base, cfg = config, p = top, cap;
             if (p != b && a != null && (cap = a.length) > 0) {
@@ -1392,7 +1392,6 @@ public class ForkJoinPool extends AbstractExecutorService
          * Polls for a task. Used only by non-owners.
          */
         final ForkJoinTask<?> poll() {
-            U.loadFence();  // ensure ordering for external callers
             for (int pb = -1, b; ; pb = b) {       // track progress
                 ForkJoinTask<?> t; int cap, nb; long k; ForkJoinTask<?>[] a;
                 if ((a = array) == null || (cap = a.length) <= 0)
@@ -1410,7 +1409,8 @@ public class ForkJoinPool extends AbstractExecutorService
                         Thread.onSpinWait();       // stalled
                 }
                 else if (U.compareAndSetReference(a, k, t, null)) {
-                    U.putIntVolatile(this, BASE, nb);
+                    base = nb;
+                    U.storeFence();
                     return t;
                 }
             }
@@ -1508,8 +1508,10 @@ public class ForkJoinPool extends AbstractExecutorService
                         break;
                     if (taken =
                         (top == p &&
-                         U.compareAndSetReference(a, k, t, null)))
-                        U.putIntOpaque(this, TOP, s);
+                         U.compareAndSetReference(a, k, t, null))) {
+                        top = s;
+                        U.storeFence();
+                    }
                     if (!internal)
                         phase = lock + NEXTIDLE;
                     if (!taken)
@@ -1547,6 +1549,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (base == b && t != null &&
                     U.compareAndSetReference(a, k, t, null)) {
                     base = b + 1;
+                    U.storeFence();
                     t.doExec();
                 }
             }
@@ -2374,6 +2377,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                     if (U.compareAndSetReference(
                                             a, k, t, null)) {
                                         q.base = b + 1;
+                                        U.storeFence();
                                         t.doExec();
                                         locals = rescan = true;
                                         break scan;
@@ -2799,6 +2803,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     if (q.base == b && t != null &&
                         U.compareAndSetReference(a, k, t, null)) {
                         q.base = b + 1;
+                        U.storeFence();
                         try {
                             t.cancel(false);
                         } catch (Throwable ignore) {
