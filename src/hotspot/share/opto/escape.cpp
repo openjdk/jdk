@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1058,6 +1058,39 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
     // "new_load" might actually be a constant, parameter, etc.
     if (new_load->is_Load()) {
       Node* new_addp = new_load->in(MemNode::Address);
+
+      // If new_load is a Load but not from the original field, it means that the load is folded
+      // into another load. And since this load is not from a field, we cannot create a unique type
+      // for it. For example:
+      //
+      //   if (b) {
+      //       Holder h1 = new Holder();
+      //       Object o = ...;
+      //       h.o = o.getClass();
+      //   } else {
+      //       Holder h2 = ...;
+      //   }
+      //   Holder h = Phi(h1, h2);
+      //   Object r = h.o;
+      //
+      // Then, splitting r through the merge point results in:
+      //
+      //   if (b) {
+      //       Holder h1 = new Holder();
+      //       Object o = ...;
+      //       h.o = o.getClass();
+      //       Object o1 = h.o;
+      //   } else {
+      //       Holder h2 = ...;
+      //       Object o2 = h2.o;
+      //   }
+      //   Object r = Phi(o1, o2);
+      //
+      // In this case, o1 is folded to o.getClass() which is a Load but not from an AddP, but from
+      // an OopHandle that is loaded from the Klass of o.
+      if (!new_addp->is_AddP()) {
+        continue;
+      }
       Node* base = get_addp_base(new_addp);
 
       // The base might not be something that we can create an unique
