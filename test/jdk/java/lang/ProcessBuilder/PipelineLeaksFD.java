@@ -26,10 +26,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.ProcessHandle;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -142,6 +143,11 @@ public class PipelineLeaksFD {
             int uniquePipes = redirectError ? 8 : 9;
             assertEquals(uniquePipes, pipes.size(),
                     "wrong number of pipes for redirect: " + redirectError);
+            String expectedTypeName = redirectError
+                    ? "java.lang.ProcessBuilder$NullInputStream"
+                    : "java.lang.ProcessImpl$ProcessPipeInputStream";
+            assertEquals(expectedTypeName, p.getErrorStream().getClass().getName(),
+                    "errorStream type is incorrect");
         } catch (IOException ioe) {
             fail("Process start", ioe);
         }
@@ -166,30 +172,29 @@ public class PipelineLeaksFD {
      * Collect a Set of file descriptors and identifying information.
      * To identify the pipes in use the `lsof` command is invoked and output scrapped for
      * fd's, pids, unique identities of the pipes (to match with parent).
-     * The pipes used by invoking the `lsof` process are removed from set captured
-     * for the parent (this test) and the child (waiting).
+     * Files are used for `lsof` input and output to avoid creating pipes.
      * @return A set of PipeRecords, possibly empty
      */
     static Set<PipeRecord> pipesForPid(long pid) throws IOException {
+        Path lsofEmptyInput = Files.createTempFile("lsof-", "empty");
+        Path lsofOutput = Files.createTempFile("lsof-", "tmp");
         try (Process p = new ProcessBuilder("lsof")
-                .redirectErrorStream(true)
+                .redirectOutput(lsofOutput.toFile())
+                .redirectInput(lsofEmptyInput.toFile()) // empty input
+                .redirectError(ProcessBuilder.Redirect.DISCARD) // ignored output
                 .start()) {
-            long lsofPid = p.pid();
-            List<String> lines = p.inputReader().readAllLines();
+            int status = p.waitFor();
+            assertEquals(0, status, "Process 'lsof' failed");
 
-            // Collect all the pipes for the three processes (parent, waiting child, lsof)
-            Set<PipeRecord> pipes = lines.stream()
+            List<String> lines = Files.readAllLines(lsofOutput);
+            // Collect all the pipes for the processes (parent, waiting child)
+            return lines.stream()
                     .map(PipelineLeaksFD::pipeFromLSOF)
                     .filter(pr -> pr != null &&
-                            (pr.pid() == pid || pr.pid() == MY_PID || pr.pid() == lsofPid))
+                            (pr.pid() == pid || pr.pid() == MY_PID))
                     .collect(Collectors.toCollection(LinkedHashSet::new));
-            // Extract the `lsof` pipe keys and remove those pipes from the set
-            List<KeyedString> lsofPipeNames = pipes.stream()
-                    .filter(pr1 -> pr1.pid() == lsofPid)
-                    .map(PipeRecord::myKey)
-                    .toList();
-            pipes.removeIf(p1 -> lsofPipeNames.contains(p1.myKey()));
-            return pipes;
+        } catch (InterruptedException ie) {
+            throw new IOException("Waiting for lsof exit interrupted", ie);
         }
     }
 
