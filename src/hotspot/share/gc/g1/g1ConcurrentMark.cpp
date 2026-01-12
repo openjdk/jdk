@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/partialArraySplitter.inline.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -76,6 +78,7 @@
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -99,7 +102,7 @@ bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
   // We move that task's local finger along.
   _task->move_finger_to(addr);
 
-  _task->scan_task_entry(G1TaskQueueEntry::from_oop(cast_to_oop(addr)));
+  _task->scan_task_entry(G1TaskQueueEntry(cast_to_oop(addr)), false /* stolen */);
   // we only partially drain the local queue and global stack
   _task->drain_local_queue(true);
   _task->drain_global_stack(true);
@@ -490,6 +493,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
   _terminator(_max_num_tasks, _task_queues),
+  _partial_array_state_manager(new PartialArrayStateManager(_max_num_tasks)),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
@@ -554,6 +558,10 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   }
 
   reset_at_marking_complete();
+}
+
+PartialArrayStateManager* G1ConcurrentMark::partial_array_state_manager() const {
+  return _partial_array_state_manager;
 }
 
 void G1ConcurrentMark::reset() {
@@ -1789,17 +1797,18 @@ public:
   { }
 
   void operator()(G1TaskQueueEntry task_entry) const {
-    if (task_entry.is_array_slice()) {
-      guarantee(_g1h->is_in_reserved(task_entry.slice()), "Slice " PTR_FORMAT " must be in heap.", p2i(task_entry.slice()));
+    if (task_entry.is_partial_array_state()) {
+      oop obj = task_entry.to_partial_array_state()->source();
+      guarantee(_g1h->is_in_reserved(obj), "Partial Array " PTR_FORMAT " must be in heap.", p2i(obj));
       return;
     }
-    guarantee(oopDesc::is_oop(task_entry.obj()),
+    guarantee(oopDesc::is_oop(task_entry.to_oop()),
               "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
-              p2i(task_entry.obj()), _phase, _info);
-    G1HeapRegion* r = _g1h->heap_region_containing(task_entry.obj());
+              p2i(task_entry.to_oop()), _phase, _info);
+    G1HeapRegion* r = _g1h->heap_region_containing(task_entry.to_oop());
     guarantee(!(r->in_collection_set() || r->has_index_in_opt_cset()),
               "obj " PTR_FORMAT " from %s (%d) in region %u in (optional) collection set",
-              p2i(task_entry.obj()), _phase, _info, r->hrm_index());
+              p2i(task_entry.to_oop()), _phase, _info, r->hrm_index());
   }
 };
 
@@ -2185,7 +2194,7 @@ bool G1CMTask::get_entries_from_global_stack() {
     if (task_entry.is_null()) {
       break;
     }
-    assert(task_entry.is_array_slice() || oopDesc::is_oop(task_entry.obj()), "Element " PTR_FORMAT " must be an array slice or oop", p2i(task_entry.obj()));
+    assert(task_entry.is_partial_array_state() || oopDesc::is_oop(task_entry.to_oop()), "Element " PTR_FORMAT " must be an array slice or oop", p2i(task_entry.to_oop()));
     bool success = _task_queue->push(task_entry);
     // We only call this when the local queue is empty or under a
     // given target limit. So, we do not expect this push to fail.
@@ -2216,7 +2225,7 @@ void G1CMTask::drain_local_queue(bool partially) {
     G1TaskQueueEntry entry;
     bool ret = _task_queue->pop_local(entry);
     while (ret) {
-      scan_task_entry(entry);
+      scan_task_entry(entry, false /* stolen */);
       if (_task_queue->size() <= target_size || has_aborted()) {
         ret = false;
       } else {
@@ -2224,6 +2233,37 @@ void G1CMTask::drain_local_queue(bool partially) {
       }
     }
   }
+}
+
+size_t G1CMTask::start_partial_objArray(oop obj) {
+  assert(should_be_sliced(obj), "Must be an array object %d and large %zu", obj->is_objArray(), obj->size());
+
+  objArrayOop obj_array = objArrayOop(obj);
+  size_t array_length = obj_array->length();
+
+  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj_array, nullptr, array_length);
+
+  // Mark objArray klass metadata
+  if (_cm_oop_closure->do_metadata()) {
+    _cm_oop_closure->do_klass(obj_array->klass());
+  }
+
+  scan_objArray(obj_array, 0, initial_chunk_size);
+
+  // Include object header size
+  return objArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+}
+
+size_t G1CMTask::do_partial_objArray(const G1TaskQueueEntry& task, bool stolen) {
+  PartialArrayState* state = task.to_partial_array_state();
+  // Access state before release by claim().
+  objArrayOop obj = objArrayOop(state->source());
+
+  PartialArraySplitter::Claim claim =
+    _partial_array_splitter.claim(state, _task_queue, stolen);
+
+  scan_objArray(obj, claim._start, claim._end);
+  return heap_word_size((claim._end - claim._start) * heapOopSize);
 }
 
 void G1CMTask::drain_global_stack(bool partially) {
@@ -2430,7 +2470,7 @@ void G1CMTask::attempt_stealing() {
   while (!has_aborted()) {
     G1TaskQueueEntry entry;
     if (_cm->try_stealing(_worker_id, entry)) {
-      scan_task_entry(entry);
+      scan_task_entry(entry, true /* stolen */);
 
       // And since we're towards the end, let's totally drain the
       // local queue and global stack.
@@ -2759,12 +2799,12 @@ G1CMTask::G1CMTask(uint worker_id,
                    G1ConcurrentMark* cm,
                    G1CMTaskQueue* task_queue,
                    G1RegionMarkStats* mark_stats) :
-  _objArray_processor(this),
   _worker_id(worker_id),
   _g1h(G1CollectedHeap::heap()),
   _cm(cm),
   _mark_bitmap(nullptr),
   _task_queue(task_queue),
+  _partial_array_splitter(cm->partial_array_state_manager(), cm->max_num_tasks(), ObjArrayMarkingStride),
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
   _time_target_ms(0.0),
