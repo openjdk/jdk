@@ -1059,9 +1059,9 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
     if (new_load->is_Load()) {
       Node* new_addp = new_load->in(MemNode::Address);
 
-      // If new_load is a Load but not from the original field, it means that the load is folded
-      // into another load. And since this load is not from a field, we cannot create a unique type
-      // for it. For example:
+      // If new_load is a Load but not from an AddP, it means that the load is folded into another
+      // load. And since this load is not from a field, we cannot create a unique type for it.
+      // For example:
       //
       //   if (b) {
       //       Holder h1 = new Holder();
