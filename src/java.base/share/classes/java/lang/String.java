@@ -1467,6 +1467,26 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    private static int encodedLengthUTF8(byte coder, byte[] val) {
+        if (coder == UTF16) {
+            return encodedLengthUTF8_UTF16(val);
+        }
+        int positives = StringCoding.countPositives(val, 0, val.length);
+        if (positives == val.length) {
+            return positives;
+        }
+        int dp = positives;
+        for (int i = dp; i < val.length; i++) {
+            byte c = val[i];
+            if (c < 0) {
+                dp += 2;
+            } else {
+                dp++;
+            }
+        }
+        return dp;
+    }
+
     /**
      * {@return the byte array obtained by first decoding {@code val} with
      * UTF-16, and then encoding the result with UTF-8}
@@ -1536,6 +1556,46 @@ public final class String
             return dst;
         }
         return Arrays.copyOf(dst, dp);
+    }
+
+    private static int encodedLengthUTF8_UTF16(byte[] val) {
+        int dp = 0;
+        int sp = 0;
+        int sl = val.length >> 1;
+        while (sp < sl) {
+            // ascii fast loop;
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= '\u0080') {
+                break;
+            }
+            dp++;
+            sp++;
+        }
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp++);
+            if (c < 0x80) {
+                dp++;
+            } else if (c < 0x800) {
+                dp += 2;
+            } else if (Character.isSurrogate(c)) {
+                int uc = -1;
+                char c2;
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
+                    uc = Character.toCodePoint(c, c2);
+                }
+                if (uc < 0) {
+                    dp++;
+                } else {
+                    dp += 4;
+                    sp++;  // 2 chars
+                }
+            } else {
+                // 3 bytes, 16 bits
+                dp += 3;
+            }
+        }
+        return dp;
     }
 
     /**
@@ -2043,6 +2103,24 @@ public final class String
      */
     public byte[] getBytes() {
         return encode(Charset.defaultCharset(), coder(), value);
+    }
+
+    /**
+     * Returns the length in bytes of the given String encoded with the given {@link Charset}.
+     *
+     * <p>The result will be the same value as {@code getBytes(charset).length}.
+     *
+     * @param cs the charset used to the compute the length
+     * @return length in bytes of the string
+     */
+    public int getBytesLength(Charset cs) {
+        if (cs == UTF_8.INSTANCE) {
+            return encodedLengthUTF8(coder, value);
+        }
+        if (bytesCompatible(cs)) {
+            return value.length;
+        }
+        return getBytes(cs).length;
     }
 
     boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
@@ -5279,5 +5357,4 @@ public final class String
     public String resolveConstantDesc(MethodHandles.Lookup lookup) {
         return this;
     }
-
 }
