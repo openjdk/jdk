@@ -45,12 +45,9 @@
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:-TieredCompilation -Xbatch
  *      -XX:+StressIncrementalInlining
- *      -XX:RepeatCompilation=10000
  *      -XX:CompileCommand=compileonly,${test.main.class}::test2
  *      ${test.main.class}
  */
-
-// TODO: remove -XX:RepeatCompilation=10000
 
 /*
  * @test id=vanilla
