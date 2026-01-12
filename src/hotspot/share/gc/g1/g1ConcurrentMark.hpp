@@ -614,6 +614,10 @@ public:
   // to be called concurrently to the mutator. It will yield to safepoint requests.
   void cleanup_for_next_mark();
 
+  // Recycle the memory that has been requested by allocators associated with
+  // this manager.
+  void reset_partial_array_state_manager();
+
   // Clear the next marking bitmap during safepoint.
   void clear_bitmap(WorkerThreads* workers);
 
@@ -710,7 +714,7 @@ private:
   G1CMBitMap*                 _mark_bitmap;
   // the task queue of this task
   G1CMTaskQueue*              _task_queue;
-  PartialArraySplitter        _partial_array_splitter;
+  PartialArraySplitter*       _partial_array_splitter;
 
   G1RegionMarkStatsCache      _mark_stats_cache;
   // Number of calls to this task
@@ -834,6 +838,11 @@ private:
 public:
   // Resets the task; should be called right at the beginning of a marking phase.
   void reset(G1CMBitMap* mark_bitmap);
+  // Register/unregister Partial Array Splitter Allocator with the PartialArrayStateManager.
+  // This allows us to discard memory arenas used for partial object array states at the end
+  // of a concurrent mark cycle.
+  void register_partial_array_splitter();
+  void unregister_partial_array_splitter();
   // Clears all the fields that correspond to a claimed region.
   void clear_region_fields();
 

@@ -812,9 +812,23 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
 
   clear_bitmap(_concurrent_workers, true);
 
+  reset_partial_array_state_manager();
+
   // Repeat the asserts from above.
   guarantee(cm_thread()->in_progress(), "invariant");
   guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
+}
+
+void G1ConcurrentMark::reset_partial_array_state_manager() {
+  for (uint i = 0; i < _max_num_tasks; ++i) {
+    _tasks[i]->unregister_partial_array_splitter();
+  }
+
+  partial_array_state_manager()->reset();
+
+  for (uint i = 0; i < _max_num_tasks; ++i) {
+    _tasks[i]->register_partial_array_splitter();
+  }
 }
 
 void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers) {
@@ -2064,6 +2078,19 @@ void G1CMTask::reset(G1CMBitMap* mark_bitmap) {
   _mark_stats_cache.reset();
 }
 
+void G1CMTask::register_partial_array_splitter() {
+  precond(_partial_array_splitter != nullptr);
+
+  ::new (_partial_array_splitter) PartialArraySplitter(_cm->partial_array_state_manager(),
+                                                       _cm->max_num_tasks(),
+                                                       ObjArrayMarkingStride);
+}
+
+void G1CMTask::unregister_partial_array_splitter() {
+  precond(_partial_array_splitter != nullptr);
+  _partial_array_splitter->~PartialArraySplitter();
+}
+
 bool G1CMTask::should_exit_termination() {
   if (!regular_clock_call()) {
     return true;
@@ -2241,7 +2268,7 @@ size_t G1CMTask::start_partial_objArray(oop obj) {
   objArrayOop obj_array = objArrayOop(obj);
   size_t array_length = obj_array->length();
 
-  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj_array, nullptr, array_length);
+  size_t initial_chunk_size = _partial_array_splitter->start(_task_queue, obj_array, nullptr, array_length);
 
   // Mark objArray klass metadata
   if (_cm_oop_closure->do_metadata()) {
@@ -2260,7 +2287,7 @@ size_t G1CMTask::do_partial_objArray(const G1TaskQueueEntry& task, bool stolen) 
   objArrayOop obj = objArrayOop(state->source());
 
   PartialArraySplitter::Claim claim =
-    _partial_array_splitter.claim(state, _task_queue, stolen);
+    _partial_array_splitter->claim(state, _task_queue, stolen);
 
   scan_objArray(obj, claim._start, claim._end);
   return heap_word_size((claim._end - claim._start) * heapOopSize);
@@ -2804,7 +2831,7 @@ G1CMTask::G1CMTask(uint worker_id,
   _cm(cm),
   _mark_bitmap(nullptr),
   _task_queue(task_queue),
-  _partial_array_splitter(cm->partial_array_state_manager(), cm->max_num_tasks(), ObjArrayMarkingStride),
+  _partial_array_splitter(NEW_C_HEAP_OBJ(PartialArraySplitter, mtGC)),
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
   _time_target_ms(0.0),
@@ -2828,6 +2855,8 @@ G1CMTask::G1CMTask(uint worker_id,
   _marking_step_diff_ms()
 {
   guarantee(task_queue != nullptr, "invariant");
+
+  register_partial_array_splitter();
 
   _marking_step_diff_ms.add(0.5);
 }
