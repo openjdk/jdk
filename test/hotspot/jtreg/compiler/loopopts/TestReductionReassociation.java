@@ -96,6 +96,8 @@ public class TestReductionReassociation {
     }
 
     enum AddOp {
+        MIN_I(CodeGenerationDataNameType.ints()),
+        MAX_I(CodeGenerationDataNameType.ints()),
         MIN_L(CodeGenerationDataNameType.longs()),
         MAX_L(CodeGenerationDataNameType.longs());
 
@@ -155,9 +157,26 @@ public class TestReductionReassociation {
                 let("a", a),
                 let("b", b),
                 switch (add) {
+                    case MIN_I -> "Integer.min(#a, #b)";
+                    case MAX_I -> "Integer.max(#a, #b)";
                     case MIN_L -> "Long.min(#a, #b)";
                     case MAX_L -> "Long.max(#a, #b)";
                 }
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateResultInit(String resultName) {
+            var template = Template.make(() -> scope(
+                let("resultName", resultName),
+                let("boxedType", add.type.boxedTypeName()),
+                let("type", add.type.name()),
+                "#type ", resultName, " = #boxedType.",
+                switch (add) {
+                    case MIN_I, MIN_L -> "MAX_VALUE";
+                    case MAX_I, MAX_L -> "MIN_VALUE";
+                },
+                ";\n"
             ));
             return template.asToken();
         }
@@ -177,25 +196,25 @@ public class TestReductionReassociation {
                 "\"}, phase = CompilePhase.AFTER_LOOP_OPTS)",
                 """
                 public Object[] #test() {
-                    #type result = Integer.MIN_VALUE;
-                    #type result2 = Integer.MIN_VALUE;
                 """,
-                "for (int i = 0; i < #input.length; i += ", batchSize, ") {",
+                generateResultInit("result"),
+                generateResultInit("result2"),
+                "for (int i = 0; i < #input.length; i += ", batchSize, ") {\n",
                 IntStream.range(0, batchSize).mapToObj(i ->
-                    List.of("long v", i, " = #input[i + ", i, "];\n")
+                    List.of("#type v", i, " = #input[i + ", i, "];\n")
                 ).toList(),
-                useIntermediate ? List.of("if (v", batchSize - 1," == #input.hashCode()) { System.out.print(\"\"); }") : "",
-                "long u0 = ", generateOp("v0", "result"), ";",
+                useIntermediate ? List.of("if (v", batchSize - 1," == #input.hashCode()) { System.out.print(\"\"); }\n") : "",
+                "#type u0 = ", generateOp("v0", "result"), ";\n",
                 IntStream.range(1, batchSize).mapToObj(i ->
-                    List.of("long u", i, " = ", generateOp("v" + i, "u" + (i - 1)), ";\n")
+                    List.of("#type u", i, " = ", generateOp("v" + i, "u" + (i - 1)), ";\n")
                 ).toList(),
-                "result = u", batchSize - 1,";",
-                "long t0 = ", generateOp("v0", "v1"), ";",
+                "result = u", batchSize - 1,";\n",
+                "#type t0 = ", generateOp("v0", "v1"), ";\n",
                 IntStream.range(1, batchSize - 1).mapToObj(i ->
-                    List.of("long t", i, " = ", generateOp("v" + (i + 1), "t" + (i - 1)), ";\n")
+                    List.of("#type t", i, " = ", generateOp("v" + (i + 1), "t" + (i - 1)), ";\n")
                 ).toList(),
-                "long t", batchSize - 1, " = ", generateOp("result", "t" + (batchSize - 2)), ";",
-                "result2 = t", batchSize - 1,";",
+                "#type t", batchSize - 1, " = ", generateOp("result", "t" + (batchSize - 2)), ";\n",
+                "result2 = t", batchSize - 1,";\n",
                 """
                     }
                     return new Object[]{result, result2};
