@@ -305,13 +305,18 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                       last_addp = n->as_AddP();
                       break;
                     }
-                    if (n->is_Phi()) {
-                      prev_before = n;
-                      continue;
-                    }
+                    // if (n->is_Phi()) {
+                    //   prev_before = n;
+                    //   continue;
+                    // }
                     Node* clone = n->clone();
                     int nb = clone->replace_edge(prev_before, prev_after);
                     assert(nb > 0, "");
+                    if (n->is_Phi()) {
+                      const Type* phi_t = phase->type(n)->filter(phase->type(prev_after));
+                      // tty->print("XXX "); n->dump(); tty->print(" "); phi_t->dump(); tty->cr();
+                      clone->as_Type()->set_type(phi_t);
+                    }
                     prev_before = n;
                     prev_after = phase->transform(clone);
                   }
