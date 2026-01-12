@@ -96,6 +96,8 @@ public class TestReductionReassociation {
     }
 
     enum AddOp {
+        MIN_F(CodeGenerationDataNameType.floats()),
+        MAX_F(CodeGenerationDataNameType.floats()),
         MIN_I(CodeGenerationDataNameType.ints()),
         MAX_I(CodeGenerationDataNameType.ints()),
         MIN_L(CodeGenerationDataNameType.longs()),
@@ -157,6 +159,8 @@ public class TestReductionReassociation {
                 let("a", a),
                 let("b", b),
                 switch (add) {
+                    case MIN_F -> "Float.min(#a, #b)";
+                    case MAX_F -> "Float.max(#a, #b)";
                     case MIN_I -> "Integer.min(#a, #b)";
                     case MAX_I -> "Integer.max(#a, #b)";
                     case MIN_L -> "Long.min(#a, #b)";
@@ -173,8 +177,8 @@ public class TestReductionReassociation {
                 let("type", add.type.name()),
                 "#type ", resultName, " = #boxedType.",
                 switch (add) {
-                    case MIN_I, MIN_L -> "MAX_VALUE";
-                    case MAX_I, MAX_L -> "MIN_VALUE";
+                    case MIN_F, MIN_I, MIN_L -> "MAX_VALUE";
+                    case MAX_F, MAX_I, MAX_L -> "MIN_VALUE";
                 },
                 ";\n"
             ));
