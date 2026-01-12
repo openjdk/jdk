@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,11 @@ public class ShareTmpDir {
             };
         t1.start();
 
+        while (!started1.exists()) {
+            System.out.println("Waiting for first JVM to start");
+            Thread.sleep(1000);
+        }
+
         Thread t2 = new Thread() {
                 public void run() {
                     synchronized(lock) {
@@ -98,8 +103,8 @@ public class ShareTmpDir {
             };
         t2.start();
 
-        while (!started1.exists() || !started2.exists()) {
-            System.out.println("Waiting for all two JVMs to start");
+        while (!started2.exists()) {
+            System.out.println("Waiting for second JVM to start");
             Thread.sleep(1000);
         }
 
