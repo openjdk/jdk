@@ -1296,12 +1296,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * over the decoding process is required.
      * <p>
      * Getting a string from a segment with a known byte offset and
-     * known byte length can be done like so:
-     * {@snippet lang=java :
-     *     byte[] bytes = new byte[length];
-     *     MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, length);
-     *     return new String(bytes, charset);
-     * }
+     * known byte length can be done using {@link #getString(long, Charset, long)}.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
@@ -1327,6 +1322,40 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         {@linkplain StandardCharsets standard charset}
      */
     String getString(long offset, Charset charset);
+
+    /**
+     * Reads a string from this segment at the given offset, using the provided length
+     * and charset.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string. The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     * <p>
+     * If the string contains any {@code '\0'} characters, they will be read as well.
+     * This differs from {@link #getString(long, Charset)}, which will only read up
+     * to the first {@code '\0'}, resulting in truncation for string data that contains
+     * the {@code '\0'} character.
+     *
+     * @param offset  offset in bytes (relative to this segment address) at which this
+     *                access operation will occur
+     * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
+     *                string bytes
+     * @param byteLength length, in bytes, of the region of memory to read and decode into
+     *                a string
+     * @return a Java string constructed from the bytes read from the given starting
+     *         address up to the given length
+     * @throws IllegalArgumentException  if the size of the string is greater than the
+     *         largest string supported by the platform
+     * @throws IndexOutOfBoundsException if {@code offset < 0}
+     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - byteLength}
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         this segment is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code isAccessibleBy(T) == false}
+     * @throws IllegalArgumentException if {@code byteLength < 0}
+     */
+    String getString(long offset, Charset charset, long byteLength);
 
     /**
      * Writes the given string into this segment at the given offset, converting it to
@@ -1366,7 +1395,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
      * the string, such as {@link MemorySegment#getString(long)}, the string
-     * will appear truncated when read again.
+     * will appear truncated when read again. The string can be read without
+     * truncation using {@link #getString(long, Charset, long)}.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur, the final address of this write
@@ -2604,6 +2634,50 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         AbstractMemorySegmentImpl.copy(srcArray, srcIndex,
                 dstSegment, dstLayout, dstOffset,
                 elementCount);
+    }
+
+    /**
+     * Copies the byte sequence of the given string encoded using the provided charset
+     * to the destination segment.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string. The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getString(long)}, the string
+     * will appear truncated when read again. The string can be read without
+     * truncation using {@link #getString(long, Charset, long)}.
+     *
+     * @param src      the Java string to be written into the destination segment
+     * @param dstEncoding the charset used to {@linkplain Charset#newEncoder() encode}
+     *                 the string bytes.
+     * @param srcIndex the starting character index of the source string
+     * @param dst      the destination segment
+     * @param dstOffset the starting offset, in bytes, of the destination segment
+     * @param numChars the number of characters to be copied
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         {@code dst} is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code dst.isAccessibleBy(T) == false}
+     * @throws IndexOutOfBoundsException if either {@code srcIndex}, {@code numChars}, or {@code dstOffset}
+     *         are {@code < 0}
+     * @throws IndexOutOfBoundsException if {@code srcIndex > src.length() - numChars}
+     * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
+     * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
+     *         in bytes, of the substring of {@code src} encoded using the given charset
+     * @return the number of copied bytes.
+     */
+    @ForceInline
+    static long copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
+        Objects.requireNonNull(src);
+        Objects.requireNonNull(dstEncoding);
+        Objects.requireNonNull(dst);
+        Objects.checkFromIndexSize(srcIndex, numChars, src.length());
+
+        return AbstractMemorySegmentImpl.copy(src, dstEncoding, srcIndex, dst, dstOffset, numChars);
     }
 
     /**
