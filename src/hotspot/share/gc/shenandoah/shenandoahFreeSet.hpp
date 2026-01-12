@@ -783,8 +783,24 @@ public:
   // adjusts available with respect to lock holders.  However, sequential calls to these three functions may produce
   // inconsistent data: available may not equal capacity - used because the intermediate states of any "atomic"
   // locked action can be seen by these unlocked functions.
-  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
-  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
+  inline size_t capacity_holding_lock() const {
+    shenandoah_assert_heaplocked();
+    return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
+  }
+  inline size_t capacity_not_holding_lock() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
+  }
+  inline size_t used_holding_lock() const {
+    shenandoah_assert_heaplocked();
+    return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
+  }
+  inline size_t used_not_holding_lock() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
+  }
   inline size_t available() {
     shenandoah_assert_not_heaplocked();
     ShenandoahRebuildLocker locker(rebuild_lock());
