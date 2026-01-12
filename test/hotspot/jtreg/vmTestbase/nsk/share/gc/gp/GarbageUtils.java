@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,10 +181,7 @@ public final class GarbageUtils {
          * Eat memory using default(byte[]) garbage producer.
          *
          * Note that this method can throw Failure if any exception
-         * is thrown while eating memory. To avoid OOM while allocating
-         * exception we preallocate it before the lunch starts. It means
-         * that exception stack trace does not correspond to the place
-         * where exception is thrown, but points at start of the method.
+         * is thrown while eating memory.
          *
          * @param stresser stresser
          * @param initialFactor determines which portion of initial memory initial chunk will be
@@ -200,10 +197,7 @@ public final class GarbageUtils {
          * Eat memory using given garbage producer.
          *
          * Note that this method can throw Failure if any exception
-         * is thrown while eating memory. To avoid OOM while allocating
-         * exception we preallocate it before the lunch starts. It means
-         * that exception stack trace does not correspond to the place
-         * where exception is thrown, but points at start of the method.
+         * is thrown while eating memory.
          *
          * @param stresser stresser to use
          * @param gp garbage producer
@@ -270,10 +264,7 @@ public final class GarbageUtils {
          * Eat memory using given garbage producer.
          *
          * Note that this method can throw Failure if any exception
-         * is thrown while eating memory. To avoid OOM while allocating
-         * exception we preallocate it before the lunch starts. It means
-         * that exception stack trace does not correspond to the place
-         * where exception is thrown, but points at start of the method.
+         * is thrown while eating memory.
          *
          * @param stresser stresser to use
          * @param gp garbage producer

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.test.mock;
 
-/*
- * @test
- * @bug 4303068
- * @summary be allowed to specify the security properties file
- *      as a -D system property
+import java.io.IOException;
+
+/**
+ * Simulates I/O error.
  *
- * @run main/othervm -Djava.security.properties=${test.src}/SecurityPropFile.file -Djava.security.debug=properties SecurityPropFile
+ * @see CommandMockExit#THROW_MOCK_IO_EXCEPTION
  */
+public final class MockIOException extends IOException {
 
-public class SecurityPropFile {
-    public static void main(String[] args) {
-        System.out.println(java.security.Security.getProperty
-                                ("policy.provider"));
-        System.out.println(java.security.Security.getProperty
-                                ("policy.url.1"));
-        System.out.println(java.security.Security.getProperty
-                                ("policy.url.2"));
+    MockIOException(String msg) {
+        super(msg);
     }
+
+    private static final long serialVersionUID = 1L;
 }
