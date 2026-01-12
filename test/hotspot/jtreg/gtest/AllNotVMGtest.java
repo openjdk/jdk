@@ -53,8 +53,6 @@ public class AllNotVMGtest {
     static TestFilter[] TEST_FILTERS = {
         // JDK-8374450
         TF("opto.canonicalize_constraints"),
-        // JDK-8372245
-        TF("globalDefinitions.format_specifiers"),
         // JDK-8372246
         TF("LogOutputList.is_level_multiple_outputs"),
         TF("LogOutputList.is_level_single_output"),
