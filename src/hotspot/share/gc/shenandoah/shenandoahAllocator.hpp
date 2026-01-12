@@ -57,7 +57,11 @@ protected:
   shenandoah_padding(1);
 
 
-  // start index of the shared alloc regions where the allocation will start from.
+  // Start index of the shared alloc regions where the allocation will start from.
+  // The alloc start index is stored in thread local data, each thread has it own start index to reduce contention.
+  // The value is determined when this function is called at the first time from a thread.
+  // For GC workers, the started index is calculated using worker id as: WorkerThread::worker_id() % _alloc_region_count;
+  // for non GC worker, the value is calculated with random like: abs(os::random()) % _alloc_region_count.
   uint alloc_start_index();
 
   // Attempt to allocate memory to satisfy alloc request.
