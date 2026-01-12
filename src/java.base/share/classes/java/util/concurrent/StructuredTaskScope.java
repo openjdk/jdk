@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -914,8 +914,8 @@ public sealed interface StructuredTaskScope<T, R>
      * forking subtasks will create an unnamed virtual thread for each subtask.
      *
      * <p> If a {@linkplain Configuration#withTimeout(Duration) timeout} is set then it
-     * starts when the scope is opened. If the timeout expires before the scope has
-     * {@linkplain #join() joined} then the scope is {@linkplain ##Cancellation cancelled}
+     * starts when the scope is opened. If the timeout expires before or while waiting in
+     * {@link #join()} then the scope is {@linkplain ##Cancellation cancelled}
      * and the {@code Joiner}'s {@link Joiner#onTimeout() onTimeout()} method is invoked
      * to optionally throw {@link TimeoutException TimeoutException}.
      *
@@ -1081,10 +1081,9 @@ public sealed interface StructuredTaskScope<T, R>
      * does not throw then the {@code Joiner}'s {@code result()} method is invoked to
      * get the result or throw.
      *
-     * <p> This method may only be invoked by the scope owner. Once the result or
-     * exception outcome is obtained, this method may not be invoked again. The only
-     * case where the method may be called again is where {@code InterruptedException}
-     * is thrown while waiting.
+     * <p> This method may only be invoked by the scope owner. It may only be invoked once
+     * to get the result, exception or timeout outcome, unless the previous invocation
+     * resulted in an {@code InterruptedException} being thrown.
      *
      * @return the result
      * @throws WrongThreadException if the current thread is not the scope owner
@@ -1093,8 +1092,11 @@ public sealed interface StructuredTaskScope<T, R>
      * exception from {@link Joiner#result() Joiner.result()} as the cause
      * @throws TimeoutException if a timeout is set, the timeout expires before or while
      * waiting, and {@link Joiner#onTimeout() Joiner.onTimeout()} throws this exception
-     * @throws InterruptedException if interrupted while waiting
+     * @throws InterruptedException if the current thread is interrupted before or
+     * while waiting. The current thread's interrupted status is cleared when this
+     * exception is thrown.
      * @since 25
+     * @see Thread##thread-interruption Thread Interruption
      */
     R join() throws InterruptedException;
 

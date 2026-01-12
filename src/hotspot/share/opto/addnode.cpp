@@ -31,8 +31,8 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/rangeinference.hpp"
 #include "opto/subnode.hpp"
-#include "opto/utilities/xor.hpp"
 #include "runtime/stubRoutines.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -1011,35 +1011,8 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 // the logical operations the ring's ADD is really a logical OR function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *OrINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-
-  // If both args are bool, can figure out better types
-  if ( r0 == TypeInt::BOOL ) {
-    if ( r1 == TypeInt::ONE) {
-      return TypeInt::ONE;
-    } else if ( r1 == TypeInt::BOOL ) {
-      return TypeInt::BOOL;
-    }
-  } else if ( r0 == TypeInt::ONE ) {
-    if ( r1 == TypeInt::BOOL ) {
-      return TypeInt::ONE;
-    }
-  }
-
-  // If either input is all ones, the output is all ones.
-  // x | ~0 == ~0 <==> x | -1 == -1
-  if (r0 == TypeInt::MINUS_1 || r1 == TypeInt::MINUS_1) {
-    return TypeInt::MINUS_1;
-  }
-
-  // If either input is not a constant, just return all integers.
-  if( !r0->is_con() || !r1->is_con() )
-    return TypeInt::INT;        // Any integer, but still no symbols.
-
-  // Otherwise just OR them bits.
-  return TypeInt::make( r0->get_con() | r1->get_con() );
+const Type* OrINode::add_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_or(t1->is_int(), t2->is_int());
 }
 
 //=============================================================================
@@ -1087,22 +1060,8 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-
-  // If either input is all ones, the output is all ones.
-  // x | ~0 == ~0 <==> x | -1 == -1
-  if (r0 == TypeLong::MINUS_1 || r1 == TypeLong::MINUS_1) {
-    return TypeLong::MINUS_1;
-  }
-
-  // If either input is not a constant, just return all integers.
-  if( !r0->is_con() || !r1->is_con() )
-    return TypeLong::LONG;      // Any integer, but still no symbols.
-
-  // Otherwise just OR them bits.
-  return TypeLong::make( r0->get_con() | r1->get_con() );
+const Type* OrLNode::add_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_or(t1->is_long(), t2->is_long());
 }
 
 //---------------------------Helper -------------------------------------------
@@ -1189,46 +1148,14 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
 // the logical operations the ring's ADD is really a logical OR function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-
-  if (r0->is_con() && r1->is_con()) {
-    // compute constant result
-    return TypeInt::make(r0->get_con() ^ r1->get_con());
-  }
-
-  // At least one of the arguments is not constant
-
-  if (r0->_lo >= 0 && r1->_lo >= 0) {
-      // Combine [r0->_lo, r0->_hi] ^ [r0->_lo, r1->_hi] -> [0, upper_bound]
-      jint upper_bound = xor_upper_bound_for_ranges<jint, juint>(r0->_hi, r1->_hi);
-      return TypeInt::make(0, upper_bound, MAX2(r0->_widen, r1->_widen));
-  }
-
-  return TypeInt::INT;
+const Type* XorINode::add_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_xor(t1->is_int(), t2->is_int());
 }
 
 //=============================================================================
 //------------------------------add_ring---------------------------------------
-const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-
-  if (r0->is_con() && r1->is_con()) {
-    // compute constant result
-    return TypeLong::make(r0->get_con() ^ r1->get_con());
-  }
-
-  // At least one of the arguments is not constant
-
-  if (r0->_lo >= 0 && r1->_lo >= 0) {
-      // Combine [r0->_lo, r0->_hi] ^ [r0->_lo, r1->_hi] -> [0, upper_bound]
-      julong upper_bound = xor_upper_bound_for_ranges<jlong, julong>(r0->_hi, r1->_hi);
-      return TypeLong::make(0, upper_bound, MAX2(r0->_widen, r1->_widen));
-  }
-
-  return TypeLong::LONG;
+const Type* XorLNode::add_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_xor(t1->is_long(), t2->is_long());
 }
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1401,6 +1328,10 @@ static ConstAddOperands as_add_with_constant(Node* n) {
 }
 
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
+  Node* n = AddNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
   int opcode = Opcode();
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
   // Try to transform the following pattern, in any of its four possible
@@ -1598,8 +1529,10 @@ static Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
         Node* x    = add2->in(1);
         Node* con2 = add2->in(2);
         if (is_sub_con(con2)) {
+          // The graph could be dying (i.e. x is top) in which case type(x) is not a long.
+          const TypeLong* x_long = phase->type(x)->isa_long();
           // Collapsed graph not equivalent if potential over/underflow -> bailing out (*)
-          if (can_overflow(phase->type(x)->is_long(), con1->get_long() + con2->get_long())) {
+          if (x_long == nullptr || can_overflow(x_long, con1->get_long() + con2->get_long())) {
             return nullptr;
           }
           Node* new_con = phase->transform(new AddLNode(con1, con2));

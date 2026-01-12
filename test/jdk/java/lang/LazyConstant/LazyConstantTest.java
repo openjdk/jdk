@@ -224,13 +224,4 @@ final class LazyConstantTest {
         };
     }
 
-    record Lazy<T>(LazyConstant<T> underlying) implements Supplier<T> {
-        @Override
-        public T get() { return underlying.get(); }
-
-        static <T> Lazy<T> of(Supplier<? extends T> computingFunction) {
-            return new Lazy<>(LazyConstant.of(computingFunction));
-        }
-    }
-
 }
