@@ -489,7 +489,9 @@ public:
 
   // Remove all elements up to the index (exclusive). The order is preserved.
   void remove_till(int idx) {
-    remove_range(0, idx);
+    if (idx > 0) {
+      remove_range(0, idx);
+    }
   }
 
   // Remove all elements in the range [start - end). The order is preserved.
