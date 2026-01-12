@@ -1355,7 +1355,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
 // Construct a LocalEA object that inspects a node for escape analysis. This constructor will
 // calculate _is_candidate and _aliases.
 MemNode::LocalEA::LocalEA(PhaseIterGVN* phase, Node* base) : _phase(phase), _is_candidate(true), _aliases(), _not_escaped_controls() {
-  if (!DoLocalEscapeAnalysis || phase == nullptr) {
+  if (!DoLocalEscapeAnalysis || phase == nullptr || !phase->type(base)->isa_oopptr()) {
     _is_candidate = false;
     return;
   }
