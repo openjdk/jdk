@@ -4978,7 +4978,7 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
-static AddNode* build_add(int opcode, Node* a, Node* b, PhaseIdealLoop* phase) {
+static MinMaxNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phase) {
   switch (opcode) {
     case Op_MinI:
       return new MinINode(a, b);
@@ -5004,7 +5004,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
 
   Node* left;
   Node* right;
-  if (node->in(1)->is_Add()) {
+  if (node->in(1)->is_MinMax()) {
     left = reassociate_chain(add_opcode, node->in(1), phi, loop_head, phase);
     right = node->in(2);
   } else {
@@ -5012,7 +5012,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
     right = reassociate_chain(add_opcode, node->in(2), phi, loop_head, phase);
   }
 
-  Node* reassoc = build_add(add_opcode, left, right, phase);
+  Node* reassoc = build_min_max(add_opcode, left, right, phase);
   phase->register_new_node(reassoc, loop_head);
   return reassoc;
 }
@@ -5021,7 +5021,7 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
   Node* chain_head = nullptr;
   Node* current = phi;
   int chain_length = 0;
-  int add_opcode = 0;
+  int opcode = 0;
   while (current != nullptr) {
     if (current->outcnt() != 1) {
       break;
@@ -5030,9 +5030,9 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
     Node* use = nullptr;
     for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
       Node* n = current->fast_out(i);
-      if (n->is_Add()) {
+      if (n->is_MinMax()) {
         use = n;
-        add_opcode = use->Opcode();
+        opcode = use->Opcode();
         break;
       }
     }
@@ -5042,7 +5042,7 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
         // Only interested in commutative add nodes that are in use in the loop
         return;
       }
-      if (use->in(1)->Opcode() == add_opcode && use->in(2)->Opcode() == add_opcode) {
+      if (use->in(1)->Opcode() == opcode && use->in(2)->Opcode() == opcode) {
         // A chain to reassociate cannot be constructed
         // when the chain can have multiple paths
         return;
@@ -5068,9 +5068,9 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
   // chain_head->dump();
 
   Node* loop_head = lpt->head();
-  Node* reassociated = reassociate_chain(add_opcode, chain_head, phi, loop_head, phase);
+  Node* reassociated = reassociate_chain(opcode, chain_head, phi, loop_head, phase);
 
-  Node* new_chain_head = build_add(add_opcode, phi, reassociated, phase);
+  Node* new_chain_head = build_min_max(opcode, phi, reassociated, phase);
   phase->register_new_node(new_chain_head, loop_head);
   phase->igvn().replace_node(chain_head, new_chain_head);
 }
