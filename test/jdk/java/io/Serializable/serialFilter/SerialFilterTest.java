@@ -248,7 +248,7 @@ public class SerialFilterTest implements Serializable {
         byte[] bytes = writeObjects(object);
         Validator validator = new Validator();
         validate(bytes, validator);
-        System.out.printf("v: %s%n", validator);
+        System.err.printf("v: %s%n", validator);
 
         Assertions.assertEquals(count, validator.count, "callback count wrong");
         Assertions.assertEquals(classes, validator.classes, "classes mismatch");
@@ -399,15 +399,11 @@ public class SerialFilterTest implements Serializable {
      */
     @ParameterizedTest
     @MethodSource("invalidLimits")
+    @MethodSource("invalidLimits")
     void testInvalidLimits(String pattern) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            try {
-                ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(pattern);
-            } catch (IllegalArgumentException iae) {
-                System.out.printf("    success exception: %s%n", iae);
-                throw iae;
-            }
-        });
+        var iae = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> ObjectInputFilter.Config.createFilter(pattern));
+        System.err.printf("    success exception: %s%n", iae);
     }
 
     /**
@@ -415,19 +411,11 @@ public class SerialFilterTest implements Serializable {
      */
     @Test
     void testNullStatus() throws IOException {
-        Assertions.assertThrows(InvalidClassException.class, () -> {
+        var ice = Assertions.assertThrows(InvalidClassException.class, () -> {
             byte[] bytes = writeObjects(0); // an Integer
-            try {
-                Object o = validate(bytes, new ObjectInputFilter() {
-                    public ObjectInputFilter.Status checkInput(ObjectInputFilter.FilterInfo f) {
-                        return null;
-                    }
-                });
-            } catch (InvalidClassException ice) {
-                System.out.printf("    success exception: %s%n", ice);
-                throw ice;
-            }
+            validate(bytes, f -> null);
         });
+        System.err.printf("    success exception: %s%n", ice);
     }
 
     /**
@@ -437,14 +425,9 @@ public class SerialFilterTest implements Serializable {
     @ParameterizedTest
     @MethodSource("invalidPatterns")
     void testInvalidPatterns(String pattern) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            try {
-                ObjectInputFilter.Config.createFilter(pattern);
-            } catch (IllegalArgumentException iae) {
-                System.out.printf("    success exception: %s%n", iae);
-                throw iae;
-            }
-        });
+        var iae = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> ObjectInputFilter.Config.createFilter(pattern));
+        System.err.printf("    success exception: %s%n", iae);
     }
 
     /**
@@ -520,7 +503,7 @@ public class SerialFilterTest implements Serializable {
         @Override
         public ObjectInputFilter.Status checkInput(FilterInfo filter) {
             Class<?> serialClass = filter.serialClass();
-            System.out.printf("     checkInput: class: %s, arrayLen: %d, refs: %d, depth: %d, bytes; %d%n",
+            System.err.printf("     checkInput: class: %s, arrayLen: %d, refs: %d, depth: %d, bytes; %d%n",
                     serialClass, filter.arrayLength(), filter.references(),
                     filter.depth(), filter.streamBytes());
             count++;
