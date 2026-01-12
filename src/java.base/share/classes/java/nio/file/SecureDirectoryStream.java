@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ public interface SecureDirectoryStream<T>
      * @param   srcpath
      *          the name of the file to move
      * @param   targetdir
-     *          the destination directory
+     *          the destination directory; can be {@code null}
      * @param   targetpath
      *          the name to give the file in the destination directory
      *
