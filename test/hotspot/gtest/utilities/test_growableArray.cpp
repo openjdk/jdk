@@ -262,44 +262,23 @@ protected:
     ASSERT_EQ(a->at(2), 7);
     ASSERT_EQ(a->at(3), 8);
 
-    // Remove the rest of the elements
-    a->remove_range(0, 4);
-    ASSERT_EQ(a->length(), 0);
+    // Remove the rest of the elements one by one
+    a->remove_range(0, 1);
+    ASSERT_EQ(a->length(), 3);
+    ASSERT_EQ(a->at(0), 2);
+    ASSERT_EQ(a->at(1), 7);
+    ASSERT_EQ(a->at(2), 8);
 
-    // Seed again
-    for (int i = 0; i < 10; i++) {
-      a->append(i);
-    }
-    ASSERT_EQ(a->length(), 10);
-
-    // Remove nothing, should still be [0 ... 9]
-    a->remove_till(0);
-    ASSERT_EQ(a->length(), 10);
-
-    // Remove one element from head, should result in [1 ... 9]
-    a->remove_till(1);
-    ASSERT_EQ(a->length(), 9);
-    for (int i = 0; i < a->length(); i++) {
-      ASSERT_EQ(a->at(i), i + 1);
-    }
-
-    // Remove all elements except two last, should result in [8 9]
-    a->remove_till(7);
+    a->remove_range(0, 1);
     ASSERT_EQ(a->length(), 2);
-    ASSERT_EQ(a->at(0), 8);
-    ASSERT_EQ(a->at(1), 9);
+    ASSERT_EQ(a->at(0), 7);
+    ASSERT_EQ(a->at(1), 8);
 
-    // Remove one leading element, should result in [9]
-    a->remove_till(1);
+    a->remove_range(0, 1);
     ASSERT_EQ(a->length(), 1);
-    ASSERT_EQ(a->at(0), 9);
+    ASSERT_EQ(a->at(0), 8);
 
-    // Remove the remaining element, should result in []
-    a->remove_till(1);
-    ASSERT_EQ(a->length(), 0);
-
-    // Remove nothing on empty list
-    a->remove_till(0);
+    a->remove_range(0, 1);
     ASSERT_EQ(a->length(), 0);
   }
 

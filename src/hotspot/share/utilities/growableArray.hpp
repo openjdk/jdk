@@ -487,13 +487,6 @@ public:
     return false;
   }
 
-  // Remove all elements up to the index (exclusive). The order is preserved.
-  void remove_till(int idx) {
-    if (idx > 0) {
-      remove_range(0, idx);
-    }
-  }
-
   // Remove all elements in the range [start - end). The order is preserved.
   void remove_range(int start, int end) {
     assert(0 <= start, "illegal start index %d", start);
