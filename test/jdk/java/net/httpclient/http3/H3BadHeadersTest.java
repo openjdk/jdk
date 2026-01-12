@@ -75,7 +75,7 @@ public class H3BadHeadersTest implements HttpServerAdapters  {
 
     static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer http3TestServer;   // HTTP/3 ( h3 only )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2 + h3 )
     String http3URI;
@@ -272,10 +272,6 @@ public class H3BadHeadersTest implements HttpServerAdapters  {
     @BeforeTest
     public void setup() throws Exception {
         System.out.println("creating servers");
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         http3TestServer =  HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(new BadHeadersHandler(), "/http3/echo");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";

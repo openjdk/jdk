@@ -24,7 +24,8 @@
 /* @test
  * @summary Basic tests for lazy map methods
  * @enablePreview
- * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED LazyMapTest
+ * @modules java.base/java.util:+open
+ * @run junit LazyMapTest
  */
 
 import org.junit.jupiter.api.Test;

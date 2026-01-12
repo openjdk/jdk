@@ -1302,7 +1302,7 @@ nmethod::nmethod(
     }
     // Native wrappers do not have deopt handlers. Make the values
     // something that will never match a pc like the nmethod vtable entry
-    _deopt_handler_offset    = 0;
+    _deopt_handler_entry_offset    = 0;
     _unwind_handler_offset   = 0;
 
     CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
@@ -1442,7 +1442,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _skipped_instructions_size    = nm._skipped_instructions_size;
   _stub_offset                  = nm._stub_offset;
   _exception_offset             = nm._exception_offset;
-  _deopt_handler_offset         = nm._deopt_handler_offset;
+  _deopt_handler_entry_offset   = nm._deopt_handler_entry_offset;
   _unwind_handler_offset        = nm._unwind_handler_offset;
   _num_stack_arg_slots          = nm._num_stack_arg_slots;
   _oops_size                    = nm._oops_size;
@@ -1498,6 +1498,40 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   //   - OOP table
   memcpy(consts_begin(), nm.consts_begin(), nm.data_end() - nm.consts_begin());
 
+  // Fix relocation
+  RelocIterator iter(this);
+  CodeBuffer src(&nm);
+  CodeBuffer dst(this);
+  while (iter.next()) {
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+    // After an nmethod is moved, some direct call sites may end up out of range.
+    // CallRelocation::fix_relocation_after_move() assumes the target is always
+    // reachable and does not check branch range. Calling it without range checks
+    // could cause us to write an offset too large for the instruction.
+    //
+    // If a call site has a trampoline, we skip the normal call relocation. The
+    // associated trampoline_stub_Relocation will handle the call and the
+    // trampoline, including range checks and updating the branch as needed.
+    //
+    // If no trampoline exists, we can assume the call target is always
+    // reachable and therefore within direct branch range, so calling
+    // CallRelocation::fix_relocation_after_move() is safe.
+    if (iter.reloc()->is_call()) {
+      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), this);
+      if (trampoline != nullptr) {
+        continue;
+      }
+    }
+#endif
+
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
+  }
+
+  {
+    MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+    clear_inline_caches();
+  }
+
   post_init();
 }
 
@@ -1519,25 +1553,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
   if (nm_copy == nullptr) {
     return nullptr;
-  }
-
-  // Fix relocation
-  RelocIterator iter(nm_copy);
-  CodeBuffer src(this);
-  CodeBuffer dst(nm_copy);
-  while (iter.next()) {
-#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
-    // Direct calls may no longer be in range and the use of a trampoline may now be required.
-    // Instead, allow trampoline relocations to update their owners and perform the necessary checks.
-    if (iter.reloc()->is_call()) {
-      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), nm_copy);
-      if (trampoline != nullptr) {
-        continue;
-      }
-    }
-#endif
-
-    iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
 
   // To make dependency checking during class loading fast, record
@@ -1569,8 +1584,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   if (!is_marked_for_deoptimization() && is_in_use()) {
     assert(method() != nullptr && method()->code() == this, "should be if is in use");
 
-    nm_copy->clear_inline_caches();
-
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
       ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
@@ -1578,7 +1591,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
       methodHandle mh(Thread::current(), nm_copy->method());
       nm_copy->method()->set_code(mh, nm_copy);
 
-      make_not_used();
+      make_not_entrant(InvalidationReason::RELOCATED);
 
       nm_copy->post_compiled_method_load_event();
 
@@ -1704,19 +1717,26 @@ nmethod::nmethod(
         _exception_offset        = -1;
       }
       if (offsets->value(CodeOffsets::Deopt) != -1) {
-        _deopt_handler_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
+        _deopt_handler_entry_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
       } else {
-        _deopt_handler_offset    = -1;
+        _deopt_handler_entry_offset    = -1;
       }
     } else
 #endif
     {
       // Exception handler and deopt handler are in the stub section
-      assert(offsets->value(CodeOffsets::Exceptions) != -1, "must be set");
       assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
 
-      _exception_offset          = _stub_offset + offsets->value(CodeOffsets::Exceptions);
-      _deopt_handler_offset      = _stub_offset + offsets->value(CodeOffsets::Deopt);
+      bool has_exception_handler = (offsets->value(CodeOffsets::Exceptions) != -1);
+      assert(has_exception_handler == (compiler->type() != compiler_c2),
+             "C2 compiler doesn't provide exception handler stub code.");
+      if (has_exception_handler) {
+        _exception_offset = _stub_offset + offsets->value(CodeOffsets::Exceptions);
+      } else {
+        _exception_offset = -1;
+      }
+
+      _deopt_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::Deopt);
     }
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       // C1 generates UnwindHandler at the end of instructions section.
@@ -4024,7 +4044,7 @@ const char* nmethod::nmethod_section_label(address pos) const {
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
   if (JVMCI_ONLY(_exception_offset >= 0 &&) pos == exception_begin())          label = "[Exception Handler]";
-  if (JVMCI_ONLY(_deopt_handler_offset != -1 &&) pos == deopt_handler_begin()) label = "[Deopt Handler Code]";
+  if (JVMCI_ONLY(_deopt_handler_entry_offset != -1 &&) pos == deopt_handler_entry()) label = "[Deopt Handler Entry Point]";
   return label;
 }
 

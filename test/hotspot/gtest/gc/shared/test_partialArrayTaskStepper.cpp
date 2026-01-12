@@ -24,6 +24,7 @@
 
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "memory/allStatic.hpp"
+#include "runtime/atomic.hpp"
 #include "unittest.hpp"
 
 using Step = PartialArrayTaskStepper::Step;
@@ -33,7 +34,7 @@ class PartialArrayTaskStepper::TestSupport : AllStatic {
 public:
   static Step next(const Stepper* stepper,
                    size_t length,
-                   size_t* to_length_addr) {
+                   Atomic<size_t>* to_length_addr) {
     return stepper->next_impl(length, to_length_addr);
   }
 };
@@ -42,9 +43,9 @@ using StepperSupport = PartialArrayTaskStepper::TestSupport;
 
 static uint simulate(const Stepper* stepper,
                      size_t length,
-                     size_t* to_length_addr) {
+                     Atomic<size_t>* to_length_addr) {
   Step init = stepper->start(length);
-  *to_length_addr = init._index;
+  to_length_addr->store_relaxed(init._index);
   uint queue_count = init._ncreate;
   uint task = 0;
   for ( ; queue_count > 0; ++task) {
@@ -57,9 +58,9 @@ static uint simulate(const Stepper* stepper,
 
 static void run_test(size_t length, size_t chunk_size, uint n_workers) {
   const PartialArrayTaskStepper stepper(n_workers, chunk_size);
-  size_t to_length;
+  Atomic<size_t> to_length;
   uint tasks = simulate(&stepper, length, &to_length);
-  ASSERT_EQ(length, to_length);
+  ASSERT_EQ(length, to_length.load_relaxed());
   ASSERT_EQ(tasks, length / chunk_size);
 }
 

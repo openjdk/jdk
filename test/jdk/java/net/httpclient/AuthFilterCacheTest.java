@@ -75,15 +75,10 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
     static final int REQUEST_COUNT = 5;
     static final int URI_COUNT = 8;
     static final CyclicBarrier barrier = new CyclicBarrier(REQUEST_COUNT * URI_COUNT);
-    static final SSLContext context;
+    private static final SSLContext context = jdk.test.lib.net.SimpleSSLContext.findSSLContext();
 
     static {
-        try {
-            context = new jdk.test.lib.net.SimpleSSLContext().get();
-            SSLContext.setDefault(context);
-        } catch (Exception x) {
-            throw new ExceptionInInitializerError(x);
-        }
+        SSLContext.setDefault(context);
     }
 
     HttpTestServer http1Server;

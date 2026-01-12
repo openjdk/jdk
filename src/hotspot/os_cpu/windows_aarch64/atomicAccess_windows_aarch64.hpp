@@ -68,6 +68,9 @@ DEFINE_INTRINSIC_ADD(InterlockedAdd64, __int64)
 
 #undef DEFINE_INTRINSIC_ADD
 
+template<>
+struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
+
 #define DEFINE_INTRINSIC_XCHG(IntrinsicName, IntrinsicType)               \
   template<>                                                              \
   template<typename T>                                                    \
@@ -75,6 +78,8 @@ DEFINE_INTRINSIC_ADD(InterlockedAdd64, __int64)
                                                                          T exchange_value, \
                                                                          atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(T));                    \
+    STATIC_ASSERT(sizeof(IntrinsicType) == 4 ||                           \
+                  sizeof(IntrinsicType) == 8);                            \
     return PrimitiveConversions::cast<T>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
                     PrimitiveConversions::cast<IntrinsicType>(exchange_value))); \
