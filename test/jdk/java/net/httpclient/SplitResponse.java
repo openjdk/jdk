@@ -24,11 +24,8 @@
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
 import javax.net.ServerSocketFactory;
@@ -43,6 +40,8 @@ import java.util.stream.Stream;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.lang.System.out;
 import static java.lang.String.format;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 
@@ -95,11 +94,10 @@ public class SplitResponse {
     };
 
     final ServerSocketFactory factory;
-    final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     final boolean useSSL;
-    SplitResponse(boolean useSSL) throws IOException {
+    SplitResponse(boolean useSSL) {
         this.useSSL = useSSL;
-        context = new SimpleSSLContext().get();
         SSLContext.setDefault(context);
         factory = useSSL ? SSLServerSocketFactory.getDefault()
                          : ServerSocketFactory.getDefault();
@@ -212,7 +210,10 @@ public class SplitResponse {
 
 
         HttpClient client = newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder(uri).version(version).build();
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                .version(version)
+                .setOption(H3_DISCOVERY, ALT_SVC)
+                .build();
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;
 

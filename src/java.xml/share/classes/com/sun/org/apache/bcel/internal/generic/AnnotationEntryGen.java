@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,6 +28,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.sun.org.apache.bcel.internal.classfile.AnnotationEntry;
 import com.sun.org.apache.bcel.internal.classfile.Attribute;
@@ -37,10 +38,11 @@ import com.sun.org.apache.bcel.internal.classfile.RuntimeInvisibleAnnotations;
 import com.sun.org.apache.bcel.internal.classfile.RuntimeInvisibleParameterAnnotations;
 import com.sun.org.apache.bcel.internal.classfile.RuntimeVisibleAnnotations;
 import com.sun.org.apache.bcel.internal.classfile.RuntimeVisibleParameterAnnotations;
+import jdk.xml.internal.Utils;
 
 /**
  * @since 6.0
- * @LastModified: Jan 2020
+ * @LastModified: Sept 2025
  */
 public class AnnotationEntryGen {
 
@@ -53,7 +55,7 @@ public class AnnotationEntryGen {
      * @param annotationEntryGens An array of AnnotationGen objects
      */
     static Attribute[] getAnnotationAttributes(final ConstantPoolGen cp, final AnnotationEntryGen[] annotationEntryGens) {
-        if (annotationEntryGens.length == 0) {
+        if (annotationEntryGens == null && annotationEntryGens.length == 0) {
             return Attribute.EMPTY_ARRAY;
         }
 
@@ -255,11 +257,7 @@ public class AnnotationEntryGen {
     }
 
     private List<ElementValuePairGen> copyValues(final ElementValuePair[] in, final ConstantPoolGen cpool, final boolean copyPoolEntries) {
-        final List<ElementValuePairGen> out = new ArrayList<>();
-        for (final ElementValuePair nvp : in) {
-            out.add(new ElementValuePairGen(nvp, cpool, copyPoolEntries));
-        }
-        return out;
+        return Utils.streamOfIfNonNull(in).map(nvp -> new ElementValuePairGen(nvp, cpool, copyPoolEntries)).collect(Collectors.toList());
     }
 
     public void dump(final DataOutputStream dos) throws IOException {
@@ -286,18 +284,20 @@ public class AnnotationEntryGen {
     }
 
     public final String getTypeName() {
-        return getTypeSignature();// BCELBUG: Should I use this instead?
+        return getTypeSignature(); // BCELBUG: Should I use this instead?
         // Utility.signatureToString(getTypeSignature());
     }
 
     public final String getTypeSignature() {
-        // ConstantClass c = (ConstantClass)cpool.getConstant(typeIndex);
+        // ConstantClass c = (ConstantClass) cpool.getConstant(typeIndex);
         final ConstantUtf8 utf8 = (ConstantUtf8) cpool.getConstant(typeIndex/* c.getNameIndex() */);
         return utf8.getBytes();
     }
 
     /**
-     * Returns list of ElementNameValuePair objects
+     * Returns list of ElementNameValuePair objects.
+     *
+     * @return list of ElementNameValuePair objects.
      */
     public List<ElementValuePairGen> getValues() {
         return evs;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public class TestAESMain {
     public static void main(String[] args) {
         String mode = System.getProperty("mode", "CBC");
         if ((mode.equals("CBC") || mode.equals("ECB")) &&
-            !Compiler.isIntrinsicAvailable(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION, "com.sun.crypto.provider.AESCrypt", "implEncryptBlock", byte[].class, int.class, byte[].class, int.class)) {
+            !Compiler.isIntrinsicAvailable(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION, "com.sun.crypto.provider.AES_Crypt", "implEncryptBlock", byte[].class, int.class, byte[].class, int.class)) {
             throw new SkippedException("AES intrinsic is not available");
         }
         if (mode.equals("GCM") &&

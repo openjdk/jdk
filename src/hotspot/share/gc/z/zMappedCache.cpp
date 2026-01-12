@@ -216,7 +216,7 @@ void ZMappedCache::Tree::replace(TreeNode* old_node, TreeNode* new_node, const T
 }
 
 size_t ZMappedCache::Tree::size_atomic() const {
-  return Atomic::load(&_num_nodes);
+  return AtomicAccess::load(&_num_nodes);
 }
 
 const ZMappedCache::TreeNode* ZMappedCache::Tree::left_most() const {

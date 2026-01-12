@@ -41,32 +41,32 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case) {
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register basic_lock, Register tmp, Label& slow_case) {
   assert(hdr == rax, "hdr must be rax, for the cmpxchg instruction");
-  assert_different_registers(hdr, obj, disp_hdr, tmp);
+  assert_different_registers(hdr, obj, basic_lock, tmp);
   int null_check_offset = -1;
 
   verify_oop(obj);
 
   // save object being locked into the BasicObjectLock
-  movptr(Address(disp_hdr, BasicObjectLock::obj_offset()), obj);
+  movptr(Address(basic_lock, BasicObjectLock::obj_offset()), obj);
 
   null_check_offset = offset();
 
-  lightweight_lock(disp_hdr, obj, hdr, tmp, slow_case);
+  fast_lock(basic_lock, obj, hdr, tmp, slow_case);
 
   return null_check_offset;
 }
 
-void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
-  assert(disp_hdr == rax, "disp_hdr must be rax, for the cmpxchg instruction");
-  assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
+void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic_lock, Label& slow_case) {
+  assert(basic_lock == rax, "basic_lock must be rax, for the cmpxchg instruction");
+  assert(hdr != obj && hdr != basic_lock && obj != basic_lock, "registers must be different");
 
   // load object
-  movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  movptr(obj, Address(basic_lock, BasicObjectLock::obj_offset()));
   verify_oop(obj);
 
-  lightweight_unlock(obj, disp_hdr, hdr, slow_case);
+  fast_unlock(obj, rax, hdr, slow_case);
 }
 
 

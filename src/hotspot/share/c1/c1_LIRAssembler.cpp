@@ -194,8 +194,7 @@ void LIR_Assembler::emit_exception_entries(ExceptionInfoList* info_list) {
       XHandler* handler = handlers->handler_at(j);
       assert(handler->lir_op_id() != -1, "handler not processed by LinearScan");
       assert(handler->entry_code() == nullptr ||
-             handler->entry_code()->instructions_list()->last()->code() == lir_branch ||
-             handler->entry_code()->instructions_list()->last()->code() == lir_delay_slot, "last operation must be branch");
+             handler->entry_code()->instructions_list()->last()->code() == lir_branch, "last operation must be branch");
 
       if (handler->entry_pco() == -1) {
         // entry code not emitted yet
@@ -479,12 +478,6 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
     fatal("unexpected op code: %s", op->name());
     break;
   }
-
-  // JSR 292
-  // Record if this method has MethodHandle invokes.
-  if (op->is_method_handle_invoke()) {
-    compilation()->set_has_method_handle_invokes(true);
-  }
 }
 
 
@@ -533,16 +526,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       safepoint_poll(op->in_opr(), op->info());
       break;
-
-#ifdef IA32
-    case lir_fxch:
-      fxch(op->in_opr()->as_jint());
-      break;
-
-    case lir_fld:
-      fld(op->in_opr()->as_jint());
-      break;
-#endif // IA32
 
     case lir_branch:
       break;
@@ -618,12 +601,6 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
       osr_entry();
       break;
-
-#ifdef IA32
-    case lir_fpop_raw:
-      fpop();
-      break;
-#endif // IA32
 
     case lir_breakpoint:
       breakpoint();

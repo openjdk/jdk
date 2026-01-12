@@ -34,7 +34,7 @@
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -539,7 +539,7 @@ class RecordInstanceClosure : public ObjectClosure {
 void ParHeapInspectTask::work(uint worker_id) {
   uintx missed_count = 0;
   bool merge_success = true;
-  if (!Atomic::load(&_success)) {
+  if (!AtomicAccess::load(&_success)) {
     // other worker has failed on parallel iteration.
     return;
   }
@@ -547,7 +547,7 @@ void ParHeapInspectTask::work(uint worker_id) {
   KlassInfoTable cit(false);
   if (cit.allocation_failed()) {
     // fail to allocate memory, stop parallel mode
-    Atomic::store(&_success, false);
+    AtomicAccess::store(&_success, false);
     return;
   }
   RecordInstanceClosure ric(&cit, _filter);
@@ -558,9 +558,9 @@ void ParHeapInspectTask::work(uint worker_id) {
     merge_success = _shared_cit->merge(&cit);
   }
   if (merge_success) {
-    Atomic::add(&_missed_count, missed_count);
+    AtomicAccess::add(&_missed_count, missed_count);
   } else {
-    Atomic::store(&_success, false);
+    AtomicAccess::store(&_success, false);
   }
 }
 

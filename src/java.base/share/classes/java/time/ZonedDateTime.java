@@ -136,7 +136,7 @@ import jdk.internal.util.DateTimeHelper;
  * For Overlaps, the general strategy is that if the local date-time falls in the
  * middle of an Overlap, then the previous offset will be retained. If there is no
  * previous offset, or the previous offset is invalid, then the earlier offset is
- * used, typically "summer" time.. Two additional methods,
+ * used, typically "summer" time. Two additional methods,
  * {@link #withEarlierOffsetAtOverlap()} and {@link #withLaterOffsetAtOverlap()},
  * help manage the case of an overlap.
  * <p>
@@ -246,7 +246,7 @@ public final class ZonedDateTime
      * Time-zone rules, such as daylight savings, mean that not every local date-time
      * is valid for the specified zone, thus the local date-time may be adjusted.
      * <p>
-     * The local date time and first combined to form a local date-time.
+     * The local date and time are first combined to form a local date-time.
      * The local date-time is then resolved to a single instant on the time-line.
      * This is achieved by finding a valid offset from UTC/Greenwich for the local
      * date-time as defined by the {@link ZoneRules rules} of the zone ID.
@@ -263,7 +263,7 @@ public final class ZonedDateTime
      * @param date  the local date, not null
      * @param time  the local time, not null
      * @param zone  the time-zone, not null
-     * @return the offset date-time, not null
+     * @return the zoned date-time, not null
      */
     public static ZonedDateTime of(LocalDate date, LocalTime time, ZoneId zone) {
         return of(LocalDateTime.of(date, time), zone);
@@ -333,7 +333,7 @@ public final class ZonedDateTime
      * @param second  the second-of-minute to represent, from 0 to 59
      * @param nanoOfSecond  the nano-of-second to represent, from 0 to 999,999,999
      * @param zone  the time-zone, not null
-     * @return the offset date-time, not null
+     * @return the zoned date-time, not null
      * @throws DateTimeException if the value of any field is out of range, or
      *  if the day-of-month is invalid for the month-year
      */

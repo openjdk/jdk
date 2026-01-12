@@ -33,7 +33,7 @@
 #include "gc/z/zRememberedSet.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -368,7 +368,6 @@ inline bool ZPage::was_remembered(volatile zpointer* p) {
   return _remembered_set.at_previous(l_offset);
 }
 
-
 inline zaddress_unsafe ZPage::find_base_unsafe(volatile zpointer* p) {
   if (is_large()) {
     return ZOffset::address_unsafe(start());
@@ -468,7 +467,7 @@ inline zaddress ZPage::alloc_object_atomic(size_t size) {
       return zaddress::null;
     }
 
-    const zoffset_end prev_top = Atomic::cmpxchg(&_top, addr, new_top);
+    const zoffset_end prev_top = AtomicAccess::cmpxchg(&_top, addr, new_top);
     if (prev_top == addr) {
       // Success
       return ZOffset::address(to_zoffset(addr));
@@ -512,7 +511,7 @@ inline bool ZPage::undo_alloc_object_atomic(zaddress addr, size_t size) {
       return false;
     }
 
-    const zoffset_end prev_top = Atomic::cmpxchg(&_top, old_top, new_top);
+    const zoffset_end prev_top = AtomicAccess::cmpxchg(&_top, old_top, new_top);
     if (prev_top == old_top) {
       // Success
       return true;

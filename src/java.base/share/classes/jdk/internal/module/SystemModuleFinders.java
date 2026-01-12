@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,26 +414,18 @@ public final class SystemModuleFinders {
          * Returns {@code true} if the given resource exists, {@code false}
          * if not found.
          */
-        private boolean containsResource(String resourcePath) throws IOException {
-            Objects.requireNonNull(resourcePath);
+        private boolean containsResource(String module, String name) throws IOException {
+            Objects.requireNonNull(name);
             if (closed)
                 throw new IOException("ModuleReader is closed");
             ImageReader imageReader = SystemImage.reader();
-            if (imageReader != null) {
-                ImageReader.Node node = imageReader.findNode("/modules" + resourcePath);
-                return node != null && node.isResource();
-            } else {
-                // not an images build
-                return false;
-            }
+            return imageReader != null && imageReader.containsResource(module, name);
         }
 
         @Override
         public Optional<URI> find(String name) throws IOException {
-            Objects.requireNonNull(name);
-            String resourcePath = "/" + module + "/" + name;
-            if (containsResource(resourcePath)) {
-                URI u = JNUA.create("jrt", resourcePath);
+            if (containsResource(module, name)) {
+                URI u = JNUA.create("jrt", "/" + module + "/" + name);
                 return Optional.of(u);
             } else {
                 return Optional.empty();
@@ -465,9 +457,7 @@ public final class SystemModuleFinders {
             if (closed) {
                 throw new IOException("ModuleReader is closed");
             }
-            String nodeName = "/modules/" + module + "/" + name;
-            ImageReader.Node node = reader.findNode(nodeName);
-            return (node != null && node.isResource()) ? node : null;
+            return reader.findResourceNode(module, name);
         }
 
         @Override
@@ -475,12 +465,6 @@ public final class SystemModuleFinders {
             ImageReader reader = SystemImage.reader();
             return Optional.ofNullable(findResource(reader, name))
                     .map(reader::getResourceBuffer);
-        }
-
-        @Override
-        public void release(ByteBuffer bb) {
-            Objects.requireNonNull(bb);
-            ImageReader.releaseByteBuffer(bb);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,36 +25,64 @@
 #ifndef SHARE_GC_G1_G1BARRIERSET_HPP
 #define SHARE_GC_G1_G1BARRIERSET_HPP
 
-#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 
 class G1CardTable;
+class Thread;
 
-// This barrier is specialized to use a logging barrier to support
-// snapshot-at-the-beginning marking.
-
+// This barrier set is specialized to manage two card tables:
+// * one the mutator is currently working on ("card table")
+// * one the refinement threads or GC during pause are working on ("refinement table")
+//
+// The card table acts like a regular card table where the mutator dirties cards
+// containing potentially interesting references.
+//
+// When the amount of dirty cards on the card table exceeds a threshold, G1 swaps
+// the card tables and has the refinement threads reduce them by "refining"
+// them.
+// I.e. refinement looks at all dirty cards on the refinement table, and updates
+// the remembered sets accordingly, clearing the cards on the refinement table.
+//
+// Meanwhile the mutator continues dirtying the now empty card table.
+//
+// This separation of data the mutator and refinement threads are working on
+// removes the need for any fine-grained (per mutator write) synchronization between
+// them, keeping the write barrier simple.
+//
+// The refinement threads mark cards in the current collection set specially on the
+// card table - this is fine wrt synchronization with the mutator, because at
+// most the mutator will overwrite it again if there is a race, as G1 will scan the
+// entire card either way during the GC pause.
+//
+// During garbage collection, if the refinement table is known to be non-empty, G1
+// merges it back (and cleaning it) to the card table which is scanned for dirty
+// cards.
+//
 class G1BarrierSet: public CardTableBarrierSet {
-  friend class VMStructs;
  private:
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
-  BufferNode::Allocator _dirty_card_queue_buffer_allocator;
   G1SATBMarkQueueSet _satb_mark_queue_set;
-  G1DirtyCardQueueSet _dirty_card_queue_set;
+
+  G1CardTable* _refinement_table;
+
+ public:
+  G1BarrierSet(G1CardTable* card_table, G1CardTable* refinement_table);
+  virtual ~G1BarrierSet();
 
   static G1BarrierSet* g1_barrier_set() {
     return barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
   }
 
- public:
-  G1BarrierSet(G1CardTable* table);
-  ~G1BarrierSet() { }
+  G1CardTable* refinement_table() const { return _refinement_table; }
 
-  virtual bool card_mark_must_follow_store() const {
-    return true;
-  }
+  // Swap the global card table references, without synchronization.
+  void swap_global_card_table();
+
+  // Update the given thread's card table (byte map) base to the current card table's.
+  void update_card_table_base(Thread* thread);
 
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph. Prefer the version that takes location, as it
@@ -71,12 +99,10 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  inline void write_region(MemRegion mr);
-  void write_region(JavaThread* thread, MemRegion mr);
+  virtual void write_region(MemRegion mr);
 
-  template <DecoratorSet decorators, typename T>
+  template <DecoratorSet decorators = DECORATORS_NONE, typename T>
   void write_ref_field_post(T* field);
-  void write_ref_field_post_slow(volatile CardValue* byte);
 
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
@@ -87,14 +113,12 @@ class G1BarrierSet: public CardTableBarrierSet {
     return g1_barrier_set()->_satb_mark_queue_set;
   }
 
-  static G1DirtyCardQueueSet& dirty_card_queue_set() {
-    return g1_barrier_set()->_dirty_card_queue_set;
-  }
+  virtual void print_on(outputStream* st) const;
 
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = G1BarrierSet>
-  class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {
-    typedef ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> ModRef;
+  class AccessBarrier: public CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT> {
+    typedef CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT> CardTableBS;
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
 
   public:

@@ -82,7 +82,7 @@ public class ResponseBodyBeforeError {
     String httpURIFixLen;
     String httpsURIFixLen;
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static final String EXPECTED_RESPONSE_BODY =
             "<html><body><h1>Heading</h1><p>Some Text</p></body></html>";
@@ -538,9 +538,6 @@ public class ResponseBodyBeforeError {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
         SSLContext.setDefault(sslContext);
 
         variableLengthServer = new PlainVariableLengthServer();

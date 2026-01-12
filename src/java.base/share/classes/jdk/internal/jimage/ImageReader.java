@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,45 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
+     * Returns a resource node in the given module, or null if no resource of
+     * that name exists.
+     *
+     * <p>This is equivalent to:
+     * <pre>{@code
+     * findNode("/modules/" + moduleName + "/" + resourcePath)
+     * }</pre>
+     * but more performant, and returns {@code null} for directories.
+     *
+     * @param moduleName The module name of the requested resource.
+     * @param resourcePath Trailing module-relative resource path, not starting
+     *     with {@code '/'}.
+     */
+    public Node findResourceNode(String moduleName, String resourcePath)
+            throws IOException {
+        ensureOpen();
+        return reader.findResourceNode(moduleName, resourcePath);
+    }
+
+    /**
+     * Returns whether a resource exists in the given module.
+     *
+     * <p>This is equivalent to:
+     * <pre>{@code
+     * findResourceNode(moduleName, resourcePath) != null
+     * }</pre>
+     * but more performant, and will not create or cache new nodes.
+     *
+     * @param moduleName The module name of the resource being tested for.
+     * @param resourcePath Trailing module-relative resource path, not starting
+     *     with {@code '/'}.
+     */
+    public boolean containsResource(String moduleName, String resourcePath)
+            throws IOException {
+        ensureOpen();
+        return reader.containsResource(moduleName, resourcePath);
+    }
+
+    /**
      * Returns a copy of the content of a resource node. The buffer returned by
      * this method is not cached by the node, and each call returns a new array
      * instance.
@@ -151,20 +190,7 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
-     * Releases a (possibly cached) {@link ByteBuffer} obtained via
-     * {@link #getResourceBuffer(Node)}.
-     *
-     * <p>Note that no testing is performed to check whether the buffer about
-     * to be released actually came from a call to {@code getResourceBuffer()}.
-     */
-    public static void releaseByteBuffer(ByteBuffer buffer) {
-        BasicImageReader.releaseByteBuffer(buffer);
-    }
-
-    /**
-     * Returns the content of a resource node in a possibly cached byte buffer.
-     * Callers of this method must call {@link #releaseByteBuffer(ByteBuffer)}
-     * when they are finished with it.
+     * Returns the content of a resource node in a newly allocated byte buffer.
      */
     public ByteBuffer getResourceBuffer(Node node) {
         requireOpen();
@@ -276,10 +302,7 @@ public final class ImageReader implements AutoCloseable {
          * Returns a node with the given name, or null if no resource or directory of
          * that name exists.
          *
-         * <p>This is the only public API by which anything outside this class can access
-         * {@code Node} instances either directly, or by resolving symbolic links.
-         *
-         * <p>Note also that there is no reentrant calling back to this method from within
+         * <p>Note that there is no reentrant calling back to this method from within
          * the node handling code.
          *
          * @param name an absolute, {@code /}-separated path string, prefixed with either
@@ -291,6 +314,9 @@ public final class ImageReader implements AutoCloseable {
                 // We cannot get the root paths ("/modules" or "/packages") here
                 // because those nodes are already in the nodes cache.
                 if (name.startsWith(MODULES_ROOT + "/")) {
+                    // This may perform two lookups, one for a directory (in
+                    // "/modules/...") and one for a non-prefixed resource
+                    // (with "/modules" removed).
                     node = buildModulesNode(name);
                 } else if (name.startsWith(PACKAGES_ROOT + "/")) {
                     node = buildPackagesNode(name);
@@ -305,6 +331,55 @@ public final class ImageReader implements AutoCloseable {
             }
             assert node == null || node.isCompleted() : "Incomplete node: " + node;
             return node;
+        }
+
+        /**
+         * Returns a resource node in the given module, or null if no resource of
+         * that name exists.
+         *
+         * <p>Note that there is no reentrant calling back to this method from within
+         * the node handling code.
+         */
+        Node findResourceNode(String moduleName, String resourcePath) {
+            // Unlike findNode(), this method makes only one lookup in the
+            // underlying jimage, but can only reliably return resource nodes.
+            if (moduleName.indexOf('/') >= 0) {
+                throw new IllegalArgumentException("invalid module name: " + moduleName);
+            }
+            String nodeName = MODULES_ROOT + "/" + moduleName + "/" + resourcePath;
+            // Synchronize as tightly as possible to reduce locking contention.
+            synchronized (this) {
+                Node node = nodes.get(nodeName);
+                if (node == null) {
+                    ImageLocation loc = findLocation(moduleName, resourcePath);
+                    if (loc != null && isResource(loc)) {
+                        node = newResource(nodeName, loc);
+                        nodes.put(node.getName(), node);
+                    }
+                    return node;
+                } else {
+                    return node.isResource() ? node : null;
+                }
+            }
+        }
+
+        /**
+         * Returns whether a resource exists in the given module.
+         *
+         * <p>This method is expected to be called frequently for resources
+         * which do not exist in the given module (e.g. as part of classpath
+         * search). As such, it skips checking the nodes cache and only checks
+         * for an entry in the jimage file, as this is faster if the resource
+         * is not present. This also means it doesn't need synchronization.
+         */
+        boolean containsResource(String moduleName, String resourcePath) {
+            if (moduleName.indexOf('/') >= 0) {
+                throw new IllegalArgumentException("invalid module name: " + moduleName);
+            }
+            // If the given module name is 'modules', then 'isResource()'
+            // returns false to prevent false positives.
+            ImageLocation loc = findLocation(moduleName, resourcePath);
+            return loc != null && isResource(loc);
         }
 
         /**

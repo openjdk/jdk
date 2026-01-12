@@ -28,6 +28,7 @@
 #include "memory/universe.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/cpuTimeUsage.hpp"
@@ -76,9 +77,9 @@ jlong CPUTimeUsage::GC::stringdedup() {
 }
 
 bool CPUTimeUsage::Error::has_error() {
-  return Atomic::load(&_has_error);
+  return AtomicAccess::load(&_has_error);
 }
 
 void CPUTimeUsage::Error::mark_error() {
-  Atomic::store(&_has_error, true);
+  AtomicAccess::store(&_has_error, true);
 }

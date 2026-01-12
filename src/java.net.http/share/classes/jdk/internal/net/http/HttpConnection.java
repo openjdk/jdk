@@ -30,8 +30,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
+import java.nio.channels.NetworkChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -42,8 +42,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
-import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 
@@ -57,7 +55,10 @@ import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.SequentialScheduler.DeferredCompleter;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
+
+import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
 /**
@@ -69,12 +70,13 @@ import static jdk.internal.net.http.common.Utils.ProxyHeaders;
  *      PlainTunnelingConnection: opens plain text (CONNECT) tunnel to server
  *      AsyncSSLConnection: TLS channel direct to server
  *      AsyncSSLTunnelConnection: TLS channel via (CONNECT) proxy tunnel
+ *      HttpQuicConnection: direct QUIC connection to server
  */
 abstract class HttpConnection implements Closeable {
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     static final Logger DEBUG_LOGGER = Utils.getDebugLogger(
-            () -> "HttpConnection(SocketTube(?))", Utils.DEBUG);
+            () -> "HttpConnection", Utils.DEBUG);
     public static final Comparator<HttpConnection> COMPARE_BY_ID
             = Comparator.comparing(HttpConnection::id);
 
@@ -112,8 +114,8 @@ abstract class HttpConnection implements Closeable {
         this.label = label;
     }
 
-    private static String nextLabel() {
-        return "" + LABEL_COUNTER.incrementAndGet();
+    private static String nextLabel(String prefix) {
+        return prefix + LABEL_COUNTER.incrementAndGet();
     }
 
     /**
@@ -198,9 +200,17 @@ abstract class HttpConnection implements Closeable {
     abstract InetSocketAddress proxy();
 
     /** Tells whether, or not, this connection is open. */
-    final boolean isOpen() {
+    boolean isOpen() {
         return channel().isOpen() &&
-                (connected() ? !getConnectionFlow().isFinished() : true);
+                (connected() ? !isFlowFinished() : true);
+    }
+
+    /**
+     * {@return {@code true} if the {@linkplain #getConnectionFlow()
+     * connection flow} is {@linkplain FlowTube#isFinished() finished}.
+     */
+    boolean isFlowFinished() {
+        return getConnectionFlow().isFinished();
     }
 
     /**
@@ -232,13 +242,17 @@ abstract class HttpConnection implements Closeable {
      * still open, and the method returns true.
      * @return true if the channel appears to be still open.
      */
-    final boolean checkOpen() {
+     boolean checkOpen() {
         if (isOpen()) {
             try {
                 // channel is non blocking
-                int read = channel().read(ByteBuffer.allocate(1));
-                if (read == 0) return true;
-                close();
+                if (channel() instanceof SocketChannel channel) {
+                    int read = channel.read(ByteBuffer.allocate(1));
+                    if (read == 0) return true;
+                    close();
+                } else {
+                    return channel().isOpen();
+                }
             } catch (IOException x) {
                 debug.log("Pooled connection is no longer operational: %s",
                         x.toString());
@@ -268,23 +282,6 @@ abstract class HttpConnection implements Closeable {
      */
     abstract HttpPublisher publisher();
 
-    // HTTP/2 MUST use TLS version 1.2 or higher for HTTP/2 over TLS
-    private static final Predicate<String> testRequiredHTTP2TLSVersion = proto ->
-            proto.equals("TLSv1.2") || proto.equals("TLSv1.3");
-
-   /**
-    * Returns true if the given client's SSL parameter protocols contains at
-    * least one TLS version that HTTP/2 requires.
-    */
-   private static final boolean hasRequiredHTTP2TLSVersion(HttpClient client) {
-       String[] protos = client.sslParameters().getProtocols();
-       if (protos != null) {
-           return Arrays.stream(protos).filter(testRequiredHTTP2TLSVersion).findAny().isPresent();
-       } else {
-           return false;
-       }
-   }
-
     /**
      * Factory for retrieving HttpConnections. A connection can be retrieved
      * from the connection pool, or a new one created if none available.
@@ -294,6 +291,7 @@ abstract class HttpConnection implements Closeable {
      * is one of the following:
      *      {@link PlainHttpConnection}
      *      {@link PlainTunnelingConnection}
+     *      {@link HttpQuicConnection}
      *
      * The returned connection, if not from the connection pool, must have its,
      * connect() or connectAsync() method invoked, which ( when it completes
@@ -301,6 +299,7 @@ abstract class HttpConnection implements Closeable {
      */
     public static HttpConnection getConnection(InetSocketAddress addr,
                                                HttpClientImpl client,
+                                               Exchange<?> exchange,
                                                HttpRequestImpl request,
                                                Version version) {
         // The default proxy selector may select a proxy whose  address is
@@ -322,18 +321,27 @@ abstract class HttpConnection implements Closeable {
                 return getPlainConnection(addr, proxy, request, client);
             }
         } else {  // secure
-            if (version != HTTP_2) { // only HTTP/1.1 connections are in the pool
+            if (version == HTTP_1_1) { // only HTTP/1.1 connections are in the pool
                 c = pool.getConnection(true, addr, proxy);
             }
             if (c != null && c.isOpen()) {
-                final HttpConnection conn = c;
-                if (DEBUG_LOGGER.on())
-                    DEBUG_LOGGER.log(conn.getConnectionFlow()
-                                     + ": SSL connection retrieved from HTTP/1.1 pool");
+                if (DEBUG_LOGGER.on()) {
+                        DEBUG_LOGGER.log(c.getConnectionFlow()
+                                + ": SSL connection retrieved from HTTP/1.1 pool");
+                }
                 return c;
+            } else if (version == HTTP_3 && client.client3().isPresent()) {
+                // We only come here after we have checked the HTTP/3 connection pool,
+                // and if the client config supports HTTP/3
+                if (DEBUG_LOGGER.on())
+                    DEBUG_LOGGER.log("Attempting to get an HTTP/3 connection");
+                return HttpQuicConnection.getHttpQuicConnection(addr, proxy, request, exchange, client);
             } else {
+                assert !request.isHttp3Only(version); // should have failed before
                 String[] alpn = null;
-                if (version == HTTP_2 && hasRequiredHTTP2TLSVersion(client)) {
+                if (version == HTTP_2 && client.hasRequiredHTTP2TLSVersion()) {
+                    // We only come here after we have checked the HTTP/2 connection pool.
+                    // We will not negotiate HTTP/2 if we don't have the appropriate TLS version
                     alpn = new String[] { Alpns.H2, Alpns.HTTP_1_1 };
                 }
                 return getSSLConnection(addr, proxy, alpn, request, client);
@@ -346,7 +354,7 @@ abstract class HttpConnection implements Closeable {
                                                    String[] alpn,
                                                    HttpRequestImpl request,
                                                    HttpClientImpl client) {
-        final String label = nextLabel();
+        final String label = nextLabel("tls:");
         final Origin originServer;
         try {
             originServer = Origin.from(request.uri());
@@ -433,7 +441,7 @@ abstract class HttpConnection implements Closeable {
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,
                                                      HttpClientImpl client) {
-        final String label = nextLabel();
+        final String label = nextLabel("tcp:");
         final Origin originServer;
         try {
             originServer = Origin.from(request.uri());
@@ -483,7 +491,7 @@ abstract class HttpConnection implements Closeable {
     /* Tells whether or not this connection is a tunnel through a proxy */
     boolean isTunnel() { return false; }
 
-    abstract SocketChannel channel();
+    abstract NetworkChannel channel();
 
     final InetSocketAddress address() {
         return address;
@@ -512,10 +520,21 @@ abstract class HttpConnection implements Closeable {
      * Closes this connection due to the given cause.
      * @param cause the cause for which the connection is closed, may be null
      */
-    void close(Throwable cause) {
-        close();
-    }
+    abstract void close(Throwable cause);
 
+    /**
+     * {@return the underlying connection flow, if applicable}
+     *
+     * @apiNote
+     * TCP based protocols like HTTP/1.1 and HTTP/2 are built on
+     * top of a {@linkplain FlowTube bidirectional connection flow}.
+     * On the other hand, Quic based protocol like HTTP/3 are
+     * multiplexed at the Quic level, and therefore do not have
+     * a connection flow.
+     *
+     * @throws IllegalStateException if the underlying transport
+     * does not expose a single connection flow.
+     */
     abstract FlowTube getConnectionFlow();
 
     /**

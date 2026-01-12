@@ -48,6 +48,12 @@
 // it calls the C++ code "xxx_C".  The generated nmethod is saved in the
 // CodeCache.  Exception handlers use the nmethod to get the callee-save
 // register OopMaps.
+//
+// Please ensure the return type of the runtime call matches its signature,
+// even if the return value is unused. This is crucial for correct handling
+// of runtime calls that return an oop and may trigger deoptimization
+// on return. See rematerialize_objects() in deoptimization.cpp.
+
 class CallInfo;
 
 //
@@ -109,15 +115,12 @@ class OptoRuntime : public AllStatic {
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
 #define C2_STUB_FIELD_DECLARE(name, f, t, r) \
   static address     C2_STUB_FIELD_NAME(name) ;
-#define C2_JVMTI_STUB_FIELD_DECLARE(name) \
-  static address     STUB_FIELD_NAME(name);
 
-  C2_STUBS_DO(C2_BLOB_FIELD_DECLARE, C2_STUB_FIELD_DECLARE, C2_JVMTI_STUB_FIELD_DECLARE)
+  C2_STUBS_DO(C2_BLOB_FIELD_DECLARE, C2_STUB_FIELD_DECLARE)
 
 #undef C2_BLOB_FIELD_DECLARE
 #undef C2_STUB_FIELD_NAME
 #undef C2_STUB_FIELD_DECLARE
-#undef C2_JVMTI_STUB_FIELD_DECLARE
 
   // static TypeFunc* data members
   static const TypeFunc* _new_instance_Type;
@@ -191,12 +194,10 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _updateBytesAdler32_Type;
   static const TypeFunc* _osr_end_Type;
   static const TypeFunc* _register_finalizer_Type;
+  static const TypeFunc* _vthread_transition_Type;
 #if INCLUDE_JFR
   static const TypeFunc* _class_id_load_barrier_Type;
 #endif // INCLUDE_JFR
-#if INCLUDE_JVMTI
-  static const TypeFunc* _notify_jvmti_vthread_Type;
-#endif // INCLUDE_JVMTI
   static const TypeFunc* _dtrace_method_entry_exit_Type;
   static const TypeFunc* _dtrace_object_alloc_Type;
 
@@ -232,6 +233,11 @@ class OptoRuntime : public AllStatic {
 public:
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
   static void monitor_notifyAll_C(oopDesc* obj, JavaThread* current);
+
+  static void vthread_end_first_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void vthread_start_final_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void vthread_start_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void vthread_end_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
 
 private:
 
@@ -287,12 +293,11 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
-#if INCLUDE_JVMTI
-  static address notify_jvmti_vthread_start()            { return _notify_jvmti_vthread_start; }
-  static address notify_jvmti_vthread_end()              { return _notify_jvmti_vthread_end; }
-  static address notify_jvmti_vthread_mount()            { return _notify_jvmti_vthread_mount; }
-  static address notify_jvmti_vthread_unmount()          { return _notify_jvmti_vthread_unmount; }
-#endif
+
+  static address vthread_end_first_transition_Java()     { return _vthread_end_first_transition_Java; }
+  static address vthread_start_final_transition_Java()   { return _vthread_start_final_transition_Java; }
+  static address vthread_start_transition_Java()         { return _vthread_start_transition_Java; }
+  static address vthread_end_transition_Java()           { return _vthread_end_transition_Java; }
 
   static UncommonTrapBlob* uncommon_trap_blob()                  { return _uncommon_trap_blob; }
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
@@ -712,19 +717,33 @@ private:
     return _register_finalizer_Type;
   }
 
+  static inline const TypeFunc* vthread_transition_Type() {
+    assert(_vthread_transition_Type != nullptr, "should be initialized");
+    return _vthread_transition_Type;
+  }
+
+  static inline const TypeFunc* vthread_end_first_transition_Type() {
+    return vthread_transition_Type();
+  }
+
+  static inline const TypeFunc* vthread_start_final_transition_Type() {
+    return vthread_transition_Type();
+  }
+
+  static inline const TypeFunc* vthread_start_transition_Type() {
+    return vthread_transition_Type();
+  }
+
+  static inline const TypeFunc* vthread_end_transition_Type() {
+    return vthread_transition_Type();
+  }
+
 #if INCLUDE_JFR
   static inline const TypeFunc* class_id_load_barrier_Type() {
     assert(_class_id_load_barrier_Type != nullptr, "should be initialized");
     return _class_id_load_barrier_Type;
   }
 #endif // INCLUDE_JFR
-
-#if INCLUDE_JVMTI
-  static inline const TypeFunc* notify_jvmti_vthread_Type() {
-    assert(_notify_jvmti_vthread_Type != nullptr, "should be initialized");
-    return _notify_jvmti_vthread_Type;
-  }
-#endif
 
   // Dtrace support. entry and exit probes have the same signature
   static inline const TypeFunc* dtrace_method_entry_exit_Type() {
@@ -736,6 +755,16 @@ private:
     assert(_dtrace_object_alloc_Type != nullptr, "should be initialized");
     return _dtrace_object_alloc_Type;
   }
+
+#ifndef PRODUCT
+  // Signature for runtime calls in debug printing nodes, which depends on which nodes are actually passed
+  // Note: we do not allow more than 7 node arguments as GraphKit::make_runtime_call only allows 8, and we need
+  // one for the static string
+  static const TypeFunc* debug_print_Type(Node* parm0 = nullptr, Node* parm1 = nullptr,
+                                          Node* parm2 = nullptr, Node* parm3 = nullptr,
+                                          Node* parm4 = nullptr, Node* parm5 = nullptr,
+                                          Node* parm6 = nullptr);
+#endif // PRODUCT
 
  private:
  static NamedCounter * volatile _named_counters;

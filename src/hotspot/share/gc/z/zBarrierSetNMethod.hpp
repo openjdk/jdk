@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,6 @@
 class nmethod;
 
 class ZBarrierSetNMethod : public BarrierSetNMethod {
-  enum : int {
-    not_entrant = 1 << 31, // armed sticky bit, see make_not_entrant
-  };
-
 protected:
   virtual bool nmethod_entry_barrier(nmethod* nm);
 
@@ -46,10 +42,6 @@ public:
   virtual oop oop_load_no_keepalive(const nmethod* nm, int index);
   virtual oop oop_load_phantom(const nmethod* nm, int index);
 
-  virtual void make_not_entrant(nmethod* nm);
-  virtual bool is_not_entrant(nmethod* nm);
-  virtual void guard_with(nmethod* nm, int value);
-  virtual bool is_armed(nmethod* nm);
   virtual void arm_all_nmethods() { ShouldNotCallThis(); }
 };
 

@@ -36,7 +36,6 @@
 
 
 void Relocation::pd_set_data_value(address x, bool verify_only) {
-#ifdef AMD64
   typedef Assembler::WhichOperand WhichOperand;
   WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm, call32, narrow oop
   assert(which == Assembler::disp32_operand ||
@@ -76,13 +75,6 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
       *(int32_t*) disp = checked_cast<int32_t>(x - next_ip);
     }
   }
-#else
-  if (verify_only) {
-    guarantee(*pd_address_in_code() == x, "instructions must match");
-  } else {
-    *pd_address_in_code() = x;
-  }
-#endif // AMD64
 }
 
 
@@ -150,22 +142,17 @@ address* Relocation::pd_address_in_code() {
   assert(is_data(), "must be a DataRelocation");
   typedef Assembler::WhichOperand WhichOperand;
   WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm/imm32
-#ifdef AMD64
   assert(which == Assembler::disp32_operand ||
          which == Assembler::call32_operand ||
          which == Assembler::imm_operand, "format unpacks ok");
   // The "address" in the code is a displacement can't return it as
   // and address* since it is really a jint*
   guarantee(which == Assembler::imm_operand, "must be immediate operand");
-#else
-  assert(which == Assembler::disp32_operand || which == Assembler::imm_operand, "format unpacks ok");
-#endif // AMD64
   return (address*) Assembler::locate_operand(addr(), which);
 }
 
 
 address Relocation::pd_get_address_from_code() {
-#ifdef AMD64
   // All embedded Intel addresses are stored in 32-bit words.
   // Since the addr points at the start of the instruction,
   // we must parse the instruction a bit to find the embedded word.
@@ -182,7 +169,6 @@ address Relocation::pd_get_address_from_code() {
     address a = next_ip + *(int32_t*) disp;
     return a;
   }
-#endif // AMD64
   return *pd_address_in_code();
 }
 

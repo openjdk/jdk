@@ -421,7 +421,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
- // As per atomic.hpp the Atomic read-modify-write operations must be logically implemented as:
+ // As per atomicAccess.hpp the atomic read-modify-write operations must be
+ // logically implemented as:
  //  <fence>; <op>; <membar StoreLoad|StoreStore>
  // But for load-linked/store-conditional based systems a fence here simply means
  // no load/store can be reordered with respect to the initial load-linked, so we have:
@@ -440,7 +441,7 @@ class StubGenerator: public StubCodeGenerator {
   // be removed in the future.
 
   // Implementation of atomic_add(jint add_value, volatile jint* dest)
-  // used by Atomic::add(volatile jint* dest, jint add_value)
+  // used by AtomicAccess::add(volatile jint* dest, jint add_value)
   //
   // Arguments :
   //
@@ -492,7 +493,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Implementation of jint atomic_xchg(jint exchange_value, volatile jint* dest)
-  // used by Atomic::add(volatile jint* dest, jint exchange_value)
+  // used by AtomicAccess::add(volatile jint* dest, jint exchange_value)
   //
   // Arguments :
   //
@@ -542,7 +543,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Implementation of jint atomic_cmpxchg(jint exchange_value, volatile jint *dest, jint compare_value)
-  // used by Atomic::cmpxchg(volatile jint *dest, jint compare_value, jint exchange_value)
+  // used by AtomicAccess::cmpxchg(volatile jint *dest, jint compare_value, jint exchange_value)
   //
   // Arguments :
   //
@@ -582,7 +583,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong *dest, jlong compare_value)
+  // Support for jlong AtomicAccess::cmpxchg(jlong exchange_value, volatile jlong *dest, jlong compare_value)
   // reordered before by a wrapper to (jlong compare_value, jlong exchange_value, volatile jlong *dest)
   //
   // Arguments :
@@ -3010,6 +3011,10 @@ class StubGenerator: public StubCodeGenerator {
     // Note:  the disjoint stubs must be generated first, some of
     //        the conjoint stubs use them.
 
+    // Note:   chaining of stubs does not rely on branching to an
+    //         auxiliary post-push entry because none of the stubs
+    //         push/pop a frame.
+
     // these need always status in case they are called from generic_arraycopy
     StubRoutines::_jbyte_disjoint_arraycopy  = generate_primitive_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id);
     StubRoutines::_jshort_disjoint_arraycopy = generate_primitive_copy(StubId::stubgen_jshort_disjoint_arraycopy_id);
@@ -3023,6 +3028,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jlong_disjoint_arraycopy  = generate_primitive_copy(StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id);
     StubRoutines::_arrayof_oop_disjoint_arraycopy    = generate_oop_copy      (StubId::stubgen_arrayof_oop_disjoint_arraycopy_id);
 
+    // disjoint copy entry is needed by conjoint copy
     // these need always status in case they are called from generic_arraycopy
     StubRoutines::_jbyte_arraycopy  = generate_primitive_copy(StubId::stubgen_jbyte_arraycopy_id, StubRoutines::_jbyte_disjoint_arraycopy);
     StubRoutines::_jshort_arraycopy = generate_primitive_copy(StubId::stubgen_jshort_arraycopy_id, StubRoutines::_jshort_disjoint_arraycopy);

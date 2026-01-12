@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public enum WixTool {
         }
     }
 
-    static WixToolset createToolset() throws ConfigException {
+    static WixToolset createToolset() {
         Function<List<ToolLookupResult>, Map<WixTool, ToolInfo>> conv = lookupResults -> {
             return lookupResults.stream().filter(ToolLookupResult::isValid).collect(Collectors.
                     groupingBy(lookupResult -> {
@@ -183,13 +183,12 @@ public enum WixTool {
             final boolean[] tooOld = new boolean[1];
             final String[] parsedVersion = new String[1];
 
-            final var validator = new ToolValidator(toolPath).setMinimalVersion(tool.minimalVersion).
-                    setToolNotFoundErrorHandler((name, ex) -> {
-                        return new ConfigException("", "");
-                    }).setToolOldVersionErrorHandler((name, version) -> {
-                tooOld[0] = true;
-                return null;
-            });
+            final var validator = new ToolValidator(toolPath)
+                    .setMinimalVersion(tool.minimalVersion)
+                    .setToolOldVersionErrorHandler((name, version) -> {
+                        tooOld[0] = true;
+                        return null;
+                    });
 
             final Function<Stream<String>, String> versionParser;
 
@@ -234,10 +233,10 @@ public enum WixTool {
                     // Detect FIPS mode
                     var fips = false;
                     try {
-                        final var exec = Executor.of(toolPath.toString(), "-?").setQuiet(true).saveOutput(true);
-                        final var exitCode = exec.execute();
+                        final var result = Executor.of(toolPath.toString(), "-?").setQuiet(true).saveOutput(true).execute();
+                        final var exitCode = result.getExitCode();
                         if (exitCode != 0 /* 308 */) {
-                            final var output = exec.getOutput();
+                            final var output = result.getOutput();
                             if (!output.isEmpty() && output.get(0).contains("error CNDL0308")) {
                                 fips = true;
                             }

@@ -573,12 +573,13 @@ public class Socket implements java.io.Closeable {
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread establishing a connection will
      *        close the underlying channel and cause this method to throw
-     *        {@link ClosedByInterruptException} with the interrupt status set.
+     *        {@link ClosedByInterruptException} with the thread's interrupted
+     *        status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is establishing a
      *        connection. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. This method will then throw
-     *        {@code SocketException} with the interrupt status set.
+     *        {@code SocketException} with the thread's interrupted status set.
      * </ol>
      *
      * @param   endpoint the {@code SocketAddress}
@@ -613,12 +614,13 @@ public class Socket implements java.io.Closeable {
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread establishing a connection will
      *        close the underlying channel and cause this method to throw
-     *        {@link ClosedByInterruptException} with the interrupt status set.
+     *        {@link ClosedByInterruptException} with the thread's interrupted
+     *        status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is establishing a
      *        connection. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. This method will then throw
-     *        {@code SocketException} with the interrupt status set.
+     *        {@code SocketException} with the thread's interrupted status set.
      * </ol>
      *
      * @apiNote Establishing a TCP/IP connection is subject to connect timeout settings
@@ -886,13 +888,14 @@ public class Socket implements java.io.Closeable {
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread reading from the input stream
      *        will close the underlying channel and cause the read method to
-     *        throw {@link ClosedByInterruptException} with the interrupt
-     *        status set.
+     *        throw {@link ClosedByInterruptException} with the thread's
+     *        interrupted status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is reading from the
      *        input stream. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. The read method will then
-     *        throw {@code SocketException} with the interrupt status set.
+     *        throw {@code SocketException} with the thread's interrupted
+     *        status set.
      * </ol>
      *
      * <p>Under abnormal conditions the underlying connection may be
@@ -1026,13 +1029,14 @@ public class Socket implements java.io.Closeable {
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread writing to the output stream
      *        will close the underlying channel and cause the write method to
-     *        throw {@link ClosedByInterruptException} with the interrupt status
-     *        set.
+     *        throw {@link ClosedByInterruptException} with the thread's
+     *        interrupted status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is writing to the
      *        output stream. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. The write method will then
-     *        throw {@code SocketException} with the interrupt status set.
+     *        throw {@code SocketException} with the thread's interrupted
+     *        status set.
      * </ol>
      *
      * <p> Closing the returned {@link java.io.OutputStream OutputStream}
@@ -1849,7 +1853,11 @@ public class Socket implements java.io.Closeable {
      *         bandwidth
      *
      * @since 1.5
+     *
+     * @deprecated This method was intended to allow for protocols that are now
+     *             obsolete.
      */
+    @Deprecated(since = "26", forRemoval = true)
     public void setPerformancePreferences(int connectionTime,
                                           int latency,
                                           int bandwidth)

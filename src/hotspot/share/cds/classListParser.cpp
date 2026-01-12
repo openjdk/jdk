@@ -47,7 +47,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -87,7 +87,7 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
   // _instance should only be accessed by the thread that created _instance.
   assert(_instance == nullptr, "must be singleton");
   _instance = this;
-  Atomic::store(&_parsing_thread, Thread::current());
+  AtomicAccess::store(&_parsing_thread, Thread::current());
 }
 
 FILE* ClassListParser::do_open(const char* file) {
@@ -104,11 +104,11 @@ FILE* ClassListParser::do_open(const char* file) {
 }
 
 bool ClassListParser::is_parsing_thread() {
-  return Atomic::load(&_parsing_thread) == Thread::current();
+  return AtomicAccess::load(&_parsing_thread) == Thread::current();
 }
 
 ClassListParser::~ClassListParser() {
-  Atomic::store(&_parsing_thread, (Thread*)nullptr);
+  AtomicAccess::store(&_parsing_thread, (Thread*)nullptr);
   delete _indy_items;
   delete _interfaces;
   _instance = nullptr;
