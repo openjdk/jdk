@@ -359,11 +359,11 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
     return false;
   }
 
-  // If UseSystemMemoryBarrier, the OrderAccess::fence(), part of the try_lock attempt for the
-  // Threads_lock above, is inadequate to prevent the next load of the thread state from floating up.
-  // To prevent this, an explicit system memory barrier is needed.
+  // Separate the arming of the poll (above) from the reading of JavaThread state (below).
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
+  } else {
+    OrderAccess::fence();
   }
 
   if (jt->thread_state() != _thread_in_native || !jt->has_last_Java_frame()) {
