@@ -46,13 +46,13 @@ public:
   bool start_old_collection();
 
   static ShenandoahGenerationalHeap* heap() {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     CollectedHeap* heap = Universe::heap();
     return cast(heap);
   }
 
   static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     return checked_cast<ShenandoahGenerationalHeap*>(heap);
   }
 
