@@ -30,7 +30,7 @@ import java.security.cert.Certificate;
  * @test
  * @bug 8366522
  * @summary Verify that getCertificates() and getCodeSigners() return correct
- *          results when CodeSource is created with emtpy or null Certificate[]
+ *          results when CodeSource is created with empty or null Certificate[]
  *          or CodeSigner[] arguments, or there are no X509 certificates in
  *          certs. Make sure that NPE is not thrown from
  *          CodeSource.getCodeSigners()
