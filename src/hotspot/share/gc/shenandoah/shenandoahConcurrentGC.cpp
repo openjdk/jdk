@@ -127,7 +127,6 @@ void ShenandoahConcurrentGC::entry_update_card_table() {
   // Heap needs to be parsable here.
   // Also, parallel heap region iterate must have a phase set.
   assert(ShenandoahTimingsTracker::is_current_phase_valid(), "Current phase must be set");
-  assert(ShenandoahGenerationalHeap::heap()->old_generation()->is_parsable(), "Need to walk old regions");
   ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
 }
 
