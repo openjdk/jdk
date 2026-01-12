@@ -2514,6 +2514,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
+               n->Opcode() == Op_Initialize||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
                "unknown node type in macro list");
       }
@@ -2593,6 +2594,12 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
       } else if (n->Opcode() == Op_MinL) {
         Node* repl = MinMaxNode::signed_min(n->in(1), n->in(2), _igvn.type(n), _igvn);
         _igvn.replace_node(n, repl);
+        success = true;
+      } else if (n->Opcode() == Op_Initialize) {
+        // _igvn.replace_input_of(n, InitializeNode::Length, C->top());
+        // _igvn._worklist.push(n);
+        _inits.push(n);
+        C->remove_macro_node(n);
         success = true;
       }
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");
@@ -2740,7 +2747,15 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     _igvn.set_delay_transform(true);
   }
 
+  while (_inits.size() > 0) {
+    Node* n = _inits.pop();
+    _igvn.replace_input_of(n, InitializeNode::Length, C->top());
+    _igvn._worklist.push(n);
+  }
+
   _igvn.set_delay_transform(false);
+  _igvn.optimize();
+  if (C->failing())  return true;
   return false;
 }
 

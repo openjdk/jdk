@@ -3498,7 +3498,7 @@ int GraphKit::next_monitor() {
 // Memory barrier to avoid floating things around
 // The membar serves as a pinch point between both control and all memory slices.
 Node* GraphKit::insert_mem_bar(int opcode, Node* precedent) {
-  MemBarNode* mb = MemBarNode::make(C, opcode, Compile::AliasIdxBot, precedent);
+  MemBarNode* mb = MemBarNode::make(C, opcode, Compile::AliasIdxBot, precedent, nullptr);
   mb->init_req(TypeFunc::Control, control());
   mb->init_req(TypeFunc::Memory,  reset_memory());
   Node* membar = _gvn.transform(mb);
@@ -3513,7 +3513,7 @@ Node* GraphKit::insert_mem_bar(int opcode, Node* precedent) {
 // The membar serves as a pinch point between both control and memory(alias_idx).
 // If you want to make a pinch point on all memory slices, do not use this
 // function (even with AliasIdxBot); use insert_mem_bar() instead.
-Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent) {
+Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent, Node* array_length) {
   // When Parse::do_put_xxx updates a volatile field, it appends a series
   // of MemBarVolatile nodes, one for *each* volatile field alias category.
   // The first membar is on the same memory slice as the field store opcode.
@@ -3523,7 +3523,7 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
   // on the first membar.  This prevents later volatile loads or stores
   // from sliding up past the just-emitted store.
 
-  MemBarNode* mb = MemBarNode::make(C, opcode, alias_idx, precedent);
+  MemBarNode* mb = MemBarNode::make(C, opcode, alias_idx, precedent, array_length);
   mb->set_req(TypeFunc::Control,control());
   if (alias_idx == Compile::AliasIdxBot) {
     mb->set_req(TypeFunc::Memory, merged_memory()->base_memory());
@@ -3712,9 +3712,31 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
   set_i_o(_gvn.transform( new ProjNode(allocx, TypeFunc::I_O, false) ) );
   Node* rawoop = _gvn.transform( new ProjNode(allocx, TypeFunc::Parms) );
 
+  Node* length = C->top();
+  if (alloc->is_AllocateArray()) {
+    length = alloc->in(AllocateNode::ALength);
+    assert(length != nullptr, "length is not null");
+    const TypeInt* length_type = _gvn.find_int_type(length);
+    const TypeAryPtr* ary_type = oop_type->isa_aryptr();
+    if (ary_type != nullptr && length_type != nullptr) {
+      const TypeInt* narrow_length_type = ary_type->narrow_size_type(length_type);
+      if (narrow_length_type != length_type) {
+        // Assert one of:
+        //   - the narrow_length is 0
+        //   - the narrow_length is not wider than length
+        assert(narrow_length_type == TypeInt::ZERO ||
+               (length_type->is_con() && narrow_length_type->is_con() &&
+                (narrow_length_type->_hi <= length_type->_lo)) ||
+               (narrow_length_type->_hi <= length_type->_hi &&
+                narrow_length_type->_lo >= length_type->_lo),
+               "narrow type must be narrower than length type");
+        length = _gvn.transform(new CastIINode(control(), length, narrow_length_type));
+      }
+    }
+  }
   // put in an initialization barrier
   InitializeNode* init = insert_mem_bar_volatile(Op_Initialize, rawidx,
-                                                 rawoop)->as_Initialize();
+                                                 rawoop, length)->as_Initialize();
   assert(alloc->initialization() == init,  "2-way macro link must work");
   assert(init ->allocation()     == alloc, "2-way macro link must work");
   {

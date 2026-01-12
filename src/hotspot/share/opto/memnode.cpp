@@ -2823,7 +2823,7 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // We can fetch the length directly through an AllocateArrayNode.
   // This works even if the length is not constant (clone or newArray).
-  if (offset == arrayOopDesc::length_offset_in_bytes()) {
+  if (!UseNewCode2 && offset == arrayOopDesc::length_offset_in_bytes()) {
     AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base);
     if (alloc != nullptr) {
       Node* allocated_length = alloc->Ideal_length();
@@ -2858,12 +2858,19 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   if (offset == arrayOopDesc::length_offset_in_bytes()) {
     AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base);
     if (alloc != nullptr) {
-      Node* allocated_length = alloc->Ideal_length();
-      // Do not allow make_ideal_length to allocate a CastII node.
-      Node* len = alloc->make_ideal_length(tary, phase, false);
-      if (allocated_length == len) {
-        // Return allocated_length only if it would not be improved by a CastII.
-        return allocated_length;
+      if (UseNewCode2) {
+        InitializeNode* init = alloc->initialization();
+        if (init != nullptr) {
+          return init->length();
+        }
+      } else {
+        Node* allocated_length = alloc->Ideal_length();
+        // Do not allow make_ideal_length to allocate a CastII node.
+        Node* len = alloc->make_ideal_length(tary, phase, false);
+        if (allocated_length == len) {
+          // Return allocated_length only if it would not be improved by a CastII.
+          return allocated_length;
+        }
       }
     }
   }
@@ -4421,7 +4428,8 @@ bool MemBarNode::cmp( const Node &n ) const {
 }
 
 //------------------------------make-------------------------------------------
-MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
+MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn, Node* array_length) {
+  assert((array_length != nullptr) == (opcode == Op_Initialize), "");
   switch (opcode) {
   case Op_MemBarAcquire:     return new MemBarAcquireNode(C, atp, pn);
   case Op_LoadFence:         return new LoadFenceNode(C, atp, pn);
@@ -4436,7 +4444,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_MemBarFull:        return new MemBarFullNode(C, atp, pn);
   case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
-  case Op_Initialize:        return new InitializeNode(C, atp, pn);
+  case Op_Initialize:        return new InitializeNode(C, atp, pn, array_length);
   default: ShouldNotReachHere(); return nullptr;
   }
 }
@@ -4771,11 +4779,16 @@ MemBarNode* MemBarNode::leading_membar() const {
 // reasonable limit on the complexity of optimized initializations.
 
 //---------------------------InitializeNode------------------------------------
-InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop)
+InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop, Node* length)
   : MemBarNode(C, adr_type, rawoop),
     _is_complete(Incomplete), _does_not_escape(false)
 {
+  add_req(length);
   init_class_id(Class_Initialize);
+  if (length != C->top()) {
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
 
   assert(adr_type == Compile::AliasIdxRaw, "only valid atp");
   assert(in(RawAddress) == rawoop, "proper init");

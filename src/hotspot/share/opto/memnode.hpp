@@ -1228,7 +1228,7 @@ public:
   // Optional 'precedent' becomes an extra edge if not null.
   static MemBarNode* make(Compile* C, int opcode,
                           int alias_idx = Compile::AliasIdxBot,
-                          Node* precedent = nullptr);
+                          Node* precedent = nullptr, Node* array_length = nullptr);
 
   MemBarNode* trailing_membar() const;
   MemBarNode* leading_membar() const;
@@ -1390,10 +1390,11 @@ public:
     Control    = TypeFunc::Control,
     Memory     = TypeFunc::Memory,     // MergeMem for states affected by this op
     RawAddress = TypeFunc::Parms+0,    // the newly-allocated raw address
-    RawStores  = TypeFunc::Parms+1     // zero or more stores (or TOP)
+    Length     = TypeFunc::Parms+1,
+    RawStores  = TypeFunc::Parms+2     // zero or more stores (or TOP)
   };
 
-  InitializeNode(Compile* C, int adr_type, Node* rawoop);
+  InitializeNode(Compile* C, int adr_type, Node* rawoop, Node* length);
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file
@@ -1410,6 +1411,10 @@ public:
   // (Note: Both InitializeNode::allocation and AllocateNode::initialization
   // are defined in graphKit.cpp, which sets up the bidirectional relation.)
   AllocateNode* allocation();
+
+  Node* length() const {
+    return in(Length);
+  }
 
   // Anything other than zeroing in this init?
   bool is_non_zero();

@@ -37,6 +37,7 @@ class  PhaseIterGVN;
 class PhaseMacroExpand : public Phase {
 private:
   PhaseIterGVN &_igvn;
+  Node_List _inits;
 
 public:
   // Helper methods roughly modeled after GraphKit:
