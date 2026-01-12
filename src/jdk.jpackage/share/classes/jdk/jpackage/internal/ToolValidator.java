@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,32 +121,32 @@ final class ToolValidator {
             cmdline.addAll(args);
         }
 
-        boolean canUseTool[] = new boolean[1];
+        boolean canUseTool = false;
         if (minimalVersion == null) {
             // No version check.
-            canUseTool[0] = true;
+            canUseTool = true;
         }
 
-        String[] version = new String[1];
+        String version = null;
 
         try {
-            Executor.of(cmdline.toArray(String[]::new)).setQuiet(true).setOutputConsumer(lines -> {
-                if (versionParser != null && minimalVersion != null) {
-                    version[0] = versionParser.apply(lines);
-                    if (version[0] != null && minimalVersion.compareTo(version[0]) <= 0) {
-                        canUseTool[0] = true;
-                    }
+            var result = Executor.of(cmdline).setQuiet(true).saveOutput().execute();
+            var lines = result.content();
+            if (versionParser != null && minimalVersion != null) {
+                version = versionParser.apply(lines.stream());
+                if (version != null && minimalVersion.compareTo(version) <= 0) {
+                    canUseTool = true;
                 }
-            }).execute();
+            }
         } catch (IOException e) {
             return new ConfigException(I18N.format("error.tool-error", toolPath, e.getMessage()), null, e);
         }
 
-        if (canUseTool[0]) {
+        if (canUseTool) {
             // All good. Tool can be used.
             return null;
         } else if (toolOldVersionErrorHandler != null) {
-            return toolOldVersionErrorHandler.apply(toolPath, version[0]);
+            return toolOldVersionErrorHandler.apply(toolPath, version);
         } else {
             return new ConfigException(
                     I18N.format("error.tool-old-version", toolPath, minimalVersion),
