@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,16 +48,14 @@ import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.ProcessTools;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class NonSerializableTest {
 
     @BeforeAll
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         boolean b = CompilerUtils.compile(
                 Paths.get(System.getProperty("test.src"), "TestEntry.java"),
                 Paths.get(System.getProperty("user.dir")));
@@ -64,8 +63,8 @@ public class NonSerializableTest {
     }
 
     // Test cases to compile and run
-    public Object[] provider() {
-        return new List[] {
+    public static Stream<List<String>> provider() {
+        return Stream.of(
             // Write NonSerial1, Read NonSerial1
             List.of("NonSerialA_1", "-cp", ".", "TestEntry", "-s", "A"),
             List.of("NonSerialA_1", "-cp", ".", "TestEntry", "-d"),
@@ -96,8 +95,7 @@ public class NonSerializableTest {
 
             // Write Serial3, Read Serial1
             List.of("SerialA_3", "-cp", ".", "TestEntry", "-s", "A"),
-            List.of("SerialA_1", "-cp", ".", "TestEntry", "-de"),
-        };
+            List.of("SerialA_1", "-cp", ".", "TestEntry", "-de"));
     }
 
     @ParameterizedTest
@@ -107,10 +105,11 @@ public class NonSerializableTest {
         boolean b = CompilerUtils.compile(Paths.get(System.getProperty("test.src"), args[0]),
                                           Paths.get(System.getProperty("user.dir")));
         assertTrue(b, "Compilation failed");
-        String params[] = Arrays.copyOfRange(args, 1, args.length);
+        String[] params = Arrays.copyOfRange(args, 1, args.length);
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(params);
-        Process p = ProcessTools.startProcess("Serializable Test", pb);
-        int exitValue = p.waitFor();
-        assertEquals(0, exitValue, "Test failed");
+        try (Process p = ProcessTools.startProcess("Serializable Test", pb)) {
+            int exitValue = p.waitFor();
+            assertEquals(0, exitValue, "Test failed");
+        }
     }
 }
