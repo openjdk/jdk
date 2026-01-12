@@ -31,6 +31,7 @@
 
 package compiler.loopopts;
 
+import compiler.igvn.TestMinMaxIdeal;
 import compiler.lib.compile_framework.CompileFramework;
 import compiler.lib.generators.Generator;
 import compiler.lib.ir_framework.*;
@@ -45,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static compiler.lib.generators.Generators.G;
 import static compiler.lib.template_framework.Template.*;
@@ -69,13 +71,16 @@ public class TestReductionReassociation {
         List<TemplateToken> testTemplateTokens = new ArrayList<>();
 
         final int size = 10_000;
-        final List<Integer> batchSizes = List.of(4, 5);
+        final int batchSize = 4;
 
-        for (Integer batchSize : batchSizes) {
-            testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, batchSize, false, size).generate());
-        }
+        Stream.of(TestReductionReassociation.AddOp.values())
+            .map(op -> new TestGenerator(op, batchSize, false, size).generate())
+            .forEach(testTemplateTokens::add);
 
-        testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, batchSizes.getFirst(), true, size).generate());
+        // A single test to test a non-power-of-2 value
+        testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, 5, false, size).generate());
+        // A single test where an intermediate value is used some other way
+        testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, batchSize, true, size).generate());
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
@@ -91,6 +96,7 @@ public class TestReductionReassociation {
     }
 
     enum AddOp {
+        MIN_L(CodeGenerationDataNameType.longs()),
         MAX_L(CodeGenerationDataNameType.longs());
 
         final PrimitiveType type;
@@ -149,7 +155,8 @@ public class TestReductionReassociation {
                 let("a", a),
                 let("b", b),
                 switch (add) {
-                    case MAX_L -> "Math.max(#a, #b)";
+                    case MIN_L -> "Long.min(#a, #b)";
+                    case MAX_L -> "Long.max(#a, #b)";
                 }
             ));
             return template.asToken();
