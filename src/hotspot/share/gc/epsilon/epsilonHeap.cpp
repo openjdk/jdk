@@ -77,6 +77,7 @@ jint EpsilonHeap::initialize() {
 void EpsilonHeap::initialize_serviceability() {
   _pool = new EpsilonMemoryPool(this);
   _memory_manager.add_pool(_pool);
+  _monitoring_support->mark_ready();
 }
 
 GrowableArray<GCMemoryManager*> EpsilonHeap::memory_managers() {
@@ -101,7 +102,7 @@ EpsilonHeap* EpsilonHeap::heap() {
   return named_heap<EpsilonHeap>(CollectedHeap::Epsilon);
 }
 
-HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
+HeapWord* EpsilonHeap::allocate_work(size_t size) {
   assert(is_object_aligned(size), "Allocation size should be aligned: %zu", size);
 
   HeapWord* res = nullptr;
@@ -151,19 +152,23 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
 
   size_t used = _space->used();
 
-  // Allocation successful, update counters
-  if (verbose) {
-    size_t last = _last_counter_update;
-    if ((used - last >= _step_counter_update) && AtomicAccess::cmpxchg(&_last_counter_update, last, used) == last) {
+  // Allocation successful, update counters and print status.
+  // At this point, some diagnostic subsystems might not yet be initialized.
+  // We pretend the printout happened either way. This keeps allocation path
+  // from obsessively checking the subsystems' status on every allocation.
+  size_t last_counter = AtomicAccess::load(&_last_counter_update);
+  if ((used - last_counter >= _step_counter_update) &&
+      AtomicAccess::cmpxchg(&_last_counter_update, last_counter, used) == last_counter) {
+    if (_monitoring_support->is_ready()) {
       _monitoring_support->update_counters();
     }
   }
 
-  // ...and print the occupancy line, if needed
-  if (verbose) {
-    size_t last = _last_heap_print;
-    if ((used - last >= _step_heap_print) && AtomicAccess::cmpxchg(&_last_heap_print, last, used) == last) {
-      print_heap_info(used);
+  size_t last_heap = AtomicAccess::load(&_last_heap_print);
+  if ((used - last_heap >= _step_heap_print) &&
+      AtomicAccess::cmpxchg(&_last_heap_print, last_heap, used) == last_heap) {
+    print_heap_info(used);
+    if (Metaspace::initialized()) {
       print_metaspace_info();
     }
   }
@@ -265,8 +270,7 @@ HeapWord* EpsilonHeap::mem_allocate(size_t size) {
 }
 
 HeapWord* EpsilonHeap::allocate_loaded_archive_space(size_t size) {
-  // Cannot use verbose=true because Metaspace is not initialized
-  return allocate_work(size, /* verbose = */false);
+  return allocate_work(size);
 }
 
 void EpsilonHeap::collect(GCCause::Cause cause) {
