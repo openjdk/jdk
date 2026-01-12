@@ -4980,6 +4980,10 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 
 static MinMaxNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phase) {
   switch (opcode) {
+    case Op_MinD:
+      return new MinDNode(a, b);
+    case Op_MaxD:
+      return new MaxDNode(a, b);
     case Op_MinF:
       return new MinFNode(a, b);
     case Op_MaxF:
