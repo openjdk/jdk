@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,7 @@ class     InstanceRefKlass;
 class     InstanceStackChunkKlass;
 class   ArrayKlass;
 class     ObjArrayKlass;
+class       RefArrayKlass;
 class     TypeArrayKlass;
 
 #endif // SHARE_OOPS_OOPSHIERARCHY_HPP

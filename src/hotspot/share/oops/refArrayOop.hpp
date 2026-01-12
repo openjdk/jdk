@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,16 @@
 #ifndef SHARE_OOPS_REFARRAYOOP_HPP
 #define SHARE_OOPS_REFARRAYOOP_HPP
 
-#include "oops/arrayOop.hpp"
+#include "oops/objArrayOop.hpp"
 #include "utilities/align.hpp"
 #include <type_traits>
 
 class Klass;
 
-// An refArrayOop is an array containing references (oops).
-// Evaluating "String arg[10]" will create an refArrayOop.
+// A refArrayOop is an array containing references (oops).
+// Evaluating "String arg[10]" will create a refArrayOop.
 
-class refArrayOopDesc : public arrayOopDesc {
+class refArrayOopDesc : public objArrayOopDesc {
   friend class ArchiveHeapWriter;
   friend class RefArrayKlass;
   friend class Runtime1;
