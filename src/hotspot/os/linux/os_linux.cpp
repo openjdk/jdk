@@ -4874,6 +4874,7 @@ int os::open(const char *path, int oflag, int mode) {
     errno = ENAMETOOLONG;
     return -1;
   }
+
   // All file descriptors that are opened in the Java process and not
   // specifically destined for a subprocess should have the close-on-exec
   // flag set.  If we don't set it, then careless 3rd party native code
