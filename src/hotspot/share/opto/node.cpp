@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1213,7 +1213,7 @@ bool Node::has_special_unique_user() const {
   if (this->is_Store()) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
-  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi()) && n->Opcode() == Op_MemBarAcquire) {
+  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi() || this->is_Con()) && n->Opcode() == Op_MemBarAcquire) {
     // Condition for removing an unused LoadNode or DecodeNNode from the MemBarAcquire precedence input
     return true;
   } else if (this->is_Load() && n->is_Move()) {
@@ -2879,21 +2879,24 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req()) {
-          uint j;
-          for (j = 0; j < use->req(); j++) {
-            if (use->in(j) != in(j)) {
-              break;
-            }
-          }
-          if (j == use->req()) {
-            return use;
-          }
+            use->req() == req() &&
+            has_same_inputs_as(use)) {
+          return use;
         }
       }
     }
   }
   return nullptr;
+}
+
+bool Node::has_same_inputs_as(const Node* other) const {
+  assert(req() == other->req(), "should have same number of inputs");
+  for (uint j = 0; j < other->req(); j++) {
+    if (in(j) != other->in(j)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 Node* Node::unique_multiple_edges_out_or_null() const {

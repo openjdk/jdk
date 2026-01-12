@@ -83,7 +83,7 @@ public:
   bool requires_barriers(stackChunkOop obj) const override { return false; }
 
   // Allocation
-  HeapWord* allocate_work(size_t size, bool verbose = true);
+  HeapWord* allocate_work(size_t size);
   HeapWord* mem_allocate(size_t size) override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,

@@ -1328,6 +1328,10 @@ static ConstAddOperands as_add_with_constant(Node* n) {
 }
 
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
+  Node* n = AddNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
   int opcode = Opcode();
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
   // Try to transform the following pattern, in any of its four possible
@@ -1525,8 +1529,10 @@ static Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
         Node* x    = add2->in(1);
         Node* con2 = add2->in(2);
         if (is_sub_con(con2)) {
+          // The graph could be dying (i.e. x is top) in which case type(x) is not a long.
+          const TypeLong* x_long = phase->type(x)->isa_long();
           // Collapsed graph not equivalent if potential over/underflow -> bailing out (*)
-          if (can_overflow(phase->type(x)->is_long(), con1->get_long() + con2->get_long())) {
+          if (x_long == nullptr || can_overflow(x_long, con1->get_long() + con2->get_long())) {
             return nullptr;
           }
           Node* new_con = phase->transform(new AddLNode(con1, con2));
