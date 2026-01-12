@@ -124,6 +124,12 @@ char* julong_to_string(julong value, char *string) {
 }
 
 static void
+fatal(const char* msg) {
+  LOG("FATAL ERROR: %s\n", msg);
+  abort();
+}
+
+static void
 fatal(JNIEnv* jni, const char* msg) {
   jni->FatalError(msg);
 }
@@ -311,6 +317,17 @@ get_thread_name(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
     tname[UNNAMED_LEN] = '\0';
   }
   return tname;
+}
+
+static char*
+get_method_name(jvmtiEnv *jvmti, jmethodID method) {
+  char*  mname = nullptr;
+  jvmtiError err;
+
+  err = jvmti->GetMethodName(method, &mname, nullptr, nullptr);
+  check_jvmti_error(err, "get_method_name: error in JVMTI GetMethodName call");
+
+  return mname;
 }
 
 static char*

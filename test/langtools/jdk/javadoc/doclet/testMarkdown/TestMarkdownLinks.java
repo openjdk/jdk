@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,19 +245,19 @@ public class TestMarkdownLinks extends JavadocTester {
                         "/api/java.base/java/util/package-summary.html\" class=\"external-link\"><code>java.util</code></a>",
 
                         "class <a href=\"https://",
-                        "/api/java.base/java/lang/String.html\" title=\"class or interface in java.lang\" class=\"external-link\"><code>String</code></a>",
+                        "/api/java.base/java/lang/String.html\" title=\"class in java.lang\" class=\"external-link\"><code>String</code></a>",
 
                         "interface <a href=\"https://",
-                        "/api/java.base/java/lang/Runnable.html\" title=\"class or interface in java.lang\" class=\"external-link\"><code>Runnable</code></a>",
+                        "/api/java.base/java/lang/Runnable.html\" title=\"interface in java.lang\" class=\"external-link\"><code>Runnable</code></a>",
 
                         "a field <a href=\"https://",
-                        "/api/java.base/java/lang/String.html#CASE_INSENSITIVE_ORDER\" title=\"class or interface in java.lang\" class=\"external-link\"><code>String.CASE_INSENSITIVE_ORDER</code></a>",
+                        "/api/java.base/java/lang/String.html#CASE_INSENSITIVE_ORDER\" class=\"external-link\"><code>String.CASE_INSENSITIVE_ORDER</code></a>",
 
                         "a constructor <a href=\"https://",
-                        "/api/java.base/java/lang/String.html#%3Cinit%3E()\" title=\"class or interface in java.lang\" class=\"external-link\"><code>String()</code></a></li>",
+                        "/api/java.base/java/lang/String.html#%3Cinit%3E()\" class=\"external-link\"><code>String()</code></a></li>",
 
                         "a method <a href=\"https://",
-                        "/api/java.base/java/lang/String.html#chars()\" title=\"class or interface in java.lang\" class=\"external-link\"><code>String.chars()</code></a>");
+                        "/api/java.base/java/lang/String.html#chars()\" class=\"external-link\"><code>String.chars()</code></a>");
     }
 
     /// Test the ability to include array elements in method signatures for

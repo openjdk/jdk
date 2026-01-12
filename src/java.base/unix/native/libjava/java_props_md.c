@@ -388,8 +388,12 @@ GetJavaProperties(JNIEnv *env)
     /* supported instruction sets */
     {
         char list[258];
-        sysinfo(SI_ISALIST, list, sizeof(list));
-        sprops.cpu_isalist = strdup(list);
+        int ret = sysinfo(SI_ISALIST, list, sizeof(list));
+        if (ret == 0) {
+            sprops.cpu_isalist = strdup(list);
+        } else {
+            sprops.cpu_isalist = NULL;
+        }
     }
 #else
     sprops.cpu_isalist = NULL;
@@ -438,7 +442,7 @@ GetJavaProperties(JNIEnv *env)
 
     /* Determine the language, country, variant, and encoding from the host,
      * and store these in the user.language, user.country, user.variant and
-     * file.encoding system properties. */
+     * native.encoding system properties. */
     setlocale(LC_ALL, "");
     if (ParseLocale(env, LC_CTYPE,
                     &(sprops.format_language),

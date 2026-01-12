@@ -26,6 +26,7 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
@@ -743,7 +744,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     public static final class UnicodeBlock extends Subset {
         /**
-         * NUM_ENTITIES should match the total number of UnicodeBlocks.
+         * NUM_ENTITIES should match the total number of UnicodeBlock identifier
+         * names plus their aliases.
          * It should be adjusted whenever the Unicode Character Database
          * is upgraded.
          */
@@ -9378,6 +9380,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         this.value = value;
     }
 
+    @AOTSafeClassInitializer
     private static final class CharacterCache {
         private CharacterCache(){}
 
