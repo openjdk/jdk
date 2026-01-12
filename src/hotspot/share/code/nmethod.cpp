@@ -1500,7 +1500,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   memcpy(consts_begin(), nm.consts_begin(), nm.data_end() - nm.consts_begin());
 
   // Fix relocation
-  ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
   RelocIterator iter(this);
   CodeBuffer src(&nm);
   CodeBuffer dst(this);
@@ -2056,7 +2055,6 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
 }
 
 void nmethod::fix_all_oop_relocations() {
-  ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
   // re-patch all oop-bearing instructions, just in case some oops moved
   RelocIterator iter(this);
   while (iter.next()) {

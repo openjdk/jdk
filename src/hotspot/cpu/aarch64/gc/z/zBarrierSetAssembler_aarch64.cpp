@@ -880,9 +880,8 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   }
 
   if (UseDeferredICacheInvalidation) {
-    assert(ICacheInvalidationContext::current() != nullptr &&
-           ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED,
-           "UseDeferredICacheInvalidation requires ICache invalidation mode to be deferred.");
+    assert(ICacheInvalidationContext::current() != nullptr,
+           "UseDeferredICacheInvalidation requires ICacheInvalidationContext to be set.");
     return;
   }
 

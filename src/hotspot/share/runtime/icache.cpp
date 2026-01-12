@@ -31,8 +31,6 @@
 // The flush stub function address
 AbstractICache::flush_icache_stub_t AbstractICache::_flush_icache_stub = nullptr;
 
-NOT_PRODUCT(THREAD_LOCAL DefaultICacheInvalidationContext* DefaultICacheInvalidationContext::_current_context = nullptr;)
-
 void AbstractICache::initialize(int phase) {
   // Making this stub must be FIRST use of assembler
   ResourceMark rm;

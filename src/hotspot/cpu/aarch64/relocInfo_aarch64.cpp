@@ -58,10 +58,6 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
   assert(_binding != nullptr, "expect to be called with RelocIterator in use");
 
   if (UseDeferredICacheInvalidation) {
-    assert(ICacheInvalidationContext::current() != nullptr &&
-           (ICacheInvalidationContext::current()->mode() == ICacheInvalidation::DEFERRED ||
-            ICacheInvalidationContext::current()->mode() == ICacheInvalidation::NOT_NEEDED),
-           "UseDeferredICacheInvalidation requires ICache invalidation mode to be deferred or unneeded.");
     return;
   }
 

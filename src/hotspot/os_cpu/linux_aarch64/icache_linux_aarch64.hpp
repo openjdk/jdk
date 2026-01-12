@@ -61,36 +61,28 @@ class ICache : public AbstractICache {
 
 class AArch64ICacheInvalidationContext : StackObj {
  private:
-  NONCOPYABLE(AArch64ICacheInvalidationContext);
 
 #ifdef ASSERT
   static THREAD_LOCAL AArch64ICacheInvalidationContext* _current_context;
-  AArch64ICacheInvalidationContext* _parent = nullptr;
 #endif
 
-  ICacheInvalidation                _mode;
-  bool                              _has_modified_code;
+  bool _has_modified_code;
 
  public:
-  AArch64ICacheInvalidationContext(ICacheInvalidation mode)
-      : _mode(mode), _has_modified_code(false) {
-    assert(_current_context == nullptr || _mode == ICacheInvalidation::NOT_NEEDED,
-           "nested ICacheInvalidationContext only supported for NOT_NEEDED mode");
+  NONCOPYABLE(AArch64ICacheInvalidationContext);
+
+  AArch64ICacheInvalidationContext()
+      : _has_modified_code(false) {
+    assert(_current_context == nullptr, "nested ICacheInvalidationContext not supported");
 #ifdef ASSERT
-    _parent = _current_context;
     _current_context = this;
 #endif
   }
 
-  AArch64ICacheInvalidationContext()
-      : AArch64ICacheInvalidationContext(UseDeferredICacheInvalidation
-                                            ? ICacheInvalidation::DEFERRED
-                                            : ICacheInvalidation::IMMEDIATE) {}
-
   ~AArch64ICacheInvalidationContext() {
-    NOT_PRODUCT(_current_context = _parent);
+    NOT_PRODUCT(_current_context = nullptr);
 
-    if (_mode != ICacheInvalidation::DEFERRED || !_has_modified_code ) {
+    if (!_has_modified_code || !UseDeferredICacheInvalidation) {
       return;
     }
 
@@ -140,8 +132,6 @@ class AArch64ICacheInvalidationContext : StackObj {
     }
     asm volatile("isb" : : : "memory");
   }
-
-  ICacheInvalidation mode() const { return _mode; }
 
   void set_has_modified_code() {
     _has_modified_code = true;

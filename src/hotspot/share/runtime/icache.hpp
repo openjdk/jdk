@@ -71,12 +71,6 @@ class AbstractICache : AllStatic {
   static void invalidate_range(address start, int nbytes);
 };
 
-enum class ICacheInvalidation : uint8_t {
-  NOT_NEEDED = 0,
-  IMMEDIATE  = 1,
-  DEFERRED   = 2
-};
-
 // Must be included before the definition of ICacheStubGenerator
 // because ICacheStubGenerator uses ICache definitions.
 
@@ -135,38 +129,14 @@ class ICacheStubGenerator : public StubCodeGenerator {
 };
 
 class DefaultICacheInvalidationContext : StackObj {
- private:
+ public:
   NONCOPYABLE(DefaultICacheInvalidationContext);
 
-  NOT_PRODUCT(static THREAD_LOCAL DefaultICacheInvalidationContext* _current_context;)
+  DefaultICacheInvalidationContext() {}
 
-  ICacheInvalidation _mode;
+  ~DefaultICacheInvalidationContext() {}
 
- public:
-  DefaultICacheInvalidationContext(ICacheInvalidation mode)
-      : _mode(mode) {
-    NOT_PRODUCT(_current_context = this);
-  }
-
-  DefaultICacheInvalidationContext() : DefaultICacheInvalidationContext(ICacheInvalidation::IMMEDIATE) {}
-
-  ~DefaultICacheInvalidationContext() {
-    NOT_PRODUCT(_current_context = nullptr);
-  }
-
-  ICacheInvalidation mode() const {
-    return _mode;
-  }
-
-  void set_has_modified_code() {
-    // No-op for the default implementation.
-  }
-
-#ifdef ASSERT
-  static DefaultICacheInvalidationContext* current() {
-    return _current_context;
-  }
-#endif
+  void set_has_modified_code() {}
 };
 
 #ifndef PD_ICACHE_INVALIDATION_CONTEXT

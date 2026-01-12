@@ -791,7 +791,6 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
   // relocated when the corresponding instruction in the code (e.g., a
   // call) is relocated. Stubs are placed behind the main code
   // section, so that section has to be copied before relocating.
-  ICacheInvalidationContext icic(ICacheInvalidation::NOT_NEEDED);
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
     CodeSection* dest_cs = dest->code_section(n);
     if (dest_cs->is_empty() || (dest_cs->locs_count() == 0)) continue;  // skip trivial section
