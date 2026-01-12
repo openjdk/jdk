@@ -32,6 +32,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/partialArrayState.hpp"
+#include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -457,6 +458,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Prints all gathered CM-related statistics
   void print_stats();
 
+  void print_and_reset_taskqueue_stats();
+
   HeapWord*           finger()       { return _finger;   }
   bool                concurrent()   { return _concurrent; }
   uint                active_tasks() { return _num_active_tasks; }
@@ -715,7 +718,7 @@ private:
   G1CMBitMap*                 _mark_bitmap;
   // the task queue of this task
   G1CMTaskQueue*              _task_queue;
-  PartialArraySplitter*       _partial_array_splitter;
+  PartialArraySplitter        _partial_array_splitter;
 
   G1RegionMarkStatsCache      _mark_stats_cache;
   // Number of calls to this task
@@ -944,6 +947,11 @@ public:
   Pair<size_t, size_t> flush_mark_stats_cache();
   // Prints statistics associated with this task
   void print_stats();
+#if TASKQUEUE_STATS
+  PartialArrayTaskStats* partial_array_task_stats() {
+    return _partial_array_splitter.stats();
+  }
+#endif
 };
 
 // Class that's used to to print out per-region liveness

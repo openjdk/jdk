@@ -180,7 +180,7 @@ inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry, bool 
 }
 
 inline bool G1CMTask::should_be_sliced(oop obj) {
-  return obj->is_objArray() && ((objArrayOop)obj)->size() >= 2 * ObjArrayMarkingStride;
+  return obj->is_objArray() && ((objArrayOop)obj)->length() >= (int)ObjArrayMarkingStride;
 }
 
 inline void G1CMTask::scan_objArray(objArrayOop obj, size_t start, size_t end) {
