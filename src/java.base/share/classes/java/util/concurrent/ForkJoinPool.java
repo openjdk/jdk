@@ -1292,9 +1292,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     U.putReferenceVolatile(this, ARRAY, newArray);
                     if (unlock != 1)
                         phase = unlock;
-                    ForkJoinWorkerThread o;
-                    if (pool != null ||
-                        ((o = owner) != null && (pool = o.pool) != null))
+                    if (pool != null)
                         pool.signalWork(this, s);
                     return;
                 }
