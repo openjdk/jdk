@@ -116,7 +116,10 @@ public:
   ShenandoahAllocator(uint alloc_region_count, ShenandoahFreeSet* free_set);
   virtual ~ShenandoahAllocator() { }
 
-  // Handle the allocation request - entry point of memory allocation, including humongous allocation.
+  // Handle the allocation request - it is the entry point of memory allocation, including humongous allocation:
+  // 1. for humongous allocation, it delegates to function ShenandoahFreeSet::allocate_contiguous;
+  // 2. for others allocations, it calls function attempt_allocation.
+  // Caller does not hold the heap lock.
   virtual HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
   // Caller must hold the heap lock at safepoint. This causes all directly allocatable regions to be placed into
