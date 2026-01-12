@@ -61,7 +61,7 @@ public class H3StopSendingTest {
     HttpRequest postRequestNoError, postRequestError;
     HttpRequest postRequestNoErrorWithData, postRequestErrorWithData;
     URI h3TestServerUriNoError, h3TestServerUriError;
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static final String TEST_ROOT_PATH = "/h3_stop_sending_test";
     static final String NO_ERROR_PATH = TEST_ROOT_PATH + "/no_error_path";
@@ -128,7 +128,6 @@ public class H3StopSendingTest {
     @BeforeTest
     public void setup() throws IOException {
 
-        sslContext  = new SimpleSSLContext().get();
         h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3TestServer.addHandler(new ServerRequestStopSendingHandler(), TEST_ROOT_PATH);
         h3TestServerUriError = URI.create("https://" + h3TestServer.serverAuthority() + ERROR_PATH);

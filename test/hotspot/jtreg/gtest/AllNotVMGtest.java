@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ public class AllNotVMGtest {
     // List of tests which have dependencies, these should have bugs associated
     // with them, and should be removed once they are resolved.
     static TestFilter[] TEST_FILTERS = {
+        // JDK-8374450
+        TF("opto.canonicalize_constraints"),
         // JDK-8372246
         TF("LogOutputList.is_level_multiple_outputs"),
         TF("LogOutputList.is_level_single_output"),

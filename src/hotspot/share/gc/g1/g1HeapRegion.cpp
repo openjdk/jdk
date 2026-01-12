@@ -307,10 +307,6 @@ void G1HeapRegion::add_code_root(nmethod* nm) {
   rem_set()->add_code_root(nm);
 }
 
-void G1HeapRegion::remove_code_root(nmethod* nm) {
-  rem_set()->remove_code_root(nm);
-}
-
 void G1HeapRegion::code_roots_do(NMethodClosure* blk) const {
   rem_set()->code_roots_do(blk);
 }

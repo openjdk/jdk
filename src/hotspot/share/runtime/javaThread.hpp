@@ -322,15 +322,11 @@ class JavaThread: public Thread {
                                                          // never locked) when throwing an exception. Used by interpreter only.
 #if INCLUDE_JVMTI
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
-  bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
   bool                  _is_in_java_upcall;              // JVMTI is doing a Java upcall, so JVMTI events must be hidden
-  bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
+  int                   _jvmti_events_disabled;          // JVMTI events disabled manually
   bool                  _on_monitor_waited_event;        // Avoid callee arg processing for enterSpecial when posting waited event
   ObjectMonitor*        _contended_entered_monitor;      // Monitor for pending monitor_contended_entered callback
-#ifdef ASSERT
-  bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
-#endif
 #endif
 
   // JNI attach states:
@@ -736,6 +732,20 @@ public:
   // current thread, i.e. reverts optimizations based on escape analysis.
   void wait_for_object_deoptimization();
 
+private:
+  bool _is_in_vthread_transition;                    // thread is in virtual thread mount state transition
+  DEBUG_ONLY(bool _is_vthread_transition_disabler;)  // thread currently disabled vthread transitions
+  DEBUG_ONLY(bool _is_disabler_at_start;)            // thread at process of disabling vthread transitions
+public:
+  bool is_in_vthread_transition() const;
+  void set_is_in_vthread_transition(bool val);
+#ifdef ASSERT
+  bool is_vthread_transition_disabler() const       { return _is_vthread_transition_disabler; }
+  void set_is_vthread_transition_disabler(bool val);
+  bool is_disabler_at_start() const                 { return _is_disabler_at_start; }
+  void set_is_disabler_at_start(bool val);
+#endif
+
 #if INCLUDE_JVMTI
   inline bool set_carrier_thread_suspended();
   inline bool clear_carrier_thread_suspended();
@@ -744,33 +754,28 @@ public:
     return AtomicAccess::load(&_carrier_thread_suspended);
   }
 
-  bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }
-  void set_is_in_VTMS_transition(bool val);
-
   bool is_disable_suspend() const                { return _is_disable_suspend; }
-  void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
+  void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; }
 
   bool is_in_java_upcall() const                 { return _is_in_java_upcall; }
-  void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; };
+  void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; }
 
-  bool VTMS_transition_mark() const              { return AtomicAccess::load(&_VTMS_transition_mark); }
-  void set_VTMS_transition_mark(bool val)        { AtomicAccess::store(&_VTMS_transition_mark, val); }
+  void disable_jvmti_events()                    { _jvmti_events_disabled++; }
+  void enable_jvmti_events()                     { _jvmti_events_disabled--; }
 
   // Temporarily skip posting JVMTI events for safety reasons when executions is in a critical section:
-  // - is in a VTMS transition (_is_in_VTMS_transition)
+  // - is in a vthread transition (_is_in_vthread_transition)
   // - is in an interruptLock or similar critical section (_is_disable_suspend)
   // - JVMTI is making a Java upcall (_is_in_java_upcall)
-  bool should_hide_jvmti_events() const          { return _is_in_VTMS_transition || _is_disable_suspend || _is_in_java_upcall; }
+  bool should_hide_jvmti_events() const {
+    return _is_in_vthread_transition || _is_disable_suspend || _is_in_java_upcall || _jvmti_events_disabled != 0;
+  }
 
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
 
   bool pending_contended_entered_event()         { return _contended_entered_monitor != nullptr; }
   ObjectMonitor* contended_entered_monitor()     { return _contended_entered_monitor; }
-#ifdef ASSERT
-  bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
-  void set_is_VTMS_transition_disabler(bool val);
-#endif
 #endif
 
   void set_contended_entered_monitor(ObjectMonitor* val) NOT_JVMTI_RETURN JVMTI_ONLY({ _contended_entered_monitor = val; })
@@ -925,9 +930,9 @@ public:
   static ByteSize preempt_alternate_return_offset() { return byte_offset_of(JavaThread, _preempt_alternate_return); }
   DEBUG_ONLY(static ByteSize interp_at_preemptable_vmcall_cnt_offset() { return byte_offset_of(JavaThread, _interp_at_preemptable_vmcall_cnt); })
   static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
+  static ByteSize is_in_vthread_transition_offset()     { return byte_offset_of(JavaThread, _is_in_vthread_transition); }
 
 #if INCLUDE_JVMTI
-  static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
   static ByteSize is_disable_suspend_offset()        { return byte_offset_of(JavaThread, _is_disable_suspend); }
 #endif
 

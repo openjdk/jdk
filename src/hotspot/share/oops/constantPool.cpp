@@ -131,8 +131,7 @@ void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_array<Klass*>(loader_data, resolved_klasses());
   set_resolved_klasses(nullptr);
 
-  MetadataFactory::free_array<jushort>(loader_data, operands());
-  set_operands(nullptr);
+  bsm_entries().deallocate_contents(loader_data);
 
   release_C_heap_structures();
 
@@ -152,7 +151,8 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
   it->push(&_pool_holder);
-  it->push(&_operands);
+  it->push(&bsm_entries().offsets());
+  it->push(&bsm_entries().bootstrap_methods());
   it->push(&_resolved_klasses, MetaspaceClosure::_writable);
 
   for (int i = 0; i < length(); i++) {
@@ -761,7 +761,7 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
   if (!(which >= 0 && which < cpool->resolved_method_entries_length())) {
     // FIXME: should be an assert
-    log_debug(class, resolve)("bad operand %d in:", which); cpool->print();
+    log_debug(class, resolve)("bad BSM %d in:", which); cpool->print();
     return nullptr;
   }
   return cpool->cache()->method_if_resolved(which);
@@ -1562,8 +1562,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     int i1 = bootstrap_methods_attribute_index(index1);
     int i2 = cp2->bootstrap_methods_attribute_index(index2);
     bool match_entry = compare_entry_to(k1, cp2, k2);
-    bool match_operand = compare_operand_to(i1, cp2, i2);
-    return (match_entry && match_operand);
+    bool match_bsm = compare_bootstrap_entry_to(i1, cp2, i2);
+    return (match_entry && match_bsm);
   } break;
 
   case JVM_CONSTANT_InvokeDynamic:
@@ -1573,8 +1573,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     int i1 = bootstrap_methods_attribute_index(index1);
     int i2 = cp2->bootstrap_methods_attribute_index(index2);
     bool match_entry = compare_entry_to(k1, cp2, k2);
-    bool match_operand = compare_operand_to(i1, cp2, i2);
-    return (match_entry && match_operand);
+    bool match_bsm = compare_bootstrap_entry_to(i1, cp2, i2);
+    return (match_entry && match_bsm);
   } break;
 
   case JVM_CONSTANT_String:
@@ -1608,140 +1608,29 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   return false;
 } // end compare_entry_to()
 
-
-// Resize the operands array with delta_len and delta_size.
+// Extend the BSMAttributeEntries with the length and size of the ext_cp BSMAttributeEntries.
 // Used in RedefineClasses for CP merge.
-void ConstantPool::resize_operands(int delta_len, int delta_size, TRAPS) {
-  int old_len  = operand_array_length(operands());
-  int new_len  = old_len + delta_len;
-  int min_len  = (delta_len > 0) ? old_len : new_len;
-
-  int old_size = operands()->length();
-  int new_size = old_size + delta_size;
-  int min_size = (delta_size > 0) ? old_size : new_size;
-
-  ClassLoaderData* loader_data = pool_holder()->class_loader_data();
-  Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, new_size, CHECK);
-
-  // Set index in the resized array for existing elements only
-  for (int idx = 0; idx < min_len; idx++) {
-    int offset = operand_offset_at(idx);                       // offset in original array
-    operand_offset_at_put(new_ops, idx, offset + 2*delta_len); // offset in resized array
-  }
-  // Copy the bootstrap specifiers only
-  Copy::conjoint_memory_atomic(operands()->adr_at(2*old_len),
-                               new_ops->adr_at(2*new_len),
-                               (min_size - 2*min_len) * sizeof(u2));
-  // Explicitly deallocate old operands array.
-  // Note, it is not needed for 7u backport.
-  if ( operands() != nullptr) { // the safety check
-    MetadataFactory::free_array<u2>(loader_data, operands());
-  }
-  set_operands(new_ops);
-} // end resize_operands()
+BSMAttributeEntries::InsertionIterator
+ConstantPool::start_extension(const constantPoolHandle& ext_cp, TRAPS) {
+  BSMAttributeEntries::InsertionIterator iter =
+    bsm_entries().start_extension(ext_cp->bsm_entries(), pool_holder()->class_loader_data(),
+                                  CHECK_(BSMAttributeEntries::InsertionIterator()));
+  return iter;
+}
 
 
-// Extend the operands array with the length and size of the ext_cp operands.
-// Used in RedefineClasses for CP merge.
-void ConstantPool::extend_operands(const constantPoolHandle& ext_cp, TRAPS) {
-  int delta_len = operand_array_length(ext_cp->operands());
-  if (delta_len == 0) {
-    return; // nothing to do
-  }
-  int delta_size = ext_cp->operands()->length();
-
-  assert(delta_len  > 0 && delta_size > 0, "extended operands array must be bigger");
-
-  if (operand_array_length(operands()) == 0) {
-    ClassLoaderData* loader_data = pool_holder()->class_loader_data();
-    Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, delta_size, CHECK);
-    // The first element index defines the offset of second part
-    operand_offset_at_put(new_ops, 0, 2*delta_len); // offset in new array
-    set_operands(new_ops);
-  } else {
-    resize_operands(delta_len, delta_size, CHECK);
-  }
-
-} // end extend_operands()
+void ConstantPool::end_extension(BSMAttributeEntries::InsertionIterator iter, TRAPS) {
+  bsm_entries().end_extension(iter, pool_holder()->class_loader_data(), THREAD);
+}
 
 
-// Shrink the operands array to a smaller array with new_len length.
-// Used in RedefineClasses for CP merge.
-void ConstantPool::shrink_operands(int new_len, TRAPS) {
-  int old_len = operand_array_length(operands());
-  if (new_len == old_len) {
-    return; // nothing to do
-  }
-  assert(new_len < old_len, "shrunken operands array must be smaller");
-
-  int free_base  = operand_next_offset_at(new_len - 1);
-  int delta_len  = new_len - old_len;
-  int delta_size = 2*delta_len + free_base - operands()->length();
-
-  resize_operands(delta_len, delta_size, CHECK);
-
-} // end shrink_operands()
-
-
-void ConstantPool::copy_operands(const constantPoolHandle& from_cp,
-                                 const constantPoolHandle& to_cp,
-                                 TRAPS) {
-
-  int from_oplen = operand_array_length(from_cp->operands());
-  int old_oplen  = operand_array_length(to_cp->operands());
-  if (from_oplen != 0) {
-    ClassLoaderData* loader_data = to_cp->pool_holder()->class_loader_data();
-    // append my operands to the target's operands array
-    if (old_oplen == 0) {
-      // Can't just reuse from_cp's operand list because of deallocation issues
-      int len = from_cp->operands()->length();
-      Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, len, CHECK);
-      Copy::conjoint_memory_atomic(
-          from_cp->operands()->adr_at(0), new_ops->adr_at(0), len * sizeof(u2));
-      to_cp->set_operands(new_ops);
-    } else {
-      int old_len  = to_cp->operands()->length();
-      int from_len = from_cp->operands()->length();
-      int old_off  = old_oplen * sizeof(u2);
-      int from_off = from_oplen * sizeof(u2);
-      // Use the metaspace for the destination constant pool
-      Array<u2>* new_operands = MetadataFactory::new_array<u2>(loader_data, old_len + from_len, CHECK);
-      int fillp = 0, len = 0;
-      // first part of dest
-      Copy::conjoint_memory_atomic(to_cp->operands()->adr_at(0),
-                                   new_operands->adr_at(fillp),
-                                   (len = old_off) * sizeof(u2));
-      fillp += len;
-      // first part of src
-      Copy::conjoint_memory_atomic(from_cp->operands()->adr_at(0),
-                                   new_operands->adr_at(fillp),
-                                   (len = from_off) * sizeof(u2));
-      fillp += len;
-      // second part of dest
-      Copy::conjoint_memory_atomic(to_cp->operands()->adr_at(old_off),
-                                   new_operands->adr_at(fillp),
-                                   (len = old_len - old_off) * sizeof(u2));
-      fillp += len;
-      // second part of src
-      Copy::conjoint_memory_atomic(from_cp->operands()->adr_at(from_off),
-                                   new_operands->adr_at(fillp),
-                                   (len = from_len - from_off) * sizeof(u2));
-      fillp += len;
-      assert(fillp == new_operands->length(), "");
-
-      // Adjust indexes in the first part of the copied operands array.
-      for (int j = 0; j < from_oplen; j++) {
-        int offset = operand_offset_at(new_operands, old_oplen + j);
-        assert(offset == operand_offset_at(from_cp->operands(), j), "correct copy");
-        offset += old_len;  // every new tuple is preceded by old_len extra u2's
-        operand_offset_at_put(new_operands, old_oplen + j, offset);
-      }
-
-      // replace target operands array with combined array
-      to_cp->set_operands(new_operands);
-    }
-  }
-} // end copy_operands()
+void ConstantPool::copy_bsm_entries(const constantPoolHandle& from_cp,
+                                    const constantPoolHandle& to_cp,
+                                    TRAPS) {
+  to_cp->bsm_entries().append(from_cp->bsm_entries(),
+                              to_cp->pool_holder()->class_loader_data(),
+                              THREAD);
+}
 
 
 // Copy this constant pool's entries at start_i to end_i (inclusive)
@@ -1771,7 +1660,7 @@ void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_
       break;
     }
   }
-  copy_operands(from_cp, to_cp, CHECK);
+  copy_bsm_entries(from_cp, to_cp, THREAD);
 
 } // end copy_cp_to_impl()
 
@@ -1895,7 +1784,7 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   {
     int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
     int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
-    k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
+    k1 += to_cp->bsm_entries().array_length();  // to_cp might already have a BSM attribute
     to_cp->dynamic_constant_at_put(to_i, k1, k2);
   } break;
 
@@ -1903,7 +1792,7 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   {
     int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
     int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
-    k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
+    k1 += to_cp->bsm_entries().array_length();  // to_cp might already have a BSM attribute
     to_cp->invoke_dynamic_at_put(to_i, k1, k2);
   } break;
 
@@ -1939,9 +1828,9 @@ int ConstantPool::find_matching_entry(int pattern_i,
 
 // Compare this constant pool's bootstrap specifier at idx1 to the constant pool
 // cp2's bootstrap specifier at idx2.
-bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  BSMAttributeEntry* e1 = bsm_attribute_entry(idx1);
-  BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
+bool ConstantPool::compare_bootstrap_entry_to(int idx1, const constantPoolHandle& cp2, int idx2) {
+  const BSMAttributeEntry* const e1 = bsm_attribute_entry(idx1);
+  const BSMAttributeEntry* const e2 = cp2->bsm_attribute_entry(idx2);
   int k1 = e1->bootstrap_method_index();
   int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
@@ -1949,34 +1838,37 @@ bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, i
   if (!match) {
     return false;
   }
-  int argc = e1->argument_count();
-  if (argc == e2->argument_count()) {
-    for (int j = 0; j < argc; j++) {
-      k1 = e1->argument_index(j);
-      k2 = e2->argument_index(j);
-      match = compare_entry_to(k1, cp2, k2);
-      if (!match) {
-        return false;
-      }
-    }
-    return true;           // got through loop; all elements equal
+
+  const int argc = e1->argument_count();
+  if (argc != e2->argument_count()) {
+    return false;
   }
-  return false;
-} // end compare_operand_to()
+
+  for (int j = 0; j < argc; j++) {
+    k1 = e1->argument(j);
+    k2 = e2->argument(j);
+    match = compare_entry_to(k1, cp2, k2);
+    if (!match) {
+      return false;
+    }
+  }
+
+  return true; // got through loop; all elements equal
+} // end compare_bootstrap_entry_to()
 
 // Search constant pool search_cp for a bootstrap specifier that matches
 // this constant pool's bootstrap specifier data at pattern_i index.
 // Return the index of a matching bootstrap attribute record or (-1) if there is no match.
-int ConstantPool::find_matching_operand(int pattern_i,
-                    const constantPoolHandle& search_cp, int search_len) {
-  for (int i = 0; i < search_len; i++) {
-    bool found = compare_operand_to(pattern_i, search_cp, i);
+int ConstantPool::find_matching_bsm_entry(int pattern_i,
+                                          const constantPoolHandle& search_cp, int offset_limit) {
+  for (int i = 0; i < offset_limit; i++) {
+    bool found = compare_bootstrap_entry_to(pattern_i, search_cp, i);
     if (found) {
       return i;
     }
   }
   return -1;  // bootstrap specifier data not found; return unused index (-1)
-} // end find_matching_operand()
+} // end find_matching_bsm_entry()
 
 
 #ifndef PRODUCT
@@ -2411,7 +2303,7 @@ void ConstantPool::print_value_on(outputStream* st) const {
   assert(is_constantPool(), "must be constantPool");
   st->print("constant pool [%d]", length());
   if (has_preresolution()) st->print("/preresolution");
-  if (operands() != nullptr)  st->print("/operands[%d]", operands()->length());
+  if (!bsm_entries().is_empty())  st->print("/BSMs[%d]", bsm_entries().bootstrap_methods()->length());
   print_address_on(st);
   if (pool_holder() != nullptr) {
     st->print(" for ");
@@ -2445,4 +2337,88 @@ void ConstantPool::verify_on(outputStream* st) {
     // used during constant pool merging
     guarantee(pool_holder()->is_klass(),    "should be klass");
   }
+}
+
+void BSMAttributeEntries::deallocate_contents(ClassLoaderData* loader_data) {
+  MetadataFactory::free_array<u4>(loader_data, this->_offsets);
+  MetadataFactory::free_array<u2>(loader_data, this->_bootstrap_methods);
+  this->_offsets = nullptr;
+  this->_bootstrap_methods = nullptr;
+}
+
+void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) const {
+  assert(num_entries + iter._cur_offset <= iter._insert_into->_offsets->length(), "must");
+  for (int i = 0; i < num_entries; i++) {
+    const BSMAttributeEntry* e = entry(i);
+    BSMAttributeEntry* e_new = iter.reserve_new_entry(e->bootstrap_method_index(), e->argument_count());
+    assert(e_new != nullptr, "must be");
+    e->copy_args_into(e_new);
+  }
+}
+
+BSMAttributeEntries::InsertionIterator
+BSMAttributeEntries::start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
+  InsertionIterator iter = start_extension(other.number_of_entries(), other.array_length(),
+                                           loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
+  return iter;
+}
+
+BSMAttributeEntries::InsertionIterator
+BSMAttributeEntries::start_extension(int number_of_entries, int array_length,
+                                     ClassLoaderData* loader_data, TRAPS) {
+  InsertionIterator extension_iterator(this, this->number_of_entries(), this->array_length());
+  int new_number_of_entries = this->number_of_entries() + number_of_entries;
+  int new_array_length = this->array_length() + array_length;
+  int invalid_index = new_array_length;
+
+  Array<u4>* new_offsets =
+    MetadataFactory::new_array<u4>(loader_data, new_number_of_entries, invalid_index, CHECK_(InsertionIterator()));
+  Array<u2>* new_array = MetadataFactory::new_array<u2>(loader_data, new_array_length, CHECK_(InsertionIterator()));
+  { // Copy over all the old BSMAEntry's and their respective offsets
+    BSMAttributeEntries carrier(new_offsets, new_array);
+    InsertionIterator copy_iter(&carrier, 0, 0);
+    copy_into(copy_iter, this->number_of_entries());
+  }
+  // Replace content
+  deallocate_contents(loader_data);
+  _offsets = new_offsets;
+  _bootstrap_methods = new_array;
+  return extension_iterator;
+}
+
+
+void BSMAttributeEntries::append(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
+  if (other.number_of_entries() == 0) {
+    return; // Done!
+  }
+  InsertionIterator iter = start_extension(other, loader_data, CHECK);
+  other.copy_into(iter, other.number_of_entries());
+  end_extension(iter, loader_data, THREAD);
+}
+
+void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS) {
+  assert(iter._insert_into == this, "must be");
+  assert(iter._cur_offset <= this->_offsets->length(), "must be");
+  assert(iter._cur_array <= this->_bootstrap_methods->length(), "must be");
+
+  // Did we fill up all of the available space? If so, do nothing.
+  if (iter._cur_offset == this->_offsets->length() &&
+      iter._cur_array == this->_bootstrap_methods->length()) {
+    return;
+  }
+
+  // We used less, truncate by allocating new arrays
+  Array<u4>* new_offsets =
+      MetadataFactory::new_array<u4>(loader_data, iter._cur_offset, 0, CHECK);
+  Array<u2>* new_array =
+    MetadataFactory::new_array<u2>(loader_data, iter._cur_array, CHECK);
+  { // Copy over the constructed BSMAEntry's
+    BSMAttributeEntries carrier(new_offsets, new_array);
+    InsertionIterator copy_iter(&carrier, 0, 0);
+    copy_into(copy_iter, iter._cur_offset);
+  }
+
+  deallocate_contents(loader_data);
+  _offsets = new_offsets;
+  _bootstrap_methods = new_array;
 }
