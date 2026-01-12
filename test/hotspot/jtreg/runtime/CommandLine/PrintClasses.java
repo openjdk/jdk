@@ -59,5 +59,9 @@ public class PrintClasses {
 
     // Test for previous bug in misc flags printing
     output.shouldNotContain("##name");
+
+    pb.command(new PidJcmdExecutor().getCommandLine("VM.classes", "-location"));
+    output = new OutputAnalyzer(pb.start());
+    output.stdoutContains(".*(file:/|jar:).*");
   }
 }
