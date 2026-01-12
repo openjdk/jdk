@@ -296,11 +296,13 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   Node* prev_before = this;
                   Node* prev_after = in(1);
                   uint i;
+                  AddPNode* last_addp = nullptr;
                   for (i = 1; i < stack.size(); ++i) {
                     Node* n = stack.node_at(i);
                     if (n->is_AddP()) {
                       i++;
                       assert(prev_before == n->in(AddPNode::Offset), "");
+                      last_addp = n->as_AddP();
                       break;
                     }
                     if (n->is_Phi()) {
@@ -313,7 +315,8 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                     prev_before = n;
                     prev_after = phase->transform(clone);
                   }
-                  assert(i < stack.size(), "");
+                  assert(i <= stack.size(), "");
+                  assert(last_addp->in(AddPNode::Base) == last_addp->in(AddPNode::Address), "");
                   Node* offset = prev_after;
                   for (; i < stack.size(); ++i) {
                     Node* n = stack.node_at(i);
@@ -332,10 +335,11 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   range = phase->transform(new ConvI2LNode(range));
                   range = phase->transform(new LShiftLNode(range, phase->intcon(shift)));
                   Node* cmp = phase->transform(new CmpULNode(offset, range));
-                  if (phase->type(cmp) == TypeInt::CC_LT) {
+                  const Type* type = phase->type(cmp);
+                  if (type == TypeInt::CC_LT || type == Type::TOP) {
                     safe_mem_access = true;
                   }
-                  if (cmp->outcnt() == 0) {
+                  if (cmp->outcnt() == 0 && !cmp->is_Con()) {
                     igvn->remove_dead_node(cmp);
                   }
                 }

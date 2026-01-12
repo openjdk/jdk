@@ -928,6 +928,12 @@ const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
   return TypeInt::CC;           // else use worst case results
 }
 
+Node* CmpULNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (in(1)->Opcode() == Op_ConvI2L && in(2)->Opcode() == Op_ConvI2L) {
+    return new CmpUNode(in(1)->in(1), in (2)->in(1));
+  }
+  return nullptr;
+}
 
 // Simplify a CmpUL (compare 2 unsigned longs) node, based on local information.
 // If both inputs are constants, compare them.
