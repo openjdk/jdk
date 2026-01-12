@@ -52,7 +52,6 @@ public class TestSplitPaneCompResize {
     private static JFrame frame;
     private JSplitPane outer;
     private static JButton leftOneTouchButton;
-    private static JButton rightOneTouchButton;
     private static volatile Point leftBtnPos;
     private static volatile boolean resized;
 
@@ -132,7 +131,7 @@ public class TestSplitPaneCompResize {
             robot.delay(1000);
 
             if (!resized) {
-                throw new RuntimeException("ComponetResized not called");
+                throw new RuntimeException("ComponentResized not called");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
@@ -167,7 +166,7 @@ public class TestSplitPaneCompResize {
         }
 
         protected JButton createRightOneTouchButton() {
-            rightOneTouchButton = super.createRightOneTouchButton();
+            JButton rightOneTouchButton = super.createRightOneTouchButton();
             return rightOneTouchButton;
         }
     }
