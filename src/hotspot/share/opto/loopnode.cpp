@@ -4978,6 +4978,17 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
+static AddNode* build_add(int opcode, Node* a, Node* b, PhaseIdealLoop* phase) {
+  switch (opcode) {
+    case Op_MinL:
+      return new MinLNode(phase->C, a, b);
+    case Op_MaxL:
+      return new MaxLNode(phase->C, a, b);
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* loop_head, PhaseIdealLoop* phase) {
   if (phi == node->in(1)) {
     return node->in(2);
@@ -4997,17 +5008,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
     right = reassociate_chain(add_opcode, node->in(2), phi, loop_head, phase);
   }
 
-  Node* reassoc = nullptr;
-  switch (add_opcode) {
-    case Op_MinL:
-      reassoc = new MinLNode(phase->C, left, right);
-      break;
-    case Op_MaxL:
-      reassoc = new MaxLNode(phase->C, left, right);
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+  Node* reassoc = build_add(add_opcode, left, right, phase);
   phase->register_new_node(reassoc, loop_head);
   return reassoc;
 }
@@ -5065,17 +5066,7 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
   Node* loop_head = lpt->head();
   Node* reassociated = reassociate_chain(add_opcode, chain_head, phi, loop_head, phase);
 
-  Node* new_chain_head = nullptr;
-  switch (add_opcode) {
-    case Op_MinL:
-      new_chain_head = new MinLNode(phase->C, phi, reassociated);
-      break;
-    case Op_MaxL:
-      new_chain_head = new MaxLNode(phase->C, phi, reassociated);
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+  Node* new_chain_head = build_add(add_opcode, phi, reassociated, phase);
   phase->register_new_node(new_chain_head, loop_head);
   phase->igvn().replace_node(chain_head, new_chain_head);
 }
