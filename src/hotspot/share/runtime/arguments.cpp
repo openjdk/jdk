@@ -64,7 +64,6 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "utilities/align.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -1222,7 +1221,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
     // avoid the char to int promotions we would otherwise do in the comparisons
     // below (which would be incorrect if we ever compared to a non-ascii char),
     // and the int to char conversions we would otherwise do in the assignments.
-    const char c = checked_cast<char>(checked_cast<unsigned char>(c_or_eof));
+    const char c = static_cast<char>(c_or_eof);
     if (in_white_space) {
       if (in_comment) {
         if (c == '\n') in_comment = false;
