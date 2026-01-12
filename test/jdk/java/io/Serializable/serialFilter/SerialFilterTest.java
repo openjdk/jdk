@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import javax.net.ssl.SSLEngineResult;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -61,7 +60,6 @@ import org.junit.jupiter.params.provider.MethodSource;
  *
  * @summary Test ObjectInputFilters using Builtin Filter Factory
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SerialFilterTest implements Serializable {
 
     @Serial
@@ -92,7 +90,7 @@ public class SerialFilterTest implements Serializable {
      * @return an array of arrays of the parameters including factories
      */
     static Object[][] patterns() {
-        Object[][] patterns = new Object[][]{
+        return new Object[][]{
                 {"java.util.Hashtable"},
                 {"java.util.Hash*"},
                 {"javax.net.ssl.*"},
@@ -106,7 +104,6 @@ public class SerialFilterTest implements Serializable {
                 {"maxbytes=+1024"},
                 {"java.base/java.util.Hashtable"},
         };
-        return patterns;
     }
 
     static Object[][] invalidPatterns() {

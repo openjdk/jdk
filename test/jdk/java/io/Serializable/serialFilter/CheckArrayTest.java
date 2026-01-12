@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.io.InvalidClassException;
 import jdk.internal.access.SharedSecrets;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -52,11 +51,10 @@ import org.junit.jupiter.params.provider.MethodSource;
  * to check array sizes during deserialization via the ObjectInputFilter attached the stream.
  * The filterCheck must be resilent to an InputStream not being available (only the subclass knows).
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CheckArrayTest {
 
     // Test patterns for arrays
-    Object[][] patterns() {
+    private static Object[][] patterns() {
         return new Object[][]{
                 new Object[]{"maxarray=10", 10, new String[10]},    // successful
                 new Object[]{"maxarray=10", 11, new String[11]},    // exception expected

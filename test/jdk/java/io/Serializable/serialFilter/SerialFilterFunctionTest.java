@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-
-
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputFilter.FilterInfo;
 import java.util.function.Predicate;
@@ -34,7 +32,6 @@ import static java.io.ObjectInputFilter.Status.UNDECIDED;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -43,7 +40,6 @@ import org.junit.jupiter.params.provider.MethodSource;
  *                      SerialFilterFunctionTest
  * @summary ObjectInputFilter.Config Function Tests
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SerialFilterFunctionTest {
 
     @Test

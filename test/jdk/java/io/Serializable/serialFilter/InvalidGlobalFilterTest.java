@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.ObjectInputStream;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -45,7 +44,6 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @run junit/othervm -Djdk.serialFilter=/ InvalidGlobalFilterTest
  *
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class InvalidGlobalFilterTest {
     private static final String serialPropName = "jdk.serialFilter";
     private static final String serialFilter = System.getProperty(serialPropName);
@@ -68,7 +66,7 @@ public class InvalidGlobalFilterTest {
                     "/", "Invalid jdk.serialFilter: module name is missing in: \"/\"");
 
     // Test cases for exceptions
-    private Object[][] cases() {
+    private static Object[][] cases() {
         return new Object[][] {
                 {serialFilter, "getSerialFilter", (Executable) () -> ObjectInputFilter.Config.getSerialFilter()},
                 {serialFilter, "setSerialFilter", (Executable) () -> ObjectInputFilter.Config.setSerialFilter(new NoopFilter())},

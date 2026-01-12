@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.ObjectInputStream;
 import java.util.function.BinaryOperator;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,7 +42,6 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @summary Check cases where the Filter Factory initialization from properties fails
  */
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SerialFactoryFaults {
 
     // Sample the serial factory class name
@@ -56,7 +54,7 @@ public class SerialFactoryFaults {
     }
 
     // Test cases of faults
-    private Object[][] cases() {
+    private static Object[][] cases() {
         return new Object[][] {
                 {"getSerialFilterFactory", (Executable) () -> Config.getSerialFilterFactory()},
                 {"setSerialFilterFactory", (Executable) () -> Config.setSerialFilterFactory(new NoopFactory())},

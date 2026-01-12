@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@ import java.io.ByteArrayInputStream;
 import java.io.InvalidClassException;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -41,12 +41,12 @@ import org.junit.jupiter.params.provider.MethodSource;
  *          global filter will not affect specific filter.
  */
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CheckInputOrderTest implements Serializable {
+    @Serial
     private static final long serialVersionUID = 12345678901L;
 
     // Test cases for serial filter strings
-    Object[][] patterns() {
+    static Object[][] patterns() {
         return new Object[][] {
                 new Object[] { SerialFilterTest.genTestObject("maxarray=1", true), "java.**;java.lang.*;java.lang.Long;maxarray=0", false },
                 new Object[] { SerialFilterTest.genTestObject("maxarray=1", true), "java.**;java.lang.*;java.lang.Long", true },

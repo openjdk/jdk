@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.Objects;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -49,7 +48,6 @@ import org.junit.jupiter.params.provider.MethodSource;
  *          -Dexpected-jdk.serialFilter=java.** GlobalFilterTest
  * @summary Test Global Filters
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class GlobalFilterTest {
     private static final String serialPropName = "jdk.serialFilter";
     private static final String badSerialFilter = "java.lang.StringBuffer;!*";
@@ -59,7 +57,7 @@ public class GlobalFilterTest {
     private static final String EXPECTED_GLOBAL_FILTER = System.getProperty("expected-" + serialPropName,
             Security.getProperty(serialPropName));
 
-    boolean hasGlobalFilter() {
+    static boolean hasGlobalFilter() {
         return EXPECTED_GLOBAL_FILTER != null && !EXPECTED_GLOBAL_FILTER.isEmpty();
     }
 
@@ -67,7 +65,7 @@ public class GlobalFilterTest {
      * DataProvider of patterns and objects derived from the configured process-wide filter.
      * @return Array of arrays of pattern, object, allowed boolean, and API factory
      */
-    Object[][] globalPatternElements() {
+    static Object[][] globalPatternElements() {
 
         String[] patterns = EXPECTED_GLOBAL_FILTER.split(";");
         Object[][] objects = new Object[patterns.length][];
