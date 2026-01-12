@@ -374,8 +374,12 @@ template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
   assert_at_safepoint();
   shenandoah_assert_heaplocked();
-  log_debug(gc, alloc)("%sAllocator: Releasing all alloc regions", _alloc_partition_name);
+  if (_alloc_region_count == 0u) {
+    // no-op if _alloc_region_count is 0
+    return;
+  }
 
+  log_debug(gc, alloc)("%sAllocator: Releasing all alloc regions", _alloc_partition_name);
   ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
   size_t total_free_bytes = 0;
   size_t total_regions_to_unretire = 0;
@@ -412,6 +416,10 @@ void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 void ShenandoahAllocator<ALLOC_PARTITION>::reserve_alloc_regions() {
   shenandoah_assert_heaplocked();
+  if (_alloc_region_count == 0u) {
+    // no-op if _alloc_region_count is 0
+    return;
+  }
   ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
   if (refresh_alloc_regions() > 0) {
     accounting_updater._need_update = true;

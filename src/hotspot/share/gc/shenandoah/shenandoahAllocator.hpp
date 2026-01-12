@@ -122,12 +122,12 @@ public:
   // Caller must hold the heap lock at safepoint. This causes all directly allocatable regions to be placed into
   // the appropriate ShenandoahFreeSet partition.
   // Collector calls this in preparation for choosing a collection set and/or rebuilding the freeset.
-  virtual void release_alloc_regions();
+  void release_alloc_regions();
 
   // Caller must hold the heap lock at safepoint. This causes us to set aside N regions as directly allocatable
   // by removing these regions from the relevant ShenandoahFreeSet partitions.
   // Collector calls this after rebuilding the freeset.
-  virtual void reserve_alloc_regions();
+  void reserve_alloc_regions();
 };
 
 /*
@@ -150,8 +150,6 @@ class ShenandoahOldCollectorAllocator : public ShenandoahAllocator<ShenandoahFre
 public:
   ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set);
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) override;
-  void release_alloc_regions() override { /* nothing to release*/ }
-  void reserve_alloc_regions() override { /* no need to reserve any alloc region*/}
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
