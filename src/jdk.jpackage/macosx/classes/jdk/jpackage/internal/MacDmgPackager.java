@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,15 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacDmgPackage;
@@ -105,6 +109,10 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         return env.configDir().resolve(pkg.app().name() + "-license.plist");
     }
 
+    private Path finalDmg() {
+        return outputDir.resolve(pkg.packageFileNameWithSuffix());
+    }
+
     Path protoDmg() {
         return dmgWorkdir().resolve("proto.dmg");
     }
@@ -126,6 +134,10 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         for (Path path : pkg.content()) {
             FileUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
         }
+    }
+
+    private Executor hdiutil(String... args) {
+        return Executor.of(sysEnv.hdiutil().toString()).args(args).storeOutputInFiles();
     }
 
     private void prepareDMGSetupScript() throws IOException {
@@ -211,13 +223,17 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         }
     }
 
+    private String hdiUtilVerbosityFlag() {
+        return env.verbose() ? "-verbose" : "-quiet";
+    }
+
     private void buildDMG() throws IOException {
         boolean copyAppImage = false;
 
-        Path protoDMG = protoDmg();
-        Path finalDMG = outputDir.resolve(pkg.packageFileNameWithSuffix());
+        final Path protoDMG = protoDmg();
+        final Path finalDMG = finalDmg();
 
-        Path srcFolder = env.appImageDir();
+        final Path srcFolder = env.appImageDir();
 
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.creating-dmg-file"), finalDMG.toAbsolutePath()));
@@ -233,21 +249,17 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         Files.createDirectories(protoDMG.getParent());
         Files.createDirectories(finalDMG.getParent());
 
-        String hdiUtilVerbosityFlag = env.verbose() ?
-                "-verbose" : "-quiet";
+        final String hdiUtilVerbosityFlag = hdiUtilVerbosityFlag();
 
         // create temp image
-        ProcessBuilder pb = new ProcessBuilder(
-                sysEnv.hdiutil().toString(),
-                "create",
-                hdiUtilVerbosityFlag,
-                "-srcfolder", normalizedAbsolutePathString(srcFolder),
-                "-volname", volumeName(),
-                "-ov", normalizedAbsolutePathString(protoDMG),
-                "-fs", "HFS+",
-                "-format", "UDRW");
         try {
-            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+            hdiutil("create",
+                    hdiUtilVerbosityFlag,
+                    "-srcfolder", normalizedAbsolutePathString(srcFolder),
+                    "-volname", volumeName(),
+                    "-ov", normalizedAbsolutePathString(protoDMG),
+                    "-fs", "HFS+",
+                    "-format", "UDRW").executeExpectSuccess();
         } catch (IOException ex) {
             Log.verbose(ex); // Log exception
 
@@ -260,31 +272,26 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
             // not be bigger, but it will able to hold additional 50 megabytes of data.
             // We need extra room for icons and background image. When we providing
             // actual files to hdiutil, it will create DMG with ~50 megabytes extra room.
-            pb = new ProcessBuilder(
-                sysEnv.hdiutil().toString(),
-                "create",
-                hdiUtilVerbosityFlag,
-                "-size", String.valueOf(size),
-                "-volname", volumeName(),
-                "-ov", normalizedAbsolutePathString(protoDMG),
-                "-fs", "HFS+");
-            new RetryExecutor()
-                .setMaxAttemptsCount(10)
-                .setAttemptTimeoutMillis(3000)
-                .setWriteOutputToFile(true)
-                .execute(pb);
+            hdiutil(
+                    "create",
+                    hdiUtilVerbosityFlag,
+                    "-size", String.valueOf(size),
+                    "-volname", volumeName(),
+                    "-ov", normalizedAbsolutePathString(protoDMG),
+                    "-fs", "HFS+"
+            ).retry()
+                    .setMaxAttemptsCount(10)
+                    .setAttemptTimeout(3, TimeUnit.SECONDS)
+                    .execute();
         }
 
+        final Path mountedVolume = volumePath();
+
         // mount temp image
-        pb = new ProcessBuilder(
-                sysEnv.hdiutil().toString(),
-                "attach",
+        hdiutil("attach",
                 normalizedAbsolutePathString(protoDMG),
                 hdiUtilVerbosityFlag,
-                "-mountroot", protoDMG.getParent().toString());
-        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
-
-        final Path mountedVolume = volumePath();
+                "-mountroot", mountedVolume.getParent().toString()).executeExpectSuccess();
 
         // Copy app image, since we did not create DMG with it, but instead we created
         // empty one.
@@ -302,9 +309,13 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
             // to install-dir in DMG as critical error, since it can fail in
             // headless environment.
             try {
-                pb = new ProcessBuilder(sysEnv.osascript().toString(),
-                        normalizedAbsolutePathString(volumeScript()));
-                IOUtils.exec(pb, 180); // Wait 3 minutes. See JDK-8248248.
+                Executor.of(
+                        sysEnv.osascript().toString(),
+                        normalizedAbsolutePathString(volumeScript())
+                )
+                // Wait 3 minutes. See JDK-8248248.
+                .timeout(3, TimeUnit.MINUTES)
+                .executeExpectSuccess();
             } catch (IOException ex) {
                 Log.verbose(ex);
             }
@@ -325,18 +336,18 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     // but it seems Finder excepts these bytes to be
                     // "icnC" for the volume icon
                     // (might not work on Mac 10.13 with old XCode)
-                    pb = new ProcessBuilder(
+                    Executor.of(
                             sysEnv.setFileUtility().orElseThrow().toString(),
                             "-c", "icnC",
-                            normalizedAbsolutePathString(volumeIconFile));
-                    IOUtils.exec(pb);
+                            normalizedAbsolutePathString(volumeIconFile)
+                    ).executeExpectSuccess();
                     volumeIconFile.toFile().setReadOnly();
 
-                    pb = new ProcessBuilder(
+                    Executor.of(
                             sysEnv.setFileUtility().orElseThrow().toString(),
                             "-a", "C",
-                            normalizedAbsolutePathString(mountedVolume));
-                    IOUtils.exec(pb);
+                            normalizedAbsolutePathString(mountedVolume)
+                    ).executeExpectSuccess();
                 } catch (IOException ex) {
                     Log.error(ex.getMessage());
                     Log.verbose("Cannot enable custom icon using SetFile utility");
@@ -347,85 +358,23 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
         } finally {
             // Detach the temporary image
-            pb = new ProcessBuilder(
-                    sysEnv.hdiutil().toString(),
-                    "detach",
-                    hdiUtilVerbosityFlag,
-                    normalizedAbsolutePathString(mountedVolume));
-            // "hdiutil detach" might not work right away due to resource busy error, so
-            // repeat detach several times.
-            RetryExecutor retryExecutor = new RetryExecutor();
-            // Image can get detach even if we got resource busy error, so stop
-            // trying to detach it if it is no longer attached.
-            retryExecutor.setExecutorInitializer(exec -> {
-                if (!Files.exists(mountedVolume)) {
-                    retryExecutor.abort();
-                }
-            });
-            try {
-                // 10 times with 6 second delays.
-                retryExecutor.setMaxAttemptsCount(10).setAttemptTimeoutMillis(6000)
-                        .execute(pb);
-            } catch (IOException ex) {
-                if (!retryExecutor.isAborted()) {
-                    // Now force to detach if it still attached
-                    if (Files.exists(mountedVolume)) {
-                        pb = new ProcessBuilder(
-                                sysEnv.hdiutil().toString(),
-                                "detach",
-                                "-force",
-                                hdiUtilVerbosityFlag,
-                                normalizedAbsolutePathString(mountedVolume));
-                        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
-                    }
-                }
-            }
+            detachVolume();
         }
 
         // Compress it to a new image
-        pb = new ProcessBuilder(
-                sysEnv.hdiutil().toString(),
-                "convert",
-                normalizedAbsolutePathString(protoDMG),
-                hdiUtilVerbosityFlag,
-                "-format", "UDZO",
-                "-o", normalizedAbsolutePathString(finalDMG));
-        try {
-            new RetryExecutor()
-                .setMaxAttemptsCount(10)
-                .setAttemptTimeoutMillis(3000)
-                .execute(pb);
-        } catch (Exception ex) {
-            // Convert might failed if something holds file. Try to convert copy.
-            Path protoCopyDMG = protoCopyDmg();
-            Files.copy(protoDMG, protoCopyDMG);
-            try {
-                pb = new ProcessBuilder(
-                        sysEnv.hdiutil().toString(),
-                        "convert",
-                        normalizedAbsolutePathString(protoCopyDMG),
-                        hdiUtilVerbosityFlag,
-                        "-format", "UDZO",
-                        "-o", normalizedAbsolutePathString(finalDMG));
-                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
-            } finally {
-                Files.deleteIfExists(protoCopyDMG);
-            }
-        }
+        convertProtoDmg();
 
         //add license if needed
         if (pkg.licenseFile().isPresent()) {
-            pb = new ProcessBuilder(
-                    sysEnv.hdiutil().toString(),
+            hdiutil(
                     "udifrez",
                     normalizedAbsolutePathString(finalDMG),
                     "-xml",
                     normalizedAbsolutePathString(licenseFile())
-            );
-            new RetryExecutor()
-                .setMaxAttemptsCount(10)
-                .setAttemptTimeoutMillis(3000)
-                .execute(pb);
+            ).retry()
+                    .setMaxAttemptsCount(10)
+                    .setAttemptTimeout(3, TimeUnit.SECONDS)
+                    .execute();
         }
 
         try {
@@ -439,6 +388,69 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 "message.output-to-location"),
                 pkg.app().name(), normalizedAbsolutePathString(finalDMG)));
 
+    }
+
+    private void detachVolume() throws IOException {
+        var mountedVolume = volumePath();
+
+        // "hdiutil detach" might not work right away due to resource busy error, so
+        // repeat detach several times.
+        Globals.instance().objectFactory().<Void, IOException>retryExecutor(IOException.class).setExecutable(context -> {
+
+            List<String> cmdline = new ArrayList<>();
+            cmdline.add("detach");
+
+            if (context.isLastAttempt()) {
+                // The last attempt, force detach.
+                cmdline.add("-force");
+            }
+
+            cmdline.addAll(List.of(
+                    hdiUtilVerbosityFlag(),
+                    normalizedAbsolutePathString(mountedVolume)
+            ));
+
+            // The image can get detached even if we get a resource busy error,
+            // so execute the detach command without checking the exit code.
+            var result = hdiutil(cmdline.toArray(String[]::new)).execute();
+
+            if (result.getExitCode() == 0 || !Files.exists(mountedVolume)) {
+                // Detached successfully!
+                return null;
+            } else {
+                throw result.unexpected();
+            }
+        }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS).execute();
+    }
+
+    private void convertProtoDmg() throws IOException {
+
+        Function<Path, Executor> convert = srcDmg -> {
+            return hdiutil(
+                    "convert",
+                    normalizedAbsolutePathString(srcDmg),
+                    hdiUtilVerbosityFlag(),
+                    "-format", "UDZO",
+                    "-o", normalizedAbsolutePathString(finalDmg()));
+        };
+
+        // Convert it to a new image.
+        try {
+            convert.apply(protoDmg()).retry()
+                .setMaxAttemptsCount(10)
+                .setAttemptTimeout(3, TimeUnit.SECONDS)
+                .execute();
+        } catch (IOException ex) {
+            Log.verbose(ex);
+            // Something holds the file, try to convert a copy.
+            Path copyDmg = protoCopyDmg();
+            Files.copy(protoDmg(), copyDmg);
+            try {
+                convert.apply(copyDmg).executeExpectSuccess();
+            } finally {
+                Files.deleteIfExists(copyDmg);
+            }
+        }
     }
 
     // Background image name in resources

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -441,10 +441,7 @@ public final class ErrorTest {
                     .error("error.no-module-in-path", "com.foo.bar"),
             // non-existing argument file
             testSpec().noAppDesc().notype().addArgs("@foo")
-                    .error("ERR_CannotParseOptions", "foo"),
-            // invalid jlink option
-            testSpec().addArgs("--jlink-options", "--foo")
-                    .error("error.jlink.failed", "Error: unknown option: --foo")
+                    .error("ERR_CannotParseOptions", "foo")
         ).map(TestSpec.Builder::create).toList());
 
         // --main-jar and --module-name
@@ -707,12 +704,6 @@ public final class ErrorTest {
         final List<CannedFormattedString> errorMessages = new ArrayList<>();
         errorMessages.add(makeError(JPackageStringBundle.MAIN.cannedFormattedString(
                 "error.cert.not.found", "Developer ID Application: " + signingId, "")));
-        errorMessages.addAll(Stream.of(
-                Map.<String, UnaryOperator<CannedFormattedString>>entry("error.explicit-sign-no-cert", JPackageCommand::makeError),
-                Map.<String, UnaryOperator<CannedFormattedString>>entry("error.explicit-sign-no-cert.advice", JPackageCommand::makeAdvice)
-        ).map(e -> {
-            return e.getValue().apply(JPackageStringBundle.MAIN.cannedFormattedString(e.getKey()));
-        }).toList());
 
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)

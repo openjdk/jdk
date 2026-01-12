@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_ATOMIC_HPP
 
 #include "cppstdlib/type_traits.hpp"
+#include "metaprogramming/dependentAlwaysFalse.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -74,6 +75,7 @@
 //     v.release_store(x) -> void
 //     v.release_store_fence(x) -> void
 //     v.compare_exchange(x, y [, o]) -> T
+//     v.compare_set(x, y [, o]) -> bool
 //     v.exchange(x [, o]) -> T
 //
 // (2) All atomic types are default constructible.
@@ -264,6 +266,11 @@ public:
   T compare_exchange(T compare_value, T new_value,
                      atomic_memory_order order = memory_order_conservative) {
     return AtomicAccess::cmpxchg(value_ptr(), compare_value, new_value, order);
+  }
+
+  bool compare_set(T compare_value, T new_value,
+                   atomic_memory_order order = memory_order_conservative) {
+    return compare_exchange(compare_value, new_value, order) == compare_value;
   }
 
   T exchange(T new_value,
@@ -476,6 +483,13 @@ public:
     return recover(_value.compare_exchange(decay(compare_value),
                                            decay(new_value),
                                            order));
+  }
+
+  bool compare_set(T compare_value, T new_value,
+                   atomic_memory_order order = memory_order_conservative) {
+    return _value.compare_set(decay(compare_value),
+                              decay(new_value),
+                              order);
   }
 
   T exchange(T new_value, atomic_memory_order order = memory_order_conservative) {
