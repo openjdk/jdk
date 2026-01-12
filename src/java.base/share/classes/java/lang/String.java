@@ -2117,7 +2117,7 @@ public final class String
         if (cs == UTF_8.INSTANCE) {
             return encodedLengthUTF8(coder, value);
         }
-        if (bytesCompatible(cs)) {
+        if (bytesCompatible(cs, 0, value.length)) {
             return value.length;
         }
         if (cs instanceof sun.nio.cs.UTF_16LE ||
@@ -5361,4 +5361,5 @@ public final class String
     public String resolveConstantDesc(MethodHandles.Lookup lookup) {
         return this;
     }
+
 }
