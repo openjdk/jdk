@@ -414,13 +414,15 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
     }
 
     /**
-     * Returns the creation timestamp (instant) of the entry identified
-     * by the given alias.
+     * Returns the creation timestamp as an {@code Instant} value
+     * of the entry identified by the given alias.
      *
      * @param alias the alias name
      *
      * @return the creation instant of this entry, or null if the given
      * alias does not exist
+     *
+     * @since 27
      */
     public Instant engineGetCreationTimestamp(String alias) {
         final Object entry = entries.get(alias.toLowerCase(Locale.ROOT));

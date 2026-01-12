@@ -550,13 +550,15 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /**
-     * Returns the creation timestamp (Instant) of the entry identified
-     * by the given alias.
+     * Returns the creation timestamp as an {@code Instant} value
+     * of the entry identified by the given alias.
      *
      * @param alias the alias name
      *
      * @return the creation date of this entry, or null if the given alias does
      * not exist
+     *
+     * @since 27
      */
     public Instant engineGetCreationTimestamp(String alias) {
         final Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));

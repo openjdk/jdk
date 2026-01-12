@@ -1184,7 +1184,8 @@ public class KeyStore {
     /**
      * Returns the creation date of the entry identified by the given alias.
      * <p>
-     * Please consider using {@code getCreationTimestamp} instead.
+     * This method returns a Date, which is mutable and more error-prone.
+     * Use getCreationTimestamp() instead.
      *
      * @param alias the alias name
      *
@@ -1205,8 +1206,8 @@ public class KeyStore {
 
 
     /**
-     * Returns the creation timestamp (Instant) of the entry identified
-     * by the given alias.
+     * Returns the creation timestamp as an {@code Instant} value
+     * of the entry identified by the given alias.
      *
      * @param alias the alias name
      *
@@ -1215,6 +1216,8 @@ public class KeyStore {
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
+     *
+     * @since 27
      */
     public final Instant getCreationTimestamp(String alias)
             throws KeyStoreException
