@@ -24,72 +24,12 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import java.util.Map;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.WinMsiPackage;
-
 @SuppressWarnings("restricted")
-public class WinExeBundler extends AbstractBundler {
+final class WinExeBundler {
 
     static {
         System.loadLibrary("jpackage");
     }
 
-    @Override
-    public String getName() {
-        return I18N.getString("exe.bundler.name");
-    }
-
-    @Override
-    public String getID() {
-        return "exe";
-    }
-
-    @Override
-    public String getBundleType() {
-        return "INSTALLER";
-    }
-
-    @Override
-    public boolean supported(boolean platformInstaller) {
-        return msiBundler.supported(platformInstaller);
-    }
-
-    @Override
-    public boolean isDefault() {
-        return true;
-    }
-
-    @Override
-    public boolean validate(Map<String, ? super Object> params)
-            throws ConfigException {
-        return msiBundler.validate(params, WinFromParams.EXE_PACKAGE);
-    }
-
-    @Override
-    public Path execute(Map<String, ? super Object> params, Path outdir)
-            throws PackagerException {
-
-        // Order is important!
-        var pkg = WinFromParams.EXE_PACKAGE.fetchFrom(params);
-        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
-
-        var msiOutputDir = env.buildRoot().resolve("msi");
-
-        return Packager.<WinMsiPackage>build().outputDir(msiOutputDir)
-                .pkg(pkg.msiPackage())
-                .env(env)
-                .pipelineBuilderMutatorFactory((packagingEnv, msiPackage, _) -> {
-                    var msiPackager = new WinMsiPackager(packagingEnv, msiPackage,
-                            msiOutputDir, msiBundler.sysEnv.orElseThrow());
-                    var exePackager = new WinExePackager(packagingEnv, pkg, outdir, msiOutputDir);
-                    return msiPackager.andThen(exePackager);
-                }).execute(WinPackagingPipeline.build());
-    }
-
     static native int embedMSI(long resourceLock, String msiPath);
-
-    private final WinMsiBundler msiBundler = new WinMsiBundler();
 }

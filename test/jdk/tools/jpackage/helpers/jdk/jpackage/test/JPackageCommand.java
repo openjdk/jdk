@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.util.stream.Collectors.toCollection;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 
 import java.io.FileOutputStream;
@@ -52,6 +52,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -291,7 +293,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
 
-        ThrowingConsumer<Path> createBulkFile = path -> {
+        ThrowingConsumer<Path, IOException> createBulkFile = path -> {
             Files.createDirectories(path.getParent());
             try (FileOutputStream out = new FileOutputStream(path.toFile())) {
                 byte[] bytes = new byte[4 * 1024];
@@ -328,12 +330,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .removeArgumentWithValue("--input");
     }
 
-    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         prerequisiteActions.add(action);
         return this;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         return addVerifyAction(action, ActionRole.DEFAULT);
     }
 
@@ -343,12 +345,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         ;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action, ActionRole actionRole) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole actionRole) {
         verifyActions.add(action, actionRole);
         return this;
     }
 
-    Stream<ThrowingConsumer<JPackageCommand>> getVerifyActionsWithRole(ActionRole actionRole) {
+    Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> getVerifyActionsWithRole(ActionRole actionRole) {
         return verifyActions.actionsWithRole(actionRole);
     }
 
@@ -779,6 +781,39 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         defaultToolProvider.set(Optional.empty());
     }
 
+    /**
+     * In a separate thread calls {@link #useToolProviderByDefault(ToolProvider)}
+     * with the specified {@code jpackageToolProvider} and then calls
+     * {@code workload.run()}. Joins the thread.
+     * <p>
+     * The idea is to run the {@code workload} in the context of the specified
+     * jpackage {@code ToolProvider} without altering the global variable holding
+     * the default jpackage {@code ToolProvider}. The global variable is
+     * thread-local; setting its value in a new thread doesn't alter its copy in the
+     * calling thread.
+     *
+     * @param jpackageToolProvider jpackage {@code ToolProvider}
+     * @param workload             the workload to run
+     */
+    public static void withToolProvider(Runnable workload, ToolProvider jpackageToolProvider) {
+        Objects.requireNonNull(workload);
+        Objects.requireNonNull(jpackageToolProvider);
+
+        CompletableFuture.runAsync(() -> {
+            var oldValue = defaultToolProvider.get();
+            useToolProviderByDefault(jpackageToolProvider);
+            try {
+                workload.run();
+            } finally {
+                defaultToolProvider.set(oldValue);
+            }
+            // Run the future in a new native thread. Don't run it in a virtual/pooled thread.
+            // Pooled and/or virtual threads are problematic when used with inheritable thread-local variables.
+            // TKit class depends on such a variable, which results in intermittent test failures
+            // if the default executor runs this future.
+        }, Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())).join();
+    }
+
     public JPackageCommand useToolProvider(boolean v) {
         verifyMutable();
         withToolProvider = v;
@@ -862,6 +897,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return label;
             }
         };
+    }
+
+    public static CannedFormattedString makeError(CannedFormattedString v) {
+        return v.addPrefix("message.error-header");
+    }
+
+    public static CannedFormattedString makeAdvice(CannedFormattedString v) {
+        return v.addPrefix("message.advice-header");
     }
 
     public String getValue(CannedFormattedString str) {
@@ -990,7 +1033,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().iterator());
         }
 
-        if (result.exitCode() == 0 && expectedExitCode.isPresent()) {
+        if (result.getExitCode() == 0 && expectedExitCode.isPresent()) {
             verifyActions.run();
         }
 
@@ -1240,6 +1283,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
                 return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+            }).filter(_ -> {
+                // Don't examine the contents of the output app image if this is Linux package installing in the "/usr" subtree.
+                return Optional.<Boolean>ofNullable(cmd.onLinuxPackageInstallDir(null, _ -> false)).orElse(true);
             }).map(Path::of).ifPresent(predefinedAppImage -> {
 
                 TKit.trace(String.format(
@@ -1282,7 +1328,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
                 TKit.trace("Done");
             });
-        })
+        }),
+        LINUX_APPLAUNCHER_LIB(cmd -> {
+            if (TKit.isLinux() && !cmd.isRuntime()) {
+                TKit.assertFileExists(cmd.appLayout().libapplauncher());
+            }
+        }),
         ;
 
         StandardAssert(Consumer<JPackageCommand> action) {
@@ -1632,16 +1683,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             actions.addAll(other.actions);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
             add(action, ActionRole.DEFAULT);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action, ActionRole role) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole role) {
             verifyMutable();
             actions.add(new Action(action, role));
         }
 
-        Stream<ThrowingConsumer<JPackageCommand>> actionsWithRole(ActionRole role) {
+        Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> actionsWithRole(ActionRole role) {
             Objects.requireNonNull(role);
             return actions.stream().filter(action -> {
                 return Objects.equals(action.role(), role);
@@ -1650,7 +1701,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         private static final class Action implements Consumer<JPackageCommand> {
 
-            Action(ThrowingConsumer<JPackageCommand> impl, ActionRole role) {
+            Action(ThrowingConsumer<JPackageCommand, ? extends Exception> impl, ActionRole role) {
                 this.impl = Objects.requireNonNull(impl);
                 this.role = Objects.requireNonNull(role);
             }
@@ -1659,7 +1710,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return role;
             }
 
-            ThrowingConsumer<JPackageCommand> impl() {
+            ThrowingConsumer<JPackageCommand, ? extends Exception> impl() {
                 return impl;
             }
 
@@ -1672,7 +1723,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
 
             private final ActionRole role;
-            private final ThrowingConsumer<JPackageCommand> impl;
+            private final ThrowingConsumer<JPackageCommand, ? extends Exception> impl;
             private boolean executed;
         }
 

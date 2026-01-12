@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,16 @@ Developers are responsible for updating their custom runtime images.
 `--bind-services`
 :   Link service provider modules and their dependencies.
 
-`-c ={0|1|2}` or `--compress={0|1|2}`
-:   Enable compression of resources:
+`-c zip-{0-9}` or `--compress=zip-{0-9}`
+:   Enable compression of resources. The accepted values are:
+    zip-{0-9}, where zip-0 provides no compression,
+    and zip-9 provides the best compression. Default is zip-6.
 
-    -   `0`: No compression
+:   Deprecated values to be removed in a future release:
+
+    -   `0`: No compression. Use zip-0 instead.
     -   `1`: Constant string sharing
-    -   `2`: ZIP
+    -   `2`: ZIP. Use zip-6 instead.
 
 `--disable-plugin` *pluginname*
 :   Disables the specified plug-in. See [jlink Plug-ins] for the list of
@@ -170,14 +174,19 @@ For a complete list of all available plug-ins, run the command
 ### Plugin `compress`
 
 Options
-:   `--compress=`{`0`\|`1`\|`2`}\[`:filter=`*pattern-list*\]
+:   `--compress=zip-`{`0`-`9`}\[`:filter=`*pattern-list*\]
 
 Description
 :   Compresses all resources in the output image.
+    Accepted values are:
+    zip-{0-9}, where zip-0 provides no compression,
+    and zip-9 provides the best compression. Default is zip-6.
 
-    -   Level 0: No compression
+:   Deprecated values to be removed in a future release:
+
+    -   Level 0: No compression. Use zip-0 instead.
     -   Level 1: Constant string sharing
-    -   Level 2: ZIP
+    -   Level 2: ZIP. Use zip-6 instead.
 
     An optional *pattern-list* filter can be specified to list the pattern of
     files to include.
