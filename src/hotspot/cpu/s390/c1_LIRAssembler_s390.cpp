@@ -272,14 +272,27 @@ int LIR_Assembler::emit_deopt_handler() {
     // Not enough space left for the handler.
     bailout("deopt handler overflow");
     return -1;
-  }  int offset = code_offset();
+  }
+
+  int offset = code_offset();
+
+  Label start;
+  __ bind(start);
+
   // Size must be constant (see HandlerImpl::emit_deopt_handler).
   __ load_const(Z_R1_scratch, SharedRuntime::deopt_blob()->unpack());
   __ call(Z_R1_scratch);
+
+  int entry_offset = __ offset();
+
+  __ z_bru(start);
+
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {

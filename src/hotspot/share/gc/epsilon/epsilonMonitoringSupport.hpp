@@ -35,9 +35,12 @@ class EpsilonMonitoringSupport : public CHeapObj<mtGC> {
 private:
   EpsilonGenerationCounters* _heap_counters;
   EpsilonSpaceCounters* _space_counters;
+  volatile bool _ready;
 
 public:
   EpsilonMonitoringSupport(EpsilonHeap* heap);
+  bool is_ready();
+  void mark_ready();
   void update_counters();
 };
 

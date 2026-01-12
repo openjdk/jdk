@@ -179,7 +179,7 @@ public:
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
-  void handle_evacuation(HeapWord* obj, size_t words, bool promotion);
+  void handle_evacuation(HeapWord* obj, size_t words) const;
 
   // Clear the flag after it is consumed by the control thread
   bool clear_failed_evacuation() {
@@ -287,28 +287,23 @@ public:
 private:
   State _state;
 
-  static const size_t FRACTIONAL_DENOMINATOR = 65536;
-
   // During initialization of the JVM, we search for the correct old-gen size by initially performing old-gen
-  // collection when old-gen usage is 50% more (INITIAL_GROWTH_BEFORE_COMPACTION) than the initial old-gen size
-  // estimate (3.125% of heap).  The next old-gen trigger occurs when old-gen grows 25% larger than its live
-  // memory at the end of the first old-gen collection.  Then we trigger again when old-gen grows 12.5%
-  // more than its live memory at the end of the previous old-gen collection.  Thereafter, we trigger each time
-  // old-gen grows more than 12.5% following the end of its previous old-gen collection.
-  static const size_t INITIAL_GROWTH_BEFORE_COMPACTION = FRACTIONAL_DENOMINATOR / 2;        //  50.0%
+  // collection when old-gen usage is 50% more (INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION) than the initial old-gen size
+  // estimate (16% of heap).  With each successive old-gen collection, we divide the growth trigger by two, but
+  // never use a growth trigger smaller than ShenandoahMinOldGenGrowthPercent.
+  static const size_t INITIAL_GROWTH_PERCENT_BEFORE_COLLECTION = 50;
 
-  // INITIAL_LIVE_FRACTION represents the initial guess of how large old-gen should be.  We estimate that old-gen
-  // needs to consume 6.25% of the total heap size.  And we "pretend" that we start out with this amount of live
+  // INITIAL_LIVE_PERCENT represents the initial guess of how large old-gen should be.  We estimate that old gen
+  // needs to consume 16% of the total heap size.  And we "pretend" that we start out with this amount of live
   // old-gen memory.  The first old-collection trigger will occur when old-gen occupies 50% more than this initial
-  // approximation of the old-gen memory requirement, in other words when old-gen usage is 150% of 6.25%, which
-  // is 9.375% of the total heap size.
-  static const uint16_t INITIAL_LIVE_FRACTION = FRACTIONAL_DENOMINATOR / 16;                //   6.25%
+  // approximation of the old-gen memory requirement, in other words when old-gen usage is 150% of 16%, which
+  // is 24% of the heap size.
+  static const size_t INITIAL_LIVE_PERCENT = 16;
 
-  size_t _live_bytes_after_last_mark;
+  size_t _live_bytes_at_last_mark;
 
-  // How much growth in usage before we trigger old collection, per FRACTIONAL_DENOMINATOR (65_536)
-  size_t _growth_before_compaction;
-  const size_t _min_growth_before_compaction;                                               // Default is 12.5%
+  // How much growth in usage before we trigger old collection as a percent of soft_max_capacity
+  size_t _growth_percent_before_collection;
 
   void validate_transition(State new_state) NOT_DEBUG_RETURN;
 
@@ -323,8 +318,8 @@ public:
 
   void transition_to(State new_state);
 
-  size_t get_live_bytes_after_last_mark() const;
-  void set_live_bytes_after_last_mark(size_t new_live);
+  size_t get_live_bytes_at_last_mark() const;
+  void set_live_bytes_at_last_mark(size_t new_live);
 
   size_t usage_trigger_threshold() const;
 

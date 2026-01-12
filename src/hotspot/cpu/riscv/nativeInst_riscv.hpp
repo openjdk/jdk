@@ -311,12 +311,19 @@ inline bool NativeInstruction::is_jump_or_nop() {
 // can store an offset from the initial nop to the nmethod.
 class NativePostCallNop: public NativeInstruction {
 public:
+  enum RISCV_specific_constants {
+    // The two parts should be checked separately to prevent out of bounds access in
+    // case the return address points to the deopt handler stub code entry point
+    // which could be at the end of page.
+    first_check_size = instruction_size
+  };
+
   bool check() const {
     // Check for two instructions: nop; lui zr, hi20
     // These instructions only ever appear together in a post-call
     // NOP, so it's unnecessary to check that the third instruction is
     // an addiw as well.
-    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(4));
+    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(first_check_size));
   }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const;
   bool patch(int32_t oopmap_slot, int32_t cb_offset);

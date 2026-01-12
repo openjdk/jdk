@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ void AOTThread::initialize() {
   // This is important because this thread runs before JVMTI monitors are set up appropriately.
   // Therefore, callbacks would not work as intended. JVMTI has no business peeking at how we
   // materialize primordial objects from the AOT cache.
-  thread->toggle_is_disable_suspend();
+  thread->disable_jvmti_events();
 #endif
 
   JavaThread::vm_exit_on_osthread_failure(thread);
