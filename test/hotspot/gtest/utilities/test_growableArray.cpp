@@ -309,7 +309,7 @@ protected:
     Clear,
     Capacity,
     Iterator,
-    RemoveRange,
+    RemoveRange
   };
 
   template <typename ArrayClass>
