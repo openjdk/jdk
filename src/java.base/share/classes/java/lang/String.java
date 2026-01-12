@@ -2045,19 +2045,26 @@ public final class String
         return encode(Charset.defaultCharset(), coder(), value);
     }
 
-    boolean bytesCompatible(Charset charset) {
+    boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
         if (isLatin1()) {
             if (charset == ISO_8859_1.INSTANCE) {
                 return true; // ok, same encoding
             } else if (charset == UTF_8.INSTANCE || charset == US_ASCII.INSTANCE) {
-                return !StringCoding.hasNegatives(value, 0, value.length); // ok, if ASCII-compatible
+                return !StringCoding.hasNegatives(value, srcIndex, numChars); // ok, if ASCII-compatible
             }
         }
         return false;
     }
 
-    void copyToSegmentRaw(MemorySegment segment, long offset) {
-        MemorySegment.copy(value, 0, segment, ValueLayout.JAVA_BYTE, offset, value.length);
+    void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
+        if (!isLatin1()) {
+            // This method is intended to be used together with bytesCompatible, which currently only supports
+            // latin1 strings. In the future, bytesCompatible could be updated to handle more cases, like
+            // UTF-16 strings (when the platform and charset endianness match, and the String doesn’t contain
+            // unpaired surrogates). If that happens, copyToSegmentRaw should also be updated.
+            throw new IllegalStateException("This string does not support copyToSegmentRaw");
+        }
+        MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, srcLength);
     }
 
     /**

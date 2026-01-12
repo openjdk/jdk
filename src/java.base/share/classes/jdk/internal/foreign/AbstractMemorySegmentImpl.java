@@ -552,6 +552,13 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
+    public String getString(long offset, Charset charset, long byteLength) {
+        Utils.checkNonNegativeArgument(byteLength, "byteLength");
+        Objects.requireNonNull(charset);
+        return StringSupport.read(this, offset, charset, byteLength);
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(
                 unsafeGetOffset(),
@@ -700,6 +707,16 @@ public abstract sealed class AbstractMemorySegmentImpl
                     srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
                     destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcInfo.scale(), srcInfo.scale());
         }
+    }
+
+    @ForceInline
+    public static long copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
+        Objects.requireNonNull(src);
+        Objects.requireNonNull(dstEncoding);
+        Objects.requireNonNull(dst);
+
+        AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dst;
+        return StringSupport.copyBytes(src, destImpl, dstEncoding, dstOffset, srcIndex, numChars);
     }
 
     // accessors
