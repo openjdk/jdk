@@ -61,6 +61,7 @@ public class CheckFiles {
         Path binDir = mainDirToScan.resolve("bin");
         Path libDir = mainDirToScan.resolve("lib");
         Path includeDir = mainDirToScan.resolve("include");
+        Path jmodsDir = mainDirToScan.resolve("jmods");
 
         System.out.println("Bin directory to scan:" + binDir);
         ArrayList<String> allowedEndingsBinDir = new ArrayList<>();
@@ -131,6 +132,20 @@ public class CheckFiles {
                 System.out.println("Include directory scan successful.");
             } else {
                 throw new Error("include dir scan failed");
+            }
+        }
+
+        // when enabling "JEP 493: Linking Run-Time Images without JMODs" we do not
+        // have the jmods folder at all, so first test the presence of the folder
+        if (Files.isDirectory(jmodsDir)) {
+            System.out.println("Jmods directory to scan:" + jmodsDir);
+            ArrayList<String> allowedEndingsJmodsDir = new ArrayList<>();
+            allowedEndingsJmodsDir.add(".jmod");
+            boolean jmodsDirRes = scanFiles(jmodsDir, allowedEndingsJmodsDir);
+            if (jmodsDirRes) {
+                System.out.println("Jmods directory scan successful.");
+            } else {
+                throw new Error("jmods dir scan failed");
             }
         }
     }
