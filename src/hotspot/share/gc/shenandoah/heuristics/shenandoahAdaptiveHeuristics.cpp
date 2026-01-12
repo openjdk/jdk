@@ -183,8 +183,8 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_degenerated() {
-  ShenandoahHeuristics::record_success_degenerated();
+void ShenandoahAdaptiveHeuristics::record_degenerated() {
+  ShenandoahHeuristics::record_degenerated();
   // Adjust both trigger's parameters in the case of a degenerated GC because
   // either of them should have triggered earlier to avoid this case.
   adjust_margin_of_error(DEGENERATE_PENALTY_SD);

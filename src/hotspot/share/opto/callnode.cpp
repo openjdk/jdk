@@ -1031,6 +1031,15 @@ bool CallNode::is_call_to_arraycopystub() const {
   return false;
 }
 
+bool CallNode::is_call_to_multianewarray_stub() const {
+  if (_name != nullptr &&
+      strstr(_name, "multianewarray") != nullptr &&
+      strstr(_name, "C2 runtime") != nullptr) {
+    return true;
+  }
+  return false;
+}
+
 //=============================================================================
 uint CallJavaNode::size_of() const { return sizeof(*this); }
 bool CallJavaNode::cmp( const Node &n ) const {

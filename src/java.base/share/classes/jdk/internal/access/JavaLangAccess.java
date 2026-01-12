@@ -634,10 +634,10 @@ public interface JavaLangAccess {
     /**
      * Copy the string bytes to an existing segment, avoiding intermediate copies.
      */
-    void copyToSegmentRaw(String string, MemorySegment segment, long offset);
+    void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength);
 
     /**
      * Are the string bytes compatible with the given charset?
      */
-    boolean bytesCompatible(String string, Charset charset);
+    boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars);
 }

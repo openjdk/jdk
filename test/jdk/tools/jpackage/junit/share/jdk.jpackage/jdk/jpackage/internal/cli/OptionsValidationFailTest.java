@@ -200,13 +200,13 @@ public class OptionsValidationFailTest {
                 Stream.of("--jpt-run=ErrorTest")
         ).flatMap(x -> x).toArray(String[]::new)).map(dynamicTest -> {
             return DynamicTest.dynamicTest(dynamicTest.getDisplayName(), () -> {
-                JPackageCommand.withToolProvider(jpackageToolProviderMock, () -> {
+                JPackageCommand.withToolProvider(() -> {
                     try {
                         dynamicTest.getExecutable().execute();
                     } catch (Throwable t) {
                         throw ExceptionBox.toUnchecked(ExceptionBox.unbox(t));
                     }
-                });
+                }, jpackageToolProviderMock);
             });
         });
     }
