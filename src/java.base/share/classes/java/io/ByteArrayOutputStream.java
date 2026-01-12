@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,25 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * Increases the capacity if necessary to ensure that it can hold
-     * at least the number of elements specified by the minimum
-     * capacity argument.
+     * Increases the capacity if necessary to ensure that this
+     * {@code ByteArrayOutputStream} can hold at least the number of
+     * elements specified by the {@code minCapacity} argument.
+     * If the {@code minCapacity} argument is nonpositive, this
+     * method takes no action and simply returns.
+     *
+     * @param minCapacity the desired minimum capacity.
+     * @since 27
+     */
+    protected void ensureCapacity(int minCapacity) {
+        if (minCapacity > 0) {
+            ensureCapacityInternal(minCapacity);
+        }
+    }
+
+    /**
+     * Increases the capacity if necessary to ensure that this
+     * {@code ByteArrayOutputStream} can hold at least the number of
+     * elements specified by the {@code minCapacity} argument.
      *
      * @param  minCapacity the desired minimum capacity.
      * @throws OutOfMemoryError if {@code minCapacity < 0} and
@@ -92,7 +108,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * request for the unsatisfiably large capacity.
      * {@code (long) Integer.MAX_VALUE + (minCapacity - Integer.MAX_VALUE)}.
      */
-    private void ensureCapacity(int minCapacity) {
+    private void ensureCapacityInternal(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = buf.length;
         int minGrowth = minCapacity - oldCapacity;
@@ -109,7 +125,7 @@ public class ByteArrayOutputStream extends OutputStream {
      */
     @Override
     public synchronized void write(int b) {
-        ensureCapacity(count + 1);
+        ensureCapacityInternal(count + 1);
         buf[count] = (byte) b;
         count += 1;
     }
@@ -129,7 +145,7 @@ public class ByteArrayOutputStream extends OutputStream {
     @Override
     public synchronized void write(byte[] b, int off, int len) {
         Objects.checkFromIndexSize(off, len, b.length);
-        ensureCapacity(count + len);
+        ensureCapacityInternal(count + len);
         System.arraycopy(b, off, buf, count, len);
         count += len;
     }
