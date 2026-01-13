@@ -72,13 +72,20 @@ protected:
   // refresh_alloc_regions to eagerly retire and refill those alloc regions.
   HeapWord* attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Slow path of allocation work. When fast path trying to allocate in shared alloc regions fails attempt_allocation_slow will
-  // be called to refresh shared alloc regions and allocate memory for the alloc request.
+  // Slow path of non-humongous allocation work.
+  // When the allocator fails to allocate memory with fast-path w/o holding heap lock, it calls this function
+  // to try the slow-path allocation. The function always acquires heap lock and then handle the slow-path allocation as:
+  // 1. if _epoch_id has changed by any other thread, try the fast-path again immediately since alloc regions have already been refreshed;
+  // 2. if any region of alloc regions is ready for refresh(retire), call refresh_alloc_regions to refresh;
+  // 3. if allocation is still not satisfied in above steps, call attempt_allocation_from_free_set to find a region
+  //    in free set w/ sufficient free space and allocate in the region;
+  // 4. update accounting if needed;
+  // Call must not hold heap lock.
   HeapWord* attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region, uint regions_ready_for_refresh, uint32_t old_epoch_id);
 
   // Attempt to allocate from a region in free set, rather than from any of shared alloc regions, it might be called in the conditions below:
-  //   1. _alloc_region_count is explicitly set to 0 to disable CAS allocator;
-  //   2. all the shared alloc regions are not ready to retire, nor have enough space for allocation.
+  // 1. All the shared alloc regions are not ready to retire, nor have enough space for allocation;
+  // 2. There are regions can be retired, but the new regions reserved from free set don't have enough free space to satisfy the allocation.
   // Caller has to hold heap lock.
   HeapWord* attempt_allocation_from_free_set(ShenandoahAllocRequest& req, bool& in_new_region);
 

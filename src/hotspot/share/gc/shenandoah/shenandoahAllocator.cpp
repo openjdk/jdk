@@ -161,17 +161,20 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_slow(Shenando
     // if alloc regions have been refreshed by other thread while current thread waits to take heap lock.
     regions_ready_for_refresh = 0u; //reset regions_ready_for_refresh to 0.
     obj = attempt_allocation_in_alloc_regions<true /*holding heap lock*/>(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
-    if (obj != nullptr) {
+    if (obj != nullptr && regions_ready_for_refresh == 0) {
       return obj;
     }
   }
 
   ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
-
+  // Eagerly refresh alloc regions if any is ready for refresh since it is already holding the heap lock.
   if (regions_ready_for_refresh > 0u) {
-    int refreshed = refresh_alloc_regions(&req, &in_new_region, &obj);
-    if (refreshed > 0 || obj != nullptr) {
-      accounting_updater._need_update = true;
+    if (obj == nullptr) {
+      if (const int refreshed = refresh_alloc_regions(&req, &in_new_region, &obj); refreshed > 0 || obj != nullptr) {
+        accounting_updater._need_update = true;
+      }
+    } else {
+      accounting_updater._need_update = refresh_alloc_regions() > 0;
     }
     if (obj != nullptr) {
       return obj;
