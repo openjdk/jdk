@@ -362,12 +362,13 @@ void CodeCache::initialize_heaps() {
   non_nmethod.size = align_up(non_nmethod.size, min_size);
   profiled.size = align_up(profiled.size, min_size);
   non_profiled.size = align_up(non_profiled.size, min_size);
-  cache_size = non_nmethod.size + profiled.size + non_profiled.size;
 
   if (hot.enabled) {
-    hot.size = align_down(hot.size, min_size);
+    hot.size = align_up(hot.size, min_size);
     FLAG_SET_ERGO(HotCodeHeapSize, hot.size);
   }
+
+  cache_size = non_nmethod.size + profiled.size + non_profiled.size + hot.size;
 
   FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled.size);
