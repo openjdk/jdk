@@ -36,9 +36,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.StringJoiner;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-
+@Tag("unit")
+@Tag("string")
+@Tag("util")
+@Tag("libs")
 public class StringJoinerOomUtf16Test {
 
     // the sum of lengths of the following two strings is way less than

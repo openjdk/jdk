@@ -29,16 +29,22 @@
  * @run junit/othervm -Xmx4g -XX:+CompactStrings StringJoinerTest
  * @author Jim Gish
  */
-import java.util.ArrayList;
-import java.util.StringJoiner;
-import static jdk.internal.util.ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
 import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.StringJoiner;
 
+import static jdk.internal.util.ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
+@Tag("unit")
+@Tag("string")
+@Tag("util")
+@Tag("libs")
 public class StringJoinerTest {
 
     private static final String EMPTY = "EMPTY";
