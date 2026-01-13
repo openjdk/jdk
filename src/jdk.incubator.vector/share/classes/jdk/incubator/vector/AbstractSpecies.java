@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,13 +427,8 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         checkValue(laneCount-1);  // worst case
         if (elementType() == Float16.class) {
             for (int i = 0; i < laneCount; i++) {
-                // All the numbers in the range [0 2048] are directly representable
-                // in IEEE 754 binary16 format without the precision loss.
-                if (i < 2049) {
-                    Array.setShort(ia, i, Float.floatToFloat16((float)i));
-                } else {
-                    assert(Float16.valueOf(i).intValue() == i);
-                }
+                Array.setShort(ia, i, Float.floatToFloat16((float)i));
+                assert(Float16.shortBitsToFloat16(Array.getShort(ia, i)).intValue() == i);
             }
         } else {
             for (int i = 0; i < laneCount; i++) {

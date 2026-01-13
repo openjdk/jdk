@@ -35,13 +35,13 @@ import static jdk.incubator.vector.VectorIntrinsics.*;
  * It caches all sorts of goodies that we can't put on java.lang.Class.
  */
 enum LaneType {
-    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE, T_FLOAT, false),
-    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE, T_DOUBLE, false),
-    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, T_BYTE, false),
-    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, T_SHORT, false),
-    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, T_INT, false),
-    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, T_LONG, false),
-    FLOAT16(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, T_FLOAT16, true);
+    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE, T_FLOAT, false, float.class),
+    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE, T_DOUBLE, false, double.class),
+    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, T_BYTE, false, byte.class),
+    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, T_SHORT, false, short.class),
+    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, T_INT, false, int.class),
+    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, T_LONG, false, long.class),
+    FLOAT16(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, T_FLOAT16, true, short.class);
 
     LaneType(Class<?> elementType,
              Class<?> genericElementType,
@@ -50,7 +50,8 @@ enum LaneType {
              int elementPrecision,
              int elementSize,
              int basicType,
-             boolean syntheticBasicType) {
+             boolean syntheticBasicType,
+             Class<?> carrierType) {
         if (elementPrecision <= 0)
             elementPrecision += elementSize;
         this.elementType = elementType;
@@ -78,6 +79,7 @@ enum LaneType {
         }
         this.basicType = basicType;
         this.syntheticBasicType = syntheticBasicType;
+        this.carrierType = carrierType;
     }
 
     final Class<?> elementType;
@@ -93,6 +95,7 @@ enum LaneType {
     final int basicType;  // lg(size/8) | (kind=='F'?4:kind=='I'?8)
     final boolean syntheticBasicType; // type like Float16 use existing 16bit short as carrier.
                                       // As per JLS they should be assigned T_OBJECT(12) basictype
+    final Class<?> carrierType;
 
     private @Stable LaneType asIntegral;
     private @Stable LaneType asFloating;
