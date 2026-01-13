@@ -773,28 +773,20 @@ void PhaseGVN::dead_loop_check(Node* n) {
     Node* in = n->in(i);
     if (in == n) {
       n->dump_bfs(100, nullptr, "");
-
-      stringStream ss;
-      ss.print_cr("Dead loop detected, node references itself");
-      ss.print("#\n#  Node: ");
-      n->dump("", false, &ss);
-      fatal("%s", ss.as_string());
+      fatal("Dead loop detected, node references itself: %s", n->Name());
     }
 
     if (in == nullptr || in->is_dead_loop_safe()) {
       continue;
     }
     for (uint j = 1; j < in->req(); j++) {
-      if (in->in(j) == n || in->in(j) == in) {
+      if (in->in(j) == n) {
         n->dump_bfs(100, nullptr, "");
-
-        stringStream ss;
-        ss.print_cr("Dead loop detected, node input references current node or itself");
-        ss.print("#\n#  Input: ");
-        in->dump("", false, &ss);
-        ss.print("#\n#  Node: ");
-        n->dump("", false, &ss);
-        fatal("%s", ss.as_string());
+        fatal("Dead loop detected, node input references current node: %s -> %s", in->Name(), n->Name());
+      }
+      if (in->in(j) == in) {
+        n->dump_bfs(100, nullptr, "");
+        fatal("Dead loop detected, node input references itself: %s", in->Name());
       }
     }
   }
