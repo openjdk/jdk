@@ -138,8 +138,8 @@ class AArch64ICacheInvalidationContext : StackObj {
   }
 
 #ifdef ASSERT
-  static AArch64ICacheInvalidationContext* current() {
-    return _current_context;
+  static bool is_deferring_icache_invalidation() {
+    return _current_context != nullptr && UseDeferredICacheInvalidation;
   }
 #endif
 };

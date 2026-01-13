@@ -137,6 +137,12 @@ class DefaultICacheInvalidationContext : StackObj {
   ~DefaultICacheInvalidationContext() {}
 
   void set_has_modified_code() {}
+
+#ifdef ASSERT
+  static bool is_deferring_icache_invalidation() {
+    return false;
+  }
+#endif
 };
 
 #ifndef PD_ICACHE_INVALIDATION_CONTEXT
