@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,8 @@ import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.MacBundle;
+import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
@@ -178,13 +180,10 @@ final class MacPackagingPipeline {
                 builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
                         .appImageAction(MacPackagingPipeline::copyJliLib).add();
 
-                final var predefinedRuntimeBundle = Optional.of(
-                        new MacBundle(p.predefinedAppImage().orElseThrow())).filter(MacBundle::isValid);
-
                 // Don't create ".package" file.
                 disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
 
-                if (predefinedRuntimeBundle.isPresent()) {
+                if (MacBundle.fromPath(p.predefinedAppImage().orElseThrow()).isPresent()) {
                     // The input runtime image is a macOS bundle.
                     // Disable all alterations of the input bundle, but keep the signing enabled.
                     disabledTasks.addAll(List.of(MacCopyAppImageTaskID.values()));
@@ -195,7 +194,7 @@ final class MacPackagingPipeline {
                             .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist).add();
                 }
 
-                if (predefinedRuntimeBundle.map(MacBundle::isSigned).orElse(false) && !((MacPackage)p).app().sign()) {
+                if (((MacPackage)p).predefinedAppImageSigned().orElse(false) && !((MacPackage)p).app().sign()) {
                     // The input runtime is a signed bundle; explicit signing is not requested for the package.
                     // Disable the signing, i.e. don't re-sign the input bundle.
                     disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
@@ -279,6 +278,30 @@ final class MacPackagingPipeline {
         }
     }
 
+    static boolean isSigned(MacBundle bundle) {
+
+        var result = toSupplier(Executor.of(
+                "/usr/sbin/spctl",
+                "-vv",
+                "--raw",
+                "--assess",
+                "--type", "exec",
+                bundle.root().toString()).setQuiet(true).saveOutput(true).binaryOutput()::execute).get();
+
+        switch (result.getExitCode()) {
+            case 0, 3 -> {
+                // These exit codes are accompanied with valid plist xml.
+                return toSupplier(() -> {
+                    return new PListReader(result.byteStdout()).findValue("assessment:originator").isPresent();
+                }).get();
+            }
+            default -> {
+                // Likely to be an "a sealed resource is missing or invalid" error.
+                return false;
+            }
+        }
+    }
+
     private static void copyAppImage(MacPackage pkg, AppImageLayout srcAppImage,
             AppImageLayout dstAppImage) throws IOException {
 
@@ -286,7 +309,7 @@ final class MacPackagingPipeline {
 
         final Optional<MacBundle> srcMacBundle;
         if (pkg.isRuntimeInstaller()) {
-            srcMacBundle = MacBundle.fromAppImageLayout(srcAppImage);
+            srcMacBundle = macBundleFromAppImageLayout(srcAppImage);
         } else {
             srcMacBundle = Optional.empty();
         }
@@ -297,7 +320,7 @@ final class MacPackagingPipeline {
             try {
                 FileUtils.copyRecursive(
                         inputBundle.root(),
-                        MacBundle.fromAppImageLayout(dstAppImage).orElseThrow().root(),
+                        macBundleFromAppImageLayout(dstAppImage).orElseThrow().root(),
                         LinkOption.NOFOLLOW_LINKS);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
@@ -415,7 +438,7 @@ final class MacPackagingPipeline {
 
         final var app = env.app();
 
-        final var infoPlistFile = MacBundle.fromAppImageLayout(env.resolvedLayout()).orElseThrow().infoPlistFile();
+        final var infoPlistFile = macBundleFromAppImageLayout(env.resolvedLayout()).orElseThrow().infoPlistFile();
 
         Log.verbose(I18N.format("message.preparing-info-plist", PathUtils.normalizedAbsolutePathString(infoPlistFile)));
 
@@ -468,7 +491,7 @@ final class MacPackagingPipeline {
         }
 
         final Runnable signAction = () -> {
-            AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(MacBundle.fromAppImageLayout(env.resolvedLayout()).orElseThrow());
+            AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(macBundleFromAppImageLayout(env.resolvedLayout()).orElseThrow());
         };
 
         app.signingConfig().flatMap(AppImageSigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
@@ -550,7 +573,7 @@ final class MacPackagingPipeline {
 
     private static MacBundle runtimeBundle(AppImageBuildEnv<MacApplication, AppImageLayout> env) {
         if (env.app().isRuntime()) {
-            return MacBundle.fromAppImageLayout(env.resolvedLayout()).orElseThrow();
+            return macBundleFromAppImageLayout(env.resolvedLayout()).orElseThrow();
         } else {
             return new MacBundle(((MacApplicationLayout)env.resolvedLayout()).runtimeRootDirectory());
         }
@@ -593,6 +616,22 @@ final class MacPackagingPipeline {
             final var withPredefinedAppImage = pkg.predefinedAppImage().isPresent();
             return new TaskContextProxy(ctx, false, isRuntimeInstaller || withPredefinedAppImage);
         };
+    }
+
+    private static Optional<MacBundle> macBundleFromAppImageLayout(AppImageLayout layout) {
+        final var root = layout.rootDirectory();
+        final var bundleSubdir = root.relativize(layout.runtimeDirectory());
+        final var contentsDirname = Path.of("Contents");
+        var bundleRoot = root;
+        for (int i = 0; i != bundleSubdir.getNameCount(); i++) {
+            var nameComponent = bundleSubdir.getName(i);
+            if (contentsDirname.equals(nameComponent)) {
+                return Optional.of(new MacBundle(bundleRoot));
+            } else {
+                bundleRoot = bundleRoot.resolve(nameComponent);
+            }
+        }
+        return Optional.empty();
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.cli.TestUtils.TestException;
+import jdk.jpackage.internal.cli.TestUtils.RecordingValidator;
 import jdk.jpackage.internal.cli.Validator.ParsedValue;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import jdk.jpackage.internal.cli.Validator.ValidatorException;
@@ -187,46 +188,97 @@ public class ValidatorTest {
     }
 
     @Test
-    public void test_andThen() {
-
-        Function<String, Validator<String, Exception>> createFailingValidator = exceptionMessage -> {
-            Objects.requireNonNull(exceptionMessage);
-            var exceptionFactory = OptionValueExceptionFactory.build().ctor(TestException::new).messageFormatter((_, _) -> {
-                return exceptionMessage;
-            }).create();
-
-            return Validator.<String, Exception>build()
-                    .predicate(_ -> false)
-                    .formatString("")
-                    .exceptionFactory(exceptionFactory).create();
-        };
+    public void test_and() {
 
         Function<Validator<String, ? extends Exception>, List<? extends Exception>> validate = validator -> {
             return validator.validate(OptionName.of("a"), ParsedValue.create("str", StringToken.of("str")));
         };
 
-        var pass = Validator.<String, RuntimeException>build().predicate(_ -> true).create();
+        var pass = new RecordingValidator<>(Validator.<String, RuntimeException>build().predicate(_ -> true).create());
 
-        var foo = createFailingValidator.apply("foo");
-        var bar = createFailingValidator.apply("bar");
-        var buz = createFailingValidator.apply("buz");
+        var foo = failingValidator("foo");
+        var bar = failingValidator("bar");
+        var buz = failingValidator("buz");
 
         assertExceptionListEquals(List.of(
                 new TestException("foo"),
                 new TestException("bar"),
                 new TestException("buz")
-        ),  validate.apply(foo.andThen(bar).andThen(pass).andThen(buz)));
+        ), validate.apply(foo.and(bar).and(pass).and(buz)));
+        assertEquals(1, pass.counter());
 
+        pass.resetCounter();
         assertExceptionListEquals(List.of(
                 new TestException("bar"),
                 new TestException("buz"),
                 new TestException("foo")
-        ),  validate.apply(pass.andThen(bar).andThen(buz).andThen(foo)));
+        ), validate.apply(pass.and(bar).and(buz).and(foo)));
+        assertEquals(1, pass.counter());
 
         assertExceptionListEquals(List.of(
                 new TestException("foo"),
                 new TestException("foo")
-        ),  validate.apply(foo.andThen(foo)));
+        ), validate.apply(foo.and(foo)));
+
+        pass.resetCounter();
+        assertExceptionListEquals(List.of(
+        ), validate.apply(pass.and(pass)));
+        assertEquals(2, pass.counter());
+    }
+
+    @Test
+    public void test_or() {
+
+        Function<Validator<String, ? extends Exception>, List<? extends Exception>> validate = validator -> {
+            return validator.validate(OptionName.of("a"), ParsedValue.create("str", StringToken.of("str")));
+        };
+
+        var pass = new RecordingValidator<>(Validator.<String, RuntimeException>build().predicate(_ -> true).create());
+
+        var foo = new RecordingValidator<>(failingValidator("foo"));
+        var bar = new RecordingValidator<>(failingValidator("bar"));
+        var buz = new RecordingValidator<>(failingValidator("buz"));
+
+        Runnable resetCounters = () -> {
+            Stream.of(pass, foo, bar, buz).forEach(RecordingValidator::resetCounter);
+        };
+
+        assertExceptionListEquals(List.of(
+                new TestException("foo"),
+                new TestException("bar"),
+                new TestException("buz")
+        ), validate.apply(foo.or(bar).or(buz)));
+        assertEquals(1, foo.counter());
+        assertEquals(1, bar.counter());
+        assertEquals(1, buz.counter());
+
+        resetCounters.run();
+        assertExceptionListEquals(List.of(
+        ), validate.apply(foo.or(bar).or(pass).or(buz)));
+        assertEquals(1, foo.counter());
+        assertEquals(1, bar.counter());
+        assertEquals(1, pass.counter());
+        assertEquals(0, buz.counter());
+
+        resetCounters.run();
+        assertExceptionListEquals(List.of(
+        ), validate.apply(pass.or(bar).or(buz).or(foo)));
+        assertEquals(1, pass.counter());
+        assertEquals(0, bar.counter());
+        assertEquals(0, buz.counter());
+        assertEquals(0, foo.counter());
+
+        resetCounters.run();
+        assertExceptionListEquals(List.of(
+                new TestException("foo"),
+                new TestException("foo")
+        ), validate.apply(foo.or(foo)));
+        assertEquals(2, foo.counter());
+
+        resetCounters.run();
+        assertExceptionListEquals(List.of(
+        ),  validate.apply(pass.or(pass)));
+        assertEquals(1, pass.counter());
     }
 
     @ParameterizedTest
@@ -267,6 +319,17 @@ public class ValidatorTest {
             }
         }
         return data;
+    }
+
+    private static Validator<String, Exception> failingValidator(String exceptionMessage) {
+        var exceptionFactory = OptionValueExceptionFactory.build().ctor(TestException::new).messageFormatter((_, _) -> {
+            return exceptionMessage;
+        }).create();
+
+        return Validator.<String, Exception>build()
+                .predicate(_ -> false)
+                .formatString("")
+                .exceptionFactory(exceptionFactory).create();
     }
 
 

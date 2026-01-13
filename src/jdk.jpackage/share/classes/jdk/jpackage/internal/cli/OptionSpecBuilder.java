@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ final class OptionSpecBuilder<T> {
         valuePattern = other.valuePattern;
         converterBuilder = other.converterBuilder.copy();
         validatorBuilder = other.validatorBuilder.copy();
+        validator = other.validator;
 
         if (other.arrayDefaultValue != null) {
             arrayDefaultValue = Arrays.copyOf(other.arrayDefaultValue, other.arrayDefaultValue.length);
@@ -135,8 +136,18 @@ final class OptionSpecBuilder<T> {
                 scope,
                 OptionSpecBuilder.this.mergePolicy().orElse(MergePolicy.CONCATENATE),
                 defaultArrayOptionalValue(),
-                Optional.of(arryValuePattern()),
+                Optional.of(arrayValuePattern()),
                 OptionSpecBuilder.this.description().orElse(""));
+    }
+
+    Optional<? extends Validator<T, RuntimeException>> createValidator() {
+        return Optional.ofNullable(validator).or(() -> {
+            if (validatorBuilder.hasValidatingMethod()) {
+                return Optional.of(validatorBuilder.create());
+            } else {
+                return Optional.empty();
+            }
+        });
     }
 
     OptionSpecBuilder<T> tokenizer(String splitRegexp) {
@@ -162,11 +173,13 @@ final class OptionSpecBuilder<T> {
 
     OptionSpecBuilder<T> validatorExceptionFormatString(String v) {
         validatorBuilder.formatString(v);
+        validator = null;
         return this;
     }
 
     OptionSpecBuilder<T> validatorExceptionFormatString(UnaryOperator<String> mutator) {
         validatorBuilder.formatString(mutator.apply(validatorBuilder.formatString().orElse(null)));
+        validator = null;
         return this;
     }
 
@@ -182,6 +195,7 @@ final class OptionSpecBuilder<T> {
 
     OptionSpecBuilder<T> validatorExceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
         validatorBuilder.exceptionFactory(v);
+        validator = null;
         return this;
     }
 
@@ -225,18 +239,27 @@ final class OptionSpecBuilder<T> {
 
     OptionSpecBuilder<T> validator(Predicate<T> v) {
         validatorBuilder.predicate(v::test);
+        validator = null;
         return this;
     }
 
     @SuppressWarnings("overloads")
     OptionSpecBuilder<T> validator(Consumer<T> v) {
         validatorBuilder.consumer(v::accept);
+        validator = null;
         return this;
     }
 
     @SuppressWarnings("overloads")
     OptionSpecBuilder<T> validator(UnaryOperator<Validator.Builder<T, RuntimeException>> mutator) {
         validatorBuilder = mutator.apply(validatorBuilder);
+        validator = null;
+        return this;
+    }
+
+    OptionSpecBuilder<T> validator(Validator<T, RuntimeException> v) {
+        validatorBuilder.predicate(null).consumer(null);
+        validator = Objects.requireNonNull(v);
         return this;
     }
 
@@ -247,6 +270,7 @@ final class OptionSpecBuilder<T> {
 
     OptionSpecBuilder<T> withoutValidator() {
         validatorBuilder.predicate(null).consumer(null);
+        validator = null;
         return this;
     }
 
@@ -423,14 +447,6 @@ final class OptionSpecBuilder<T> {
         }
     }
 
-    private Optional<Validator<T, ? extends RuntimeException>> createValidator() {
-        if (validatorBuilder.hasValidatingMethod()) {
-            return Optional.of(validatorBuilder.create());
-        } else {
-            return Optional.empty();
-        }
-    }
-
     private OptionValueConverter<T[]> createArrayConverter() {
         final var newBuilder = converterBuilder.copy();
         newBuilder.tokenizer(Optional.ofNullable(arrayTokenizer).orElse(str -> {
@@ -440,7 +456,7 @@ final class OptionSpecBuilder<T> {
         return newBuilder.createArray();
     }
 
-    private String arryValuePattern() {
+    private String arrayValuePattern() {
         final var elementValuePattern = OptionSpecBuilder.this.valuePattern().orElseThrow();
         if (arrayValuePatternSeparator == null) {
             return elementValuePattern;
@@ -468,6 +484,7 @@ final class OptionSpecBuilder<T> {
     private String valuePattern;
     private OptionValueConverter.Builder<T> converterBuilder = OptionValueConverter.build();
     private Validator.Builder<T, RuntimeException> validatorBuilder = Validator.build();
+    private Validator<T, RuntimeException> validator;
 
     private T[] arrayDefaultValue;
     private String arrayValuePatternSeparator;

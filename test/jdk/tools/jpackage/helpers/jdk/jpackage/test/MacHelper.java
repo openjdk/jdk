@@ -33,6 +33,7 @@ import static jdk.jpackage.internal.util.PListWriter.writeStringArray;
 import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
 import static jdk.jpackage.internal.util.XmlUtils.initDocumentBuilder;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 
 import java.io.ByteArrayInputStream;
@@ -45,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -59,14 +61,13 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.RetryExecutor;
@@ -89,8 +90,8 @@ public final class MacHelper {
         // See JDK-8373105. "hdiutil" does not handle such cases very good.
         final var mountRoot = TKit.createTempDirectory("mountRoot");
 
-        // Explode DMG assuming this can require interaction, thus use `yes`.
-        final var attachStdout = Executor.of("sh", "-c", String.join(" ",
+        // Explode the DMG assuming this can require interaction if the DMG has a license, thus use `yes`.
+        final var attachExec = Executor.of("sh", "-c", String.join(" ",
                 "yes",
                 "|",
                 "/usr/bin/hdiutil",
@@ -99,14 +100,34 @@ public final class MacHelper {
                 "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
                 "-nobrowse",
                 "-plist"
-        )).saveOutput().storeOutputInFiles().executeAndRepeatUntilExitCode(0, 10, 6).stdout();
+        )).saveOutput().storeOutputInFiles().binaryOutput();
+
+        final var attachResult = attachExec.executeAndRepeatUntilExitCode(0, 10, 6);
 
         final Path mountPoint;
 
         boolean mountPointInitialized = false;
         try {
+            byte[] stdout = attachResult.byteStdout();
+
+            // If the DMG has a license, it will be printed to the stdout before the plist content.
+            // All bytes before the XML declaration of the plist must be skipped.
+            // We need to find the location of the {'<', '?', 'x', 'm', 'l'} byte array
+            // (the XML declaration) in the captured binary stdout.
+            // Instead of crafting an ad-hoc function that operates on byte arrays,
+            // we will convert the byte array into a String instance using
+            // an 8-bit character set (ISO-8859-1) and use the standard String#indexOf().
+            var startPlistIndex = new String(stdout, StandardCharsets.ISO_8859_1).indexOf("<?xml");
+
+            byte[] plistXml;
+            if (startPlistIndex > 0) {
+                plistXml = Arrays.copyOfRange(stdout, startPlistIndex, stdout.length);
+            } else {
+                plistXml = stdout;
+            }
+
             // One of "dict" items of "system-entities" array property should contain "mount-point" string property.
-            mountPoint = readPList(attachStdout).queryArrayValue("system-entities", false)
+            mountPoint = readPList(plistXml).queryArrayValue("system-entities", false)
                     .map(PListReader.class::cast)
                     .map(dict -> {
                         return dict.findValue("mount-point");
@@ -117,7 +138,7 @@ public final class MacHelper {
         } finally {
             if (!mountPointInitialized) {
                 TKit.trace("Unexpected plist file missing `system-entities` array:");
-                attachStdout.forEach(TKit::trace);
+                attachResult.toCharacterResult(attachExec.charset(), false).stdout().forEach(TKit::trace);
                 TKit.trace("Done");
             }
         }
@@ -168,19 +189,13 @@ public final class MacHelper {
 
     public static PListReader readPList(Path path) {
         TKit.assertReadableFileExists(path);
-        return ThrowingSupplier.toSupplier(() -> readPList(Files.readAllLines(
-                path))).get();
+        return readPList(toFunction(Files::readAllBytes).apply(path));
     }
 
-    public static PListReader readPList(List<String> lines) {
-        return readPList(lines.stream());
-    }
-
-    public static PListReader readPList(Stream<String> lines) {
-        return ThrowingSupplier.toSupplier(() -> new PListReader(lines
-                // Skip leading lines before xml declaration
-                .dropWhile(Pattern.compile("\\s?<\\?xml\\b.+\\?>").asPredicate().negate())
-                .collect(Collectors.joining()).getBytes(StandardCharsets.UTF_8))).get();
+    public static PListReader readPList(byte[] xml) {
+        return ThrowingSupplier.toSupplier(() -> {
+            return new PListReader(xml);
+        }).get();
     }
 
     public static Map<String, String> flatMapPList(PListReader plistReader) {
@@ -265,13 +280,13 @@ public final class MacHelper {
             throw new UnsupportedOperationException();
         }
 
-        var runtimeImage = Optional.ofNullable(cmd.getArgumentValue("--runtime-image")).map(Path::of);
+        var runtimeImageBundle = Optional.ofNullable(cmd.getArgumentValue("--runtime-image")).map(Path::of).flatMap(MacBundle::fromPath);
         var appImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of);
 
-        if (cmd.isRuntime() && Files.isDirectory(runtimeImage.orElseThrow().resolve("Contents/_CodeSignature"))) {
+        if (cmd.isRuntime() && runtimeImageBundle.map(MacHelper::isBundleSigned).orElse(false)) {
             // If the predefined runtime is a signed bundle, bundled image should be signed too.
             return true;
-        } else if (appImage.map(AppImageFile::load).map(AppImageFile::macSigned).orElse(false)) {
+        } else if (appImage.map(MacHelper::isBundleSigned).orElse(false)) {
             // The external app image is signed, so the app image is signed too.
             return true;
         }
@@ -299,6 +314,14 @@ public final class MacHelper {
                 createFaPListFragmentFromFaProperties(cmd, xml);
             }
         }).run();
+    }
+
+    static boolean isBundleSigned(Path bundleRoot) {
+        return isBundleSigned(MacBundle.fromPath(bundleRoot).orElseThrow(IllegalArgumentException::new));
+    }
+
+    static boolean isBundleSigned(MacBundle bundle) {
+        return MacSignVerify.findSpctlSignOrigin(MacSignVerify.SpctlType.EXEC, bundle.root(), true).isPresent();
     }
 
     private static void createFaPListFragmentFromFaProperties(JPackageCommand cmd, XMLStreamWriter xml)
@@ -383,7 +406,7 @@ public final class MacHelper {
 
         var predefinedAppImage = Path.of(Optional.ofNullable(cmd.getArgumentValue("--app-image")).orElseThrow(IllegalArgumentException::new));
 
-        var plistPath = ApplicationLayout.macAppImage().resolveAt(predefinedAppImage).contentDirectory().resolve("Info.plist");
+        var plistPath = MacBundle.fromPath(predefinedAppImage).orElseThrow().infoPlistFile();
 
         try (var plistStream = Files.newInputStream(plistPath)) {
             var plist = new PListReader(initDocumentBuilder().parse(plistStream));
