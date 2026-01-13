@@ -2356,9 +2356,7 @@ void PrintClassClosure::do_klass(Klass* k)  {
   _st->print("%4d  ", k->size());
   // initialization state
 
-  assert(!k->is_instance_klass(), "not InstanceKlass!");
-
-  InstanceKlass *ik = k->is_instance_klass() ? InstanceKlass::cast(k) : nullptr;
+  InstanceKlass* ik = k->is_instance_klass() ? InstanceKlass::cast(k) : nullptr;
 
   if (ik != nullptr) {
     _st->print("%-20s  ",InstanceKlass::cast(k)->init_state_name());
@@ -2385,38 +2383,38 @@ void PrintClassClosure::do_klass(Klass* k)  {
 
     oop pd = java_lang_Class::protection_domain(k->java_mirror());
 
-    assert(pd != nullptr && !pd->klass()->is_instance_klass(), "pd klass is not InstanceKlass");
+    assert(pd == nullptr || pd->klass()->is_instance_klass(), "pd klass is not InstanceKlass");
 
-    if (pd != nullptr && (ik = pd->klass()->is_instance_klass() ? InstanceKlass::cast(pd->klass()) : nullptr) != nullptr) {
+    if (pd != nullptr) {
 
       TempNewSymbol css  = SymbolTable::new_symbol("codesource");
       TempNewSymbol csss = SymbolTable::new_symbol("Ljava/security/CodeSource;");
 
       fieldDescriptor csfd;
 
-      if (ik->find_field(css, csss, &csfd)) {
+      if (InstanceKlass::cast(pd->klass())->find_field(css, csss, &csfd)) {
 
         oop cs = pd->obj_field(csfd.offset());
 
-        assert(cs !=nullptr && !cs->klass()->is_instance_klass(), "cs klass is not InstanceKlass");
+        assert(cs == nullptr || cs->klass()->is_instance_klass(), "cs klass is not InstanceKlass");
 
-        if (cs != nullptr && (ik = cs->klass()->is_instance_klass() ? InstanceKlass::cast(cs->klass()) : nullptr) != nullptr) {
+        if (cs != nullptr) {
           fieldDescriptor locfd;
 
           TempNewSymbol csls  = SymbolTable::new_symbol("locationNoFragString");
           TempNewSymbol cslss = SymbolTable::new_symbol("Ljava/lang/String;");
 
-          if (ik->find_field(csls, cslss, &locfd)) {
+          if (InstanceKlass::cast(cs->klass())->find_field(csls, cslss, &locfd)) {
             oop loc = cs->obj_field(locfd.offset());
 
-            assert(loc != nullptr && loc->klass() != vmClasses::String_klass(), "locationNoFragString field is not a String");
+            assert(loc == nullptr || loc->klass() == vmClasses::String_klass(), "locationNoFragString field is not a String");
 
-            if (loc != nullptr && loc->klass() == vmClasses::String_klass()) {
+            if (loc != nullptr) {
               java_lang_String::print(loc, _st, MAXPATHLEN);
             }
           }
-        } else assert(true, "failed to find locationNoFragString field in CodeSource");
-      } else assert(true, "failed to find codeSource field in ProtectionDomain");
+        }
+      }
     }
   }
   // end
