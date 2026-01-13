@@ -25,6 +25,7 @@
 
 package com.sun.media.sound;
 
+import java.nio.ByteOrder;
 import java.util.StringTokenizer;
 
 /**
@@ -60,7 +61,7 @@ final class Platform {
      * Determine whether the system is big-endian.
      */
     static boolean isBigEndian() {
-        return java.nio.ByteOrder.nativeOrder().equals(java.nio.ByteOrder.BIG_ENDIAN);
+        return ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN);
     }
 
     /**
