@@ -51,8 +51,6 @@ public class AllNotVMGtest {
     // List of tests which have dependencies, these should have bugs associated
     // with them, and should be removed once they are resolved.
     static TestFilter[] TEST_FILTERS = {
-        // JDK-8374450
-        TF("opto.canonicalize_constraints"),
         // JDK-8372245
         TF("globalDefinitions.format_specifiers"),
         // JDK-8372246
