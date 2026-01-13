@@ -932,6 +932,26 @@ Node* CmpULNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(1)->Opcode() == Op_ConvI2L && in(2)->Opcode() == Op_ConvI2L) {
     return new CmpUNode(in(1)->in(1), in (2)->in(1));
   }
+  if (in(1)->Opcode() == Op_LShiftL && in(2)->Opcode() == Op_LShiftL && in(1)->in(2) == in(2)->in(2)) {
+    int shift = phase->find_int_con(in(1)->in(2), -1);
+    if (shift > 0) {
+      shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
+      if (shift != 0) {
+        const TypeLong* in1_t = phase->type(in(1))->isa_long();
+        const TypeLong* in2_t = phase->type(in(2))->isa_long();
+        const TypeLong* in1_in1_t = phase->type(in(1)->in(1))->isa_long();
+        const TypeLong* in2_in1_t = phase->type(in(2)->in(1))->isa_long();
+        if (in1_t != nullptr && in2_t != nullptr && in1_in1_t != nullptr && in2_in1_t != nullptr) {
+          if (java_shift_left(in1_in1_t->_lo, shift) == in1_t->_lo &&
+              java_shift_left(in1_in1_t->_hi, shift) == in1_t->_hi &&
+              java_shift_left(in2_in1_t->_lo, shift) == in2_t->_lo &&
+              java_shift_left(in2_in1_t->_hi, shift) == in2_t->_hi) {
+            return new CmpULNode(in(1)->in(1), in(2)->in(1));
+          }
+        }
+      }
+    }
+  }
   return nullptr;
 }
 

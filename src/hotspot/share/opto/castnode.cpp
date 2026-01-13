@@ -245,7 +245,11 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   assert(base == addr->in(AddPNode::Base), "");
                   addr = addr->in(AddPNode::Address);
                 }
-                assert(addr == base, "");
+                if (addr != base) {
+                  assert(addr->is_Phi(), "");
+                  phase->is_IterGVN()->_worklist.push(this);
+                  return nullptr;
+                }
                 Node* mem_ctrl = use->in(0);
                 bool safe_mem_access = false;
                 // if (mem_ctrl->is_IfTrue() && mem_ctrl->in(0)->is_RangeCheck() &&
@@ -321,12 +325,15 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                     prev_after = phase->transform(clone);
                   }
                   assert(i <= stack.size(), "");
-                  assert(last_addp->in(AddPNode::Base) == last_addp->in(AddPNode::Address), "");
                   Node* offset = prev_after;
+                  while (last_addp->in(AddPNode::Base) != last_addp->in(AddPNode::Address)) {
+                    last_addp = last_addp->in(AddPNode::Address)->as_AddP();
+                    offset = phase->transform(new AddXNode(offset, last_addp->in(AddPNode::Offset)));
+                  }
                   for (; i < stack.size(); ++i) {
                     Node* n = stack.node_at(i);
                     assert(n->is_AddP(), "");
-                    offset = phase->transform(new AddXNode(prev_after, n->in(AddPNode::Offset)));
+                    offset = phase->transform(new AddXNode(offset, n->in(AddPNode::Offset)));
                   }
                   const Type* elem_t = addr_t->make_oopptr()->is_aryptr()->elem();
                   assert(elem_t != Type::BOTTOM, "");
