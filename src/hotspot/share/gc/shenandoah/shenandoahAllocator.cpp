@@ -130,17 +130,6 @@ uint ShenandoahAllocator<ALLOC_PARTITION>::alloc_start_index() {
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
-  // Always allocate under heap lock held when shared alloc region count is set to 0
-  if (_alloc_region_count == 0u) {
-    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
-    ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
-    HeapWord* obj = attempt_allocation_from_free_set(req, in_new_region);
-    if (obj != nullptr) {
-      accounting_updater._need_update = true;
-    }
-    return obj;
-  }
-
   uint regions_ready_for_refresh = 0u;
   uint32_t old_epoch_id = AtomicAccess::load(&_epoch_id);
   // Fast path: start the attempt to allocate in alloc regions right away
