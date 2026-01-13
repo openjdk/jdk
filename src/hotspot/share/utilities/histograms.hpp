@@ -261,7 +261,7 @@ void dumpTimersSometimes();
 #define HISTOGRAM_PASTE(a, b) a ## b
 #define HISTOGRAM_EXPAND_THEN_PASTE(pre, post) HISTOGRAM_PASTE(pre, post)
 #define HISTOGRAM_DESCRIBED_BLOCK(description, timer_name, stopwatch_name)   \
-  static HistogramTimer timer_name(__FILE__, __func__, __LINE__,             \
+  static HistogramTimer timer_name(__FILE__, __PRETTY_FUNCTION__, __LINE__,             \
                               description);                                  \
   HistogramStopWatch stopwatch_name(&(timer_name));                          \
   (stopwatch_name).start();
@@ -293,10 +293,10 @@ void dumpTimersSometimes();
 // single timing interval (such as for traversing from the GC thread,
 // to the VM thread, or vice versa).
 #define HISTOGRAM_ALWAYS_START_GLOBAL_STOPWATCH(stopwatch)          \
-  stopwatch.start(__FILE__, __func__, __LINE__);
+  stopwatch.start(__FILE__, __PRETTY_FUNCTION__, __LINE__);
 
 #define HISTOGRAM_ALWAYS_STOP_GLOBAL_STOPWATCH(stopwatch)   \
-  stopwatch.stop(__FILE__, __func__, __LINE__);
+  stopwatch.stop(__FILE__, __PRETTY_FUNCTION__, __LINE__);
 
 int print_with_commas(FILE *stream, const char* prefix, unsigned long value);
 int print_time_value(FILE *stream,
