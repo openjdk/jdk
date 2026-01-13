@@ -72,14 +72,14 @@ public class TestReductionReassociation {
         final int size = 10_000;
         final int batchSize = 4;
 
-        Stream.of(TestReductionReassociation.AddOp.values())
+        Stream.of(AssociativeAdd.values())
             .map(op -> new TestGenerator(op, batchSize, false, size).generate())
             .forEach(testTemplateTokens::add);
 
         // A single test to test a non-power-of-2 value
-        testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, 5, false, size).generate());
+        testTemplateTokens.add(new TestGenerator(AssociativeAdd.MAX_L, 5, false, size).generate());
         // A single test where an intermediate value is used some other way
-        testTemplateTokens.add(new TestGenerator(AddOp.MAX_L, batchSize, true, size).generate());
+        testTemplateTokens.add(new TestGenerator(AssociativeAdd.MAX_L, batchSize, true, size).generate());
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
@@ -95,7 +95,7 @@ public class TestReductionReassociation {
             testTemplateTokens);
     }
 
-    enum AddOp {
+    enum AssociativeAdd {
         MIN_D(CodeGenerationDataNameType.doubles()),
         MAX_D(CodeGenerationDataNameType.doubles()),
         MIN_HF(CodeGenerationDataNameType.float16()),
@@ -109,7 +109,7 @@ public class TestReductionReassociation {
 
         final CodeGenerationDataNameType type;
 
-        AddOp(CodeGenerationDataNameType type) {
+        AssociativeAdd(CodeGenerationDataNameType type) {
             this.type = type;
         }
 
@@ -118,7 +118,11 @@ public class TestReductionReassociation {
         }
     }
 
-    record TestGenerator(AddOp add, int batchSize, boolean useIntermediate, int size) {
+    record TestGenerator(int countsIR, AssociativeAdd add, int batchSize, boolean useIntermediate, int size) {
+        TestGenerator(AssociativeAdd add, int batchSize, boolean useIntermediate, int size) {
+            this(useIntermediate ? batchSize * 2 : batchSize, add, batchSize, useIntermediate, size);
+        }
+
         public TemplateToken generate() {
             var testTemplate = Template.make(() -> {
                 String test = $("test");
@@ -207,6 +211,7 @@ public class TestReductionReassociation {
 
         private TemplateToken generateTest(String input, String setup, String test) {
             var template = Template.make(() -> scope(
+                let("countsIR", countsIR),
                 let("irNodeName", add.name()),
                 let("input", input),
                 let("setup", setup),
@@ -215,9 +220,20 @@ public class TestReductionReassociation {
                 """
                 @Test
                 """,
-                "@IR(counts = {IRNode.#irNodeName, \"= ",
-                useIntermediate ? batchSize * 2 : batchSize,
-                "\"}, phase = CompilePhase.AFTER_LOOP_OPTS)",
+                add.isFloat16() ?
+                    """
+                    @IR(counts = {IRNode.#irNodeName, "= #countsIR"},
+                        phase = CompilePhase.AFTER_LOOP_OPTS,
+                        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+                    @IR(counts = {IRNode.#irNodeName, "= #countsIR"},
+                        phase = CompilePhase.AFTER_LOOP_OPTS,
+                        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+                    """
+                    :
+                    """
+                    @IR(counts = {IRNode.#irNodeName, "= #countsIR"},
+                        phase = CompilePhase.AFTER_LOOP_OPTS)
+                    """,
                 """
                 public Object[] #test() {
                 """,
