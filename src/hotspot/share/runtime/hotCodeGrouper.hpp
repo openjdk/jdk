@@ -37,6 +37,8 @@ class HotCodeGrouper : public NonJavaThread {
   static int _new_c2_nmethods_count;
   static int _total_c2_nmethods_count;
 
+  static CodeHeap* hot_code_heap;
+
   void do_grouping(ThreadSampler& sampler);
 
  public:
@@ -49,6 +51,8 @@ class HotCodeGrouper : public NonJavaThread {
   static void initialize();
   static void unregister_nmethod(nmethod* nm);
   static void register_nmethod(nmethod* nm);
+
+  bool hot_heap_has_space(size_t size);
 };
 
 #endif // SHARE_RUNTIME_HOTCODEGROUPER_HPP
