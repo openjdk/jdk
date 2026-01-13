@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,15 +351,22 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
   //    outside the safepoint protocol.
 
   // OrderAccess::fence() as part of acquiring the lock prevents loads from floating up.
-  JfrMutexTryLock threads_lock(Threads_lock);
+  JfrMutexTryLock lock(Threads_lock);
 
-  if (!threads_lock.acquired() || !jt->has_last_Java_frame()) {
+  if (!lock.acquired()) {
     // Remove the native sample request and release the potentially waiting thread.
     JfrSampleMonitor jsm(tl);
     return false;
   }
 
-  if (jt->thread_state() != _thread_in_native) {
+  // Separate the arming of the poll (above) from the reading of JavaThread state (below).
+  if (UseSystemMemoryBarrier) {
+    SystemMemoryBarrier::emit();
+  } else {
+    OrderAccess::fence();
+  }
+
+  if (jt->thread_state() != _thread_in_native || !jt->has_last_Java_frame()) {
     assert_lock_strong(Threads_lock);
     JfrSampleMonitor jsm(tl);
     if (jsm.is_waiting()) {
