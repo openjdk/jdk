@@ -430,16 +430,14 @@ public class ModulesTest {
 
     @Test
     public void testLoadNull1() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ServiceLoader.load(null);
-        });
+        Assertions.assertThrows(NullPointerException.class,
+                () -> ServiceLoader.load(null));
     }
 
     @Test
     public void testLoadNull2() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ServiceLoader.load((Class<?>) null, ClassLoader.getSystemClassLoader());
-        });
+        Assertions.assertThrows(NullPointerException.class,
+                () -> ServiceLoader.load((Class<?>) null, ClassLoader.getSystemClassLoader()));
     }
 
     @Test
@@ -452,16 +450,14 @@ public class ModulesTest {
 
     @Test
     public void testLoadNull4() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ServiceLoader.load(ModuleLayer.empty(), null);
-        });
+        Assertions.assertThrows(NullPointerException.class,
+                () -> ServiceLoader.load(ModuleLayer.empty(), null));
     }
 
     @Test
     public void testLoadNull5() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            ServiceLoader.loadInstalled(null);
-        });
+        Assertions.assertThrows(NullPointerException.class,
+                () -> ServiceLoader.loadInstalled(null));
     }
 
     /**

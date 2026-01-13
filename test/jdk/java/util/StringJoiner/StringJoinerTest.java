@@ -224,30 +224,26 @@ public class StringJoinerTest {
 
     @Test
     public void setEmptyValueNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            new StringJoiner(DASH, "{", "}").setEmptyValue(null);
-        });
+        Assertions.assertThrows(NullPointerException.class,
+                () -> new StringJoiner(DASH, "{", "}").setEmptyValue(null));
     }
 
     @Test
     public void setDelimiterNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            new StringJoiner(null);
-        });
+        Assertions.assertThrows(NullPointerException.class,
+                () -> new StringJoiner(null));
     }
 
     @Test
     public void setPrefixNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            new StringJoiner(DASH, null, "}");
-        });
+        Assertions.assertThrows(NullPointerException.class,
+                () -> new StringJoiner(DASH, null, "}"));
     }
 
     @Test
     public void setSuffixNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            new StringJoiner(DASH, "{", null);
-        });
+        Assertions.assertThrows(NullPointerException.class,
+                () -> new StringJoiner(DASH, "{", null));
     }
 
     @Test

@@ -72,10 +72,8 @@ public class MergeTest {
 
     @Test
     public void testNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            StringJoiner sj = new StringJoiner(",", "{", "}");
-            sj.merge(null);
-        });
+        StringJoiner sj = new StringJoiner(",", "{", "}");
+        Assertions.assertThrows(NullPointerException.class, () -> sj.merge(null));
     }
 
     @Test
