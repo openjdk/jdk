@@ -27,8 +27,7 @@
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main/othervm -Xmx1g -XX:+CompactStrings UUIDTest
- * @run main/othervm -Xmx1g -XX:-CompactStrings UUIDTest
+ * @run main/othervm -Xmx1g UUIDTest
  */
 
 import java.util.*;

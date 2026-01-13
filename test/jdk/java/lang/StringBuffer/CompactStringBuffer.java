@@ -33,8 +33,7 @@ import static org.testng.Assert.assertTrue;
  * @bug 8077559 8221430
  * @summary Tests Compact String. This test is testing StringBuffer
  *          behavior related to Compact String.
- * @run testng/othervm -XX:+CompactStrings CompactStringBuffer
- * @run testng/othervm -XX:-CompactStrings CompactStringBuffer
+ * @run testng/othervm CompactStringBuffer
  */
 
 public class CompactStringBuffer {

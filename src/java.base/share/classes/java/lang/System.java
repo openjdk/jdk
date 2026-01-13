@@ -2206,7 +2206,7 @@ public final class System {
             }
 
             public byte stringInitCoder() {
-                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
+                return String.LATIN1;
             }
 
             public byte stringCoder(String str) {

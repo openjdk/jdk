@@ -47,13 +47,11 @@ public class TestArrayCopySelect {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-UseCompactObjectHeaders",
-                                   "-XX:-CompactStrings",
                                    "-XX:CompileCommand=inline,java.lang.StringBuilder::toString",
                                    "-XX:CompileCommand=inline,java.lang.StringUTF16::getChars",
                                    "-XX:CompileCommand=inline,java.lang.StringUTF16::toBytes");
 
         TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders",
-                                   "-XX:-CompactStrings",
                                    "-XX:CompileCommand=inline,java.lang.StringBuilder::toString",
                                    "-XX:CompileCommand=inline,java.lang.StringUTF16::getChars",
                                    "-XX:CompileCommand=inline,java.lang.StringUTF16::toBytes");

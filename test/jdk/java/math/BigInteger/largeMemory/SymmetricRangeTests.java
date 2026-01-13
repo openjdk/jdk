@@ -27,7 +27,7 @@
  * @summary Test range of BigInteger values (use -Dseed=X to set PRNG seed)
  * @library /test/lib
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 10g)
- * @run main/timeout=180/othervm -Xmx8g -XX:+CompactStrings SymmetricRangeTests
+ * @run main/timeout=180/othervm -Xmx8g SymmetricRangeTests
  * @author Dmitry Nadezhin
  * @key randomness
  */

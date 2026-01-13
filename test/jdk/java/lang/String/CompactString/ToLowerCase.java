@@ -31,8 +31,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.toLowerCase.
- * @run testng/othervm -XX:+CompactStrings ToLowerCase
- * @run testng/othervm -XX:-CompactStrings ToLowerCase
+ * @run testng/othervm ToLowerCase
  */
 
 public class ToLowerCase extends CompactString {

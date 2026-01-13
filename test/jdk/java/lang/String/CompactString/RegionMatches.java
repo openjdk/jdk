@@ -31,8 +31,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559 8248655 8264544
  * @summary Tests Compact String. This one is for String.regionMatches.
- * @run testng/othervm -XX:+CompactStrings RegionMatches
- * @run testng/othervm -XX:-CompactStrings RegionMatches
+ * @run testng/othervm RegionMatches
  */
 
 public class RegionMatches extends CompactString {

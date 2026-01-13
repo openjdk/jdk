@@ -28,7 +28,6 @@
  * @summary Fix a bug in AArch64 string intrinsics
  *
  * @run main/othervm compiler.intrinsics.Test8215792
- * @run main/othervm -XX:-CompactStrings compiler.intrinsics.Test8215792
  */
 
 package compiler.intrinsics;

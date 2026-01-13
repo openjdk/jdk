@@ -24,7 +24,7 @@
 /* @test
  * @bug 8239787
  * @summary String.indexOf(char) for empty string must give -1
- * @run main/othervm -XX:-CompactStrings StringIndexOfChar
+ * @run main/othervm StringIndexOfChar
  */
 public class StringIndexOfChar {
     public static void main(String[] args) throws Exception {

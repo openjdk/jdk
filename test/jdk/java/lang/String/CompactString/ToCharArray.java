@@ -32,8 +32,7 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.toCharArray.
- * @run testng/othervm -XX:+CompactStrings ToCharArray
- * @run testng/othervm -XX:-CompactStrings ToCharArray
+ * @run testng/othervm ToCharArray
  */
 
 public class ToCharArray extends CompactString {

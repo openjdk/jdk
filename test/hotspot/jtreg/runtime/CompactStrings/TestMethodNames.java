@@ -26,8 +26,7 @@
  * @bug 8164612
  * @summary Test method names containing Latin-1 supplement characters.
  * @compile methodNames.jcod
- * @run main/othervm -XX:+CompactStrings TestMethodNames
- * @run main/othervm -XX:-CompactStrings TestMethodNames
+ * @run main/othervm TestMethodNames
  */
 public class TestMethodNames {
 

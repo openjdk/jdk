@@ -32,8 +32,7 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.split.
- * @run testng/othervm -XX:+CompactStrings Split
- * @run testng/othervm -XX:-CompactStrings Split
+ * @run testng/othervm Split
  */
 
 public class Split extends CompactString {

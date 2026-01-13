@@ -30,8 +30,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.subString.
- * @run testng/othervm -XX:+CompactStrings SubString
- * @run testng/othervm -XX:-CompactStrings SubString
+ * @run testng/othervm SubString
  */
 
 public class SubString extends CompactString {

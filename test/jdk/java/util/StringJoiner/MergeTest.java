@@ -27,7 +27,7 @@
  * @summary test  StringJoiner::merge
  * @modules java.base/jdk.internal.util
  * @requires vm.bits == "64" & os.maxMemory > 4G
- * @run testng/othervm -Xmx4g -XX:+CompactStrings MergeTest
+ * @run testng/othervm -Xmx4g MergeTest
  */
 
 import java.util.StringJoiner;

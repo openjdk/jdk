@@ -23,20 +23,14 @@
 
 /**
  * @test
- * @summary StringConcatFactory MH_INLINE_SIZED_EXACT strategy does not work with -XX:-CompactStrings
+ * @summary StringConcatFactory MH_INLINE_SIZED_EXACT strategy
  * @bug 8148869
  *
  * @compile -XDstringConcat=indy CompactStringsInitialCoder.java
- * @run main/othervm -Xverify:all -XX:+CompactStrings CompactStringsInitialCoder
+ * @run main/othervm -Xverify:all CompactStringsInitialCoder
  *
  * @compile -XDstringConcat=indyWithConstants CompactStringsInitialCoder.java
- * @run main/othervm -Xverify:all -XX:+CompactStrings CompactStringsInitialCoder
- *
- * @compile -XDstringConcat=indy CompactStringsInitialCoder.java
- * @run main/othervm -Xverify:all -XX:-CompactStrings CompactStringsInitialCoder
- *
- * @compile -XDstringConcat=indyWithConstants CompactStringsInitialCoder.java
- * @run main/othervm -Xverify:all -XX:-CompactStrings CompactStringsInitialCoder
+ * @run main/othervm -Xverify:all CompactStringsInitialCoder
 */
 import java.lang.StringBuilder;
 

@@ -37,7 +37,6 @@ import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 
-import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.UTF16;
 import static java.lang.String.LATIN1;
 import static java.lang.String.checkIndex;
@@ -97,13 +96,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * Creates an AbstractStringBuilder of the specified capacity.
      */
     AbstractStringBuilder(int capacity) {
-        if (COMPACT_STRINGS) {
-            value = new byte[capacity];
-            coder = LATIN1;
-        } else {
-            value = StringUTF16.newBytesFor(capacity);
-            coder = UTF16;
-        }
+        value = new byte[capacity];
+        coder = LATIN1;
     }
 
     /**
@@ -145,17 +139,13 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
                 ? length + 16 : Integer.MAX_VALUE;
 
         final byte initCoder;
-        if (COMPACT_STRINGS) {
-            if (seq instanceof AbstractStringBuilder asb) {
-                initCoder = asb.getCoder();
-                maybeLatin1 |= asb.maybeLatin1;
-            } else if (seq instanceof String s) {
-                initCoder = s.coder();
-            } else {
-                initCoder = LATIN1;
-            }
+        if (seq instanceof AbstractStringBuilder asb) {
+            initCoder = asb.getCoder();
+            maybeLatin1 |= asb.maybeLatin1;
+        } else if (seq instanceof String s) {
+            initCoder = s.coder();
         } else {
-            initCoder = UTF16;
+            initCoder = LATIN1;
         }
 
         coder = initCoder;
@@ -1816,18 +1806,13 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     /* for readObject() */
     void initBytes(char[] value, int off, int len) {
-        if (String.COMPACT_STRINGS) {
-            byte[] val = StringUTF16.compress(value, off, len);
-            this.coder = StringUTF16.coderFromArrayLen(val, len);
-            this.value = val;
-            return;
-        }
-        this.coder = UTF16;
-        this.value = StringUTF16.toBytes(value, off, len);
+        byte[] val = StringUTF16.compress(value, off, len);
+        this.coder = StringUTF16.coderFromArrayLen(val, len);
+        this.value = val;
     }
 
     final byte getCoder() {
-        return COMPACT_STRINGS ? coder : UTF16;
+        return coder;
     }
 
     // Package access for String and StringBuffer.
@@ -1836,7 +1821,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     private static boolean isLatin1(byte coder) {
-        return COMPACT_STRINGS && coder == LATIN1;
+        return coder == LATIN1;
     }
 
     /**
@@ -1911,7 +1896,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     private static byte[] inflateIfNeededFor(byte[] value, int count, byte coder, byte otherCoder) {
-        if (COMPACT_STRINGS && (coder == LATIN1 && otherCoder == UTF16)) {
+        if (coder == LATIN1 && otherCoder == UTF16) {
             return inflateToUTF16(value, count);
         }
         return value;

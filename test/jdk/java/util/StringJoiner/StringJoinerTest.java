@@ -26,7 +26,7 @@
  * @summary tests StringJoinerTest
  * @modules java.base/jdk.internal.util
  * @requires vm.bits == "64" & os.maxMemory > 4G
- * @run testng/othervm -Xmx4g -XX:+CompactStrings StringJoinerTest
+ * @run testng/othervm -Xmx4g StringJoinerTest
  * @author Jim Gish
  */
 import java.util.ArrayList;
