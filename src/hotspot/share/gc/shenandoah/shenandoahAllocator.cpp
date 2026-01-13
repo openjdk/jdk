@@ -141,10 +141,10 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation(ShenandoahAll
     // Slow path under heap lock
     obj = attempt_allocation_slow(req, in_new_region, regions_ready_for_refresh, old_epoch_id);
   } else {
-    // Eagerly refresh alloc region if there are 1/2 or more of alloc regions ready for retire
+    // Eagerly refresh alloc regions if there are 50% or more of alloc regions ready for retire
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
     if (_epoch_id == old_epoch_id) {
-      refresh_alloc_regions(nullptr, nullptr, nullptr);
+      reserve_alloc_regions();
     }
   }
   return obj;
