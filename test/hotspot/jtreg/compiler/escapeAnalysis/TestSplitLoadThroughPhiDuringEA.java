@@ -27,11 +27,11 @@ import java.util.Objects;
 /*
  * @test
  * @bug 8374435
- * @summary assert during escape analysis when splitting a Load through a Phi does not result in a
- *          Phi of Loads
+ * @summary assert during escape analysis when splitting a Load through a Phi because the input of
+ *          the result Phi is a Load not from an AddP
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-UseCompressedOops ${test.main.class}
  */
-public class Test8374435 {
+public class TestSplitLoadThroughPhiDuringEA {
     static class Holder {
         Object o;
     }
