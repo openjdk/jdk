@@ -233,6 +233,12 @@ public final class StandardOption {
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.MACOS) {
                     b.description("help.option.app-image" + resourceKeySuffix(context.os()));
+                    var directoryValidator = b.createValidator().orElseThrow();
+                    var macBundleValidator = b
+                            .validatorExceptionFormatString("error.parameter-not-mac-bundle")
+                            .validator(StandardValidator.IS_VALID_MAC_BUNDLE)
+                            .createValidator().orElseThrow();
+                    b.validator(Validator.and(directoryValidator, macBundleValidator));
                 }
             }))
             .create();
