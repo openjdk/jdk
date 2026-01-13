@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,75 +23,54 @@
  * questions.
  */
 
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.util;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.model.AppImageLayout;
 
 /**
  * An abstraction of macOS Application bundle.
  *
  * @see <a href="https://en.wikipedia.org/wiki/Bundle_(macOS)#Application_bundles">https://en.wikipedia.org/wiki/Bundle_(macOS)#Application_bundles</a>
  */
-record MacBundle(Path root) {
+public record MacBundle(Path root) {
 
-    MacBundle {
+    public MacBundle {
         Objects.requireNonNull(root);
     }
 
-    boolean isValid() {
+    public boolean isValid() {
         return Files.isDirectory(contentsDir()) && Files.isDirectory(macOsDir()) && Files.isRegularFile(infoPlistFile());
     }
 
-    boolean isSigned() {
-        return Files.isDirectory(contentsDir().resolve("_CodeSignature"));
-    }
-
-    Path contentsDir() {
+    public Path contentsDir() {
         return root.resolve("Contents");
     }
 
-    Path homeDir() {
+    public Path homeDir() {
         return contentsDir().resolve("Home");
     }
 
-    Path macOsDir() {
+    public Path macOsDir() {
         return contentsDir().resolve("MacOS");
     }
 
-    Path resourcesDir() {
+    public Path resourcesDir() {
         return contentsDir().resolve("Resources");
     }
 
-    Path infoPlistFile() {
+    public Path infoPlistFile() {
         return contentsDir().resolve("Info.plist");
     }
 
-    static Optional<MacBundle> fromPath(Path path) {
+    public static Optional<MacBundle> fromPath(Path path) {
         var bundle = new MacBundle(path);
         if (bundle.isValid()) {
             return Optional.of(bundle);
         } else {
             return Optional.empty();
         }
-    }
-
-    static Optional<MacBundle> fromAppImageLayout(AppImageLayout layout) {
-        final var root = layout.rootDirectory();
-        final var bundleSubdir = root.relativize(layout.runtimeDirectory());
-        final var contentsDirname = Path.of("Contents");
-        var bundleRoot = root;
-        for (int i = 0; i != bundleSubdir.getNameCount(); i++) {
-            var nameComponent = bundleSubdir.getName(i);
-            if (contentsDirname.equals(nameComponent)) {
-                return Optional.of(new MacBundle(bundleRoot));
-            } else {
-                bundleRoot = bundleRoot.resolve(nameComponent);
-            }
-        }
-        return Optional.empty();
     }
 }
