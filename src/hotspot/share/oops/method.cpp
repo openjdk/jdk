@@ -1898,8 +1898,8 @@ void Method::print_name(outputStream* st) const {
 #endif // !PRODUCT || INCLUDE_JVMTI
 
 
-void Method::print_codes_on(outputStream* st, int flags) const {
-  print_codes_on(0, code_size(), st, flags);
+void Method::print_codes_on(outputStream* st, int flags, bool buffered) const {
+  print_codes_on(0, code_size(), st, flags, buffered);
 }
 
 void Method::print_codes_on(int from, int to, outputStream* st, int flags, bool buffered) const {
