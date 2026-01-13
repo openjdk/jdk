@@ -162,10 +162,11 @@ public class SnippetTaglet extends BaseTaglet {
                         case Style.Markup m -> markupEncountered = true;
                     }
                 }
-                Content c;
                 if (markupEncountered) {
                     return;
-                } else if (linkTarget != null) {
+                }
+                Content c = Text.of(text);
+                if (linkTarget != null) {
                     //disable preview tagging inside the snippets:
                     Utils.PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
@@ -174,15 +175,16 @@ public class SnippetTaglet extends BaseTaglet {
                                 null,
                                 linkTarget,
                                 ref,
-                                false, // TODO: for now
+                                true,
                                 Text.of(sequence.toString()),
                                 (key, args) -> { /* Error has already been reported above */ },
                                 tagletWriter);
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
                     }
-                } else {
-                    c = HtmlTree.SPAN(Text.of(text));
+                }
+                if (!classes.isEmpty()) {
+                    c = HtmlTree.SPAN(c);
                     classes.forEach(((HtmlTree) c)::addStyle);
                 }
                 code.add(c);

@@ -301,7 +301,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
 
             JMenu menu = (JMenu)evt.getSource();
             ButtonModel model = menu.getModel();
-            if (menu.isRolloverEnabled()) {
+            if (menu.isRolloverEnabled() && menu.isTopLevelMenu()) {
                 model.setRollover(false);
                 menuItem.repaint();
             }

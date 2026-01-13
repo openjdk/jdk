@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Stress test that reaches the process limit for thread count, or time limit.
+ * @requires test.thread.factory == null
  * @requires os.family != "aix"
  * @key stress
  * @library /test/lib
@@ -33,6 +34,7 @@
 /**
  * @test
  * @summary Stress test that reaches the process limit for thread count, or time limit.
+ * @requires test.thread.factory == null
  * @requires os.family == "aix"
  * @key stress
  * @library /test/lib

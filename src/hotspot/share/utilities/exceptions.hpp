@@ -94,6 +94,10 @@ class ThreadShadow: public CHeapObj<mtThread> {
   // use CLEAR_PENDING_NONASYNC_EXCEPTION to clear probable nonasync exception.
   void clear_pending_nonasync_exception();
 
+  void set_pending_preempted_exception();
+  void clear_pending_preempted_exception();
+  void check_preempted_exception() NOT_DEBUG_RETURN;
+
   ThreadShadow() : _pending_exception(nullptr),
                    _exception_file(nullptr), _exception_line(0) {}
 };
@@ -230,6 +234,8 @@ class Exceptions {
 #define CHECK_NULL                               CHECK_(nullptr)
 #define CHECK_false                              CHECK_(false)
 #define CHECK_JNI_ERR                            CHECK_(JNI_ERR)
+#define CHECK_PREEMPTABLE                        THREAD); if (HAS_PENDING_EXCEPTION) { THREAD->check_preempted_exception(); return;       } (void)(0
+#define CHECK_PREEMPTABLE_false                  THREAD); if (HAS_PENDING_EXCEPTION) { THREAD->check_preempted_exception(); return false; } (void)(0
 
 // CAUTION: These macros clears all exceptions including async exceptions, use it with caution.
 #define CHECK_AND_CLEAR                         THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return;        } (void)(0
@@ -248,6 +254,10 @@ class Exceptions {
 #define CHECK_AND_CLEAR_NONASYNC_NH             CHECK_AND_CLEAR_NONASYNC_(Handle())
 #define CHECK_AND_CLEAR_NONASYNC_NULL           CHECK_AND_CLEAR_NONASYNC_(nullptr)
 #define CHECK_AND_CLEAR_NONASYNC_false          CHECK_AND_CLEAR_NONASYNC_(false)
+
+#define CLEAR_PENDING_PREEMPTED_EXCEPTION       (((ThreadShadow*)THREAD)->clear_pending_preempted_exception())
+#define CHECK_AND_CLEAR_PREEMPTED               THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_PREEMPTED_EXCEPTION; return; } (void)(0
+
 
 // The THROW... macros should be used to throw an exception. They require a THREAD variable to be
 // visible within the scope containing the THROW. Usually this is achieved by declaring the function

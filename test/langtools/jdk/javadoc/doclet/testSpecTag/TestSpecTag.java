@@ -126,10 +126,8 @@ public class TestSpecTag extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#external-specs">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
-                    </ul>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></b\
+                    utton></li>
                     """);
     }
 

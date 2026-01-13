@@ -75,7 +75,6 @@ import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -133,7 +132,7 @@ final class MacPackagingPipeline {
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
-                        .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist)
+                        .noaction()
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
@@ -186,14 +185,18 @@ final class MacPackagingPipeline {
                 disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
 
                 if (predefinedRuntimeBundle.isPresent()) {
-                    // The predefined app image is a macOS bundle.
+                    // The input runtime image is a macOS bundle.
                     // Disable all alterations of the input bundle, but keep the signing enabled.
                     disabledTasks.addAll(List.of(MacCopyAppImageTaskID.values()));
                     disabledTasks.remove(MacCopyAppImageTaskID.COPY_SIGN);
+                } else {
+                    // The input runtime is not a macOS bundle and doesn't have the plist file. Create one.
+                    builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
+                            .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist).add();
                 }
 
                 if (predefinedRuntimeBundle.map(MacBundle::isSigned).orElse(false) && !((MacPackage)p).app().sign()) {
-                    // The predefined app image is a signed bundle; explicit signing is not requested for the package.
+                    // The input runtime is a signed bundle; explicit signing is not requested for the package.
                     // Disable the signing, i.e. don't re-sign the input bundle.
                     disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
                 }
@@ -221,10 +224,12 @@ final class MacPackagingPipeline {
         if (!app.sign()) {
             throw new IllegalArgumentException();
         }
-        return toSupplier(() -> {
-            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppImage(
-                    Objects.requireNonNull(env.appImageDir())).installDir(Path.of("/foo")).create();
-        }).get();
+        return new PackageBuilder(
+                app,
+                SignAppImagePackageType.VALUE
+        ).predefinedAppImage(
+                Objects.requireNonNull(env.appImageDir())
+        ).installDir(Path.of("/foo")).create();
     }
 
     static final class LayoutUtils {
@@ -264,7 +269,7 @@ final class MacPackagingPipeline {
         static <T extends AppImageLayout> AppImageTaskAction<MacApplication, T> withBundleLayout(AppImageTaskAction<MacApplication, T> action) {
             return new AppImageTaskAction<>() {
                 @Override
-                public void execute(AppImageBuildEnv<MacApplication, T> env) throws IOException, PackagerException {
+                public void execute(AppImageBuildEnv<MacApplication, T> env) throws IOException {
                     if (!env.envLayout().runtimeDirectory().getName(0).equals(Path.of("Contents"))) {
                         env = LayoutUtils.fromPackagerLayout(env);
                     }
@@ -360,12 +365,21 @@ final class MacPackagingPipeline {
 
         final var app = env.app();
 
+        // If the embedded runtime contains executable(s) in the "bin"
+        // subdirectory, we should use the standalone runtime info plist
+        // template. Otherwise, the user may be unable to run the "java"
+        // or other executables in the "bin" subdirectory of the embedded
+        // runtime.
+        final var useRuntimeInfoPlist = app.isRuntime() ||
+                app.runtimeBuilder().orElseThrow().withNativeCommands() ||
+                Files.isDirectory(env.resolvedLayout().runtimeDirectory().resolve("bin"));
+
         Map<String, String> data = new HashMap<>();
         data.put("CF_BUNDLE_IDENTIFIER", app.bundleIdentifier());
         data.put("CF_BUNDLE_NAME", app.bundleName());
         data.put("CF_BUNDLE_VERSION", app.version());
         data.put("CF_BUNDLE_SHORT_VERSION_STRING", app.shortVersion().toString());
-        if (app.isRuntime()) {
+        if (useRuntimeInfoPlist) {
             data.put("CF_BUNDLE_VENDOR", app.vendor());
         }
 
@@ -373,12 +387,18 @@ final class MacPackagingPipeline {
         final String publicName;
         final String category;
 
-        if (app.isRuntime()) {
+        if (useRuntimeInfoPlist) {
             template = "Runtime-Info.plist.template";
+        } else {
+            template = "ApplicationRuntime-Info.plist.template";
+        }
+
+        // Public name and category should be based on standalone runtime vs
+        // embedded runtime.
+        if (app.isRuntime()) {
             publicName = "Info.plist";
             category = "resource.runtime-info-plist";
         } else {
-            template = "ApplicationRuntime-Info.plist.template";
             publicName = "Runtime-Info.plist";
             category = "resource.app-runtime-info-plist";
         }
@@ -591,11 +611,20 @@ final class MacPackagingPipeline {
         }
 
         @Override
-        public void execute(TaskAction taskAction) throws IOException, PackagerException {
+        public void execute(TaskAction taskAction) throws IOException {
             delegate.execute(taskAction);
         }
     }
 
+    private static final ApplicationLayout MAC_APPLICATION_LAYOUT = ApplicationLayout.build()
+            .launchersDirectory("Contents/MacOS")
+            .appDirectory("Contents/app")
+            .runtimeDirectory("Contents/runtime/Contents/Home")
+            .desktopIntegrationDirectory("Contents/Resources")
+            .appModsDirectory("Contents/app/mods")
+            .contentDirectory("Contents")
+            .create();
+
     static final MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(
-            ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
+            MAC_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
 }

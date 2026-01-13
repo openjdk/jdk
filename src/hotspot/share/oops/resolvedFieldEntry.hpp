@@ -43,6 +43,9 @@
 // Field bytecodes start with a constant pool index as their operand, which is then rewritten to
 // a "field index", which is an index into the array of ResolvedFieldEntry.
 
+// The explicit paddings are necessary for generating deterministic CDS archives. They prevent
+// the C++ compiler from potentially inserting random values in unused gaps.
+
 //class InstanceKlass;
 class ResolvedFieldEntry {
   friend class VMStructs;
@@ -54,17 +57,9 @@ class ResolvedFieldEntry {
   u1 _tos_state;                // TOS state
   u1 _flags;                    // Flags: [0000|00|is_final|is_volatile]
   u1 _get_code, _put_code;      // Get and Put bytecodes of the field
-
-  void copy_from(const ResolvedFieldEntry& other) {
-    _field_holder = other._field_holder;
-    _field_offset = other._field_offset;
-    _field_index = other._field_index;
-    _cpool_index = other._cpool_index;
-    _tos_state = other._tos_state;
-    _flags = other._flags;
-    _get_code = other._get_code;
-    _put_code = other._put_code;
-  }
+#ifdef _LP64
+  u4 _padding;
+#endif
 
 public:
   ResolvedFieldEntry(u2 cpi) :
@@ -75,47 +70,14 @@ public:
     _tos_state(0),
     _flags(0),
     _get_code(0),
-    _put_code(0) {}
+    _put_code(0)
+#ifdef _LP64
+    , _padding(0)
+#endif
+    {}
 
   ResolvedFieldEntry() :
     ResolvedFieldEntry(0) {}
-
-  // Notes on copy constructor, copy assignment operator, and copy_from().
-  // These are necessary for generating deterministic CDS archives.
-  //
-  // We have some unused padding on 64-bit platforms (4 bytes at the tail end).
-  //
-  // When ResolvedFieldEntries in a ConstantPoolCache are allocated from the metaspace,
-  // their entire content (including the padding) is filled with zeros. They are
-  // then initialized with initialize_resolved_entries_array() in cpCache.cpp from a
-  // GrowableArray.
-  //
-  // The GrowableArray is initialized in rewriter.cpp, using ResolvedFieldEntries that
-  // are originally allocated from the C++ stack. Functions like GrowableArray::expand_to()
-  // will also allocate ResolvedFieldEntries from the stack. These may have random bits
-  // in the padding as the C++ compiler is allowed to leave the padding in uninitialized
-  // states.
-  //
-  // If we use the default copy constructor and/or default copy assignment operator,
-  // the random padding will be copied into the GrowableArray, from there
-  // to the ConstantPoolCache, and eventually to the CDS archive. As a result, the
-  // CDS archive will contain random bits, causing failures in
-  // test/hotspot/jtreg/runtime/cds/DeterministicDump.java (usually on Windows).
-  //
-  // By using copy_from(), we can prevent the random padding from being copied,
-  // ensuring that the ResolvedFieldEntries in a ConstantPoolCache (and thus the
-  // CDS archive) will have all zeros in the padding.
-
-  // Copy constructor
-  ResolvedFieldEntry(const ResolvedFieldEntry& other) {
-    copy_from(other);
-  }
-
-  // Copy assignment operator
-  ResolvedFieldEntry& operator=(const ResolvedFieldEntry& other) {
-    copy_from(other);
-    return *this;
-  }
 
   // Bit shift to get flags
   // Note: Only two flags exists at the moment but more could be added

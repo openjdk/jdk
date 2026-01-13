@@ -378,8 +378,8 @@ void VM_Version::initialize() {
   if (UseSHA && VM_Version::supports_sha3()) {
     // Auto-enable UseSHA3Intrinsics on hardware with performance benefit.
     // Note that the evaluation of UseSHA3Intrinsics shows better performance
-    // on Apple silicon but worse performance on Neoverse V1 and N2.
-    if (_cpu == CPU_APPLE) {  // Apple silicon
+    // on Apple and Qualcomm silicon but worse performance on Neoverse V1 and N2.
+    if (_cpu == CPU_APPLE || _cpu == CPU_QUALCOMM) {  // Apple or Qualcomm silicon
       if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
         FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
       }
