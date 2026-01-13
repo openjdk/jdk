@@ -99,7 +99,7 @@ class HistogramTimer {
                              const float percentages[],
                              unsigned long snapshot_max_duration) const;
 
-  // The the integral width of a bin (i.e., the number of possible
+  // The integral width of a bin (i.e., the number of possible
   // integral values that could have been placed in the bin).
   unsigned long get_bin_width(size_t bin) const;
   // Optional bar scaling factor, that uses bin_width vs 1.

@@ -31,6 +31,34 @@
 #include "logging/log.hpp"
 #include "runtime/threads.hpp"
 
+// A closure that takes an oop in the old generation and, if it's pointing
+// into the young generation, dirties the corresponding remembered set entry.
+// This is only used to rebuild the remembered set after a full GC.
+class ShenandoahDirtyRememberedSetClosure : public BasicOopIterateClosure {
+protected:
+  ShenandoahGenerationalHeap* const _heap;
+  ShenandoahScanRemembered*   const _scanner;
+
+public:
+  ShenandoahDirtyRememberedSetClosure() :
+          _heap(ShenandoahGenerationalHeap::heap()),
+          _scanner(_heap->old_generation()->card_scan()) {}
+
+  template<class T>
+  void work(T* p) {
+    assert(_heap->is_in_old(p), "Expecting to get an old gen address");
+    if (T o = RawAccess<>::oop_load(p); !CompressedOops::is_null(o)) {
+      if (const oop obj = CompressedOops::decode_not_null(o); _heap->is_in_young(obj)) {
+        // Dirty the card containing the cross-generational pointer.
+        _scanner->mark_card_as_dirty((HeapWord*) p);
+      }
+    }
+  }
+
+  void do_oop(narrowOop* p) override { work(p); }
+  void do_oop(oop* p) override       { work(p); }
+};
+
 size_t ShenandoahDirectCardMarkRememberedSet::last_valid_index() const {
   return _card_table->last_valid_index();
 }
@@ -181,19 +209,13 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
   log_debug(gc, remset)("Update remembered set from " PTR_FORMAT ", to " PTR_FORMAT, p2i(start), p2i(end));
 
   {
-    // TODO: Experiment with more precise card marking by iterating fields in object
-    HISTOGRAM_TIME_DESCRIBED_BLOCK("dirty_cards");
-    _rs->mark_range_as_dirty(start, pointer_delta(end, start));
-  }
-
-  {
     HISTOGRAM_TIME_DESCRIBED_BLOCK("register_objects");
+    ShenandoahDirtyRememberedSetClosure make_cards_dirty;
     while (address < end) {
 
-      const size_t object_size_words = cast_to_oop(address)->size();
-      HeapWord* object_end_address = address + object_size_words;
-
       register_object_without_lock(address);
+      const oop obj = cast_to_oop(address);
+      address += obj->oop_iterate_size(&make_cards_dirty);
 
       // if (object_end_address >= next_card_start) {
       //   _rs->mark_range_as_dirty(address, object_size_words);
@@ -215,8 +237,6 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
       // if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::lab_alignment_reserve()) {
       //   set_last_start(object_card_index, offset_in_card);
       // }
-
-      address = object_end_address;
     }
   }
 }
@@ -689,36 +709,6 @@ void ShenandoahScanRemembered::merge_worker_card_stats_cumulative(
   }
 }
 #endif
-
-// A closure that takes an oop in the old generation and, if it's pointing
-// into the young generation, dirties the corresponding remembered set entry.
-// This is only used to rebuild the remembered set after a full GC.
-class ShenandoahDirtyRememberedSetClosure : public BasicOopIterateClosure {
-protected:
-  ShenandoahGenerationalHeap* const _heap;
-  ShenandoahScanRemembered*   const _scanner;
-
-public:
-  ShenandoahDirtyRememberedSetClosure() :
-          _heap(ShenandoahGenerationalHeap::heap()),
-          _scanner(_heap->old_generation()->card_scan()) {}
-
-  template<class T>
-  inline void work(T* p) {
-    assert(_heap->is_in_old(p), "Expecting to get an old gen address");
-    T o = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_in_young(obj)) {
-        // Dirty the card containing the cross-generational pointer.
-        _scanner->mark_card_as_dirty((HeapWord*) p);
-      }
-    }
-  }
-
-  virtual void do_oop(narrowOop* p) { work(p); }
-  virtual void do_oop(oop* p)       { work(p); }
-};
 
 ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable* card_table, size_t total_card_count) :
   LogCardValsPerIntPtr(log2i_exact(sizeof(intptr_t)) - log2i_exact(sizeof(CardValue))),
