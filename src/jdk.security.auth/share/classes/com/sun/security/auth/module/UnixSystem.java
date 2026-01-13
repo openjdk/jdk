@@ -85,32 +85,33 @@ public class UnixSystem {
     private static final ValueLayout C_SIZE_T
             = (ValueLayout) LINKER.canonicalLayouts().get("size_t");
 
-    private static final StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
-    private static final VarHandle errnoHandle = capturedStateLayout.varHandle(
+    private static final StructLayout CAPTURE_STATE_LAYOUT
+            = Linker.Option.captureStateLayout();
+    private static final VarHandle VH_errno = CAPTURE_STATE_LAYOUT.varHandle(
             MemoryLayout.PathElement.groupElement("errno"));
 
-    private static final MethodHandle strerror = LINKER
-            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("strerror"),
+    private static final MethodHandle MH_strerror
+            = LINKER.downcallHandle(SYMBOL_LOOKUP.findOrThrow("strerror"),
                     FunctionDescriptor.of(C_POINTER, C_INT));
 
-    private static final MethodHandle getgroups = LINKER
-            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getgroups"),
+    private static final MethodHandle MH_getgroups
+            = LINKER.downcallHandle(SYMBOL_LOOKUP.findOrThrow("getgroups"),
                     FunctionDescriptor.of(C_INT, C_INT, C_POINTER),
                     Linker.Option.captureCallState("errno"));
-    private static final MethodHandle getuid = LINKER
-            .downcallHandle(SYMBOL_LOOKUP.findOrThrow("getuid"),
+    private static final MethodHandle MH_getuid
+            = LINKER.downcallHandle(SYMBOL_LOOKUP.findOrThrow("getuid"),
                     FunctionDescriptor.of(C_INT));
 
     // getpwuid_r does not work on AIX, instead we use another similar function
     // extern int _posix_getpwuid_r(uid_t, struct passwd *, char *, int, struct passwd **)
-    private static final MethodHandle getpwuid_r = LINKER
-            .downcallHandle(SYMBOL_LOOKUP.findOrThrow(
+    private static final MethodHandle MH_getpwuid_r
+            = LINKER.downcallHandle(SYMBOL_LOOKUP.findOrThrow(
                             OperatingSystem.isAix() ? "_posix_getpwuid_r" : "getpwuid_r"),
                     FunctionDescriptor.of(C_INT, C_INT, C_POINTER, C_POINTER,
                             OperatingSystem.isAix() ? C_INT : C_SIZE_T,
                             C_POINTER));
 
-    private static final GroupLayout passwd_layout = MemoryLayout.structLayout(
+    private static final GroupLayout ML_passwd = MemoryLayout.structLayout(
             C_POINTER.withName("pw_name"),
             C_POINTER.withName("pw_passwd"),
             C_INT.withName("pw_uid"),
@@ -120,18 +121,12 @@ public class UnixSystem {
             // big enough to avoid buffer overflow when `getpwuid_r` is called.
             MemoryLayout.paddingLayout(100));
 
-    private static final ValueLayout.OfInt pw_uid_layout
-            = (ValueLayout.OfInt) passwd_layout.select(groupElement("pw_uid"));
-    private static final long pw_uid_offset
-            = passwd_layout.byteOffset(groupElement("pw_uid"));
-    private static final ValueLayout.OfInt pw_gid_layout
-            = (ValueLayout.OfInt) passwd_layout.select(groupElement("pw_gid"));
-    private static final long pw_gid_offset
-            = passwd_layout.byteOffset(groupElement("pw_gid"));
-    private static final AddressLayout pw_name_layout
-            = (AddressLayout) passwd_layout.select(groupElement("pw_name"));
-    private static final long pw_name_offset
-            = passwd_layout.byteOffset(groupElement("pw_name"));
+    private static final VarHandle VH_pw_uid
+            = ML_passwd.varHandle(groupElement("pw_uid"));
+    private static final VarHandle VH_pw_gid
+            = ML_passwd.varHandle(groupElement("pw_gid"));
+    private static final VarHandle VH_pw_name
+            = ML_passwd.varHandle(groupElement("pw_name"));
 
     // The buffer size for the getpwuid_r function:
     // 1. sysconf(_SC_GETPW_R_SIZE_MAX) on macOS is 4096 and 1024 on Linux,
@@ -154,17 +149,17 @@ public class UnixSystem {
         // differently. I've checked several and an extra 100 chars at the
         // end seems enough.
         try (Arena scope = Arena.ofConfined()) {
-            MemorySegment capturedState = scope.allocate(capturedStateLayout);
-            int groupnum = (int) getgroups.invokeExact(capturedState, 0, MemorySegment.NULL);
+            MemorySegment capturedState = scope.allocate(CAPTURE_STATE_LAYOUT);
+            int groupnum = (int) MH_getgroups.invokeExact(capturedState, 0, MemorySegment.NULL);
             if (groupnum == -1) {
                 throw new RuntimeException("getgroups returns " + groupnum);
             }
 
             var gs = scope.allocate(C_INT, groupnum);
-            groupnum = (int) getgroups.invokeExact(capturedState, groupnum, gs);
+            groupnum = (int) MH_getgroups.invokeExact(capturedState, groupnum, gs);
             if (groupnum == -1) {
-                var errno = (int) errnoHandle.get(capturedState, 0L);
-                var errMsg = (MemorySegment) strerror.invokeExact(errno);
+                var errno = (int) VH_errno.get(capturedState, 0L);
+                var errMsg = (MemorySegment) MH_strerror.invokeExact(errno);
                 throw new RuntimeException("getgroups returns " + groupnum
                         + ". Reason: " + errMsg.reinterpret(Long.MAX_VALUE).getString(0));
             }
@@ -174,26 +169,26 @@ public class UnixSystem {
                 groups[i] = Integer.toUnsignedLong(gs.getAtIndex(C_INT, i));
             }
 
-            var pwd = scope.allocate(passwd_layout);
+            var pwd = scope.allocate(ML_passwd);
             var result = scope.allocate(C_POINTER);
             var buffer = scope.allocate(GETPW_R_SIZE_MAX);
-            var tmpUid = (int)getuid.invokeExact();
+            var tmpUid = (int) MH_getuid.invokeExact();
             // Do not call invokeExact because the type of buffer_size is not
             // always long in the underlying system.
-            int out = (int) getpwuid_r.invoke(
+            int out = (int) MH_getpwuid_r.invoke(
                     tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
             if (out != 0) {
                 // If ERANGE (Result too large) is detected in a new platform,
                 // consider adjusting GETPW_R_SIZE_MAX.
-                var err = (MemorySegment) strerror.invokeExact(out);
+                var err = (MemorySegment) MH_strerror.invokeExact(out);
                 throw new RuntimeException(err.reinterpret(Long.MAX_VALUE).getString(0));
             } else if (result.get(ValueLayout.ADDRESS, 0).equals(MemorySegment.NULL)) {
                 throw new RuntimeException("the requested entry is not found");
             } else {
                 // uid_t and gid_t were defined unsigned.
-                uid = Integer.toUnsignedLong(pwd.get(pw_uid_layout, pw_uid_offset));
-                gid = Integer.toUnsignedLong(pwd.get(pw_gid_layout, pw_gid_offset));
-                username = pwd.get(pw_name_layout, pw_name_offset).getString(0);
+                uid = Integer.toUnsignedLong((int) VH_pw_uid.get(pwd, 0L));
+                gid = Integer.toUnsignedLong((int) VH_pw_gid.get(pwd, 0L));
+                username = ((MemorySegment) VH_pw_name.get(pwd, 0L)).getString(0);
             }
         } catch (Throwable t) {
             var error = new UnsatisfiedLinkError("FFM calls failed");
