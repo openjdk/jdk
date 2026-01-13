@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,6 +53,8 @@ public class PipelineLeaksFD {
 
     private static final long MY_PID =  ProcessHandle.current().pid();
 
+    private static final boolean LSOF_AVAILABLE = checkForLSOF();
+
     // Test cases for pipelines with a number of pipeline sequences
     public static Object[][] builders() {
         return new Object[][]{
@@ -66,6 +69,23 @@ public class PipelineLeaksFD {
         };
     }
 
+    // True if lsof is runnable and collect pipe usage.
+    private static boolean lsofAvailable() {
+        return LSOF_AVAILABLE;
+    }
+
+    // Check if lsof is available
+    private static boolean checkForLSOF() {
+        try {
+            pipesForPid(MY_PID);
+            return true;
+        } catch (IOException ioe) {
+            System.err.println("Skipping: " + ioe);
+            return false;
+        }
+    }
+
+    @EnabledIf("lsofAvailable")
     @ParameterizedTest
     @MethodSource("builders")
     void checkForLeaks(List<ProcessBuilder> builders) throws IOException {
@@ -123,6 +143,7 @@ public class PipelineLeaksFD {
     }
 
     // Test redirectErrorStream  (true/false) has the right number of pipes in use
+    @EnabledIf("lsofAvailable")
     @ParameterizedTest()
     @MethodSource("redirectCases")
     void checkRedirectErrorStream(boolean redirectError) throws IOException {
