@@ -1978,6 +1978,7 @@ void G1ConcurrentMark::print_summary_info() {
 
 void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
   if (is_fully_initialized()) { // they are initialized late
+    tc->do_thread(_cm_thread);
     _concurrent_workers->threads_do(tc);
   }
 }

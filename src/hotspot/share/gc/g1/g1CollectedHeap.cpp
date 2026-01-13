@@ -1634,7 +1634,8 @@ jint G1CollectedHeap::initialize() {
 }
 
 bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  assert(_cm != nullptr, "thread must exist in order to check if mark is terminating");
+  assert(_cm != nullptr, "_cm must have been created");
+  assert(_cm->is_fully_initialized(), "thread must exist in order to check if mark is terminating");
   return _cm->cm_thread()->should_terminate();
 }
 
@@ -2422,9 +2423,6 @@ void G1CollectedHeap::print_gc_on(outputStream* st) const {
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   workers()->threads_do(tc);
-  if (_cm->is_fully_initialized()) {
-    tc->do_thread(_cm->cm_thread());
-  }
   _cm->threads_do(tc);
   _cr->threads_do(tc);
   tc->do_thread(_service_thread);
@@ -2545,8 +2543,8 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 }
 
 void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_mark) {
-  assert(!_cm->in_progress(), "Can not start concurrent operation while in progress");
   assert(_cm->is_fully_initialized(), "sanity");
+  assert(!_cm->in_progress(), "Can not start concurrent operation while in progress");
   MutexLocker x(G1CGC_lock, Mutex::_no_safepoint_check_flag);
   if (concurrent_operation_is_full_mark) {
     _cm->post_concurrent_mark_start();
