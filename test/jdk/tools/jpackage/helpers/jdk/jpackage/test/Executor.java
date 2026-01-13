@@ -63,6 +63,7 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     public Executor() {
+        commandOutputControl.dumpStdout(TKit.state().out()).dumpStderr(TKit.state().err());
     }
 
     public Executor setExecutable(String v) {
@@ -83,6 +84,10 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor setToolProvider(JavaTool v) {
         return setToolProvider(v.asToolProvider());
+    }
+
+    public Optional<ToolProvider> getToolProvider() {
+        return Optional.ofNullable(toolProvider);
     }
 
     public Optional<Path> getExecutable() {

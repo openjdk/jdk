@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import java.io.PrintWriter;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -46,6 +47,18 @@ public final class Globals {
         return objectFactory(ObjectFactory.build(objectFactory).executorFactory(v).create());
     }
 
+    Log.Logger logger() {
+        return logger;
+    }
+
+    public void loggerOutputStreams(PrintWriter out, PrintWriter err) {
+        logger.setPrintWriter(out, err);
+    }
+
+    public void loggerVerbose() {
+        logger.setVerbose();
+    }
+
     public static int main(Supplier<Integer> mainBody) {
         if (INSTANCE.isBound()) {
             return mainBody.get();
@@ -65,6 +78,7 @@ public final class Globals {
     }
 
     private ObjectFactory objectFactory = ObjectFactory.DEFAULT;
+    private final Log.Logger logger = new Log.Logger();
 
     private static final ScopedValue<Globals> INSTANCE = ScopedValue.newInstance();
     private static final Globals DEFAULT = new Globals();

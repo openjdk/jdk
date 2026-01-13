@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,13 +200,14 @@ public class OptionsValidationFailTest {
                 Stream.of("--jpt-run=ErrorTest")
         ).flatMap(x -> x).toArray(String[]::new)).map(dynamicTest -> {
             return DynamicTest.dynamicTest(dynamicTest.getDisplayName(), () -> {
-                JPackageCommand.withToolProvider(() -> {
+                TKit.withNewState(() -> {
+                    JPackageCommand.useToolProviderByDefault(jpackageToolProviderMock);
                     try {
                         dynamicTest.getExecutable().execute();
                     } catch (Throwable t) {
                         throw ExceptionBox.toUnchecked(ExceptionBox.unbox(t));
                     }
-                }, jpackageToolProviderMock);
+                });
             });
         });
     }
