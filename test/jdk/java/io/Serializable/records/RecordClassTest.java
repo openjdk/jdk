@@ -50,7 +50,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 /**
  * Serializes and deserializes record classes. Ensures that the SUID is 0.
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class RecordClassTest {
 
     record Foo () implements Serializable { }
@@ -127,7 +126,7 @@ public class RecordClassTest {
 
     record NotSerializable3<T>(T t) { }
 
-    public Object[][] notSerRecordClasses() {
+    public static Object[][] notSerRecordClasses() {
         return new Object[][] {
             new Object[] { NotSerializable1.class },
             new Object[] { NotSerializable2.class },

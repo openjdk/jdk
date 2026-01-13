@@ -75,13 +75,13 @@ public class SerialFactoryFaults {
         final String msg = ex.getMessage();
 
         if (factoryName.equals("ForcedError_NoSuchClass")) {
-            Assertions.assertEquals(                    "invalid jdk.serialFilterFactory: ForcedError_NoSuchClass: java.lang.ClassNotFoundException: ForcedError_NoSuchClass", msg, "wrong exception");
+            Assertions.assertEquals("invalid jdk.serialFilterFactory: ForcedError_NoSuchClass: java.lang.ClassNotFoundException: ForcedError_NoSuchClass", msg, "wrong exception");
         } else if (factoryName.equals("SerialFactoryFaults$NoPublicConstructor")) {
-            Assertions.assertEquals(                    "invalid jdk.serialFilterFactory: SerialFactoryFaults$NoPublicConstructor: java.lang.NoSuchMethodException: SerialFactoryFaults$NoPublicConstructor.<init>()", msg, "wrong exception");
+            Assertions.assertEquals("invalid jdk.serialFilterFactory: SerialFactoryFaults$NoPublicConstructor: java.lang.NoSuchMethodException: SerialFactoryFaults$NoPublicConstructor.<init>()", msg, "wrong exception");
         } else if (factoryName.equals("SerialFactoryFaults$ConstructorThrows")) {
-            Assertions.assertEquals(                    "invalid jdk.serialFilterFactory: SerialFactoryFaults$ConstructorThrows: java.lang.RuntimeException: constructor throwing a runtime exception", msg, "wrong exception");
+            Assertions.assertEquals("invalid jdk.serialFilterFactory: SerialFactoryFaults$ConstructorThrows: java.lang.RuntimeException: constructor throwing a runtime exception", msg, "wrong exception");
         } else if (factoryName.equals("SerialFactoryFaults$FactorySetsFactory")) {
-            Assertions.assertEquals(                    "invalid jdk.serialFilterFactory: SerialFactoryFaults$FactorySetsFactory: java.lang.IllegalStateException: Serial filter factory initialization incomplete", msg, "wrong exception");
+            Assertions.assertEquals("invalid jdk.serialFilterFactory: SerialFactoryFaults$FactorySetsFactory: java.lang.IllegalStateException: Serial filter factory initialization incomplete", msg, "wrong exception");
         } else {
             Assertions.fail("No test for filter factory: " + factoryName);
         }

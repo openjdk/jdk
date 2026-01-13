@@ -396,7 +396,6 @@ public class SerialFilterTest implements Serializable {
      */
     @ParameterizedTest
     @MethodSource("invalidLimits")
-    @MethodSource("invalidLimits")
     void testInvalidLimits(String pattern) {
         var iae = Assertions.assertThrows(IllegalArgumentException.class,
                 () -> ObjectInputFilter.Config.createFilter(pattern));
