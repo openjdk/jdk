@@ -1317,7 +1317,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
                 if (tree.isImplicitlyTyped()) {
-                    setVarAttrs(tree, v.type);
+                    setupImplicitlyTypedVariable(tree, v.type);
                 }
             }
             result = tree.type = v.type;
@@ -1592,7 +1592,7 @@ public class Attr extends JCTree.Visitor {
             if (tree.var.isImplicitlyTyped()) {
                 Type inferredType = chk.checkLocalVarType(tree.var, elemtype, tree.var.name);
                 tree.var.type = inferredType;
-                setVarAttrs(tree.var, inferredType);
+                setupImplicitlyTypedVariable(tree.var, inferredType);
             }
             attribStat(tree.var, loopEnv);
             chk.checkType(tree.expr.pos(), elemtype, tree.var.sym.type);
@@ -3216,9 +3216,10 @@ public class Attr extends JCTree.Visitor {
                     Type argType = arityMismatch ?
                             syms.errType :
                             actuals.head;
-                    if (params.head.type == null) {
+                    if (params.head.type == null &&
+                        params.head.isImplicitlyTyped()) { //error recovery
                         params.head.type = argType;
-                        setVarAttrs(params.head, argType);
+                        setupImplicitlyTypedVariable(params.head, argType);
                     }
                     params.head.sym = null;
                     actuals = actuals.isEmpty() ?
@@ -4221,7 +4222,7 @@ public class Attr extends JCTree.Visitor {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
         if (tree.var.isImplicitlyTyped()) {
-            setVarAttrs(tree.var, type == Type.noType ? syms.errType
+            setupImplicitlyTypedVariable(tree.var, type == Type.noType ? syms.errType
                                                       : type);
         }
         chk.validate(tree.var.vartype, env, true);
@@ -4243,7 +4244,7 @@ public class Attr extends JCTree.Visitor {
     public void visitRecordPattern(JCRecordPattern tree) {
         Type site;
 
-        if (tree.deconstructor == null) {
+        if (tree.deconstructor instanceof JCIdent id && id.name == names.var) {
             log.error(tree.pos(), Errors.DeconstructionPatternVarNotAllowed);
             tree.record = syms.errSymbol;
             site = tree.type = types.createErrorType(tree.record.type);
@@ -4259,6 +4260,7 @@ public class Attr extends JCTree.Visitor {
             }
             tree.type = tree.deconstructor.type = type;
             site = types.capture(tree.type);
+            chk.validate(tree.deconstructor, env, true);
         }
 
         List<Type> expectedRecordTypes;
@@ -4304,7 +4306,6 @@ public class Attr extends JCTree.Visitor {
         } finally {
             localEnv.info.scope.leave();
         }
-        chk.validate(tree.deconstructor, env, true);
         result = tree.type;
         matchBindings = new MatchBindings(outBindings.toList(), List.nil());
     }
@@ -5716,8 +5717,14 @@ public class Attr extends JCTree.Visitor {
         return types.capture(type);
     }
 
-    private void setVarAttrs(JCVariableDecl tree, Type type) {
+    private void setupImplicitlyTypedVariable(JCVariableDecl tree, Type type) {
         Assert.check(tree.isImplicitlyTyped());
+
+        if (tree.isImplicitlyTyped() &&
+            !type.hasTag(NONE) && !type.isErroneous()) {
+            //make sure warnings are reported:
+            attribType(make.at(tree.vartype != null ? tree.vartype.pos() : tree.pos()).Type(type), env);
+        }
 
         if (tree.vartype == null) {
             return ;

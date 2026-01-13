@@ -25,6 +25,9 @@ public class VarWarnPosition {
 
         // Test 4
         Consumer<Depr> c3 = (final var d) -> { };
+
+        // Test 5
+        var d = deprecatedList.get(0);
     }
 }
 

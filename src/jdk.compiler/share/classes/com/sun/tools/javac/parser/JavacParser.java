@@ -990,12 +990,12 @@ public class JavacParser implements Parser {
             pattern = toP(F.at(token.pos).AnyPattern());
         }
         else {
-            int varTypePos = Position.NOPOS;
+            boolean declaredUsingVar = false;
             if (parsedType == null) {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
                 e = unannotatedType(allowVar, TYPE | NOLAMBDA);
                 if (var) {
-                    varTypePos = e.pos;
+                    declaredUsingVar = true;
                 }
             } else {
                 e = parsedType;
@@ -1033,9 +1033,7 @@ public class JavacParser implements Parser {
                     name = names.empty;
                 }
                 JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null,
-                  //TODO: cleanup the DeclKind:
-                  varTypePos != Position.NOPOS ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT,
-                  varTypePos));
+                  declaredUsingVar ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT));
                 if (e == null) {
                     if (var.name == names.underscore && !allowVar) {
                         log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UseOfUnderscoreNotAllowed);
@@ -2188,7 +2186,6 @@ public class JavacParser implements Parser {
                         && restrictedTypeName(param.vartype, true) != null) {
                     checkSourceLevel(param.pos, Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS);
                     param.declKind = JCVariableDecl.DeclKind.VAR;
-                    param.typePos = TreeInfo.getStartPos(param.vartype);
                 }
             }
         }
@@ -3827,7 +3824,6 @@ public class JavacParser implements Parser {
             syntaxError(token.pos, Errors.Expected(EQ));
         }
 
-        int varTypePos = Position.NOPOS;
         JCTree elemType = TreeInfo.innermostType(type, true);
         if (elemType.hasTag(IDENT)) {
             Name typeName = ((JCIdent) elemType).name;
@@ -3839,7 +3835,6 @@ public class JavacParser implements Parser {
                     reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
                     declaredUsingVar = true;
-                    varTypePos = elemType.pos;
                     if (compound)
                         //error - 'var' in compound local var decl
                         reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
@@ -3847,7 +3842,7 @@ public class JavacParser implements Parser {
             }
         }
         JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init,
-          declaredUsingVar ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT, varTypePos));
+          declaredUsingVar ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT));
         return attach(result, dc);
     }
 
@@ -3961,11 +3956,10 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
-        boolean declaredUsingVar = type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var;
+        boolean declaredUsingVar = type != null && restrictedTypeName(type, false) == names.var;
         JCVariableDecl.DeclKind declKind = declaredUsingVar ? JCVariableDecl.DeclKind.VAR :
           type != null ? JCVariableDecl.DeclKind.EXPLICIT : JCVariableDecl.DeclKind.IMPLICIT;
-        int typePos = type != null ? type.pos : pos;
-        return toP(F.at(pos).VarDef(mods, name, type, null, declKind, typePos));
+        return toP(F.at(pos).VarDef(mods, name, type, null, declKind));
     }
 
     /** Resources = Resource { ";" Resources }

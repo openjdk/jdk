@@ -86,10 +86,12 @@ public class DeclarationEndPositions {
 
                     // For variable declarations using "var", verify the "var" position
                     if (tree instanceof JCVariableDecl varDecl && varDecl.declaredUsingVar()) {
-                        int vpos = varDecl.typePos;
-                        if (!input.substring(vpos).startsWith("var")) {
+                        int varStart = varDecl.vartype.getStartPosition();
+                        int varEnd = varDecl.vartype.getEndPosition(unit.endPositions);
+
+                        if (!input.substring(varStart, varEnd).startsWith("var")) {
                             throw new AssertionError(String.format(
-                              "wrong %s pos %d for \"%s\" in \"%s\"", "var", vpos, tree, input));
+                              "wrong %s start pos %d end pos %d for \"%s\" in \"%s\"", "var", varStart, varEnd, tree, input));
                         }
                     }
                 }

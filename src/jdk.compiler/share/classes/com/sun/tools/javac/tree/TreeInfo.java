@@ -614,8 +614,6 @@ public class TreeInfo {
                     return node.mods.pos;
                 } else if (node.vartype != null) {
                     return getStartPos(node.vartype);
-                } else if (node.typePos != Position.NOPOS) {
-                    return node.typePos;
                 }
                 break;
             }

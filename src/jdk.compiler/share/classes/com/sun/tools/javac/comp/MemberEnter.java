@@ -114,7 +114,7 @@ public class MemberEnter extends JCTree.Visitor {
         ListBuffer<Type> argbuf = new ListBuffer<>();
         for (List<JCVariableDecl> l = params; l.nonEmpty(); l = l.tail) {
             memberEnter(l.head, env);
-            argbuf.append(l.head.vartype.type);
+            argbuf.append(l.head.sym.type);
         }
 
         // Attribute result type, if one is given.
