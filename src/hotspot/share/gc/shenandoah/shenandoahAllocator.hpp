@@ -64,14 +64,15 @@ protected:
   // for non GC worker, the value is calculated with random like: abs(os::random()) % _alloc_region_count.
   uint alloc_start_index();
 
-  // Attempt to allocate memory to satisfy alloc request.
-  // If _alloc_region_count is not 0, it will try to allocate in shared alloc regions first with atomic operations w/o
-  // the need of global heap lock(fast path); when fast path fails, it will call attempt_allocation_slow which takes
-  // global heap lock and try to refresh shared alloc regions if they are not refreshed by other mutator thread.
-  // If _alloc_region_count is 0, no shared alloc region will be reserved, allocation is always done with global heap lock held.
+  // Attempt to allocate memory to satisfy non-humongous allocation.
+  // The function is the main entry point of non-humongous allocation work, it tries fast-path allocation calling function
+  // attempt_allocation_in_alloc_regions to directly allocate from shared alloc regions.
+  // When fast-path allocation fails, it will call attempt_allocation_slow which acquires heap lock.
+  // When fast-path allocation succeeds while it also determines >=50% of alloc regions are ready to retire, it calls
+  // refresh_alloc_regions to eagerly retire and refill those alloc regions.
   HeapWord* attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Slow path of allocation attempt. When fast path trying to allocate in shared alloc regions fails attempt_allocation_slow will
+  // Slow path of allocation work. When fast path trying to allocate in shared alloc regions fails attempt_allocation_slow will
   // be called to refresh shared alloc regions and allocate memory for the alloc request.
   HeapWord* attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region, uint regions_ready_for_refresh, uint32_t old_epoch_id);
 
@@ -137,14 +138,17 @@ public:
   virtual void reserve_alloc_regions();
 };
 
-/*
- * Allocator impl for mutator
- */
+// Allocator impl for mutator:
+// 1. _yield_to_safepoint is set to true,
+// 1. _alloc_region_count is configured by flag ShenandoahMutatorAllocRegions
 class ShenandoahMutatorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::Mutator> {
 public:
   ShenandoahMutatorAllocator(ShenandoahFreeSet* free_set);
 };
 
+// Allocator impl for collector:
+// 1. _yield_to_safepoint is set to false,
+// 1. _alloc_region_count is configured by flag ShenandoahCollectorAllocRegions
 class ShenandoahCollectorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::Collector> {
 public:
   ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set);
@@ -156,6 +160,9 @@ public:
 class ShenandoahOldCollectorAllocator : public ShenandoahAllocator<ShenandoahFreeSetPartitionId::OldCollector> {
 public:
   ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set);
+  // Overrides ShenandoahAllocator::allocate function for OldCollector partition.
+  // It delegates allocation work to ShenandoahFreeSet::allocate_for_collector,
+  // in addition, after allocation it handles plab and remembered set related works which are needed only for old gen.
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) override;
 };
 

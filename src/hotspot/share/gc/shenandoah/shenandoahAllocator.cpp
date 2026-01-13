@@ -141,10 +141,12 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation(ShenandoahAll
     // Slow path under heap lock
     obj = attempt_allocation_slow(req, in_new_region, regions_ready_for_refresh, old_epoch_id);
   } else {
-    // Eagerly refresh alloc regions if there are 50% or more of alloc regions ready for retire
-    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+    // Eagerly refresh alloc regions if there are 50% or more of alloc regions ready for retire.
+    // While holding uninitialized new object, the thread MUST NOT yield to safepoint.
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), false);
+    ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
     if (_epoch_id == old_epoch_id) {
-      reserve_alloc_regions();
+      accounting_updater._need_update = refresh_alloc_regions() > 0;
     }
   }
   return obj;
