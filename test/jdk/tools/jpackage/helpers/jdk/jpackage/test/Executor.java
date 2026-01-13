@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.spi.ToolProvider;
 import java.util.stream.IntStream;
@@ -106,15 +107,6 @@ public final class Executor extends CommandArguments<Executor> {
     public Executor setEnvVar(String envVarName, String envVarValue) {
         setEnvVars.put(Objects.requireNonNull(envVarName), Objects.requireNonNull(envVarValue));
         removeEnvVars.remove(envVarName);
-        return this;
-    }
-
-    public Executor setWinRunWithEnglishOutput(boolean value) {
-        if (!TKit.isWindows()) {
-            throw new UnsupportedOperationException(
-                    "setWinRunWithEnglishOutput is only valid on Windows platform");
-        }
-        winEnglishOutput = value;
         return this;
     }
 
@@ -193,6 +185,11 @@ public final class Executor extends CommandArguments<Executor> {
 
     Executor storeOutputInFiles() {
         return storeOutputInFiles(true);
+    }
+
+    public Executor processListener(Consumer<Process> v) {
+        commandOutputControl.processListener(v);
+        return this;
     }
 
     public record Result(CommandOutputControl.Result base) {
@@ -308,11 +305,6 @@ public final class Executor extends CommandArguments<Executor> {
         if (toolProvider != null && directory != null) {
             throw new IllegalArgumentException(
                     "Can't change directory when using tool provider");
-        }
-
-        if (toolProvider != null && winEnglishOutput) {
-            throw new IllegalArgumentException(
-                    "Can't change locale when using tool provider");
         }
 
         return ThrowingSupplier.toSupplier(() -> {
@@ -434,17 +426,8 @@ public final class Executor extends CommandArguments<Executor> {
         return executable.toAbsolutePath();
     }
 
-    private List<String> prefixCommandLineArgs() {
-        if (winEnglishOutput) {
-            return List.of("cmd.exe", "/c", "chcp", "437", ">nul", "2>&1", "&&");
-        } else {
-            return List.of();
-        }
-    }
-
     private Result runExecutable() throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
-        command.addAll(prefixCommandLineArgs());
         command.add(executablePath().toString());
         command.addAll(args);
         ProcessBuilder builder = new ProcessBuilder(command);
@@ -522,8 +505,7 @@ public final class Executor extends CommandArguments<Executor> {
             exec = executablePath().toString();
         }
 
-        var cmdline = Stream.of(prefixCommandLineArgs(), List.of(exec), args).flatMap(
-                List::stream).toList();
+        var cmdline = Stream.of(List.of(exec), args).flatMap(List::stream).toList();
 
         return String.format(format, CommandLineFormat.DEFAULT.apply(cmdline), cmdline.size());
     }
@@ -559,6 +541,5 @@ public final class Executor extends CommandArguments<Executor> {
     private Path directory;
     private Set<String> removeEnvVars = new HashSet<>();
     private Map<String, String> setEnvVars = new HashMap<>();
-    private boolean winEnglishOutput;
     private String winTmpDir = null;
 }
