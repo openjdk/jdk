@@ -3074,7 +3074,7 @@ class StubGenerator: public StubCodeGenerator {
                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
 #ifdef ASSERT
-    if (AvoidUnalignedAccesses) {
+    if (!UseUnalignedAccesses) {
       Label align_ok;
       __ andi(t0, strL, 0x7);
       __ beqz(t0, align_ok);
@@ -3136,7 +3136,7 @@ class StubGenerator: public StubCodeGenerator {
              tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
              tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
-    if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+    if (!UseUnalignedAccesses && (base_offset % 8) != 0) {
       // Load 4 bytes from strL to make sure main loop is 8-byte aligned
       // cnt2 is >= 68 here, no need to check it for >= 0
       __ lwu(tmpL, Address(strL));
@@ -3150,7 +3150,7 @@ class StubGenerator: public StubCodeGenerator {
       __ subi(cnt2, cnt2, wordSize / 2);
     }
 
-    // we are now 8-bytes aligned on strL when AvoidUnalignedAccesses is true
+    // we are now 8-bytes aligned on strL when UseUnalignedAccesses is false
     __ subi(cnt2, cnt2, wordSize * 2);
     __ bltz(cnt2, TAIL);
     __ bind(SMALL_LOOP); // smaller loop
