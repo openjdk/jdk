@@ -305,7 +305,9 @@ public class TestKeyStoreBasic {
             // so comparing with precision of 1 ms
             if (!(diff >= 0 && diff <= 1000000)) {
                 throw new RuntimeException("ERROR: entry creation time (" + k
-                        + ") differs using Instance {"+timestampO1 +" -- "+timestampO2+"}"+diff);
+                                           + ") differs using Instance {"
+                                           + timestampO1 + " - "
+                                           + timestampO2 + "}");
             }
         }
     }
