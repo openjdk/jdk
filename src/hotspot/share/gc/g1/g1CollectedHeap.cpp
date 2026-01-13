@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -686,7 +686,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   // the check before we do the actual allocation. The reason for doing it
   // before the allocation is that we avoid having to keep track of the newly
   // allocated memory while we do a GC.
-  if (policy()->need_to_start_conc_mark("concurrent humongous allocation",
+  // Only try that if we can actually perform a GC.
+  if (is_init_completed() && policy()->need_to_start_conc_mark("concurrent humongous allocation",
                                         word_size)) {
     try_collect(word_size, GCCause::_g1_humongous_allocation, collection_counters(this));
   }
