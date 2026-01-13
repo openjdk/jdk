@@ -1354,6 +1354,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if {@code byteLength < 0}
+     * @since 27
      */
     String getString(long offset, Charset charset, long byteLength);
 
@@ -2669,6 +2670,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
      *         in bytes, of the substring of {@code src} encoded using the given charset
      * @return the number of copied bytes.
+     * @since 27
      */
     @ForceInline
     static long copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
