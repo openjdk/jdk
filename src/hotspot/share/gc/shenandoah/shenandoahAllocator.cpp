@@ -145,11 +145,20 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation(ShenandoahAll
   uint32_t old_epoch_id = AtomicAccess::load(&_epoch_id);
   // Fast path: start the attempt to allocate in alloc regions right away
   HeapWord* obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
-  if (obj != nullptr) {
+  if (obj != nullptr && regions_ready_for_refresh < _alloc_region_count / 2) {
     return obj;
   }
-  // Slow path under heap lock
-  return attempt_allocation_slow(req, in_new_region, regions_ready_for_refresh, old_epoch_id);
+  if (obj == nullptr) {
+    // Slow path under heap lock
+    obj = attempt_allocation_slow(req, in_new_region, regions_ready_for_refresh, old_epoch_id);
+  } else {
+    // Eagerly refresh alloc region if there are 1/2 or more of alloc regions ready for retire
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+    if (_epoch_id == old_epoch_id) {
+      refresh_alloc_regions(nullptr, nullptr, nullptr);
+    }
+  }
+  return obj;
 }
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
