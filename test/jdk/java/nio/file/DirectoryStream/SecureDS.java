@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,14 +302,11 @@ public class SecureDS {
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir);) {
             if (ds instanceof SecureDirectoryStream<Path> sds) {
                 sds.move(file, null, file);
-                if (!Files.exists(result))
-                    throw new RuntimeException(result + " does not exist");
                 if (!TEXT.equals(Files.readString(result)))
                     throw new RuntimeException(result + " content incorrect");
             } else {
                 throw new RuntimeException("Not a SecureDirectoryStream");
             }
-            System.out.println("Success: \"" + TEXT + "\"");
         } finally {
             boolean fileDeleted = Files.deleteIfExists(filepath);
             if (!fileDeleted)
