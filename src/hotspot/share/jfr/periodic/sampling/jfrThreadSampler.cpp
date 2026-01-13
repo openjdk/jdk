@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,7 +354,15 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
 
   SafepointMechanism::arm_local_poll_release(jt);
 
-  if (jt->thread_state() != _thread_in_native) {
+  // Separate the arming of the poll (above) from the reading of JavaThread state (below).
+  if (UseSystemMemoryBarrier) {
+    SystemMemoryBarrier::emit();
+  } else {
+    OrderAccess::fence();
+  }
+
+  if (jt->thread_state() != _thread_in_native || !jt->has_last_Java_frame()) {
+    assert_lock_strong(Threads_lock);
     JfrSampleMonitor jsm(tl);
     if (jsm.is_waiting()) {
       // The thread has already returned from native,
