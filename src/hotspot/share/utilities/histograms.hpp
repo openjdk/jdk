@@ -15,7 +15,7 @@
 // Uncomment this next #define to turn on timings.  If this line is
 // commented, then all timing code will be removed from the source.
 
-#define HISTOGRAM_COMPILE_FOR_TIMING
+// #define HISTOGRAM_COMPILE_FOR_TIMING
 
 #include <cstdio>
 #include <ctime>
