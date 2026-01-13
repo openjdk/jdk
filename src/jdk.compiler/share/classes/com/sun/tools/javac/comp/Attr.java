@@ -4755,10 +4755,7 @@ public class Attr extends JCTree.Visitor {
             // was given when the constructor was resolved)
 
             if (sym.name != names.init || tree.hasTag(REFERENCE)) {
-                chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
-                chk.checkSunAPI(tree.pos(), sym);
-                chk.checkProfile(tree.pos(), sym);
-                chk.checkPreview(tree.pos(), env.info.scope.owner, site, sym);
+                checkSymbol(tree.pos(), site, sym);
             }
 
             if (pt.isErroneous()) {
@@ -4894,6 +4891,15 @@ public class Attr extends JCTree.Visitor {
                    !Flags.isConstant(v) &&
                    v.name != names._class;
         }
+
+    private void checkSymbol(DiagnosticPosition pos, Type site, Symbol sym) {
+        Assert.check(site != null || sym.kind != MTH || sym.kind != VAR);
+
+        chk.checkDeprecated(pos, env.info.scope.owner, sym);
+        chk.checkSunAPI(pos, sym);
+        chk.checkProfile(pos, sym);
+        chk.checkPreview(pos, env.info.scope.owner, site, sym);
+    }
 
     /**
      * Check that method arguments conform to its instantiation.
@@ -5720,10 +5726,16 @@ public class Attr extends JCTree.Visitor {
     private void setupImplicitlyTypedVariable(JCVariableDecl tree, Type type) {
         Assert.check(tree.isImplicitlyTyped());
 
-        if (tree.isImplicitlyTyped() &&
-            !type.hasTag(NONE) && !type.isErroneous()) {
-            //make sure warnings are reported:
-            attribType(make.at(tree.vartype != null ? tree.vartype.pos() : tree.pos()).Type(type), env);
+        if (tree.isImplicitlyTyped()) {
+            DiagnosticPosition pos = tree.vartype != null ? tree.vartype.pos()
+                                                          : tree.pos();
+            new StructuralTypeMapping<Object>() {
+                @Override
+                public Type visitClassType(ClassType t, Object s) {
+                    checkSymbol(pos, null, t.tsym);
+                    return super.visitClassType(t, s);
+                }
+            }.apply(type);
         }
 
         if (tree.vartype == null) {
@@ -5734,9 +5746,7 @@ public class Attr extends JCTree.Visitor {
 
         JCIdent vartype = (JCIdent) tree.vartype;
 
-        //TODO: should we set the symbol if it is "sensible" (e.g. primitive types don't have sensible symbol):
-//        vartype.sym = type.tsym;
-        //but *some* symbol needs to be set:
+        //some symbol needs to be set of JCIdent:
         vartype.sym = syms.noSymbol;
         vartype.type = type;
     }

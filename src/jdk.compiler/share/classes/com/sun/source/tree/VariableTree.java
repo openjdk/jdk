@@ -76,4 +76,12 @@ public interface VariableTree extends StatementTree {
      * @return the initializer
      */
     ExpressionTree getInitializer();
+
+    /**
+     * {@returns {@code true} if and only if the variable does not have an explicit type, and
+     * the type is infered implicitly.}
+     *
+     * @since 27
+     */
+    public boolean isImplicitlyTyped();
 }

@@ -1059,6 +1059,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             }
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public boolean isImplicitlyTyped() {
             return declKind != DeclKind.EXPLICIT;
         }
