@@ -312,7 +312,7 @@ bool src_elem_modified_after_arraycopy(const ArrayCopyNode* ac, Node* start, con
       to_visit.push(call->memory());
     } else if (mem->is_Store() || mem->isa_LoadStore()) {
       // Step through (load)store if it does not modify the source element.
-      const TypePtr* ptr_ty = mem->adr_type();
+      const TypePtr* ptr_ty = mem->in(MemNode::Address)->bottom_type()->is_ptr();
       const int ptr_alias_idx = phase->C->get_alias_index(ptr_ty);
       if (src_offset == Type::OffsetBot || ptr_ty->offset() == Type::OffsetBot ||
           (src_alias_idx == ptr_alias_idx && src_offset == ptr_ty->offset())) {
