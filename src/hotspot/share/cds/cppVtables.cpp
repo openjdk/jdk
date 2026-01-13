@@ -58,6 +58,9 @@
 
 #ifndef PRODUCT
 
+// AOTGrowableArray has a vtable only when in non-product builds (due to
+// the virtual printing functions in AnyObj).
+
 using GrowableArray_ModuleEntry_ptr = AOTGrowableArray<ModuleEntry*>;
 
 #define DEBUG_CPP_VTABLE_TYPES_DO(f) \
@@ -282,7 +285,7 @@ void CppVtables::serialize(SerializeClosure* soc) {
   }
 }
 
-intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address obj) {
+intptr_t* CppVtables::get_archived_vtable(MetaspaceClosureType type, address obj) {
   if (!_orig_cpp_vtptrs_inited) {
     CPP_VTABLE_TYPES_DO(INIT_ORIG_CPP_VTPTRS);
     _orig_cpp_vtptrs_inited = true;
@@ -290,23 +293,23 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
 
   assert(CDSConfig::is_dumping_archive(), "sanity");
   int kind = -1;
-  switch (msotype) {
-  case MetaspaceObj::SymbolType:
-  case MetaspaceObj::TypeArrayU1Type:
-  case MetaspaceObj::TypeArrayU2Type:
-  case MetaspaceObj::TypeArrayU4Type:
-  case MetaspaceObj::TypeArrayU8Type:
-  case MetaspaceObj::TypeArrayOtherType:
-  case MetaspaceObj::CArrayType:
-  case MetaspaceObj::ConstMethodType:
-  case MetaspaceObj::ConstantPoolCacheType:
-  case MetaspaceObj::AnnotationsType:
-  case MetaspaceObj::ModuleEntryType:
-  case MetaspaceObj::PackageEntryType:
-  case MetaspaceObj::RecordComponentType:
-  case MetaspaceObj::AdapterHandlerEntryType:
-  case MetaspaceObj::AdapterFingerPrintType:
-  PRODUCT_ONLY(case MetaspaceObj::GrowableArrayType:)
+  switch (type) {
+  case MetaspaceClosureType::SymbolType:
+  case MetaspaceClosureType::TypeArrayU1Type:
+  case MetaspaceClosureType::TypeArrayU2Type:
+  case MetaspaceClosureType::TypeArrayU4Type:
+  case MetaspaceClosureType::TypeArrayU8Type:
+  case MetaspaceClosureType::TypeArrayOtherType:
+  case MetaspaceClosureType::CArrayType:
+  case MetaspaceClosureType::ConstMethodType:
+  case MetaspaceClosureType::ConstantPoolCacheType:
+  case MetaspaceClosureType::AnnotationsType:
+  case MetaspaceClosureType::ModuleEntryType:
+  case MetaspaceClosureType::PackageEntryType:
+  case MetaspaceClosureType::RecordComponentType:
+  case MetaspaceClosureType::AdapterHandlerEntryType:
+  case MetaspaceClosureType::AdapterFingerPrintType:
+  PRODUCT_ONLY(case MetaspaceClosureType::GrowableArrayType:)
     // These have no vtables.
     break;
   default:

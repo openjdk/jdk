@@ -27,6 +27,7 @@
 
 #include "cds/aotGrowableArray.hpp"
 #include "jni.h"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
@@ -186,7 +187,7 @@ public:
   // methods required by MetaspaceClosure
   void metaspace_pointers_do(MetaspaceClosure* it);
   int size_in_heapwords() const { return (int)heap_word_size(sizeof(ModuleEntry)); }
-  MetaspaceObj::Type type() const { return MetaspaceObj::ModuleEntryType; }
+  MetaspaceClosureType type() const { return MetaspaceClosureType::ModuleEntryType; }
   static bool is_read_only_by_default() { return false; }
 
   void print(outputStream* st = tty) const;

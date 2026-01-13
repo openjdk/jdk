@@ -27,6 +27,7 @@
 
 #include "cds/aotGrowableArray.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -211,7 +212,7 @@ public:
   // methods required by MetaspaceClosure
   void metaspace_pointers_do(MetaspaceClosure* it);
   int size_in_heapwords() const { return (int)heap_word_size(sizeof(PackageEntry)); }
-  MetaspaceObj::Type type() const { return MetaspaceObj::PackageEntryType; }
+  MetaspaceClosureType type() const { return MetaspaceClosureType::PackageEntryType; }
   static bool is_read_only_by_default() { return false; }
 
   void print(outputStream* st = tty);

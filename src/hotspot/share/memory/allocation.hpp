@@ -306,8 +306,6 @@ class MetaspaceObj {
   f(TypeArrayU4) \
   f(TypeArrayU8) \
   f(TypeArrayOther) \
-  f(GrowableArray) \
-  f(CArray) \
   f(Method) \
   f(ConstMethod) \
   f(MethodData) \
@@ -316,8 +314,6 @@ class MetaspaceObj {
   f(Annotations) \
   f(MethodCounters) \
   f(RecordComponent) \
-  f(ModuleEntry) \
-  f(PackageEntry) \
   f(KlassTrainingData) \
   f(MethodTrainingData) \
   f(CompileTrainingData) \

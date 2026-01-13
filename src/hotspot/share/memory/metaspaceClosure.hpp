@@ -29,6 +29,7 @@
 #include "cppstdlib/type_traits.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/array.hpp"
 #include "utilities/debug.hpp"
@@ -66,15 +67,26 @@ public:
     _default
   };
 
+#define METASPACE_CLOSURE_TYPE_NAME_CASE(name) case MetaspaceClosureType::name ## Type: return #name;
+
+  static const char* type_name(MetaspaceClosureType type) {
+    switch(type) {
+    METASPACE_CLOSURE_TYPES_DO(METASPACE_CLOSURE_TYPE_NAME_CASE)
+    default:
+      ShouldNotReachHere();
+      return nullptr;
+    }
+  }
+
   // class MetaspaceClosure::Ref --
   //
   // For type X to be iterable by MetaspaceClosure, X (or one of X's supertypes) must have
   // the following public functions:
   //         void metaspace_pointers_do(MetaspaceClosure* it);
-  //         MetaspaceObj::Type type() const;
   //         static bool is_read_only_by_default() { return true; }
   //
   // In addition, if X is not a subtype of MetaspaceObj, it must have the following function:
+  //         MetaspaceClosureType type() const;
   //         int size_in_heapwords() const;
   //
   // Currently, the iterable types include all subtypes of MetsapceObj, as well
@@ -122,7 +134,7 @@ public:
     virtual bool not_null() const = 0;
     virtual int size() const = 0;
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const = 0;
-    virtual MetaspaceObj::Type msotype() const = 0;
+    virtual MetaspaceClosureType type() const = 0;
     virtual bool is_read_only_by_default() const = 0;
     virtual ~Ref() {}
 
@@ -181,6 +193,15 @@ private:
     return obj->size_in_heapwords();
   }
 
+  static MetaspaceClosureType as_type(MetaspaceClosureType t) {
+    return t;
+  }
+
+  static MetaspaceClosureType as_type(MetaspaceObj::Type msotype) {
+    precond(msotype < MetaspaceObj::_number_of_types);
+    return (MetaspaceClosureType)msotype;
+  }
+
   // MSORef -- iterate an instance of T, where T::metaspace_pointers_do() exists.
   template <class T> class MSORef : public Ref {
     T** _mpp;
@@ -198,7 +219,7 @@ private:
     virtual bool is_read_only_by_default() const { return T::is_read_only_by_default(); }
     virtual bool not_null()                const { return dereference() != nullptr; }
     virtual int size()                     const { return get_size(dereference()); }
-    virtual MetaspaceObj::Type msotype()   const { return dereference()->type(); }
+    virtual MetaspaceClosureType type()    const { return as_type(dereference()->type()); }
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
       dereference()->metaspace_pointers_do(it);
@@ -227,7 +248,7 @@ private:
     virtual bool is_read_only_by_default() const { return true; }
     virtual bool not_null()                const { return dereference() != nullptr;  }
     virtual int size()                     const { return dereference()->size(); }
-    virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::array_type(sizeof(T)); }
+    virtual MetaspaceClosureType type()    const { return as_type(MetaspaceObj::array_type(sizeof(T))); }
   };
 
   // OtherArrayRef -- iterate an instance of Array<T>, where T does NOT have metaspace_pointer_do().
@@ -315,7 +336,7 @@ private:
     virtual bool is_read_only_by_default() const { return false; }
     virtual bool not_null()                const { return dereference() != nullptr; }
     virtual int size()                     const { return (int)heap_word_size(byte_size()); }
-    virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::CArrayType; }
+    virtual MetaspaceClosureType type()    const { return MetaspaceClosureType::CArrayType; }
   };
 
   // OtherCArrayRef -- iterate a C array of type T, where T does NOT have metaspace_pointer_do().

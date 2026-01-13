@@ -28,6 +28,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -66,7 +67,7 @@ class AOTMapLogger : AllStatic {
     address _buffered_addr;
     address _requested_addr;
     int _bytes;
-    MetaspaceObj::Type _type;
+    MetaspaceClosureType _type;
   };
 
 public:

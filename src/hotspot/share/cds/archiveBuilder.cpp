@@ -243,7 +243,7 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
   if (get_follow_mode(ref) != make_a_copy) {
     return false;
   }
-  if (ref->msotype() == MetaspaceObj::ClassType) {
+  if (ref->type() == MetaspaceClosureType::ClassType) {
     Klass* klass = (Klass*)ref->obj();
     assert(klass->is_klass(), "must be");
     if (!is_excluded(klass)) {
@@ -252,7 +252,7 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
         assert(klass->is_instance_klass(), "must be");
       }
     }
-  } else if (ref->msotype() == MetaspaceObj::SymbolType) {
+  } else if (ref->type() == MetaspaceClosureType::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
     Symbol* sym = (Symbol*)ref->obj();
     sym->increment_refcount();
@@ -441,14 +441,14 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   }
 
 #ifdef ASSERT
-  if (ref->msotype() == MetaspaceObj::MethodType) {
+  if (ref->type() == MetaspaceClosureType::MethodType) {
     Method* m = (Method*)ref->obj();
     assert(!RegeneratedClasses::has_been_regenerated((address)m->method_holder()),
            "Should not archive methods in a class that has been regenerated");
   }
 #endif
 
-  if (ref->msotype() == MetaspaceObj::MethodDataType) {
+  if (ref->type() == MetaspaceClosureType::MethodDataType) {
     MethodData* md = (MethodData*)ref->obj();
     md->clean_method_data(false /* always_clean */);
   }
@@ -549,16 +549,16 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
   if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
-  } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
-             ref->msotype() == MetaspaceObj::MethodCountersType ||
-             ref->msotype() == MetaspaceObj::KlassTrainingDataType ||
-             ref->msotype() == MetaspaceObj::MethodTrainingDataType ||
-             ref->msotype() == MetaspaceObj::CompileTrainingDataType) {
+  } else if (ref->type() == MetaspaceClosureType::MethodDataType ||
+             ref->type() == MetaspaceClosureType::MethodCountersType ||
+             ref->type() == MetaspaceClosureType::KlassTrainingDataType ||
+             ref->type() == MetaspaceClosureType::MethodTrainingDataType ||
+             ref->type() == MetaspaceClosureType::CompileTrainingDataType) {
     return (TrainingData::need_data() || TrainingData::assembling_data()) ? make_a_copy : set_to_null;
-  } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
+  } else if (ref->type() == MetaspaceClosureType::AdapterHandlerEntryType) {
     return CDSConfig::is_dumping_adapters() ? make_a_copy : set_to_null;
   } else {
-    if (ref->msotype() == MetaspaceObj::ClassType) {
+    if (ref->type() == MetaspaceClosureType::ClassType) {
       Klass* klass = (Klass*)ref->obj();
       assert(klass->is_klass(), "must be");
       if (RegeneratedClasses::has_been_regenerated(klass)) {
@@ -635,7 +635,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   size_t alignment = SharedSpaceObjectAlignment; // alignment for the dest pointer
 
   char* oldtop = dump_region->top();
-  if (src_info->msotype() == MetaspaceObj::ClassType) {
+  if (src_info->type() == MetaspaceClosureType::ClassType) {
     // Allocate space for a pointer directly in front of the future InstanceKlass, so
     // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
     // without building another hashtable. See RunTimeClassInfo::get_for()
@@ -651,7 +651,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
       alignment = nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
     }
 #endif
-  } else if (src_info->msotype() == MetaspaceObj::SymbolType) {
+  } else if (src_info->type() == MetaspaceClosureType::SymbolType) {
     // Symbols may be allocated by using AllocateHeap, so their sizes
     // may be less than size_in_bytes() indicates.
     bytes = ((Symbol*)src)->byte_size();
@@ -661,7 +661,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   memcpy(dest, src, bytes);
 
   // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
-  if (CDSConfig::is_dumping_static_archive() && (src_info->msotype() == MetaspaceObj::SymbolType)) {
+  if (CDSConfig::is_dumping_static_archive() && (src_info->type() == MetaspaceClosureType::SymbolType)) {
     Symbol* buffered_symbol = (Symbol*)dest;
     assert(((Symbol*)src)->is_permanent(), "archived symbols must be permanent");
     buffered_symbol->update_identity_hash();
@@ -676,7 +676,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     }
   }
 
-  intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->msotype(), (address)dest);
+  intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->type(), (address)dest);
   if (archived_vtable != nullptr) {
     *(address*)dest = (address)archived_vtable;
     ArchivePtrMarker::mark_pointer((address*)dest);
@@ -686,7 +686,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   src_info->set_buffered_addr((address)dest);
 
   char* newtop = dump_region->top();
-  _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
+  _alloc_stats.record(src_info->type(), int(newtop - oldtop), src_info->read_only());
 
   DEBUG_ONLY(_alloc_stats.verify((int)dump_region->used(), src_info->read_only()));
 }
@@ -971,15 +971,15 @@ void ArchiveBuilder::make_training_data_shareable() {
       return;
     }
 
-    if (info.msotype() == MetaspaceObj::KlassTrainingDataType ||
-        info.msotype() == MetaspaceObj::MethodTrainingDataType ||
-        info.msotype() == MetaspaceObj::CompileTrainingDataType) {
+    if (info.type() == MetaspaceClosureType::KlassTrainingDataType ||
+        info.type() == MetaspaceClosureType::MethodTrainingDataType ||
+        info.type() == MetaspaceClosureType::CompileTrainingDataType) {
       TrainingData* buffered_td = (TrainingData*)info.buffered_addr();
       buffered_td->remove_unshareable_info();
-    } else if (info.msotype() == MetaspaceObj::MethodDataType) {
+    } else if (info.type() == MetaspaceClosureType::MethodDataType) {
       MethodData* buffered_mdo = (MethodData*)info.buffered_addr();
       buffered_mdo->remove_unshareable_info();
-    } else if (info.msotype() == MetaspaceObj::MethodCountersType) {
+    } else if (info.type() == MetaspaceClosureType::MethodCountersType) {
       MethodCounters* buffered_mc = (MethodCounters*)info.buffered_addr();
       buffered_mc->remove_unshareable_info();
     }
