@@ -96,6 +96,10 @@ void GCLocker::block() {
   OrderAccess::fence();
 
   JavaThread* java_thread = JavaThread::current();
+  if (CheckJNICalls && java_thread->in_critical()) {
+    fatal("Deadlock due to GC while in JNI critical section");
+  }
+
   ThreadBlockInVM tbivm(java_thread);
 
   // Wait for threads leaving critical section

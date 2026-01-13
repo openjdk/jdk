@@ -172,6 +172,10 @@ MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
 }
 
 void ZCollectedHeap::collect(GCCause::Cause cause) {
+  if (CheckJNICalls && JavaThread::current()->in_critical()) {
+    fatal("Deadlock due to GC while in JNI critical section");
+  }
+
   // Handle external collection requests
   switch (cause) {
   case GCCause::_wb_young_gc:
