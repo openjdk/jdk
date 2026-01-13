@@ -204,10 +204,7 @@ public class SigningPackageTest {
         }
 
         MacSign.ResolvedKeychain keychain() {
-            return chooseKeychain(Stream.of(
-                    appImageSignOption.stream(),
-                    packageSignOption.stream()
-            ).flatMap(x -> x).map(SignKeyOption::type).findFirst().orElseThrow()).keychain();
+            return SigningBase.StandardKeychain.MAIN.keychain();
         }
 
         static List<TestSpec> testCases(boolean withUnicode) {
@@ -228,14 +225,7 @@ public class SigningPackageTest {
 
             for (var certRequests : certRequestGroups) {
                 for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
-                    if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT
-                            && !SigningBase.StandardKeychain.SINGLE.contains(certRequests.getFirst())) {
-                        // Skip invalid test case: the keychain for testing signing without
-                        // an explicitly specified signing key option doesn't have this signing key.
-                        break;
-                    }
-
-                    var keychain = chooseKeychain(signIdentityType).keychain();
+                    var keychain = SigningBase.StandardKeychain.MAIN.keychain();
                     var appImageSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getFirst(), keychain);
                     var pkgSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getLast(), keychain);
 
@@ -246,7 +236,7 @@ public class SigningPackageTest {
                             data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.empty(), PackageType.MAC));
                             data.add(new TestSpec(Optional.empty(), Optional.of(pkgSignKeyOption), PackageType.MAC_PKG));
                         }
-                        case SIGN_KEY_USER_SHORT_NAME, SIGN_KEY_IMPLICIT -> {
+                        case SIGN_KEY_USER_SHORT_NAME -> {
                             // Use "--mac-signing-key-user-name" signing option with short user name or implicit signing option.
                             // It signs both the packaged app image and the installer (.pkg).
                             // Thus, if the installer is not signed, it can be used only with .dmg packaging.
@@ -272,14 +262,6 @@ public class SigningPackageTest {
             }
 
             return data;
-        }
-
-        private static SigningBase.StandardKeychain chooseKeychain(SignKeyOption.Type signIdentityType) {
-            if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
-                return SigningBase.StandardKeychain.SINGLE;
-            } else {
-                return SigningBase.StandardKeychain.MAIN;
-            }
         }
     }
 }

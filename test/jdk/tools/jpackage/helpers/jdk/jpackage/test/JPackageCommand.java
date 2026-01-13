@@ -1114,7 +1114,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public static enum ReadOnlyPathAssert {
         APP_IMAGE(new Builder("--app-image").enable(cmd -> {
             // External app image should be R/O unless it is an app image signing on macOS.
-            return !(TKit.isOSX() && cmd.hasArgument("--app-image") && MacHelper.signPredefinedAppImage(cmd));
+            return !(TKit.isOSX() && MacHelper.signPredefinedAppImage(cmd));
         }).create()),
         APP_CONTENT(new Builder("--app-content").multiple().create()),
         RESOURCE_DIR(new Builder("--resource-dir").create()),
@@ -1252,7 +1252,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }),
         MAC_BUNDLE_UNSIGNED_SIGNATURE(cmd -> {
-            if (TKit.isOSX()) {
+            if (TKit.isOSX() && !MacHelper.appImageSigned(cmd)) {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
             }
         }),

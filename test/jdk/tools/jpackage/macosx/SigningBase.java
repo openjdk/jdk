@@ -118,12 +118,6 @@ public class SigningBase {
                 StandardCertificateRequest.PKG,
                 StandardCertificateRequest.CODESIGN_COPY,
                 StandardCertificateRequest.PKG_COPY),
-        /**
-         * A keychain with a single certificate for each role.
-         */
-        SINGLE("jpackagerTest-single.keychain",
-                StandardCertificateRequest.CODESIGN,
-                StandardCertificateRequest.PKG),
         ;
 
         StandardKeychain(String keychainName, StandardCertificateRequest... certs) {
