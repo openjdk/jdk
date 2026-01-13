@@ -25,6 +25,7 @@
 #include "ci/ciSymbols.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "opto/library_call.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/vectornode.hpp"
 #include "prims/vectorSupport.hpp"
@@ -2336,8 +2337,16 @@ bool LibraryCallKit::inline_vector_convert() {
     // expected to violate this at runtime, but we may compile unreachable code
     // where such impossible combinations arise.
     if (is_ucast && (!is_integral_type(elem_bt_from) || elem_bt_from == T_LONG)) {
+      // Halt-and-catch fire here. This condition should never happen at runtime.
+      stringStream ss;
+      ss.print("impossible combination: unsigned vector cast from %s", type2name(elem_bt_from));
+      HaltNode* halt = new HaltNode(control(), frameptr(), ss.as_string(C->comp_arena())
+                                                           PRODUCT_ONLY(COMMA /*reachable*/false));
+      _gvn.set_type_bottom(halt);
+      root()->add_req(halt);
+      stop_and_kill_map();
       log_if_needed("  ** impossible combination: unsigned cast from %s", type2name(elem_bt_from));
-      return false;
+      return true;
     }
 
     int cast_vopc = VectorCastNode::opcode(-1, elem_bt_from, !is_ucast);
