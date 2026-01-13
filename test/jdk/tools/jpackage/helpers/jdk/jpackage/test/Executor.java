@@ -86,6 +86,10 @@ public final class Executor extends CommandArguments<Executor> {
         return setToolProvider(v.asToolProvider());
     }
 
+    public Optional<ToolProvider> getToolProvider() {
+        return Optional.ofNullable(toolProvider);
+    }
+
     public Optional<Path> getExecutable() {
         return Optional.ofNullable(executable);
     }

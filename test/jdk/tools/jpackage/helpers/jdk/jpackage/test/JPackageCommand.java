@@ -61,6 +61,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -75,6 +76,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     @SuppressWarnings("this-escape")
     public JPackageCommand() {
+        toolProviderSource = new ToolProviderSource();
         prerequisiteActions = new Actions();
         verifyActions = new Actions();
         excludeStandardAsserts(StandardAssert.MAIN_LAUNCHER_DESCRIPTION);
@@ -82,7 +84,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     private JPackageCommand(JPackageCommand cmd, boolean immutable) {
         args.addAll(cmd.args);
-        withToolProvider = cmd.withToolProvider;
+        toolProviderSource = cmd.toolProviderSource.copy();
         saveConsoleOutput = cmd.saveConsoleOutput;
         discardStdout = cmd.discardStdout;
         discardStderr = cmd.discardStderr;
@@ -781,7 +783,17 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand useToolProvider(boolean v) {
         verifyMutable();
-        withToolProvider = v;
+        if (v) {
+            toolProviderSource.useDefaultToolProvider();
+        } else {
+            toolProviderSource.useProcess();
+        }
+        return this;
+    }
+
+    public JPackageCommand useToolProvider(ToolProvider v) {
+        verifyMutable();
+        toolProviderSource.useToolProvider(v);
         return this;
     }
 
@@ -893,7 +905,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public boolean isWithToolProvider() {
-        return TKit.state().findProperty(DefaultToolProviderKey.VALUE).isPresent();
+        return toolProviderSource.toolProvider().isPresent();
     }
 
     public JPackageCommand executePrerequisiteActions() {
@@ -901,16 +913,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    private Executor createExecutor() {
+    Executor createExecutor() {
         Executor exec = new Executor()
                 .saveOutput(saveConsoleOutput).dumpOutput(!suppressOutput)
                 .discardStdout(discardStdout).discardStderr(discardStderr)
                 .setDirectory(executeInDirectory)
                 .addArguments(args);
 
-        TKit.state().findProperty(DefaultToolProviderKey.VALUE)
-                .map(ToolProvider.class::cast)
-                .ifPresentOrElse(exec::setToolProvider, () -> {
+        toolProviderSource.toolProvider().ifPresentOrElse(exec::setToolProvider, () -> {
                     exec.setExecutable(JavaTool.JPACKAGE);
                     if (TKit.isWindows()) {
                         exec.setWindowsTmpDir(System.getProperty("java.io.tmpdir"));
@@ -1694,7 +1704,70 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         private final List<Action> actions;
     }
 
-    private Boolean withToolProvider;
+    private static final class ToolProviderSource {
+
+        ToolProviderSource copy() {
+            return new ToolProviderSource(this);
+        }
+
+        void useDefaultToolProvider() {
+            customToolProvider = null;
+            mode = Mode.USE_TOOL_PROVIDER;
+        }
+
+        void useToolProvider(ToolProvider tp) {
+            customToolProvider = Objects.requireNonNull(tp);
+            mode = Mode.USE_TOOL_PROVIDER;
+        }
+
+        void useProcess() {
+            customToolProvider = null;
+            mode = Mode.USE_PROCESS;
+        }
+
+        Optional<ToolProvider> toolProvider() {
+            switch (mode) {
+                case USE_PROCESS -> {
+                    return Optional.empty();
+                }
+                case USE_TOOL_PROVIDER -> {
+                    if (customToolProvider != null) {
+                        return Optional.of(customToolProvider);
+                    } else {
+                        return TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast).or(() -> {
+                            return Optional.of(JavaTool.JPACKAGE.asToolProvider());
+                        });
+                    }
+                }
+                case INHERIT_DEFAULTS -> {
+                    return TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast);
+                }
+                default -> {
+                    throw ExceptionBox.reachedUnreachable();
+                }
+            }
+        }
+
+        ToolProviderSource() {
+            mode = Mode.INHERIT_DEFAULTS;
+        }
+
+        private ToolProviderSource(ToolProviderSource other) {
+            this.customToolProvider = other.customToolProvider;
+            this.mode = other.mode;
+        }
+
+        private enum Mode {
+            INHERIT_DEFAULTS,
+            USE_PROCESS,
+            USE_TOOL_PROVIDER
+        }
+
+        private ToolProvider customToolProvider;
+        private Mode mode;
+    }
+
+    private final ToolProviderSource toolProviderSource;
     private boolean saveConsoleOutput;
     private boolean discardStdout;
     private boolean discardStderr;
