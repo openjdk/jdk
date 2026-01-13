@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ static void test_canonicalize_constraints_random() {
   }
 }
 
-TEST(opto, canonicalize_constraints) {
+TEST_VM(opto, canonicalize_constraints) {
   test_canonicalize_constraints_trivial();
   test_canonicalize_constraints_exhaustive<intn_t<1>, uintn_t<1>>();
   test_canonicalize_constraints_exhaustive<intn_t<2>, uintn_t<2>>();
