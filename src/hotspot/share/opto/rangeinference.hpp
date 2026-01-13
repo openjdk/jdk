@@ -346,6 +346,21 @@ private:
     }
 
     assert(is_init, "must be initialized");
+    // It is important that widen is computed on the whole result instead of during each step. This
+    // is because we normalize the widen of small Type instances to 0, so computing the widen value
+    // for each step and taking the union of them may return a widen value that conflicts with
+    // other computations, trigerring the monotonicity assert during CCP.
+    //
+    // For example, let us consider the operation r = x ^ y:
+    // - During the first step of CCP, type(x) = {0}, type(y) = [-2, 2], w = 3.
+    //   Since x is a constant that is the identity element of the xor operation, type(r) = type(y) = [-2, 2], w = 3
+    // - During the second step, type(x) is widen to [0, 2], w = 0.
+    //   We then compute the range for:
+    //   r1 = x ^ y1, type(x) = [0, 2], w = 0, type(y1) = [0, 2], w = 0
+    //   r2 = x ^ y2, type(x) = [0, 2], w = 0, type(y2) = [-2, -1], w = 0
+    //   This results in type(r1) = [0, 3], w = 0, and type(r2) = [-4, -1], w = 0
+    //   So the union of type(r1) and type(r2) is [-4, 3], w = 0. This widen value is smaller than
+    //   that of the previous step, triggering the monotonicity assert.
     return CT<CTP>::make(res, MAX2(t1->_widen, t2->_widen));
   }
 
