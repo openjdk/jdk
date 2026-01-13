@@ -49,7 +49,7 @@ import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
-//import jdk.tools.jlink.internal.LinkableRuntimeImage;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
 /*
  * @test
@@ -81,7 +81,7 @@ public final class BasicTest {
     private static boolean isAllModulePathCapable() {
         Path jmods = Path.of(System.getProperty("java.home"), "jmods");
         boolean noJmods = Files.notExists(jmods);
-        if (noJmods) {
+        if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
            TKit.trace("ALL-MODULE-PATH test skipped for linkable run-time image");
            return false;
         }
