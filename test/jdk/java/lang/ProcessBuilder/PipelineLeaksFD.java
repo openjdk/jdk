@@ -46,14 +46,6 @@ import java.util.stream.Collectors;
  * @run junit/othervm PipelineLeaksFD
  */
 
-/*
- * @test
- * @bug 8289643 8291986
- * @requires os.family == "mac" | (os.family == "linux" & !vm.musl)
- * @summary File descriptor leak detection with ProcessBuilder.startPipeline
- * @run junit/othervm -Xint PipelineLeaksFD
- */
-
 public class PipelineLeaksFD {
 
     private static final String OS_NAME = System.getProperty("os.name", "Unknown");
