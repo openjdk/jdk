@@ -354,7 +354,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
   // specific order as a result of expanding an intrinsic call. After that, if
   // any of the inputs to VectorBoxNode are value-numbered they can only
   // move up and are guaranteed to dominate.
-  if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
+  if (vbox->is_Phi() && vect->bottom_type()->isa_vect()) {
     for (uint i = 1; i < vbox->req(); i++) {
       Node* new_box = expand_vbox_node_helper(vbox->in(i), vect,
                                               box_type, vect_type, visited);
