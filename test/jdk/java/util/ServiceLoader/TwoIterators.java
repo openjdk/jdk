@@ -38,9 +38,7 @@ import java.util.ServiceLoader;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TwoIterators {
 
     // service type
@@ -50,18 +48,17 @@ public class TwoIterators {
     public static class S1 implements S { }
     public static class S2 implements S { }
 
-    private ClassLoader testClassLoader;
+    private static ClassLoader testClassLoader;
 
     // creates the services configuration file and sets the ClassLoader
     @BeforeAll
-    void setup() throws Exception {
+    static void setup() throws Exception {
         String classes = System.getProperty("test.classes");
         Path dir = Paths.get(classes, "META-INF", "services");
         Files.createDirectories(dir);
         Path config = dir.resolve(S.class.getName());
         Files.write(config, Arrays.asList(S1.class.getName(), S2.class.getName()));
-
-        this.testClassLoader = TwoIterators.class.getClassLoader();
+        testClassLoader = TwoIterators.class.getClassLoader();
     }
 
     @Test

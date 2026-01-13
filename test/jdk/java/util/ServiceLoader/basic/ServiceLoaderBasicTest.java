@@ -50,11 +50,9 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Arrays.asList;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ServiceLoaderBasicTest {
 
     private static final String METAINFO = "META-INF/services/FooService";
@@ -83,7 +81,7 @@ public class ServiceLoaderBasicTest {
     private static final String XTESTXMETAP2_CP = XTESTXMETA_CP + P2;
 
     @BeforeAll
-    public void initialize() throws Exception {
+    public static void initialize() throws Exception {
         createProviderConfig(XTEST_CONFIG, "FooProvider1");
         createProviderConfig(XMETA_CONFIG, "FooProvider42");
         createJar(P2JAR, "FooProvider2", List.of("FooProvider2"));
@@ -91,7 +89,7 @@ public class ServiceLoaderBasicTest {
         Files.copy(P2JAR, P2DUPJAR, REPLACE_EXISTING);
     }
 
-    public Object[][] testCases() {
+    public static Object[][] testCases() {
         return new Object[][]{
             //       CLI options,            Test,       Runtime arguments
             // Success cases
@@ -112,7 +110,7 @@ public class ServiceLoaderBasicTest {
         };
     }
 
-    public Object[][] negativeTestCases() {
+    public static Object[][] negativeTestCases() {
         return new Object[][]{
             {"blah blah"},
             {"9234"},
@@ -147,12 +145,12 @@ public class ServiceLoaderBasicTest {
                     .shouldHaveExitValue(0);
     }
 
-    private void createProviderConfig(Path config, String providerName) throws Exception {
+    private static void createProviderConfig(Path config, String providerName) throws Exception {
         Files.createDirectories(config.getParent());
         Files.write(config, providerName.getBytes(), CREATE);
     }
 
-    private void createJar(Path jar, String provider, List<String> files) throws Exception {
+    private static void createJar(Path jar, String provider, List<String> files) throws Exception {
         Path xdir = Path.of(provider);
         createProviderConfig(xdir.resolve(METAINFO), provider);
 

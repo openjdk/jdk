@@ -60,7 +60,6 @@ import static java.lang.constant.ConstantDescs.MTD_void;
 import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -68,8 +67,6 @@ import org.junit.jupiter.params.provider.MethodSource;
  * Basic test of `provides S with PF` and `provides S with P` where the provider
  * factory or provider
  */
-
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BadProvidersTest {
 
     private static final String TEST_SRC = System.getProperty("test.src");
@@ -142,7 +139,7 @@ public class BadProvidersTest {
     }
 
 
-    public Object[][] createBadFactories() {
+    public static Object[][] createBadFactories() {
         return new Object[][] {
                 { "classnotpublic",     null },
                 { "methodnotpublic",    null },
@@ -174,7 +171,7 @@ public class BadProvidersTest {
     }
 
 
-    public Object[][] createBadProviders() {
+    public static Object[][] createBadProviders() {
         return new Object[][] {
                 { "notpublic",          null },
                 { "ctornotpublic",      null },
@@ -213,13 +210,13 @@ public class BadProvidersTest {
     public void testWithTwoFactoryMethods() throws Exception {
         Assertions.assertThrows(ServiceConfigurationError.class, () -> {
             Path mods = compileTest(TEST1_MODULE);
-            
+
             var bytes = ClassFile.of().build(ClassDesc.of("p", "ProviderFactory"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-                
+
                 var providerFactory$1 = ClassDesc.of("p", "ProviderFactory$1");
-                
+
                 // public static p.Service provider()
                 clb.withMethodBody("provider", MethodTypeDesc.of(ClassDesc.of("p", "Service")),
                         ACC_PUBLIC | ACC_STATIC, cob -> {
@@ -228,7 +225,7 @@ public class BadProvidersTest {
                             cob.invokespecial(providerFactory$1, INIT_NAME, MTD_void);
                             cob.areturn();
                         });
-                
+
                 // public static p.ProviderFactory$1 provider()
                 clb.withMethodBody("provider", MethodTypeDesc.of(providerFactory$1),
                         ACC_PUBLIC | ACC_STATIC, cob -> {
@@ -238,13 +235,13 @@ public class BadProvidersTest {
                             cob.areturn();
                         });
             });
-            
+
             // write the class bytes into the compiled module directory
             Path classFile = mods.resolve(TEST1_MODULE)
                     .resolve("p")
                     .resolve("ProviderFactory.class");
             Files.write(classFile, bytes);
-            
+
             // load providers and instantiate each one
             loadProviders(mods, TEST1_MODULE).forEach(Provider::get);
         });

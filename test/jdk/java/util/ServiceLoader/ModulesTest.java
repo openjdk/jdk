@@ -59,7 +59,6 @@ import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 /**
  * Basic test for ServiceLoader. The test make use of two service providers:
@@ -69,13 +68,11 @@ import org.junit.jupiter.api.TestInstance;
  * 2. PearScriptEngine - a ScriptEngineFactory deployed on the class path
  *    with a service configuration file.
  */
-
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ModulesTest {
 
     // Copy the services configuration file for "pearscript" into place.
     @BeforeAll
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         Path src = Paths.get(System.getProperty("test.src"));
         Path classes = Paths.get(System.getProperty("test.classes"));
         String st = ScriptEngineFactory.class.getName();

@@ -49,9 +49,7 @@ import jdk.test.lib.compiler.CompilerUtils;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class NoInterferenceTest {
 
     private static final String TEST_SRC = System.getProperty("test.src");
@@ -60,7 +58,7 @@ public class NoInterferenceTest {
     private static final List<String> MODULES = Arrays.asList("s1", "p1", "s2", "p2");
 
     @BeforeAll
-    void compile() throws Exception {
+    static void compile() throws Exception {
         Files.createDirectory(MODS_DIR);
         for (String name : MODULES) {
             Path src = SRC_DIR.resolve(name);
