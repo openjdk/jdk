@@ -80,13 +80,13 @@ protected:
   // 3. if allocation is still not satisfied in above steps, call attempt_allocation_from_free_set to find a region
   //    in free set w/ sufficient free space and allocate in the region;
   // 4. update accounting if needed;
-  // Call must not hold heap lock.
+  // Caller must not hold heap lock.
   HeapWord* attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region, uint regions_ready_for_refresh, uint32_t old_epoch_id);
 
   // Attempt to allocate from a region in free set, rather than from any of shared alloc regions, it might be called in the conditions below:
   // 1. All the shared alloc regions are not ready to retire, nor have enough space for allocation;
   // 2. There are regions can be retired, but the new regions reserved from free set don't have enough free space to satisfy the allocation.
-  // Caller has to hold heap lock.
+  // Caller must hold the heap lock.
   HeapWord* attempt_allocation_from_free_set(ShenandoahAllocRequest& req, bool& in_new_region);
 
   // Attempt to allocate in a shared alloc region using atomic operation without holding the heap lock.
