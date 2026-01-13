@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -291,7 +293,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
 
-        ThrowingConsumer<Path> createBulkFile = path -> {
+        ThrowingConsumer<Path, IOException> createBulkFile = path -> {
             Files.createDirectories(path.getParent());
             try (FileOutputStream out = new FileOutputStream(path.toFile())) {
                 byte[] bytes = new byte[4 * 1024];
@@ -328,12 +330,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .removeArgumentWithValue("--input");
     }
 
-    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         prerequisiteActions.add(action);
         return this;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
         return addVerifyAction(action, ActionRole.DEFAULT);
     }
 
@@ -343,12 +345,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         ;
     }
 
-    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action, ActionRole actionRole) {
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole actionRole) {
         verifyActions.add(action, actionRole);
         return this;
     }
 
-    Stream<ThrowingConsumer<JPackageCommand>> getVerifyActionsWithRole(ActionRole actionRole) {
+    Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> getVerifyActionsWithRole(ActionRole actionRole) {
         return verifyActions.actionsWithRole(actionRole);
     }
 
@@ -779,6 +781,39 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         defaultToolProvider.set(Optional.empty());
     }
 
+    /**
+     * In a separate thread calls {@link #useToolProviderByDefault(ToolProvider)}
+     * with the specified {@code jpackageToolProvider} and then calls
+     * {@code workload.run()}. Joins the thread.
+     * <p>
+     * The idea is to run the {@code workload} in the context of the specified
+     * jpackage {@code ToolProvider} without altering the global variable holding
+     * the default jpackage {@code ToolProvider}. The global variable is
+     * thread-local; setting its value in a new thread doesn't alter its copy in the
+     * calling thread.
+     *
+     * @param jpackageToolProvider jpackage {@code ToolProvider}
+     * @param workload             the workload to run
+     */
+    public static void withToolProvider(Runnable workload, ToolProvider jpackageToolProvider) {
+        Objects.requireNonNull(workload);
+        Objects.requireNonNull(jpackageToolProvider);
+
+        CompletableFuture.runAsync(() -> {
+            var oldValue = defaultToolProvider.get();
+            useToolProviderByDefault(jpackageToolProvider);
+            try {
+                workload.run();
+            } finally {
+                defaultToolProvider.set(oldValue);
+            }
+            // Run the future in a new native thread. Don't run it in a virtual/pooled thread.
+            // Pooled and/or virtual threads are problematic when used with inheritable thread-local variables.
+            // TKit class depends on such a variable, which results in intermittent test failures
+            // if the default executor runs this future.
+        }, Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())).join();
+    }
+
     public JPackageCommand useToolProvider(boolean v) {
         verifyMutable();
         withToolProvider = v;
@@ -998,7 +1033,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().iterator());
         }
 
-        if (result.exitCode() == 0 && expectedExitCode.isPresent()) {
+        if (result.getExitCode() == 0 && expectedExitCode.isPresent()) {
             verifyActions.run();
         }
 
@@ -1350,7 +1385,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             if (!isImagePackageType() && hasArgument("--app-image")) {
                 // Build native macOS package from an external app image.
                 // If the external app image is signed, ".jpackage.xml" file should be kept, otherwise removed.
-                return AppImageFile.load(Path.of(getArgumentValue("--app-image"))).macSigned();
+                return MacHelper.isBundleSigned(Path.of(getArgumentValue("--app-image")));
             }
         }
 
@@ -1371,13 +1406,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             final AppImageFile aif = AppImageFile.load(rootDir);
 
             if (TKit.isOSX()) {
-                boolean expectedValue = MacHelper.appImageSigned(this);
-                boolean actualValue = aif.macSigned();
-                TKit.assertEquals(expectedValue, actualValue,
-                    "Check for unexpected value of <signed> property in app image file");
-
-                expectedValue = hasArgument("--mac-app-store");
-                actualValue = aif.macAppStore();
+                var expectedValue = hasArgument("--mac-app-store");
+                var actualValue = aif.macAppStore();
                 TKit.assertEquals(expectedValue, actualValue,
                     "Check for unexpected value of <app-store> property in app image file");
             }
@@ -1402,7 +1432,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         } else {
             if (TKit.isOSX() && hasArgument("--app-image")) {
                 String appImage = getArgumentValue("--app-image");
-                if (AppImageFile.load(Path.of(appImage)).macSigned()) {
+                if (MacHelper.isBundleSigned(Path.of(appImage))) {
                     assertFileNotInAppImage(lookupPath);
                 } else {
                     assertFileInAppImage(lookupPath);
@@ -1648,16 +1678,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             actions.addAll(other.actions);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
             add(action, ActionRole.DEFAULT);
         }
 
-        void add(ThrowingConsumer<JPackageCommand> action, ActionRole role) {
+        void add(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole role) {
             verifyMutable();
             actions.add(new Action(action, role));
         }
 
-        Stream<ThrowingConsumer<JPackageCommand>> actionsWithRole(ActionRole role) {
+        Stream<ThrowingConsumer<JPackageCommand, ? extends Exception>> actionsWithRole(ActionRole role) {
             Objects.requireNonNull(role);
             return actions.stream().filter(action -> {
                 return Objects.equals(action.role(), role);
@@ -1666,7 +1696,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         private static final class Action implements Consumer<JPackageCommand> {
 
-            Action(ThrowingConsumer<JPackageCommand> impl, ActionRole role) {
+            Action(ThrowingConsumer<JPackageCommand, ? extends Exception> impl, ActionRole role) {
                 this.impl = Objects.requireNonNull(impl);
                 this.role = Objects.requireNonNull(role);
             }
@@ -1675,7 +1705,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return role;
             }
 
-            ThrowingConsumer<JPackageCommand> impl() {
+            ThrowingConsumer<JPackageCommand, ? extends Exception> impl() {
                 return impl;
             }
 
@@ -1688,7 +1718,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
 
             private final ActionRole role;
-            private final ThrowingConsumer<JPackageCommand> impl;
+            private final ThrowingConsumer<JPackageCommand, ? extends Exception> impl;
             private boolean executed;
         }
 

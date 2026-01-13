@@ -88,7 +88,7 @@ import static org.testng.Assert.assertTrue;
 
 public class ISO_8859_1_Test implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     DummyServer http1DummyServer;
     HttpTestServer http1TestServer;   // HTTP/1.1 ( http )
     HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
@@ -412,10 +412,6 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         HttpServerAdapters.HttpTestHandler handler = new ISO88591Handler();
         InetSocketAddress loopback = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,55 @@
  */
 package jdk.jpackage.internal.cli;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 @FunctionalInterface
 interface Validator<T, U extends Exception> {
 
     List<U> validate(OptionName optionName, ParsedValue<T> optionValue);
 
-    default Validator<T, ? extends Exception> andThen(Validator<T, ? extends Exception> after) {
-        return reduce(this, after);
+    default Validator<T, ? extends Exception> and(Validator<T, ? extends Exception> after) {
+        Objects.requireNonNull(after);
+        var before = this;
+        return (optionName, optionValue) -> {
+            return Stream.concat(
+                    before.validate(optionName, optionValue).stream(),
+                    after.validate(optionName, optionValue).stream()
+            ).toList();
+        };
+    }
+
+    default Validator<T, ? extends Exception> or(Validator<T, ? extends Exception> after) {
+        Objects.requireNonNull(after);
+        var before = this;
+        return (optionName, optionValue) -> {
+            var bErrors = before.validate(optionName, optionValue);
+            if (bErrors.isEmpty()) {
+                return List.of();
+            }
+
+            var aErrors = after.validate(optionName, optionValue);
+            if (aErrors.isEmpty()) {
+                return List.of();
+            }
+
+            return Stream.concat(bErrors.stream(), aErrors.stream()).toList();
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T, U extends Exception> Validator<T, U> and(Validator<T, U> first, Validator<T, U> second) {
+        return (Validator<T, U>)first.and(second);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T, U extends Exception> Validator<T, U> or(Validator<T, U> first, Validator<T, U> second) {
+        return (Validator<T, U>)first.or(second);
     }
 
     /**
@@ -250,16 +285,5 @@ interface Validator<T, U extends Exception> {
                 Objects.requireNonNull(value);
             }
         }
-    }
-
-    @SafeVarargs
-    private static <T> Validator<T, ? extends Exception> reduce(Validator<T, ? extends Exception>... validators) {
-        @SuppressWarnings("varargs")
-        var theValidators = List.of(validators);
-        return (optionName, optionValue) -> {
-            return theValidators.stream().map(validator -> {
-                return validator.validate(optionName, optionValue);
-            }).flatMap(Collection::stream).map(Exception.class::cast).toList();
-        };
     }
 }
