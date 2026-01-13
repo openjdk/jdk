@@ -294,34 +294,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
-
-        ThrowingConsumer<Path, IOException> createBulkFile = path -> {
-            Files.createDirectories(path.getParent());
-            try (FileOutputStream out = new FileOutputStream(path.toFile())) {
-                byte[] bytes = new byte[4 * 1024];
-                new SecureRandom().nextBytes(bytes);
-                out.write(bytes);
-            }
-        };
-
         addPrerequisiteAction(cmd -> {
-            Path fakeRuntimeDir = TKit.createTempDirectory("fake_runtime");
-
-            TKit.trace(String.format("Init fake runtime in [%s] directory",
-                    fakeRuntimeDir));
-
-            if (TKit.isOSX()) {
-                // Make MacAppImageBuilder happy
-                createBulkFile.accept(fakeRuntimeDir.resolve(Path.of(
-                        "lib/jli/libjli.dylib")));
-            }
-
-            // Make sure fake runtime takes some disk space.
-            // Package bundles with 0KB size are unexpected and considered
-            // an error by PackageTest.
-            createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("lib", "bulk")));
-
-            cmd.setArgumentValue("--runtime-image", fakeRuntimeDir);
+            cmd.setArgumentValue("--runtime-image", createInputRuntimeImage(RuntimeImageType.RUNTIME_TYPE_FAKE));
         });
 
         return this;
@@ -390,24 +364,77 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return cmd;
     }
 
+    public enum RuntimeImageType {
+
+        /**
+         * Runtime suitable for running the default "Hello" test app.
+         */
+        RUNTIME_TYPE_HELLO_APP,
+
+        /**
+         * Fake runtime.
+         */
+        RUNTIME_TYPE_FAKE,
+
+        ;
+    }
+
     public static Path createInputRuntimeImage() {
+        return createInputRuntimeImage(RuntimeImageType.RUNTIME_TYPE_HELLO_APP);
+    }
+
+    public static Path createInputRuntimeImage(RuntimeImageType role) {
+        Objects.requireNonNull(role);
 
         final Path runtimeImageDir;
+        switch (role) {
 
-        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
-            runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-        } else {
-            runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+            case RUNTIME_TYPE_FAKE -> {
+                Consumer<Path> createBulkFile = ThrowingConsumer.toConsumer(path -> {
+                    Files.createDirectories(path.getParent());
+                    try (FileOutputStream out = new FileOutputStream(path.toFile())) {
+                        byte[] bytes = new byte[4 * 1024];
+                        new SecureRandom().nextBytes(bytes);
+                        out.write(bytes);
+                    }
+                });
 
-            new Executor().setToolProvider(JavaTool.JLINK)
-                    .dumpOutput()
-                    .addArguments(
-                            "--output", runtimeImageDir.toString(),
-                            "--add-modules", "java.desktop",
-                            "--strip-debug",
-                            "--no-header-files",
-                            "--no-man-pages")
-                    .execute();
+                runtimeImageDir = TKit.createTempDirectory("fake_runtime");
+
+                TKit.trace(String.format("Init fake runtime in [%s] directory", runtimeImageDir));
+
+                if (TKit.isOSX()) {
+                    // Make MacAppImageBuilder happy
+                    createBulkFile.accept(runtimeImageDir.resolve(Path.of("lib/jli/libjli.dylib")));
+                }
+
+                // Make sure fake runtime takes some disk space.
+                // Package bundles with 0KB size are unexpected and considered
+                // an error by PackageTest.
+                createBulkFile.accept(runtimeImageDir.resolve(Path.of("lib", "bulk")));
+            }
+
+            case RUNTIME_TYPE_HELLO_APP -> {
+                if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null && !isFakeRuntime(DEFAULT_RUNTIME_IMAGE)) {
+                    runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
+                } else {
+                    runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+
+                    new Executor().setToolProvider(JavaTool.JLINK)
+                            .dumpOutput()
+                            .addArguments(
+                                    "--output", runtimeImageDir.toString(),
+                                    "--add-modules", "java.desktop",
+                                    "--strip-debug",
+                                    "--no-header-files",
+                                    "--no-man-pages")
+                            .execute();
+                }
+            }
+
+            default -> {
+                throw ExceptionBox.reachedUnreachable();
+            }
         }
 
         return runtimeImageDir;

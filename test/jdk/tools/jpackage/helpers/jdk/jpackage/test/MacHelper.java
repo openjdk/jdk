@@ -434,18 +434,50 @@ public final class MacHelper {
         }
     }
 
+    public static final class RuntimeBundleBuilder {
+
+        public Path create() {
+            return createRuntimeBundle(type, Optional.ofNullable(mutator));
+        }
+
+        public RuntimeBundleBuilder type(JPackageCommand.RuntimeImageType v) {
+            type = Objects.requireNonNull(v);
+            return this;
+        }
+
+        public RuntimeBundleBuilder mutator(Consumer<JPackageCommand> v) {
+            mutator = v;
+            return this;
+        }
+
+        public RuntimeBundleBuilder mutate(Consumer<RuntimeBundleBuilder> mutator) {
+            mutator.accept(this);
+            return this;
+        }
+
+        private RuntimeBundleBuilder() {
+        }
+
+        private JPackageCommand.RuntimeImageType type = JPackageCommand.RuntimeImageType.RUNTIME_TYPE_HELLO_APP;
+        private Consumer<JPackageCommand> mutator;
+    };
+
+    public static RuntimeBundleBuilder buildRuntimeBundle() {
+        return new RuntimeBundleBuilder();
+    }
+
     public static Path createRuntimeBundle(Consumer<JPackageCommand> mutator) {
-        return createRuntimeBundle(Optional.of(mutator));
+        return buildRuntimeBundle().mutator(Objects.requireNonNull(mutator)).create();
     }
 
     public static Path createRuntimeBundle() {
-        return createRuntimeBundle(Optional.empty());
+        return buildRuntimeBundle().create();
     }
 
-    public static Path createRuntimeBundle(Optional<Consumer<JPackageCommand>> mutator) {
+    private static Path createRuntimeBundle(JPackageCommand.RuntimeImageType type, Optional<Consumer<JPackageCommand>> mutator) {
         Objects.requireNonNull(mutator);
 
-        final var runtimeImage = JPackageCommand.createInputRuntimeImage();
+        final var runtimeImage = JPackageCommand.createInputRuntimeImage(type);
 
         final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
 
