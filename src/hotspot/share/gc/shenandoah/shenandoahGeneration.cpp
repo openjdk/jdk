@@ -815,10 +815,9 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    size_t young_cset_regions, old_cset_regions;
 
     // We are preparing for evacuation.  At this time, we ignore cset region tallies.
-    size_t first_old, last_old, num_old;
+    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
 
     if (heap->mode()->is_generational()) {
