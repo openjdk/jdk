@@ -184,6 +184,28 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     const Type* t = Value(phase);
     if (t->singleton() && t != Type::TOP && !_dependency.narrows_type()) {
+      for (DUIterator i = outs(); has_out(i); i++) {
+        Node* u = out(i);
+        if (u->is_CFG()) {
+          continue;
+        }
+        if (u->is_AddP()) {
+          ShouldNotReachHere();
+        } else {
+          Node* clone = u->clone();
+          int nb = clone->replace_edge(this, in(1));
+          assert(nb > 0, "");
+          igvn->register_new_node_with_optimizer(clone);
+          Node* cast = make_cast_for_type(in(0), clone, clone->bottom_type(),
+                                          DependencyType::NonFloatingNonNarrowing,
+                                          nullptr);
+          igvn->register_new_node_with_optimizer(cast);
+          igvn->replace_node(u, cast);
+          --i;
+        }
+      }
+    }
+    if (t->singleton() && t != Type::TOP && !_dependency.narrows_type() && 0) {
       ResourceMark rm;
       Node_Stack stack(0);
       VectorSet visited;
@@ -359,7 +381,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   clones.clear();
                   continue;
                 }
-                ShouldNotReachHere();
+                // ShouldNotReachHere();
                 Node* new_cast = igvn->register_new_node_with_optimizer(new CastPPNode(in(0), base, phase->type(base), DependencyType::NonFloatingNonNarrowing));
                 Node* prev = nullptr;
                 while (clones.size() > 0) {
