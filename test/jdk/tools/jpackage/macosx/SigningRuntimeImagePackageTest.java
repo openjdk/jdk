@@ -21,17 +21,19 @@
  * questions.
  */
 
+import static jdk.jpackage.test.JPackageCommand.RuntimeImageType.RUNTIME_TYPE_FAKE;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.Slot;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -84,24 +86,20 @@ public class SigningRuntimeImagePackageTest {
     }
 
     @Test
-    @Parameter("IMAGE")
-    @Parameter("BUNDLE")
-    public static void testBundleSignedRuntime(RuntimeType runtimeType) {
+    public static void testBundleSignedRuntime() {
 
         Slot<Path> predefinedRuntime = Slot.createEmpty();
 
         var signRuntime = runtimeImageSignOption();
 
         new PackageTest().addRunOnceInitializer(() -> {
-            predefinedRuntime.set(createRuntime(Optional.of(signRuntime), runtimeType));
+            predefinedRuntime.set(createRuntime(Optional.of(signRuntime), RuntimeType.BUNDLE));
         }).addInitializer(cmd -> {
             cmd.ignoreDefaultRuntime(true);
             cmd.removeArgumentWithValue("--input");
             cmd.setArgumentValue("--runtime-image", predefinedRuntime.get());
         }).addInstallVerifier(cmd -> {
-            if (runtimeType == RuntimeType.BUNDLE) {
-                MacSignVerify.verifyAppImageSigned(cmd, signRuntime.certRequest());
-            }
+            MacSignVerify.verifyAppImageSigned(cmd, signRuntime.certRequest());
         }).run();
     }
 
@@ -109,21 +107,26 @@ public class SigningRuntimeImagePackageTest {
 
         List<RuntimeTestSpec> data = new ArrayList<>();
 
-        for (var runtimeType : RuntimeType.values()) {
-            for (var signRuntime : List.of(true, false)) {
-                Optional<SignKeyOptionWithKeychain> runtimeSignOption;
-                if (signRuntime) {
-                    // Sign the runtime bundle with the key not used in the jpackage command line being tested.
-                    // This way we can test if jpackage keeps or replaces the signature of
-                    // the predefined runtime bundle when backing it in the pkg or dmg installer.
-                    runtimeSignOption = Optional.of(runtimeImageSignOption());
-                } else {
-                    runtimeSignOption = Optional.empty();
-                }
+        for (var runtimeSpec : List.of(
+                Map.entry(RuntimeType.IMAGE, false /* unsigned */),
+                Map.entry(RuntimeType.BUNDLE, false /* unsigned */),
+                Map.entry(RuntimeType.BUNDLE, true /* signed */)
+        )) {
+            var runtimeType = runtimeSpec.getKey();
+            var signRuntime = runtimeSpec.getValue();
 
-                for (var signPackage : SigningPackageTest.TestSpec.testCases(false)) {
-                    data.add(new RuntimeTestSpec(runtimeSignOption, runtimeType, signPackage));
-                }
+            Optional<SignKeyOptionWithKeychain> runtimeSignOption;
+            if (signRuntime) {
+                // Sign the runtime bundle with the key not used in the jpackage command line being tested.
+                // This way we can test if jpackage keeps or replaces the signature of
+                // the predefined runtime bundle when backing it in the pkg or dmg installer.
+                runtimeSignOption = Optional.of(runtimeImageSignOption());
+            } else {
+                runtimeSignOption = Optional.empty();
+            }
+
+            for (var signPackage : SigningPackageTest.TestSpec.testCases(false)) {
+                data.add(new RuntimeTestSpec(runtimeSignOption, runtimeType, signPackage));
             }
         }
 
@@ -204,14 +207,16 @@ public class SigningRuntimeImagePackageTest {
 
     private static Path createRuntime(Optional<SignKeyOptionWithKeychain> signRuntime, RuntimeType runtimeType) {
         if (runtimeType == RuntimeType.IMAGE && signRuntime.isEmpty()) {
-            return JPackageCommand.createInputRuntimeImage();
+            return JPackageCommand.createInputRuntimeImage(RUNTIME_TYPE_FAKE);
         } else {
             Slot<Path> runtimeBundle = Slot.createEmpty();
 
             MacSign.withKeychain(keychain -> {
-                runtimeBundle.set(MacHelper.createRuntimeBundle(signRuntime.map(signingOption -> {
-                    return signingOption::setTo;
-                })));
+                var runtimeBundleBuilder = MacHelper.buildRuntimeBundle();
+                signRuntime.ifPresent(signingOption -> {
+                    runtimeBundleBuilder.mutator(signingOption::setTo);
+                });
+                runtimeBundle.set(runtimeBundleBuilder.type(RUNTIME_TYPE_FAKE).create());
             }, SigningBase.StandardKeychain.MAIN.keychain());
 
             if (runtimeType == RuntimeType.IMAGE) {
