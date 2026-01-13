@@ -4988,10 +4988,10 @@ static MinMaxNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* p
       return new MinFNode(a, b);
     case Op_MaxF:
       return new MaxFNode(a, b);
-    case Op_MinHF:
-      return new MinHFNode(a, b);
-    case Op_MaxHF:
-      return new MaxHFNode(a, b);
+    // case Op_MinHF:
+    //   return new MinHFNode(a, b);
+    // case Op_MaxHF:
+    //   return new MaxHFNode(a, b);
     case Op_MinI:
       return new MinINode(a, b);
     case Op_MaxI:

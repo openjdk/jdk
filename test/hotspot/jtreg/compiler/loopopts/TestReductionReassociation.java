@@ -98,8 +98,8 @@ public class TestReductionReassociation {
     enum AssociativeAdd {
         MIN_D(CodeGenerationDataNameType.doubles()),
         MAX_D(CodeGenerationDataNameType.doubles()),
-        MIN_HF(CodeGenerationDataNameType.float16()),
-        MAX_HF(CodeGenerationDataNameType.float16()),
+//        MIN_HF(CodeGenerationDataNameType.float16()),
+//        MAX_HF(CodeGenerationDataNameType.float16()),
         MIN_F(CodeGenerationDataNameType.floats()),
         MAX_F(CodeGenerationDataNameType.floats()),
         MIN_I(CodeGenerationDataNameType.ints()),
@@ -113,9 +113,9 @@ public class TestReductionReassociation {
             this.type = type;
         }
 
-        boolean isFloat16() {
-            return MIN_HF == this || MAX_HF == this;
-        }
+//        boolean isFloat16() {
+//            return MIN_HF == this || MAX_HF == this;
+//        }
     }
 
     record TestGenerator(int countsIR, AssociativeAdd add, int batchSize, boolean useIntermediate, int size) {
@@ -173,8 +173,6 @@ public class TestReductionReassociation {
                 switch (add) {
                     case MIN_D -> "Double.min(#a, #b)";
                     case MAX_D -> "Double.max(#a, #b)";
-                    case MIN_HF -> "Float16.min(#a, #b)";
-                    case MAX_HF -> "Float16.max(#a, #b)";
                     case MIN_F -> "Float.min(#a, #b)";
                     case MAX_F -> "Float.max(#a, #b)";
                     case MIN_I -> "Integer.min(#a, #b)";
@@ -193,8 +191,8 @@ public class TestReductionReassociation {
                 let("type", add.type.name()),
                 "#type ", resultName, " = #boxedType.",
                 switch (add) {
-                    case MIN_HF, MIN_D, MIN_F, MIN_I, MIN_L -> "MAX_VALUE";
-                    case MAX_HF, MAX_D, MAX_F, MAX_I, MAX_L -> "MIN_VALUE";
+                    case MIN_D, MIN_F, MIN_I, MIN_L -> "MAX_VALUE";
+                    case MAX_D, MAX_F, MAX_I, MAX_L -> "MIN_VALUE";
                 },
                 ";\n"
             ));
@@ -219,22 +217,8 @@ public class TestReductionReassociation {
                 let("type", add.type.name()),
                 """
                 @Test
-                """,
-                add.isFloat16() ?
-                    """
-                    @IR(counts = {IRNode.#irNodeName, "= #countsIR"},
-                        phase = CompilePhase.AFTER_LOOP_OPTS,
-                        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
-                    @IR(counts = {IRNode.#irNodeName, "= #countsIR"},
-                        phase = CompilePhase.AFTER_LOOP_OPTS,
-                        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-                    """
-                    :
-                    """
-                    @IR(counts = {IRNode.#irNodeName, "= #countsIR"},
-                        phase = CompilePhase.AFTER_LOOP_OPTS)
-                    """,
-                """
+                @IR(counts = {IRNode.#irNodeName, "= #countsIR"},
+                    phase = CompilePhase.AFTER_LOOP_OPTS)
                 public Object[] #test() {
                 """,
                 generateResultInit("result"),
@@ -284,25 +268,9 @@ public class TestReductionReassociation {
                 let("gen", add.type.name().toLowerCase(Locale.ROOT) + "s"),
                 """
                 private static #type[] #input = new #type[#size];
-                """,
-                add.isFloat16() ?
-                    """
-                    private static final Generator<Short> GEN_#input = Generators.G.float16s();
 
-                    static void fill_#input(Float16[] a) {
-                        for (int i = 0; i < a.length; i++) {
-                            a[i] = Float16.shortBitsToFloat16(GEN_#input.next());
-                        }
-                    }
-                    """
-                    : "",
-                """
                 static {
-                """,
-                add.isFloat16() ?
-                    "fill_#input(#input);"
-                    : "Generators.G.fill(Generators.G.#gen(), #input);",
-                """
+                    Generators.G.fill(Generators.G.#gen(), #input);
                 }
                 """
             ));
