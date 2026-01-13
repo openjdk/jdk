@@ -1033,7 +1033,7 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::CC;
 }
 
-static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
+static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n, bool& might_be_an_array) {
   // Return the klass node for (indirect load from OopHandle)
   //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
   //   or null if not matching.
@@ -1055,12 +1055,13 @@ static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
   if (k == nullptr)  return nullptr;
   const TypeKlassPtr* tkp = phase->type(k)->isa_klassptr();
   if (!tkp || off != in_bytes(Klass::java_mirror_offset())) return nullptr;
+  might_be_an_array |= tkp->isa_aryklassptr() || tkp->is_instklassptr()->might_be_an_array();
 
   // We've found the klass node of a Java mirror load.
   return k;
 }
 
-static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
+static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n, bool& might_be_an_array) {
   // for ConP(Foo.class) return ConP(Foo.klass)
   // otherwise return null
   if (!n->is_Con()) return nullptr;
@@ -1080,8 +1081,14 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
   }
 
   // return the ConP(Foo.klass)
-  assert(mirror_type->is_klass(), "mirror_type should represent a Klass*");
-  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass(), Type::trust_interfaces));
+  ciKlass* mirror_klass = mirror_type->as_klass();
+
+  if (mirror_klass->is_array_klass()) {
+    // Special case for non-value arrays: They only have one (default) refined class, use it
+    return phase->makecon(TypeAryKlassPtr::make(mirror_klass, Type::trust_interfaces, true));
+  }
+
+  return phase->makecon(TypeKlassPtr::make(mirror_klass, Type::trust_interfaces));
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1105,13 +1112,18 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   //   }
   // a CmpPNode could be shared between if_acmpne and checkcast
   {
-    Node* k1 = isa_java_mirror_load(phase, in(1));
-    Node* k2 = isa_java_mirror_load(phase, in(2));
-    Node* conk2 = isa_const_java_mirror(phase, in(2));
+    bool might_be_an_array1 = false;
+    bool might_be_an_array2 = false;
+    Node* k1 = isa_java_mirror_load(phase, in(1), might_be_an_array1);
+    Node* k2 = isa_java_mirror_load(phase, in(2), might_be_an_array2);
+    Node* conk2 = isa_const_java_mirror(phase, in(2), might_be_an_array2);
+    if (might_be_an_array1 && might_be_an_array2) {
+      // Don't optimize if both sides might be an array because arrays with
+      // the same Java mirror can have different refined array klasses.
+      k1 = k2 = nullptr;
+    }
 
-    // TODO 8366668 add a test for this. Improve this condition
-    bool doIt = (conk2 && !phase->type(conk2)->isa_aryklassptr());
-    if (k1 && (k2 || conk2) && doIt) {
+    if (k1 && (k2 || conk2)) {
       Node* lhs = k1;
       Node* rhs = (k2 != nullptr) ? k2 : conk2;
       set_req_X(1, lhs, phase);
@@ -1186,6 +1198,14 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
     if (!ik->is_final()) {
       phase->C->dependencies()->assert_leaf_type(ik);
     }
+  }
+
+  // Do not fold the subtype check to an array klass pointer comparison for
+  // value class arrays because they can have multiple refined array klasses.
+  superklass = t2->exact_klass();
+  if (superklass->is_obj_array_klass()) {
+    // Special case for non-value arrays: They only have one (default) refined class, use it
+    set_req_X(2, phase->makecon(t2->is_aryklassptr()->refined_array_klass_ptr()), phase);
   }
 
   // Bypass the dependent load, and compare directly

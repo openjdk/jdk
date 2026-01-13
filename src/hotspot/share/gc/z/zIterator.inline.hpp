@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 #include "gc/z/zVerify.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/objArrayOop.hpp"
-#include "oops/refArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/refArrayOop.hpp"
 
 inline bool ZIterator::is_invisible_object(oop obj) {
   // This is a good place to make sure that we can't concurrently iterate over

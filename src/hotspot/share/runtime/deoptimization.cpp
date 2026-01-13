@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1591,7 +1591,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       assert(!k->is_refArray_klass(), "Unexpected refined klass");
       nmethod* nm = fr->cb()->as_nmethod_or_null();
       // Just go with the default properties for now
-      k = ObjArrayKlass::cast(k)->default_ref_array_klass_acquire();
+      k = ObjArrayKlass::cast(k)->next_refined_array_klass();
     }
 
     Handle obj = sv->value();

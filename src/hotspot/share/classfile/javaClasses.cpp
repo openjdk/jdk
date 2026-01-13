@@ -1257,7 +1257,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   } else {
     ObjArrayKlass* objarray_k = (ObjArrayKlass*)as_Klass(m);
     // Mirror should be restored for an ObjArrayKlass or one of its refined array klasses
-    assert(objarray_k == k || objarray_k->default_ref_array_klass_acquire() == k, "must be");
+    assert(objarray_k == k || objarray_k->next_refined_array_klass() == k, "must be");
   }
 
   assert(class_loader() == k->class_loader(), "should be same");

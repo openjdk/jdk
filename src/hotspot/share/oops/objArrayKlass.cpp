@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name, KlassKin
     ArrayKlass(name, kind) {
   set_dimension(n);
   set_element_klass(element_klass);
-  _default_ref_array_klass = nullptr;
+  _next_refined_array_klass = nullptr;
 
   Klass* bk;
   if (element_klass->is_objArray_klass()) {
@@ -158,7 +158,7 @@ size_t ObjArrayKlass::oop_size(oop obj) const {
 objArrayOop ObjArrayKlass::allocate_instance(int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
 
-  ObjArrayKlass* ak = default_ref_array_klass(CHECK_NULL);
+  ObjArrayKlass* ak = klass_with_properties(CHECK_NULL);
   precond(ak->kind() == Klass::RefArrayKlassKind);
   size_t size = refArrayOopDesc::object_size(length);
   objArrayOop array = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
@@ -171,7 +171,7 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   int length = *sizes;
   ArrayKlass* ld_klass = lower_dimension();
   // If length < 0 allocate will throw an exception.
-  ObjArrayKlass* oak = default_ref_array_klass(CHECK_NULL);
+  ObjArrayKlass* oak = klass_with_properties(CHECK_NULL);
   assert(oak->is_refArray_klass(), "Must be");
   objArrayOop array = oak->allocate_instance(length, CHECK_NULL);
   objArrayHandle h_array (THREAD, array);
@@ -246,31 +246,31 @@ void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   ArrayKlass::metaspace_pointers_do(it);
   it->push(&_element_klass);
   it->push(&_bottom_klass);
-  if (_default_ref_array_klass != nullptr && !CDSConfig::is_dumping_dynamic_archive()) {
-    it->push(&_default_ref_array_klass);
+  if (_next_refined_array_klass != nullptr && !CDSConfig::is_dumping_dynamic_archive()) {
+    it->push(&_next_refined_array_klass);
   }
 }
 
 void ObjArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   ArrayKlass::restore_unshareable_info(loader_data, protection_domain, CHECK);
-  if (_default_ref_array_klass != nullptr) {
-    _default_ref_array_klass->restore_unshareable_info(loader_data, protection_domain, CHECK);
+  if (_next_refined_array_klass != nullptr) {
+    _next_refined_array_klass->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }
 }
 
 void ObjArrayKlass::remove_unshareable_info() {
   ArrayKlass::remove_unshareable_info();
-  if (_default_ref_array_klass != nullptr && !CDSConfig::is_dumping_dynamic_archive()) {
-    _default_ref_array_klass->remove_unshareable_info();
+  if (_next_refined_array_klass != nullptr && !CDSConfig::is_dumping_dynamic_archive()) {
+    _next_refined_array_klass->remove_unshareable_info();
   } else {
-    _default_ref_array_klass = nullptr;
+    _next_refined_array_klass = nullptr;
   }
 }
 
 void ObjArrayKlass::remove_java_mirror() {
   ArrayKlass::remove_java_mirror();
-  if (_default_ref_array_klass != nullptr) {
-    _default_ref_array_klass->remove_java_mirror();
+  if (_next_refined_array_klass != nullptr) {
+    _next_refined_array_klass->remove_java_mirror();
   }
 }
 
@@ -296,15 +296,15 @@ PackageEntry* ObjArrayKlass::package() const {
   return bottom_klass()->package();
 }
 
-ObjArrayKlass* ObjArrayKlass::default_ref_array_klass(TRAPS) {
+ObjArrayKlass* ObjArrayKlass::klass_with_properties(TRAPS) {
 
-  ObjArrayKlass* ak = default_ref_array_klass_acquire();
+  ObjArrayKlass* ak = next_refined_array_klass_acquire();
   if (ak == nullptr) {
     // Ensure atomic creation of refined array klasses
     RecursiveLocker rl(MultiArray_lock, THREAD);
 
     ak = RefArrayKlass::allocate_refArray_klass(class_loader_data(), dimension(), element_klass(), CHECK_NULL);
-    release_set_default_ref_array_klass(ak);
+    release_set_next_refined_array_klass(ak);
   }
   THREAD->check_possible_safepoint();
   return ak;

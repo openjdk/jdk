@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,7 @@ class ObjArrayKlass : public ArrayKlass {
   // must add this field to ObjArrayKlass::metaspace_pointers_do().
   Klass* _element_klass;            // The klass of the elements of this array type
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
-
-  ObjArrayKlass* _default_ref_array_klass;
+  ObjArrayKlass* _next_refined_array_klass;
 
   static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
 
@@ -78,11 +77,11 @@ class ObjArrayKlass : public ArrayKlass {
   ModuleEntry* module() const override;
   PackageEntry* package() const override;
 
-  ObjArrayKlass* default_ref_array_klass(TRAPS);
-  inline ObjArrayKlass* default_ref_array_klass_acquire() const;
-  inline void release_set_default_ref_array_klass(ObjArrayKlass* ak);
-
-  static ByteSize default_ref_array_klass_offset() { return byte_offset_of(ObjArrayKlass, _default_ref_array_klass); }
+  ObjArrayKlass* next_refined_array_klass() const      { return _next_refined_array_klass; }
+  inline ObjArrayKlass* next_refined_array_klass_acquire() const;
+  inline void release_set_next_refined_array_klass(ObjArrayKlass* ak);
+  ObjArrayKlass* klass_with_properties(TRAPS);
+  static ByteSize next_refined_array_klass_offset() { return byte_offset_of(ObjArrayKlass, _next_refined_array_klass); }
 
   // Dispatched operation
   bool can_be_primary_super_slow() const override;

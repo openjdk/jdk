@@ -56,8 +56,7 @@ public class OptimizeImplicitExceptions {
         INVOKE_NULL_POINTER_EXCEPTION("null_check"),
         ARITHMETIC_EXCEPTION("div0_check"),
         ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION("range_check"),
-        // TODO 8366668 This currently fails
-        // ARRAY_STORE_EXCEPTION("array_check"),
+        ARRAY_STORE_EXCEPTION("array_check"),
         CLASS_CAST_EXCEPTION("class_check");
         private final String reason;
         ImplicitException(String reason) {
@@ -103,12 +102,9 @@ public class OptimizeImplicitExceptions {
             case ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION: {
                 return object_a[5];
             }
-            // TODO 8366668 Re-enable
-            /*
             case ARRAY_STORE_EXCEPTION: {
                 return (object_a[0] = o);
             }
-            */
             case CLASS_CAST_EXCEPTION: {
                 return (ImplicitException[])object_a;
             }
@@ -158,8 +154,8 @@ public class OptimizeImplicitExceptions {
 
         int trapCount = WB.getMethodTrapCount(throwImplicitException_m);
         int trapCountSpecific = WB.getMethodTrapCount(throwImplicitException_m, impExcp.getReason());
-        Asserts.assertEQ(trapCount, invocations, "Trap count must much invocation count.");
-        Asserts.assertEQ(trapCountSpecific, invocations, "Trap count must much invocation count.");
+        Asserts.assertEQ(trapCount, invocations, "Trap count must match invocation count.");
+        Asserts.assertEQ(trapCountSpecific, invocations, "Trap count must match invocation count.");
         Asserts.assertNotNull(ex.getMessage(), "Exceptions thrown in the interpreter should have a message.");
     }
 

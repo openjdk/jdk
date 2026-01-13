@@ -30,7 +30,6 @@ import java.util.ArrayList;
 /*
  * @test
  * bug 8308869
- * @ignore TODO 8366668
  * @summary C2: use profile data in subtype checks when profile has more than one class
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox

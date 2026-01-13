@@ -1981,7 +1981,7 @@ public:
   // returns base element type, an instance klass (and not interface) for object arrays
   const Type* base_element_type(int& dims) const;
 
-  static const TypeAryKlassPtr *make(PTR ptr, ciKlass* k, int offset, InterfaceHandling interface_handling, bool vm_type);
+  static const TypeAryKlassPtr *make(PTR ptr, ciKlass* k, int offset, InterfaceHandling interface_handling, bool vm_type = false);
 
   bool is_same_java_type_as_helper(const TypeKlassPtr* other) const;
   bool is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
@@ -1989,10 +1989,10 @@ public:
 
   bool  is_loaded() const { return (_elem->isa_klassptr() ? _elem->is_klassptr()->is_loaded() : true); }
 
-  static const TypeAryKlassPtr *make(PTR ptr, const Type *elem, ciKlass* k, int offset, bool vm_type);
-  static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling, bool vm_type);
+  static const TypeAryKlassPtr *make(PTR ptr, const Type *elem, ciKlass* k, int offset, bool vm_type = false);
+  static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling, bool vm_type = false);
 
-  const TypeAryKlassPtr* get_vm_type(bool vm_type = true) const;
+  const TypeAryKlassPtr* refined_array_klass_ptr() const;
 
   const Type *elem() const { return _elem; }
 

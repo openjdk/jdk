@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,12 @@
 #include "utilities/macros.hpp"
 
 
-inline ObjArrayKlass* ObjArrayKlass::default_ref_array_klass_acquire() const {
-  return AtomicAccess::load_acquire(&_default_ref_array_klass);
+inline ObjArrayKlass* ObjArrayKlass::next_refined_array_klass_acquire() const {
+  return AtomicAccess::load_acquire(&_next_refined_array_klass);
 }
 
-inline void ObjArrayKlass::release_set_default_ref_array_klass(ObjArrayKlass* k) {
-  AtomicAccess::release_store(&_default_ref_array_klass, k);
+inline void ObjArrayKlass::release_set_next_refined_array_klass(ObjArrayKlass* k) {
+  AtomicAccess::release_store(&_next_refined_array_klass, k);
 }
 
 template <typename T, class OopClosureType>

@@ -6031,13 +6031,18 @@ const TypeAryKlassPtr* TypeAryKlassPtr::make(ciKlass* klass, InterfaceHandling i
   return TypeAryKlassPtr::make(Constant, klass, 0, interface_handling, vm_type);
 }
 
-const TypeAryKlassPtr* TypeAryKlassPtr::get_vm_type(bool vm_type) const {
+// Get the refined array klass ptr
+// TODO 8370341 We should also evaluate if we can get rid of the _vm_type and if we should split ciObjArrayKlass into ciRefArrayKlass and ciFlatArrayKlass like the runtime now does.
+const TypeAryKlassPtr* TypeAryKlassPtr::refined_array_klass_ptr() const {
+  if (!klass_is_exact() || !exact_klass()->is_obj_array_klass()) {
+    return this;
+  }
   ciKlass* eklass = elem()->is_klassptr()->exact_klass_helper();
   if (elem()->isa_aryklassptr()) {
     eklass = exact_klass()->as_obj_array_klass()->element_klass();
   }
   ciKlass* array_klass = ciArrayKlass::make(eklass, true);
-  return make(_ptr, array_klass, 0, trust_interfaces, vm_type);
+  return make(_ptr, array_klass, 0, trust_interfaces, true);
 }
 
 
@@ -6287,6 +6292,11 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
         vm_type = _vm_type || tap->_vm_type;
       }
     }
+    if (res_xk && _vm_type != tap->_vm_type) {
+      // This can happen if the phi emitted by LibraryCallKit::load_default_refined_array_klass is folded
+      // before the typeArray guard is folded. Keep the information that this is a refined klass pointer.
+      vm_type = true;
+    }
     return make(ptr, elem, res_klass, off, vm_type);
   } // End of case KlassPtr
   case InstKlassPtr: {
@@ -6473,7 +6483,7 @@ ciKlass* TypeAryKlassPtr::exact_klass_helper() const {
     if (k == nullptr) {
       return nullptr;
     }
-    k = ciObjArrayKlass::make(k, _vm_type);
+    k = ciArrayKlass::make(k, _vm_type);
     return k;
   }
 

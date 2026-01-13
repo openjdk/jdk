@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -958,6 +958,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         __ load_klass(obj, obj);
 
         // This is necessary because I am never in my own secondary_super list.
+        // TODO 8370341 Wouldn't this fail for arrays?
         __ cmp(obj, klass);
         __ br(Assembler::EQ, success);
 

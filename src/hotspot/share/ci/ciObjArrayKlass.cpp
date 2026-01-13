@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,21 +133,21 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
 // ciObjArrayKlass::make_impl
 //
 // Implementation of make.
-ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool vm_type) {
+ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool vm_type) {
 
   if (element_klass->is_loaded()) {
     EXCEPTION_CONTEXT;
     // The element klass is loaded
     Klass* array = element_klass->get_Klass()->array_klass(THREAD);
-    // Think we want to return a refArrayKlass here.
-    if (array->is_objArray_klass() && vm_type) {
-      assert(!array->is_refArray_klass(), "Unexpected refined klass");
-      array = ObjArrayKlass::cast(array)->default_ref_array_klass(THREAD);
-    }
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       CURRENT_THREAD_ENV->record_out_of_memory_failure();
       return ciEnv::unloaded_ciobjarrayklass();
+    }
+    // Think we want to return a refArrayKlass here.
+    if (vm_type) {
+      assert(!array->is_refArray_klass(), "Unexpected refined klass");
+      array = ObjArrayKlass::cast(array)->klass_with_properties(THREAD);
     }
     return CURRENT_THREAD_ENV->get_obj_array_klass(array);
   }
@@ -167,11 +167,11 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool vm_type
 // ciObjArrayKlass::make
 //
 // Make an array klass corresponding to the specified primitive type.
-ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool vm_type) {
+ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool vm_type) {
   GUARDED_VM_ENTRY(return make_impl(element_klass, vm_type);)
 }
 
-ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
+ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
   ciKlass* klass = element_klass;
   for (int i = 0; i < dims; i++) {
     klass = ciObjArrayKlass::make(klass, false);

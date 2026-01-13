@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1047,7 +1047,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
           k = ek->array_klass(CHECK);
           if (k->is_objArray_klass()) {
             // Return specialized array klass type.
-            k = ObjArrayKlass::cast(k)->default_ref_array_klass(CHECK);
+            k = ObjArrayKlass::cast(k)->next_refined_array_klass(CHECK);
           }
         }
         break;

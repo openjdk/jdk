@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
+#include "ci/ciObjArrayKlass.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -1336,7 +1337,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   __ verify_oop(obj);
 
   if (op->fast_check()) {
-    // TODO 8366668 Is this correct? I don't think so. Probably we now always go to the slow path here. Same on AArch64.
+    assert(!k->is_loaded() || !k->is_obj_array_klass(), "Use refined array for a direct pointer comparison");
     // get object class
     // not a safepoint as obj null check happens earlier
     if (UseCompressedClassPointers) {
@@ -1361,7 +1362,14 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         // See if we get an immediate positive hit
         __ jcc(Assembler::equal, *success_target);
         // check for self
-        __ cmpptr(klass_RInfo, k_RInfo);
+        if (k->is_loaded() && k->is_obj_array_klass()) {
+          // For a direct pointer comparison, we need the refined array klass pointer
+          ciKlass* k_refined = ciObjArrayKlass::make(k->as_obj_array_klass()->element_klass());
+          __ mov_metadata(tmp_load_klass, k_refined->constant_encoding());
+          __ cmpptr(klass_RInfo, tmp_load_klass);
+        } else {
+          __ cmpptr(klass_RInfo, k_RInfo);
+        }
         __ jcc(Assembler::equal, *success_target);
 
         __ push_ppx(klass_RInfo);
