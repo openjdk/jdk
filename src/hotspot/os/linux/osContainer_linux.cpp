@@ -59,6 +59,11 @@ void OSContainer::init() {
   if (cgroup_subsystem == nullptr) {
     return; // Required subsystem files not found or other error
   }
+  // Adjust controller paths once subsystem is initialized
+  physical_memory_size_type phys_mem = os::Linux::physical_memory();
+  int host_cpus = os::Linux::active_processor_count();
+  cgroup_subsystem->adjust_controllers(phys_mem, host_cpus);
+
   /*
    * In order to avoid a false positive on is_containerized() on
    * Linux systems outside a container *and* to ensure compatibility
@@ -254,7 +259,7 @@ char * OSContainer::cpu_cpuset_memory_nodes() {
 
 bool OSContainer::active_processor_count(int& value) {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->active_processor_count(value);
+  return cgroup_subsystem->active_processor_count(&os::Linux::active_processor_count, value);
 }
 
 bool OSContainer::cpu_quota(int& value) {

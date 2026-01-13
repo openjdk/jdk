@@ -154,8 +154,6 @@ CgroupV2Subsystem::CgroupV2Subsystem(CgroupV2MemoryController * memory,
                                      CgroupV2CpuacctController* cpuacct,
                                      CgroupV2Controller unified) :
                                      _unified(unified) {
-  CgroupUtil::adjust_controller(memory);
-  CgroupUtil::adjust_controller(cpu);
   _memory = new CachingCgroupController<CgroupMemoryController>(memory);
   _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
   _cpuacct = cpuacct;

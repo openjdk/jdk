@@ -277,7 +277,7 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
 class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     bool memory_limit_in_bytes(physical_memory_size_type upper_bound, physical_memory_size_type& value);
-    bool active_processor_count(int& value);
+    bool active_processor_count(int (*cpu_bound_func)(), int& value);
 
     virtual bool pids_max(uint64_t& value) = 0;
     virtual bool pids_current(uint64_t& value) = 0;
@@ -289,6 +289,8 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     virtual CachingCgroupController<CgroupMemoryController>* memory_controller() = 0;
     virtual CachingCgroupController<CgroupCpuController>* cpu_controller() = 0;
     virtual CgroupCpuacctController* cpuacct_controller() = 0;
+
+    void adjust_controllers(physical_memory_size_type upper_mem_bound, int upper_cpu_bound);
 
     bool cpu_quota(int& value);
     bool cpu_period(int& value);

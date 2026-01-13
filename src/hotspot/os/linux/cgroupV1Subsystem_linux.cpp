@@ -326,8 +326,6 @@ CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
     _cpuset(cpuset),
     _cpuacct(cpuacct),
     _pids(pids) {
-  CgroupUtil::adjust_controller(memory);
-  CgroupUtil::adjust_controller(cpu);
   _memory = new CachingCgroupController<CgroupMemoryController>(memory);
   _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
 }
