@@ -60,6 +60,8 @@ public class CheckFiles {
         System.out.println("Main directory to scan:" + mainDirToScan);
         Path binDir = mainDirToScan.resolve("bin");
         Path libDir = mainDirToScan.resolve("lib");
+        Path includeDir = mainDirToScan.resolve("include");
+        Path jmodsDir = mainDirToScan.resolve("jmods");
 
         System.out.println("Bin directory to scan:" + binDir);
         ArrayList<String> allowedEndingsBinDir = new ArrayList<>();
@@ -108,12 +110,43 @@ public class CheckFiles {
         }
         boolean libDirRes = scanFiles(libDir, allowedEndingsLibDir);
 
-        if (!binDirRes) {
+        if (binDirRes) {
+            System.out.println("Bin directory scan successful.");
+        } else {
             throw new Error("bin dir scan failed");
         }
 
-        if (!libDirRes) {
+        if (libDirRes) {
+            System.out.println("Lib directory scan successful.");
+        } else {
             throw new Error("lib dir scan failed");
+        }
+
+        if (Files.isDirectory(includeDir)) {
+            System.out.println("Include directory to scan:" + includeDir);
+            ArrayList<String> allowedEndingsIncludeDir = new ArrayList<>();
+            allowedEndingsIncludeDir.add(".h");
+            allowedEndingsIncludeDir.add(".hpp");
+            boolean includeDirRes = scanFiles(includeDir, allowedEndingsIncludeDir);
+            if (includeDirRes) {
+                System.out.println("Include directory scan successful.");
+            } else {
+                throw new Error("include dir scan failed");
+            }
+        }
+
+        // when enabling "JEP 493: Linking Run-Time Images without JMODs" we do not
+        // have the jmods folder at all, so first test the presence of the folder
+        if (Files.isDirectory(jmodsDir)) {
+            System.out.println("Jmods directory to scan:" + jmodsDir);
+            ArrayList<String> allowedEndingsJmodsDir = new ArrayList<>();
+            allowedEndingsJmodsDir.add(".jmod");
+            boolean jmodsDirRes = scanFiles(jmodsDir, allowedEndingsJmodsDir);
+            if (jmodsDirRes) {
+                System.out.println("Jmods directory scan successful.");
+            } else {
+                throw new Error("jmods dir scan failed");
+            }
         }
     }
 
