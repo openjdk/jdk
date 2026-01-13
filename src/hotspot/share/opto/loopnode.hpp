@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1455,7 +1455,8 @@ public:
                                           IdealLoopTree* loop, IdealLoopTree* outer_loop,
                                           Node_List& worklist, uint new_counter);
   void clone_outer_nodes_helper(Node* root, uint new_counter, Node_List& old_new,
-                                LoopNode* head, Node_List& extra_data_nodes, CloneLoopMode mode);
+                                LoopNode* head, Node_List& extra_data_nodes,
+                                CloneLoopMode mode, IfFalseNode* cle_out);
   // Determines whether 'n' lies on the control path leading into loop 'cl'.
   // Such a node would either be a projection of an assertion predicate
   // or the taken branch of the zero-trip guard.

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it

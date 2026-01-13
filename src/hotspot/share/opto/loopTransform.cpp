@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1423,7 +1423,7 @@ Node* PhaseIdealLoop::resolve_input_for_drain_or_post(Node* post_head_ctrl, Vect
   //       |     |              |         \   /
   //       |    IfTrue          |    ----> PhiNode('main_phi')
   //       |     |              v    |       |
-  //       |     -------loop end     ---- addI('main_incr')
+  //       |     -------loop end     ---- addI('iv_after_main')
   //        \              |                 |
   //         \          IfFalse              |
   //          \          /        'pre_incr' |
@@ -1451,26 +1451,27 @@ Node* PhaseIdealLoop::resolve_input_for_drain_or_post(Node* post_head_ctrl, Vect
   //                    post zero-trip guard
   //                           ...
   //
-  // We look for an existing Phi node 'drain_input' among the uses of 'main_incr'.
+  // We look for an existing Phi node 'drain_input' among the uses of 'iv_after_main'.
   //
   // If no valid Phi is found, we create a new Phi that merges output data edges
   // from both the pre-loop and main loop. The example here is test5() added in
   // TestVectorizedDrainLoop.java.
   Node* drain_input = nullptr;
-  Node* main_incr = main_phi->in(LoopNode::LoopBackControl);
-  if (get_ctrl(main_incr) != main_backedge_ctrl) {
-    // We try to look up target phi from all uses of node 'main_incr'.
-    drain_input = find_merge_phi_for_vectorized_drain(main_incr, main_merge_region);
+  Node* iv_after_main = main_phi->in(LoopNode::LoopBackControl);
+  if (get_ctrl(iv_after_main) != main_backedge_ctrl) {
+    // We try to look up target phi from all uses of node 'iv_after_main'.
+    drain_input = find_merge_phi_for_vectorized_drain(iv_after_main, main_merge_region);
   }
   if (drain_input == nullptr) {
     // Make the fall-in values to the vectorized drain-loop come from a phi node
     // merging the data from the vector main-loop and the pre-loop.
 
-    // If Node 'main_incr' lives in the 'main_backedge_ctrl' block, we clone a private version of
-    // 'main_incr' in 'main_exit' block and return that, otherwise return 'main_incr'.
-    main_incr = clone_up_backedge_goo(main_backedge_ctrl, main_merge_region->in(2), main_incr,
-                                      visited, clones);
-    drain_input = PhiNode::make(main_merge_region, main_incr);
+    // If Node 'iv_after_main' lives in the 'main_backedge_ctrl' block, we clone a
+    // private version of 'iv_after_main' in 'main_exit' block and return that,
+    // otherwise return 'iv_after_main'.
+    iv_after_main = clone_up_backedge_goo(main_backedge_ctrl, main_merge_region->in(2),
+                                          iv_after_main, visited, clones);
+    drain_input = PhiNode::make(main_merge_region, iv_after_main);
     Node* pre_incr = main_phi->in(LoopNode::EntryControl);
     if (has_ctrl(pre_incr) && !is_dominator(get_ctrl(pre_incr), main_merge_region->in(1))) {
       // If the entry input of the main_phi is not directly from pre-loop but has been preprocessed
@@ -1921,8 +1922,6 @@ Node* PhaseIdealLoop::insert_post_or_drain_loop(IdealLoopTree* loop, Node_List& 
     assert(outer_loop->_head == main_head->in(LoopNode::EntryControl), "broken loop tree");
   }
 
-  //------------------------------
-  // Step A: Create a new post-Loop.
   IfFalseNode* main_exit = outer_main_end->false_proj();
   int dd_main_exit = dom_depth(main_exit);
 
@@ -2135,23 +2134,26 @@ Node* PhaseIdealLoop::insert_post_or_drain_loop(IdealLoopTree* loop, Node_List& 
       new_phi->set_req(LoopNode::EntryControl, new_input);
     }
   }
-  // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
-  // do not have an associated Phi node. Such nodes are attached to the false projection of the CountedLoopEnd node,
-  // right after the execution of the inner CountedLoop.
-  // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
-  // The moved store node is always attached right after the inner loop exit, and just before the safepoint
-  const IfFalseNode* if_false = main_end->false_proj();
-  for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
-    Node* store = if_false->out(j);
-    if (store->is_Store()) {
-      // We only make changes if the memory input of the store is outside the outer loop body,
-      // as this is when we would normally expect a Phi as input. If the memory input
-      // is in the loop body as well, then we can safely assume it is still correct as the entire
-      // body was cloned as a unit
-      if (!ctrl_is_member(outer_loop, store->in(MemNode::Memory))) {
-        Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
-        Node* store_new = old_new[store->_idx];
-        store_new->set_req(MemNode::Memory, mem_out);
+
+  if (mode == ControlAroundStripMined) {
+    // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
+    // do not have an associated Phi node. Such nodes are attached to the false projection of the CountedLoopEnd node,
+    // right after the execution of the inner CountedLoop.
+    // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
+    // The moved store node is always attached right after the inner loop exit, and just before the safepoint
+    const IfFalseNode* if_false = main_end->false_proj();
+    for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
+      Node* store = if_false->out(j);
+      if (store->is_Store()) {
+        // We only make changes if the memory input of the store is outside the outer loop body,
+        // as this is when we would normally expect a Phi as input. If the memory input
+        // is in the loop body as well, then we can safely assume it is still correct as the entire
+        // body was cloned as a unit
+        if (!ctrl_is_member(outer_loop, store->in(MemNode::Memory))) {
+          Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
+          Node* store_new = old_new[store->_idx];
+          store_new->set_req(MemNode::Memory, mem_out);
+        }
       }
     }
   }

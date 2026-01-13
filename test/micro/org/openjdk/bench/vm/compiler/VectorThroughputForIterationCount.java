@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +128,13 @@ public abstract class VectorThroughputForIterationCount {
     private int seed;
     private Random r = new Random(seed);
 
+    // Enable a warm-up phase with a large iteration count to force
+    // auto-vectorization and unrolling. Without this, C2 may optimize
+    // away small fixed-trip loops based on profiling, making the
+    // effects of this patch unobservable.
+    @Param({"true", "false"})
+    public static boolean ENABLE_LARGE_LOOP_WARMUP;
+
     @Setup
     public void init() {
         aI = new int[CONTAINER_SIZE];
@@ -192,11 +200,13 @@ public abstract class VectorThroughputForIterationCount {
             }
         }
 
-        for (int i = 0; i < 10_000; i++) {
-            byteadd(aB, bB, rB, START_IDX, WARMUP_LEN);
-            shortadd(aS, bS, rS, START_IDX, WARMUP_LEN);
-            intadd(aI, bI, rI, START_IDX, WARMUP_LEN);
-            longadd(aL, bL, rL, START_IDX, WARMUP_LEN);
+        if (ENABLE_LARGE_LOOP_WARMUP) {
+            for (int i = 0; i < 10_000; i++) {
+                byteadd(aB, bB, rB, START_IDX, WARMUP_LEN);
+                shortadd(aS, bS, rS, START_IDX, WARMUP_LEN);
+                intadd(aI, bI, rI, START_IDX, WARMUP_LEN);
+                longadd(aL, bL, rL, START_IDX, WARMUP_LEN);
+            }
         }
 
     }

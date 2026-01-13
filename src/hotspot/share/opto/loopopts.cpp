@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2545,15 +2545,19 @@ void PhaseIdealLoop::fix_data_uses_for_vectorized_drain(Node* main_old, Node_Lis
         }
       }
 
-      // The increment feeding the trip-counter phi in the new loop body
-      // is 'drain_incr', which is dangling. We create a new 'drain_merge_phi'
-      // node which will merge 'drain_incr' and 'main_merge_phi' and take
-      // the RegionNode, 'new_prev', as the control input which was created in
-      // fix_ctrl_uses_for_vectorized_drain(). This new node 'drain_merge_phi'
-      // will replace all other uses of 'main_merge_phi'.
+      // 'drain_incr' is now dangling. In the following while loop, for each
+      // 'main_merge_phi', we create a corresponding 'drain_merge_phi',
+      // as illustrated below:
       //
-      // 'use' may have more than one valid "Phi" uses.
-      // The example here is test6() added in TestVectorizedDrainLoop.java.
+      //   main_merge_phi  = Phi(pre_incr, main_old)
+      //   drain_merge_phi = Phi(drain_incr, main_merge_phi)
+      //
+      // The 'drain_merge_phi' takes the RegionNode 'drain_merge_region' as its
+      // control input. This newly created 'drain_merge_phi' replaces all other
+      // uses of 'main_merge_phi'.
+      //
+      // Note that 'use' may have more than one valid Phi use. Refer to test6()
+      // in TestVectorizedDrainLoop.java for an example.
       while (phi_list.size() != 0) {
         Node* main_merge_phi = phi_list.pop();
         const uint idx = 2;
@@ -2653,7 +2657,7 @@ Node* PhaseIdealLoop::find_merge_phi_for_vectorized_drain(Node* n, Node* merge_r
 // loop out-edge and in-edge.
 void PhaseIdealLoop::clone_outer_nodes_helper(Node* root, uint new_counter, Node_List& old_new,
                                               LoopNode* head, Node_List& extra_data_nodes,
-                                              CloneLoopMode mode) {
+                                              CloneLoopMode mode, IfFalseNode* cle_out) {
   CountedLoopNode* cl = head->as_CountedLoop();
   Node* sfpt = cl->outer_safepoint();
   Node* new_sfpt = mode == CloneIncludesStripMined ? old_new[sfpt->_idx] : nullptr;
@@ -2661,7 +2665,6 @@ void PhaseIdealLoop::clone_outer_nodes_helper(Node* root, uint new_counter, Node
   stack.push(root, 1);
   Node* l = cl->outer_loop();
   IdealLoopTree* outer_loop = get_loop(l);
-  Node* cle_out = cl->loopexit()->proj_out(false);
 
   Node* main_pre_exit_region = nullptr;
   if (mode == InsertVectorizedDrain) {
@@ -2738,7 +2741,16 @@ bool PhaseIdealLoop::is_loop_entry_ctrl(Node* n, CountedLoopNode* cl) {
     return false;
   }
   Node* ctrl = get_ctrl(n);
-  Node* dom_ctrl = cl->skip_assertion_predicates_with_halt();
+
+  assert(cl->is_main_loop(), "Must be a main loop");
+  Node* entry_ctrl = cl->in(LoopNode::EntryControl);
+  if (cl->is_strip_mined()) {
+    entry_ctrl = cl->outer_loop()->in(LoopNode::EntryControl);
+  }
+  assert(entry_ctrl != nullptr, "Dying loop");
+  AssertionPredicates assertion_predicates(entry_ctrl);
+  Node* dom_ctrl = assertion_predicates.entry();
+
   if (ctrl == dom_ctrl) { return true; }
   return (is_dominator(dom_ctrl, ctrl) && AssertionPredicate::is_predicate(ctrl));
 }
@@ -2806,7 +2818,8 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     // from the safepoint node's inputs.
     uint new_counter = C->unique();
     // To support the loop out-edge.
-    clone_outer_nodes_helper(sfpt, new_counter, old_new, head, extra_data_nodes, mode);
+    clone_outer_nodes_helper(sfpt, new_counter, old_new, head,
+                             extra_data_nodes, mode, cle_out);
 
     if (mode == CloneIncludesStripMined) {
       _igvn.register_new_node_with_optimizer(new_sfpt);
@@ -2822,7 +2835,8 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
           if (old->in(j) != nullptr && drain_n->in(j) == old->in(j) &&
               is_loop_entry_ctrl(old->in(j), cl)) {
             if (old_new[old->in(j)->_idx] == nullptr) {
-              clone_outer_nodes_helper(old->in(j), new_counter, old_new, head, extra_data_nodes, InsertVectorizedDrain);
+              clone_outer_nodes_helper(old->in(j), new_counter, old_new, head,
+                                       extra_data_nodes, InsertVectorizedDrain, cle_out);
               assert(old_new[old->in(j)->_idx], "We must clone a new node for vectorized drain loop");
             } else {
               assert(old_new[old->in(j)->_idx]->_idx >= new_counter, "Must be a new cloned node");
