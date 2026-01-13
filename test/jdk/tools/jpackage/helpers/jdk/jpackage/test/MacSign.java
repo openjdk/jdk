@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1172,7 +1172,7 @@ public final class MacSign {
                     "-c", certFile.normalize().toString(),
                     "-k", keychain.name(),
                     "-p", resolvedCertificateRequest.installed().type().verifyPolicy()).saveOutput(!quite).executeWithoutExitCodeCheck();
-            if (result.exitCode() == 0) {
+            if (result.getExitCode() == 0) {
                 return VerifyStatus.VERIFY_OK;
             }
         }

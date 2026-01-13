@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,15 +89,19 @@ final class VirtualThread extends BaseVirtualThread {
      *
      *  RUNNING -> PARKING         // Thread parking with LockSupport.park
      *  PARKING -> PARKED          // cont.yield successful, parked indefinitely
-     *  PARKING -> PINNED          // cont.yield failed, parked indefinitely on carrier
      *   PARKED -> UNPARKED        // unparked, may be scheduled to continue
-     *   PINNED -> RUNNING         // unparked, continue execution on same carrier
      * UNPARKED -> RUNNING         // continue execution after park
+     *
+     *  PARKING -> RUNNING         // cont.yield failed, need to park on carrier
+     *  RUNNING -> PINNED          // park on carrier
+     *   PINNED -> RUNNING         // unparked, continue execution on same carrier
      *
      *       RUNNING -> TIMED_PARKING   // Thread parking with LockSupport.parkNanos
      * TIMED_PARKING -> TIMED_PARKED    // cont.yield successful, timed-parked
-     * TIMED_PARKING -> TIMED_PINNED    // cont.yield failed, timed-parked on carrier
      *  TIMED_PARKED -> UNPARKED        // unparked, may be scheduled to continue
+     *
+     * TIMED_PARKING -> RUNNING         // cont.yield failed, need to park on carrier
+     *       RUNNING -> TIMED_PINNED    // park on carrier
      *  TIMED_PINNED -> RUNNING         // unparked, continue execution on same carrier
      *
      *   RUNNING -> BLOCKING       // blocking on monitor enter
@@ -108,7 +112,7 @@ final class VirtualThread extends BaseVirtualThread {
      *   RUNNING -> WAITING        // transitional state during wait on monitor
      *   WAITING -> WAIT           // waiting on monitor
      *      WAIT -> BLOCKED        // notified, waiting to be unblocked by monitor owner
-     *      WAIT -> UNBLOCKED      // timed-out/interrupted
+     *      WAIT -> UNBLOCKED      // interrupted
      *
      *       RUNNING -> TIMED_WAITING   // transition state during timed-waiting on monitor
      * TIMED_WAITING -> TIMED_WAIT      // timed-waiting on monitor
@@ -856,16 +860,20 @@ final class VirtualThread extends BaseVirtualThread {
      * Re-enables this virtual thread for scheduling. If this virtual thread is parked
      * then its task is scheduled to continue, otherwise its next call to {@code park} or
      * {@linkplain #parkNanos(long) parkNanos} is guaranteed not to block.
+     * @param lazySubmit to use lazySubmit if possible
      * @throws RejectedExecutionException if the scheduler cannot accept a task
      */
-    @Override
-    void unpark() {
+    private void unpark(boolean lazySubmit) {
         if (!getAndSetParkPermit(true) && currentThread() != this) {
             int s = state();
 
             // unparked while parked
             if ((s == PARKED || s == TIMED_PARKED) && compareAndSetState(s, UNPARKED)) {
-                submitRunContinuation();
+                if (lazySubmit) {
+                    lazySubmitRunContinuation();
+                } else {
+                    submitRunContinuation();
+                }
                 return;
             }
 
@@ -888,6 +896,11 @@ final class VirtualThread extends BaseVirtualThread {
         }
     }
 
+    @Override
+    void unpark() {
+        unpark(false);
+    }
+
     /**
      * Invoked by unblocker thread to unblock this virtual thread.
      */
@@ -904,11 +917,7 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private void parkTimeoutExpired() {
         assert !VirtualThread.currentThread().isVirtual();
-        if (!getAndSetParkPermit(true)
-                && (state() == TIMED_PARKED)
-                && compareAndSetState(TIMED_PARKED, UNPARKED)) {
-            lazySubmitRunContinuation();
-        }
+        unpark(true);
     }
 
     /**
