@@ -29,6 +29,7 @@ import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import javax.crypto.KeyGenerator;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SNIMatcher;
@@ -64,6 +65,11 @@ final class SSLConfiguration implements Cloneable {
     // the configured named groups for the "supported_groups" extensions
     String[]                   namedGroups;
 
+    // The configured certificate compression algorithms for
+    // "compress_certificate" extensions
+    Map<String, Function<byte[], byte[]>> certDeflaters;
+    Map<String, Function<byte[], byte[]>> certInflaters;
+
     // the maximum protocol version of enabled protocols
     ProtocolVersion             maximumProtocolVersion;
 
@@ -83,6 +89,11 @@ final class SSLConfiguration implements Cloneable {
 
     // To switch off the extended_master_secret extension.
     static final boolean useExtendedMasterSecret;
+
+    // Enable certificate compression.
+    private final boolean enableCertificateCompression =
+            Utilities.getBooleanProperty(
+                    "jdk.tls.enableCertificateCompression", true);
 
     // Allow session resumption without Extended Master Secret extension.
     static final boolean allowLegacyResumption =
@@ -248,6 +259,12 @@ final class SSLConfiguration implements Cloneable {
                 CustomizedServerSignatureSchemes.signatureSchemes != null ?
                         CustomizedServerSignatureSchemes.signatureSchemes :
                         SupportedSigSchemes.DEFAULT;
+
+        this.certDeflaters = this.enableCertificateCompression
+                ? CompressionAlgorithm.getDefaultDeflaters() : Map.of();
+        this.certInflaters = this.enableCertificateCompression
+                ? CompressionAlgorithm.getDefaultInflaters() : Map.of();
+
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
@@ -379,6 +396,11 @@ final class SSLConfiguration implements Cloneable {
         } else {    // Otherwise, use the default values.
             this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         }
+
+        this.certDeflaters = params.getEnableCertificateCompression()
+                ? CompressionAlgorithm.getDefaultDeflaters() : Map.of();
+        this.certInflaters = params.getEnableCertificateCompression()
+                ? CompressionAlgorithm.getDefaultInflaters() : Map.of();
 
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         this.enableRetransmissions = params.getEnableRetransmissions();

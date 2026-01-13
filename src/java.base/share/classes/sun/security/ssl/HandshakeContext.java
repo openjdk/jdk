@@ -33,6 +33,7 @@ import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.function.Function;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
@@ -130,6 +131,10 @@ abstract class HandshakeContext implements ConnectionContext {
     List<SignatureScheme>                   localSupportedCertSignAlgs;
     List<SignatureScheme>                   peerRequestedSignatureSchemes;
     List<SignatureScheme>                   peerRequestedCertSignSchemes;
+
+    // CertificateCompressionAlgorithm
+    Map<Integer, Function<byte[], byte[]>>          certInflaters;
+    Map.Entry<Integer, Function<byte[], byte[]>>    certDeflater;
 
     // Known authorities
     X500Principal[]                         peerSupportedAuthorities = null;

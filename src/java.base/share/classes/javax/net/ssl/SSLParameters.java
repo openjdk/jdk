@@ -27,6 +27,7 @@ package javax.net.ssl;
 
 import java.security.AlgorithmConstraints;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Encapsulates parameters for an SSL/TLS/DTLS connection. The parameters
@@ -86,6 +87,7 @@ public class SSLParameters {
     private String[] applicationProtocols = new String[0];
     private String[] signatureSchemes = null;
     private String[] namedGroups = null;
+    private boolean enableCertificateCompression = true;
 
     /**
      * Constructs SSLParameters.
@@ -959,5 +961,39 @@ public class SSLParameters {
         }
 
         this.namedGroups = tempGroups;
+    }
+
+    /**
+     * Sets whether TLS certificate compression should be enabled.
+     * <p>
+     * This method only applies to TLSv1.3.
+     *
+     * @param   enableCertificateCompression
+     *          {@code true} indicates that TLS certificate compression
+     *          should be enabled; {@code false} indicates that TLS certificate
+     *          compression should be disabled
+     *
+     * @see     #getEnableCertificateCompression()
+     *
+     * @since 27
+     */
+    public void setEnableCertificateCompression(
+            boolean enableCertificateCompression) {
+        this.enableCertificateCompression = enableCertificateCompression;
+    }
+
+    /**
+     * Returns whether TLS certificate compression should be enabled
+     * <p>
+     * This method only applies to TLSv1.3.
+     *
+     * @return  true, if TLS certificate compression should be enabled
+     *
+     * @see     #setEnableCertificateCompression(boolean)
+     *
+     * @since 27
+     */
+    public boolean getEnableCertificateCompression() {
+        return this.enableCertificateCompression;
     }
 }
