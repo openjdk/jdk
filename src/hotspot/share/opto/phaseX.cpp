@@ -782,7 +782,8 @@ void PhaseGVN::dead_loop_check(Node* n) {
     for (uint j = 1; j < in->req(); j++) {
       if (in->in(j) == n) {
         n->dump_bfs(100, nullptr, "");
-        fatal("Dead loop detected, node input references current node: %s -> %s", in->Name(), n->Name());
+        fatal("Dead loop detected, node input references current node: %s -> %s",
+              in->Name(), n->Name());
       }
       if (in->in(j) == in) {
         n->dump_bfs(100, nullptr, "");
