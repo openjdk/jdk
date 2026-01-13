@@ -48,27 +48,27 @@ public class TestGCInJNICritical {
 
     public static void main(String[] args) throws Throwable {
         if (GC.Epsilon.isSupported()) {
-            // Supports safe pinning by triviality
+            // Supports JNI Critical by not moving anything
             shouldPass("-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC");
         }
         if (GC.G1.isSupported()) {
-            // Supports safe pinning by managing pinned regions (JEP 423)
+            // Supports JNI Critical by pinning regions (JEP 423)
             shouldPass("-XX:+UseG1GC");
         }
         if (GC.Parallel.isSupported()) {
-            // Supports pinning with GCLocker, can deadlock
+            // Supports JNI Critical with GCLocker, can deadlock
             shouldFailCheck("-XX:+UseParallelGC");
         }
         if (GC.Serial.isSupported()) {
-            // Supports pinning with GCLocker, can deadlock
+            // Supports JNI Critical with GCLocker, can deadlock
             shouldFailCheck("-XX:+UseSerialGC");
         }
         if (GC.Shenandoah.isSupported()) {
-            // Supports safe pinning by managing pinned regions
+            // Supports JNI Critical by pinning regions
             shouldPass("-XX:+UseShenandoahGC");
         }
         if (GC.Z.isSupported()) {
-            // Supports pinning by GCLocker-like mechanism, can deadlock
+            // Supports JNI Critical by GCLocker-like mechanism, can deadlock
             shouldFailCheck("-XX:+UseZGC");
         }
     }
