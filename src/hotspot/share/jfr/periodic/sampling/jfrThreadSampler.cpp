@@ -362,7 +362,6 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
   }
 
   if (jt->thread_state() != _thread_in_native || !jt->has_last_Java_frame()) {
-    assert_lock_strong(Threads_lock);
     JfrSampleMonitor jsm(tl);
     if (jsm.is_waiting()) {
       // The thread has already returned from native,
