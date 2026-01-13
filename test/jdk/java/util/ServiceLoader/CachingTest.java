@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Test ServiceLoader caches
- * @run testng CachingTest
+ * @run junit CachingTest
  */
 
 import java.nio.file.Files;
@@ -38,10 +38,12 @@ import java.util.ServiceLoader.Provider;
 import java.util.Spliterator;
 import java.util.stream.Collectors;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CachingTest {
 
     // service type
@@ -55,7 +57,7 @@ public class CachingTest {
     private ClassLoader testClassLoader;
 
     // creates the services configuration file and sets the ClassLoader
-    @BeforeClass
+    @BeforeAll
     void setup() throws Exception {
         String classes = System.getProperty("test.classes");
         Path dir = Paths.get(classes, "META-INF", "services");

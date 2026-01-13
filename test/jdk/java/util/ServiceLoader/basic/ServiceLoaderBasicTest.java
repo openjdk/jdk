@@ -29,7 +29,7 @@
  * @build jdk.test.lib.process.*
  *        jdk.test.lib.util.JarUtils
  *        Basic Load FooService FooProvider1 FooProvider2 FooProvider3 BarProvider
- * @run testng ServiceLoaderBasicTest
+ * @run junit ServiceLoaderBasicTest
  */
 
 
@@ -44,14 +44,17 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Arrays.asList;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ServiceLoaderBasicTest {
 
     private static final String METAINFO = "META-INF/services/FooService";
@@ -79,7 +82,7 @@ public class ServiceLoaderBasicTest {
     private static final String XTESTXMETA_CP = XTEST_CP + XMETA;
     private static final String XTESTXMETAP2_CP = XTESTXMETA_CP + P2;
 
-    @BeforeClass
+    @BeforeAll
     public void initialize() throws Exception {
         createProviderConfig(XTEST_CONFIG, "FooProvider1");
         createProviderConfig(XMETA_CONFIG, "FooProvider42");
@@ -88,7 +91,6 @@ public class ServiceLoaderBasicTest {
         Files.copy(P2JAR, P2DUPJAR, REPLACE_EXISTING);
     }
 
-    @DataProvider
     public Object[][] testCases() {
         return new Object[][]{
             //       CLI options,            Test,       Runtime arguments
@@ -110,7 +112,6 @@ public class ServiceLoaderBasicTest {
         };
     }
 
-    @DataProvider
     public Object[][] negativeTestCases() {
         return new Object[][]{
             {"blah blah"},
@@ -121,12 +122,14 @@ public class ServiceLoaderBasicTest {
         };
     }
 
-    @Test(dataProvider = "testCases")
+    @ParameterizedTest
+    @MethodSource("testCases")
     public void testProvider(List<String> args) throws Throwable {
         runJava(args);
     }
 
-    @Test(dataProvider = "negativeTestCases")
+    @ParameterizedTest
+    @MethodSource("negativeTestCases")
     public void testBadProvider(String providerName) throws Throwable {
         Files.write(XMETA_CONFIG, providerName.getBytes());
         runJava(List.of("-cp", XMETA_CP, "Load", "fail"));

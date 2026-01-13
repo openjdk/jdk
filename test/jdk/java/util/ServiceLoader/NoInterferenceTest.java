@@ -26,7 +26,7 @@
  * @library /test/lib
  * @modules jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
- * @run testng NoInterferenceTest
+ * @run junit NoInterferenceTest
  * @summary Basic test of ServiceLoader that ensures there is no interference
  *          when there are two service interfaces of the same name in a layer
  *          or overridden in a child layer.
@@ -46,10 +46,12 @@ import java.util.Set;
 
 import jdk.test.lib.compiler.CompilerUtils;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class NoInterferenceTest {
 
     private static final String TEST_SRC = System.getProperty("test.src");
@@ -57,7 +59,7 @@ public class NoInterferenceTest {
     private static final Path MODS_DIR = Paths.get("mods");
     private static final List<String> MODULES = Arrays.asList("s1", "p1", "s2", "p2");
 
-    @BeforeTest
+    @BeforeAll
     void compile() throws Exception {
         Files.createDirectory(MODS_DIR);
         for (String name : MODULES) {

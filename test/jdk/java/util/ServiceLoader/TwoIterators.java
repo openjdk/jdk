@@ -25,7 +25,7 @@
  * @test
  * @summary Test ServiceLoader with two iterators, interleaving their use
  *   to test that they don't interfere with each other
- * @run testng TwoIterators
+ * @run junit TwoIterators
  */
 
 import java.nio.file.Files;
@@ -35,10 +35,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TwoIterators {
 
     // service type
@@ -51,7 +53,7 @@ public class TwoIterators {
     private ClassLoader testClassLoader;
 
     // creates the services configuration file and sets the ClassLoader
-    @BeforeClass
+    @BeforeAll
     void setup() throws Exception {
         String classes = System.getProperty("test.classes");
         Path dir = Paths.get(classes, "META-INF", "services");

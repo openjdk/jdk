@@ -26,18 +26,19 @@
  * @summary tests StringJoiner OOME when joining sub-max-length Strings
  * @modules java.base/jdk.internal.util
  * @requires vm.bits == "64" & os.maxMemory > 4G
- * @run testng/othervm -Xmx4g -XX:+CompactStrings StringJoinerOomUtf16Test
+ * @run junit/othervm -Xmx4g -XX:+CompactStrings StringJoinerOomUtf16Test
  */
 
-import org.testng.annotations.Test;
 
 import static jdk.internal.util.ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.StringJoiner;
 
+import org.junit.jupiter.api.Test;
 
-@Test(groups = {"unit","string","util","libs"})
+
 public class StringJoinerOomUtf16Test {
 
     // the sum of lengths of the following two strings is way less than
@@ -48,6 +49,7 @@ public class StringJoinerOomUtf16Test {
     private static final String OVERFLOW_UTF16_STRING =
         "\u017D".repeat(((Integer.MAX_VALUE - SOFT_MAX_ARRAY_LENGTH) >> 1) + 1);
 
+    @Test
     public void OOM1() {
         try {
             new StringJoiner("")
@@ -60,6 +62,7 @@ public class StringJoinerOomUtf16Test {
         }
     }
 
+    @Test
     public void OOM2() {
         try {
             new StringJoiner(HALF_MAX_LATIN1_STRING)
@@ -72,6 +75,7 @@ public class StringJoinerOomUtf16Test {
         }
     }
 
+    @Test
     public void OOM3() {
         try {
             new StringJoiner(OVERFLOW_UTF16_STRING)
@@ -84,6 +88,7 @@ public class StringJoinerOomUtf16Test {
         }
     }
 
+    @Test
     public void OOM4() {
         try {
             new StringJoiner("", HALF_MAX_LATIN1_STRING, OVERFLOW_UTF16_STRING)

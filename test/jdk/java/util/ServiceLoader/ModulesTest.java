@@ -29,7 +29,7 @@
  * @build jdk.test.lib.util.JarUtils
  * @compile classpath/pearscript/org/pear/PearScriptEngineFactory.java
  *          classpath/pearscript/org/pear/PearScript.java
- * @run testng/othervm ModulesTest
+ * @run junit/othervm ModulesTest
  * @summary Basic test for ServiceLoader with a provider deployed as a module.
  */
 
@@ -55,9 +55,11 @@ import javax.script.ScriptEngineFactory;
 
 import jdk.test.lib.util.JarUtils;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeTest;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * Basic test for ServiceLoader. The test make use of two service providers:
@@ -68,10 +70,11 @@ import static org.testng.Assert.*;
  *    with a service configuration file.
  */
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ModulesTest {
 
     // Copy the services configuration file for "pearscript" into place.
-    @BeforeTest
+    @BeforeAll
     public void setup() throws Exception {
         Path src = Paths.get(System.getProperty("test.src"));
         Path classes = Paths.get(System.getProperty("test.classes"));
@@ -428,30 +431,40 @@ public class ModulesTest {
 
     // -- nulls --
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testLoadNull1() {
-        ServiceLoader.load(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            ServiceLoader.load(null);
+        });
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testLoadNull2() {
-        ServiceLoader.load((Class<?>) null, ClassLoader.getSystemClassLoader());
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            ServiceLoader.load((Class<?>) null, ClassLoader.getSystemClassLoader());
+        });
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testLoadNull3() {
-        class S { }
-        ServiceLoader.load((ModuleLayer) null, S.class);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            class S { }
+            ServiceLoader.load((ModuleLayer) null, S.class);
+        });
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testLoadNull4() {
-        ServiceLoader.load(ModuleLayer.empty(), null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            ServiceLoader.load(ModuleLayer.empty(), null);
+        });
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testLoadNull5() {
-        ServiceLoader.loadInstalled(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            ServiceLoader.loadInstalled(null);
+        });
     }
 
     /**
