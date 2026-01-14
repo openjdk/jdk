@@ -1521,7 +1521,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (!k || !k->is_loaded()) {                  // Only fails for some -Xcomp runs
         tj = tk = TypeInstKlassPtr::make(TypePtr::NotNull, env()->Object_klass(), offset);
       } else {
-        tj = tk = TypeAryKlassPtr::make(TypePtr::NotNull, tk->is_aryklassptr()->elem(), k, offset, tk->is_aryklassptr()->is_vm_type());
+        tj = tk = TypeAryKlassPtr::make(TypePtr::NotNull, tk->is_aryklassptr()->elem(), k, offset, tk->is_aryklassptr()->is_refined_type());
       }
     }
 

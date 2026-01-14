@@ -5843,7 +5843,7 @@ const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
       // below the centerline when the superclass is exact. We need to
       // do the same here.
       if (klass()->equals(ciEnv::current()->Object_klass()) && tp_interfaces->contains(this_interfaces) && !klass_is_exact()) {
-        return TypeAryKlassPtr::make(ptr, tp->elem(), tp->klass(), offset, tp->is_vm_type());
+        return TypeAryKlassPtr::make(ptr, tp->elem(), tp->klass(), offset, tp->is_refined_type());
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
         ptr = NotNull;
@@ -5863,7 +5863,7 @@ const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
         if (klass()->equals(ciEnv::current()->Object_klass()) && tp_interfaces->contains(this_interfaces) && !klass_is_exact()) {
           // that is, tp's array type is a subtype of my klass
           return TypeAryKlassPtr::make(ptr,
-                                       tp->elem(), tp->klass(), offset, tp->is_vm_type());
+                                       tp->elem(), tp->klass(), offset, tp->is_refined_type());
         }
       }
       // The other case cannot happen, since I cannot be a subtype of an array.
@@ -6007,16 +6007,16 @@ void TypeInstKlassPtr::dump2(Dict& d, uint depth, outputStream* st) const {
 }
 #endif // PRODUCT
 
-const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, int offset, bool vm_type) {
-  return (TypeAryKlassPtr*)(new TypeAryKlassPtr(ptr, elem, k, offset, vm_type))->hashcons();
+const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, int offset, bool refined_type) {
+  return (TypeAryKlassPtr*)(new TypeAryKlassPtr(ptr, elem, k, offset, refined_type))->hashcons();
 }
 
-const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, ciKlass* k, int offset, InterfaceHandling interface_handling, bool vm_type) {
+const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, ciKlass* k, int offset, InterfaceHandling interface_handling, bool refined_type) {
   if (k->is_obj_array_klass()) {
     // Element is an object array. Recursively call ourself.
     ciKlass* eklass = k->as_obj_array_klass()->element_klass();
     const TypeKlassPtr *etype = TypeKlassPtr::make(eklass, interface_handling)->cast_to_exactness(false);
-    return TypeAryKlassPtr::make(ptr, etype, nullptr, offset, vm_type);
+    return TypeAryKlassPtr::make(ptr, etype, nullptr, offset, refined_type);
   } else if (k->is_type_array_klass()) {
     // Element is an typeArray
     const Type* etype = get_const_basic_type(k->as_type_array_klass()->element_type());
@@ -6027,24 +6027,22 @@ const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, ciKlass* k, int offset, In
   }
 }
 
-const TypeAryKlassPtr* TypeAryKlassPtr::make(ciKlass* klass, InterfaceHandling interface_handling, bool vm_type) {
-  return TypeAryKlassPtr::make(Constant, klass, 0, interface_handling, vm_type);
+const TypeAryKlassPtr* TypeAryKlassPtr::make(ciKlass* klass, InterfaceHandling interface_handling, bool refined_type) {
+  return TypeAryKlassPtr::make(Constant, klass, 0, interface_handling, refined_type);
 }
 
-// Get the refined array klass ptr
-// TODO 8370341 We should also evaluate if we can get rid of the _vm_type and if we should split ciObjArrayKlass into ciRefArrayKlass and ciFlatArrayKlass like the runtime now does.
-const TypeAryKlassPtr* TypeAryKlassPtr::refined_array_klass_ptr() const {
-  if (!klass_is_exact() || !exact_klass()->is_obj_array_klass()) {
-    return this;
-  }
-  ciKlass* eklass = elem()->is_klassptr()->exact_klass_helper();
-  if (elem()->isa_aryklassptr()) {
-    eklass = exact_klass()->as_obj_array_klass()->element_klass();
-  }
-  ciKlass* array_klass = ciArrayKlass::make(eklass, true);
-  return make(_ptr, array_klass, 0, trust_interfaces, true);
+// Get the (non-)refined array klass ptr
+const TypeAryKlassPtr* TypeAryKlassPtr::cast_to_refined_array_klass_ptr(bool refined) const {
+  if ((refined == is_refined_type()) || !klass_is_exact() || !exact_klass()->is_obj_array_klass()) {
+     return this;
+   }
+   ciKlass* eklass = elem()->is_klassptr()->exact_klass_helper();
+   if (elem()->isa_aryklassptr()) {
+     eklass = exact_klass()->as_obj_array_klass()->element_klass();
+   }
+  ciKlass* array_klass = ciArrayKlass::make(eklass, refined);
+  return make(_ptr, array_klass, 0, trust_interfaces, refined);
 }
-
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
@@ -6052,14 +6050,16 @@ bool TypeAryKlassPtr::eq(const Type *t) const {
   const TypeAryKlassPtr *p = t->is_aryklassptr();
   return
     _elem == p->_elem &&  // Check array
+    _refined_type == p->_refined_type &&
     TypeKlassPtr::eq(p);  // Check sub-parts
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 uint TypeAryKlassPtr::hash(void) const {
-  return (uint)(uintptr_t)_elem + TypeKlassPtr::hash();
+   return (uint)(uintptr_t)_elem + TypeKlassPtr::hash() + (uint)(_refined_type ? 48 : 0);
 }
+
 
 //----------------------compute_klass------------------------------------------
 // Compute the defining klass for this class
@@ -6145,18 +6145,18 @@ const Type* TypeAryPtr::base_element_type(int& dims) const {
 //------------------------------add_offset-------------------------------------
 // Access internals of klass object
 const TypePtr* TypeAryKlassPtr::add_offset(intptr_t offset) const {
-  return make(_ptr, elem(), klass(), xadd_offset(offset), _vm_type);
+  return make(_ptr, elem(), klass(), xadd_offset(offset), _refined_type);
 }
 
 const TypeAryKlassPtr* TypeAryKlassPtr::with_offset(intptr_t offset) const {
-  return make(_ptr, elem(), klass(), offset, _vm_type);
+  return make(_ptr, elem(), klass(), offset, _refined_type);
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
 const TypeAryKlassPtr* TypeAryKlassPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == AryKlassPtr, "subclass must override cast_to_ptr_type");
   if (ptr == _ptr) return this;
-  return make(ptr, elem(), _klass, _offset, _vm_type);
+  return make(ptr, elem(), _klass, _offset, _refined_type);
 }
 
 bool TypeAryKlassPtr::must_be_exact() const {
@@ -6176,7 +6176,7 @@ const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) cons
   if (elem->isa_klassptr() && !klass_is_exact) {
     elem = elem->is_klassptr()->cast_to_exactness(klass_is_exact);
   }
-  return make(klass_is_exact ? Constant : NotNull, elem, k, _offset, _vm_type);
+  return make(klass_is_exact ? Constant : NotNull, elem, k, _offset, _refined_type);
 }
 
 
@@ -6238,7 +6238,7 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
     case Null:
       if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
     case AnyNull:
-      return make( ptr, _elem, klass(), offset, _vm_type);
+      return make( ptr, _elem, klass(), offset, _refined_type);
     case BotPTR:
     case NotNull:
       return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
@@ -6280,24 +6280,24 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
     MeetResult res = meet_aryptr(ptr, elem, this, tap, res_klass, res_xk);
     assert(res_xk == (ptr == Constant), "");
     // No idea what any of this means.  Probably has more meaning with flattened/null-free and atomic.
-    bool vm_type = _vm_type && tap->_vm_type;
+    bool refined_type = _refined_type && tap->_refined_type;
     if (res == NOT_SUBTYPE) {
-      vm_type = false;
+      refined_type = false;
     } else if (res == SUBTYPE) {
       if (above_centerline(tap->ptr()) && !above_centerline(this->ptr())) {
-        vm_type = _vm_type;
+        refined_type = _refined_type;
       } else if (above_centerline(this->ptr()) && !above_centerline(tap->ptr())) {
-        vm_type = tap->_vm_type;
+        refined_type = tap->_refined_type;
       } else if (above_centerline(this->ptr()) && above_centerline(tap->ptr())) {
-        vm_type = _vm_type || tap->_vm_type;
+        refined_type = _refined_type || tap->_refined_type;
+      } else if (res_xk && _refined_type != tap->_refined_type) {
+        // This can happen if the phi emitted by LibraryCallKit::load_default_refined_array_klass/load_non_refined_array_klass
+        // is processed before the typeArray guard is folded. Both inputs are constant but the input corresponding to the
+        // typeArray will go away. Don't constant fold it yet but wait for the control input to collapse.
+        ptr = PTR::NotNull;
       }
     }
-    if (res_xk && _vm_type != tap->_vm_type) {
-      // This can happen if the phi emitted by LibraryCallKit::load_default_refined_array_klass is folded
-      // before the typeArray guard is folded. Keep the information that this is a refined klass pointer.
-      vm_type = true;
-    }
-    return make(ptr, elem, res_klass, off, vm_type);
+    return make(ptr, elem, res_klass, off, refined_type);
   } // End of case KlassPtr
   case InstKlassPtr: {
     const TypeInstKlassPtr *tp = t->is_instklassptr();
@@ -6315,7 +6315,7 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
       // do the same here.
       if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
           !tp->klass_is_exact()) {
-        return TypeAryKlassPtr::make(ptr, _elem, _klass, offset, _vm_type);
+        return TypeAryKlassPtr::make(ptr, _elem, _klass, offset, _refined_type);
       } else {
         // cannot subclass, so the meet has to fall badly below the centerline
         ptr = NotNull;
@@ -6335,7 +6335,7 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
         if (tp->klass()->equals(ciEnv::current()->Object_klass()) && this_interfaces->contains(tp_interfaces) &&
             !tp->klass_is_exact()) {
           // that is, my array type is a subtype of 'tp' klass
-          return make(ptr, _elem, _klass, offset, _vm_type);
+          return make(ptr, _elem, _klass, offset, _refined_type);
         }
       }
       // The other case cannot happen, since t cannot be a subtype of an array.
@@ -6473,7 +6473,7 @@ bool TypeAryKlassPtr::maybe_java_subtype_of_helper(const TypeKlassPtr* other, bo
 //------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type    *TypeAryKlassPtr::xdual() const {
-  return new TypeAryKlassPtr(dual_ptr(), elem()->dual(), klass(), dual_offset(), _vm_type);
+  return new TypeAryKlassPtr(dual_ptr(), elem()->dual(), klass(), dual_offset(), _refined_type);
 }
 
 // Is there a single ciKlass* that can represent that type?
@@ -6483,7 +6483,7 @@ ciKlass* TypeAryKlassPtr::exact_klass_helper() const {
     if (k == nullptr) {
       return nullptr;
     }
-    k = ciArrayKlass::make(k, _vm_type);
+    k = ciArrayKlass::make(k, _refined_type);
     return k;
   }
 
@@ -6514,6 +6514,7 @@ void TypeAryKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
   _elem->dump2(d, depth, st);
   _interfaces->dump(st);
   st->print(":%s", ptr_msg[_ptr]);
+  if (_refined_type) st->print(":refined_type");
   dump_offset(st);
 }
 #endif

@@ -958,7 +958,6 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         __ load_klass(obj, obj);
 
         // This is necessary because I am never in my own secondary_super list.
-        // TODO 8370341 Wouldn't this fail for arrays?
         __ cmp(obj, klass);
         __ br(Assembler::EQ, success);
 

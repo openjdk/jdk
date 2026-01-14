@@ -284,7 +284,7 @@ void Parse::do_anewarray() {
   kill_dead_locals();
 
   const TypeAryKlassPtr* array_klass_type = TypeAryKlassPtr::make(array_klass, Type::trust_interfaces);
-  array_klass_type = array_klass_type->refined_array_klass_ptr();
+  array_klass_type = array_klass_type->cast_to_refined_array_klass_ptr();
   Node* count_val = pop();
   Node* obj = new_array(makecon(array_klass_type), count_val, 1);
   push(obj);
@@ -307,7 +307,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
   Node* length = lengths[0];
   assert(length != nullptr, "");
   const TypeAryKlassPtr* array_klass_type = TypeAryKlassPtr::make(array_klass, Type::trust_interfaces);
-  array_klass_type = array_klass_type->refined_array_klass_ptr();
+  array_klass_type = array_klass_type->cast_to_refined_array_klass_ptr();
   Node* array = new_array(makecon(array_klass_type), length, nargs);
   if (ndimensions > 1) {
     jint length_con = find_int_con(length, -1);

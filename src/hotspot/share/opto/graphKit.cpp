@@ -2694,7 +2694,8 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // For a direct pointer comparison, we need the refined array klass pointer
   Node* vm_superklass = superklass;
   if (klass_ptr_type->isa_aryklassptr() && klass_ptr_type->klass_is_exact()) {
-    vm_superklass = gvn.makecon(klass_ptr_type->is_aryklassptr()->refined_array_klass_ptr());
+    assert(!klass_ptr_type->is_aryklassptr()->is_refined_type(), "Unexpected refined array klass pointer");
+    vm_superklass = gvn.makecon(klass_ptr_type->is_aryklassptr()->cast_to_refined_array_klass_ptr());
   }
 
   // Fast check for identical types, perhaps identical constants.
@@ -2814,7 +2815,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
         }
         if (klass_t->isa_aryklassptr()) {
           // For a direct pointer comparison, we need the refined array klass pointer
-          klass_t = klass_t->is_aryklassptr()->refined_array_klass_ptr();
+          klass_t = klass_t->is_aryklassptr()->cast_to_refined_array_klass_ptr();
         }
         float prob = profile.receiver_prob(i);
         ConNode* klass_node = gvn.makecon(klass_t);
@@ -2937,7 +2938,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
   const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces);
   if (tklass->isa_aryklassptr()) {
     // For a direct pointer comparison, we need the refined array klass pointer
-    tklass = tklass->is_aryklassptr()->refined_array_klass_ptr();
+    tklass = tklass->is_aryklassptr()->cast_to_refined_array_klass_ptr();
   }
 
   Node* recv_klass = load_object_klass(receiver);

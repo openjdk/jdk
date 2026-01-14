@@ -133,7 +133,7 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
 // ciObjArrayKlass::make_impl
 //
 // Implementation of make.
-ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool vm_type) {
+ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined_type) {
 
   if (element_klass->is_loaded()) {
     EXCEPTION_CONTEXT;
@@ -145,7 +145,7 @@ ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool vm_type) {
       return ciEnv::unloaded_ciobjarrayklass();
     }
     // Think we want to return a refArrayKlass here.
-    if (vm_type) {
+    if (refined_type) {
       assert(!array->is_refArray_klass(), "Unexpected refined klass");
       array = ObjArrayKlass::cast(array)->klass_with_properties(THREAD);
     }
@@ -167,14 +167,14 @@ ciArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool vm_type) {
 // ciObjArrayKlass::make
 //
 // Make an array klass corresponding to the specified primitive type.
-ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool vm_type) {
-  GUARDED_VM_ENTRY(return make_impl(element_klass, vm_type);)
+ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool refined_type) {
+  GUARDED_VM_ENTRY(return make_impl(element_klass, refined_type);)
 }
 
 ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
   ciKlass* klass = element_klass;
   for (int i = 0; i < dims; i++) {
-    klass = ciObjArrayKlass::make(klass, false);
+    klass = ciObjArrayKlass::make(klass, /* refined_type = */ false);
   }
   return klass->as_obj_array_klass();
 }

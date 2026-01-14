@@ -49,7 +49,7 @@ protected:
     return (ObjArrayKlass*)get_Klass();
   }
 
-  static ciArrayKlass* make_impl(ciKlass* element_klass, bool vm_type);
+  static ciArrayKlass* make_impl(ciKlass* element_klass, bool refined_type = false);
   static ciSymbol* construct_array_name(ciSymbol* element_name,
                                         int       dimension);
 
@@ -68,7 +68,7 @@ public:
   // What kind of ciObject is this?
   bool is_obj_array_klass() const { return true; }
 
-  static ciArrayKlass* make(ciKlass* element_klass, bool vm_type);
+  static ciArrayKlass* make(ciKlass* element_klass, bool refined_type = true);
   static ciArrayKlass* make(ciKlass* element_klass, int dims);
 
   virtual ciKlass* exact_klass();

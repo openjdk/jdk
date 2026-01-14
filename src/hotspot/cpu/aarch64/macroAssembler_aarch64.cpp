@@ -1403,7 +1403,6 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   // We move this check to the front of the fast path because many
   // type checks are in fact trivially successful in this manner,
   // so we get a nicely predicted branch right at the start of the check.
-  // TODO 8370341 For a direct pointer comparison, we need the refined array klass pointer
   cmp(sub_klass, super_klass);
   br(Assembler::EQ, *L_success);
 

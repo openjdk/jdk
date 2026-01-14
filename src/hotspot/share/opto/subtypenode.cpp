@@ -110,8 +110,7 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // Verify that optimizing the subtype check to a simple code pattern
   // when possible would not constant fold better
-  // TODO 8370341 fails with TestArrayCopyAsLoadsStores
-  // assert(verify(phase), "missing Value() optimization");
+  assert(verify(phase), "missing Value() optimization");
 
   return nullptr;
 }
@@ -134,7 +133,8 @@ static Node* record_for_cleanup(Node* n, PhaseGVN* phase) {
   return n;
 }
 bool SubTypeCheckNode::verify_helper(PhaseGVN* phase, Node* subklass, const Type* cached_t) {
-  Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
+  Node* cmp_orig = new CmpPNode(subklass, in(SuperKlass));
+  Node* cmp = phase->transform(cmp_orig);
   record_for_cleanup(cmp, phase);
 
   const Type* cmp_t = phase->type(cmp);
@@ -147,9 +147,10 @@ bool SubTypeCheckNode::verify_helper(PhaseGVN* phase, Node* subklass, const Type
   } else {
     t->dump(); tty->cr();
     this->dump(2); tty->cr();
+    tty->print_cr("VS.\n");
     cmp_t->dump(); tty->cr();
-    subklass->dump(2); tty->cr();
-    tty->print_cr("==============================");
+    cmp_orig->dump(2); tty->cr();
+    tty->print_cr("==============================\n");
     phase->C->root()->dump(9999);
     return false;
   }

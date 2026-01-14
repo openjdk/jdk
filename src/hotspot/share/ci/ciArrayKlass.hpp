@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_CI_CIARRAYKLASS_HPP
 
 #include "ci/ciKlass.hpp"
+#include "oops/arrayKlass.hpp"
 
 // ciArrayKlass
 //
@@ -58,7 +59,7 @@ public:
   // The one-level type of the array elements.
   virtual ciKlass* element_klass() { return nullptr; }
 
-  static ciArrayKlass* make(ciType* element_type, bool vm_type);
+  static ciArrayKlass* make(ciType* klass, bool refined_type = false);
 };
 
 #endif // SHARE_CI_CIARRAYKLASS_HPP

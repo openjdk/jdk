@@ -190,6 +190,7 @@ class LibraryCallKit : public GraphKit {
                                          offset);
   }
   Node* load_default_refined_array_klass(Node* klass_node, bool type_array_guard = true);
+  Node* load_non_refined_array_klass(Node* klass_node);
 
   Node* generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
                                    ByteSize offset, const Type* type, BasicType bt);

@@ -162,7 +162,7 @@ objArrayOop ObjArrayKlass::allocate_instance(int length, TRAPS) {
   precond(ak->kind() == Klass::RefArrayKlassKind);
   size_t size = refArrayOopDesc::object_size(length);
   objArrayOop array = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
-                                                                    /* do_zero */ true, THREAD);
+                                                                    /* do_zero */ true, CHECK_NULL);
   assert(array->is_refArray(), "Must be");
   return array;
 }

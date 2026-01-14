@@ -167,8 +167,8 @@ void RefArrayKlass::do_copy(arrayOop s, size_t src_offset,
     assert(result == OopCopyResult::ok, "Should never fail");
   } else {
     // We have to make sure all elements conform to the destination array
-    Klass* bound = ObjArrayKlass::cast(d->klass())->element_klass();
-    Klass* stype = ObjArrayKlass::cast(s->klass())->element_klass();
+    Klass* bound = RefArrayKlass::cast(d->klass())->element_klass();
+    Klass* stype = RefArrayKlass::cast(s->klass())->element_klass();
     bool type_check = stype != bound && !stype->is_subtype_of(bound);
 
     auto arraycopy = [&] {
@@ -196,20 +196,18 @@ void RefArrayKlass::do_copy(arrayOop s, size_t src_offset,
   }
 }
 
-void RefArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos,
-                               int length, TRAPS) {
+void RefArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
+                               int dst_pos, int length, TRAPS) {
   assert(s->is_refArray(), "must be a reference array");
 
   if (!d->is_refArray()) {
     ResourceMark rm(THREAD);
     stringStream ss;
     if (d->is_typeArray()) {
-      ss.print(
-          "arraycopy: type mismatch: can not copy object array[] into %s[]",
-          type2name_tab[ArrayKlass::cast(d->klass())->element_type()]);
+      ss.print("arraycopy: type mismatch: can not copy object array[] into %s[]",
+               type2name_tab[ArrayKlass::cast(d->klass())->element_type()]);
     } else {
-      ss.print("arraycopy: destination type %s is not an array",
-               d->klass()->external_name());
+      ss.print("arraycopy: destination type %s is not an array", d->klass()->external_name());
     }
     THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
   }
@@ -223,35 +221,27 @@ void RefArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos,
       ss.print("arraycopy: source index %d out of bounds for object array[%d]",
                src_pos, s->length());
     } else if (dst_pos < 0) {
-      ss.print(
-          "arraycopy: destination index %d out of bounds for object array[%d]",
-          dst_pos, d->length());
+      ss.print("arraycopy: destination index %d out of bounds for object array[%d]",
+               dst_pos, d->length());
     } else {
       ss.print("arraycopy: length %d is negative", length);
     }
-    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(),
-              ss.as_string());
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
   // Check if the ranges are valid
-  if ((((unsigned int)length + (unsigned int)src_pos) >
-       (unsigned int)s->length()) ||
-      (((unsigned int)length + (unsigned int)dst_pos) >
-       (unsigned int)d->length())) {
+  if ((((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length()) ||
+      (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length())) {
     // Pass specific exception reason.
     ResourceMark rm(THREAD);
     stringStream ss;
-    if (((unsigned int)length + (unsigned int)src_pos) >
-        (unsigned int)s->length()) {
-      ss.print(
-          "arraycopy: last source index %u out of bounds for object array[%d]",
-          (unsigned int)length + (unsigned int)src_pos, s->length());
+    if (((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length()) {
+      ss.print("arraycopy: last source index %u out of bounds for object array[%d]",
+               (unsigned int) length + (unsigned int) src_pos, s->length());
     } else {
-      ss.print("arraycopy: last destination index %u out of bounds for object "
-               "array[%d]",
-               (unsigned int)length + (unsigned int)dst_pos, d->length());
+      ss.print("arraycopy: last destination index %u out of bounds for object array[%d]",
+               (unsigned int) length + (unsigned int) dst_pos, d->length());
     }
-    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(),
-              ss.as_string());
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
 
   // Special case. Boundary cases must be checked first
@@ -262,26 +252,20 @@ void RefArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos,
     return;
   }
   if (UseCompressedOops) {
-    size_t src_offset =
-        (size_t)refArrayOopDesc::obj_at_offset<narrowOop>(src_pos);
-    size_t dst_offset =
-        (size_t)refArrayOopDesc::obj_at_offset<narrowOop>(dst_pos);
+    size_t src_offset = (size_t) refArrayOopDesc::obj_at_offset<narrowOop>(src_pos);
+    size_t dst_offset = (size_t) refArrayOopDesc::obj_at_offset<narrowOop>(dst_pos);
     assert(arrayOopDesc::obj_offset_to_raw<narrowOop>(s, src_offset, nullptr) ==
-               refArrayOop(s)->obj_at_addr<narrowOop>(src_pos),
-           "sanity");
+           refArrayOop(s)->obj_at_addr<narrowOop>(src_pos), "sanity");
     assert(arrayOopDesc::obj_offset_to_raw<narrowOop>(d, dst_offset, nullptr) ==
-               refArrayOop(d)->obj_at_addr<narrowOop>(dst_pos),
-           "sanity");
+           refArrayOop(d)->obj_at_addr<narrowOop>(dst_pos), "sanity");
     do_copy(s, src_offset, d, dst_offset, length, CHECK);
   } else {
-    size_t src_offset = (size_t)refArrayOopDesc::obj_at_offset<oop>(src_pos);
-    size_t dst_offset = (size_t)refArrayOopDesc::obj_at_offset<oop>(dst_pos);
+    size_t src_offset = (size_t) refArrayOopDesc::obj_at_offset<oop>(src_pos);
+    size_t dst_offset = (size_t) refArrayOopDesc::obj_at_offset<oop>(dst_pos);
     assert(arrayOopDesc::obj_offset_to_raw<oop>(s, src_offset, nullptr) ==
-               refArrayOop(s)->obj_at_addr<oop>(src_pos),
-           "sanity");
+           refArrayOop(s)->obj_at_addr<oop>(src_pos), "sanity");
     assert(arrayOopDesc::obj_offset_to_raw<oop>(d, dst_offset, nullptr) ==
-               refArrayOop(d)->obj_at_addr<oop>(dst_pos),
-           "sanity");
+           refArrayOop(d)->obj_at_addr<oop>(dst_pos), "sanity");
     do_copy(s, src_offset, d, dst_offset, length, CHECK);
   }
 }

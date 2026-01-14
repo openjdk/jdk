@@ -193,7 +193,7 @@ void Parse::array_store_check() {
     const TypeAryKlassPtr* extak = tak->cast_to_exactness(true)->is_aryklassptr();
     if (extak->exact_klass(true) != nullptr) {
       // For a direct pointer comparison, we need the refined array klass pointer
-      extak = extak->refined_array_klass_ptr();
+      extak = extak->cast_to_refined_array_klass_ptr();
       Node* con = makecon(extak);
       Node* cmp = _gvn.transform(new CmpPNode(array_klass, con));
       Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
