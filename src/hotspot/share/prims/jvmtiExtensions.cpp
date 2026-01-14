@@ -167,6 +167,44 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   return JVMTI_ERROR_NONE;
 }
 
+// JvmtiEnv::RequestStackTrace(jthread thread, void* ucontext, , const void* user_data) {
+
+// Parameters: (thread, ucontext, begin_stack_trace_callback, end_stack_trace_callback, stack_frame_callback, user_data)
+static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
+  JvmtiEnv* jvmti_env = JvmtiEnv::JvmtiEnv_from_jvmti_env((jvmtiEnv*)env);
+  if (jvmti_env->get_capabilities()->can_request_stack_trace == 0) {
+    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
+  }
+
+  JavaThread* current_thread = JavaThread::current();
+  HandleMark hm(current_thread);
+  jthread thread = nullptr;
+  void* ucontext;
+  jvmtiBeginStackTraceCallback begin_stack_trace_callback;
+  jvmtiEndStackTraceCallback end_stack_trace_callback;
+  jvmtiStackFrameCallback stack_frame_callback;
+  const void* user_data;
+
+  va_list ap;
+
+  va_start(ap, env);
+  thread = va_arg(ap, jthread);
+  ucontext = va_arg(ap, void*);
+  begin_stack_trace_callback = va_arg(ap, jvmtiBeginStackTraceCallback);
+  end_stack_trace_callback = va_arg(ap, jvmtiEndStackTraceCallback);
+  stack_frame_callback = va_arg(ap, jvmtiStackFrameCallback);
+  user_data = va_arg(ap, const void*);
+  va_end(ap);
+
+#if INCLUDE_JFR && defined(LINUX)
+  if (thread == nullptr) {
+    JfrCPUTimeThreadSampling::jvmti_request_stacktrace(ucontext, begin_stack_trace_callback, end_stack_trace_callback, stack_frame_callback, user_data);
+    return JVMTI_ERROR_NONE;
+  }
+#endif
+  return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+}
+
 // register extension functions and events. In this implementation we
 // have a single extension function (to prove the API) that tests if class
 // unloading is enabled or disabled. We also have a single extension event
@@ -188,6 +226,15 @@ void JvmtiExtensions::register_extensions() {
   static jvmtiParamInfo func_params2[] = {
     { (char*)"GetCarrierThread", JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_FALSE },
     { (char*)"GetCarrierThread", JVMTI_KIND_OUT, JVMTI_TYPE_JTHREAD, JNI_FALSE }
+  };
+  // RequestStackTrace
+  static jvmtiParamInfo func_params3[] = {
+    { (char*)"thread", JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_TRUE },
+    { (char*)"ucontext", JVMTI_KIND_OUT_BUF, JVMTI_TYPE_CVOID, JNI_TRUE },
+    { (char*)"begin_stack_trace_callback", JVMTI_KIND_OUT_BUF, JVMTI_TYPE_CVOID, JNI_FALSE },
+    { (char*)"end_stack_trace_callback", JVMTI_KIND_OUT_BUF, JVMTI_TYPE_CVOID, JNI_FALSE },
+    { (char*)"stack_frame_callback", JVMTI_KIND_OUT_BUF, JVMTI_TYPE_CVOID, JNI_FALSE },
+    { (char*)"user_data", JVMTI_KIND_IN_BUF, JVMTI_TYPE_CVOID, JNI_TRUE }
   };
 
   static jvmtiError errors[] = {
@@ -225,9 +272,20 @@ void JvmtiExtensions::register_extensions() {
     errors
   };
 
+  static jvmtiExtensionFunctionInfo ext_func3 = {
+    (jvmtiExtensionFunction)RequestStackTrace,
+    (char*)"com.sun.hotspot.functions.RequestStackTrace",
+    (char*)"Request a stacktrace to be emitted via callbacks",
+    sizeof(func_params3)/sizeof(func_params3[0]),
+    func_params3,
+    sizeof(errors)/sizeof(jvmtiError),   // non-universal errors
+    errors
+  };
+
   _ext_functions->append(&ext_func0);
   _ext_functions->append(&ext_func1);
   _ext_functions->append(&ext_func2);
+  _ext_functions->append(&ext_func3);
 
   // register our extension event
 

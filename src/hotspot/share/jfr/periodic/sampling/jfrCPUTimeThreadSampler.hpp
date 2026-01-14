@@ -37,6 +37,20 @@ class JavaThread;
 
 #if INCLUDE_JVMTI
 #include "jvmti.h"
+
+enum jvmtiFrameType {
+  JVMTI_JAVA_FRAME,
+  JVMTI_NATIVE_FRAME
+};
+
+typedef void (JNICALL *jvmtiBeginStackTraceCallback)
+    (jboolean failed, jboolean biased, const void* user_data);
+
+typedef void (JNICALL *jvmtiEndStackTraceCallback)
+    (const void* user_data);
+
+typedef jvmtiIterationControl (JNICALL *jvmtiStackFrameCallback)
+    (jvmtiFrameType frame_type, jmethodID method, jlocation location, const void* user_data);
 #endif
 
 struct JfrCPUTimeSampleRequest {
