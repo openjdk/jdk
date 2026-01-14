@@ -50,8 +50,11 @@ public class TestJhsdbJstackMixed {
     private static final Pattern LINE_PATTERN = Pattern
             .compile(LINE_MATCHER_STR);
     private static final String HEX_STR_PATTERN = "0x([a-fA-F0-9]+)";
+
+    // On windows the native symbol will be prefixed with "NoFramePointer!"
     private static final String FIB_SPLIT_PATTERN = "(NoFramePointer!)?" + NATIVE_FUNCTION_NAME
             + "\\s+\\+";
+
     private static final Pattern HEX_PATTERN = Pattern.compile(HEX_STR_PATTERN);
     private static final int ADDRESS_ALIGNMENT_X86 = 4;
 
