@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.MacSign.DigestAlgorithm.SHA256;
 
 import java.nio.file.Path;
@@ -30,10 +29,8 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.test.MacSign.CertificateHash;
@@ -66,7 +63,7 @@ public final class MacSignVerify {
         });
 
         // Set to "null" if the sign origin is not found, instead of bailing out with an exception.
-        // Let is fail in the following TKit.assertEquals() call with a proper log message.
+        // Let it fail in the following TKit.assertEquals() call with a proper log message.
         var signOrigin = findSpctlSignOrigin(SpctlType.EXEC, bundleRoot).orElse(null);
 
         TKit.assertEquals(certRequest.name(), signOrigin,
@@ -92,10 +89,14 @@ public final class MacSignVerify {
     }
 
     public static Optional<PListReader> findEntitlements(Path path) {
-        final var exec = Executor.of("/usr/bin/codesign", "-d", "--entitlements", "-", "--xml", path.toString()).saveOutput().dumpOutput();
+        final var exec = Executor.of(
+                "/usr/bin/codesign",
+                "-d",
+                "--entitlements", "-",
+                "--xml", path.toString()).saveOutput().dumpOutput().binaryOutput();
         final var result = exec.execute();
-        var xml = result.stdout();
-        if (xml.isEmpty()) {
+        var xml = result.byteStdout();
+        if (xml.length == 0) {
             return Optional.empty();
         } else {
             return Optional.of(MacHelper.readPList(xml));
@@ -135,17 +136,33 @@ public final class MacSignVerify {
     public static final String ADHOC_SIGN_ORIGIN = "-";
 
     public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path) {
-        final var exec = Executor.of("/usr/sbin/spctl", "-vv", "--raw", "--assess", "--type", type.value(), path.toString()).saveOutput().discardStderr();
-        final var result = exec.executeWithoutExitCodeCheck();
-        TKit.assertTrue(Set.of(0, 3).contains(result.getExitCode()),
-                String.format("Check exit code of command %s is either 0 or 3", exec.getPrintableCommandLine()));
-        return toSupplier(() -> {
-            try {
-                return Optional.of(new PListReader(String.join("", result.getOutput()).getBytes()).queryValue("assessment:originator"));
-            } catch (NoSuchElementException ex) {
-                return Optional.<String>empty();
+        return findSpctlSignOrigin(type, path, false);
+    }
+
+    public static Optional<String> findSpctlSignOrigin(SpctlType type, Path path, boolean acceptBrokenSignature) {
+        final var exec = Executor.of(
+                "/usr/sbin/spctl",
+                "-vv",
+                "--raw",
+                "--assess",
+                "--type", type.value(),
+                path.toString()).saveOutput().discardStderr().binaryOutput();
+        Executor.Result result;
+        if (acceptBrokenSignature) {
+            result = exec.executeWithoutExitCodeCheck();
+            switch (result.getExitCode()) {
+                case 0, 3 -> {
+                    // NOP
+                }
+                default -> {
+                    // No plist XML to process.
+                    return Optional.empty();
+                }
             }
-        }).get();
+        } else {
+            result = exec.execute(0, 3);
+        }
+        return MacHelper.readPList(result.byteStdout()).findValue("assessment:originator");
     }
 
     public static Optional<String> findCodesignSignOrigin(Path path) {

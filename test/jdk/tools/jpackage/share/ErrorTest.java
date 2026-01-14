@@ -643,7 +643,12 @@ public final class ErrorTest {
                         .error("message.invalid-identifier", "#1"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
-                        .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands")
+                        .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),
+                // Predefined app image must be a valid macOS bundle.
+                testSpec().noAppDesc().nativeType().addArgs("--app-image", Token.EMPTY_DIR.token())
+                        .error("error.parameter-not-mac-bundle", JPackageCommand.cannedArgument(cmd -> {
+                            return Path.of(cmd.getArgumentValue("--app-image"));
+                        }, Token.EMPTY_DIR.token()), "--app-image")
         ).map(TestSpec.Builder::create).toList());
 
         macInvalidRuntime(testCases::add);
