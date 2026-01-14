@@ -244,7 +244,7 @@ void mutex_init() {
   MUTEX_DEFN(SymbolArena_lock                , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(ExceptionCache_lock             , PaddedMutex  , safepoint);
 #ifndef PRODUCT
-  MUTEX_DEFN(FullGCALot_lock                 , PaddedMutex  , safepoint); // a lock to make FullGCALot MT safe
+  MUTEX_DEFN(FullGCALot_lock                 , PaddedMutex  , nosafepoint);      // a lock to make FullGCALot MT safe
 #endif
   MUTEX_DEFN(BeforeExit_lock                 , PaddedMonitor, safepoint);
 

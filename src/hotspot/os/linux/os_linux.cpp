@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "hugepages.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -96,7 +97,6 @@
 # include <signal.h>
 # include <stdint.h>
 # include <stdio.h>
-# include <stdlib.h>
 # include <string.h>
 # include <sys/ioctl.h>
 # include <sys/ipc.h>
@@ -1470,9 +1470,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// time support
-
 // thread_id is kernel thread id (similar to Solaris LWP id)
 intx os::current_thread_id() { return os::Linux::gettid(); }
 int os::current_process_id() {
@@ -2432,62 +2429,57 @@ bool os::Linux::print_container_info(outputStream* st) {
   st->print_cr("container (cgroup) information:");
 
   const char *p_ct = OSContainer::container_type();
-  st->print_cr("container_type: %s", p_ct != nullptr ? p_ct : "not supported");
+  OSContainer::print_container_metric(st, "container_type", p_ct != nullptr ? p_ct : "not supported");
 
   char *p = OSContainer::cpu_cpuset_cpus();
-  st->print_cr("cpu_cpuset_cpus: %s", p != nullptr ? p : "not supported");
+  OSContainer::print_container_metric(st, "cpu_cpuset_cpus", p != nullptr ? p : "not supported");
   free(p);
 
   p = OSContainer::cpu_cpuset_memory_nodes();
-  st->print_cr("cpu_memory_nodes: %s", p != nullptr ? p : "not supported");
+  OSContainer::print_container_metric(st, "cpu_memory_nodes", p != nullptr ? p : "not supported");
   free(p);
 
   int i = -1;
   bool supported = OSContainer::active_processor_count(i);
-  st->print("active_processor_count: ");
   if (supported) {
     assert(i > 0, "must be");
     if (ActiveProcessorCount > 0) {
-      st->print_cr("%d, but overridden by -XX:ActiveProcessorCount %d", i, ActiveProcessorCount);
+      OSContainer::print_container_metric(st, "active_processor_count", ActiveProcessorCount, "(from -XX:ActiveProcessorCount)");
     } else {
-      st->print_cr("%d", i);
+      OSContainer::print_container_metric(st, "active_processor_count", i);
     }
   } else {
-    st->print_cr("not supported");
+    OSContainer::print_container_metric(st, "active_processor_count", "not supported");
   }
 
 
   supported = OSContainer::cpu_quota(i);
-  st->print("cpu_quota: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_quota", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no quota");
+    OSContainer::print_container_metric(st, "cpu_quota", !supported ? "not supported" : "no quota");
   }
 
   supported = OSContainer::cpu_period(i);
-  st->print("cpu_period: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_period", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no period");
+    OSContainer::print_container_metric(st, "cpu_period", !supported ? "not supported" : "no period");
   }
 
   supported = OSContainer::cpu_shares(i);
-  st->print("cpu_shares: ");
   if (supported && i > 0) {
-    st->print_cr("%d", i);
+    OSContainer::print_container_metric(st, "cpu_shares", i);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no shares");
+    OSContainer::print_container_metric(st, "cpu_shares", !supported ? "not supported" : "no shares");
   }
 
   uint64_t j = 0;
   supported = OSContainer::cpu_usage_in_micros(j);
-  st->print("cpu_usage_in_micros: ");
   if (supported && j > 0) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "cpu_usage", j, "us");
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no usage");
+    OSContainer::print_container_metric(st, "cpu_usage", !supported ? "not supported" : "no usage");
   }
 
   MetricResult memory_limit;
@@ -2530,31 +2522,29 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (OSContainer::cache_usage_in_bytes(val)) {
     cache_usage.set_value(val);
   }
-  OSContainer::print_container_helper(st, memory_limit, "memory_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_swap_limit, "memory_and_swap_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_soft_limit, "memory_soft_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_throttle_limit, "memory_throttle_limit_in_bytes");
-  OSContainer::print_container_helper(st, mem_usage, "memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, mem_max_usage, "memory_max_usage_in_bytes");
-  OSContainer::print_container_helper(st, rss_usage, "rss_usage_in_bytes");
-  OSContainer::print_container_helper(st, cache_usage, "cache_usage_in_bytes");
+  OSContainer::print_container_helper(st, memory_limit, "memory_limit");
+  OSContainer::print_container_helper(st, mem_swap_limit, "memory_and_swap_limit");
+  OSContainer::print_container_helper(st, mem_soft_limit, "memory_soft_limit");
+  OSContainer::print_container_helper(st, mem_throttle_limit, "memory_throttle_limit");
+  OSContainer::print_container_helper(st, mem_usage, "memory_usage");
+  OSContainer::print_container_helper(st, mem_max_usage, "memory_max_usage");
+  OSContainer::print_container_helper(st, rss_usage, "rss_usage");
+  OSContainer::print_container_helper(st, cache_usage, "cache_usage");
 
   OSContainer::print_version_specific_info(st);
 
   supported = OSContainer::pids_max(j);
-  st->print("maximum number of tasks: ");
   if (supported && j != value_unlimited) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "maximum number of tasks", j);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "unlimited");
+    OSContainer::print_container_metric(st, "maximum number of tasks", !supported ? "not supported" : "unlimited");
   }
 
   supported = OSContainer::pids_current(j);
-  st->print("current number of tasks: ");
   if (supported && j > 0) {
-    st->print_cr(UINT64_FORMAT, j);
+    OSContainer::print_container_metric(st, "current number of tasks", j);
   } else {
-    st->print_cr("%s", !supported ? "not supported" : "no current tasks");
+    OSContainer::print_container_metric(st, "current number of tasks", !supported ? "not supported" : "no tasks");
   }
 
   return true;
@@ -4298,13 +4288,6 @@ OSReturn os::get_native_priority(const Thread* const thread,
   return (*priority_ptr != -1 || errno == 0 ? OS_OK : OS_ERR);
 }
 
-// This is the fastest way to get thread cpu time on Linux.
-// Returns cpu time (user+sys) for any thread, not only for current.
-// POSIX compliant clocks are implemented in the kernels 2.6.16+.
-// It might work on 2.6.10+ with a special kernel/glibc patch.
-// For reference, please, see IEEE Std 1003.1-2004:
-//   http://www.unix.org/single_unix_specification
-
 jlong os::Linux::thread_cpu_time(clockid_t clockid) {
   struct timespec tp;
   int status = clock_gettime(clockid, &tp);
@@ -4895,31 +4878,8 @@ int os::open(const char *path, int oflag, int mode) {
   // All file descriptors that are opened in the Java process and not
   // specifically destined for a subprocess should have the close-on-exec
   // flag set.  If we don't set it, then careless 3rd party native code
-  // might fork and exec without closing all appropriate file descriptors,
-  // and this in turn might:
-  //
-  // - cause end-of-file to fail to be detected on some file
-  //   descriptors, resulting in mysterious hangs, or
-  //
-  // - might cause an fopen in the subprocess to fail on a system
-  //   suffering from bug 1085341.
-  //
-  // (Yes, the default setting of the close-on-exec flag is a Unix
-  // design flaw)
-  //
-  // See:
-  // 1085341: 32-bit stdio routines should support file descriptors >255
-  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-  //
-  // Modern Linux kernels (after 2.6.23 2007) support O_CLOEXEC with open().
-  // O_CLOEXEC is preferable to using FD_CLOEXEC on an open file descriptor
-  // because it saves a system call and removes a small window where the flag
-  // is unset.  On ancient Linux kernels the O_CLOEXEC flag will be ignored
-  // and we fall back to using FD_CLOEXEC (see below).
-#ifdef O_CLOEXEC
+  // might fork and exec without closing all appropriate file descriptors.
   oflag |= O_CLOEXEC;
-#endif
 
   int fd = ::open(path, oflag, mode);
   if (fd == -1) return -1;
@@ -4932,8 +4892,8 @@ int os::open(const char *path, int oflag, int mode) {
 
     if (ret != -1) {
       if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
         ::close(fd);
+        errno = EISDIR;
         return -1;
       }
     } else {
@@ -4941,21 +4901,6 @@ int os::open(const char *path, int oflag, int mode) {
       return -1;
     }
   }
-
-#ifdef FD_CLOEXEC
-  // Validate that the use of the O_CLOEXEC flag on open above worked.
-  // With recent kernels, we will perform this check exactly once.
-  static sig_atomic_t O_CLOEXEC_is_known_to_work = 0;
-  if (!O_CLOEXEC_is_known_to_work) {
-    int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1) {
-      if ((flags & FD_CLOEXEC) != 0)
-        O_CLOEXEC_is_known_to_work = 1;
-      else
-        ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
-    }
-  }
-#endif
 
   return fd;
 }

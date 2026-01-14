@@ -711,7 +711,7 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
     for (size_t i = 0; i < length; i++) {
       const bool skip = (skipDefaults && flagTable[i].is_default());
       const bool visited = iteratorMarkers.at(i);
-      if (!visited && flagTable[i].is_unlocked() && !skip) {
+      if (!visited && !skip) {
         if ((bestFlag == nullptr) || (strcmp(bestFlag->name(), flagTable[i].name()) > 0)) {
           bestFlag = &flagTable[i];
           bestFlagIndex = i;

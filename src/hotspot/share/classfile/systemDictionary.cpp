@@ -54,6 +54,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -1146,17 +1147,6 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   }
 }
 
-#if INCLUDE_JFR
-void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
-  assert(event != nullptr, "invariant");
-  assert(k != nullptr, "invariant");
-  event->set_loadedClass(k);
-  event->set_definingClassLoader(k->class_loader_data());
-  event->set_initiatingClassLoader(init_cld);
-  event->commit();
-}
-#endif // INCLUDE_JFR
-
 // This is much more lightweight than SystemDictionary::resolve_or_null
 // - There's only a single Java thread at this point. No need for placeholder.
 // - All supertypes of ik have been loaded
@@ -1216,6 +1206,17 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
 }
 
 #endif // INCLUDE_CDS
+
+#if INCLUDE_JFR
+void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
+  assert(event != nullptr, "invariant");
+  assert(k != nullptr, "invariant");
+  event->set_loadedClass(k);
+  event->set_definingClassLoader(k->class_loader_data());
+  event->set_initiatingClassLoader(init_cld);
+  event->commit();
+}
+#endif // INCLUDE_JFR
 
 InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS) {
 
@@ -1859,7 +1860,7 @@ Symbol* SystemDictionary::find_resolution_error(const constantPoolHandle& pool, 
 
 void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
                                            int which,
-                                           const char* message) {
+                                           const stringStream& message) {
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
     ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
@@ -1868,14 +1869,19 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
       // constant pool index. In this case resolution succeeded but there's an error in this nest host
       // that we use the table to record.
       assert(pool->resolved_klass_at(which) != nullptr, "klass should be resolved if there is no entry");
-      ResolutionErrorTable::add_entry(pool, which, message);
+      ResolutionErrorTable::add_entry(pool, which, message.as_string(true /* on C-heap */));
     } else {
       // An existing entry means we had a true resolution failure (LinkageError) with our nest host, but we
       // still want to add the error message for the higher-level access checks to report. We should
       // only reach here under the same error condition, so we can ignore the potential race with setting
-      // the message, and set it again.
-      assert(entry->nest_host_error() == nullptr || strcmp(entry->nest_host_error(), message) == 0, "should be the same message");
-      entry->set_nest_host_error(message);
+      // the message.
+      const char* nhe = entry->nest_host_error();
+      if (nhe == nullptr) {
+        entry->set_nest_host_error(message.as_string(true /* on C-heap */));
+      } else {
+        DEBUG_ONLY(const char* msg = message.base();)
+        assert(strcmp(nhe, msg) == 0, "New message %s, differs from original %s", msg, nhe);
+      }
     }
   }
 }
@@ -2172,9 +2178,10 @@ static bool is_always_visible_class(oop mirror) {
     return true; // primitive array
   }
   assert(klass->is_instance_klass(), "%s", klass->external_name());
-  return klass->is_public() &&
-         (InstanceKlass::cast(klass)->is_same_class_package(vmClasses::Object_klass()) ||       // java.lang
-          InstanceKlass::cast(klass)->is_same_class_package(vmClasses::MethodHandle_klass()));  // java.lang.invoke
+  InstanceKlass* ik = InstanceKlass::cast(klass);
+  return ik->is_public() &&
+         (ik->is_same_class_package(vmClasses::Object_klass()) ||       // java.lang
+          ik->is_same_class_package(vmClasses::MethodHandle_klass()));  // java.lang.invoke
 }
 
 // Find or construct the Java mirror (java.lang.Class instance) for

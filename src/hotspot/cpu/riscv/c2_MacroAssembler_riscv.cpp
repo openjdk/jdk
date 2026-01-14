@@ -2067,6 +2067,83 @@ void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRe
   }
 }
 
+void C2_MacroAssembler::enc_cmove_fp_cmp(int cmpFlag, Register op1, Register op2,
+                        FloatRegister dst, FloatRegister src, bool is_single) {
+  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      cmov_fp_eq(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::ne:
+      cmov_fp_ne(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::le:
+      if (is_unsigned) {
+        cmov_fp_leu(op1, op2, dst, src, is_single);
+      } else {
+        cmov_fp_le(op1, op2, dst, src, is_single);
+      }
+      break;
+    case BoolTest::ge:
+      if (is_unsigned) {
+        cmov_fp_geu(op1, op2, dst, src, is_single);
+      } else {
+        cmov_fp_ge(op1, op2, dst, src, is_single);
+      }
+      break;
+    case BoolTest::lt:
+      if (is_unsigned) {
+        cmov_fp_ltu(op1, op2, dst, src, is_single);
+      } else {
+        cmov_fp_lt(op1, op2, dst, src, is_single);
+      }
+      break;
+    case BoolTest::gt:
+      if (is_unsigned) {
+        cmov_fp_gtu(op1, op2, dst, src, is_single);
+      } else {
+        cmov_fp_gt(op1, op2, dst, src, is_single);
+      }
+      break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
+                           FloatRegister op1, FloatRegister op2,
+                           FloatRegister dst, FloatRegister src,
+                           bool cmp_single, bool cmov_single) {
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      cmov_fp_cmp_fp_eq(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::ne:
+      cmov_fp_cmp_fp_ne(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::le:
+      cmov_fp_cmp_fp_le(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::ge:
+      cmov_fp_cmp_fp_ge(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::lt:
+      cmov_fp_cmp_fp_lt(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    case BoolTest::gt:
+      cmov_fp_cmp_fp_gt(op1, op2, dst, src, cmp_single, cmov_single);
+      break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   FLOAT_TYPE ft, bool is_min) {
@@ -2736,14 +2813,10 @@ void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Regist
 
 // Intrinsic for
 //
-// - sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes char[] to byte[] in ISO-8859-1
-//
-// - java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes byte[] (containing UTF-16) to byte[] in ISO-8859-1
-//
-// - java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes char[] to byte[] in ASCII
+// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
+//     return the number of characters copied.
+// - java/lang/StringUTF16.compress
+//     return index of non-latin1 character if copy fails, otherwise 'len'.
 //
 // This version always returns the number of characters copied. A successful
 // copy will complete with the post-condition: 'res' == 'len', while an

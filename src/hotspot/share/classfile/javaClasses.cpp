@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1091,10 +1091,6 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   // Set the modifiers flag.
   u2 computed_modifiers = k->compute_modifier_flags();
   set_modifiers(mirror(), computed_modifiers);
-  // Set the raw access_flags, this is used by reflection instead of modifier flags.
-  // The Java code for array classes gets the access flags from the element type.
-  assert(!k->is_array_klass() || k->access_flags().as_unsigned_short() == 0, "access flags are not set for arrays");
-  set_raw_access_flags(mirror(), k->access_flags().as_unsigned_short());
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -1103,6 +1099,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
 
   // It might also have a component mirror.  This mirror must already exist.
   if (k->is_array_klass()) {
+    // The Java code for array classes gets the access flags from the element type.
+    set_raw_access_flags(mirror(), 0);
     if (k->is_typeArray_klass()) {
       BasicType type = TypeArrayKlass::cast(k)->element_type();
       if (is_scratch) {
@@ -1129,6 +1127,8 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
     // and java_mirror in this klass.
   } else {
     assert(k->is_instance_klass(), "Must be");
+    // Set the raw access_flags, this is used by reflection instead of modifier flags.
+    set_raw_access_flags(mirror(), InstanceKlass::cast(k)->access_flags().as_unsigned_short());
     initialize_mirror_fields(InstanceKlass::cast(k), mirror, protection_domain, classData, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // If any of the fields throws an exception like OOM remove the klass field
@@ -4297,10 +4297,6 @@ int jdk_internal_foreign_abi_NativeEntryPoint::_downcall_stub_address_offset;
   macro(_method_type_offset,           k, "methodType",          java_lang_invoke_MethodType_signature, false); \
   macro(_downcall_stub_address_offset, k, "downcallStubAddress", long_signature, false);
 
-bool jdk_internal_foreign_abi_NativeEntryPoint::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
-
 void jdk_internal_foreign_abi_NativeEntryPoint::compute_offsets() {
   InstanceKlass* k = vmClasses::NativeEntryPoint_klass();
   NEP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
@@ -4336,10 +4332,6 @@ int jdk_internal_foreign_abi_ABIDescriptor::_scratch2_offset;
   macro(_shadowSpace_offset,     k, "shadowSpace",     int_signature, false); \
   macro(_scratch1_offset,        k, "scratch1",        jdk_internal_foreign_abi_VMStorage_signature, false); \
   macro(_scratch2_offset,        k, "scratch2",        jdk_internal_foreign_abi_VMStorage_signature, false);
-
-bool jdk_internal_foreign_abi_ABIDescriptor::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
 
 void jdk_internal_foreign_abi_ABIDescriptor::compute_offsets() {
   InstanceKlass* k = vmClasses::ABIDescriptor_klass();
