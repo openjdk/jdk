@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * This class prepares, creates, and runs the "test" VM with verification of proper termination. The class also stores
+ * This class prepares, creates, and runs the Test VM with verification of proper termination. The class also stores
  * information about the Test VM which is later queried for IR matching. The communication between this Driver VM
  * and the Test VM is done over a dedicated socket.
  *
