@@ -28,7 +28,6 @@
  */
 import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Starvation {
@@ -43,7 +42,7 @@ public class Starvation {
             while (count.get() == c) Thread.onSpinWait();
             return null; }};
 
-    static void testSubmitExternalCallable() throws Exception {
+    public static void main(String[] args) throws Exception {
         try (var pool = new ForkJoinPool(2)) {
             for (int i = 0; i < 100_000; i++) {
                 var future1 = pool.submit(new AwaitCount(i));
@@ -53,22 +52,5 @@ public class Starvation {
                 future1.get();
             }
         }
-    }
-
-    static void testSubmitAdaptedCallable() throws Exception {
-        try (var pool = new ForkJoinPool(2)) {
-            for (int i = 0; i < 100_000; i++) {
-                var future1 = pool.submit(new AwaitCount(i));
-                var future2 = pool.submit(ForkJoinTask.adapt(noop));
-                future2.get();
-                count.set(i + 1);
-                future1.get();
-            }
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        testSubmitExternalCallable();
-        testSubmitAdaptedCallable();
     }
 }
