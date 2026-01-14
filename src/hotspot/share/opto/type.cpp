@@ -2443,13 +2443,12 @@ const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
   return nullptr;
 }
 
-// Create the type for a vector mask with the given element basic type and lane
-// count.
-// - Returns "TypeVectMask" for platforms that support the predicate feature and
-//   it is implemented properly in the backend, allowing the vector mask to be
-//   stored in a predicate/mask register.
-// - Returns a normal vector type (i.e. TypeVectA ~ TypeVectZ) otherwise, where
-//   the vector mask is stored in a vector register.
+// Create a vector mask type with the given element basic type and length.
+// - Returns "TypeVectMask" (PVectMask) for platforms that support the predicate
+//   feature and it is implemented properly in the backend, allowing the mask to
+//   be stored in a predicate/mask register.
+// - Returns a normal vector type "TypeVectA ~ TypeVectZ" (NVectMask) otherwise,
+//   where the vector mask is stored in a vector register.
 const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
   if (Matcher::has_predicated_vectors() &&
       Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
