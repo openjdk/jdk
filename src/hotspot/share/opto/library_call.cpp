@@ -967,7 +967,7 @@ void LibraryCallKit::generate_string_range_check(Node* array,
   generate_negative_guard(offset, bailout, nullptr, is_opaque);
   generate_negative_guard(count, bailout, nullptr, is_opaque);
   // Offset + count must not exceed length of array
-  generate_limit_guard(offset, count, load_array_length(array), bailout);
+  generate_limit_guard(offset, count, load_array_length(array), bailout, is_opaque);
 
   if (bailout->req() > 1) {
     if (halt_on_oob) {
