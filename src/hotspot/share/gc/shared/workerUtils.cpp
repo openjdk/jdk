@@ -89,7 +89,7 @@ SubTasksDone::SubTasksDone(uint n) :
 
 #ifdef ASSERT
 void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
-  if (_verification_done.compare_exchange(false, true)) {
+  if (!_verification_done.compare_set(false, true)) {
     // another thread has done the verification
     return;
   }
@@ -117,7 +117,7 @@ void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
 
 bool SubTasksDone::try_claim_task(uint t) {
   assert(t < _n_tasks, "bad task id.");
-  return !_tasks[t].load_relaxed() && !_tasks[t].compare_exchange(false, true);
+  return !_tasks[t].load_relaxed() && _tasks[t].compare_set(false, true);
 }
 
 SubTasksDone::~SubTasksDone() {
