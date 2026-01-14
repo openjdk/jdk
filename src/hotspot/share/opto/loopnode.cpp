@@ -1872,8 +1872,12 @@ void CountedLoopConverter::LoopStructure::build() {
   }
 
   Node* safepoint = _back_control->in(0)->in(0);
-  if (_loop->_child != nullptr && safepoint->Opcode() == Op_SafePoint) {
-    _safepoint = safepoint->as_SafePoint();
+  if (_loop->_child != nullptr) {
+    if (safepoint->Opcode() == Op_SafePoint) {
+      _safepoint = safepoint->as_SafePoint();
+    } else {
+      _safepoint = nullptr;
+    }
   } else {
     _safepoint = _phase->find_safepoint(_back_control, _head, _loop);
   }
