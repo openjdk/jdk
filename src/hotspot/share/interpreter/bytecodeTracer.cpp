@@ -200,7 +200,6 @@ void BytecodeTracer::print_method_codes(const methodHandle& method, int from, in
   ResourceMark rm;
   stringStream ss;
   const bool buffered = st->is_buffered();
-
   outputStream* out = buffered ? st : &ss;
   while (s.next() >= 0) {
     method_printer.trace(method, s.bcp(), out);
