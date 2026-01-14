@@ -1721,17 +1721,6 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
   return err;
 } /* end GetThreadListStackTraces */
 
-jvmtiError
-JvmtiEnv::RequestStackTrace(jthread thread, void* ucontext, jlong user_data) {
-#if INCLUDE_JFR && defined(LINUX)
-  if (thread == nullptr) {
-    JfrCPUTimeThreadSampling::jvmti_request_stacktrace(ucontext, user_data);
-    return JVMTI_ERROR_NONE;
-  }
-#endif
-  return JVMTI_ERROR_UNSUPPORTED_OPERATION;
-}
-
 // thread - NOT protected by ThreadsListHandle and NOT pre-checked
 // count_ptr - pre-checked for null
 jvmtiError
