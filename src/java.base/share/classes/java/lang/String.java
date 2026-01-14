@@ -1073,6 +1073,27 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    private static int encodedLengthASCII(byte coder, byte[] value) {
+        if (coder == LATIN1) {
+            return value.length;
+        }
+        int len = value.length >> 1;
+        int dp = 0;
+        for (int i = 0; i < len; i++) {
+            char c = StringUTF16.getChar(value, i);
+            if (c < 0x80) {
+                dp++;
+                continue;
+            }
+            if (Character.isHighSurrogate(c) && i + 1 < len &&
+                    Character.isLowSurrogate(StringUTF16.getChar(value, i + 1))) {
+                i++;
+            }
+            dp++;
+        }
+        return dp;
+    }
+
     private static void replaceNegatives(byte[] val, int fromIndex) {
         for (int i = fromIndex; i < val.length; i++) {
             if (val[i] < 0) {
@@ -2110,21 +2131,29 @@ public final class String
      *
      * <p>The result will be the same value as {@code getBytes(charset).length}.
      *
+     * @implNote This method may allocate memory to compute the length for some charsets.
+     *
      * @param cs the charset used to the compute the length
      * @return length in bytes of the string
+     * @since 27
      */
     public int getBytesLength(Charset cs) {
         if (cs == UTF_8.INSTANCE) {
             return encodedLengthUTF8(coder, value);
-        }
-        if (bytesCompatible(cs, 0, value.length)) {
-            return value.length;
-        }
-        if (cs instanceof sun.nio.cs.UTF_16LE ||
-            cs instanceof sun.nio.cs.UTF_16BE) {
-            return value.length << (1 - coder());
+        } else if (cs == ISO_8859_1.INSTANCE) {
+            if (isLatin1()) {
+                return value.length;
+            }
+        } else if (cs == US_ASCII.INSTANCE) {
+            return encodedLengthASCII(coder, value);
+        } else if (cs instanceof sun.nio.cs.UTF_16LE || cs instanceof sun.nio.cs.UTF_16BE) {
+            return byteFor(value.length, coder);
         }
         return getBytes(cs).length;
+    }
+
+    private int byteFor(int length, int coder) {
+        return length << (1 - coder);
     }
 
     boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
