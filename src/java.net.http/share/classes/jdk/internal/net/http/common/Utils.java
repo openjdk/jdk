@@ -720,7 +720,6 @@ public final class Utils {
         p1.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
         p1.setSignatureSchemes(p.getSignatureSchemes());
         p1.setNamedGroups(p.getNamedGroups());
-        p1.setWantClientAuth(p.getWantClientAuth());
         p1.setEnableCertificateCompression(p.getEnableCertificateCompression());
         return p1;
     }

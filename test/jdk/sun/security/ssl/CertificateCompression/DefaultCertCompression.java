@@ -22,12 +22,12 @@
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
-import static jdk.test.lib.Asserts.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import javax.net.ssl.SSLParameters;
 
 /*
  * @test
@@ -36,7 +36,6 @@ import java.util.Objects;
  * @library /javax/net/ssl/templates
  *          /test/lib
  * @run main/othervm DefaultCertCompression
- * @run main/othervm DefaultCertCompression -Djdk.tls.enableCertificateCompression=false
  */
 
 public class DefaultCertCompression extends SSLEngineTemplate {
@@ -45,19 +44,24 @@ public class DefaultCertCompression extends SSLEngineTemplate {
     protected static final int COMP_CERT_EXT = 27;
     // zlib(1), brotli(2), zstd(3)
     protected static final List<Integer> DEFAULT_COMP_ALGS = List.of(1);
-    private final boolean certCompEnabled;
 
     protected DefaultCertCompression() throws Exception {
-        certCompEnabled = Boolean.parseBoolean(System.getProperty(
-                "jdk.tls.enableCertificateCompression", "true"));
         super();
     }
 
     public static void main(String[] args) throws Exception {
-        new DefaultCertCompression().run();
+        new DefaultCertCompression().runTest(true);
+        System.setProperty("jdk.tls.enableCertificateCompression", "false");
+        new DefaultCertCompression().runTest(false);
     }
 
-    protected void run() throws Exception {
+    protected void runTest(boolean sysPropValue) throws Exception {
+        SSLParameters params = clientEngine.getSSLParameters();
+        // Assert system property was set correctly in SSLParameters,
+        // then flip it to test that SSLParameters override the system property
+        assertEquals(sysPropValue, params.getEnableCertificateCompression());
+        params.setEnableCertificateCompression(!sysPropValue);
+        clientEngine.setSSLParameters(params);
 
         // Produce client_hello
         clientEngine.wrap(clientOut, cTOs);
@@ -67,12 +71,15 @@ public class DefaultCertCompression extends SSLEngineTemplate {
     }
 
     protected void checkClientHello() throws Exception {
-        if (certCompEnabled) {
-            assertTrue(DEFAULT_COMP_ALGS.equals(getCompAlgsCliHello(
-                    extractHandshakeMsg(cTOs, CLI_HELLO_MSG, false))));
+        List<Integer> compCertExt = getCompAlgsCliHello(
+                extractHandshakeMsg(cTOs, CLI_HELLO_MSG, false));
+
+        if (clientEngine.getSSLParameters().getEnableCertificateCompression()) {
+            assertEquals(DEFAULT_COMP_ALGS, compCertExt,
+                    "Unexpected compress_certificate extension algorithms: "
+                            + compCertExt);
         } else {
-            assertEquals(getCompAlgsCliHello(
-                            extractHandshakeMsg(cTOs, CLI_HELLO_MSG, false)).size(), 0,
+            assertEquals(compCertExt.size(), 0,
                     "compress_certificate extension present in ClientHello");
         }
     }
