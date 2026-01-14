@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ WorkerTaskDispatcher::WorkerTaskDispatcher() :
 void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
   // No workers are allowed to read the state variables until they have been signaled.
   _task = task;
-  _not_finished = num_workers;
+  _not_finished.store_relaxed(num_workers);
 
   // Dispatch 'num_workers' number of tasks.
   _start_semaphore.signal(num_workers);
@@ -51,9 +51,12 @@ void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint nu
   _end_semaphore.wait();
 
   // No workers are allowed to read the state variables after the coordinator has been signaled.
-  assert(_not_finished == 0, "%d not finished workers?", _not_finished);
+#ifdef ASSERT
+  uint not_finished = _not_finished.load_relaxed();
+  assert(not_finished == 0, "%u not finished workers?", not_finished);
+#endif // ASSERT
   _task = nullptr;
-  _started = 0;
+  _started.store_relaxed(0);
 }
 
 void WorkerTaskDispatcher::worker_run_task() {
@@ -61,7 +64,7 @@ void WorkerTaskDispatcher::worker_run_task() {
   _start_semaphore.wait();
 
   // Get and set worker id.
-  const uint worker_id = AtomicAccess::fetch_then_add(&_started, 1u);
+  const uint worker_id = _started.fetch_then_add(1u);
   WorkerThread::set_worker_id(worker_id);
 
   // Run task.
@@ -70,7 +73,7 @@ void WorkerTaskDispatcher::worker_run_task() {
 
   // Mark that the worker is done with the task.
   // The worker is not allowed to read the state variables after this line.
-  const uint not_finished = AtomicAccess::sub(&_not_finished, 1u);
+  const uint not_finished = _not_finished.sub_then_fetch(1u);
 
   // The last worker signals to the coordinator that all work is completed.
   if (not_finished == 0) {

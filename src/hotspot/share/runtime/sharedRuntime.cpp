@@ -737,34 +737,6 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
   throw_and_post_jvmti_exception(current, h_exception);
 }
 
-#if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == JNI_FALSE, "must be VTMS transition finish");
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == JNI_TRUE, "must be VTMS transition start");
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current))
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current))
-  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
-  JNIHandles::destroy_local(vthread);
-JRT_END
-#endif // INCLUDE_JVMTI
-
 // The interpreter code to call this tracing function is only
 // called/generated when UL is on for redefine, class and has the right level
 // and tags. Since obsolete methods are never compiled, we don't have
@@ -3390,7 +3362,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
                   RegisterMap::WalkContinuation::skip);
   frame sender = fr.sender(&map);
   if (sender.is_interpreted_frame()) {
-    current->push_cont_fastpath(sender.sp());
+    current->push_cont_fastpath(sender.unextended_sp());
   }
 
   return buf;
