@@ -30,26 +30,13 @@
  * @run main/othervm InheritIOClosed close close
  */
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.file.Path;
 
 public class InheritIOClosed {
-    private static String JAVA_EXE = System.getProperty("java.home")
-            + File.separator + "bin"
-            + File.separator + "java";
+    private final static Path JAVA_EXE =
+            Path.of(System.getProperty("java.home"), "bin", "java");
 
-    private static String s = "1234567890" +
-                              "1234567890" +
-                              "1234567890" +
-                              "1234567890" +
-                              "1234567890" +
-                              "1234567890" +
-                              "1234567890" +
-                              "1234567890" +
-                              "1234567890" +
-                              "1234567890";
+    private static final String s = "1234567890".repeat(10);
 
     public static void main(String[] args) throws Exception {
         if (args.length == 2) {
@@ -62,7 +49,7 @@ public class InheritIOClosed {
             }
 
             ProcessBuilder pb = new ProcessBuilder().inheritIO()
-                .command(JAVA_EXE,
+                .command(JAVA_EXE.toString(),
                          "-cp",
                          System.getProperty("java.class.path"),
                          InheritIOClosed.class.getName());
