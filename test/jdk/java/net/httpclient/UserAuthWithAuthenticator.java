@@ -88,7 +88,7 @@ class UserAuthWithAuthenticator {
     }
 
     private static void h2Test(final boolean useHeader, boolean rightPassword) throws Exception {
-        SSLContext sslContext = new SimpleSSLContext().get();
+        SSLContext sslContext = SimpleSSLContext.findSSLContext();
         try (ExecutorService executor = Executors.newCachedThreadPool();
              HttpTestServer server = HttpTestServer.of(new Http2TestServer(
                      InetAddress.getLoopbackAddress(),
@@ -117,7 +117,7 @@ class UserAuthWithAuthenticator {
     }
 
     private static void h3Test(final boolean useHeader, boolean rightPassword) throws Exception {
-        SSLContext sslContext = new SimpleSSLContext().get();
+        SSLContext sslContext = SimpleSSLContext.findSSLContext();
         try (ExecutorService executor = Executors.newCachedThreadPool();
              HttpTestServer server = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext, executor);
              HttpClient client = HttpServerAdapters.createClientBuilderForH3()

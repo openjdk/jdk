@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@ package jdk.internal.net.http.hpack;
 
 import jdk.internal.net.http.hpack.Huffman.Reader;
 import jdk.internal.net.http.hpack.Huffman.Writer;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -39,8 +38,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static jdk.internal.net.http.hpack.HPACK.bytesForBits;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public final class HuffmanTest {
 
@@ -412,8 +412,8 @@ public final class HuffmanTest {
             // might not be printable/visible)
             int expected = code.sym;
             int actual = (int) output.charAt(0);
-            assertEquals(output.length(), 1); // exactly 1 character
-            assertEquals(actual, expected);
+            assertEquals(1, output.length()); // exactly 1 character
+            assertEquals(expected, actual);
         }
     }
 
@@ -653,7 +653,7 @@ public final class HuffmanTest {
                 w.from(str, 0, str.length()).write(buffer);
                 Reader r = READER.get();
                 r.read(buffer.flip(), b, true);
-                assertEquals(b.toString(), str);
+                assertEquals(str, b.toString());
             }
 
             private void roundTrip(int... lengths) throws IOException {
@@ -765,7 +765,7 @@ public final class HuffmanTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        assertEquals(actual.toString(), decoded);
+        assertEquals(decoded, actual.toString());
     }
 
     private static void readExhaustively(String hexdump, String decoded) {
@@ -782,7 +782,7 @@ public final class HuffmanTest {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-            assertEquals(actual.toString(), decoded);
+            assertEquals(decoded, actual.toString());
             reader.reset();
             actual.setLength(0);
         });
@@ -796,7 +796,7 @@ public final class HuffmanTest {
         boolean written = writer.write(destination);
         assertTrue(written);
         String actual = SpecHelper.toHexdump(destination.flip());
-        assertEquals(actual, hexdump);
+        assertEquals(hexdump, actual);
         writer.reset();
     }
 
@@ -815,7 +815,7 @@ public final class HuffmanTest {
             assertTrue(written);
             ByteBuffer concated = BuffersTestingKit.concat(byteBuffers);
             String actual = SpecHelper.toHexdump(concated);
-            assertEquals(actual, hexdump);
+            assertEquals(hexdump, actual);
             writer.reset();
         });
     }
