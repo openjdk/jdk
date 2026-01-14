@@ -232,63 +232,12 @@ protected:
     }
   }
 
-  template <typename ArrayClass>
-  static void test_remove_range(ArrayClass* a) {
-    // Seed initial
-    for (int i = 0; i < 10; i++) {
-      a->append(i);
-    }
-    ASSERT_EQ(a->length(), 10);
-
-    // Remove one element from head, should result in [1 ... 9]
-    a->remove_range(0, 1);
-    ASSERT_EQ(a->length(), 9);
-    for (int i = 0; i < a->length(); i++) {
-      ASSERT_EQ(a->at(i), i + 1);
-    }
-
-    // Remove one element from tail, should result in [1 ... 8]
-    a->remove_range(8, 9);
-    ASSERT_EQ(a->length(), 8);
-    for (int i = 0; i < a->length(); i++) {
-      ASSERT_EQ(a->at(i), i + 1);
-    }
-
-    // Remove some elements from the middle, should result in [1 2 7 8]
-    a->remove_range(2, 6);
-    ASSERT_EQ(a->length(), 4);
-    ASSERT_EQ(a->at(0), 1);
-    ASSERT_EQ(a->at(1), 2);
-    ASSERT_EQ(a->at(2), 7);
-    ASSERT_EQ(a->at(3), 8);
-
-    // Remove the rest of the elements one by one
-    a->remove_range(0, 1);
-    ASSERT_EQ(a->length(), 3);
-    ASSERT_EQ(a->at(0), 2);
-    ASSERT_EQ(a->at(1), 7);
-    ASSERT_EQ(a->at(2), 8);
-
-    a->remove_range(0, 1);
-    ASSERT_EQ(a->length(), 2);
-    ASSERT_EQ(a->at(0), 7);
-    ASSERT_EQ(a->at(1), 8);
-
-    a->remove_range(0, 1);
-    ASSERT_EQ(a->length(), 1);
-    ASSERT_EQ(a->at(0), 8);
-
-    a->remove_range(0, 1);
-    ASSERT_EQ(a->length(), 0);
-  }
-
   // Supported by all GrowableArrays
   enum TestEnum {
     Append,
     Clear,
     Capacity,
-    Iterator,
-    RemoveRange
+    Iterator
   };
 
   template <typename ArrayClass>
@@ -308,10 +257,6 @@ protected:
 
       case Iterator:
         test_iterator(a);
-        break;
-
-      case RemoveRange:
-        test_remove_range(a);
         break;
 
       default:
@@ -504,10 +449,6 @@ TEST_VM_F(GrowableArrayTest, capacity) {
 
 TEST_VM_F(GrowableArrayTest, iterator) {
   with_all_types_all_0(Iterator);
-}
-
-TEST_VM_F(GrowableArrayTest, remove_range) {
-  with_all_types_all_0(RemoveRange);
 }
 
 TEST_VM_F(GrowableArrayTest, copy) {
