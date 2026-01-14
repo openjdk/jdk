@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -511,23 +511,23 @@ gen_binary_bcst_op_no_masked "MAX+max" "Math.max(a, b)"
 gen_saturating_binary_op_associative "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWISE"
 
 # Reductions.
-gen_reduction_op "AND" "\&" "BITWISE" "-1"
-gen_reduction_op "OR" "|" "BITWISE" "0"
-gen_reduction_op "XOR" "^" "BITWISE" "0"
-gen_reduction_op "ADD" "+" "" "0"
-gen_reduction_op "MUL" "*" "" "1"
-gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "\$Wideboxtype\$.\$MaxValue\$"
-gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "\$Wideboxtype\$.\$MinValue\$"
-gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "\$Wideboxtype\$.\$MaxValue\$"
-gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "\$Wideboxtype\$.\$MinValue\$"
-gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
+gen_reduction_op "AND" "\&" "BITWISE" "AND_IDENTITY"
+gen_reduction_op "OR" "|" "BITWISE" "OR_IDENTITY"
+gen_reduction_op "XOR" "^" "BITWISE" "XOR_IDENTITY"
+gen_reduction_op "ADD" "+" "" "ADD_IDENTITY"
+gen_reduction_op "MUL" "*" "" "MUL_IDENTITY"
+gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "MIN_IDENTITY"
+gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "MAX_IDENTITY"
+gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "UMIN_IDENTITY"
+gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "UMAX_IDENTITY"
+gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "FIRST_NONZERO_IDENTITY"
 
 # Boolean reductions.
 gen_bool_reduction_op "anyTrue" "|" "BITWISE" "false"
 gen_bool_reduction_op "allTrue" "\&" "BITWISE" "true"
 
 # Saturating reductions.
-gen_saturating_reduction_op "SUADD" "(\$type\$) VectorMath.addSaturatingUnsigned" "BITWISE" "0"
+gen_saturating_reduction_op "SUADD" "(\$type\$) VectorMath.addSaturatingUnsigned" "BITWISE" "SUADD_IDENTITY"
 
 #Insert
 gen_with_op "withLane" "" "" ""

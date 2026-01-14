@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,19 +86,37 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #end[MaxBit]
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
-
 #if[MaxBit]
+
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
     }
 
     private static final int Max = 256;  // juts so we can do N/$bits$
 #end[MaxBit]
-
 #if[BITWISE]
+
     private static final $type$ CONST_SHIFT = $Boxtype$.SIZE / 2;
 #end[BITWISE]
+
+    // Identity values for reduction operations
+    private static final $type$ ADD_IDENTITY = ($type$)0;
+#if[BITWISE]
+    private static final $type$ AND_IDENTITY = ($type$)-1;
+#end[BITWISE]
+    private static final $type$ FIRST_NONZERO_IDENTITY = ($type$)0;
+    private static final $type$ MAX_IDENTITY = $Wideboxtype$.$MinValue$;
+    private static final $type$ MIN_IDENTITY = $Wideboxtype$.$MaxValue$;
+    private static final $type$ MUL_IDENTITY = ($type$)1;
+#if[BITWISE]
+    private static final $type$ OR_IDENTITY = ($type$)0;
+    private static final $type$ SUADD_IDENTITY = ($type$)0;
+    private static final $type$ UMAX_IDENTITY = ($type$)0;   // Minimum unsigned value
+    private static final $type$ UMIN_IDENTITY = ($type$)-1;  // Maximum unsigned value
+    private static final $type$ XOR_IDENTITY = ($type$)0;
+#end[BITWISE]
 #if[FP]
+
     // for floating point addition reduction ops that may introduce rounding errors
     private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_ADD = ($type$)10.0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "hugepages.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -96,7 +97,6 @@
 # include <signal.h>
 # include <stdint.h>
 # include <stdio.h>
-# include <stdlib.h>
 # include <string.h>
 # include <sys/ioctl.h>
 # include <sys/ipc.h>
@@ -4878,31 +4878,8 @@ int os::open(const char *path, int oflag, int mode) {
   // All file descriptors that are opened in the Java process and not
   // specifically destined for a subprocess should have the close-on-exec
   // flag set.  If we don't set it, then careless 3rd party native code
-  // might fork and exec without closing all appropriate file descriptors,
-  // and this in turn might:
-  //
-  // - cause end-of-file to fail to be detected on some file
-  //   descriptors, resulting in mysterious hangs, or
-  //
-  // - might cause an fopen in the subprocess to fail on a system
-  //   suffering from bug 1085341.
-  //
-  // (Yes, the default setting of the close-on-exec flag is a Unix
-  // design flaw)
-  //
-  // See:
-  // 1085341: 32-bit stdio routines should support file descriptors >255
-  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-  //
-  // Modern Linux kernels (after 2.6.23 2007) support O_CLOEXEC with open().
-  // O_CLOEXEC is preferable to using FD_CLOEXEC on an open file descriptor
-  // because it saves a system call and removes a small window where the flag
-  // is unset.  On ancient Linux kernels the O_CLOEXEC flag will be ignored
-  // and we fall back to using FD_CLOEXEC (see below).
-#ifdef O_CLOEXEC
+  // might fork and exec without closing all appropriate file descriptors.
   oflag |= O_CLOEXEC;
-#endif
 
   int fd = ::open(path, oflag, mode);
   if (fd == -1) return -1;
@@ -4924,21 +4901,6 @@ int os::open(const char *path, int oflag, int mode) {
       return -1;
     }
   }
-
-#ifdef FD_CLOEXEC
-  // Validate that the use of the O_CLOEXEC flag on open above worked.
-  // With recent kernels, we will perform this check exactly once.
-  static sig_atomic_t O_CLOEXEC_is_known_to_work = 0;
-  if (!O_CLOEXEC_is_known_to_work) {
-    int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1) {
-      if ((flags & FD_CLOEXEC) != 0)
-        O_CLOEXEC_is_known_to_work = 1;
-      else
-        ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
-    }
-  }
-#endif
 
   return fd;
 }
