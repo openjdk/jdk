@@ -239,7 +239,7 @@ public class TestFramework {
      * Tests the class from which this method was invoked from. The Test VM is called with the specified {@code flags}.
      * <ul>
      *     <li><p>The {@code flags} override any set VM or Javaoptions flags by JTreg by default.<p>
-     *            Use {@code -DPreferCommandLineFlags=true} if you want to prefer the JTreg VM and  Javaoptions flags over
+     *            Use {@code -DPreferCommandLineFlags=true} if you want to prefer the JTreg VM and Javaoptions flags over
      *            the specified {@code flags} of this method.</li>
      *     <li><p>If you want to run your entire JTreg test with additional flags, use this method.</li>
      *     <li><p>If you want to run your entire JTreg test with additional flags but for another test class then the one
