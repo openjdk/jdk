@@ -164,6 +164,17 @@ public:
   int position() const            { return _position; }
 };
 
+
+struct JcmdOptions {
+  enum class TimeStamp {
+    Default,
+    Yes,
+    No
+  };
+
+  TimeStamp timestamp;
+};
+
 // The DCmdParser class can be used to create an argument parser for a
 // diagnostic command. It is not mandatory to use it to parse arguments.
 // The DCmdParser parses a CmdLine instance according to the parameters that
@@ -258,7 +269,7 @@ public:
                 "The argument list of this diagnostic command should be empty.");
     }
   }
-  virtual void execute(DCmdSource source, TRAPS) { }
+  virtual void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) { }
   virtual void reset(TRAPS) { }
   virtual void cleanup() { }
 
@@ -274,6 +285,7 @@ public:
 
   // helper class to invoke the framework
   class Executor : public StackObj {
+
     DCmdSource _source;
     outputStream* _out;
   public:
@@ -282,7 +294,7 @@ public:
     void parse_and_execute(const char* cmdline, char delim, TRAPS);
 
   protected:
-    virtual void execute(DCmd* command, TRAPS);
+    virtual void execute(DCmd* command, const JcmdOptions& commonOptions, TRAPS);
   };
 
   // main method to invoke the framework
@@ -295,7 +307,7 @@ public:
 
   // Helper method to substitute help options "<cmd> -h|-help|--help"
   // for "help <cmd>".
-  static bool reorder_help_cmd(CmdLine line, stringStream& updated_line);
+  static bool reorder_help_cmd(const CmdLine& line, stringStream& updated_line);
 };
 
 class DCmdWithParser : public DCmd {
@@ -306,7 +318,7 @@ public:
   static const char* disabled_message() { return "Diagnostic command currently disabled"; }
   static const char* impact()         { return "Low: No impact"; }
   virtual void parse(CmdLine *line, char delim, TRAPS);
-  virtual void execute(DCmdSource source, TRAPS) { }
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override { }
   virtual void reset(TRAPS);
   virtual void cleanup();
   virtual void print_help(const char* name) const;

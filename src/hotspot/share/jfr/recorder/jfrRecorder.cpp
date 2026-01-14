@@ -164,7 +164,7 @@ static bool validate_recording_options(TRAPS) {
 static bool launch_recording(JfrStartFlightRecordingDCmd* dcmd_recording, TRAPS) {
   assert(dcmd_recording != nullptr, "invariant");
   log_trace(jfr, system)("Starting a recording");
-  dcmd_recording->execute(DCmd_Source_Internal, THREAD);
+  dcmd_recording->execute(DCmd_Source_Internal, {}/*commonOptions*/, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     log_debug(jfr, system)("Exception while starting a recording");
     CLEAR_PENDING_EXCEPTION;

@@ -169,7 +169,7 @@ void ClassLoaderStatsVMOperation::doit() {
 }
 
 
-void ClassLoaderStatsDCmd::execute(DCmdSource source, TRAPS) {
+void ClassLoaderStatsDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   ClassLoaderStatsVMOperation op(output());
   VMThread::execute(&op);
 }

@@ -39,7 +39,7 @@ class JfrDCmd : public DCmd {
   void invoke(JfrJavaArguments& method, TRAPS) const;
   void print_java_help(const char* help_method) const;
  public:
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
   virtual void print_help(const char* name) const;
   virtual GrowableArray<const char*>* argument_name_array() const;
   virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
@@ -202,7 +202,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
     return "Low";
   }
   static int num_arguments() { return 10; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
   virtual void print_help(const char* name) const;
 };
 

@@ -47,7 +47,7 @@ class LogDiagnosticCommand : public DCmdWithParser {
 
  public:
   LogDiagnosticCommand(outputStream* output, bool heap_allocated);
-  void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
   static void registerCommand();
   static int num_arguments() { return 7; }
 

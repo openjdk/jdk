@@ -50,19 +50,36 @@ class Arguments {
             return;
         }
 
-        if (args[0].equals("-?") ||
-            args[0].equals("-h") ||
-            args[0].equals("--help") ||
-            // -help: legacy.
-            args[0].equals("-help")) {
+        if (args[0].equals("-?")
+                || args[0].equals("-h")
+                || args[0].equals("--help")
+                || args[0].equals("-help")) { // -help: legacy.
             showUsage = true;
             return;
         }
 
-        processString = args[0];
-
+        int argsCounter = 0;
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < args.length; i++) {
+
+        // {<PID>, <main class>}
+        processString = args[argsCounter];
+        argsCounter++;
+
+        // common flags: [-T]
+        if (argsCounter < args.length           // "jcmd <PID>" is valid and acts like "jcmd <PID> help"
+                && args[argsCounter].equals("-T")) {
+            sb.append(args[argsCounter]).append(" ");
+            argsCounter++;
+
+            // common flag should be followed by commands
+            if (args.length == argsCounter + 1) {
+                throw new IllegalArgumentException(
+                        "Not enough arguments.\n" +
+                        "Usage: jcmd <pid | main class> [-T] <command ...|PerfCounter.print|-f file>");
+            }
+        }
+
+        for (int i = argsCounter; i < args.length; i++) {
             if (args[i].equals("-f")) {
                 if (args.length == i + 1) {
                     throw new IllegalArgumentException(
@@ -108,11 +125,13 @@ class Arguments {
     }
 
     public static void usage() {
-        System.out.println("Usage: jcmd <pid | main class> <command ...|PerfCounter.print|-f file>");
+        System.out.println("Usage: jcmd <pid | main class> [-T] <command ...|PerfCounter.print|-f file>");
         System.out.println("   or: jcmd -l                                                    ");
         System.out.println("   or: jcmd -h                                                    ");
         System.out.println("                                                                  ");
-        System.out.println("  command must be a valid jcmd command for the selected jvm.      ");
+        System.out.println("  -T flag ensures the dignostic command begins with a timestamp   ");
+        System.out.println("                                                                  ");
+        System.out.println("  command must be a valid jcmd command for the selected JVM.      ");
         System.out.println("  Use the command \"help\" to see which commands are available.   ");
         System.out.println("  If the pid is 0, commands will be sent to all Java processes.   ");
         System.out.println("  The main class argument will be used to match (either partially ");

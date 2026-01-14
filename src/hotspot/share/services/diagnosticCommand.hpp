@@ -53,7 +53,7 @@ public:
            "'help all' will show help for all commands.";
   }
   static const char* impact() { return "Low"; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class VersionDCmd : public DCmd {
@@ -64,7 +64,7 @@ public:
     return "Print JVM version information.";
   }
   static const char* impact() { return "Low"; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class CommandLineDCmd : public DCmd {
@@ -75,7 +75,7 @@ public:
     return "Print the command line used to start this VM instance.";
   }
   static const char* impact() { return "Low"; }
-  virtual void execute(DCmdSource source, TRAPS) {
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override {
     Arguments::print_on(_output);
   }
 };
@@ -91,7 +91,7 @@ public:
     static const char* impact() {
       return "Low";
     }
-    virtual void execute(DCmdSource source, TRAPS);
+    void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 // See also: print_flag in attachListener.cpp
@@ -108,7 +108,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class SetVMFlagDCmd : public DCmdWithParser {
@@ -126,7 +126,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class JVMTIDataDumpDCmd : public DCmd {
@@ -139,7 +139,7 @@ public:
   static const char* impact() {
     return "High";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 #if INCLUDE_SERVICES
@@ -156,7 +156,7 @@ public:
     return "Load JVMTI native agent.";
   }
   static const char* impact() { return "Low"; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
@@ -173,7 +173,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class VMUptimeDCmd : public DCmdWithParser {
@@ -189,7 +189,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class VMInfoDCmd : public DCmd {
@@ -200,7 +200,7 @@ public:
     return "Print information about JVM environment and status.";
   }
   static const char* impact() { return "Low"; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class SystemGCDCmd : public DCmd {
@@ -213,7 +213,7 @@ public:
     static const char* impact() {
       return "Medium: Depends on Java heap size and content.";
     }
-    virtual void execute(DCmdSource source, TRAPS);
+    void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class RunFinalizationDCmd : public DCmd {
@@ -226,7 +226,7 @@ public:
     static const char* impact() {
       return "Medium: Depends on Java content.";
     }
-    virtual void execute(DCmdSource source, TRAPS);
+    void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class HeapInfoDCmd : public DCmd {
@@ -240,7 +240,7 @@ public:
     return "Medium";
   }
 
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class FinalizerInfoDCmd : public DCmd {
@@ -254,7 +254,7 @@ public:
     return "Medium";
   }
 
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 #if INCLUDE_SERVICES   // Heap dumping supported
@@ -279,7 +279,7 @@ public:
     return "High: Depends on Java heap size and content. "
            "Request a full GC unless the '-all' option is specified.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 #endif // INCLUDE_SERVICES
 
@@ -300,7 +300,7 @@ public:
   static const char* impact() {
     return "High: Depends on Java heap size and content.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class ClassHierarchyDCmd : public DCmdWithParser {
@@ -322,7 +322,7 @@ public:
   static const char* impact() {
       return "Medium: Depends on number of loaded classes.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 #if INCLUDE_CDS
@@ -336,7 +336,7 @@ public:
     static const char* impact() {
       return "Medium: Pause time depends on number of loaded classes";
     }
-    virtual void execute(DCmdSource source, TRAPS);
+    void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 #endif // INCLUDE_CDS
 
@@ -357,7 +357,7 @@ public:
   static const char* impact() {
     return "Medium: Pause time depends on number of loaded classes";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 #endif // INCLUDE_CDS
 
@@ -378,7 +378,7 @@ public:
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 // Enhanced JMX Agent support
@@ -428,7 +428,7 @@ public:
     return "Start remote management agent.";
   }
 
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class JMXStartLocalDCmd : public DCmd {
@@ -448,7 +448,7 @@ public:
     return "Start local management agent.";
   }
 
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 
 };
 
@@ -467,7 +467,7 @@ public:
     return "Stop remote management agent.";
   }
 
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 // Print the JMX system status
@@ -483,7 +483,7 @@ public:
     return "Print the management agent status.";
   }
 
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 
 };
 
@@ -499,7 +499,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 #ifdef LINUX
@@ -518,7 +518,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 #endif // LINUX
 
@@ -534,7 +534,7 @@ public:
   static const char* impact() {
     return "Medium";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class CodeCacheDCmd : public DCmd {
@@ -549,7 +549,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 //---<  BEGIN  >--- CodeHeap State Analytics.
@@ -570,7 +570,7 @@ public:
     return "Low: Depends on code heap size and content. "
            "Holds CodeCache_lock during analysis step, usually sub-second duration.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 //---<  END  >--- CodeHeap State Analytics.
 
@@ -586,7 +586,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class CompilerDirectivesRemoveDCmd : public DCmd {
@@ -601,7 +601,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class CompilerDirectivesAddDCmd : public DCmdWithParser {
@@ -619,7 +619,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class CompilerDirectivesClearDCmd : public DCmd {
@@ -634,7 +634,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -695,7 +695,7 @@ public:
   static const char* impact() {
     return "Medium: Depends on Java content.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class StringtableDCmd : public DCmdWithParser {
@@ -713,7 +713,7 @@ public:
   static const char* impact() {
     return "Medium: Depends on Java content.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class SystemDictionaryDCmd : public DCmdWithParser {
@@ -731,7 +731,7 @@ public:
   static const char* impact() {
       return "Medium: Depends on Java content.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class ClassesDCmd : public DCmdWithParser {
@@ -749,7 +749,7 @@ public:
   static const char* impact() {
       return "Medium: Depends on number of loaded classes.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class EventLogDCmd : public DCmdWithParser {
@@ -768,7 +768,7 @@ public:
   static const char* impact() {
     return "Low: Depends on event log size. ";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class ThreadDumpToFileDCmd : public DCmdWithParser {
@@ -791,7 +791,7 @@ public:
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class VThreadSchedulerDCmd : public DCmd {
@@ -805,7 +805,7 @@ public:
            "virtual threads doing timed operations.";
   }
   static const char* impact() { return "Low"; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class VThreadPollersDCmd : public DCmd {
@@ -818,7 +818,7 @@ public:
     return "Print the I/O pollers that support virtual threads doing blocking network I/O operations.";
   }
   static const char* impact() { return "Low"; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class CompilationMemoryStatisticDCmd: public DCmdWithParser {
@@ -838,7 +838,7 @@ public:
   static const char* impact() {
     return "Medium: Pause time depends on number of compiled methods";
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
@@ -851,7 +851,7 @@ public:
     return "Prints an annotated process memory map of the VM process (linux, Windows and MacOS only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 class SystemDumpMapDCmd : public DCmdWithParser {
@@ -864,7 +864,7 @@ public:
     return "Dumps an annotated process memory map to an output file (linux, Windows and MacOS only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
 };
 
 #endif // LINUX, WINDOWS or MACOS

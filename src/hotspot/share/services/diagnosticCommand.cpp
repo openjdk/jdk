@@ -188,7 +188,7 @@ static void print_local_time(outputStream* output) {
 }
 
 
-void HelpDCmd::execute(DCmdSource source, TRAPS) {
+void HelpDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   if (_all.value()) {
     GrowableArray<const char*>* cmd_list = DCmdFactory::DCmd_list(source);
     cmd_list->sort(compare_strings);
@@ -231,7 +231,7 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-void VersionDCmd::execute(DCmdSource source, TRAPS) {
+void VersionDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   output()->print_cr("%s version %s", VM_Version::vm_name(),
           VM_Version::vm_release());
   JDK_Version jdk_version = JDK_Version::current();
@@ -251,8 +251,11 @@ PrintVMFlagsDCmd::PrintVMFlagsDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_all);
 }
 
-void PrintVMFlagsDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void PrintVMFlagsDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   if (_all.value()) {
     JVMFlag::printFlags(output(), true);
   } else {
@@ -269,7 +272,7 @@ SetVMFlagDCmd::SetVMFlagDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_value);
 }
 
-void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
+void SetVMFlagDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   const char* val = nullptr;
   if (_value.value() != nullptr) {
     val = _value.value();
@@ -283,7 +286,7 @@ void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-void JVMTIDataDumpDCmd::execute(DCmdSource source, TRAPS) {
+void JVMTIDataDumpDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   if (JvmtiExport::should_post_data_dump()) {
     JvmtiExport::post_data_dump();
   }
@@ -300,7 +303,7 @@ JVMTIAgentLoadDCmd::JVMTIAgentLoadDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_option);
 }
 
-void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
+void JVMTIAgentLoadDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
 
   if (_libpath.value() == nullptr) {
     output()->print_cr("JVMTI.agent_load dcmd needs library path.");
@@ -341,7 +344,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
-void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
+void PrintSystemPropertiesDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   // load VMSupport
   Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
   Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
@@ -391,7 +394,7 @@ VMUptimeDCmd::VMUptimeDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_date);
 }
 
-void VMUptimeDCmd::execute(DCmdSource source, TRAPS) {
+void VMUptimeDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   if (_date.value()) {
     output()->date_stamp(true, "", ": ");
   }
@@ -400,16 +403,19 @@ void VMUptimeDCmd::execute(DCmdSource source, TRAPS) {
   output()->print_cr(" s");
 }
 
-void VMInfoDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void VMInfoDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   VMError::print_vm_info(_output);
 }
 
-void SystemGCDCmd::execute(DCmdSource source, TRAPS) {
+void SystemGCDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   Universe::heap()->collect(GCCause::_dcmd_gc_run);
 }
 
-void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
+void RunFinalizationDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   Klass* k = vmClasses::System_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, k,
@@ -417,14 +423,20 @@ void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::void_method_signature(), CHECK);
 }
 
-void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void HeapInfoDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   MutexLocker hl(THREAD, Heap_lock);
   Universe::heap()->print_heap_on(output());
 }
 
-void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void FinalizerInfoDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   ResourceMark rm(THREAD);
 
   if (!InstanceKlass::is_finalization_enabled()) {
@@ -497,8 +509,11 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_parallel);
 }
 
-void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void HeapDumpDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   jlong level = -1; // -1 means no compression.
   jlong parallel = HeapDumper::default_num_of_dump_threads();
 
@@ -545,8 +560,11 @@ ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_parallel_thread_num);
 }
 
-void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void ClassHistogramDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   jlong num = _parallel_thread_num.value();
   if (num < 0) {
     output()->print_cr("Parallel thread number out of range (>=0): " JLONG_FORMAT, num);
@@ -571,8 +589,10 @@ ThreadDumpDCmd::ThreadDumpDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_extended);
 }
 
-void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
+void ThreadDumpDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  // always timestamp
   print_local_time(output());
+
   // thread stacks and JNI global handles
   VM_PrintThreads op1(output(), _locks.value(), _extended.value(), true /* print JNI handle info */);
   VMThread::execute(&op1);
@@ -697,7 +717,7 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
     _dcmdparser.add_dcmd_option(&_jdp_name);
 }
 
-void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
+void JMXStartRemoteDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
 
@@ -770,7 +790,7 @@ JMXStartLocalDCmd::JMXStartLocalDCmd(outputStream *output, bool heap_allocated) 
   // do nothing
 }
 
-void JMXStartLocalDCmd::execute(DCmdSource source, TRAPS) {
+void JMXStartLocalDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
 
@@ -787,7 +807,7 @@ void JMXStartLocalDCmd::execute(DCmdSource source, TRAPS) {
     JavaCalls::call_static(&result, k, vmSymbols::startLocalAgent_name(), vmSymbols::void_method_signature(), CHECK);
 }
 
-void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
+void JMXStopRemoteDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
 
@@ -809,8 +829,11 @@ JMXStatusDCmd::JMXStatusDCmd(outputStream *output, bool heap_allocated) :
   // do nothing
 }
 
-void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void JMXStatusDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
@@ -843,25 +866,37 @@ VMDynamicLibrariesDCmd::VMDynamicLibrariesDCmd(outputStream *output, bool heap_a
   // do nothing
 }
 
-void VMDynamicLibrariesDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void VMDynamicLibrariesDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   os::print_dll_info(output());
   output()->cr();
 }
 
-void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void CompileQueueDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   VM_PrintCompileQueue printCompileQueueOp(output());
   VMThread::execute(&printCompileQueueOp);
 }
 
-void CodeListDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void CodeListDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   CodeCache::print_codelist(output());
 }
 
-void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void CodeCacheDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   CodeCache::print_layout(output());
 }
 
@@ -873,7 +908,7 @@ PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_filename);
 }
 
-void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
+void PerfMapDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   CodeCache::write_perf_map(_filename.value(), output());
 }
 #endif // LINUX
@@ -887,8 +922,11 @@ CodeHeapAnalyticsDCmd::CodeHeapAnalyticsDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_granularity);
 }
 
-void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void CodeHeapAnalyticsDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   jlong granularity = _granularity.value();
   if (granularity < 1) {
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
@@ -909,8 +947,10 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_max);
 }
 
-void EventLogDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void EventLogDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
   int max = (int)_max.value();
   if (max < 0) {
     output()->print_cr("Invalid max option: \"%d\".", max);
@@ -924,8 +964,10 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void CompilerDirectivesPrintDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
   DirectivesStack::print(output());
 }
 
@@ -935,15 +977,15 @@ CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool 
   _dcmdparser.add_dcmd_argument(&_filename);
 }
 
-void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
+void CompilerDirectivesAddDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   DirectivesParser::parse_from_file(_filename.value(), output(), true);
 }
 
-void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
+void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   DirectivesStack::pop(1);
 }
 
-void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
+void CompilerDirectivesClearDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   DirectivesStack::clear();
 }
 
@@ -962,8 +1004,10 @@ ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_classname);
 }
 
-void ClassHierarchyDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void ClassHierarchyDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
   VM_PrintClassHierarchy printClassHierarchyOp(output(), _print_interfaces.value(),
                                                _print_subclasses.value(), _classname.value());
   VMThread::execute(&printClassHierarchyOp);
@@ -1000,14 +1044,17 @@ public:
   }
 };
 
-void ClassesDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void ClassesDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   VM_PrintClasses vmop(output(), _verbose.value());
   VMThread::execute(&vmop);
 }
 
 #if INCLUDE_CDS
-void AOTEndRecordingDCmd::execute(DCmdSource source, TRAPS) {
+void AOTEndRecordingDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   if (!CDSConfig::is_dumping_preimage_static_archive()) {
     output()->print_cr("AOT.end_recording is unsupported when VM flags -XX:AOTMode=record or -XX:AOTCacheOutput=<file> are missing.");
     return;
@@ -1041,8 +1088,11 @@ DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_filename);
 }
 
-void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void DumpSharedArchiveDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   jboolean is_static;
   const char* scmd = _suboption.value();
 
@@ -1105,7 +1155,7 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_filepath);
 }
 
-void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {
+void ThreadDumpToFileDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   bool json = (_format.value() != nullptr) && (strcmp(_format.value(), "json") == 0);
   char* path = _filepath.value();
   bool overwrite = _overwrite.value();
@@ -1182,13 +1232,19 @@ static void execute_vthread_command(Symbol* method_name, outputStream* output, T
   output->print_raw((const char*)addr, ba->length());
 }
 
-void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void VThreadSchedulerDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   execute_vthread_command(vmSymbols::printScheduler_name(), output(), CHECK);
 }
 
-void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void VThreadPollersDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   execute_vthread_command(vmSymbols::printPollers_name(), output(), CHECK);
 }
 
@@ -1202,8 +1258,11 @@ CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* out
   _dcmdparser.add_dcmd_option(&_legend);
 }
 
-void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void CompilationMemoryStatisticDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
   CompilationMemoryStatistic::print_jcmd_report(output(), _verbose.value(), _legend.value(), minsize);
 }
@@ -1212,8 +1271,11 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
-void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void SystemMapDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   MemMapPrinter::print_all_mappings(output());
 }
 
@@ -1225,8 +1287,11 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
-void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  print_local_time(output());
+void SystemDumpMapDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   const char* name = _filename.value();
   if (name == nullptr || name[0] == 0) {
     output()->print_cr("filename is empty or not specified.  No file written");
