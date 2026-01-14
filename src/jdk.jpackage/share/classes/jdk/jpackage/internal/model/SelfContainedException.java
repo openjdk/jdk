@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,18 @@
 
 package jdk.jpackage.internal.model;
 
-import java.util.Objects;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Generic jpackage exception with non-null message.
+ * Annotation for exceptions with self-contained error messages that don't
+ * require an additional context, like exception class name or a stack trace.
  */
-@SelfContainedException
-public class JPackageException extends RuntimeException {
-
-    public JPackageException(String msg) {
-        super(Objects.requireNonNull(msg));
-    }
-
-    public JPackageException(String msg, Throwable cause) {
-        super(Objects.requireNonNull(msg), cause);
-    }
-
-    private static final long serialVersionUID = 1L;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Inherited
+public @interface SelfContainedException {
 }

@@ -283,11 +283,11 @@ public final class Executor extends CommandArguments<Executor> {
                     long expectedExitCode = expectedExitCodes.getFirst();
                     TKit.assertEquals(expectedExitCode, getExitCode(), String.format(
                             "Check command %s exited with %d code",
-                            base.execAttrs(), expectedExitCode));
+                            base.execAttrs().printableCommandLine(), expectedExitCode));
                 } default -> {
                     TKit.assertTrue(expectedExitCodes.contains(getExitCode()), String.format(
                             "Check command %s exited with one of %s codes",
-                            base.execAttrs(), expectedExitCodes.stream().sorted().toList()));
+                            base.execAttrs().printableCommandLine(), expectedExitCodes.stream().sorted().toList()));
                 }
             }
             return this;
@@ -302,7 +302,7 @@ public final class Executor extends CommandArguments<Executor> {
         }
 
         public String getPrintableCommandLine() {
-            return base.execAttrs().toString();
+            return base.execAttrs().printableCommandLine();
         }
     }
 
@@ -515,19 +515,14 @@ public final class Executor extends CommandArguments<Executor> {
         return String.format(format, CommandLineFormat.DEFAULT.apply(cmdline), cmdline.size());
     }
 
-    private record ExecutableAttributes(CommandOutputControl.ExecutableAttributes base, String toStringValue)
+    private record ExecutableAttributes(CommandOutputControl.ExecutableAttributes base, String printableCommandLine)
             implements CommandOutputControl.ExecutableAttributes {
 
         ExecutableAttributes {
             Objects.requireNonNull(base);
-            if (toStringValue.isBlank()) {
+            if (printableCommandLine.isBlank()) {
                 throw new IllegalArgumentException();
             }
-        }
-
-        @Override
-        public String toString() {
-            return toStringValue;
         }
 
         @Override
