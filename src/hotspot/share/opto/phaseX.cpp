@@ -2126,9 +2126,15 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   DEBUG_ONLY(dead_loop_check(k);)
   DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
   C->remove_modified_node(k);
+#ifndef PRODUCT
+  uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
+#endif
   Node* i = apply_ideal(k, /*can_reshape=*/true);
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
 #ifndef PRODUCT
+  if (is_verify_Ideal_return()) {
+    assert(k->outcnt() == 0 || i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
+  }
   verify_step(k);
 #endif
 
@@ -2152,9 +2158,15 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     // Try idealizing again
     DEBUG_ONLY(is_new = (k->outcnt() == 0);)
     C->remove_modified_node(k);
+#ifndef PRODUCT
+    uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
+#endif
     i = apply_ideal(k, /*can_reshape=*/true);
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
 #ifndef PRODUCT
+    if (is_verify_Ideal_return()) {
+      assert(k->outcnt() == 0 || i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
+    }
     verify_step(k);
 #endif
     DEBUG_ONLY(loop_count++;)

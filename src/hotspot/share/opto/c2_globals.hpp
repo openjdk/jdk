@@ -694,7 +694,9 @@
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering =EDCBA, with:"           \
+          "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
+          "  F: verify Node::Ideal does not return nullptr if the node"     \
+                "hash has changed"                                          \
           "  E: verify node specific invariants"                            \
           "  D: verify Node::Identity did not miss opportunities"           \
           "  C: verify Node::Ideal did not miss opportunities"              \
