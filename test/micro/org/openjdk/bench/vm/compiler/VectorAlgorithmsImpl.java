@@ -358,7 +358,7 @@ public class VectorAlgorithmsImpl {
             var mask = v.compare(VectorOperators.GE, thresholds);
             v = v.compress(mask);
             int trueCount = mask.trueCount();
-            var prefixMask = VectorMask.fromLong(SPECIES_I, (1L << trueCount) - 1);
+            var prefixMask = mask.compress();
             v.intoArray(r, j, prefixMask);
             j += trueCount;
         }

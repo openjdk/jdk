@@ -456,9 +456,9 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I,       "> 0",
                   IRNode.VECTOR_MASK_CMP,     "> 0",
                   IRNode.VECTOR_TEST,         "> 0",
-                  IRNode.VECTOR_LONG_TO_MASK, "> 0",
+                  IRNode.COMPRESS_VI,         "> 0",
                   IRNode.STORE_VECTOR_MASKED, "> 0"},
-        applyIfCPUFeature = {"avx", "true"})
+        applyIfCPUFeature = {"avx2", "true"})
     public Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI(a, r, threshold);
     }
