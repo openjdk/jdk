@@ -371,8 +371,6 @@ class os: AllStatic {
   // (currently only cgroup-based Linux runtimes). If the process is running inside a
   // containerized environment, methods from this class report the effective limits imposed
   // by the container, which may be more restrictive than what os::Machine reports.
-  // If a method returns true, a limit was found and set in the out-parameter.
-  // If there is no limit, or the limit could not be determined, it instead returns false.
   // Methods return true and set the out-parameter if a limit is found,
   // or false if no limit exists or it cannot be determined.
   class Container : AllStatic {

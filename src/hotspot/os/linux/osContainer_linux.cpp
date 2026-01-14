@@ -289,11 +289,13 @@ template<typename T> struct metric_fmt;
 template<> struct metric_fmt<unsigned long long int> { static constexpr const char* fmt = "%llu"; };
 template<> struct metric_fmt<unsigned long int> { static constexpr const char* fmt = "%lu"; };
 template<> struct metric_fmt<int> { static constexpr const char* fmt = "%d"; };
+template<> struct metric_fmt<double> { static constexpr const char* fmt = "%.2f"; };
 template<> struct metric_fmt<const char*> { static constexpr const char* fmt = "%s"; };
 
 template void OSContainer::print_container_metric<unsigned long long int>(outputStream*, const char*, unsigned long long int, const char*);
 template void OSContainer::print_container_metric<unsigned long int>(outputStream*, const char*, unsigned long int, const char*);
 template void OSContainer::print_container_metric<int>(outputStream*, const char*, int, const char*);
+template void OSContainer::print_container_metric<double>(outputStream*, const char*, double, const char*);
 template void OSContainer::print_container_metric<const char*>(outputStream*, const char*, const char*, const char*);
 
 template <typename T>
