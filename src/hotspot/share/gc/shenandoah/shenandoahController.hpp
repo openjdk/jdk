@@ -42,7 +42,7 @@ private:
   shenandoah_padding(1);
 
 protected:
-  const Mutex::Rank LOCK_RANK = Mutex::safepoint - 10;
+  const Mutex::Rank LOCK_RANK = Mutex::service;
 
   // While we could have a single lock for these, it may risk unblocking
   // GC waiters when alloc failure GC cycle finishes. We want instead
