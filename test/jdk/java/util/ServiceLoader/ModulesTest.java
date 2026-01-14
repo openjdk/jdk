@@ -442,8 +442,8 @@ public class ModulesTest {
 
     @Test
     public void testLoadNull3() {
+        class S { }
         Assertions.assertThrows(NullPointerException.class, () -> {
-            class S { }
             ServiceLoader.load((ModuleLayer) null, S.class);
         });
     }

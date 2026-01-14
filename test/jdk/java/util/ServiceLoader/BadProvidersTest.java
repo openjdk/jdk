@@ -153,24 +153,24 @@ public class BadProvidersTest {
     @ParameterizedTest
     @MethodSource("createBadFactories")
     public void testBadFactory(String testName, String ignore) throws Exception {
-        Assertions.assertThrows(ServiceConfigurationError.class, () -> {
-            Path mods = compileTest(TEST1_MODULE);
+        Path mods = compileTest(TEST1_MODULE);
 
-            // compile the bad factory
-            Path source = BADFACTORIES_DIR.resolve(testName);
-            Path output = Files.createTempDirectory(USER_DIR, "tmp");
-            boolean compiled = CompilerUtils.compile(source, output);
-            assertTrue(compiled);
+        // compile the bad factory
+        Path source = BADFACTORIES_DIR.resolve(testName);
+        Path output = Files.createTempDirectory(USER_DIR, "tmp");
+        boolean compiled = CompilerUtils.compile(source, output);
+        assertTrue(compiled);
 
-            // copy the compiled class into the module
-            Path classFile = Paths.get("p", "ProviderFactory.class");
-            Files.copy(output.resolve(classFile),
-                    mods.resolve(TEST1_MODULE).resolve(classFile),
-                    StandardCopyOption.REPLACE_EXISTING);
+        // copy the compiled class into the module
+        Path classFile = Paths.get("p", "ProviderFactory.class");
+        Files.copy(output.resolve(classFile),
+                mods.resolve(TEST1_MODULE).resolve(classFile),
+                StandardCopyOption.REPLACE_EXISTING);
 
-            // load providers and instantiate each one
-            loadProviders(mods, TEST1_MODULE).forEach(Provider::get);
-        });
+        Assertions.assertThrows(ServiceConfigurationError.class,
+                // load providers and instantiate each one
+                () -> loadProviders(mods, TEST1_MODULE).forEach(Provider::get)
+        );
     }
 
 
@@ -187,24 +187,24 @@ public class BadProvidersTest {
     @ParameterizedTest
     @MethodSource("createBadProviders")
     public void testBadProvider(String testName, String ignore) throws Exception {
-        Assertions.assertThrows(ServiceConfigurationError.class, () -> {
-            Path mods = compileTest(TEST2_MODULE);
+        Path mods = compileTest(TEST2_MODULE);
 
-            // compile the bad provider
-            Path source = BADPROVIDERS_DIR.resolve(testName);
-            Path output = Files.createTempDirectory(USER_DIR, "tmp");
-            boolean compiled = CompilerUtils.compile(source, output);
-            assertTrue(compiled);
+        // compile the bad provider
+        Path source = BADPROVIDERS_DIR.resolve(testName);
+        Path output = Files.createTempDirectory(USER_DIR, "tmp");
+        boolean compiled = CompilerUtils.compile(source, output);
+        assertTrue(compiled);
 
-            // copy the compiled class into the module
-            Path classFile = Paths.get("p", "Provider.class");
-            Files.copy(output.resolve(classFile),
-                    mods.resolve(TEST2_MODULE).resolve(classFile),
-                    StandardCopyOption.REPLACE_EXISTING);
+        // copy the compiled class into the module
+        Path classFile = Paths.get("p", "Provider.class");
+        Files.copy(output.resolve(classFile),
+                mods.resolve(TEST2_MODULE).resolve(classFile),
+                StandardCopyOption.REPLACE_EXISTING);
 
-            // load providers and instantiate each one
-            loadProviders(mods, TEST2_MODULE).forEach(Provider::get);
-        });
+        Assertions.assertThrows(ServiceConfigurationError.class,
+                // load providers and instantiate each one
+                () -> loadProviders(mods, TEST2_MODULE).forEach(Provider::get)
+        );
     }
 
 
@@ -214,43 +214,43 @@ public class BadProvidersTest {
      */
     @Test
     public void testWithTwoFactoryMethods() throws Exception {
-        Assertions.assertThrows(ServiceConfigurationError.class, () -> {
-            Path mods = compileTest(TEST1_MODULE);
+        Path mods = compileTest(TEST1_MODULE);
 
-            var bytes = ClassFile.of().build(ClassDesc.of("p", "ProviderFactory"), clb -> {
-                clb.withSuperclass(CD_Object);
-                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+        var bytes = ClassFile.of().build(ClassDesc.of("p", "ProviderFactory"), clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
 
-                var providerFactory$1 = ClassDesc.of("p", "ProviderFactory$1");
+            var providerFactory$1 = ClassDesc.of("p", "ProviderFactory$1");
 
-                // public static p.Service provider()
-                clb.withMethodBody("provider", MethodTypeDesc.of(ClassDesc.of("p", "Service")),
-                        ACC_PUBLIC | ACC_STATIC, cob -> {
-                            cob.new_(providerFactory$1);
-                            cob.dup();
-                            cob.invokespecial(providerFactory$1, INIT_NAME, MTD_void);
-                            cob.areturn();
-                        });
+            // public static p.Service provider()
+            clb.withMethodBody("provider", MethodTypeDesc.of(ClassDesc.of("p", "Service")),
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
+                        cob.new_(providerFactory$1);
+                        cob.dup();
+                        cob.invokespecial(providerFactory$1, INIT_NAME, MTD_void);
+                        cob.areturn();
+                    });
 
-                // public static p.ProviderFactory$1 provider()
-                clb.withMethodBody("provider", MethodTypeDesc.of(providerFactory$1),
-                        ACC_PUBLIC | ACC_STATIC, cob -> {
-                            cob.new_(providerFactory$1);
-                            cob.dup();
-                            cob.invokespecial(providerFactory$1, INIT_NAME, MTD_void);
-                            cob.areturn();
-                        });
-            });
-
-            // write the class bytes into the compiled module directory
-            Path classFile = mods.resolve(TEST1_MODULE)
-                    .resolve("p")
-                    .resolve("ProviderFactory.class");
-            Files.write(classFile, bytes);
-
-            // load providers and instantiate each one
-            loadProviders(mods, TEST1_MODULE).forEach(Provider::get);
+            // public static p.ProviderFactory$1 provider()
+            clb.withMethodBody("provider", MethodTypeDesc.of(providerFactory$1),
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
+                        cob.new_(providerFactory$1);
+                        cob.dup();
+                        cob.invokespecial(providerFactory$1, INIT_NAME, MTD_void);
+                        cob.areturn();
+                    });
         });
+
+        // write the class bytes into the compiled module directory
+        Path classFile = mods.resolve(TEST1_MODULE)
+                .resolve("p")
+                .resolve("ProviderFactory.class");
+        Files.write(classFile, bytes);
+
+        Assertions.assertThrows(ServiceConfigurationError.class,
+                // load providers and instantiate each one
+                () -> loadProviders(mods, TEST1_MODULE).forEach(Provider::get)
+        );
     }
 
 }

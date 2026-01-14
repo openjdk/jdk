@@ -65,44 +65,37 @@ public class ReloadTest {
 
     @Test
     public void testIteratorHasNext() {
-        Assertions.assertThrows(ConcurrentModificationException.class, () -> {
-            ServiceLoader<ScriptEngineFactory> sl = load(ScriptEngineFactory.class);
-            Iterator<ScriptEngineFactory> iterator = sl.iterator();
-            sl.reload();
-            iterator.hasNext();
-        });
+        ServiceLoader<ScriptEngineFactory> sl = load(ScriptEngineFactory.class);
+        Iterator<ScriptEngineFactory> iterator = sl.iterator();
+        sl.reload();
+        Assertions.assertThrows(ConcurrentModificationException.class, iterator::hasNext);
     }
 
     @Test
     public void testIteratorNext() {
-        Assertions.assertThrows(ConcurrentModificationException.class, () -> {
-            ServiceLoader<ScriptEngineFactory> sl = load(ScriptEngineFactory.class);
-            Iterator<ScriptEngineFactory> iterator = sl.iterator();
-            assertTrue(iterator.hasNext());
-            sl.reload();
-            iterator.next();
-        });
+        ServiceLoader<ScriptEngineFactory> sl = load(ScriptEngineFactory.class);
+        Iterator<ScriptEngineFactory> iterator = sl.iterator();
+        assertTrue(iterator.hasNext());
+        sl.reload();
+        Assertions.assertThrows(ConcurrentModificationException.class, iterator::next);
     }
 
     @Test
     public void testStreamFindAny() {
-        Assertions.assertThrows(ConcurrentModificationException.class, () -> {
-            ServiceLoader<ScriptEngineFactory> sl = load(ScriptEngineFactory.class);
-            Stream<Provider<ScriptEngineFactory>> stream = sl.stream();
-            sl.reload();
-            stream.findAny();
-        });
+        ServiceLoader<ScriptEngineFactory> sl = load(ScriptEngineFactory.class);
+        Stream<Provider<ScriptEngineFactory>> stream = sl.stream();
+        sl.reload();
+        Assertions.assertThrows(ConcurrentModificationException.class, stream::findAny);
     }
 
     @Test
     public void testSpliteratorTryAdvance() {
-        Assertions.assertThrows(ConcurrentModificationException.class, () -> {
-            ServiceLoader<ScriptEngineFactory> sl = load(ScriptEngineFactory.class);
-            Stream<Provider<ScriptEngineFactory>> stream = sl.stream();
-            Spliterator<Provider<ScriptEngineFactory>> spliterator = stream.spliterator();
-            sl.reload();
-            spliterator.tryAdvance(System.out::println);
-        });
+        ServiceLoader<ScriptEngineFactory> sl = load(ScriptEngineFactory.class);
+        Stream<Provider<ScriptEngineFactory>> stream = sl.stream();
+        Spliterator<Provider<ScriptEngineFactory>> spliterator = stream.spliterator();
+        sl.reload();
+        Assertions.assertThrows(ConcurrentModificationException.class,
+                () -> spliterator.tryAdvance(System.out::println));
     }
 
 }
