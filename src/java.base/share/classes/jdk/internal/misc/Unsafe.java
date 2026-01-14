@@ -106,7 +106,7 @@ public final class Unsafe {
 
     // These work on object fields (of all types) in the Java heap.
     // They also work on array elements (of all types) in the Java heap.
-    // THey also work on off-heap values (of primitive types).
+    // They also work on off-heap values (of primitive types).
 
     // These basic type codes are shared with the classfile format.  Do not change.
     private static final byte BT_BOOLEAN = 4;
@@ -182,7 +182,7 @@ public final class Unsafe {
      * Likewise, a store marked {@code MO_RELEASE} must come last after
      * other accesses, plain or not, that might otherwise slide after it.
      * When a releasing store releases a data value to memory,
-     * the current thread is must finish up with all of its previous
+     * the current thread must finish up with all of its previous
      * stores, before the releasing store releases its data to
      * memory (and thus to other threads).
      * Finally, {@code MO_VOLATILE} is sequentially consistent access,
@@ -195,7 +195,9 @@ public final class Unsafe {
      * Selects volatile memory order, as found in Java.  Neither
      * compiler nor hardware will reorder these accesses.
      * This is the default MO parameter for any operation which
-     * performs getting and setting in some atomic sequence.
+     * performs getting and setting in some atomic "X-and-Y" sequence
+     * (like {@code getAndAddInt} or {@code compareAndSetLong}
+     * or {@code compareAndExchangeReference}).
      * <p>
      * In brief, volatile memory order gives the strongest possible
      * guarantee that the program order of memory accesses (in the
@@ -236,7 +238,7 @@ public final class Unsafe {
      * In brief, if a thread reads from a shared variable using an
      * acquiring load, and subsequently the thread reads or writes a
      * second shared variable (in any mode), the thread will observe
-     * a global memory state that at least as "fresh" as the state
+     * a global memory state that is at least as "fresh" as the state
      * observed by the acquiring load.  (The precise meaning of
      * "fresh" derives from the sequential order provided by global
      * memory on the current platform.  The point is that localized
@@ -265,7 +267,7 @@ public final class Unsafe {
      * In brief, if a thread stores to a shared variable using a
      * releasing store, after the thread has previously read or
      * written another shared variable (in any mode), the thread will
-     * update a global memory state that at least as "fresh" as the
+     * update a global memory state that is at least as "fresh" as the
      * state operated on by the previous memory access.  (The precise
      * meaning of "fresh" derives from the sequential order provided
      * by global memory on the current platform.  The point is that
@@ -411,7 +413,7 @@ public final class Unsafe {
         long bits;
         switch (basicType & PRIMITIVE_SIZE_MASK) {  // encodes size of BT
             case 3 -> {
-                if (memoryOrder == MO_PLAIN && basicType == BT_LONG && basicType == BT_LONG) {
+                if (memoryOrder == MO_PLAIN && basicType == BT_LONG) {
                     return getPrimitiveBitsMONative(MO_PLAIN, BT_LONG, o, offset);
                 }
             }
@@ -484,7 +486,7 @@ public final class Unsafe {
         checkMemoryOrder(memoryOrder & ~MO_UNALIGNED);
         switch (basicType & PRIMITIVE_SIZE_MASK) {  // encodes size of BT
             case 3 -> {
-                if (memoryOrder == MO_PLAIN && basicType == BT_LONG && basicType == BT_LONG) {
+                if (memoryOrder == MO_PLAIN && basicType == BT_LONG) {
                     putPrimitiveBitsMONative(MO_PLAIN, BT_LONG, o, offset, bits);
                     return;
                 }
