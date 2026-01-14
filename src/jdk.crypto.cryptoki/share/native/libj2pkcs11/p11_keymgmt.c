@@ -931,7 +931,6 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
 
     /* If derivation failed, do not attempt copy-back */
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
-        jKeyHandle = 0L;
         goto cleanup;
     }
 
