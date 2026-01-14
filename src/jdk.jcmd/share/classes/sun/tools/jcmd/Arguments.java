@@ -66,16 +66,14 @@ class Arguments {
         argsCounter++;
 
         // common flags: [-T]
-        if (argsCounter < args.length           // "jcmd <PID>" is valid and acts like "jcmd <PID> help"
+        if (argsCounter < args.length           // "jcmd <PID>" is not an error and acts as "jcmd <PID> help"
                 && args[argsCounter].equals("-T")) {
             sb.append(args[argsCounter]).append(" ");
             argsCounter++;
 
-            // common flag should be followed by commands
-            if (args.length == argsCounter + 1) {
-                throw new IllegalArgumentException(
-                        "Not enough arguments.\n" +
-                        "Usage: jcmd <pid | main class> [-T] <command ...|PerfCounter.print|-f file>");
+            if (argsCounter == args.length) {
+                // common flag followed by nothing
+                throw new IllegalArgumentException("Not enough arguments");
             }
         }
 
@@ -127,7 +125,7 @@ class Arguments {
     public static void usage() {
         System.out.println("Usage: jcmd <pid | main class> [-T] <command ...|PerfCounter.print|-f file>");
         System.out.println("   or: jcmd -l                                                    ");
-        System.out.println("   or: jcmd -h                                                    ");
+        System.out.println("   or: jcmd <-h | --help>                                         ");
         System.out.println("                                                                  ");
         System.out.println("  -T flag ensures the dignostic command begins with a timestamp   ");
         System.out.println("                                                                  ");
@@ -141,6 +139,6 @@ class Arguments {
         System.out.println("  PerfCounter.print display the counters exposed by this process  ");
         System.out.println("  -f  read and execute commands from the file                     ");
         System.out.println("  -l  list JVM processes on the local machine                     ");
-        System.out.println("  -? -h --help print this help message                            ");
+        System.out.println("  -? -h --help  print this help message                           ");
     }
 }
