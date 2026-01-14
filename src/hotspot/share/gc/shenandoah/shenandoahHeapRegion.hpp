@@ -513,8 +513,18 @@ public:
 
   void reset_age() {
     uint current = age();
-    if (current != 0) {
-      AtomicAccess::store(&_age, uint(0));
+    // return immediately in fast path when current age is 0
+    if (current == 0u) return;
+    // reset_age can be called from multiple mutator/worker threads concurrently w/o heap lock,
+    // if no need to update census noise, there is no need to use cmpxchg here.
+    // The while loop with cmpxchg is to make sure we don't duplicately count the age in census noise.
+    uint old = current;
+    while ((current = AtomicAccess::cmpxchg(&_age, old, 0u)) != old &&
+           current != 0u) {
+      old = current;
+    }
+    if (current != 0u) {
+      // Only the thread successfully resets age should update census noise
       CENSUS_NOISE(AtomicAccess::add(&_youth, current, memory_order_relaxed);)
     }
   }
