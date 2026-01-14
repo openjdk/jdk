@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import jdk.jpackage.internal.FileAssociationGroup.FileAssociationNoMimesExceptio
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
@@ -130,8 +131,7 @@ final class LauncherFromOptions {
                         .advice("error.no-content-types-for-file-association.advice", faID)
                         .create();
             } catch (FileAssociationNoExtensionsException ex) {
-                // TODO: Must do something about this condition!
-                throw new AssertionError();
+                throw new JPackageException(I18N.format("error.no-extensions-for-file-association", faID));
             } catch (FileAssociationException ex) {
                 // Should never happen
                 throw new UnsupportedOperationException(ex);
