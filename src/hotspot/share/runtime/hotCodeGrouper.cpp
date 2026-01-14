@@ -144,7 +144,7 @@ void HotCodeGrouper::do_grouping(ThreadSampler& sampler) {
     }
 
     if (!hot_heap_has_space(nm->size())) {
-      log_info(hotcodegrouper)("Not enough space in HotCodeHeap (%ld bytes) to relocate nm (%d bytes). Bailing out",
+      log_info(hotcodegrouper)("Not enough space in HotCodeHeap (%zd bytes) to relocate nm (%d bytes). Bailing out",
         hot_code_heap->unallocated_capacity(), nm->size());
       return;
     }
@@ -197,7 +197,7 @@ void HotCodeGrouper::do_grouping(ThreadSampler& sampler) {
       }
 
       if (!hot_heap_has_space(actual_dest_nm->size())) {
-        log_info(hotcodegrouper)("Not enough space in HotCodeHeap (%ld bytes) to relocate nm (%d bytes). Bailing out",
+        log_info(hotcodegrouper)("Not enough space in HotCodeHeap (%zd bytes) to relocate nm (%d bytes). Bailing out",
           hot_code_heap->unallocated_capacity(), actual_dest_nm->size());
         return;
       }

@@ -26,6 +26,7 @@
 #ifndef SHARE_RUNTIME_HOTCODEGROUPER_HPP
 #define SHARE_RUNTIME_HOTCODEGROUPER_HPP
 
+#include "code/codeCache.hpp"
 #include "runtime/nonJavaThread.hpp"
 
 class ThreadSampler;
