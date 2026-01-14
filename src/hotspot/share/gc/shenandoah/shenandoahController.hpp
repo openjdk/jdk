@@ -42,6 +42,8 @@ private:
   shenandoah_padding(1);
 
 protected:
+  const Mutex::Rank LOCK_RANK = Mutex::safepoint - 10;
+
   // While we could have a single lock for these, it may risk unblocking
   // GC waiters when alloc failure GC cycle finishes. We want instead
   // to make complete explicit cycle for demanding customers.
@@ -54,8 +56,8 @@ protected:
 public:
   ShenandoahController():
     _gc_id(0),
-    _alloc_failure_waiters_lock(Mutex::safepoint-2, "ShenandoahAllocFailureGC_lock", true),
-    _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true)
+    _alloc_failure_waiters_lock(LOCK_RANK, "ShenandoahAllocFailureGC_lock", true),
+    _gc_waiters_lock(LOCK_RANK, "ShenandoahRequestedGC_lock", true)
   { }
 
   // Request a collection cycle. This handles "explicit" gc requests
