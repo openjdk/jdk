@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,6 @@ public class CodeCacheTest {
         // Get output from dcmd (diagnostic command)
         OutputAnalyzer output = executor.execute("Compiler.codecache");
         Iterator<String> lines = output.asLines().iterator();
-        lines.next(); // skip timestamp
 
         // Validate code cache segments
         String line;
