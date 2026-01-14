@@ -46,7 +46,7 @@ public record ExecutableAttributesWithCapturedOutput(ExecutableAttributes execAt
         return execAttrs.commandLine();
     }
 
-    public static Result augmenResultWithOutput(Result result, String output) {
+    public static Result augmentResultWithOutput(Result result, String output) {
         var execAttrs = new ExecutableAttributesWithCapturedOutput(result.execAttrs(), output);
         return result.copyWithExecutableAttributes(execAttrs);
     }

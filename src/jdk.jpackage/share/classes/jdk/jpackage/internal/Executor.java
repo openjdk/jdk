@@ -233,7 +233,7 @@ final class Executor {
             log(result, printableOutput);
         }
 
-        return ExecutableAttributesWithCapturedOutput.augmenResultWithOutput(result, printableOutput);
+        return ExecutableAttributesWithCapturedOutput.augmentResultWithOutput(result, printableOutput);
     }
 
     Result executeExpectSuccess() throws IOException {

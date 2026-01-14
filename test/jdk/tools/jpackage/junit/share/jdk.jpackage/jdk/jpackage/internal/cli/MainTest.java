@@ -22,7 +22,7 @@
  */
 package jdk.jpackage.internal.cli;
 
-import static jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput.augmenResultWithOutput;
+import static jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput.augmentResultWithOutput;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -252,21 +252,21 @@ public class MainTest extends JUnitAdapter {
 
                 for (var expect : List.of(
                         Map.entry(
-                                augmenResultWithOutput(
+                                augmentResultWithOutput(
                                         CommandOutputControl.Result.build().exitCode(135).execAttrs(execAttrs).create(),
                                         "The quick brown fox\njumps over the lazy dog"
                                 ).unexpected("Kaput!"),
                                 ExceptionFormatter.FAILED_COMMAND_UNEXPECTED_OUTPUT_MESSAGE
                         ),
                         Map.entry(
-                                new UnexpectedExitCodeException(augmenResultWithOutput(
+                                new UnexpectedExitCodeException(augmentResultWithOutput(
                                         CommandOutputControl.Result.build().exitCode(135).create(),
                                         "The quick brown fox\njumps"
                                 )),
                                 ExceptionFormatter.FAILED_COMMAND_UNEXPECTED_EXIT_CODE_MESSAGE
                         ),
                         Map.entry(
-                                augmenResultWithOutput(
+                                augmentResultWithOutput(
                                         CommandOutputControl.Result.build().create(),
                                         "The quick brown fox\njumps"
                                 ).unexpected("Timed out!"),
