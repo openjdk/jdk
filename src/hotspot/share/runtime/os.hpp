@@ -485,7 +485,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false, const char* err_msg = nullptr);
   static bool   release_memory(char* addr, size_t bytes);
 
   // Does the platform support trimming the native heap?
@@ -515,7 +515,7 @@ class os: AllStatic {
   static bool   unguard_memory(char* addr, size_t bytes);
   static bool   create_stack_guard_pages(char* addr, size_t bytes);
   static bool   pd_create_stack_guard_pages(char* addr, size_t bytes);
-  static bool   remove_stack_guard_pages(char* addr, size_t bytes);
+  static bool   remove_stack_guard_pages(char* addr, size_t bytes, const char* err_msg = nullptr);
   // Helper function to create a new file with template jvmheap.XXXXXX.
   // Returns a valid fd on success or else returns -1
   static int create_file_for_heap(const char* dir);
@@ -531,7 +531,7 @@ class os: AllStatic {
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, MemTag mem_tag, bool read_only = false,
                            bool allow_exec = false);
-  static bool   unmap_memory(char *addr, size_t bytes);
+  static bool   unmap_memory(char *addr, size_t bytes, const char* err_msg = nullptr);
   static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 

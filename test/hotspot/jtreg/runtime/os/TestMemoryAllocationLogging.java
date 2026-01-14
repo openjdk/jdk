@@ -157,7 +157,7 @@ public class TestMemoryAllocationLogging {
                 expectedLogs = new String[] {
                         /* Debug level log */
                         String.format("Reserved \\[0x.* - 0x.*\\), \\(%d bytes\\)", PAGE_SIZE),
-                        "Failed to uncommit \\[0x.* - 0x.*\\), \\(.* bytes\\)",
+                        "fatal error: Failed to uncommit \\[0x.* - 0x.*\\), \\(.* bytes\\).*",
                         /* Trace level log */
                         "mmap failed: \\[0x.* - 0x.*\\), \\(.* bytes\\) errno=\\(Invalid argument\\)"
                 };

@@ -99,9 +99,7 @@ static char* reserve_memory_inner(char* requested_address,
   }
 
   // Base not aligned, retry.
-  if (!os::release_memory(base, size)) {
-    fatal("os::release_memory failed");
-  }
+  os::release_memory(base, size);
 
   // Map using the requested alignment.
   return os::reserve_memory_aligned(size, alignment, mem_tag, exec);
@@ -266,9 +264,7 @@ static char* map_memory_to_file(char* requested_address,
 
 
   // Base not aligned, retry.
-  if (!os::unmap_memory(base, size)) {
-    fatal("os::unmap_memory failed");
-  }
+  os::unmap_memory(base, size);
 
   // Map using the requested alignment.
   return os::map_memory_to_file_aligned(size, alignment, fd, mem_tag);

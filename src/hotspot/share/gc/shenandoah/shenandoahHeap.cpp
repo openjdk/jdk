@@ -1768,12 +1768,7 @@ void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_sta
 
 void ShenandoahHeap::reclaim_aux_bitmap_for_iteration() {
   if (!_aux_bitmap_region_special) {
-    bool success = os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size());
-    if (!success) {
-      log_warning(gc)("Auxiliary marking bitmap uncommit failed: " PTR_FORMAT " (%zu bytes)",
-                      p2i(_aux_bitmap_region.start()), _aux_bitmap_region.byte_size());
-      assert(false, "Auxiliary marking bitmap uncommit should always succeed");
-    }
+    os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false, "Auxiliary marking bitmap uncommit failed");
   }
 }
 
@@ -2623,11 +2618,7 @@ void ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   size_t len = _bitmap_bytes_per_slice;
 
   char* addr = (char*) _bitmap_region.start() + off;
-  bool success = os::uncommit_memory(addr, len);
-  if (!success) {
-    log_warning(gc)("Bitmap slice uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(addr), len);
-    assert(false, "Bitmap slice uncommit should always succeed");
-  }
+  os::uncommit_memory(addr, len, false, "Bitmap slice uncommit failed");
 }
 
 void ShenandoahHeap::forbid_uncommit() {
