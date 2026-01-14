@@ -2340,10 +2340,7 @@ bool LibraryCallKit::inline_vector_convert() {
       // Halt-and-catch fire here. This condition should never happen at runtime.
       stringStream ss;
       ss.print("impossible combination: unsigned vector cast from %s", type2name(elem_bt_from));
-      HaltNode* halt = new HaltNode(control(), frameptr(), ss.as_string(C->comp_arena())
-                                                           PRODUCT_ONLY(COMMA /*reachable*/false));
-      _gvn.set_type_bottom(halt);
-      root()->add_req(halt);
+      halt(control(), frameptr(), ss.as_string(C->comp_arena()));
       stop_and_kill_map();
       log_if_needed("  ** impossible combination: unsigned cast from %s", type2name(elem_bt_from));
       return true;
