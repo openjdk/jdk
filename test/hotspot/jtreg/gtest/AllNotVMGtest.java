@@ -59,8 +59,6 @@ public class AllNotVMGtest {
         TF("LogOutputList.level_for"),
         // JDK-8372249
         TF("os_linux.addr_to_function_valid"),
-        // JDK-8372247
-        TF("Semaphore.trywait", Platform.isOSX()),
         // JDK-8372244
         TF("ZArrayTest.slice"),
         TF("ZNUMATest.calculate_share"),
