@@ -91,7 +91,7 @@ public class OldJTable extends JTable
 
         // Set up the model side first
         DefaultTableModel m = (DefaultTableModel)getModel();
-        m.addColumn(columnIdentifier, columnData.toArray());
+        m.addColumn(columnIdentifier, (columnData == null) ? null : columnData.toArray());
 
         // The column will have been added to the end, so the index of the
         // column in the model is the last element.
