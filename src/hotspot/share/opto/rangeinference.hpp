@@ -398,9 +398,9 @@ public:
       U<CTP> uhi = std::numeric_limits<U<CTP>>::max();
 
       // Reminder: st1 is a simple interval, which means:
-      // - (st1._lo < 0) == (st1._hi < 0)
-      // - st1._lo == st1._ulo
-      // - st1._hi == st1._uhi
+      // + (st1._lo < 0) == (st1._hi < 0)
+      // + st1._lo == st1._ulo
+      // + st1._hi == st1._uhi
       // The same is true for st2.
       // Consider unsigned values v1 and v2 satisfying st1 and st2, respectively.
       if ((st1._lo < S<CTP>(0)) == (st2._lo < S<CTP>(0))) {
@@ -409,14 +409,14 @@ public:
         //
         // If st1._lo >= 0 and st2._lo >= 0, and since st1._lo == st1._ulo, st1._hi == st1._uhi,
         // st2._lo == st2._ulo, st2._hi == st2._uhi, we have both:
-        // - 0 <= st1._ulo <= v1 <= st1._uhi <= 2^(n-1) - 1
-        // - 0 <= st2._ulo <= v2 <= st2._uhi <= 2^(n-1) - 1
+        // + 0 <= st1._ulo <= v1 <= st1._uhi <= 2^(n-1) - 1
+        // + 0 <= st2._ulo <= v2 <= st2._uhi <= 2^(n-1) - 1
         // Which means 0 <= st1._ulo + st2._ulo <= v1 + v2 <= st1._uhi + st2._uhi <= 2^n - 2, so
         // 0 <= (st1._ulo + st2._ulo) mod 2^n <= (v1 + v2) mod 2^n <= (st1._uhi + st2._uhi) mod 2^n
         //
         // Similarly, if st1._lo < 0 and st2._lo < 0, we have:
-        // - 2^(n-1) <= st1._ulo <= v1 <= st1._uhi <= 2^n - 1
-        // - 2^(n-1) <= st2._ulo <= v2 <= st2._uhi <= 2^n - 1
+        // + 2^(n-1) <= st1._ulo <= v1 <= st1._uhi <= 2^n - 1
+        // + 2^(n-1) <= st2._ulo <= v2 <= st2._uhi <= 2^n - 1
         // Which means 2^n <= st1._ulo + st2._ulo <= v1 + v2 <= st1._uhi + st2._uhi <= 2^n + 2^n - 2
         // For all value x such that 2^n <= x <= 2^n + 2^n - 1, we have x mod 2^n == x - 2^n. So:
         // 0 <= (st1._ulo + st2._ulo) mod 2^n <= (v1 + v2) mod 2^n <= (st1._uhi + st2._uhi) mod 2^n
@@ -487,13 +487,13 @@ public:
       //
       // Since st1._bits._ones[i], st2._bits._ones[i], min_carry[i] can only be 0 or 1,
       // min_bit >= 2 if and only if either:
-      // - st1._bits._ones[i] == st2._bits._ones[i] == 1
-      // - (st1._bits._ones[i] == 1 || st2._bits._ones[i] == 1) && ((min_bit & 1) == 0)
+      // + st1._bits._ones[i] == st2._bits._ones[i] == 1
+      // + (st1._bits._ones[i] != st2._bits._ones[i]) && ((min_bit & 1) == 0)
       //
       // In other words:
       // min_carry[i - 1] == 1 iff either:
-      // - (st1._bits._ones[i] & st2._bits._ones[i]) == 1
-      // - ((st1._bits._ones[i] | st2._bits._ones[i]) & (~tmp[i])) == 1
+      // + (st1._bits._ones[i] & st2._bits._ones[i]) == 1
+      // + ((st1._bits._ones[i] | st2._bits._ones[i]) & (~tmp[i])) == 1
       //
       // As a result, we can calculate min_carry:
       // min_carry = ((st1._bits._ones & st2._bits._ones) | ((st1._bits._ones | st2._bits._ones) & (~(st1._bits._ones + st2._bits._ones)))) << 1
@@ -560,13 +560,13 @@ public:
       //
       // Since st1._bits._ones[i], (~st2._bits._ones)[i], max_carry[i] can only be 0 or 1,
       // min_bit < 0 if and only if either:
-      // - st1._bits._ones[i] == 0 && (~st2._bits._zeros)[i] == 1
-      // - st1._bits._ones[i] == (~st2._bits._zeros)[i] && ((min_bit & 1) == 1)
+      // + st1._bits._ones[i] == 0 && (~st2._bits._zeros)[i] == 1
+      // + st1._bits._ones[i] == (~st2._bits._zeros)[i] && ((min_bit & 1) == 1)
       //
       // In other words:
       // max_carry[i - 1] == 1 iff either:
-      // - ((~st1._bits._ones)[i] | (~st2._bits._zeros)[i]) == 1
-      // - ((st1._bits._ones[i] ^ st2._bits._zeros[i]) & tmp[i]) == 1
+      // + ((~st1._bits._ones)[i] | (~st2._bits._zeros)[i]) == 1
+      // + ((st1._bits._ones[i] ^ st2._bits._zeros[i]) & tmp[i]) == 1
       U<CTP> max_carry = ((~st1._bits._ones & ~st2._bits._zeros) |
                           ((st1._bits._ones ^ st2._bits._zeros) & (st1._bits._ones - (~st2._bits._zeros))));
       max_carry = max_carry << 1;
