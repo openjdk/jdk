@@ -2130,29 +2130,18 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 // counter updates are not atomic.
 //
 void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+  assert_different_registers(recv, mdp, rscratch1, rscratch2);
+
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
   int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
   int poly_count_offset      = in_bytes(CounterData::count_offset());
   int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
   int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
 
-  // Adjust for MDP offsets. Slots are pointer-sized, so is the global offset.
-  assert(is_aligned(mdp_offset, BytesPerWord), "sanity");
+  // Adjust for MDP offsets.
   base_receiver_offset += mdp_offset;
   end_receiver_offset  += mdp_offset;
   poly_count_offset    += mdp_offset;
-
-  // Scale down to optimize encoding. Slots are pointer-sized.
-  assert(is_aligned(base_receiver_offset,   BytesPerWord), "sanity");
-  assert(is_aligned(end_receiver_offset,    BytesPerWord), "sanity");
-  assert(is_aligned(poly_count_offset,      BytesPerWord), "sanity");
-  assert(is_aligned(receiver_step,          BytesPerWord), "sanity");
-  assert(is_aligned(receiver_to_count_step, BytesPerWord), "sanity");
-  base_receiver_offset   >>= LogBytesPerWord;
-  end_receiver_offset    >>= LogBytesPerWord;
-  poly_count_offset      >>= LogBytesPerWord;
-  receiver_step          >>= LogBytesPerWord;
-  receiver_to_count_step >>= LogBytesPerWord;
 
 #ifdef ASSERT
   // We are about to walk the MDO slots without asking for offsets.
@@ -2162,18 +2151,18 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
     int offset = base_receiver_offset + receiver_step*c;
     int count_offset = offset + receiver_to_count_step;
-    assert((offset << LogBytesPerWord) == real_recv_offset, "receiver slot math");
-    assert((count_offset << LogBytesPerWord) == real_count_offset, "receiver count math");
+    assert(offset == real_recv_offset, "receiver slot math");
+    assert(count_offset == real_count_offset, "receiver count math");
   }
   int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
-  assert(poly_count_offset << LogBytesPerWord == real_poly_count_offset, "poly counter math");
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
 #endif
 
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
-    ldr(rscratch1, Address(mdp, poly_count_offset, Address::lsl(LogBytesPerWord)));
+    ldr(rscratch1, Address(mdp, poly_count_offset));
     add(rscratch1, rscratch1, DataLayout::counter_increment);
-    str(rscratch1, Address(mdp, poly_count_offset, Address::lsl(LogBytesPerWord)));
+    str(rscratch1, Address(mdp, poly_count_offset));
     return;
   }
 
@@ -2234,21 +2223,23 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // Fastest: receiver is already installed
   mov(offset, base_receiver_offset);
   bind(L_loop_search_receiver);
-    ldr(rscratch2, Address(mdp, offset, Address::lsl(LogBytesPerWord)));
+    ldr(rscratch2, Address(mdp, offset));
     cmp(rscratch2, recv);
     br(Assembler::EQ, L_found_recv);
   add(offset, offset, receiver_step);
-  cmpw(offset, end_receiver_offset);
+  mov(rscratch2, end_receiver_offset);
+  cmp(offset, rscratch2);
   br(Assembler::NE, L_loop_search_receiver);
 
   // Fast: no receiver, but profile is full
   mov(offset, base_receiver_offset);
   bind(L_loop_search_empty);
-    ldr(rscratch2, Address(mdp, offset, Address::lsl(LogBytesPerWord)));
+    ldr(rscratch2, Address(mdp, offset));
     cmp(rscratch2, (u1)NULL_WORD);
     br(Assembler::EQ, L_found_empty);
   add(offset, offset, receiver_step);
-  cmpw(offset, end_receiver_offset);
+  mov(rscratch2, end_receiver_offset);
+  cmp(offset, rscratch2);
   br(Assembler::NE, L_loop_search_empty);
   b(L_polymorphic);
 
@@ -2260,7 +2251,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // The update code uses CAS, which clobbers rscratch1. However we
   // will no longer need this value so we do not need to save it.
 
-  lea(rscratch2, Address(mdp, offset, Address::lsl(LogBytesPerWord)));
+  lea(rscratch2, Address(mdp, offset));
   cmpxchg(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword,
           /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
 
@@ -2282,9 +2273,9 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add(offset, offset, receiver_to_count_step);
 
   bind(L_count_update);
-  ldr(rscratch2, Address(mdp, offset, Address::lsl(LogBytesPerWord)));
+  ldr(rscratch2, Address(mdp, offset));
   add(rscratch2, offset, DataLayout::counter_increment);
-  str(rscratch2, Address(mdp, offset, Address::lsl(LogBytesPerWord)));
+  str(rscratch2, Address(mdp, offset));
 }
 
 
