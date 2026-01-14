@@ -155,16 +155,19 @@ public class BadProvidersTest {
     public void testBadFactory(String testName, String ignore) throws Exception {
         Assertions.assertThrows(ServiceConfigurationError.class, () -> {
             Path mods = compileTest(TEST1_MODULE);
+
             // compile the bad factory
             Path source = BADFACTORIES_DIR.resolve(testName);
             Path output = Files.createTempDirectory(USER_DIR, "tmp");
             boolean compiled = CompilerUtils.compile(source, output);
             assertTrue(compiled);
+
             // copy the compiled class into the module
             Path classFile = Paths.get("p", "ProviderFactory.class");
             Files.copy(output.resolve(classFile),
                     mods.resolve(TEST1_MODULE).resolve(classFile),
                     StandardCopyOption.REPLACE_EXISTING);
+
             // load providers and instantiate each one
             loadProviders(mods, TEST1_MODULE).forEach(Provider::get);
         });
@@ -186,16 +189,19 @@ public class BadProvidersTest {
     public void testBadProvider(String testName, String ignore) throws Exception {
         Assertions.assertThrows(ServiceConfigurationError.class, () -> {
             Path mods = compileTest(TEST2_MODULE);
+
             // compile the bad provider
             Path source = BADPROVIDERS_DIR.resolve(testName);
             Path output = Files.createTempDirectory(USER_DIR, "tmp");
             boolean compiled = CompilerUtils.compile(source, output);
             assertTrue(compiled);
+
             // copy the compiled class into the module
             Path classFile = Paths.get("p", "Provider.class");
             Files.copy(output.resolve(classFile),
                     mods.resolve(TEST2_MODULE).resolve(classFile),
                     StandardCopyOption.REPLACE_EXISTING);
+
             // load providers and instantiate each one
             loadProviders(mods, TEST2_MODULE).forEach(Provider::get);
         });
