@@ -34,8 +34,7 @@ import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.gc.GC;
 
 /* @test
- * @summary Test that GC is either completing well, or fail with JNI check error
- *          when GC is requested when current thread is in JNI critical region
+ * @summary Test that we are catching bugs when leaving JNI critical region into unsafe code
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox gc.jni.JNICriticalSupport
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -48,27 +47,27 @@ public class TestGCInJNICritical {
 
     public static void main(String[] args) throws Throwable {
         if (GC.Epsilon.isSupported()) {
-            // Supports JNI Critical by not moving anything
+            // Supports JNI Critical by not moving anything and never tracking thread status
             shouldPass("-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC");
         }
         if (GC.G1.isSupported()) {
-            // Supports JNI Critical by pinning regions (JEP 423)
+            // Supports JNI Critical by pinning regions (JEP 423) and never tracking thread status
             shouldPass("-XX:+UseG1GC");
         }
         if (GC.Parallel.isSupported()) {
-            // Supports JNI Critical with GCLocker, can deadlock
+            // Supports JNI Critical with GCLocker, tracks thread status
             shouldFailCheck("-XX:+UseParallelGC");
         }
         if (GC.Serial.isSupported()) {
-            // Supports JNI Critical with GCLocker, can deadlock
+            // Supports JNI Critical with GCLocker, tracks thread status
             shouldFailCheck("-XX:+UseSerialGC");
         }
         if (GC.Shenandoah.isSupported()) {
-            // Supports JNI Critical by pinning regions
+            // Supports JNI Critical by pinning regions, and never tracking thread status
             shouldPass("-XX:+UseShenandoahGC");
         }
         if (GC.Z.isSupported()) {
-            // Supports JNI Critical by GCLocker-like mechanism, can deadlock
+            // Supports JNI Critical by GCLocker-like mechanism, tracks thread status
             shouldFailCheck("-XX:+UseZGC");
         }
     }
@@ -86,7 +85,7 @@ public class TestGCInJNICritical {
     public static void shouldFailCheck(String... gcArgs) throws Throwable {
         OutputAnalyzer oa = runWith(gcArgs);
         oa.shouldNotHaveExitValue(0);
-        oa.stdoutShouldContain("Deadlock due to GC while in JNI critical section");
+        oa.stdoutShouldContain("Leaving native code while in JNI critical section, potential deadlock");
     }
 
     public static void shouldPass(String... gcArgs) throws Throwable {
@@ -100,6 +99,8 @@ public class TestGCInJNICritical {
         public static void main(String[] args) {
             int[] cog = new int[10];
             JNICriticalSupport.get(cog);
+            // Do anything that could trigger a safepoint while we are in JNI critical section, really.
+            // Asking for GC also shows the opportunity to deadlock with GCLocker.
             System.gc();
             JNICriticalSupport.release(cog);
         }
