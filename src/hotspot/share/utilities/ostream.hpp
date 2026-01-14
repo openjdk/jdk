@@ -286,7 +286,7 @@ class stringStream : public outputStream {
   // Copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
   char* as_string(Arena* arena) const;
-  bool is_buffered() const override { return true; }
+  bool is_buffered() const { return true; }
 };
 
 class fileStream : public outputStream {
