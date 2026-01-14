@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,29 @@
 
 package jdk.jpackage.internal.model;
 
+import java.util.List;
 import java.util.Objects;
+import jdk.jpackage.internal.util.CommandOutputControl.ExecutableAttributes;
+import jdk.jpackage.internal.util.CommandOutputControl.Result;
 
 /**
- * Generic jpackage exception with non-null message.
+ * {@link ExecutableAttributes} augmented with printable command output.
  */
-@SelfContainedException
-public class JPackageException extends RuntimeException {
+public record ExecutableAttributesWithCapturedOutput(ExecutableAttributes execAttrs, String printableOutput)
+        implements ExecutableAttributes {
 
-    public JPackageException(String msg) {
-        super(Objects.requireNonNull(msg));
+    public ExecutableAttributesWithCapturedOutput {
+        Objects.requireNonNull(execAttrs);
+        Objects.requireNonNull(printableOutput);
     }
 
-    public JPackageException(String msg, Throwable cause) {
-        super(Objects.requireNonNull(msg), cause);
+    @Override
+    public List<String> commandLine() {
+        return execAttrs.commandLine();
     }
 
-    private static final long serialVersionUID = 1L;
+    public static Result augmentResultWithOutput(Result result, String output) {
+        var execAttrs = new ExecutableAttributesWithCapturedOutput(result.execAttrs(), output);
+        return result.copyWithExecutableAttributes(execAttrs);
+    }
 }
