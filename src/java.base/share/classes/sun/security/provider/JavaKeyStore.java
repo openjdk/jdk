@@ -237,14 +237,14 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-        final Instant instant = this.engineGetCreationTimestamp(alias);
+        final Instant instant = this.engineGetCreationInstant(alias);
         return instant == null ? null : Date.from(instant);
     }
 
 
 
     /**
-     * Returns the creation timestamp as an {@code Instant} value
+     * Returns the creation {@code Instant} value
      * of the entry identified by the given alias.
      *
      * @param alias the alias name
@@ -254,7 +254,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
      *
      * @since 27
      */
-    public Instant engineGetCreationTimestamp(String alias) {
+    public Instant engineGetCreationInstant(String alias) {
         final Object entry = entries.get(convertAlias(alias));
 
         if (entry != null) {

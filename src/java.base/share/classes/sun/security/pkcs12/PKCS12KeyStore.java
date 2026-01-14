@@ -542,7 +542,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-        final Instant instant = this.engineGetCreationTimestamp(alias);
+        final Instant instant = this.engineGetCreationInstant(alias);
         if (instant == null){
             return null;
         }
@@ -550,7 +550,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /**
-     * Returns the creation timestamp as an {@code Instant} value
+     * Returns the creation {@code Instant} value
      * of the entry identified by the given alias.
      *
      * @param alias the alias name
@@ -560,7 +560,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      *
      * @since 27
      */
-    public Instant engineGetCreationTimestamp(String alias) {
+    public Instant engineGetCreationInstant(String alias) {
         final Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (entry != null) {
             return entry.date;

@@ -236,7 +236,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
     }
 
     /**
-     * Returns the creation timestamp as an {@code Instant} value
+     * Returns the creation {@code Instant} value
      * of the entry identified by the given alias.
      *
      * @param alias the alias name
@@ -246,7 +246,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
      *
      * @since 27
      */
-    public Instant engineGetCreationTimestamp(String alias) {
+    public Instant engineGetCreationInstant(String alias) {
 
         AbstractMap.SimpleEntry<String, Collection<KeyStore>> pair =
             getKeystoresForReading(alias);
@@ -255,7 +255,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
         try {
             String entryAlias = pair.getKey();
             for (KeyStore keystore : pair.getValue()) {
-                instant = keystore.getCreationTimestamp(entryAlias);
+                instant = keystore.getCreationInstant(entryAlias);
                 if (instant != null) {
                     break;
                 }

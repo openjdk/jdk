@@ -182,7 +182,7 @@ public class TestKeyStoreBasic {
 
         // compare the creation date of the 2 key stores for all aliases
         compareCreationDate(ks, ks2, numEntries);
-        compareCreationTimestamp(ks, ks2, numEntries);
+        compareCreationInstant(ks, ks2, numEntries);
 
         // remove the last entry from the 2nd key store
         numEntries--;
@@ -220,7 +220,7 @@ public class TestKeyStoreBasic {
 
         // compare the creation date of the 2 key stores for all aliases
         compareCreationDate(ks, ks2, numEntries);
-        compareCreationTimestamp(ks, ks2, numEntries);
+        compareCreationInstant(ks, ks2, numEntries);
 
         // check setEntry/getEntry with a password protection algorithm
         if ("PKCS12".equalsIgnoreCase(ks.getType())) {
@@ -292,22 +292,22 @@ public class TestKeyStoreBasic {
         }
     }
 
-    // compare the creation timestamps - true if all the same
-    private void compareCreationTimestamp(KeyStore o1, KeyStore o2, int range)
+    // compare the creation instants - true if all the same
+    private void compareCreationInstant(KeyStore o1, KeyStore o2, int range)
             throws KeyStoreException {
         String alias;
         for (int k = 0; k < range; k++) {
             alias = ALIAS_HEAD + k;
-            final Instant timestampO1 = o1.getCreationTimestamp(alias);
-            final Instant timestampO2 = o2.getCreationTimestamp(alias);
-            final int diff = timestampO1.compareTo(timestampO2);
+            final Instant instant1 = o1.getCreationInstant(alias);
+            final Instant instant2 = o2.getCreationInstant(alias);
+            final int diff = instant1.compareTo(instant2);
             // There could be a difference in nano seconds on some machines
             // so comparing with precision of 1 ms
             if (!(diff >= 0 && diff <= 1000000)) {
                 throw new RuntimeException("ERROR: entry creation time (" + k
-                                           + ") differs using Instance {"
-                                           + timestampO1 + " - "
-                                           + timestampO2 + "}");
+                                           + ") differs Instants {"
+                                           + instant1 + " - "
+                                           + instant2 + "}");
             }
         }
     }

@@ -1185,7 +1185,7 @@ public class KeyStore {
      * Returns the creation date of the entry identified by the given alias.
      * <p>
      * This method returns a Date, which is mutable and more error-prone.
-     * Use getCreationTimestamp() instead.
+     * Use {@link #getCreationInstant(String)} instead.
      *
      * @param alias the alias name
      *
@@ -1206,7 +1206,7 @@ public class KeyStore {
 
 
     /**
-     * Returns the creation timestamp as an {@code Instant} value
+     * Returns the creation {@code Instant} value
      * of the entry identified by the given alias.
      *
      * @param alias the alias name
@@ -1219,13 +1219,13 @@ public class KeyStore {
      *
      * @since 27
      */
-    public final Instant getCreationTimestamp(String alias)
+    public final Instant getCreationInstant(String alias)
             throws KeyStoreException
     {
         if (!initialized) {
             throw new KeyStoreException("Uninitialized keystore");
         }
-        return keyStoreSpi.engineGetCreationTimestamp(alias);
+        return keyStoreSpi.engineGetCreationInstant(alias);
     }
 
 

@@ -406,7 +406,7 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-        final Instant instant = this.engineGetCreationTimestamp(alias);
+        final Instant instant = this.engineGetCreationInstant(alias);
         if (instant == null){
             return null;
         }
@@ -424,7 +424,7 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      *
      * @since 27
      */
-    public Instant engineGetCreationTimestamp(String alias) {
+    public Instant engineGetCreationInstant(String alias) {
         final Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (entry != null) {
