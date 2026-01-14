@@ -2046,14 +2046,14 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
     if (b->is_Phi()) {
       _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
-      assert(b->is_Bool() || b->is_OpaqueNotNull() || b->is_OpaqueInitializedAssertionPredicate(),
+      assert(b->is_Bool() || b->is_OpaqueNotNull() || b->is_OpaqueGuard() || b->is_OpaqueInitializedAssertionPredicate(),
              "bool, non-null check with OpaqueNotNull or Initialized Assertion Predicate with its Opaque node");
     }
   }
   Node* n = phi->in(1);
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
-  if (n->is_OpaqueNotNull() || n->is_OpaqueInitializedAssertionPredicate()) {
+  if (n->is_OpaqueNotNull() || n->is_OpaqueInitializedAssertionPredicate() || n->is_OpaqueGuard()) {
     sample_opaque = n;
     sample_bool = n->in(1);
     assert(sample_bool->is_Bool(), "wrong type");
