@@ -243,7 +243,11 @@ public abstract class HtmlDocletWriter {
         if (generating) {
             writeGenerating();
         }
+        CURRENT_PATH.set(path.getPath());
     }
+
+    /** Temporary workaround to share current path with taglets, see 8373909 */
+    public static final ThreadLocal<String> CURRENT_PATH = new ThreadLocal<>();
 
     /**
      * The top-level method to generate and write the page represented by this writer.
@@ -908,12 +912,13 @@ public abstract class HtmlDocletWriter {
      * @param refMemName the name of the member being referenced.  This should
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
+     * @param title the title for the link
      * @param style optional style for the link.
      * @param code true if the label should be code font.
      * @return the link
      */
     public Content getCrossClassLink(TypeElement classElement, String refMemName,
-                                     Content label, HtmlStyle style, boolean code) {
+                                     Content label, String title, HtmlStyle style, boolean code) {
         if (classElement != null) {
             String className = utils.getSimpleName(classElement);
             PackageElement packageElement = utils.containingPackage(classElement);
@@ -931,9 +936,7 @@ public abstract class HtmlDocletWriter {
                 DocLink link = configuration.extern.getExternalLink(packageElement, pathToRoot,
                                 className + ".html", refMemName);
                 return links.createLink(link,
-                    (label == null) || label.isEmpty() ? defaultLabel : label, style,
-                    resources.getText("doclet.Href_Class_Or_Interface_Title",
-                        getLocalizedPackageName(packageElement)), true);
+                    (label == null) || label.isEmpty() ? defaultLabel : label, style, title, true);
             }
         }
         return null;

@@ -1076,8 +1076,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
 
       // Prepare register mask for each input
       for( uint k = input_edge_start; k < cnt; k++ ) {
-        uint vreg = _lrg_map.live_range_id(n->in(k));
-        if (!vreg) {
+        uint vreg_in = _lrg_map.live_range_id(n->in(k));
+        if (!vreg_in) {
           continue;
         }
 
@@ -1099,7 +1099,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           if (k >= cur_node->num_opnds()) continue;
         }
 
-        LRG &lrg = lrgs(vreg);
+        LRG &lrg_in = lrgs(vreg_in);
         // // Testing for floating point code shape
         // Node *test = n->in(k);
         // if( test->is_Mach() ) {
@@ -1114,25 +1114,25 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // Do not limit registers from uncommon uses before
         // AggressiveCoalesce.  This effectively pre-virtual-splits
         // around uncommon uses of common defs.
-        const RegMask &rm = n->in_RegMask(k);
+        const RegMask &rm_in = n->in_RegMask(k);
         if (!after_aggressive && _cfg.get_block_for_node(n->in(k))->_freq > 1000 * block->_freq) {
           // Since we are BEFORE aggressive coalesce, leave the register
           // mask untrimmed by the call.  This encourages more coalescing.
           // Later, AFTER aggressive, this live range will have to spill
           // but the spiller handles slow-path calls very nicely.
         } else {
-          lrg.and_with(rm);
+          lrg_in.and_with(rm_in);
         }
 
         // Check for bound register masks
-        const RegMask &lrgmask = lrg.mask();
+        const RegMask &lrgmask_in = lrg_in.mask();
         uint kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
         assert(n->in(k)->bottom_type()->isa_vect() == nullptr || is_vect ||
                kreg == Op_RegD || kreg == Op_RegL || kreg == Op_RegVectMask,
                "vector must be in vector registers");
-        if (lrgmask.is_bound(kreg))
-          lrg._is_bound = 1;
+        if (lrgmask_in.is_bound(kreg))
+          lrg_in._is_bound = 1;
 
         // If this use of a double forces a mis-aligned double,
         // flag as '_fat_proj' - really flag as allowing misalignment
@@ -1141,30 +1141,30 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // FOUR registers!
 #ifdef ASSERT
         if (is_vect && !_scheduling_info_generated) {
-          if (lrg.num_regs() != 0) {
-            assert(lrgmask.is_aligned_sets(lrg.num_regs()), "vector should be aligned");
-            assert(!lrg._fat_proj, "sanity");
-            assert(RegMask::num_registers(kreg) == lrg.num_regs(), "sanity");
+          if (lrg_in.num_regs() != 0) {
+            assert(lrgmask_in.is_aligned_sets(lrg_in.num_regs()), "vector should be aligned");
+            assert(!lrg_in._fat_proj, "sanity");
+            assert(RegMask::num_registers(kreg) == lrg_in.num_regs(), "sanity");
           } else {
             assert(n->is_Phi(), "not all inputs processed only if Phi");
           }
         }
 #endif
-        if (!is_vect && lrg.num_regs() == 2 && !lrg._fat_proj && rm.is_misaligned_pair()) {
-          lrg._fat_proj = 1;
-          lrg._is_bound = 1;
+        if (!is_vect && lrg_in.num_regs() == 2 && !lrg_in._fat_proj && rm_in.is_misaligned_pair()) {
+          lrg_in._fat_proj = 1;
+          lrg_in._is_bound = 1;
         }
         // if the LRG is an unaligned pair, we will have to spill
         // so clear the LRG's register mask if it is not already spilled
         if (!is_vect && !n->is_SpillCopy() &&
-            (lrg._def == nullptr || lrg.is_multidef() || !lrg._def->is_SpillCopy()) &&
-            lrgmask.is_misaligned_pair()) {
-          lrg.clear();
+            (lrg_in._def == nullptr || lrg_in.is_multidef() || !lrg_in._def->is_SpillCopy()) &&
+            lrgmask_in.is_misaligned_pair()) {
+          lrg_in.clear();
         }
 
         // Check for maximum frequency value
-        if (lrg._maxfreq < block->_freq) {
-          lrg._maxfreq = block->_freq;
+        if (lrg_in._maxfreq < block->_freq) {
+          lrg_in._maxfreq = block->_freq;
         }
 
       } // End for all allocated inputs
@@ -1471,6 +1471,65 @@ static OptoReg::Name find_first_set(LRG& lrg, RegMask& mask) {
   return assigned;
 }
 
+OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG& lrg) {
+  uint bias_lrg1_idx = _lrg_map.find(lrg._copy_bias);
+  uint bias_lrg2_idx = _lrg_map.find(lrg._copy_bias2);
+
+  // If bias_lrg1 has a color
+  if (bias_lrg1_idx != 0 && !_ifg->_yanked->test(bias_lrg1_idx)) {
+    OptoReg::Name reg = lrgs(bias_lrg1_idx).reg();
+    //  and it is legal for lrg
+    if (is_legal_reg(lrg, reg)) {
+      return reg;
+    }
+  }
+
+  // If bias_lrg2 has a color
+  if (bias_lrg2_idx != 0 && !_ifg->_yanked->test(bias_lrg2_idx)) {
+    OptoReg::Name reg = lrgs(bias_lrg2_idx).reg();
+    //  and it is legal for lrg
+    if (is_legal_reg(lrg, reg)) {
+      return reg;
+    }
+  }
+
+  uint bias_lrg_idx = 0;
+  if (bias_lrg1_idx != 0 && bias_lrg2_idx != 0) {
+    // Since none of the bias live ranges are part of the IFG yet, constrain the
+    // definition mask with the bias live range with the least degrees of
+    // freedom. This will increase the chances of register sharing once the bias
+    // live range becomes part of the IFG.
+    lrgs(bias_lrg1_idx).compute_set_mask_size();
+    lrgs(bias_lrg2_idx).compute_set_mask_size();
+    bias_lrg_idx = lrgs(bias_lrg1_idx).degrees_of_freedom() >
+                           lrgs(bias_lrg2_idx).degrees_of_freedom()
+                       ? bias_lrg2_idx
+                       : bias_lrg1_idx;
+  } else if (bias_lrg1_idx != 0) {
+    bias_lrg_idx = bias_lrg1_idx;
+  } else if (bias_lrg2_idx != 0) {
+    bias_lrg_idx = bias_lrg2_idx;
+  }
+
+  // Register masks with offset excludes all mask bits before the offset.
+  // Such masks are mainly used for allocation from stack slots. Constrain the
+  // register mask of definition live range using bias mask only if
+  // both masks have zero offset.
+  if (bias_lrg_idx != 0 && !lrg.mask().is_offset() &&
+      !lrgs(bias_lrg_idx).mask().is_offset()) {
+    // Choose a color which is legal for bias_lrg
+    ResourceMark rm(C->regmask_arena());
+    RegMask tempmask(lrg.mask(), C->regmask_arena());
+    tempmask.and_with(lrgs(bias_lrg_idx).mask());
+    tempmask.clear_to_sets(lrg.num_regs());
+    OptoReg::Name reg = find_first_set(lrg, tempmask);
+    if (OptoReg::is_valid(reg)) {
+      return reg;
+    }
+  }
+  return OptoReg::Bad;
+}
+
 // Choose a color using the biasing heuristic
 OptoReg::Name PhaseChaitin::bias_color(LRG& lrg) {
 
@@ -1492,25 +1551,10 @@ OptoReg::Name PhaseChaitin::bias_color(LRG& lrg) {
     }
   }
 
-  uint copy_lrg = _lrg_map.find(lrg._copy_bias);
-  if (copy_lrg != 0) {
-    // If he has a color,
-    if(!_ifg->_yanked->test(copy_lrg)) {
-      OptoReg::Name reg = lrgs(copy_lrg).reg();
-      //  And it is legal for you,
-      if (is_legal_reg(lrg, reg)) {
-        return reg;
-      }
-    } else if (!lrg.mask().is_offset()) {
-      // Choose a color which is legal for him
-      ResourceMark rm(C->regmask_arena());
-      RegMask tempmask(lrg.mask(), C->regmask_arena());
-      tempmask.and_with(lrgs(copy_lrg).mask());
-      tempmask.clear_to_sets(lrg.num_regs());
-      OptoReg::Name reg = find_first_set(lrg, tempmask);
-      if (OptoReg::is_valid(reg))
-        return reg;
-    }
+  // Try biasing the color with non-interfering bias live range[s].
+  OptoReg::Name reg = select_bias_lrg_color(lrg);
+  if (OptoReg::is_valid(reg)) {
+    return reg;
   }
 
   // If no bias info exists, just go with the register selection ordering
@@ -1524,7 +1568,7 @@ OptoReg::Name PhaseChaitin::bias_color(LRG& lrg) {
   // CNC - Fun hack.  Alternate 1st and 2nd selection.  Enables post-allocate
   // copy removal to remove many more copies, by preventing a just-assigned
   // register from being repeatedly assigned.
-  OptoReg::Name reg = lrg.mask().find_first_elem();
+  reg = lrg.mask().find_first_elem();
   if( (++_alternate & 1) && OptoReg::is_valid(reg) ) {
     // This 'Remove; find; Insert' idiom is an expensive way to find the
     // SECOND element in the mask.
@@ -1640,6 +1684,27 @@ uint PhaseChaitin::Select( ) {
         }
       }
     }
+
+    Node* def = lrg->_def;
+    if (lrg->is_singledef() && !lrg->_is_bound && def->is_Mach()) {
+      MachNode* mdef = def->as_Mach();
+      if (Matcher::is_register_biasing_candidate(mdef, 1)) {
+        Node* in1 = mdef->in(mdef->operand_index(1));
+        if (in1 != nullptr && lrg->_copy_bias == 0) {
+          lrg->_copy_bias = _lrg_map.find(in1);
+        }
+      }
+
+      // For commutative operations, def allocation can also be
+      // biased towards LRG of second input's def.
+      if (Matcher::is_register_biasing_candidate(mdef, 2)) {
+        Node* in2 = mdef->in(mdef->operand_index(2));
+        if (in2 != nullptr && lrg->_copy_bias2 == 0) {
+          lrg->_copy_bias2 = _lrg_map.find(in2);
+        }
+      }
+    }
+
     //assert(is_infinite_stack == lrg->mask().is_infinite_stack(), "nbrs must not change InfiniteStackedness");
     // Aligned pairs need aligned masks
     assert(!lrg->_is_vector || !lrg->_fat_proj, "sanity");

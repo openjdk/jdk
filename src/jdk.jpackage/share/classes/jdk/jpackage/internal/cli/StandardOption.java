@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_NATIVE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.fromOptionName;
 import static jdk.jpackage.internal.cli.StandardOptionContext.createOptionSpecBuilderMutator;
-import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITHOUT_CONTEXT;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITH_VALUE;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITH_VALUE_AND_OPTION_NAME;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.forMessageWithOptionValueAndName;
@@ -56,11 +55,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.AppImageBundleType;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.SetBuilder;
 
 /**
@@ -104,18 +106,18 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> VERBOSE = auxilaryOption("verbose").create();
 
-    public static final OptionValue<PackageType> TYPE = option("type", PackageType.class).addAliases("t")
+    public static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)
             .converterExceptionFactory(ERROR_WITH_VALUE).converterExceptionFormatString("ERR_InvalidInstallerType")
             .converter(str -> {
-                Objects.requireNonNull(str);
-                return Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
-                    return bundlingOperation.packageTypeValue().equals(str);
-                }).map(StandardBundlingOperation::packageType).findFirst().orElseThrow(IllegalArgumentException::new);
+                return parseBundleType(str, OperatingSystem.current());
             })
             .description("help.option.type" + resourceKeySuffix(OperatingSystem.current()))
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 b.description("help.option.type" + resourceKeySuffix(context.os()));
+                b.converter(str -> {
+                    return parseBundleType(str, context.os());
+                });
             })).create();
 
     public static final OptionValue<Path> INPUT = directoryOption("input").addAliases("i")
@@ -177,10 +179,7 @@ public final class StandardOption {
 
     public static final OptionValue<String> COPYRIGHT = stringOption("copyright").valuePattern("copyright string").create();
 
-    public static final OptionValue<Path> LICENSE_FILE = fileOption("license-file")
-            .validatorExceptionFormatString("ERR_LicenseFileNotExit")
-            .validatorExceptionFactory(ERROR_WITHOUT_CONTEXT)
-            .create();
+    public static final OptionValue<Path> LICENSE_FILE = fileOption("license-file").create();
 
     public static final OptionValue<String> APP_VERSION = stringOption("app-version").create();
 
@@ -216,12 +215,10 @@ public final class StandardOption {
             .validatorExceptionFactory((optionName, optionValue, formatString, cause) -> {
                 if (cause.orElseThrow() instanceof StandardValidator.DirectoryListingIOException) {
                     formatString = "error.path-parameter-ioexception";
-                    return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName, optionValue, formatString, cause);
-                } else {
-                    return ERROR_WITH_VALUE.create(optionName, optionValue, formatString, cause);
                 }
+                return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName, optionValue, formatString, cause);
             })
-            .validatorExceptionFormatString("ERR_BuildRootInvalid")
+            .validatorExceptionFormatString("error.parameter-not-empty-directory")
             .validator(StandardValidator.IS_DIRECTORY_EMPTY_OR_NON_EXISTENT)
             .create();
 
@@ -236,11 +233,15 @@ public final class StandardOption {
 
     public static final OptionValue<Path> PREDEFINED_APP_IMAGE = directoryOption("app-image")
             .scope(CREATE_NATIVE).inScope(SIGN_MAC_APP_IMAGE).inScope(BundlingOperationModifier.BUNDLE_PREDEFINED_APP_IMAGE)
-            .validatorExceptionFactory(ERROR_WITH_VALUE)
-            .validatorExceptionFormatString("ERR_AppImageNotExist")
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.MACOS) {
                     b.description("help.option.app-image" + resourceKeySuffix(context.os()));
+                    var directoryValidator = b.createValidator().orElseThrow();
+                    var macBundleValidator = b
+                            .validatorExceptionFormatString("error.parameter-not-mac-bundle")
+                            .validator(StandardValidator.IS_VALID_MAC_BUNDLE)
+                            .createValidator().orElseThrow();
+                    b.validator(Validator.and(directoryValidator, macBundleValidator));
                 }
             }))
             .create();
@@ -538,7 +539,7 @@ public final class StandardOption {
                 });
             }))
             .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-            .converterExceptionFormatString("error.invalid-option-value")
+            .converterExceptionFormatString("error.parameter-not-launcher-shortcut-dir")
             .converter(mainLauncherShortcutConv())
             .defaultOptionalValue(new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT))
             .valuePattern("shortcut startup directory");
@@ -551,7 +552,7 @@ public final class StandardOption {
                 .description("help.option." + name)
                 .scope(fromOptionName(name))
                 .scope(scope -> {
-                    return SetBuilder.build(OptionScope.class)
+                    return SetBuilder.<OptionScope>build()
                             .add(scope)
                             .add(BundlingOperationModifier.values())
                             .create();
@@ -637,8 +638,8 @@ public final class StandardOption {
                 .converterExceptionFactory((optionName, optionValue, formatString, cause) -> {
                     final var theCause = cause.orElseThrow();
                     if (theCause instanceof AddLauncherSyntaxException) {
-                        return ERROR_WITHOUT_CONTEXT.create(optionName,
-                                optionValue, "ERR_NoAddLauncherName", cause);
+                        return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName,
+                                optionValue, "error.parameter-add-launcher-malformed", cause);
                     } else {
                         return (RuntimeException)theCause;
                     }
@@ -667,6 +668,23 @@ public final class StandardOption {
                 }).defaultArrayValue(new AdditionalLauncher[0]).createArray();
     }
 
+    private static BundleType parseBundleType(String str, OperatingSystem appImageOS) {
+        Objects.requireNonNull(str);
+        Objects.requireNonNull(appImageOS);
+
+        return Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
+            return bundlingOperation.bundleTypeValue().equals(str);
+        })
+        .filter(bundlingOperation -> {
+            // Skip app image bundle type if it is from another platform.
+            return !(bundlingOperation.bundleType() instanceof AppImageBundleType)
+                    || (bundlingOperation.os() == appImageOS);
+        })
+        .map(StandardBundlingOperation::bundleType)
+        .findFirst()
+        .orElseThrow(IllegalArgumentException::new);
+    }
+
     private static String resourceKeySuffix(OperatingSystem os) {
         switch (os) {
             case LINUX -> {
@@ -685,6 +703,7 @@ public final class StandardOption {
     }
 
 
+    @SelfContainedException
     static class AddLauncherIllegalArgumentException extends IllegalArgumentException {
 
         AddLauncherIllegalArgumentException(String message) {
@@ -735,8 +754,15 @@ public final class StandardOption {
         //
 
         // regexp for parsing args (for example, for additional launchers)
-        private static Pattern pattern = Pattern.compile(
-              "(?:(?:([\"'])(?:\\\\\\1|.)*?(?:\\1|$))|(?:\\\\[\"'\\s]|[^\\s]))++");
+        private static Pattern PATTERN = Pattern.compile(String.format(
+                "(?:(?:%s|%s)|(?:\\\\[\"'\\s]|\\S))++",
+                createPatternComponent('\''),
+                createPatternComponent('\"')));
+
+        private static String createPatternComponent(char quoteChar) {
+            var str = Character.toString(quoteChar);
+            return String.format("(?:%s(?:\\\\%s|[^%s])*+(?:%s|$))", str, str, str, str);
+        }
 
         static List<String> getArgumentList(String inputString) {
             Objects.requireNonNull(inputString);
@@ -749,7 +775,7 @@ public final class StandardOption {
             // The "pattern" regexp attempts to abide to the rule that
             // strings are delimited by whitespace unless surrounded by
             // quotes, then it is anything (including spaces) in the quotes.
-            Matcher m = pattern.matcher(inputString);
+            Matcher m = PATTERN.matcher(inputString);
             while (m.find()) {
                 String s = inputString.substring(m.start(), m.end()).trim();
                 // Ensure we do not have an empty string. trim() will take care of

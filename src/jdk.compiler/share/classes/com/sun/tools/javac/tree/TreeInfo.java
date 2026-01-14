@@ -651,6 +651,11 @@ public class TreeInfo {
         if (tree == null)
             return Position.NOPOS;
 
+        if (endPosTable == null) {
+            // fall back on limited info in the tree
+            return endPos(tree);
+        }
+
         int mapPos = endPosTable.getEndPos(tree);
         if (mapPos != Position.NOPOS)
             return mapPos;
