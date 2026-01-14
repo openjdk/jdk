@@ -33,7 +33,7 @@ package compiler.intrinsics.string;
 
 import compiler.lib.ir_framework.*;
 
-public class TestCheckOpaqueGuardNodes {
+public class TestOpaqueGuardNodes {
 
     static byte[] bytes = new byte[42];
 
