@@ -26,6 +26,7 @@
 
 #include "gc/z/zAddress.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "oops/oop.hpp"
@@ -37,8 +38,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include CPU_HEADER_INLINE(gc/z/zAddress)
-
-#include <type_traits>
 
 // Offset Operator Macro
 // Creates operators for the offset, offset_end style types

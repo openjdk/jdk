@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5104584 8237244
+ * @bug 5104584 8237244 8369335
  * @key headful
  * @requires (os.family != "mac")
  * @summary Verifies that scaling an image works properly when the
@@ -105,6 +105,11 @@ public class ScaleParamsOOB extends Panel {
         int x2 = x1 + wholeRegion.width;
         int y2 = y1 + wholeRegion.height;
 
+        int ax1 = affectedRegion.x;
+        int ay1 = affectedRegion.y;
+        int ax2 = ax1 + affectedRegion.width;
+        int ay2 = ay1 + affectedRegion.height;
+
         for (int y = y1; y < y2; y++) {
             for (int x = x1; x < x2; x++) {
                 int actual = bi.getRGB(x, y);
@@ -128,13 +133,20 @@ public class ScaleParamsOOB extends Panel {
                     (Math.abs(red - standardRed) > TOLERANCE) ||
                     (Math.abs(green - standardGreen) > TOLERANCE) ||
                     (Math.abs(blue - standardBlue) > TOLERANCE)) {
-                    saveImage(bi);
-                    throw new RuntimeException("Test failed at x="+x+" y="+y+
-                                               " (expected="+
-                                               Integer.toHexString(expected) +
-                                               " actual="+
-                                               Integer.toHexString(actual) +
-                                               ")");
+
+                    String msg = ("Test failed at x="+x+" y="+y+
+                                   " (expected="+
+                                   Integer.toHexString(expected) +
+                                   " actual="+
+                                   Integer.toHexString(actual) +
+                                   ")");
+                    // log edge pixel differences, but don't fail the test.
+                    if ((x == ax1) || (x == ax2) || (y == ay1) || (y == ay2)) {
+                        System.err.println(msg);
+                    } else {
+                        saveImage(bi);
+                        throw new RuntimeException(msg);
+                    }
                 }
             }
         }

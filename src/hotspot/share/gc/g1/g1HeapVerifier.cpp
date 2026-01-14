@@ -669,6 +669,23 @@ void G1HeapVerifier::verify_card_tables_in_sync() {
     Threads::java_threads_do(&check_same_cl);
 }
 
+void G1HeapVerifier::verify_free_regions_card_tables_clean() {
+  class G1VerifyFreeRegionsCleanClosure : public G1HeapRegionClosure {
+  private:
+    G1HeapVerifier* _verifier;
+  public:
+    G1VerifyFreeRegionsCleanClosure(G1HeapVerifier* verifier) : G1HeapRegionClosure(), _verifier(verifier) { }
+    virtual bool do_heap_region(G1HeapRegion* r) {
+      if (r->is_free()) {
+        _verifier->verify_ct_clean_region(r);
+        _verifier->verify_rt_clean_region(r);
+      }
+    return false;
+    }
+  } cl(this);
+  _g1h->heap_region_iterate(&cl);
+}
+
 class G1CheckRegionAttrTableClosure : public G1HeapRegionClosure {
 private:
   bool _failures;

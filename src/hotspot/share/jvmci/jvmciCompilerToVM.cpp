@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1008,7 +1008,7 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   }
 
   LinkInfo link_info(cp, index, mh, code, CHECK_NULL);
-  LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_NULL);
+  LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), ClassInitMode::dont_init, CHECK_NULL);
   JVMCIPrimitiveArray info = JVMCIENV->wrap(info_handle);
   if (info.is_null() || JVMCIENV->get_length(info) != 4) {
     JVMCI_ERROR_NULL("info must not be null and have a length of 4");
@@ -1218,7 +1218,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
   return result;
 C2V_END
 
-C2V_VMENTRY_0(jobject, getInvalidationReasonDescription, (JNIEnv *env, jobject, jint invalidation_reason))
+C2V_VMENTRY_NULL(jobject, getInvalidationReasonDescription, (JNIEnv *env, jobject, jint invalidation_reason))
   HandleMark hm(THREAD);
   JNIHandleMark jni_hm(thread);
   nmethod::InvalidationReason reason = static_cast<nmethod::InvalidationReason>(invalidation_reason);

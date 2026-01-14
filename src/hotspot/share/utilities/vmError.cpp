@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2023, 2025, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -60,6 +60,7 @@
 #include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "sanitizers/address.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -663,6 +664,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   BEGIN
   if (MemTracker::enabled() &&
       NmtVirtualMemory_lock != nullptr &&
+      _thread != nullptr &&
       NmtVirtualMemory_lock->owned_by_self()) {
     // Manually unlock to avoid reentrancy due to mallocs in detailed mode.
     NmtVirtualMemory_lock->unlock();
@@ -910,7 +912,16 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing date and time", _verbose)
     os::print_date_and_time(st, buf, sizeof(buf));
 
-  STEP_IF("printing thread", _verbose)
+#ifdef ADDRESS_SANITIZER
+  STEP_IF("printing ASAN error information", _verbose && Asan::had_error())
+    st->cr();
+    st->print_cr("------------------  A S A N ----------------");
+    st->cr();
+    Asan::report(st);
+    st->cr();
+#endif // ADDRESS_SANITIZER
+
+    STEP_IF("printing thread", _verbose)
     st->cr();
     st->print_cr("---------------  T H R E A D  ---------------");
     st->cr();
@@ -1295,7 +1306,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     os::print_signal_handlers(st, buf, sizeof(buf));
     st->cr();
 
-  STEP_IF("Native Memory Tracking", _verbose)
+  STEP_IF("Native Memory Tracking", _verbose && _thread != nullptr)
     MemTracker::error_report(st);
     st->cr();
 
@@ -1887,7 +1898,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     log.set_fd(-1);
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL, true);)
+  JFR_ONLY(Jfr::on_vm_shutdown(true, false, static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL);)
 
   if (PrintNMTStatistics) {
     fdStream fds(fd_out);
@@ -2185,6 +2196,14 @@ void VMError::controlled_crash(int how) {
         ThreadsListHandle tlh2;
         fatal("Force crash with a nested ThreadsListHandle.");
       }
+    }
+    case 18: {
+      // Trigger an error that should cause ASAN to report a double free or use-after-free.
+      // Please note that this is not 100% bullet-proof since it assumes that this block
+      // is not immediately repurposed by some other thread after free.
+      void* const p = os::malloc(4096, mtTest);
+      os::free(p);
+      os::free(p);
     }
     default:
       // If another number is given, give a generic crash.

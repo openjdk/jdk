@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_JFR_HPP
 #define SHARE_JFR_JFR_HPP
 
+#include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
@@ -70,7 +71,7 @@ class Jfr : AllStatic {
   static void on_resolution(const Method* caller, const Method* target, TRAPS);
   static void on_java_thread_start(JavaThread* starter, JavaThread* startee);
   static void on_set_current_thread(JavaThread* jt, oop thread);
-  static void on_vm_shutdown(bool emit_old_object_samples, bool emit_event_shutdown, bool halt = false);
+  static void on_vm_shutdown(bool exception_handler = false, bool halt = false, bool oom = false);
   static void on_vm_error_report(outputStream* st);
   static bool on_flight_recorder_option(const JavaVMOption** option, char* delimiter);
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
@@ -78,6 +79,8 @@ class Jfr : AllStatic {
   static void initialize_main_thread(JavaThread* jt);
   static bool has_sample_request(JavaThread* jt);
   static void check_and_process_sample_request(JavaThread* jt);
+  static void on_report_java_out_of_memory();
+  CDS_ONLY(static void on_restoration(const Klass* k, JavaThread* jt);)
 };
 
 #endif // SHARE_JFR_JFR_HPP

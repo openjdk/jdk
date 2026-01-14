@@ -76,7 +76,7 @@ final class Renderer {
      * <p>
      * When using nested templates, the user of the Template Framework may be tempted to first render
      * the nested template to a {@link String}, and then use this {@link String} as a token in an outer
-     * {@link Template#body}. This would be a bad pattern: the outer and nested {@link Template} would
+     * {@link Template#scope}. This would be a bad pattern: the outer and nested {@link Template} would
      * be rendered separately, and could not interact. For example, the nested {@link Template} would
      * not have access to the scopes of the outer {@link Template}. The inner {@link Template} could
      * not access {@link Name}s and {@link Hook}s from the outer {@link Template}. The user might assume
@@ -84,8 +84,8 @@ final class Renderer {
      * be separated. This could lead to unexpected behavior or even bugs.
      *
      * <p>
-     * Instead, the user should create a {@link TemplateToken} from the inner {@link Template}, and
-     * use that {@link TemplateToken} in the {@link Template#body} of the outer {@link Template}.
+     * Instead, the user must create a {@link TemplateToken} from the inner {@link Template}, and
+     * use that {@link TemplateToken} in the {@link Template#scope} of the outer {@link Template}.
      * This way, the inner and outer {@link Template}s get rendered together, and the inner {@link Template}
      * has access to the {@link Name}s and {@link Hook}s of the outer {@link Template}.
      *
@@ -113,7 +113,7 @@ final class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            throw new RendererException("A Template method such as '$', 'let', 'sample', 'count' etc. was called outside a template rendering.");
+            throw new RendererException("A Template method such as '$', 'fuel', etc. was called outside a template rendering call.");
         }
         return renderer;
     }
@@ -171,26 +171,6 @@ final class Renderer {
         return currentTemplateFrame.fuel;
     }
 
-    void setFuelCost(float fuelCost) {
-        currentTemplateFrame.setFuelCost(fuelCost);
-    }
-
-    Name sampleName(NameSet.Predicate predicate) {
-        return currentCodeFrame.sampleName(predicate);
-    }
-
-    int countNames(NameSet.Predicate predicate) {
-        return currentCodeFrame.countNames(predicate);
-    }
-
-    boolean hasAnyNames(NameSet.Predicate predicate) {
-        return currentCodeFrame.hasAnyNames(predicate);
-    }
-
-    List<Name> listNames(NameSet.Predicate predicate) {
-        return currentCodeFrame.listNames(predicate);
-    }
-
     /**
      * Formats values to {@link String} with the goal of using them in Java code.
      * By default, we use the overrides of {@link Object#toString}.
@@ -243,12 +223,16 @@ final class Renderer {
     }
 
     private void renderTemplateToken(TemplateToken templateToken) {
+        // We need a TemplateFrame in all cases, this ensures that the outermost scope of the template
+        // is not transparent for hashtags and setFuelCost, and also that the id of the template is
+        // unique.
         TemplateFrame templateFrame = TemplateFrame.make(currentTemplateFrame, nextTemplateFrameId++);
         currentTemplateFrame = templateFrame;
 
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
-        TemplateBody body = templateToken.instantiate();
-        renderTokenList(body.tokens());
+
+        // If the ScopeToken is transparent to Names, then the Template is transparent to names.
+        renderScopeToken(templateToken.instantiate());
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");
@@ -256,29 +240,76 @@ final class Renderer {
         currentTemplateFrame = currentTemplateFrame.parent;
     }
 
+    private void renderScopeToken(ScopeToken st) {
+        renderScopeToken(st, () -> {});
+    }
+
+    private void renderScopeToken(ScopeToken st, Runnable preamble) {
+        if (!(st instanceof ScopeTokenImpl(List<Token> tokens,
+                                           boolean isTransparentForNames,
+                                           boolean isTransparentForHashtags,
+                                           boolean isTransparentForSetFuelCost))) {
+            throw new RuntimeException("Internal error: could not unpack ScopeTokenImpl.");
+        }
+
+        // We need the CodeFrame for local names.
+        CodeFrame outerCodeFrame = currentCodeFrame;
+        if (!isTransparentForNames) {
+            currentCodeFrame = CodeFrame.make(currentCodeFrame, false);
+        }
+
+        // We need to be able to define local hashtag replacements, but still
+        // see the outer ones. We also need to have the same id for dollar
+        // replacement as the outer frame. And we need to be able to allow
+        // local setFuelCost definitions.
+        TemplateFrame innerTemplateFrame = null;
+        if (!isTransparentForHashtags || !isTransparentForSetFuelCost) {
+            innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame,
+                                                              isTransparentForHashtags,
+                                                              isTransparentForSetFuelCost);
+            currentTemplateFrame = innerTemplateFrame;
+        }
+
+        // Allow definition of hashtags and variables to be placed in the nested frames.
+        preamble.run();
+
+        // Now render the nested code.
+        renderTokenList(tokens);
+
+        if (!isTransparentForHashtags || !isTransparentForSetFuelCost) {
+            if (currentTemplateFrame != innerTemplateFrame) {
+                throw new RuntimeException("Internal error: TemplateFrame mismatch!");
+            }
+            currentTemplateFrame = currentTemplateFrame.parent;
+        }
+
+        // Tear down CodeFrame nesting. If no nesting happened, the code is already
+        // in the currentCodeFrame.
+        if (!isTransparentForNames) {
+            outerCodeFrame.addCode(currentCodeFrame.getCode());
+            currentCodeFrame = outerCodeFrame;
+        }
+    }
+
     private void renderToken(Token token) {
         switch (token) {
             case StringToken(String s) -> {
                 renderStringWithDollarAndHashtagReplacements(s);
             }
-            case NothingToken() -> {
-                // Nothing.
-            }
-            case HookAnchorToken(Hook hook, List<Token> tokens) -> {
+            case HookAnchorToken(Hook hook, ScopeTokenImpl innerScope) -> {
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
-                // We need a CodeFrame to which the hook can insert code. That way, name
-                // definitions at the hook cannot escape the hookCodeFrame.
-                CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame);
+                // We need a CodeFrame to which the hook can insert code. If the nested names
+                // are to be local, the CodeFrame must be non-transparent for names.
+                CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame, innerScope.isTransparentForNames());
                 hookCodeFrame.addHook(hook);
 
-                // We need a CodeFrame where the tokens can be rendered. That way, name
-                // definitions from the tokens cannot escape the innerCodeFrame to the
-                // hookCodeFrame.
-                CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame);
+                // We need a CodeFrame where the tokens can be rendered for code that is
+                // generated inside the anchor scope, but not inserted directly to the hook.
+                CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame, innerScope.isTransparentForNames());
                 currentCodeFrame = innerCodeFrame;
 
-                renderTokenList(tokens);
+                renderScopeToken(innerScope);
 
                 // Close the hookCodeFrame and innerCodeFrame. hookCodeFrame code comes before the
                 // innerCodeFrame code from the tokens.
@@ -286,20 +317,20 @@ final class Renderer {
                 currentCodeFrame.addCode(hookCodeFrame.getCode());
                 currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
-            case HookInsertToken(Hook hook, TemplateToken templateToken) -> {
+            case HookInsertToken(Hook hook, ScopeTokenImpl scopeToken) -> {
                 // Switch to hook CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
                 CodeFrame hookCodeFrame = codeFrameForHook(hook);
 
                 // Use a transparent nested CodeFrame. We need a CodeFrame so that the code generated
-                // by the TemplateToken can be collected, and hook insertions from it can still
-                // be made to the hookCodeFrame before the code from the TemplateToken is added to
+                // by the scopeToken can be collected, and hook insertions from it can still
+                // be made to the hookCodeFrame before the code from the scopeToken is added to
                 // the hookCodeFrame.
                 // But the CodeFrame must be transparent, so that its name definitions go out to
-                // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateToken.
-                currentCodeFrame = CodeFrame.makeTransparentForNames(hookCodeFrame);
+                // the hookCodeFrame, and are not limited to the CodeFrame for the scopeToken.
+                currentCodeFrame = CodeFrame.make(hookCodeFrame, true);
 
-                renderTemplateToken(templateToken);
+                renderScopeToken(scopeToken);
 
                 hookCodeFrame.addCode(currentCodeFrame.getCode());
 
@@ -307,17 +338,67 @@ final class Renderer {
                 currentCodeFrame = callerCodeFrame;
             }
             case TemplateToken templateToken -> {
-                // Use a nested CodeFrame.
-                CodeFrame callerCodeFrame = currentCodeFrame;
-                currentCodeFrame = CodeFrame.make(currentCodeFrame);
-
                 renderTemplateToken(templateToken);
-
-                callerCodeFrame.addCode(currentCodeFrame.getCode());
-                currentCodeFrame = callerCodeFrame;
             }
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
+            }
+            case ScopeToken scopeToken -> {
+                renderScopeToken(scopeToken);
+            }
+            case NameSampleToken nameScopeToken -> {
+                Name name = currentCodeFrame.sampleName(nameScopeToken.predicate());
+                if (name == null) {
+                    throw new RendererException("No Name found for " + nameScopeToken.predicate().toString());
+                }
+                ScopeToken scopeToken = nameScopeToken.getScopeToken(name);
+                renderScopeToken(scopeToken, () -> {
+                    if (nameScopeToken.name() != null) {
+                        addHashtagReplacement(nameScopeToken.name(), name.name());
+                    }
+                    if (nameScopeToken.type() != null) {
+                        addHashtagReplacement(nameScopeToken.type(), name.type());
+                    }
+                });
+            }
+            case NameForEachToken nameForEachToken -> {
+                List<Name> list = currentCodeFrame.listNames(nameForEachToken.predicate());
+                list.stream().forEach(name -> {
+                    ScopeToken scopeToken = nameForEachToken.getScopeToken(name);
+                    renderScopeToken(scopeToken, () -> {
+                        if (nameForEachToken.name() != null) {
+                            addHashtagReplacement(nameForEachToken.name(), name.name());
+                        }
+                        if (nameForEachToken.type() != null) {
+                            addHashtagReplacement(nameForEachToken.type(), name.type());
+                        }
+                    });
+                });
+            }
+            case NamesToListToken nameToListToken -> {
+                List<Name> list = currentCodeFrame.listNames(nameToListToken.predicate());
+                renderScopeToken(nameToListToken.getScopeToken(list));
+            }
+            case NameCountToken nameCountToken -> {
+                int count = currentCodeFrame.countNames(nameCountToken.predicate());
+                renderScopeToken(nameCountToken.getScopeToken(count));
+            }
+            case NameHasAnyToken nameHasAnyToken -> {
+                boolean hasAny = currentCodeFrame.hasAnyNames(nameHasAnyToken.predicate());
+                renderScopeToken(nameHasAnyToken.getScopeToken(hasAny));
+            }
+            case SetFuelCostToken(float fuelCost) -> {
+                currentTemplateFrame.setFuelCost(fuelCost);
+            }
+            case LetToken letToken -> {
+                ScopeToken scopeToken = letToken.getScopeToken();
+                renderScopeToken(scopeToken, () -> {
+                    addHashtagReplacement(letToken.key(), letToken.value());
+                });
+            }
+            case HookIsAnchoredToken hookIsAnchoredToken -> {
+                boolean isAnchored = currentCodeFrame.codeFrameForHook(hookIsAnchoredToken.hook()) != null;
+                renderScopeToken(hookIsAnchoredToken.getScopeToken(isAnchored));
             }
         }
     }
@@ -421,10 +502,6 @@ final class Renderer {
                 }
             }
         ));
-    }
-
-    boolean isAnchored(Hook hook) {
-        return currentCodeFrame.codeFrameForHook(hook) != null;
     }
 
     private CodeFrame codeFrameForHook(Hook hook) {

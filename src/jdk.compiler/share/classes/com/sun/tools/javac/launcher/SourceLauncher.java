@@ -226,6 +226,8 @@ public final class SourceLauncher {
 
         Object instance = null;
 
+        // Similar to sun.launcher.LauncherHelper#checkAndLoadMain, including
+        // checks performed in LauncherHelper#validateMainMethod
         if (!isStatic) {
             if (Modifier.isAbstract(mainClass.getModifiers())) {
                 throw new Fault(Errors.CantInstantiate(mainClassName));
@@ -236,6 +238,10 @@ public final class SourceLauncher {
                 constructor = mainClass.getDeclaredConstructor();
             } catch (NoSuchMethodException e) {
                 throw new Fault(Errors.CantFindConstructor(mainClassName));
+            }
+
+            if (Modifier.isPrivate(constructor.getModifiers())) {
+                throw new Fault(Errors.CantUsePrivateConstructor(mainClassName));
             }
 
             try {

@@ -255,7 +255,7 @@ void StringConcat::eliminate_unneeded_control() {
       Compile* C = _stringopts->C;
       C->gvn_replace_by(n, n->in(0)->in(0));
       // get rid of the other projection
-      C->gvn_replace_by(n->in(0)->as_If()->proj_out(false), C->top());
+      C->gvn_replace_by(n->in(0)->as_If()->false_proj(), C->top());
     } else if (n->is_Region()) {
       Node* iff = n->in(1)->in(0);
       assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
@@ -380,17 +380,13 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   Compile* C = _stringopts->C;
 
   // Eliminate Initialize node.
-  assert(init->outcnt() <= 2, "only a control and memory projection expected");
   assert(init->req() <= InitializeNode::RawStores, "no pending inits");
   Node *ctrl_proj = init->proj_out_or_null(TypeFunc::Control);
   if (ctrl_proj != nullptr) {
     C->gvn_replace_by(ctrl_proj, init->in(TypeFunc::Control));
   }
-  Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
-  if (mem_proj != nullptr) {
-    Node *mem = init->in(TypeFunc::Memory);
-    C->gvn_replace_by(mem_proj, mem);
-  }
+  Node* mem = init->in(TypeFunc::Memory);
+  init->replace_mem_projs_by(mem, C);
   C->gvn_replace_by(init, C->top());
   init->disconnect_inputs(C);
 }
