@@ -97,7 +97,7 @@ import java.security.spec.NamedParameterSpec;
 /// Table 2 defines the ML-DSA-65 private key as a 4032-byte array, which is
 /// used in the ML-DSA.Sign function in Algorithm 2, representing the
 /// expanded format. However, in
-/// [draft-ietf-lamps-dilithium-certificates-08](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-dilithium-certificates#name-private-key-format),
+/// [RFC 9881](https://datatracker.ietf.org/doc/html/rfc9881#name-private-key-format),
 /// a private key can be encoded into a CHOICE of three formats, none in the
 /// same as the FIPS 204 format. The choices are defined in
 /// [sun.security.util.KeyChoices]. A `NamedKeyPairGenerator` implementation
