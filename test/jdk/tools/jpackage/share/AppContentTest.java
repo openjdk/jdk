@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -499,11 +498,11 @@ public class AppContentTest {
         return new FileContentFactory(() -> {
             var basedir = TKit.createTempDirectory("content").resolve(path);
 
-            for (var textFile : Map.ofEntries(
+            for (var textFile : List.of(
                     entry("woods/moose", "The moose"),
                     entry("woods/bear", "The bear"),
                     entry("woods/trees/jay", "The gray jay")
-            ).entrySet()) {
+            )) {
                 var src = basedir.resolve(textFile.getKey());
                 Files.createDirectories(src.getParent());
                 TKit.createTextFile(src, Stream.of(textFile.getValue()));
@@ -631,7 +630,7 @@ public class AppContentTest {
 
     private static final class FileContentFactory implements ContentFactory {
 
-        FileContentFactory(ThrowingSupplier<Path> factory, Path pathInAppContentRoot) {
+        FileContentFactory(ThrowingSupplier<Path, IOException> factory, Path pathInAppContentRoot) {
             this.factory = ThrowingSupplier.toSupplier(factory);
             this.pathInAppContentRoot = pathInAppContentRoot;
             if (pathInAppContentRoot.isAbsolute()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,15 @@ import java.time.*;
 import java.time.zone.*;
 import java.util.*;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
 /**
  * @summary ZoneRules invariants can be broken.
  *
  * @bug 8246788
  */
-@Test
 public class TestMutableZoneRules {
     static final ZoneOffset offset = ZoneOffset.ofHoursMinutes(1, 30);
 
@@ -48,16 +47,18 @@ public class TestMutableZoneRules {
         ZoneOffsetTransitionRule.of(Month.MARCH, 2, DayOfWeek.MONDAY, LocalTime.MIN, true,
                 ZoneOffsetTransitionRule.TimeDefinition.UTC, offset, offset, offset);
 
+    @Test
     public void testMutation() {
         ZoneOffsetTransitionRule[] array = { rule1 };
         ZoneRules zr1 = ZoneRules.of(offset, offset, List.of(), List.of(), List.of(rule1));
         ZoneRules zr2 = ZoneRules.of(offset, offset, List.of(), List.of(), new TestList(array, array.length));
 
-        assertEquals(zr2, zr1);
+        assertEquals(zr1, zr2);
         array[0] = rule2;
-        assertEquals(zr2, zr1);
+        assertEquals(zr1, zr2);
     }
 
+    @Test
     public void testLength() {
         ZoneOffsetTransitionRule[] array = new ZoneOffsetTransitionRule[17];
         Arrays.setAll(array, i -> rule1);

@@ -38,9 +38,10 @@ class Symbol;
 
 class CDSHeapVerifier : public KlassClosure {
   class CheckStaticFields;
+  class SharedSecretsAccessorFinder;
   class TraceFields;
 
-  int _archived_objs;
+  size_t _archived_objs;
   int _problems;
 
   struct StaticFieldInfo {
@@ -55,6 +56,7 @@ class CDSHeapVerifier : public KlassClosure {
       HeapShared::oop_hash> _table;
 
   GrowableArray<const char**> _exclusions;
+  GrowableArray<oop> _shared_secret_accessors;
 
   void add_exclusion(const char** excl) {
     _exclusions.append(excl);
@@ -70,6 +72,22 @@ class CDSHeapVerifier : public KlassClosure {
     }
     return nullptr;
   }
+
+  void add_shared_secret_accessors();
+
+  void add_shared_secret_accessor(oop obj) {
+    _shared_secret_accessors.append(obj);
+  }
+
+  bool is_shared_secret_accessor(oop obj) {
+    for (int i = 0; i < _shared_secret_accessors.length(); i++) {
+      if (_shared_secret_accessors.at(i) == obj) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   static int trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p);
 
   CDSHeapVerifier();

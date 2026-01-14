@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,9 @@ package tck.java.time.chrono;
 
 
 import static java.time.temporal.ChronoField.ERA;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.chrono.Era;
 import java.time.chrono.MinguoChronology;
@@ -65,16 +66,17 @@ import java.time.chrono.MinguoEra;
 import java.time.temporal.ValueRange;
 import java.util.List;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKMinguoEra {
 
-    @DataProvider(name = "MinguoEras")
     Object[][] data_of_eras() {
         return new Object[][] {
                     {MinguoEra.BEFORE_ROC, "BEFORE_ROC", 0},
@@ -85,11 +87,12 @@ public class TCKMinguoEra {
     //-----------------------------------------------------------------------
     // valueOf()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="MinguoEras")
+    @ParameterizedTest
+    @MethodSource("data_of_eras")
     public void test_valueOf(MinguoEra era , String eraName, int eraValue) {
-        assertEquals(era.getValue(), eraValue);
-        assertEquals(MinguoEra.of(eraValue), era);
-        assertEquals(MinguoEra.valueOf(eraName), era);
+        assertEquals(eraValue, era.getValue());
+        assertEquals(era, MinguoEra.of(eraValue));
+        assertEquals(era, MinguoEra.valueOf(eraName));
     }
 
 
@@ -100,7 +103,7 @@ public class TCKMinguoEra {
     public void test_values() {
         List<Era> eraList = MinguoChronology.INSTANCE.eras();
         MinguoEra[] eras = MinguoEra.values() ;
-        assertEquals(eraList.size(), eras.length);
+        assertEquals(eras.length, eraList.size());
         for (MinguoEra era : eras) {
             assertTrue(eraList.contains(era));
         }
@@ -112,7 +115,7 @@ public class TCKMinguoEra {
     @Test
     public void test_range() {
         for (MinguoEra era : MinguoEra.values()) {
-            assertEquals(era.range(ERA), ValueRange.of(0, 1));
+            assertEquals(ValueRange.of(0, 1), era.range(ERA));
         }
     }
 

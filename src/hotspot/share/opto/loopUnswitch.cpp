@@ -488,7 +488,7 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();
   Node* entry = multiversion_if->in(0);
   OpaqueMultiversioningNode* opaque = multiversion_if->in(1)->as_OpaqueMultiversioning();
-  IfFalseNode* multiversion_slow_proj = multiversion_if->proj_out(0)->as_IfFalse();
+  IfFalseNode* multiversion_slow_proj = multiversion_if->false_proj();
   Node* slow_path = multiversion_slow_proj->unique_ctrl_out();
 
   // The slow_loop may still be delayed, and waiting for runtime-checks to be added to the
@@ -520,11 +520,12 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   region->add_req(new_if_false);
   register_control(region, lp, new_multiversion_slow_proj);
 
-  // Hook region into slow_path, in stead of the multiversion_slow_proj.
+  // Hook region into slow_path, instead of the multiversion_slow_proj.
   // This also moves all other dependencies of the multiversion_slow_proj to the region.
-  // The lazy_replace ensures that any get_ctrl that used to have multiversion_slow_proj
-  // as their control are forwarded to the new region node as their control.
-  lazy_replace(multiversion_slow_proj, region);
+  // The replace_node_and_forward_ctrl ensures that any get_ctrl that used to have
+  // multiversion_slow_proj as their control are forwarded to the new region node as
+  // their control.
+  replace_node_and_forward_ctrl(multiversion_slow_proj, region);
 
   return new_if_true;
 }

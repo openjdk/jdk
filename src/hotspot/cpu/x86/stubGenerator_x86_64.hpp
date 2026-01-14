@@ -68,12 +68,6 @@ class StubGenerator: public StubCodeGenerator {
   // Support for intptr_t OrderAccess::fence()
   address generate_orderaccess_fence();
 
-  // Support for intptr_t get_previous_sp()
-  //
-  // This routine is used to find the previous stack pointer for the
-  // caller.
-  address generate_get_previous_sp();
-
   //----------------------------------------------------------------------------------------------------
   // Support for void verify_mxcsr()
   //

@@ -2233,7 +2233,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ movl(temp, code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
   // Update registers with resolved info
   __ load_method_entry(cache, index);
   __ bind(L_done);
@@ -2280,7 +2280,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ movl(temp, code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
   // Update registers with resolved info
   __ load_field_entry(cache, index);
   __ bind(L_done);
@@ -3266,7 +3266,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ load_klass(rax, recv, rscratch1);
 
   // profile this call
-  __ profile_virtual_call(rax, rlocals, rdx);
+  __ profile_virtual_call(rax, rlocals);
   // get target Method* & entry point
   __ lookup_virtual_method(rax, index, method);
 
@@ -3407,7 +3407,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // profile this call
   __ restore_bcp(); // rbcp was destroyed by receiver type check
-  __ profile_virtual_call(rdx, rbcp, rlocals);
+  __ profile_virtual_call(rdx, rbcp);
 
   // Get declaring interface class from method, and itable index
   __ load_method_holder(rax, rbx);
@@ -3644,8 +3644,8 @@ void TemplateTable::_new() {
 
   __ get_constant_pool(c_rarg1);
   __ get_unsigned_2_byte_index_at_bcp(c_rarg2, 1);
-  call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
-   __ verify_oop(rax);
+  __ call_VM_preemptable(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
+  __ verify_oop(rax);
 
   // continue
   __ bind(done);

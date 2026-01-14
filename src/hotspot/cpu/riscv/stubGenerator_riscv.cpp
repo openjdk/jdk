@@ -1239,7 +1239,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0);
 
     __ leave();
     __ mv(x10, zr); // return 0
@@ -1401,7 +1401,7 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, t2);
       }
     }
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0);
     __ leave();
     __ mv(x10, zr); // return 0
     __ ret();
@@ -1467,7 +1467,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register ckval       = c_rarg4;   // super_klass
 
     RegSet wb_pre_saved_regs   = RegSet::range(c_rarg0, c_rarg4);
-    RegSet wb_post_saved_regs  = RegSet::of(count);
 
     // Registers used as temps (x7, x9, x18 are save-on-entry)
     const Register count_save  = x19;       // orig elementscount
@@ -1588,7 +1587,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(count, L_done_pop);
 
     __ BIND(L_do_card_marks);
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, t0, wb_post_saved_regs);
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, t0);
 
     __ bind(L_done_pop);
     __ pop_reg(RegSet::of(x7, x9, x18, x19), sp);
@@ -2437,7 +2436,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_unsafe_setmemory    = generate_unsafe_setmemory();
   }
 
-  void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int rounds) {
+  void aes_load_keys(const Register &key, VectorRegister *working_vregs, int rounds) {
     const int step = 16;
     for (int i = 0; i < rounds; i++) {
       __ vle32_v(working_vregs[i], key);
@@ -2449,7 +2448,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  void generate_aes_encrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
+  void aes_encrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
     assert(rounds <= 15, "rounds should be less than or equal to working_vregs size");
 
     __ vxor_vv(res, res, working_vregs[0]);
@@ -2464,7 +2463,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_encryptBlock() {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
@@ -2494,14 +2493,14 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(res, from);
 
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128);
+    __ mv(t2, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t2, L_aes128);
     __ beq(keylen, t2, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs key += 15*16
-    generate_aes_loadkeys(key, working_vregs, 15);
-    generate_aes_encrypt(res, working_vregs, 15);
+    aes_load_keys(key, working_vregs, 15);
+    aes_encrypt(res, working_vregs, 15);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
@@ -2509,8 +2508,8 @@ class StubGenerator: public StubCodeGenerator {
 
   __ bind(L_aes192);
     // Note: the following function performs key += 13*16
-    generate_aes_loadkeys(key, working_vregs, 13);
-    generate_aes_encrypt(res, working_vregs, 13);
+    aes_load_keys(key, working_vregs, 13);
+    aes_encrypt(res, working_vregs, 13);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
@@ -2518,8 +2517,8 @@ class StubGenerator: public StubCodeGenerator {
 
   __ bind(L_aes128);
     // Note: the following function performs key += 11*16
-    generate_aes_loadkeys(key, working_vregs, 11);
-    generate_aes_encrypt(res, working_vregs, 11);
+    aes_load_keys(key, working_vregs, 11);
+    aes_encrypt(res, working_vregs, 11);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
@@ -2528,7 +2527,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void generate_aes_decrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
+  void aes_decrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
     assert(rounds <= 15, "rounds should be less than or equal to working_vregs size");
 
     __ vxor_vv(res, res, working_vregs[rounds - 1]);
@@ -2543,7 +2542,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_decryptBlock() {
     assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
@@ -2573,14 +2572,14 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(res, from);
 
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128);
+    __ mv(t2, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t2, L_aes128);
     __ beq(keylen, t2, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs key += 15*16
-    generate_aes_loadkeys(key, working_vregs, 15);
-    generate_aes_decrypt(res, working_vregs, 15);
+    aes_load_keys(key, working_vregs, 15);
+    aes_decrypt(res, working_vregs, 15);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
@@ -2588,8 +2587,8 @@ class StubGenerator: public StubCodeGenerator {
 
   __ bind(L_aes192);
     // Note: the following function performs key += 13*16
-    generate_aes_loadkeys(key, working_vregs, 13);
-    generate_aes_decrypt(res, working_vregs, 13);
+    aes_load_keys(key, working_vregs, 13);
+    aes_decrypt(res, working_vregs, 13);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
@@ -2597,10 +2596,468 @@ class StubGenerator: public StubCodeGenerator {
 
   __ bind(L_aes128);
     // Note: the following function performs key += 11*16
-    generate_aes_loadkeys(key, working_vregs, 11);
-    generate_aes_decrypt(res, working_vregs, 11);
+    aes_load_keys(key, working_vregs, 11);
+    aes_decrypt(res, working_vregs, 11);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  void cipherBlockChaining_encryptAESCrypt(int round, Register from, Register to, Register key,
+                                           Register rvec, Register input_len) {
+    const Register len = x29;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    __ mv(len, input_len);
+    // load init rvec
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v16, rvec);
+
+    aes_load_keys(key, working_vregs, round);
+    Label L_enc_loop;
+    __ bind(L_enc_loop);
+    // Encrypt from source by block size
+      __ vle32_v(v17, from);
+      __ addi(from, from, BLOCK_SIZE);
+      __ vxor_vv(v16, v16, v17);
+      aes_encrypt(v16, working_vregs, round);
+      __ vse32_v(v16, to);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
+      __ bnez(len, L_enc_loop);
+
+    // save current rvec and return
+    __ vse32_v(v16, rvec);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - r vector byte array address
+  //   c_rarg4   - input length
+  //
+  // Output:
+  //   x10       - input length
+  //
+  address generate_cipherBlockChaining_encryptAESCrypt() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register from       = c_rarg0;
+    const Register to         = c_rarg1;
+    const Register key        = c_rarg2;
+    const Register rvec       = c_rarg3;
+    const Register input_len  = c_rarg4;
+
+    const Register keylen     = x28;
+
+    address start = __ pc();
+    __ enter();
+
+    Label L_aes128, L_aes192;
+    // Compute #rounds for AES based on the length of the key array
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ mv(t0, 52);
+    __ bltu(keylen, t0, L_aes128);
+    __ beq(keylen, t0, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs key += 15*16
+    cipherBlockChaining_encryptAESCrypt(15, from, to, key, rvec, input_len);
+
+    // Note: the following function performs key += 11*16
+    __ bind(L_aes128);
+    cipherBlockChaining_encryptAESCrypt(11, from, to, key, rvec, input_len);
+
+    // Note: the following function performs key += 13*16
+    __ bind(L_aes192);
+    cipherBlockChaining_encryptAESCrypt(13, from, to, key, rvec, input_len);
+
+    return start;
+  }
+
+  void cipherBlockChaining_decryptAESCrypt(int round, Register from, Register to, Register key,
+                                           Register rvec, Register input_len) {
+    const Register len = x29;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    __ mv(len, input_len);
+    // load init rvec
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v16, rvec);
+
+    aes_load_keys(key, working_vregs, round);
+    Label L_dec_loop;
+    // Decrypt from source by block size
+    __ bind(L_dec_loop);
+      __ vle32_v(v17, from);
+      __ addi(from, from, BLOCK_SIZE);
+      __ vmv_v_v(v18, v17);
+      aes_decrypt(v17, working_vregs, round);
+      __ vxor_vv(v17, v17, v16);
+      __ vse32_v(v17, to);
+      __ vmv_v_v(v16, v18);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
+      __ bnez(len, L_dec_loop);
+
+    // save current rvec and return
+    __ vse32_v(v16, rvec);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - r vector byte array address
+  //   c_rarg4   - input length
+  //
+  // Output:
+  //   x10       - input length
+  //
+  address generate_cipherBlockChaining_decryptAESCrypt() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register from        = c_rarg0;
+    const Register to          = c_rarg1;
+    const Register key         = c_rarg2;
+    const Register rvec        = c_rarg3;
+    const Register input_len   = c_rarg4;
+
+    const Register keylen      = x28;
+
+    address start = __ pc();
+    __ enter();
+
+    Label L_aes128, L_aes192, L_aes128_loop, L_aes192_loop, L_aes256_loop;
+    // Compute #rounds for AES based on the length of the key array
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ mv(t0, 52);
+    __ bltu(keylen, t0, L_aes128);
+    __ beq(keylen, t0, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs key += 15*16
+    cipherBlockChaining_decryptAESCrypt(15, from, to, key, rvec, input_len);
+
+    // Note: the following function performs key += 11*16
+    __ bind(L_aes128);
+    cipherBlockChaining_decryptAESCrypt(11, from, to, key, rvec, input_len);
+
+    // Note: the following function performs key += 13*16
+    __ bind(L_aes192);
+    cipherBlockChaining_decryptAESCrypt(13, from, to, key, rvec, input_len);
+
+    return start;
+  }
+
+  // Load big-endian 128-bit from memory.
+  void be_load_counter_128(Register counter_hi, Register counter_lo, Register counter) {
+    __ ld(counter_lo, Address(counter, 8)); // Load 128-bits from counter
+    __ ld(counter_hi, Address(counter));
+    __ rev8(counter_lo, counter_lo);        // Convert big-endian to little-endian
+    __ rev8(counter_hi, counter_hi);
+  }
+
+  // Little-endian 128-bit + 64-bit -> 128-bit addition.
+  void add_counter_128(Register counter_hi, Register counter_lo) {
+    assert_different_registers(counter_hi, counter_lo, t0);
+    __ addi(counter_lo, counter_lo, 1);
+    __ seqz(t0, counter_lo);                // Check for result overflow
+    __ add(counter_hi, counter_hi, t0);     // Add 1 if overflow otherwise 0
+  }
+
+  // Store big-endian 128-bit to memory.
+  void be_store_counter_128(Register counter_hi, Register counter_lo, Register counter) {
+    assert_different_registers(counter_hi, counter_lo, t0, t1);
+    __ rev8(t0, counter_lo);                // Convert little-endian to big-endian
+    __ rev8(t1, counter_hi);
+    __ sd(t0, Address(counter, 8));         // Store 128-bits to counter
+    __ sd(t1, Address(counter));
+  }
+
+  void counterMode_AESCrypt(int round, Register in, Register out, Register key, Register counter,
+                            Register input_len,  Register saved_encrypted_ctr, Register used_ptr) {
+    // Algorithm:
+    //
+    //   aes_load_keys();
+    //   load_counter_128(counter_hi, counter_lo, counter);
+    //
+    //   L_next:
+    //     if (used >= BLOCK_SIZE) goto L_main_loop;
+    //
+    //   L_encrypt_next:
+    //       *out = *in ^ saved_encrypted_ctr[used]);
+    //       out++; in++; used++; len--;
+    //       if (len == 0) goto L_exit;
+    //       goto L_next;
+    //
+    //   L_main_loop:
+    //     if (len == 0) goto L_exit;
+    //     saved_encrypted_ctr = aes_encrypt(counter);
+    //
+    //     add_counter_128(counter_hi, counter_lo);
+    //     be_store_counter_128(counter_hi, counter_lo, counter);
+    //     used = 0;
+    //
+    //     if(len < BLOCK_SIZE) goto L_encrypt_next;
+    //
+    //     v_in = load_16Byte(in);
+    //     v_out = load_16Byte(out);
+    //     v_saved_encrypted_ctr = load_16Byte(saved_encrypted_ctr);
+    //     v_out = v_in ^ v_saved_encrypted_ctr;
+    //     out += BLOCK_SIZE;
+    //     in += BLOCK_SIZE;
+    //     len -= BLOCK_SIZE;
+    //     used = BLOCK_SIZE;
+    //     goto L_main_loop;
+    //
+    //
+    //   L_exit:
+    //     store(used);
+    //     result = input_len
+    //     return result;
+
+    const Register used          = x28;
+    const Register len           = x29;
+    const Register counter_hi    = x30;
+    const Register counter_lo    = x31;
+    const Register block_size    = t2;
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+
+    __ lwu(used, Address(used_ptr));
+    __ mv(len, input_len);
+    __ mv(block_size, BLOCK_SIZE);
+
+    // load keys to working_vregs according to round
+    aes_load_keys(key, working_vregs, round);
+
+    // 128-bit big-endian load
+    be_load_counter_128(counter_hi, counter_lo, counter);
+
+    Label L_next, L_encrypt_next, L_main_loop, L_exit;
+    // Check the last saved_encrypted_ctr used value, we fall through
+    // to L_encrypt_next when the used value lower than block_size
+    __ bind(L_next);
+    __ bgeu(used, block_size, L_main_loop);
+
+    // There is still data left fewer than block_size after L_main_loop
+    // or last used, we encrypt them one by one.
+    __ bind(L_encrypt_next);
+    __ add(t0, saved_encrypted_ctr, used);
+    __ lbu(t1, Address(t0));
+    __ lbu(t0, Address(in));
+    __ xorr(t1, t1, t0);
+    __ sb(t1, Address(out));
+    __ addi(in, in, 1);
+    __ addi(out, out, 1);
+    __ addi(used, used, 1);
+    __ subi(len, len, 1);
+    __ beqz(len, L_exit);
+    __ j(L_next);
+
+    // We will calculate the next saved_encrypted_ctr and encrypt the blocks of data
+    // one by one until there is less than a full block remaining if len not zero
+    __ bind(L_main_loop);
+    __ beqz(len, L_exit);
+    __ vle32_v(v16, counter);
+
+    // encrypt counter according to round
+    aes_encrypt(v16, working_vregs, round);
+
+    __ vse32_v(v16, saved_encrypted_ctr);
+
+    // 128-bit little-endian increment
+    add_counter_128(counter_hi, counter_lo);
+    // 128-bit big-endian store
+    be_store_counter_128(counter_hi, counter_lo, counter);
+
+    __ mv(used, 0);
+    // Check if we have a full block_size
+    __ bltu(len, block_size, L_encrypt_next);
+
+    // We have one full block to encrypt at least
+    __ vle32_v(v17, in);
+    __ vxor_vv(v16, v16, v17);
+    __ vse32_v(v16, out);
+    __ add(out, out, block_size);
+    __ add(in, in, block_size);
+    __ sub(len, len, block_size);
+    __ mv(used, block_size);
+    __ j(L_main_loop);
+
+    __ bind(L_exit);
+    __ sw(used, Address(used_ptr));
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+  };
+
+  // CTR AES crypt.
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - counter vector byte array address
+  //   c_rarg4   - input length
+  //   c_rarg5   - saved encryptedCounter start
+  //   c_rarg6   - saved used length
+  //
+  // Output:
+  //   x10       - input length
+  //
+  address generate_counterMode_AESCrypt() {
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) and Zbb extension support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register in                  = c_rarg0;
+    const Register out                 = c_rarg1;
+    const Register key                 = c_rarg2;
+    const Register counter             = c_rarg3;
+    const Register input_len           = c_rarg4;
+    const Register saved_encrypted_ctr = c_rarg5;
+    const Register used_len_ptr        = c_rarg6;
+
+    const Register keylen              = c_rarg7; // temporary register
+
+    const address start = __ pc();
+    __ enter();
+
+    Label L_exit;
+    __ beqz(input_len, L_exit);
+
+    Label L_aes128, L_aes192;
+    // Compute #rounds for AES based on the length of the key array
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ mv(t0, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t0, L_aes128);
+    __ beq(keylen, t0, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs crypt with key += 15*16
+    counterMode_AESCrypt(15, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    // Note: the following function performs crypt with key += 13*16
+    __ bind(L_aes192);
+    counterMode_AESCrypt(13, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    // Note: the following function performs crypt with key += 11*16
+    __ bind(L_aes128);
+    counterMode_AESCrypt(11, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    __ bind(L_exit);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  void ghash_loop(Register state, Register subkeyH, Register data, Register blocks,
+                  VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
+    VectorRegister partial_hash = vtmp1;
+    VectorRegister hash_subkey  = vtmp2;
+    VectorRegister cipher_text  = vtmp3;
+
+    const unsigned int BLOCK_SIZE = 16;
+
+    __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
+    __ vle64_v(hash_subkey, subkeyH);
+    __ vrev8_v(hash_subkey, hash_subkey);
+    __ vle64_v(partial_hash, state);
+    __ vrev8_v(partial_hash, partial_hash);
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    Label L_ghash_loop;
+    __ bind(L_ghash_loop);
+      __ vle32_v(cipher_text, data);
+      __ addi(data, data, BLOCK_SIZE);
+      __ vghsh_vv(partial_hash, hash_subkey, cipher_text);
+      __ subi(blocks, blocks, 1);
+      __ bnez(blocks, L_ghash_loop);
+
+    __ vsetivli(x0, 2, Assembler::e64, Assembler::m1);
+    __ vrev8_v(partial_hash, partial_hash);
+    __ vse64_v(partial_hash, state);
+  }
+
+  /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - current state address
+   *  c_rarg1   - H key address
+   *  c_rarg2   - data address
+   *  c_rarg3   - number of blocks
+   *
+   *  Output:
+   *  Updated state at c_rarg0
+   */
+  address generate_ghash_processBlocks() {
+    assert(UseGHASHIntrinsics, "need GHASH instructions (Zvkg extension) and Zvbb support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ pc();
+    __ enter();
+
+    Register state   = c_rarg0;
+    Register subkeyH = c_rarg1;
+    Register data    = c_rarg2;
+    Register blocks  = c_rarg3;
+
+    VectorRegister vtmp1 = v1;
+    VectorRegister vtmp2 = v2;
+    VectorRegister vtmp3 = v3;
+
+    ghash_loop(state, subkeyH, data, blocks, vtmp1, vtmp2, vtmp3);
+
     __ leave();
     __ ret();
 
@@ -6825,6 +7282,16 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+      StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
+      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
+    }
+
+    if (UseAESCTRIntrinsics) {
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    }
+
+    if (UseGHASHIntrinsics) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     if (UsePoly1305Intrinsics) {

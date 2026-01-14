@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,10 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
@@ -90,14 +92,16 @@ SerialHeap::SerialHeap() :
     CollectedHeap(),
     _young_gen(nullptr),
     _old_gen(nullptr),
+    _young_gen_saved_top(nullptr),
+    _old_gen_saved_top(nullptr),
     _rem_set(nullptr),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _young_manager(nullptr),
     _old_manager(nullptr),
-    _is_heap_almost_full(false),
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
-    _old_pool(nullptr) {
+    _old_pool(nullptr),
+    _is_heap_almost_full(false) {
   _young_manager = new GCMemoryManager("Copy");
   _old_manager = new GCMemoryManager("MarkSweepCompact");
   GCLocker::initialize();
@@ -146,7 +150,8 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
 
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
   MutexLocker ml(Heap_lock);
-  return old_gen()->allocate(word_size);
+  HeapWord* const addr = old_gen()->allocate(word_size);
+  return addr != nullptr ? addr : old_gen()->expand_and_allocate(word_size);
 }
 
 void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
@@ -268,6 +273,8 @@ size_t SerialHeap::max_capacity() const {
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
+  assert(Heap_lock->is_locked(), "precondition");
+
   HeapWord* result = _young_gen->expand_and_allocate(size);
 
   if (result == nullptr && !is_tlab) {
@@ -301,9 +308,12 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   for (uint try_count = 1; /* break */; try_count++) {
-    result = mem_allocate_cas_noexpand(size, is_tlab);
-    if (result != nullptr) {
-      break;
+    {
+      ConditionalMutexLocker locker(Heap_lock, !is_init_completed());
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        break;
+      }
     }
     uint gc_count_before;  // Read inside the Heap_lock locked region.
     {
@@ -316,6 +326,19 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
         break;
       }
 
+      if (!is_init_completed()) {
+        // Double checked locking, this ensure that is_init_completed() does not
+        // transition while expanding the heap.
+        MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
+        if (!is_init_completed()) {
+          // Can't do GC; try heap expansion to satisfy the request.
+          result = expand_heap_and_allocate(size, is_tlab);
+          if (result != nullptr) {
+            return result;
+          }
+        }
+      }
+
       gc_count_before = total_collections();
     }
 
@@ -324,11 +347,6 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
     if (op.gc_succeeded()) {
       result = op.result();
       break;
-    }
-
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
     }
 
     // Give a warning if we seem to be looping forever.
@@ -615,6 +633,14 @@ bool SerialHeap::requires_barriers(stackChunkOop obj) const {
 
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool SerialHeap::is_in(const void* p) const {
+  // precondition
+  verify_not_in_native_if_java_thread();
+
+  if (!is_in_reserved(p)) {
+    // If it's not even in reserved.
+    return false;
+  }
+
   return _young_gen->is_in(p) || _old_gen->is_in(p);
 }
 
@@ -649,16 +675,16 @@ bool SerialHeap::block_is_obj(const HeapWord* addr) const {
   return addr < _old_gen->space()->top();
 }
 
-size_t SerialHeap::tlab_capacity(Thread* thr) const {
+size_t SerialHeap::tlab_capacity() const {
   // Only young-gen supports tlab allocation.
   return _young_gen->tlab_capacity();
 }
 
-size_t SerialHeap::tlab_used(Thread* thr) const {
+size_t SerialHeap::tlab_used() const {
   return _young_gen->tlab_used();
 }
 
-size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t SerialHeap::unsafe_max_tlab_alloc() const {
   return _young_gen->unsafe_max_tlab_alloc();
 }
 
@@ -782,3 +808,12 @@ void SerialHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
 };
+
+#ifdef ASSERT
+void SerialHeap::verify_not_in_native_if_java_thread() {
+  if (Thread::current()->is_Java_thread()) {
+    JavaThread* thread = JavaThread::current();
+    assert(thread->thread_state() != _thread_in_native, "precondition");
+  }
+}
+#endif

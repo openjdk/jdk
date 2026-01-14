@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -38,7 +37,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 import jdk.jpackage.internal.util.FileUtils;
@@ -112,8 +110,7 @@ final class RuntimeBuilderBuilder {
         );
     }
 
-    private static RuntimeBuilder createCopyingRuntimeBuilder(Path runtimeDir,
-            Path... modulePath) throws ConfigException {
+    private static RuntimeBuilder createCopyingRuntimeBuilder(Path runtimeDir, Path... modulePath) {
         return appImageLayout -> {
             try {
                 // copy whole runtime, skipping jmods and src.zip
@@ -147,10 +144,9 @@ final class RuntimeBuilderBuilder {
 
         @Override
         public RuntimeBuilder get() {
-            return toSupplier(() -> createCopyingRuntimeBuilder(
+            return createCopyingRuntimeBuilder(
                     predefinedRuntimeImage,
-                    Optional.ofNullable(thiz.modulePath).orElseGet(List::of).toArray(Path[]::new))
-            ).get();
+                    Optional.ofNullable(thiz.modulePath).orElseGet(List::of).toArray(Path[]::new));
         }
     }
 
@@ -160,13 +156,12 @@ final class RuntimeBuilderBuilder {
 
         @Override
         public RuntimeBuilder get() {
-            return toSupplier(() -> JLinkRuntimeBuilder.createJLinkRuntimeBuilder(
+            return JLinkRuntimeBuilder.createJLinkRuntimeBuilder(
                     Optional.ofNullable(thiz.modulePath).orElseGet(List::of),
                     Optional.ofNullable(addModules).orElseGet(Set::of),
                     Optional.ofNullable(limitModules).orElseGet(Set::of),
                     Optional.ofNullable(options).orElseGet(List::of),
-                    startupInfos)
-            ).get();
+                    startupInfos);
         }
     }
 

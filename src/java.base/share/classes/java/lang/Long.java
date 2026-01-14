@@ -35,14 +35,13 @@ import java.util.Optional;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
-import static java.lang.String.LATIN1;
-import static java.lang.String.UTF16;
 
 /**
  * The {@code Long} class is the {@linkplain
@@ -913,6 +912,7 @@ public final class Long extends Number
         return Long.valueOf(parseLong(s, 10));
     }
 
+    @AOTSafeClassInitializer
     private static final class LongCache {
         private LongCache() {}
 

@@ -67,7 +67,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   z_stg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
 
-  lightweight_lock(Rbox, Roop, Rmark, tmp, slow_case);
+  fast_lock(Rbox, Roop, Rmark, tmp, slow_case);
 }
 
 void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
@@ -77,7 +77,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   z_lg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
   verify_oop(Roop, FILE_AND_LINE);
 
-  lightweight_unlock(Roop, Rmark, Z_R1_scratch, slow_case);
+  fast_unlock(Roop, Rmark, Z_R1_scratch, slow_case);
 }
 
 void C1_MacroAssembler::try_allocate(

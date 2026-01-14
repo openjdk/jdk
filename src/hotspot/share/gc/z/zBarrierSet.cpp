@@ -217,33 +217,12 @@ static void deoptimize_allocation(JavaThread* thread) {
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
   const ZPage* const page = ZHeap::heap()->page(to_zaddress(new_obj));
-  const ZPageAge age = page->age();
-  if (age == ZPageAge::old) {
+  if (!page->allows_raw_null()) {
     // We promised C2 that its allocations would end up in young gen. This object
-    // breaks that promise. Take a few steps in the interpreter instead, which has
-    // no such assumptions about where an object resides.
+    // is too old to guarantee that. Take a few steps in the interpreter instead,
+    // which does not elide barriers based on the age of an object.
     deoptimize_allocation(thread);
-    return;
   }
-
-  if (!ZGeneration::young()->is_phase_mark_complete()) {
-    return;
-  }
-
-  if (!page->is_relocatable()) {
-    return;
-  }
-
-  if (ZRelocate::compute_to_age(age) != ZPageAge::old) {
-    return;
-  }
-
-  // If the object is young, we have to still be careful that it isn't racingly
-  // about to get promoted to the old generation. That causes issues when null
-  // pointers are supposed to be coloured, but the JIT is a bit sloppy and
-  // reinitializes memory with raw nulls. We detect this situation and detune
-  // rather than relying on the JIT to never be sloppy with redundant initialization.
-  deoptimize_allocation(thread);
 }
 
 void ZBarrierSet::print_on(outputStream* st) const {

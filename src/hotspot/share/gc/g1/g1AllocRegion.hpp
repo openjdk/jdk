@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1NUMA.hpp"
+#include "runtime/atomic.hpp"
 
 class G1CollectedHeap;
 
@@ -40,8 +41,6 @@ class G1CollectedHeap;
 // replaced.
 
 class G1AllocRegion : public CHeapObj<mtGC> {
-
-private:
   // The active allocating region we are currently allocating out
   // of. The invariant is that if this object is initialized (i.e.,
   // init() has been called and release() has not) then _alloc_region
@@ -52,7 +51,7 @@ private:
   // then _alloc_region is null and this object should not be used to
   // satisfy allocation requests (it was done this way to force the
   // correct use of init() and release()).
-  G1HeapRegion* volatile _alloc_region;
+  Atomic<G1HeapRegion*> _alloc_region;
 
   // It keeps track of the distinct number of regions that are used
   // for allocation in the active interval of this object, i.e.,
@@ -71,7 +70,7 @@ private:
   // == end()). When we don't have a valid active region we make
   // _alloc_region point to this. This allows us to skip checking
   // whether the _alloc_region is null or not.
-  static G1HeapRegion* _dummy_region;
+  static Atomic<G1HeapRegion*> _dummy_region;
 
   // After a region is allocated by alloc_new_region, this
   // method is used to set it as the active alloc_region
@@ -124,9 +123,9 @@ public:
   static void setup(G1CollectedHeap* g1h, G1HeapRegion* dummy_region);
 
   G1HeapRegion* get() const {
-    G1HeapRegion * hr = _alloc_region;
+    G1HeapRegion * hr = _alloc_region.load_acquire();
     // Make sure that the dummy region does not escape this class.
-    return (hr == _dummy_region) ? nullptr : hr;
+    return (hr == _dummy_region.load_relaxed()) ? nullptr : hr;
   }
 
   uint count() { return _count; }
@@ -177,7 +176,7 @@ private:
   // Retained allocation region. Used to lower the waste generated
   // during mutation by having two active regions if the free space
   // in a region about to be retired still could fit a TLAB.
-  G1HeapRegion* volatile _retained_alloc_region;
+  Atomic<G1HeapRegion*> _retained_alloc_region;
 
   // Decide if the region should be retained, based on the free size
   // in it and the free size in the currently retained region, if any.

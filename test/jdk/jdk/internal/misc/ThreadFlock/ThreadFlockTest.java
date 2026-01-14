@@ -530,7 +530,7 @@ class ThreadFlockTest {
     }
 
     /**
-     * Test awaitAll with interrupt status set, should interrupt thread.
+     * Test awaitAll with interrupted status set, should interrupt thread.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -550,17 +550,17 @@ class ThreadFlockTest {
             Thread thread = factory.newThread(awaitLatch);
             flock.start(thread);
 
-            // invoke awaitAll with interrupt status set.
+            // invoke awaitAll with interrupted status set.
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll();
                 fail("awaitAll did not throw");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
-            // invoke awaitAll(Duration) with interrupt status set.
+            // invoke awaitAll(Duration) with interrupted status set.
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
@@ -568,7 +568,7 @@ class ThreadFlockTest {
             } catch (TimeoutException e) {
                 fail("TimeoutException not expected");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -609,7 +609,7 @@ class ThreadFlockTest {
                 flock.awaitAll();
                 fail("awaitAll did not throw");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -620,7 +620,7 @@ class ThreadFlockTest {
             } catch (TimeoutException e) {
                 fail("TimeoutException not expected");
             } catch (InterruptedException e) {
-                // interrupt status should be clear
+                // interrupted status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
             }
 
@@ -841,7 +841,7 @@ class ThreadFlockTest {
     }
 
     /**
-     * Test close with interrupt status set, should not interrupt threads.
+     * Test close with interrupted status set, should not interrupt threads.
      */
     @ParameterizedTest
     @MethodSource("factories")
