@@ -52,6 +52,7 @@ import static java.util.Arrays.asList;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ServiceLoaderBasicTest {
 
@@ -89,7 +90,7 @@ public class ServiceLoaderBasicTest {
         Files.copy(P2JAR, P2DUPJAR, REPLACE_EXISTING);
     }
 
-    public static Object[][] testCases() {
+    private static Object[][] testCases() {
         return new Object[][]{
             //       CLI options,            Test,       Runtime arguments
             // Success cases
@@ -110,24 +111,14 @@ public class ServiceLoaderBasicTest {
         };
     }
 
-    public static Object[][] negativeTestCases() {
-        return new Object[][]{
-            {"blah blah"},
-            {"9234"},
-            {"X!"},
-            {"BarProvider"},
-            {"FooProvider42"}
-        };
-    }
-
     @ParameterizedTest
     @MethodSource("testCases")
     public void testProvider(List<String> args) throws Throwable {
         runJava(args);
     }
 
-    @ParameterizedTest
-    @MethodSource("negativeTestCases")
+    @ParameterizedTest // negative test cases
+    @ValueSource(strings = { "blah blah", "9234", "X!", "BarProvider", "FooProvider42" })
     public void testBadProvider(String providerName) throws Throwable {
         Files.write(XMETA_CONFIG, providerName.getBytes());
         runJava(List.of("-cp", XMETA_CP, "Load", "fail"));

@@ -61,7 +61,7 @@ import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Basic test of `provides S with PF` and `provides S with P` where the provider
@@ -138,21 +138,10 @@ public class BadProvidersTest {
         assertTrue(p != null);
     }
 
-
-    public static Object[][] createBadFactories() {
-        return new Object[][] {
-                { "classnotpublic",     null },
-                { "methodnotpublic",    null },
-                { "badreturntype",      null },
-                { "returnsnull",        null },
-                { "throwsexception",    null },
-        };
-    }
-
-
     @ParameterizedTest
-    @MethodSource("createBadFactories")
-    public void testBadFactory(String testName, String ignore) throws Exception {
+    @ValueSource(strings = { "classnotpublic", "methodnotpublic", "badreturntype",
+            "returnsnull", "throwsexception" })
+    public void testBadFactory(String testName) throws Exception {
         Path mods = compileTest(TEST1_MODULE);
 
         // compile the bad factory
@@ -173,20 +162,9 @@ public class BadProvidersTest {
         );
     }
 
-
-    public static Object[][] createBadProviders() {
-        return new Object[][] {
-                { "notpublic",          null },
-                { "ctornotpublic",      null },
-                { "notasubtype",        null },
-                { "throwsexception",    null }
-        };
-    }
-
-
     @ParameterizedTest
-    @MethodSource("createBadProviders")
-    public void testBadProvider(String testName, String ignore) throws Exception {
+    @ValueSource(strings = { "notpublic", "ctornotpublic", "notasubtype", "throwsexception" })
+    public void testBadProvider(String testName) throws Exception {
         Path mods = compileTest(TEST2_MODULE);
 
         // compile the bad provider
