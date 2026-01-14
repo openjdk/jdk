@@ -142,6 +142,48 @@ endef
 $(eval $(call SetupLogging))
 
 ################################################################################
+# We need to quote strings for two reasons when sending them as
+# "variable append packs":
+#
+# 1) variable appends can include spaces, and those must be preserved
+# 2) variable appends can include assignment strings ":=", and those
+# must be quoted to a form so that we can recognise the "append pack".
+# We recognise an "append pack" by its lack of strict assignment ":="
+
+q       := $(HASH)
+spaceQ  := $(q)s
+appendQ := $(q)+
+assignQ := $(q)a
+qQ      := $(q)$(q)
+
+# $(call quote,echo "#trala:=") -> echo#s"##trala#a"
+quote = $(subst :=,$(assignQ),$(subst $(SPACE),$(spaceQ),$(subst $(q),$(qQ),$1)))
+
+# $(call unQuote,echo#s"##trala#a") -> echo "#trala:="
+unQuote = $(subst $(qQ),$(q),$(subst $(spaceQ),$(SPACE),$(subst $(assignQ),:=,$1)))
+
+# $(call quoteAppend,name,some value) -> name#+some#svalue
+# $(call quoteAppend,bad+=name,some value) -> error
+quoteAppend = $(if $(findstring +=,$1),$(error you can not have += in a variable name: "$1"),$(call quote,$1)$(appendQ)$(call quote,$2))
+
+# $(call unquoteAppendIndex,name#+some#svalue,1) -> name
+# $(call unquoteAppendIndex,name#+some#svalue,2) -> some value
+unquoteAppendIndex = $(call unQuote,$(word $2,$(subst $(appendQ),$(SPACE),$1)))
+
+# $(call requrseFiles,dir) -> header.hpp file1.cpp file2.cpp
+requrseFiles = $(strip $(foreach f,$(wildcard $1/*),$(call requrseFiles,$f) $f))
+
+# $(call filterFiles,dir,%.cpp) -> file1.cpp file2.cpp (without path)
+filterFiles = $(filter $2,$(notdir $(call requrseFiles,$1)))
+
+# $(call overrideFlags,dir,%.cpp,_CXXFLAGS,-Wconversion) -> file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion
+overrideFlags = $(foreach file,$(call filterFiles,$1,$2,),$(call quoteAppend,$(file)$3,$4))
+
+# $(call unpack module_,file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion) -> module_file1.cpp_CXXFLAGS += -Wconversion
+#                                                                                             module_file2.cpp_CXXFLAGS += -Wconversion
+unpack = $(foreach pair,$2,$1$(call unquoteAppendIndex,$(pair),1) += $(call unquoteAppendIndex,$(pair),2)$(NEWLINE))
+
+################################################################################
 
 MAX_PARAMS := 96
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
@@ -166,7 +208,10 @@ define NamedParamsMacroTemplate
       Too many named arguments to macro, please update MAX_PARAMS in MakeBase.gmk))
   # Iterate over 2 3 4... and evaluate the named parameters with $1_ as prefix
   $(foreach i, $(PARAM_SEQUENCE), $(if $(strip $($i)), \
-    $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE)))
+    $(if $(findstring :=,$($i)), \
+      $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE), \
+      $(call unpack,$(strip $1)_,$($i)))))
+
   # Debug print all named parameter names and values
   $(if $(findstring $(LOG_LEVEL), trace), \
     $(info $0 $(strip $1) $(foreach i, $(PARAM_SEQUENCE), \
