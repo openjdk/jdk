@@ -497,7 +497,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     if (print_codes) {
       // print_codes_on() may acquire MDOExtraData_lock (rank nosafepoint-1).
       // To keep the lock acquisition order correct, call it before taking tty_lock.
-      method()->print_codes_on(&codes_ss, 0, false);
+      method()->print_codes_on(&codes_ss, 0);
     }
     ttyLocker ttyl;
     tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
