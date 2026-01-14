@@ -39,6 +39,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import jdk.test.lib.thread.VThreadScheduler;
 
+/* Testing scenario:
+ * Several threads are involved:
+ *  - VT-0: a virtual thread which is interrupt-friendly and constantly interrupted with JVMTI InterruptThread
+ *  - VT-1: a virtual thread which state is constantly checked with JVMTI GetThreadState
+ *  - VT-2: a virtual thread: in a loop calls JVMTI InterruptThread(VT-0) and GetThreadState(VT-1)
+ *  - main: a platform thread: in a loop invokes native method testSuspendResume which suspends and resumes VT-2
+ * The JVMTI functionis above install a MountUnmountDisabler for target virtual thread (VT-0 or VT-1).
+ * The goal is to catch VT-2 in an attempt to self-suspend while in a context of MountUnmountDisabler.
+ * This would mean there is a suspend point while VT-2 is in a context of MountUnmountDisabler.
+ * The InterruptThread implementation does a Java upcall to j.l.Thread::interrupt().
+ * The JavaCallWrapper constructor has such a suspend point.
+ */
 public class ThreadStateTest2 {
     private static native void setMonitorContendedMode(boolean enable);
     private static native void testSuspendResume(Thread vthread);
