@@ -25,7 +25,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "zunittest.hpp"
 
-class ZAddressTest : public ZTest {
+class ZAddressTest : public ZVMTest {
 protected:
   static zpointer color(uintptr_t value, uintptr_t color) {
     return ZAddress::color(zaddress(value | ZAddressHeapBase), color);

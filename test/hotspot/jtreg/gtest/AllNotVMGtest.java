@@ -61,9 +61,6 @@ public class AllNotVMGtest {
         TF("os_linux.addr_to_function_valid"),
         // JDK-8372247
         TF("Semaphore.trywait", Platform.isOSX()),
-        // JDK-8372244
-        TF("ZArrayTest.slice"),
-        TF("ZNUMATest.calculate_share"),
     };
 
     public static Stream<String> getFilteredTests() {

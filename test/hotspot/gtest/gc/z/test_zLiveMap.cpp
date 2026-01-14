@@ -26,7 +26,7 @@
 #include "gc/z/zLiveMap.inline.hpp"
 #include "zunittest.hpp"
 
-class ZLiveMapTest : public ZTest {
+class ZLiveMapTest : public ZVMTest {
 private:
   // Setup and tear down
   ZHeap*            _old_heap;

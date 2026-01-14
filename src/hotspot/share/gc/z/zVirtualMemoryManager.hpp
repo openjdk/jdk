@@ -33,9 +33,9 @@
 using ZVirtualMemoryRegistry = ZRangeRegistry<ZVirtualMemory>;
 
 class ZVirtualMemoryReserver {
-  friend class ZTest;
   friend class ZMapperTest;
   friend class ZVirtualMemoryManagerTest;
+  friend class ZVMTest;
 
 private:
 
