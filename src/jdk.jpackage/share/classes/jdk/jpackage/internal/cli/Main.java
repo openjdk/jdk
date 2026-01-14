@@ -79,8 +79,8 @@ public final class Main {
 
         @Override
         public int run(PrintStream out, PrintStream err, String... args) {
-            PrintWriter outWriter = new PrintWriter(out, true);
-            PrintWriter errWriter = new PrintWriter(err, true);
+            PrintWriter outWriter = toPrintWriter(out);
+            PrintWriter errWriter = toPrintWriter(err);
             try {
                 try {
                     return run(outWriter, errWriter, args);
@@ -98,8 +98,8 @@ public final class Main {
     }
 
     public static void main(String... args) {
-        var out = new PrintWriter(System.out, true);
-        var err = new PrintWriter(System.err, true);
+        var out = toPrintWriter(System.out);
+        var err = toPrintWriter(System.err);
         System.exit(run(out, err, args));
     }
 
@@ -127,7 +127,7 @@ public final class Main {
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
 
-        Log.setPrintWriter(out, err);
+        Globals.instance().loggerOutputStreams(out, err);
 
         final var runner = new Runner(t -> {
             new ErrorReporter(_ -> {
@@ -179,7 +179,7 @@ public final class Main {
                 }
 
                 if (VERBOSE.containsIn(options)) {
-                    Log.setVerbose();
+                    Globals.instance().loggerVerbose();
                 }
 
                 final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, bundlingEnv);
@@ -308,6 +308,10 @@ public final class Main {
 
     private static String getVersion() {
         return System.getProperty("java.version");
+    }
+
+    private static PrintWriter toPrintWriter(PrintStream ps) {
+        return new PrintWriter(ps, true, ps.charset());
     }
 
     private enum DefaultBundlingEnvironmentLoader implements Supplier<CliBundlingEnvironment> {
