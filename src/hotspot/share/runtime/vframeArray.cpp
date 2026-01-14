@@ -491,10 +491,10 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 
 #ifndef PRODUCT
   if (PrintDeoptimizationDetails) {
-    const bool dump_codes = WizardMode && Verbose;
+    const bool print_codes = WizardMode && Verbose;
     ResourceMark rm(thread);
     stringStream codes_ss;
-    if (dump_codes) {
+    if (print_codes) {
       // print_codes_on() may acquire MDOExtraData_lock (rank nosafepoint-1).
       // To keep the lock acquisition order correct, call it before taking tty_lock.
       method()->print_codes_on(&codes_ss, 0, false);
@@ -508,7 +508,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                     RegisterMap::WalkContinuation::skip);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
-    if (dump_codes) {
+    if (print_codes) {
       tty->print("%s", codes_ss.as_string());
     }
     tty->cr();
