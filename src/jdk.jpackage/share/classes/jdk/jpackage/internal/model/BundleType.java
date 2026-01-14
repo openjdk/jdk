@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jpackage.internal.model;
 
-/**
- * App image packaging type.
- *
- * @see StandardPackageType
- */
-public final class AppImagePackageType implements PackageType {
 
-    private AppImagePackageType() {
-    }
+/**
+ * Generic bundle type. E.g.: application image, rpm, msi are all bundle types.
+ */
+public sealed interface BundleType permits PackageType, AppImageBundleType {
 
     /**
-     * Singleton
+     * Returns a user-facing label of this bundle type.
+     * @return a user-facing label of this bundle type.
      */
-    public static final AppImagePackageType APP_IMAGE = new AppImagePackageType();
+    String label();
 }

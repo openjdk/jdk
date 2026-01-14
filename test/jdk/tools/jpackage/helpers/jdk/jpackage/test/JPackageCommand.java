@@ -80,6 +80,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         prerequisiteActions = new Actions();
         verifyActions = new Actions();
         excludeStandardAsserts(StandardAssert.MAIN_LAUNCHER_DESCRIPTION);
+        removeOldOutputBundle = true;
     }
 
     private JPackageCommand(JPackageCommand cmd, boolean immutable) {
@@ -91,6 +92,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         suppressOutput = cmd.suppressOutput;
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
+        removeOldOutputBundle = cmd.removeOldOutputBundle;
         this.immutable = immutable;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
@@ -844,6 +846,28 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    /**
+     * Configures this instance to optionally remove the existing output bundle
+     * before running the jpackage command.
+     *
+     * @param v {@code true} to remove existing output bundle before running the
+     *          jpackage command, and {@code false} otherwise
+     * @return this
+     */
+    public JPackageCommand removeOldOutputBundle(boolean v) {
+        verifyMutable();
+        removeOldOutputBundle = v;
+        return this;
+    }
+
+    /**
+     * Returns {@code true} if this instance will remove existing output bundle
+     * before running the jpackage command, and {@code false} otherwise.
+     */
+    public boolean isRemoveOldOutputBundle() {
+        return removeOldOutputBundle;
+    }
+
     public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
         return validateOutput(validator::apply);
     }
@@ -946,21 +970,18 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         verifyMutable();
         executePrerequisiteActions();
 
-        if (hasArgument("--dest")) {
-            nullableOutputBundle().ifPresent(path -> {
-                ThrowingRunnable.toRunnable(() -> {
-                    if (Files.isDirectory(path)) {
-                        TKit.deleteDirectoryRecursive(path, String.format(
-                                "Delete [%s] folder before running jpackage",
-                                path));
-                    } else if (TKit.deleteIfExists(path)) {
-                        TKit.trace(String.format(
-                                "Deleted [%s] file before running jpackage",
-                                path));
-                    }
-                }).run();
-            });
-        }
+        nullableOutputBundle().filter(_ -> {
+            return removeOldOutputBundle;
+        }).ifPresent(path -> {
+            ThrowingRunnable.toRunnable(() -> {
+                if (Files.isDirectory(path)) {
+                    TKit.deleteDirectoryRecursive(path,
+                            String.format("Delete [%s] folder before running jpackage", path));
+                } else if (TKit.deleteIfExists(path)) {
+                    TKit.trace(String.format("Deleted [%s] file before running jpackage", path));
+                }
+            }).run();
+        });
 
         Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
         if (resourceDir != null && Files.isDirectory(resourceDir)) {
@@ -1090,7 +1111,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         private final Map<ReadOnlyPathAssert, List<TKit.PathSnapshot>> snapshots;
     }
 
-    public static enum ReadOnlyPathAssert{
+    public static enum ReadOnlyPathAssert {
         APP_IMAGE(new Builder("--app-image").enable(cmd -> {
             // External app image should be R/O unless it is an app image signing on macOS.
             return !(TKit.isOSX() && MacHelper.signPredefinedAppImage(cmd));
@@ -1774,6 +1795,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean suppressOutput;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
+    private boolean removeOldOutputBundle;
     private boolean immutable;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;

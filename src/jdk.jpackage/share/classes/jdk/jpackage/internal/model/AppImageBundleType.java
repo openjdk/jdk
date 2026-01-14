@@ -27,28 +27,19 @@ package jdk.jpackage.internal.model;
 import java.util.Objects;
 
 /**
- * Standard native package types.
+ * App image bundle type.
+ *
+ * @see StandardPackageType
  */
-public enum StandardPackageType implements PackageType {
-    WIN_MSI("bundle-type.win-msi", ".msi"),
-    WIN_EXE("bundle-type.win-exe", ".exe"),
-    LINUX_DEB("bundle-type.linux-deb", ".deb"),
-    LINUX_RPM("bundle-type.linux-rpm", ".rpm"),
-    MAC_PKG("bundle-type.mac-pkg", ".pkg"),
-    MAC_DMG("bundle-type.mac-dmg", ".dmg");
+public enum AppImageBundleType implements BundleType {
 
-    StandardPackageType(String key, String suffix) {
+    WIN_APP_IMAGE("bundle-type.win-app"),
+    LINUX_APP_IMAGE("bundle-type.linux-app"),
+    MAC_APP_IMAGE("bundle-type.mac-app"),
+    ;
+
+    private AppImageBundleType(String key) {
         this.key = Objects.requireNonNull(key);
-        this.suffix = Objects.requireNonNull(suffix);
-    }
-
-    /**
-     * Gets file extension of this package type.
-     * E.g.: <code>.msi</code>, <code>.dmg</code>, <code>.deb</code>.
-     * @return file extension of this package type
-     */
-    public String suffix() {
-        return suffix;
     }
 
     @Override
@@ -57,5 +48,4 @@ public enum StandardPackageType implements PackageType {
     }
 
     private final String key;
-    private final String suffix;
 }

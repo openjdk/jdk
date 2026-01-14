@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import jdk.jpackage.internal.model.BundlingEnvironment;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
-import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.BundleType;
 
 /**
  * Analyzes jpackage command line structure.
@@ -250,7 +250,7 @@ final class OptionsAnalyzer {
             return error("ERR_NoInstallerEntryPoint", mapFormatArguments(optionSpec));
         } else {
             return error("ERR_InvalidTypeOption", mapFormatArguments(
-                    optionSpec, bundlingOperation.packageTypeValue()));
+                    optionSpec, bundlingOperation.bundleTypeValue()));
         }
     }
 
@@ -267,30 +267,31 @@ final class OptionsAnalyzer {
         final var typeOption = TYPE.getOption();
 
         return cmdline.find(typeOption).map(obj -> {
-            if (obj instanceof PackageType packageType) {
-                return packageType;
+            if (obj instanceof BundleType bundleType) {
+                return bundleType;
             } else {
-                return typeOption.spec()
+                var spec = new StandardOptionContext(os).mapOptionSpec(typeOption.spec());
+                return spec
                         .converter().orElseThrow()
-                        .convert(typeOption.spec().name(), StringToken.of(((String[])obj)[0]))
+                        .convert(spec.name(), StringToken.of(((String[])obj)[0]))
                         .orElseThrow();
             }
-        }).map(packageType -> {
-            // Find standard bundling operations producing the given package type.
+        }).map(bundleType -> {
+            // Find standard bundling operations producing the given bundle type.
             var bundlingOperations = Stream.of(StandardBundlingOperation.values()).filter(op -> {
-                return op.packageType().equals(packageType);
+                return op.bundleType().equals(bundleType);
             }).toList();
 
             if (bundlingOperations.isEmpty()) {
                 // jpackage internal error: none of the standard bundling operations produce
-                // bundles of the `packageType`.
+                // bundles of the `bundleType`.
                 throw new AssertionError(String.format(
                         "None of the standard bundling operations produce bundles of type [%s]",
-                        packageType));
+                        bundleType));
             } else if (bundlingOperations.size() == 1) {
                 return bundlingOperations.getFirst();
             } else {
-                // Multiple standard bundling operations produce the `packageType` package type.
+                // Multiple standard bundling operations produce the `bundleType` bundle type.
                 // Filter those that belong to the current OS
                 bundlingOperations = bundlingOperations.stream().filter(op -> {
                     return op.os().equals(OperatingSystem.current());
@@ -298,10 +299,10 @@ final class OptionsAnalyzer {
 
                 if (bundlingOperations.isEmpty()) {
                     // jpackage internal error: none of the standard bundling operations produce
-                    // bundles of the `packageType` on the current OS.
+                    // bundles of the `bundleType` on the current OS.
                     throw new AssertionError(String.format(
                             "None of the standard bundling operations produce bundles of type [%s] on %s",
-                            packageType, OperatingSystem.current()));
+                            bundleType, OperatingSystem.current()));
                 } else if (bundlingOperations.size() == 1) {
                     return bundlingOperations.getFirst();
                 } else if (StandardBundlingOperation.MACOS_APP_IMAGE.containsAll(bundlingOperations)) {
@@ -316,7 +317,7 @@ final class OptionsAnalyzer {
                 }
             }
         }).orElseGet(() -> {
-            // No package type specified, use the default bundling operation in the given environment.
+            // No bundle type specified, use the default bundling operation in the given environment.
             return env.defaultOperation().map(descriptor -> {
                 return Stream.of(StandardBundlingOperation.values()).filter(op -> {
                     return descriptor.equals(op.descriptor());

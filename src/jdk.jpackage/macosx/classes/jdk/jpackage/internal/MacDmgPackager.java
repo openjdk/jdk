@@ -235,17 +235,6 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
         final Path srcFolder = env.appImageDir();
 
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.creating-dmg-file"), finalDMG.toAbsolutePath()));
-
-        try {
-            Files.deleteIfExists(finalDMG);
-        } catch (IOException ex) {
-            throw new IOException(MessageFormat.format(I18N.getString(
-                    "message.dmg-cannot-be-overwritten"),
-                    finalDMG.toAbsolutePath()));
-        }
-
         Files.createDirectories(protoDMG.getParent());
         Files.createDirectories(finalDMG.getParent());
 
@@ -383,11 +372,6 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         } catch (IOException ex) {
             // Don't care if fails
         }
-
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.output-to-location"),
-                pkg.app().name(), normalizedAbsolutePathString(finalDMG)));
-
     }
 
     private void detachVolume() throws IOException {
