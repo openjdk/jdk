@@ -47,7 +47,7 @@ public class CustomSpinnerAccessibilityTest extends JPanel {
             3. Using up and down arrows change current month
             4. Wait for the VoiceOver to finish speaking
             5. Repeat steps 3 and 4 couple more times
-            
+
             If every time value of the spinner is changed VoiceOver
             announces the new value click "Pass".
             If instead the value is narrated only partially
