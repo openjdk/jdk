@@ -36,6 +36,7 @@
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -190,7 +191,8 @@ void G1Arguments::initialize() {
     }
     FLAG_SET_DEFAULT(G1ConcRefinementThreads, 0);
   } else if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
-    FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
+    const JVMTypedFlagLimit<uint>* conc_refinement_threads_limits = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(G1ConcRefinementThreads))->cast<uint>();
+    FLAG_SET_ERGO(G1ConcRefinementThreads, MIN2(ParallelGCThreads, conc_refinement_threads_limits->max()));
   }
 
   if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
