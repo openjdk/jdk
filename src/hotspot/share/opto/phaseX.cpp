@@ -762,26 +762,36 @@ bool PhaseGVN::is_dominator_helper(Node *d, Node *n, bool linear_only) {
 //------------------------------dead_loop_check--------------------------------
 // Check for a simple dead loop when a data node references itself directly
 // or through an other data node excluding cons and phis.
-void PhaseGVN::dead_loop_check( Node *n ) {
-  // Phi may reference itself in a loop
-  if (n != nullptr && !n->is_dead_loop_safe() && !n->is_CFG()) {
-    // Do 2 levels check and only data inputs.
-    bool no_dead_loop = true;
-    uint cnt = n->req();
-    for (uint i = 1; i < cnt && no_dead_loop; i++) {
-      Node *in = n->in(i);
-      if (in == n) {
-        no_dead_loop = false;
-      } else if (in != nullptr && !in->is_dead_loop_safe()) {
-        uint icnt = in->req();
-        for (uint j = 1; j < icnt && no_dead_loop; j++) {
-          if (in->in(j) == n || in->in(j) == in)
-            no_dead_loop = false;
-        }
+void PhaseGVN::dead_loop_check(Node* n) {
+  // Phi may reference itself in a loop.
+  if (n == nullptr || n->is_dead_loop_safe() || n->is_CFG()) {
+    return;
+  }
+
+  // Do 2 levels check and only data inputs.
+  for (uint i = 1; i < n->req(); i++) {
+    Node* in = n->in(i);
+    if (in == n) {
+      n->dump_bfs(100, nullptr, "");
+      fatal("Dead loop detected, node references itself: %s (%d)",
+            n->Name(), n->_idx);
+    }
+
+    if (in == nullptr || in->is_dead_loop_safe()) {
+      continue;
+    }
+    for (uint j = 1; j < in->req(); j++) {
+      if (in->in(j) == n) {
+        n->dump_bfs(100, nullptr, "");
+        fatal("Dead loop detected, node input references current node: %s (%d) -> %s (%d)",
+              in->Name(), in->_idx, n->Name(), n->_idx);
+      }
+      if (in->in(j) == in) {
+        n->dump_bfs(100, nullptr, "");
+        fatal("Dead loop detected, node input references itself: %s (%d)",
+              in->Name(), in->_idx);
       }
     }
-    if (!no_dead_loop) { n->dump_bfs(100, nullptr, ""); }
-    assert(no_dead_loop, "dead loop detected");
   }
 }
 
