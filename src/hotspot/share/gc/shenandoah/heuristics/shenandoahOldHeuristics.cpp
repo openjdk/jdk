@@ -132,8 +132,8 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     _unspent_unfragmented_old_budget = (size_t) ((double) unaffiliated_available / ShenandoahOldEvacWaste);
   }
 
-  log_debug(gc)("Choose old regions for mixed collection: old evacuation budget: %zu%s, candidates: %u",
-                byte_size_in_proper_unit(_old_evacuation_budget), proper_unit_for_byte_size(_old_evacuation_budget),
+  log_debug(gc)("Choose old regions for mixed collection: old evacuation budget: " PROPERFMT ", candidates: %u",
+                PROPERFMTARGS(_old_evacuation_budget),
                 unprocessed_old_collection_candidates());
   return add_old_regions_to_cset();
 }
