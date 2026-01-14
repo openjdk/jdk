@@ -2431,21 +2431,21 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     }
                 }
                 entry.keyId = keyId;
-                // restore timestamp if it exists
+                // restore instant if it exists
                 String keyIdStr = new String(keyId, UTF_8);
-                Instant timestamp = null;
+                Instant instant = null;
                 if (keyIdStr.startsWith("Time ")) {
                     try {
-                        timestamp = Instant.ofEpochMilli(
+                        instant = Instant.ofEpochMilli(
                                 Long.parseLong(keyIdStr.substring(5)));
                     } catch (Exception e) {
-                        // timestamp has been initialized to null
+                        // instant has been initialized to null
                     }
                 }
-                if (timestamp == null) {
-                    timestamp = Instant.now();
+                if (instant == null) {
+                    instant = Instant.now();
                 }
-                entry.date = timestamp;
+                entry.date = instant;
 
                 if (bagItem instanceof PrivateKeyEntry) {
                     keyList.add(entry);
