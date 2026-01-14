@@ -35,6 +35,7 @@
  * @run driver GeneratedInternedString
  */
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.test.lib.cds.SimpleCDSAppTester;
 
 public class GeneratedInternedString {
@@ -77,6 +78,7 @@ class GeneratedInternedStringApp {
 }
 
 // A variant using a bespoke record
+@AOTSafeClassInitializer
 record GeneratedInternedStringRecordApp(int value) {
 
     static volatile int n = 0;
