@@ -129,17 +129,11 @@ void ShenandoahAdaptiveHeuristics::initialize() {
 void ShenandoahAdaptiveHeuristics::post_initialize() {
   ShenandoahHeuristics::post_initialize();
   _free_set = ShenandoahHeap::heap()->free_set();
-  if (_is_generational) {
-    _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
-    size_t young_available = ShenandoahGenerationalHeap::heap()->young_generation()->max_capacity() -
-      (ShenandoahGenerationalHeap::heap()->young_generation()->used() + _free_set->reserved());
-    recalculate_trigger_threshold(young_available);
-  } else {
-    _control_thread = ShenandoahHeap::heap()->control_thread();
-    size_t global_available = ShenandoahHeap::heap()->global_generation()->max_capacity() -
-      (ShenandoahHeap::heap()->global_generation()->used() + _free_set->reserved());
-    recalculate_trigger_threshold(global_available);
-  }
+  assert(!_is_generational, "ShenandoahGenerationalHeuristics overrides this method");
+  _control_thread = ShenandoahHeap::heap()->control_thread();
+  size_t global_available = (ShenandoahHeap::heap()->global_generation()->max_capacity() -
+                             (ShenandoahHeap::heap()->global_generation()->used() + _free_set->reserved()));
+  recalculate_trigger_threshold(global_available);
 }
 
 double ShenandoahAdaptiveHeuristics::get_most_recent_wake_time() const {

@@ -45,6 +45,9 @@ public:
   explicit ShenandoahGenerationalHeuristics(ShenandoahGeneration* generation);
 
   void choose_collection_set(ShenandoahCollectionSet* collection_set) override;
+
+  virtual void post_initialize() override;
+
 protected:
   ShenandoahGeneration* _generation;
 

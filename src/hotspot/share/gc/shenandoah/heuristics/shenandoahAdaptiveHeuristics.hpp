@@ -190,12 +190,6 @@ public:
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
 
-  // _trigger_threshold, represented in words, is the amount of memory that we allow ourselves to allocate while concurrent
-  // GC is running.  If anticipated consumption of mutator memory during GC (e.g. average alloc rate * average GC time)
-  // exceeds _trigger_threshold, we need to start GC now.  Note that we intend NOT to allocate the headroom reserve,
-  // so this is not included in the _trigger_threshold.
-  void recalculate_trigger_threshold(size_t mutator_available);
-
   // Returns number of words that can be allocated before we need to trigger next GC.
   inline size_t allocatable() const {
     size_t allocated_bytes = _free_set->get_bytes_allocated_since_gc_start();
@@ -266,6 +260,12 @@ protected:
   double _gc_time_m;            // slope
   double _gc_time_b;            // y-intercept
   double _gc_time_sd;           // sd on deviance from prediction
+
+  // _trigger_threshold, represented in words, is the amount of memory that we allow ourselves to allocate while concurrent
+  // GC is running.  If anticipated consumption of mutator memory during GC (e.g. average alloc rate * average GC time)
+  // exceeds _trigger_threshold, we need to start GC now.  Note that we intend NOT to allocate the headroom reserve,
+  // so this is not included in the _trigger_threshold.
+  void recalculate_trigger_threshold(size_t mutator_available);
 
   void add_gc_time(double timestamp_at_start, double duration);
   void add_degenerated_gc_time(double timestamp_at_start, double duration);
