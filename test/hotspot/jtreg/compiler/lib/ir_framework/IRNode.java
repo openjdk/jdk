@@ -3137,6 +3137,11 @@ public class IRNode {
         machOnlyNameRegex(REPLICATE_HF_IMM8, "replicateHF_imm8_gt128b");
     }
 
+    public static final String OPAQUE_GUARD = PREFIX + "OPAQUE_GUARD" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OPAQUE_GUARD, "OpaqueGuard");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
