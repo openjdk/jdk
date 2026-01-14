@@ -49,7 +49,7 @@
 //
 
 bool ZForwarding::claim() {
-  return _claimed.compare_exchange(false, true) == false;
+  return _claimed.compare_set(false, true);
 }
 
 void ZForwarding::in_place_relocation_start(zoffset relocated_watermark) {
@@ -100,7 +100,7 @@ bool ZForwarding::retain_page(ZRelocateQueue* queue) {
       return false;
     }
 
-    if (_ref_count.compare_exchange(ref_count, ref_count + 1) == ref_count) {
+    if (_ref_count.compare_set(ref_count, ref_count + 1)) {
       // Retained
       return true;
     }
@@ -113,7 +113,7 @@ void ZForwarding::in_place_relocation_claim_page() {
     assert(ref_count > 0, "Invalid state");
 
     // Invert reference count
-    if (_ref_count.compare_exchange(ref_count, -ref_count) != ref_count) {
+    if (!_ref_count.compare_set(ref_count, -ref_count)) {
       continue;
     }
 
@@ -138,7 +138,7 @@ void ZForwarding::release_page() {
 
     if (ref_count > 0) {
       // Decrement reference count
-      if (_ref_count.compare_exchange(ref_count, ref_count - 1) != ref_count) {
+      if (!_ref_count.compare_set(ref_count, ref_count - 1)) {
         continue;
       }
 
@@ -151,7 +151,7 @@ void ZForwarding::release_page() {
       }
     } else {
       // Increment reference count
-      if (_ref_count.compare_exchange(ref_count, ref_count + 1) != ref_count) {
+      if (!_ref_count.compare_set(ref_count, ref_count + 1)) {
         continue;
       }
 
