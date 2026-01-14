@@ -115,7 +115,7 @@ uint WorkerThreads::set_active_workers(uint num_workers) {
          num_workers, _max_workers);
 
   if (_created_workers > 0 && InjectGCWorkerCreationFailure) {
-    assert(is_init_completed(), "Initialization not completed");
+    assert(is_init_completed(), "Would be interesting to see if this ever happens");
     log_error(gc, task)("Failed to create worker thread (InjectGCWorkerCreationFailure)");
     _active_workers = MIN2(_created_workers, num_workers);
     return _active_workers;
