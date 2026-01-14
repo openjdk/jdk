@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class G1Analytics: public CHeapObj<mtGC> {
   const static int NumPrevPausesForHeuristics = 10;
   const G1Predictions* _predictor;
 
-  // These exclude marking times and System.gc() pause times.
+  // These exclude marking times.
   TruncatedSeq _recent_gc_times_ms;
 
   TruncatedSeq _concurrent_mark_remark_times_ms;
@@ -196,7 +196,8 @@ public:
   size_t predict_pending_cards(bool for_young_only_phase) const;
 
   // Add a new GC of the given duration and end time to the record.
-  void update_gc_time_ratios(double end_time_sec, double pause_time_ms, bool is_user_requested_gc);
+  void update_recent_gc_times(double end_time_sec, double gc_time_ms);
+  void update_gc_time_ratios(double end_time_sec, double pause_time_ms);
 };
 
 #endif // SHARE_GC_G1_G1ANALYTICS_HPP

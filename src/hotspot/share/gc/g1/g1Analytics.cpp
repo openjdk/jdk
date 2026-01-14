@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,34 +162,28 @@ void G1Analytics::report_alloc_rate_ms(double alloc_rate) {
   _alloc_rate_ms_seq.add(alloc_rate);
 }
 
-void G1Analytics::update_gc_time_ratios(double end_time_sec, double pause_time_ms, bool is_user_requested_gc) {
-  // Exclude pause times from user-requested GCs when updating sizing heuristics.
-  // User-triggered GCs may occur independently of normal GC pressure, so including
-  // their pause times would skew the GC Time Ratios used for heap sizing decisions.
-  if (!is_user_requested_gc) {
-    // This estimates the wall-clock time "lost" by application mutator threads due to concurrent GC
-    // activity. We do not account for contention on other shared resources such as memory bandwidth and
-    // caches, therefore underestimate the impact of the concurrent GC activity on mutator threads.
-    uint num_cpus = (uint)os::active_processor_count();
-    double concurrent_gc_impact_time = _concurrent_gc_cpu_time_ms / num_cpus;
+void G1Analytics::update_gc_time_ratios(double end_time_sec, double pause_time_ms) {
+  // This estimates the wall-clock time "lost" by application mutator threads due to concurrent GC
+  // activity. We do not account for contention on other shared resources such as memory bandwidth and
+  // caches, therefore underestimate the impact of the concurrent GC activity on mutator threads.
+  uint num_cpus = (uint)os::active_processor_count();
+  double concurrent_gc_impact_time = _concurrent_gc_cpu_time_ms / num_cpus;
 
-    double gc_time_ms = pause_time_ms + concurrent_gc_impact_time;
+  double gc_time_ms = pause_time_ms + concurrent_gc_impact_time;
 
-    double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
-    double long_term_gc_time_ms = _recent_gc_times_ms.sum() - _recent_gc_times_ms.oldest() + gc_time_ms;
+  double long_interval_ms = (end_time_sec - oldest_known_gc_end_time_sec()) * 1000.0;
+  double long_term_gc_time_ms = _recent_gc_times_ms.sum() - _recent_gc_times_ms.oldest() + gc_time_ms;
 
-    _long_term_gc_time_ratio = long_term_gc_time_ms / long_interval_ms;
-    _long_term_gc_time_ratio = clamp(_long_term_gc_time_ratio, 0.0, 1.0);
+  _long_term_gc_time_ratio = long_term_gc_time_ms / long_interval_ms;
+  _long_term_gc_time_ratio = clamp(_long_term_gc_time_ratio, 0.0, 1.0);
 
-    double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
+  double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
 
-    assert(short_interval_ms != 0.0, "short_interval_ms should not be zero, calculated from %f and %f", end_time_sec,  most_recent_gc_end_time_sec());
-    _short_term_gc_time_ratio = gc_time_ms / short_interval_ms;
-    _short_term_gc_time_ratio = clamp(_short_term_gc_time_ratio, 0.0, 1.0);
+  assert(short_interval_ms != 0.0, "short_interval_ms should not be zero, calculated from %f and %f", end_time_sec,  most_recent_gc_end_time_sec());
+  _short_term_gc_time_ratio = gc_time_ms / short_interval_ms;
+  _short_term_gc_time_ratio = clamp(_short_term_gc_time_ratio, 0.0, 1.0);
 
-    _recent_gc_times_ms.add(gc_time_ms);
-  }
-  _recent_prev_end_times_for_all_gcs_sec.add(end_time_sec);
+  update_recent_gc_times(end_time_sec, gc_time_ms);
 }
 
 void G1Analytics::report_concurrent_refine_rate_ms(double cards_per_ms) {
@@ -326,6 +320,12 @@ double G1Analytics::oldest_known_gc_end_time_sec() const {
 
 double G1Analytics::most_recent_gc_end_time_sec() const {
   return _recent_prev_end_times_for_all_gcs_sec.last();
+}
+
+void G1Analytics::update_recent_gc_times(double end_time_sec,
+                                         double gc_time_ms) {
+  _recent_gc_times_ms.add(gc_time_ms);
+  _recent_prev_end_times_for_all_gcs_sec.add(end_time_sec);
 }
 
 void G1Analytics::report_concurrent_mark_cleanup_times_ms(double ms) {
