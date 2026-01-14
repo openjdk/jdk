@@ -435,8 +435,17 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, trac
     event.set_biased(false);
     event.commit();
   } else {
-    begin_stack_trace_callback(true, false, user_data);
-    end_stack_trace_callback(user_data);
+    Thread* thread = Thread::current();
+    if (thread->is_Java_thread()) {
+      // A Java thread needs to transition to native (from ) before we can call into a callback.
+      // Notice that this involves a safepoint-check.
+      ThreadToNativeFromVM transition(JavaThread::current());
+      begin_stack_trace_callback(true, false, user_data);
+      end_stack_trace_callback(user_data);
+    } else {
+      begin_stack_trace_callback(true, false, user_data);
+      end_stack_trace_callback(user_data);
+    }
   }
 }
 
