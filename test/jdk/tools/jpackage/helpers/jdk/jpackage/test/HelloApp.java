@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -315,37 +316,33 @@ public final class HelloApp {
 
     public static void executeLauncherAndVerifyOutput(JPackageCommand cmd,
             String... args) {
-        AppOutputVerifier av = assertMainLauncher(cmd, args);
-        if (av != null) {
+        assertMainLauncher(cmd, args).ifPresent(av -> {
             av.executeAndVerifyOutput(args);
-        }
+        });
     }
 
     public static Executor.Result executeLauncher(JPackageCommand cmd,
             String... args) {
-        AppOutputVerifier av = assertMainLauncher(cmd, args);
-        if (av != null) {
+        return assertMainLauncher(cmd, args).map(av -> {
             return av.saveOutput(true).execute(args);
-        } else {
-            return null;
-        }
+        }).orElseThrow();
     }
 
-    public static AppOutputVerifier assertMainLauncher(JPackageCommand cmd,
+    public static Optional<AppOutputVerifier> assertMainLauncher(JPackageCommand cmd,
             String... args) {
         final Path launcherPath = cmd.appLauncherPath();
         if (!cmd.canRunLauncher(String.format("Not running [%s] launcher",
                 launcherPath))) {
-            return null;
+            return Optional.empty();
         }
 
-        return assertApp(launcherPath)
+        return Optional.of(assertApp(launcherPath)
         .addDefaultArguments(Optional
                 .ofNullable(cmd.getAllArgumentValues("--arguments"))
                 .orElseGet(() -> new String[0]))
         .addJavaOptions(Optional
                 .ofNullable(cmd.getAllArgumentValues("--java-options"))
-                .orElseGet(() -> new String[0]));
+                .orElseGet(() -> new String[0])));
     }
 
 
@@ -426,6 +423,11 @@ public final class HelloApp {
             .collect(Collectors.toList()));
         }
 
+        public AppOutputVerifier processListener(Consumer<Process> v) {
+            processListener = v;
+            return this;
+        }
+
         public void verifyOutput(String... args) {
             final List<String> launcherArgs = List.of(args);
             final List<String> appArgs;
@@ -479,6 +481,7 @@ public final class HelloApp {
                     .saveOutput(saveOutput)
                     .dumpOutput()
                     .setExecutable(executablePath)
+                    .processListener(processListener)
                     .addArguments(List.of(args));
 
             env.forEach((envVarName, envVarValue) -> {
@@ -493,6 +496,7 @@ public final class HelloApp {
         private final Path launcherPath;
         private Path outputFilePath;
         private int expectedExitCode;
+        private Consumer<Process> processListener;
         private final List<String> defaultLauncherArgs;
         private final Map<String, String> params;
         private final Map<String, String> env;
