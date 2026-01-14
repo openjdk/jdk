@@ -6214,7 +6214,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ sub(parsedLength, parsedLength, 64);
     __ cmp(parsedLength, (u1)0);
-    __ br(Assembler::GE, L_loop);
+    __ br(Assembler::GT, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
