@@ -30,6 +30,7 @@
 #include <stdio.h>
 
 #define GTEST_DONT_DEFINE_TEST 1
+#define GTEST_DONT_DEFINE_TEST_F 1
 
 // googlemock has ::testing::internal::Log function, so we need to temporary
 // undefine 'Log' from logging/log.hpp and define it back after gmock header
@@ -54,6 +55,8 @@
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+#include <string_view>
 END_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_reinstall.hpp"
 
@@ -65,15 +68,27 @@ END_ALLOW_FORBIDDEN_FUNCTIONS
 // Wrapper around os::exit so we don't need to include os.hpp here.
 extern void gtest_exit_from_child_vm(int num);
 
+constexpr bool gtest_check_valid_test_name(std::string_view name) {
+  auto ends_with = [&](std::string_view other) {
+    return name.size() >= other.size() &&
+           name.compare(name.size() - other.size(), std::string_view::npos, other) == 0;
+  };
+
+  // Test names are not allowed to end in `_`, `__vm`, `__other_vm` or `__vm_assert`
+  return !ends_with("_") && !ends_with("__vm") && !ends_with("__other_vm") && !ends_with("__vm_assert");
+}
+
 #define CONCAT(a, b) a ## b
 
-#define TEST(category, name) GTEST_TEST(category, name)
+#define HS_GTEST_CHECK_NAME(name) static_assert(gtest_check_valid_test_name(#name));
 
-#define TEST_VM(category, name) GTEST_TEST(category, CONCAT(name, _vm))
+#define TEST(category, name) HS_GTEST_CHECK_NAME(name) GTEST_TEST(category, name)
 
-#define TEST_VM_F(test_fixture, name)                               \
-  GTEST_TEST_(test_fixture, name ## _vm, test_fixture,              \
-              ::testing::internal::GetTypeId<test_fixture>())
+#define TEST_F(category, name) HS_GTEST_CHECK_NAME(name) GTEST_TEST_F(category, name)
+
+#define TEST_VM(category, name) HS_GTEST_CHECK_NAME(name) GTEST_TEST(category, CONCAT(name, __vm))
+
+#define TEST_VM_F(test_fixture, name) HS_GTEST_CHECK_NAME(name) GTEST_TEST_F(test_fixture, CONCAT(name, __vm))
 
 #define TEST_OTHER_VM(category, name)                               \
   static void test_  ## category ## _ ## name ## _();               \
@@ -94,7 +109,7 @@ extern void gtest_exit_from_child_vm(int num);
     gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
-  TEST(category, CONCAT(name, _other_vm)) {                         \
+  GTEST_TEST(category, CONCAT(name, __other_vm)) {                  \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(0),                       \
                 ".*OKIDOKI.*");                                     \
@@ -112,7 +127,7 @@ extern void gtest_exit_from_child_vm(int num);
     gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
-  TEST(category, CONCAT(name, _vm_assert)) {                        \
+  GTEST_TEST(category, CONCAT(name, __vm_assert)) {                 \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
                 "assert failed");                                   \
@@ -134,7 +149,7 @@ extern void gtest_exit_from_child_vm(int num);
     gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
-  TEST(category, CONCAT(name, _vm_assert)) {                        \
+  GTEST_TEST(category, CONCAT(name, __vm_assert)) {                 \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
                 "assert failed: " msg);                             \
@@ -155,7 +170,7 @@ extern void gtest_exit_from_child_vm(int num);
     gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
-  TEST(category, CONCAT(name, _vm_assert)) {                        \
+  GTEST_TEST(category, CONCAT(name, __vm_assert)) {                 \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
                 msg);                                               \
@@ -172,7 +187,7 @@ extern void gtest_exit_from_child_vm(int num);
     gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
-  TEST(category, CONCAT(name, _vm_assert)) {                        \
+  GTEST_TEST(category, CONCAT(name, __vm_assert)) {                 \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
                 "signaled: " signame);                              \
