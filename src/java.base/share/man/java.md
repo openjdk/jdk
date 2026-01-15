@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ To launch a source-file program:
 :   Specifies the name of the class to be launched. Command-line entries
     following `classname` are the arguments for the main method.
 
-`-jar` *jarfile*
+[`-jar`]{#-jar} *jarfile*
 :   Executes a program encapsulated in a JAR file. The *jarfile* argument is
     the name of a JAR file with a manifest that contains a line in the form
     `Main-Class:`*classname* that defines the class with the
@@ -70,7 +70,7 @@ To launch a source-file program:
     is the source of all user classes, and other class path settings are
     ignored. If you're using JAR files, then see [jar](jar.html).
 
-`-m` or `--module` *module*\[`/`*mainclass*\]
+[`-m`]{#-m} or `--module` *module*\[`/`*mainclass*\]
 :   Executes the main class in a module specified by *mainclass* if it is
     given, or, if it is not given, the value in the *module*. In other words,
     *mainclass* can be used when it is not specified by the module, or to
@@ -370,7 +370,7 @@ the JVM.
 > **Note:** To specify an argument for a long option, you can use either
 `--`*name*`=`*value* or `--`*name* *value*.
 
-`-agentlib:`*libname*\[`=`*options*\]
+[`-agentlib:`]{#-agentlib}*libname*\[`=`*options*\]
 :   Loads the specified native agent library. After the library name, a
     comma-separated list of options specific to the library can be used.
     If the option `-agentlib:foo` is specified, then the JVM attempts to
@@ -393,12 +393,12 @@ the JVM.
 
         >   `-agentlib:jdwp=transport=dt_socket,server=y,address=8000`
 
-`-agentpath:`*pathname*\[`=`*options*\]
+[`-agentpath:`]{#-agentpath}*pathname*\[`=`*options*\]
 :   Loads the native agent library specified by the absolute path name. This
     option is equivalent to `-agentlib` but uses the full path and file name of
     the library.
 
-`--class-path` *classpath*, `-classpath` *classpath*, or `-cp` *classpath*
+[`--class-path`]{#--class-path} *classpath*, `-classpath` *classpath*, or `-cp` *classpath*
 :   Specifies a list of directories, JAR files, and ZIP archives to search
     for class files.
 
@@ -424,15 +424,15 @@ the JVM.
     expanded except by querying the environment, such as by calling
     `System.getenv("CLASSPATH")`.
 
-`--disable-@files`
+[`--disable-@files`]{#--disable-@files}
 :   Can be used anywhere on the command line, including in an argument file, to
     prevent further `@filename` expansion. This option stops expanding
     `@`-argfiles after the option.
 
-`--enable-preview`
+[`--enable-preview`]{#--enable-preview}
 :   Allows classes to depend on [preview features](https://docs.oracle.com/en/java/javase/12/language/index.html#JSLAN-GUID-5A82FE0E-0CA4-4F1F-B075-564874FE2823) of the release.
 
-`--enable-native-access` *module*\[`,`*module*...\]
+[`--enable-native-access`]{#--enable-native-access} *module*\[`,`*module*...\]
 :   Native access involves access to code or data outside the Java runtime.
     This is generally unsafe and, if done incorrectly, might crash the JVM or result
     in memory corruption. Native access can occur as a result of calling a method that
@@ -465,7 +465,7 @@ the JVM.
     run it with `--illegal-native-access=deny` along with any necessary `--enable-native-access`
     options.
 
-`--enable-final-field-mutation` *module*\[,*module*...\]
+[`--enable-final-field-mutation`]{#--enable-final-field-mutation} *module*\[,*module*...\]
 :   Mutation of final fields is possible with the reflection API of the Java Platform.
     However, it compromises safety and performance in all programs.
     This option allows code in the specified modules to mutate final fields by reflection.
@@ -498,13 +498,13 @@ the JVM.
     run it with `--illegal-final-field-mutation=deny` along with any necessary
     `--enable-final-field-mutation` options.
 
-`--finalization=`*value*
+[`--finalization=`]{#--finalization}*value*
 :   Controls whether the JVM performs finalization of objects. Valid values
     are "enabled" and "disabled". Finalization is enabled by default, so the
     value "enabled" does nothing. The value "disabled" disables finalization,
     so that no finalizers are invoked.
 
-`--module-path` *modulepath*... or `-p` *modulepath*
+[`--module-path`]{#--module-path} *modulepath*... or `-p` *modulepath*
 :   Specifies where to find application modules with a list of path elements.
     The elements of a module path can be a file path to a module or a directory
     containing modules. Each module is either a modular JAR or an
@@ -513,7 +513,7 @@ the JVM.
     On Windows, semicolons (`;`) separate path elements in this list;
     on other platforms it is a colon (`:`).
 
-`--upgrade-module-path` *modulepath*...
+[`--upgrade-module-path`]{#--upgrade-module-path} *modulepath*...
 :   Specifies where to find module replacements of upgradeable modules in the
     runtime image with a list of path elements.
     The elements of a module path can be a file path to a module or a directory
@@ -523,33 +523,33 @@ the JVM.
     On Windows, semicolons (`;`) separate path elements in this list;
     on other platforms it is a colon (`:`).
 
-`--add-modules` *module*\[`,`*module*...\]
+[`--add-modules`]{#--add-modules} *module*\[`,`*module*...\]
 :   Specifies the root modules to resolve in addition to the initial module.
     *module* can also be `ALL-DEFAULT`, `ALL-SYSTEM`, and `ALL-MODULE-PATH`.
 
-`--list-modules`
+[`--list-modules`]{#--list-modules}
 :   Lists the observable modules and then exits.
 
-`-d` *module\_name* or `--describe-module` *module\_name*
+[`-d`]{#-d} *module\_name* or `--describe-module` *module\_name*
 :   Describes a specified module and then exits.
 
-`--dry-run`
+[`--dry-run`]{#--dry-run}
 :   Creates the VM but doesn't execute the main method. This `--dry-run` option
     might be useful for validating the command-line options such as the module
     system configuration.
 
-`--validate-modules`
+[`--validate-modules`]{#--validate-modules}
 :   Validates all modules and exit. This option is helpful for finding
     conflicts and other errors with modules on the module path.
 
-`-D`*property*`=`*value*
+[`-D`]{#-D}*property*`=`*value*
 :   Sets a system property value. The *property* variable is a string with no
     spaces that represents the name of the property. The *value* variable is a
     string that represents the value of the property. If *value* is a string
     with spaces, then enclose it in quotation marks (for example
     `-Dfoo="foo bar"`).
 
-`-disableassertions`\[`:`\[*packagename*\]...\|`:`*classname*\] or `-da`\[`:`\[*packagename*\]...\|`:`*classname*\]
+[`-disableassertions`]{#-disableassertions}\[`:`\[*packagename*\]...\|`:`*classname*\] or `-da`\[`:`\[*packagename*\]...\|`:`*classname*\]
 :   Disables assertions. By default, assertions are disabled in all packages
     and classes. With no arguments, `-disableassertions` (`-da`) disables
     assertions in all packages and classes. With the *packagename* argument
@@ -574,10 +574,10 @@ the JVM.
     >   `java -ea:com.wombat.fruitbat... -da:com.wombat.fruitbat.Brickbat
         MyClass`
 
-`-disablesystemassertions` or `-dsa`
+[`-disablesystemassertions`]{#-disablesystemassertions} or `-dsa`
 :   Disables assertions in all system classes.
 
-`-enableassertions`\[`:`\[*packagename*\]...\|`:`*classname*\] or `-ea`\[`:`\[*packagename*\]...\|`:`*classname*\]
+[`-enableassertions`]{#-enableassertions}\[`:`\[*packagename*\]...\|`:`*classname*\] or `-ea`\[`:`\[*packagename*\]...\|`:`*classname*\]
 :   Enables assertions. By default, assertions are disabled in all packages and
     classes. With no arguments, `-enableassertions` (`-ea`) enables assertions
     in all packages and classes. With the *packagename* argument ending in
@@ -604,28 +604,28 @@ the JVM.
     >   `java -ea:com.wombat.fruitbat... -da:com.wombat.fruitbat.Brickbat
         MyClass`
 
-`-enablesystemassertions` or `-esa`
+[`-enablesystemassertions`]{#-enablesystemassertions} or `-esa`
 :   Enables assertions in all system classes.
 
-`-help`, `-h`, or `-?`
+[`-help`]{#-help}, `-h`, or `-?`
 :   Prints the help message to the error stream.
 
-`--help`
+[`--help`]{#--help}
 :   Prints the help message to the output stream.
 
-`-javaagent:`*jarpath*\[`=`*options*\]
+[`-javaagent:`]{#-javaagent_}*jarpath*\[`=`*options*\]
 :   Loads the specified Java programming language agent. See `java.lang.instrument`.
 
-`--show-version`
+[`--show-version`]{#--show-version}
 :   Prints the product version to the output stream and continues.
 
-`-showversion`
+[`-showversion`]{#-showversion}
 :   Prints the product version to the error stream and continues.
 
-`--show-module-resolution`
+[`--show-module-resolution`]{#--show-module-resolution}
 :   Shows module resolution output during startup.
 
-`-splash:`*imagepath*
+[`-splash:`]{#-splash_}*imagepath*
 :   Shows the splash screen with the image specified by *imagepath*. HiDPI
     scaled images are automatically supported and used if available. The
     unscaled image file name, such as `image.ext`, should always be passed as
@@ -639,29 +639,29 @@ the JVM.
 
     See the SplashScreen API documentation for more information.
 
-`-verbose:class`
+[`-verbose:class`]{#-verbose_class}
 :   Displays information about each loaded class.
 
-`-verbose:gc`
+[`-verbose:gc`]{#-verbose_gc}
 :   Displays information about each garbage collection (GC) event.
 
-`-verbose:jni`
+[`-verbose:jni`]{#-verbose_jni}
 :   Displays information about the use of native methods and other Java Native
     Interface (JNI) activity.
 
-`-verbose:module`
+[`-verbose:module`]{#-verbose_module}
 :   Displays information about the modules in use.
 
-`--version`
+[`--version`]{#--version}
 :   Prints product version to the output stream and exits.
 
-`-version`
+[`-version`]{#-version}
 :   Prints product version to the error stream and exits.
 
-`-X`
+[`-X`]{#-X}
 :   Prints the help on extra options to the error stream.
 
-`--help-extra`
+[`--help-extra`]{#--help-extra}
 :   Prints the help on extra options to the output stream.
 
 `@`*argfile*
@@ -688,7 +688,7 @@ the JVM.
 The following `java` options are general purpose options that are specific to
 the Java HotSpot Virtual Machine.
 
-`-Xbatch`
+[`-Xbatch`]{#-Xbatch}
 :   Disables background compilation. By default, the JVM compiles the method as
     a background task, running the method in interpreter mode until the
     background compilation is finished. The `-Xbatch` flag disables background
@@ -696,14 +696,14 @@ the Java HotSpot Virtual Machine.
     task until completed. This option is equivalent to
     `-XX:-BackgroundCompilation`.
 
-`-Xbootclasspath/a:`*directories*\|*zip*\|*JAR-files*
+[`-Xbootclasspath/a:`]{#-Xbootclasspath}*directories*\|*zip*\|*JAR-files*
 :   Specifies a list of directories, JAR files, and ZIP archives to append to
     the end of the default bootstrap class path.
 
     On Windows, semicolons (`;`) separate entities in this list;
     on other platforms it is a colon (`:`).
 
-`-Xcheck:jni`
+[`-Xcheck:jni`]{#-Xcheck_jni}
 :   Performs additional checks for Java Native Interface (JNI) functions.
 
     The following checks are considered indicative of significant problems
@@ -739,22 +739,22 @@ the Java HotSpot Virtual Machine.
 
     Expect a performance degradation when this option is used.
 
-`-Xcomp`
+[`-Xcomp`]{#-Xcomp}
 :   Testing mode to exercise JIT compilers. This option should not be used in production environments.
 
-`-Xdebug`
+[`-Xdebug`]{#-Xdebug}
 :   Does nothing; deprecated for removal in a future release.
 
-`-Xdiag`
+[`-Xdiag`]{#-Xdiag}
 :   Shows additional diagnostic messages.
 
-`-Xint`
+[`-Xint`]{#-Xint}
 :   Runs the application in interpreted-only mode. Compilation to native code
     is disabled, and all bytecode is executed by the interpreter. The
     performance benefits offered by the just-in-time (JIT) compiler aren't
     present in this mode.
 
-`-Xinternalversion`
+[`-Xinternalversion`]{#-Xinternalversion}
 :   Displays more detailed JVM version information than the `-version` option,
     and then exits.
 
@@ -763,11 +763,11 @@ the Java HotSpot Virtual Machine.
     logging framework. See [Enable Logging with the JVM Unified Logging
     Framework].
 
-`-Xmixed`
+[`-Xmixed`]{#-Xmixed}
 :   Executes all bytecode by the interpreter except for hot methods, which are
     compiled to native code. On by default. Use `-Xint` to switch off.
 
-`-Xmn` *size*
+[`-Xmn`]{#-Xmn} *size*
 :   Sets the initial and maximum size (in bytes) of the heap for the young
     generation (nursery) in the generational collectors. Append the letter
     `k` or `K` to indicate kilobytes, `m` or `M` to indicate megabytes, or
@@ -793,7 +793,7 @@ the Java HotSpot Virtual Machine.
     the heap for the young generation, you can use `-XX:NewSize` to set the
     initial size and `-XX:MaxNewSize` to set the maximum size.
 
-`-Xms` *size*
+[`-Xms`]{#-Xms} *size*
 :   Sets the minimum and the initial size (in bytes) of the heap. This value
     must be a multiple of 1024 and greater than 1 MB. Append the letter `k` or
     `K` to indicate kilobytes, `m` or `M` to indicate megabytes, or `g` or `G`
@@ -815,7 +815,7 @@ the Java HotSpot Virtual Machine.
     initial heap size. If it appears after `-Xms` on the command line, then the
     initial heap size gets set to the value specified with `-XX:InitialHeapSize`.
 
-`-Xmx` *size*
+[`-Xmx`]{#-Xmx} *size*
 :   Specifies the maximum size (in bytes) of the heap. This value
     must be a multiple of 1024 and greater than 2 MB. Append the letter `k` or
     `K` to indicate kilobytes, `m` or `M` to indicate megabytes, or `g` or `G`
@@ -832,7 +832,7 @@ the Java HotSpot Virtual Machine.
 
     The `-Xmx` option is equivalent to `-XX:MaxHeapSize`.
 
-`-Xnoclassgc`
+[`-Xnoclassgc`]{#-Xnoclassgc}
 :   Disables garbage collection (GC) of classes. This can save some GC time,
     which shortens interruptions during the application run. When you specify
     `-Xnoclassgc` at startup, the class objects in the application are left
@@ -840,7 +840,7 @@ the Java HotSpot Virtual Machine.
     more memory being permanently occupied which, if not used carefully, throws
     an out-of-memory exception.
 
-`-Xrs`
+[`-Xrs`]{#-Xrs}
 :   Reduces the use of operating system signals by the JVM. Shutdown hooks
     enable the orderly shutdown of a Java application by running user cleanup
     code (such as closing database connections) at shutdown, even if the JVM
@@ -890,7 +890,7 @@ the Java HotSpot Virtual Machine.
     User code is responsible for causing shutdown hooks to run, for example, by
     calling `System.exit()` when the JVM is to be terminated.
 
-`-Xshare:`*mode*
+[`-Xshare:`]{#-Xshare_}*mode*
 :   Sets the class data sharing (CDS) mode.
 
     Possible *mode* arguments for this option include the following:
@@ -910,10 +910,10 @@ the Java HotSpot Virtual Machine.
     `off`
     :   Do not attempt to use shared class data.
 
-`-XshowSettings`
+[`-XshowSettings`]{#-XshowSettings}
 :   Shows all settings and then continues.
 
-`-XshowSettings:`*category*
+[`-XshowSettings:`]{#-XshowSettings_}*category*
 :   Shows settings and continues. Possible *category* arguments for this option
     include the following:
 
@@ -942,7 +942,7 @@ the Java HotSpot Virtual Machine.
     `system`
     :   **Linux only:** Shows host system or container configuration and continues.
 
-`-Xss` *size*
+[`-Xss`]{#-Xss} *size*
 :   Sets the thread stack size (in bytes). Append the letter `k` or `K` to
     indicate KB, `m` or `M` to indicate MB, or `g` or `G` to indicate GB. The
     actual size may be rounded up to a multiple of the system page size as
@@ -970,32 +970,32 @@ the Java HotSpot Virtual Machine.
 
     This option is similar to `-XX:ThreadStackSize`.
 
-`--add-reads` *module*`=`*target-module*(`,`*target-module*)\*
+[`--add-reads`]{#--add-reads} *module*`=`*target-module*(`,`*target-module*)\*
 :   Updates *module* to read the *target-module*, regardless of the module
     declaration. *target-module* can be `ALL-UNNAMED` to read all unnamed
     modules.
 
-`--add-exports` *module*`/`*package*`=`*target-module*(`,`*target-module*)\*
+[`--add-exports`]{#--add-exports} *module*`/`*package*`=`*target-module*(`,`*target-module*)\*
 :   Updates *module* to export *package* to *target-module*, regardless of
     module declaration. *target-module* can be `ALL-UNNAMED` to export to all
     unnamed modules.
 
-`--add-opens` *module*`/`*package*`=`*target-module*(`,`*target-module*)\*
+[`--add-opens`]{#--add-opens} *module*`/`*package*`=`*target-module*(`,`*target-module*)\*
 :   Updates *module* to open *package* to *target-module*, regardless of module
     declaration.
 
-`--limit-modules` *module*\[`,`*module*...\]
+[`--limit-modules`]{#--limit-modules} *module*\[`,`*module*...\]
 :   Specifies the limit of the universe of observable modules.
 
-`--patch-module` *module*`=`*file*(`;`*file*)\*
+[`--patch-module`]{#--patch-module} *module*`=`*file*(`;`*file*)\*
 :   Overrides or augments a module with classes and resources in JAR files or
     directories.
 
-`--source` *version*
+[`--source`]{#--source} *version*
 :   Sets the version of the source in source-file mode.
 
 
-`--sun-misc-unsafe-memory-access=` *value*
+[`--sun-misc-unsafe-memory-access=`]{#--sun-misc-unsafe-memory-access} *value*
 :   Allow or deny usage of unsupported API `sun.misc.Unsafe`. *value* is one of:
 
     `allow`
@@ -1021,20 +1021,20 @@ the Java HotSpot Virtual Machine.
 
 The following extra options are macOS specific.
 
-`-XstartOnFirstThread`
+[`-XstartOnFirstThread`]{#-XstartOnFirstThread}
 :   Runs the `main()` method on the first (AppKit) thread.
 
-`-Xdock:name=`*application\_name*
+[`-Xdock:name=`]{#-Xdock_name}*application\_name*
 :   Overrides the default application name displayed in dock.
 
-`-Xdock:icon=`*path\_to\_icon\_file*
+[`-Xdock:icon=`]{#-Xdock_icon}*path\_to\_icon\_file*
 :   Overrides the default icon displayed in dock.
 
 ## Advanced Options for Java
 
 These `java` options can be used to enable other advanced options.
 
-`-XX:+UnlockDiagnosticVMOptions`
+[`-XX:+UnlockDiagnosticVMOptions`]{#-XX__UnlockDiagnosticVMOptions}
 :   Unlocks the options intended for diagnosing the JVM. By default, this
     option is disabled and diagnostic options aren't available.
 
@@ -1046,7 +1046,7 @@ These `java` options can be used to enable other advanced options.
     of these options may be removed or their behavior changed without any
     warning.
 
-`-XX:+UnlockExperimentalVMOptions`
+[`-XX:+UnlockExperimentalVMOptions`]{#-XX__UnlockExperimentalVMOptions}
 :   Unlocks the options that provide experimental features in the JVM.
     By default, this option is disabled and experimental features aren't available.
 
@@ -1054,7 +1054,7 @@ These `java` options can be used to enable other advanced options.
 
 These `java` options control the runtime behavior of the Java HotSpot VM.
 
-`-XX:ActiveProcessorCount=`*x*
+[`-XX:ActiveProcessorCount=`]{#-XX_ActiveProcessorCount}*x*
 :   Overrides the number of CPUs that the VM will use to calculate the size of
     thread pools it will use for various operations such as Garbage Collection
     and ForkJoinPool.
@@ -1066,7 +1066,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     `-XX:-UseContainerSupport` for a description of enabling and disabling
     container support.
 
-`-XX:AllocateHeapAt=`*path*
+[`-XX:AllocateHeapAt=`]{#-XX_AllocateHeapAt}*path*
 :   Takes a path to the file system and uses memory mapping to allocate the
     object heap on the memory device. Using this option enables the HotSpot VM
     to allocate the Java object heap on an alternative memory device, such as
@@ -1084,7 +1084,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     The existing heap related flags (such as `-Xmx` and `-Xms`) and
     garbage-collection related flags continue to work as before.
 
-`-XX:-CompactStrings`
+[`-XX:-CompactStrings`]{#-XX__CompactStrings}
 :   Disables the Compact Strings feature. By default, this option is enabled.
     When this option is enabled, Java Strings containing only single-byte
     characters are internally represented and stored as
@@ -1107,7 +1107,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     In both of these scenarios, disabling Compact Strings makes sense.
 
-`-XX:ErrorFile=`*filename*
+[`-XX:ErrorFile=`]{#-XX_ErrorFile}*filename*
 :   Specifies the path and file name to which error data is written when an
     irrecoverable error occurs. By default, this file is created in the current
     working directory and named `hs_err_pid`*pid*`.log` where *pid* is the
@@ -1139,7 +1139,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         `TMP` environment variable; if that environment variable isn't defined,
         then the value of the `TEMP` environment variable is used.
 
-`-XX:+ExtensiveErrorReports`
+[`-XX:+ExtensiveErrorReports`]{#-XX__ExtensiveErrorReports}
 :   Enables the reporting of more extensive error information in the `ErrorFile`.
     This option can be turned on in environments where maximal information is
     desired - even if the resulting logs may be quite large and/or contain
@@ -1147,7 +1147,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     from release to release, and across different platforms. By default this
     option is disabled.
 
-`-XX:FlightRecorderOptions=`*parameter*`=`*value* (or) `-XX:FlightRecorderOptions:`*parameter*`=`*value*
+[`-XX:FlightRecorderOptions=`]{#-XX_FlightRecorderOptions}*parameter*`=`*value* (or) `-XX:FlightRecorderOptions:`*parameter*`=`*value*
 :   Sets the parameters that control the behavior of JFR. Multiple parameters can be specified
     by separating them with a comma.
 
@@ -1207,7 +1207,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         4 kilobytes. Overriding this parameter
         could reduce performance and is not recommended.
 
-`-XX:LargePageSizeInBytes=`*size*
+[`-XX:LargePageSizeInBytes=`]{#-XX_LargePageSizeInBytes}*size*
 :   Sets the maximum large page size (in bytes) used by the JVM. The
     *size* argument must be a valid page size supported by the environment
     to have any effect. Append the letter `k` or `K` to indicate kilobytes,
@@ -1221,7 +1221,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     >   `-XX:LargePageSizeInBytes=1g`
 
-`-XX:MaxDirectMemorySize=`*size*
+[`-XX:MaxDirectMemorySize=`]{#-XX_MaxDirectMemorySize}*size*
 :   Sets the maximum total size (in bytes) of the `java.nio` package,
     direct-buffer allocations. Append the letter `k` or `K` to indicate
     kilobytes, `m` or `M` to indicate megabytes, or `g` or `G` to indicate
@@ -1237,14 +1237,14 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     -XX:MaxDirectMemorySize=1048576
     ```
 
-`-XX:-MaxFDLimit`
+[`-XX:-MaxFDLimit`]{#-XX__MaxFDLimit}
 :   Disables the attempt to set the soft limit for the number of open file
     descriptors to the hard limit. By default, this option is enabled on all
     platforms, but is ignored on Windows. The only time that you may need to
     disable this is on macOS, where its use imposes a maximum of 10240, which
     is lower than the actual system maximum.
 
-`-XX:NativeMemoryTracking=`*mode*
+[`-XX:NativeMemoryTracking=`]{#-XX_NativeMemoryTracking}*mode*
 :   Specifies the mode for tracking JVM native memory usage. Possible *mode*
     arguments for this option include the following:
 
@@ -1261,7 +1261,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         usage by individual `CallSite`, individual virtual memory region and
         its committed regions.
 
-`-XX:TrimNativeHeapInterval=`*millis*
+[`-XX:TrimNativeHeapInterval=`]{#-XX_TrimNativeHeapInterval}*millis*
 :   Interval, in ms, at which the JVM will trim the native heap. Lower values
     will reclaim memory more eagerly at the cost of higher overhead. A value
     of 0 (default) disables native heap trimming.
@@ -1269,7 +1269,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is only supported on Linux with GNU C Library (glibc).
 
-`-XX:ObjectAlignmentInBytes=`*alignment*
+[`-XX:ObjectAlignmentInBytes=`]{#-XX_ObjectAlignmentInBytes}*alignment*
 :   Sets the memory alignment of Java objects (in bytes). By default, the value
     is set to 8 bytes. The specified value should be a power of 2, and must be
     within the range of 8 and 256 (inclusive). This option makes it possible to
@@ -1283,7 +1283,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     increases. As a result, you may not realize any benefits from using
     compressed pointers with large Java heap sizes.
 
-`-XX:OnError=`*string*
+[`-XX:OnError=`]{#-XX_OnError}*string*
 :   Sets a custom command or a series of semicolon-separated commands to run
     when an irrecoverable error occurs. If the string contains spaces, then it
     must be enclosed in quotation marks.
@@ -1304,7 +1304,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
         >   `-XX:OnError="userdump.exe %p"`
 
-`-XX:OnOutOfMemoryError=`*string*
+[`-XX:OnOutOfMemoryError=`]{#-XX_OnOutOfMemoryError}*string*
 :   Sets a custom command or a series of semicolon-separated commands to run
     when an `OutOfMemoryError` exception is first thrown by the JVM.
     If the string
@@ -1316,31 +1316,31 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     directly from Java code, nor by the JVM for other types of resource
     exhaustion (such as native thread creation errors).
 
-`-XX:+PrintCommandLineFlags`
+[`-XX:+PrintCommandLineFlags`]{#-XX__PrintCommandLineFlags}
 :   Enables printing of ergonomically selected JVM flags that appeared on the
     command line. It can be useful to know the ergonomic values set by the JVM,
     such as the heap space size and the selected garbage collector. By default,
     this option is disabled and flags aren't printed.
 
-`-XX:+PreserveFramePointer`
+[`-XX:+PreserveFramePointer`]{#-XX__PreserveFramePointer}
 :   Selects between using the RBP register as a general purpose register
     (`-XX:-PreserveFramePointer`) and using the RBP register to hold the frame
     pointer of the currently executing method (`-XX:+PreserveFramePointer`). If
     the frame pointer is available, then external profiling tools (for example,
     Linux perf) can construct more accurate stack traces.
 
-`-XX:+PrintNMTStatistics`
+[`-XX:+PrintNMTStatistics`]{#-XX__PrintNMTStatistics}
 :   Enables printing of collected native memory tracking data at JVM exit when
     native memory tracking is enabled (see `-XX:NativeMemoryTracking`). By
     default, this option is disabled and native memory tracking data isn't
     printed.
 
-`-XX:SharedArchiveFile=`*path*
+[`-XX:SharedArchiveFile=`]{#-XX_SharedArchiveFile}*path*
 :   Specifies the path and name of the class data sharing (CDS) archive file
 
     See [Application Class Data Sharing].
 
-`-XX:+VerifySharedSpaces`
+[`-XX:+VerifySharedSpaces`]{#-XX__VerifySharedSpaces}
 :   If this option is specified, the JVM will load a CDS archive file only if it
     passes an integrity check based on CRC32 checksums. The purpose of this flag is
     to check for unintentional damage to CDS archive files in transmission or storage.
@@ -1348,10 +1348,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     ensure that the CDS archive files used by Java applications cannot be modified without
     proper authorization.
 
-`-XX:SharedArchiveConfigFile=`*shared\_config\_file*
+[`-XX:SharedArchiveConfigFile=`]{#-XX_SharedArchiveConfigFile}*shared\_config\_file*
 :   Specifies additional shared data added to the archive file.
 
-`-XX:SharedClassListFile=`*file\_name*
+[`-XX:SharedClassListFile=`]{#-XX_SharedClassListFile}*file\_name*
 :   Specifies the text file that contains the names of the classes to store in
     the class data sharing (CDS) archive. This file contains the full name of
     one class per line, except slashes (`/`) replace dots (`.`). For example,
@@ -1369,7 +1369,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     See [Application Class Data Sharing].
 
-`-XX:+ShowCodeDetailsInExceptionMessages`
+[`-XX:+ShowCodeDetailsInExceptionMessages`]{#-XX__ShowCodeDetailsInExceptionMessages}
 :   Enables printing of improved `NullPointerException` messages. When an application throws a
     `NullPointerException`, the option enables the JVM to analyze the program's bytecode
     instructions to determine precisely which reference is `null`,
@@ -1378,13 +1378,13 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     and will be printed as the exception message along with
     the method, filename, and line number. By default, this option is enabled.
 
-`-XX:+ShowMessageBoxOnError`
+[`-XX:+ShowMessageBoxOnError`]{#-XX__ShowMessageBoxOnError}
 :   Enables the display of a dialog box when the JVM experiences an
     irrecoverable error. This prevents the JVM from exiting and keeps the
     process active so that you can attach a debugger to it to investigate the
     cause of the error. By default, this option is disabled.
 
-`-XX:StartFlightRecording:`*parameter*`=`*value*
+[`-XX:StartFlightRecording:`]{#-XX_StartFlightRecording_}*parameter*`=`*value*
 :   Starts a JFR recording for the Java application. This option is equivalent
     to the `JFR.start` diagnostic command that starts a recording during
     runtime. `-XX:StartFlightRecording:help` prints available options and
@@ -1503,7 +1503,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     To only see warnings and errors from JFR during startup set
     -Xlog:jfr+startup=warning.
 
-`-XX:ThreadStackSize=`*size*
+[`-XX:ThreadStackSize=`]{#-XX_ThreadStackSize}*size*
 :   Sets the Java thread stack size (in kilobytes). Use of a scaling suffix,
     such as `k`, results in the scaling of the kilobytes value so that
     `-XX:ThreadStackSize=1k` sets the Java thread stack size to 1024\*1024
@@ -1529,7 +1529,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is similar to `-Xss`.
 
-`-XX:+UseCompactObjectHeaders`
+[`-XX:+UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
 :   Enables compact object headers. By default, this option is disabled.
     Enabling this option reduces memory footprint in the Java heap by
     4 bytes per object (on average) and often improves performance.
@@ -1538,7 +1538,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     In a future release it is expected to be enabled by default, and
     eventually will be the only mode of operation.
 
-`-XX:-UseCompressedOops`
+[`-XX:-UseCompressedOops`]{#-XX__UseCompressedOops}
 :   Disables the use of compressed pointers. By default, this option is
     enabled, and compressed pointers are used. This will automatically limit
     the maximum ergonomically determined Java heap size to the maximum amount
@@ -1553,7 +1553,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     It's possible to use compressed pointers with Java heap sizes greater than
     32 GB. See the `-XX:ObjectAlignmentInBytes` option.
 
-`-XX:-UseContainerSupport`
+[`-XX:-UseContainerSupport`]{#-XX__UseContainerSupport}
 :   **Linux only:** The VM now provides automatic container detection support, which allows the
     VM to determine the amount of memory and number of processors that are
     available to a Java process running in docker containers. It uses this
@@ -1568,28 +1568,28 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     information. See [Enable Logging with the JVM Unified Logging Framework]
     for a description of using Unified Logging.
 
-`-XX:+UseLargePages`
+[`-XX:+UseLargePages`]{#-XX__UseLargePages}
 :   Enables the use of large page memory. By default, this option is disabled
     and large page memory isn't used.
 
     See [Large Pages].
 
-`-XX:+UseTransparentHugePages`
+[`-XX:+UseTransparentHugePages`]{#-XX__UseTransparentHugePages}
 :   **Linux only:** Enables the use of large pages that can dynamically grow or
     shrink. This option is disabled by default. You may encounter performance
     problems with transparent huge pages as the OS moves other pages around to
     create huge pages; this option is made available for experimentation.
 
-`-XX:+AllowUserSignalHandlers`
+[`-XX:+AllowUserSignalHandlers`]{#-XX__AllowUserSignalHandlers}
 :   **Non-Windows:** Enables installation of signal handlers by the application. By default,
     this option is disabled and the application isn't allowed to install signal
     handlers.
 
-`-XX:VMOptionsFile=`*filename*
+[`-XX:VMOptionsFile=`]{#-XX_VMOptionsFile}*filename*
 :   Allows user to specify VM options in a file, for example,
     `java -XX:VMOptionsFile=/var/my_vm_options HelloWorld`.
 
-`-XX:UseBranchProtection=`*mode*
+[`-XX:UseBranchProtection=`]{#-XX_UseBranchProtection}*mode*
 :   **Linux AArch64 only:** Specifies the branch protection mode.
     All options other than
     `none` require the VM to have been built with branch protection
@@ -1613,14 +1613,14 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 These `java` options control the dynamic just-in-time (JIT) compilation
 performed by the Java HotSpot VM.
 
-`-XX:AllocateInstancePrefetchLines=`*lines*
+[`-XX:AllocateInstancePrefetchLines=`]{#-XX_AllocateInstancePrefetchLines}*lines*
 :   Sets the number of lines to prefetch ahead of the instance allocation
     pointer. By default, the number of lines to prefetch is set to 1:
 
     >   `-XX:AllocateInstancePrefetchLines=1`
 
 
-`-XX:AllocatePrefetchDistance=`*size*
+[`-XX:AllocatePrefetchDistance=`]{#-XX_AllocatePrefetchDistance}*size*
 :   Sets the size (in bytes) of the prefetch distance for object allocation.
     Memory about to be written with the value of new objects is prefetched up
     to this distance starting from the address of the last allocated object.
@@ -1636,7 +1636,7 @@ performed by the Java HotSpot VM.
     >   `-XX:AllocatePrefetchDistance=1024`
 
 
-`-XX:AllocatePrefetchInstr=`*instruction*
+[`-XX:AllocatePrefetchInstr=`]{#-XX_AllocatePrefetchInstr}*instruction*
 :   Sets the prefetch instruction to prefetch ahead of the allocation pointer.
     Possible values are from 0 to 3. The actual instructions behind the values
     depend on the platform. By default, the prefetch instruction is set to 0:
@@ -1644,7 +1644,7 @@ performed by the Java HotSpot VM.
     >   `-XX:AllocatePrefetchInstr=0`
 
 
-`-XX:AllocatePrefetchLines=`*lines*
+[`-XX:AllocatePrefetchLines=`]{#-XX_AllocatePrefetchLines}*lines*
 :   Sets the number of cache lines to load after the last object allocation by
     using the prefetch instructions generated in compiled code. The default
     value is 1 if the last allocated object was an instance, and 3 if it was an
@@ -1656,7 +1656,7 @@ performed by the Java HotSpot VM.
     >   `-XX:AllocatePrefetchLines=5`
 
 
-`-XX:AllocatePrefetchStepSize=`*size*
+[`-XX:AllocatePrefetchStepSize=`]{#-XX_AllocatePrefetchStepSize}*size*
 :   Sets the step size (in bytes) for sequential prefetch instructions. Append
     the letter `k` or `K` to indicate kilobytes, `m` or `M` to indicate
     megabytes, `g` or `G` to indicate gigabytes. By default, the step size is
@@ -1665,7 +1665,7 @@ performed by the Java HotSpot VM.
     >   `-XX:AllocatePrefetchStepSize=16`
 
 
-`-XX:AllocatePrefetchStyle=`*style*
+[`-XX:AllocatePrefetchStyle=`]{#-XX_AllocatePrefetchStyle}*style*
 :   Sets the generated code style for prefetch instructions. The *style*
     argument is an integer from 0 to 3:
 
@@ -1684,12 +1684,12 @@ performed by the Java HotSpot VM.
     :   Generate one prefetch instruction per cache line.
 
 
-`-XX:+BackgroundCompilation`
+[`-XX:+BackgroundCompilation`]{#-XX__BackgroundCompilation}
 :   Enables background compilation. This option is enabled by default. To
     disable background compilation, specify `-XX:-BackgroundCompilation` (this
     is equivalent to specifying `-Xbatch`).
 
-`-XX:CICompilerCount=`*threads*
+[`-XX:CICompilerCount=`]{#-XX_CICompilerCount}*threads*
 :   Sets the number of compiler threads to use for compilation.
     By default, the number of compiler threads is selected automatically
     depending on the number of CPUs and memory available for compiled code.
@@ -1697,11 +1697,11 @@ performed by the Java HotSpot VM.
 
     >   `-XX:CICompilerCount=2`
 
-`-XX:+UseDynamicNumberOfCompilerThreads`
+[`-XX:+UseDynamicNumberOfCompilerThreads`]{#-XX__UseDynamicNumberOfCompilerThreads}
 :   Dynamically create compiler thread up to the limit specified by `-XX:CICompilerCount`.
     This option is enabled by default.
 
-`-XX:CompileCommand=`*command*`,`*method*\[`,`*option*\]
+[`-XX:CompileCommand=`]{#-XX_CompileCommand}*command*`,`*method*\[`,`*option*\]
 :   Specifies a *command* to perform on a *method*. For example, to exclude the
     `indexOf()` method of the `String` class from being compiled, use the
     following:
@@ -1800,7 +1800,7 @@ performed by the Java HotSpot VM.
         You can suppress this by specifying the `-XX:CompileCommand=quiet`
         option before other `-XX:CompileCommand` options.
 
-`-XX:CompileCommandFile=`*filename*
+[`-XX:CompileCommandFile=`]{#-XX_CompileCommandFile}*filename*
 :   Sets the file from which JIT compiler commands are read. By default, the
     `.hotspot_compiler` file is used to store commands performed by the JIT
     compiler.
@@ -1814,7 +1814,7 @@ performed by the Java HotSpot VM.
     If you're using commands for the JIT compiler to perform on methods, then
     see the `-XX:CompileCommand` option.
 
-`-XX:CompilerDirectivesFile=`*file*
+[`-XX:CompilerDirectivesFile=`]{#-XX_CompilerDirectivesFile}*file*
 :   Adds directives from a file to the directives stack when a program starts.
     See [Compiler Control](https://docs.oracle.com/en/java/javase/12/vm/compiler-control1.html#GUID-94AD8194-786A-4F19-BFFF-278F8E237F3A).
 
@@ -1822,14 +1822,14 @@ performed by the Java HotSpot VM.
     `-XX:UnlockDiagnosticVMOptions` option that unlocks diagnostic JVM options.
 
 
-`-XX:+CompilerDirectivesPrint`
+[`-XX:+CompilerDirectivesPrint`]{#-XX__CompilerDirectivesPrint}
 :   Prints the directives stack when the program starts or when a new directive
     is added.
 
     The `-XX:+CompilerDirectivesPrint` option has to be used together with the
     `-XX:UnlockDiagnosticVMOptions` option that unlocks diagnostic JVM options.
 
-`-XX:CompileOnly=`*methods*
+[`-XX:CompileOnly=`]{#-XX_CompileOnly}*methods*
 :   Sets the list of methods (separated by commas) to which compilation should
     be restricted. Only the specified methods are compiled.
 
@@ -1841,7 +1841,7 @@ performed by the Java HotSpot VM.
     -XX:CompileCommand=compileonly,methodN
     ```
 
-`-XX:CompileThresholdScaling=`*scale*
+[`-XX:CompileThresholdScaling=`]{#-XX_CompileThresholdScaling}*scale*
 :   Provides unified control of first compilation. This option controls when
     methods are first compiled for both the tiered and the nontiered modes of
     operation. The `CompileThresholdScaling` option has a floating point value
@@ -1851,11 +1851,11 @@ performed by the Java HotSpot VM.
     compilation while values greater than 1.0 delay compilation. Setting
     `CompileThresholdScaling` to 0 is equivalent to disabling compilation.
 
-`-XX:+DoEscapeAnalysis`
+[`-XX:+DoEscapeAnalysis`]{#-XX__DoEscapeAnalysis}
 :   Enables the use of escape analysis. This option is enabled by default. To
     disable the use of escape analysis, specify `-XX:-DoEscapeAnalysis`.
 
-`-XX:InitialCodeCacheSize=`*size*
+[`-XX:InitialCodeCacheSize=`]{#-XX_InitialCodeCacheSize}*size*
 :   Sets the initial code cache size (in bytes). Append the letter `k` or `K`
     to indicate kilobytes, `m` or `M` to indicate megabytes, or `g` or `G` to
     indicate gigabytes. The default value depends on the platform. The initial code
@@ -1865,11 +1865,11 @@ performed by the Java HotSpot VM.
 
     >   `-XX:InitialCodeCacheSize=32k`
 
-`-XX:+Inline`
+[`-XX:+Inline`]{#-XX__Inline}
 :   Enables method inlining. This option is enabled by default to increase
     performance. To disable method inlining, specify `-XX:-Inline`.
 
-`-XX:InlineSmallCode=`*size*
+[`-XX:InlineSmallCode=`]{#-XX_InlineSmallCode}*size*
 :   Sets the maximum code size (in bytes) for already compiled methods
     that may be inlined. This flag only applies to the C2 compiler.
     Append the letter `k` or `K` to indicate kilobytes,
@@ -1879,7 +1879,7 @@ performed by the Java HotSpot VM.
 
     >   `-XX:InlineSmallCode=1000`
 
-`-XX:+LogCompilation`
+[`-XX:+LogCompilation`]{#-XX__LogCompilation}
 :   Enables logging of compilation activity to a file named `hotspot.log` in
     the current working directory. You can specify a different log file path
     and name using the `-XX:LogFile` option.
@@ -1893,7 +1893,7 @@ performed by the Java HotSpot VM.
     `-XX:+PrintCompilation` option.
 
 
-`-XX:FreqInlineSize=`*size*
+[`-XX:FreqInlineSize=`]{#-XX_FreqInlineSize}*size*
 :   Sets the maximum bytecode size (in bytes) of a hot method to be inlined.
     This flag only applies to the C2 compiler. Append
     the letter `k` or `K` to indicate kilobytes, `m` or `M` to indicate
@@ -1903,7 +1903,7 @@ performed by the Java HotSpot VM.
     >   `-XX:FreqInlineSize=325`
 
 
-`-XX:MaxInlineSize=`*size*
+[`-XX:MaxInlineSize=`]{#-XX_MaxInlineSize}*size*
 :   Sets the maximum bytecode size (in bytes) of a cold method to be inlined.
     This flag only applies to the C2 compiler.
     Append the letter `k` or `K` to indicate kilobytes, `m` or `M` to indicate
@@ -1912,7 +1912,7 @@ performed by the Java HotSpot VM.
 
     >   `-XX:MaxInlineSize=35`
 
-`-XX:C1MaxInlineSize=`*size*
+[`-XX:C1MaxInlineSize=`]{#-XX_C1MaxInlineSize}*size*
 :   Sets the maximum bytecode size (in bytes) of a cold method to be inlined.
     This flag only applies to the C1 compiler.
     Append the letter `k` or `K` to indicate kilobytes, `m` or `M` to indicate
@@ -1921,7 +1921,7 @@ performed by the Java HotSpot VM.
 
     >   `-XX:MaxInlineSize=35`
 
-`-XX:MaxTrivialSize=`*size*
+[`-XX:MaxTrivialSize=`]{#-XX_MaxTrivialSize}*size*
 :   Sets the maximum bytecode size (in bytes) of a trivial method to be
     inlined. This flag only applies to the C2 compiler.
     Append the letter `k` or `K` to indicate kilobytes, `m` or `M` to
@@ -1930,7 +1930,7 @@ performed by the Java HotSpot VM.
 
     >   `-XX:MaxTrivialSize=6`
 
-`-XX:C1MaxTrivialSize=`*size*
+[`-XX:C1MaxTrivialSize=`]{#-XX_C1MaxTrivialSize}*size*
 :   Sets the maximum bytecode size (in bytes) of a trivial method to be
     inlined. This flag only applies to the C1 compiler.
     Append the letter `k` or `K` to indicate kilobytes, `m` or `M` to
@@ -1939,14 +1939,14 @@ performed by the Java HotSpot VM.
 
     >   `-XX:MaxTrivialSize=6`
 
-`-XX:MaxNodeLimit=`*nodes*
+[`-XX:MaxNodeLimit=`]{#-XX_MaxNodeLimit}*nodes*
 :   Sets the maximum number of nodes to be used during single method
     compilation. By default the value depends on the features enabled.
     In the following example the maximum number of nodes is set to 100,000:
 
     >   `-XX:MaxNodeLimit=100000`
 
-`-XX:NonNMethodCodeHeapSize=`*size*
+[`-XX:NonNMethodCodeHeapSize=`]{#-XX_NonNMethodCodeHeapSize}*size*
 :   Sets the size in bytes of the code segment containing nonmethod code.
 
     A nonmethod code segment containing nonmethod code, such as compiler
@@ -1954,16 +1954,16 @@ performed by the Java HotSpot VM.
     cache forever. This flag is used only if `-XX:SegmentedCodeCache` is
     enabled.
 
-`-XX:NonProfiledCodeHeapSize=`*size*
+[`-XX:NonProfiledCodeHeapSize=`]{#-XX_NonProfiledCodeHeapSize}*size*
 :   Sets the size in bytes of the code segment containing nonprofiled methods.
     This flag is used only if `-XX:SegmentedCodeCache` is enabled.
 
-`-XX:+OptimizeStringConcat`
+[`-XX:+OptimizeStringConcat`]{#-XX__OptimizeStringConcat}
 :   Enables the optimization of `String` concatenation operations. This option
     is enabled by default. To disable the optimization of `String`
     concatenation operations, specify `-XX:-OptimizeStringConcat`.
 
-`-XX:+PrintAssembly`
+[`-XX:+PrintAssembly`]{#-XX__PrintAssembly}
 :   Enables printing of assembly code for bytecoded and native methods by using
     the external `hsdis-<arch>.so` or `.dll` library. For 64-bit VM on Windows,
     it's `hsdis-amd64.dll`. This lets you to see the generated code, which may
@@ -1973,11 +1973,11 @@ performed by the Java HotSpot VM.
     `-XX:+PrintAssembly` option has to be used together with the
     `-XX:UnlockDiagnosticVMOptions` option that unlocks diagnostic JVM options.
 
-`-XX:ProfiledCodeHeapSize=`*size*
+[`-XX:ProfiledCodeHeapSize=`]{#-XX_ProfiledCodeHeapSize}*size*
 :   Sets the size in bytes of the code segment containing profiled methods.
     This flag is used only if `-XX:SegmentedCodeCache` is enabled.
 
-`-XX:+PrintCompilation`
+[`-XX:+PrintCompilation`]{#-XX__PrintCompilation}
 :   Enables verbose diagnostic output from the JVM by printing a message to the
     console every time a method is compiled. This lets you to see which methods
     actually get compiled. By default, this option is disabled and diagnostic
@@ -1986,7 +1986,7 @@ performed by the Java HotSpot VM.
     You can also log compilation activity to a file by using the
     `-XX:+LogCompilation` option.
 
-`-XX:+PrintInlining`
+[`-XX:+PrintInlining`]{#-XX__PrintInlining}
 :   Enables printing of inlining decisions. This let's you see which methods
     are getting inlined.
 
@@ -1995,7 +1995,7 @@ performed by the Java HotSpot VM.
     `-XX:+UnlockDiagnosticVMOptions` option that unlocks diagnostic JVM
     options.
 
-`-XX:ReservedCodeCacheSize=`*size*
+[`-XX:ReservedCodeCacheSize=`]{#-XX_ReservedCodeCacheSize}*size*
 :   Sets the maximum code cache size (in bytes) for JIT-compiled code. Append
     the letter `k` or `K` to indicate kilobytes, `m` or `M` to indicate
     megabytes, or `g` or `G` to indicate gigabytes. The default maximum code
@@ -2005,7 +2005,7 @@ performed by the Java HotSpot VM.
     size shouldn't be less than the initial code cache size; see the option
     `-XX:InitialCodeCacheSize`.
 
-`-XX:+SegmentedCodeCache`
+[`-XX:+SegmentedCodeCache`]{#-XX__SegmentedCodeCache}
 :   Enables segmentation of the code cache, without which the code cache
     consists of one large segment. With `-XX:+SegmentedCodeCache`, separate
     segments will be used for non-method, profiled method, and non-profiled
@@ -2018,29 +2018,29 @@ performed by the Java HotSpot VM.
     (`-XX:+TieredCompilation` ) and the reserved code cache size
     (`-XX:ReservedCodeCacheSize`) is at least 240 MB.
 
-`-XX:StartAggressiveSweepingAt=`*percent*
+[`-XX:StartAggressiveSweepingAt=`]{#-XX_StartAggressiveSweepingAt}*percent*
 :   Forces stack scanning of active methods to aggressively remove unused code
     when only the given percentage of the code cache is free. The default value
     is 10%.
 
-`-XX:-TieredCompilation`
+[`-XX:-TieredCompilation`]{#-XX__TieredCompilation}
 :   Disables the use of tiered compilation. By default, this option is enabled.
 
-`-XX:UseSSE=`*version*
+[`-XX:UseSSE=`]{#-XX_UseSSE}*version*
 :   Enables the use of SSE instruction set of a specified version.
     Is set by default to the highest supported version available (x86 only).
 
-`-XX:UseAVX=`*version*
+[`-XX:UseAVX=`]{#-XX_UseAVX}*version*
 :   Enables the use of AVX instruction set of a specified version.
     Is set by default to the highest supported version available (x86 only).
 
-`-XX:+UseAES`
+[`-XX:+UseAES`]{#-XX__UseAES}
 :   Enables hardware-based AES intrinsics for hardware that supports it.
     This option is on by default on hardware that has the necessary instructions.
     The `-XX:+UseAES` is used in conjunction with `UseAESIntrinsics`. Flags
     that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseAESIntrinsics`
+[`-XX:+UseAESIntrinsics`]{#-XX__UseAESIntrinsics}
 :   Enables AES intrinsics. Specifying `-XX:+UseAESIntrinsics` is equivalent to
     also enabling `-XX:+UseAES`. To disable hardware-based AES intrinsics,
     specify `-XX:-UseAES -XX:-UseAESIntrinsics`. For example, to enable hardware
@@ -2051,47 +2051,47 @@ performed by the Java HotSpot VM.
     Flags that control intrinsics now require the option
     `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseAESCTRIntrinsics`
+[`-XX:+UseAESCTRIntrinsics`]{#-XX__UseAESCTRIntrinsics}
 :   Analogous to `-XX:+UseAESIntrinsics` enables AES/CTR intrinsics.
 
-`-XX:+UseGHASHIntrinsics`
+[`-XX:+UseGHASHIntrinsics`]{#-XX__UseGHASHIntrinsics}
 :   Controls the use of GHASH intrinsics. Enabled by default on platforms that
     support the corresponding instructions.
     Flags that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseChaCha20Intrinsics`
+[`-XX:+UseChaCha20Intrinsics`]{#-XX__UseChaCha20Intrinsics}
 :   Enable ChaCha20 intrinsics. This option is on by default for supported
     platforms.  To disable ChaCha20 intrinsics, specify
     `-XX:-UseChaCha20Intrinsics`. Flags that control intrinsics now require
     the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UsePoly1305Intrinsics`
+[`-XX:+UsePoly1305Intrinsics`]{#-XX__UsePoly1305Intrinsics}
 :   Enable Poly1305 intrinsics. This option is on by default for supported
     platforms.  To disable Poly1305 intrinsics, specify
     `-XX:-UsePoly1305Intrinsics`. Flags that control intrinsics now require
     the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseBASE64Intrinsics`
+[`-XX:+UseBASE64Intrinsics`]{#-XX__UseBASE64Intrinsics}
 :   Controls the use of accelerated BASE64 encoding routines for `java.util.Base64`.
     Enabled by default on platforms that support it.
     Flags that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseAdler32Intrinsics`
+[`-XX:+UseAdler32Intrinsics`]{#-XX__UseAdler32Intrinsics}
 :   Controls the use of Adler32 checksum algorithm intrinsic for `java.util.zip.Adler32`.
     Enabled by default on platforms that support it.
     Flags that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseCRC32Intrinsics`
+[`-XX:+UseCRC32Intrinsics`]{#-XX__UseCRC32Intrinsics}
 :   Controls the use of CRC32 intrinsics for `java.util.zip.CRC32`.
     Enabled by default on platforms that support it.
     Flags that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseCRC32CIntrinsics`
+[`-XX:+UseCRC32CIntrinsics`]{#-XX__UseCRC32CIntrinsics}
 :   Controls the use of CRC32C intrinsics for `java.util.zip.CRC32C`.
     Enabled by default on platforms that support it.
     Flags that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseSHA`
+[`-XX:+UseSHA`]{#-XX__UseSHA}
 :   Enables hardware-based intrinsics for SHA crypto hash functions for some
     hardware. The `UseSHA` option is used in conjunction with the
     `UseSHA1Intrinsics`, `UseSHA256Intrinsics`, and `UseSHA512Intrinsics`
@@ -2108,26 +2108,26 @@ performed by the Java HotSpot VM.
     disable only a particular SHA intrinsic, use the appropriate corresponding
     option. For example: `-XX:-UseSHA256Intrinsics`.
 
-`-XX:+UseSHA1Intrinsics`
+[`-XX:+UseSHA1Intrinsics`]{#-XX__UseSHA1Intrinsics}
 :   Enables intrinsics for SHA-1 crypto hash function. Flags that control
     intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseSHA256Intrinsics`
+[`-XX:+UseSHA256Intrinsics`]{#-XX__UseSHA256Intrinsics}
 :   Enables intrinsics for SHA-224 and SHA-256 crypto hash functions. Flags
     that control intrinsics now require the option
     `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseSHA512Intrinsics`
+[`-XX:+UseSHA512Intrinsics`]{#-XX__UseSHA512Intrinsics}
 :   Enables intrinsics for SHA-384 and SHA-512 crypto hash functions. Flags
     that control intrinsics now require the option
     `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseMathExactIntrinsics`
+[`-XX:+UseMathExactIntrinsics`]{#-XX__UseMathExactIntrinsics}
 :   Enables intrinsification of various `java.lang.Math.*Exact()` functions.
     Enabled by default.
     Flags that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseMultiplyToLenIntrinsic`
+[`-XX:+UseMultiplyToLenIntrinsic`]{#-XX__UseMultiplyToLenIntrinsic}
 :   Enables intrinsification of `BigInteger.multiplyToLen()`.
     Enabled by default on platforms that support it.
     Flags that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
@@ -2152,44 +2152,44 @@ performed by the Java HotSpot VM.
     Enabled by default on platforms that support it.
     Flags that control intrinsics now require the option `-XX:+UnlockDiagnosticVMOptions`.
 
-`-XX:+UseCMoveUnconditionally`
+[`-XX:+UseCMoveUnconditionally`]{#-XX__UseCMoveUnconditionally}
 :   Generates CMove (scalar and vector) instructions regardless of
     profitability analysis.
 
-`-XX:+UseCodeCacheFlushing`
+[`-XX:+UseCodeCacheFlushing`]{#-XX__UseCodeCacheFlushing}
 :   Enables flushing of the code cache before shutting down the compiler. This
     option is enabled by default. To disable flushing of the code cache before
     shutting down the compiler, specify `-XX:-UseCodeCacheFlushing`.
 
-`-XX:+UseCondCardMark`
+[`-XX:+UseCondCardMark`]{#-XX__UseCondCardMark}
 :   Enables checking if the card is already marked before updating the card
     table. This option is disabled by default. It should be used only on
     machines with multiple sockets, where it increases the performance of Java
     applications that rely on concurrent operations.
 
-`-XX:+UseCountedLoopSafepoints`
+[`-XX:+UseCountedLoopSafepoints`]{#-XX__UseCountedLoopSafepoints}
 :   Keeps safepoints in counted loops. Its default value depends on whether the
     selected garbage collector requires low latency safepoints.
 
-`-XX:LoopStripMiningIter=`*number_of_iterations*
+[`-XX:LoopStripMiningIter=`]{#-XX_LoopStripMiningIter}*number_of_iterations*
 :   Controls the number of iterations in the inner strip mined loop. Strip mining
     transforms counted loops into two level nested loops. Safepoints are kept
     in the outer loop while the inner loop can execute at full speed. This option
     controls the maximum number of iterations in the inner loop. The default value
     is 1,000.
 
-`-XX:LoopStripMiningIterShortLoop=`*number_of_iterations*
+[`-XX:LoopStripMiningIterShortLoop=`]{#-XX_LoopStripMiningIterShortLoop}*number_of_iterations*
 :   Controls loop strip mining optimization. Loops with the number of iterations
     less than specified will not have safepoints in them. Default value is
     1/10th of `-XX:LoopStripMiningIter`.
 
-`-XX:+UseFMA`
+[`-XX:+UseFMA`]{#-XX__UseFMA}
 :   Enables hardware-based FMA intrinsics for hardware where FMA instructions
     are available (such as, Intel and ARM64). FMA intrinsics are
     generated for the `java.lang.Math.fma(`*a*`,` *b*`,` *c*`)` methods that
     calculate the value of `(` *a* `*` *b* `+` *c* `)` expressions.
 
-`-XX:+UseSuperWord`
+[`-XX:+UseSuperWord`]{#-XX__UseSuperWord}
 :   Enables the transformation of scalar operations into superword operations.
     Superword is a vectorization optimization. This option is enabled by
     default. To disable the transformation of scalar operations into superword
@@ -2200,7 +2200,7 @@ performed by the Java HotSpot VM.
 These `java` options provide the ability to gather system information and
 perform extensive debugging.
 
-`-XX:+DisableAttachMechanism`
+[`-XX:+DisableAttachMechanism`]{#-XX__DisableAttachMechanism}
 :   Disables the mechanism that lets tools attach to the JVM. By default, this
     option is disabled, meaning that the attach mechanism is enabled and you
     can use diagnostics and troubleshooting tools such as `jcmd`, `jstack`,
@@ -2211,17 +2211,17 @@ perform extensive debugging.
     supported when using the tools from one JDK version to troubleshoot a
     different JDK version.
 
-`-XX:+DTraceAllocProbes`
+[`-XX:+DTraceAllocProbes`]{#-XX__DTraceAllocProbes}
 :   **Linux and macOS:** Enable `dtrace` tool probes for object allocation.
 
-`-XX:+DTraceMethodProbes`
+[`-XX:+DTraceMethodProbes`]{#-XX__DTraceMethodProbes}
 :   **Linux and macOS:** Enable `dtrace` tool probes for method-entry
     and method-exit.
 
-`-XX:+DTraceMonitorProbes`
+[`-XX:+DTraceMonitorProbes`]{#-XX__DTraceMonitorProbes}
 :   **Linux and macOS:** Enable `dtrace` tool probes for monitor events.
 
-`-XX:+HeapDumpOnOutOfMemoryError`
+[`-XX:+HeapDumpOnOutOfMemoryError`]{#-XX__HeapDumpOnOutOfMemoryError}
 :   Enables the dumping of the Java heap to a file in the current directory by
     using the heap profiler (HPROF) when a `java.lang.OutOfMemoryError`
     exception is thrown by the JVM. You can explicitly set the heap dump file path and
@@ -2233,7 +2233,7 @@ perform extensive debugging.
     directly from Java code, nor by the JVM for other types of resource
     exhaustion (such as native thread creation errors).
 
-`-XX:HeapDumpPath=`*path*
+[`-XX:HeapDumpPath=`]{#-XX_HeapDumpPath}*path*
 :   Sets the path and file name for writing the heap dump provided by the heap
     profiler (HPROF) when the `-XX:+HeapDumpOnOutOfMemoryError` option is set.
     By default, the file is created in the current working directory, and it's
@@ -2253,7 +2253,7 @@ perform extensive debugging.
 
         >   `-XX:HeapDumpPath=C:/log/java/java_heapdump.log`
 
-`-XX:LogFile=`*path*
+[`-XX:LogFile=`]{#-XX_LogFile}*path*
 :   Sets the path and file name to where log data is written. By default, the
     file is created in the current working directory, and it's named
     `hotspot.log`.
@@ -2268,7 +2268,7 @@ perform extensive debugging.
 
         >   `-XX:LogFile=C:/log/java/hotspot.log`
 
-`-XX:+PrintClassHistogram`
+[`-XX:+PrintClassHistogram`]{#-XX__PrintClassHistogram}
 :   Enables printing of a class instance histogram after one of the following
     events:
 
@@ -2282,7 +2282,7 @@ perform extensive debugging.
     the `jcmd` *pid* `GC.class_histogram` command, where *pid* is the current
     Java process identifier.
 
-`-XX:+PrintConcurrentLocks`
+[`-XX:+PrintConcurrentLocks`]{#-XX__PrintConcurrentLocks}
 :   Enables printing of `java.util.concurrent` locks after one of the following
     events:
 
@@ -2296,12 +2296,12 @@ perform extensive debugging.
     `jcmd` *pid* `Thread.print -l` command, where *pid* is the current Java
     process identifier.
 
-`-XX:+PrintFlagsRanges`
+[`-XX:+PrintFlagsRanges`]{#-XX__PrintFlagsRanges}
 :   Prints the range specified and allows automatic testing of the values. See
     [Validate Java Virtual Machine Flag
     Arguments].
 
-`-XX:+PerfDataSaveToFile`
+[`-XX:+PerfDataSaveToFile`]{#-XX__PerfDataSaveToFile}
 :   If enabled, saves [jstat](jstat.html) binary data when the Java application
     exits. This binary data is saved in a file named `hsperfdata_`*pid*, where
     *pid* is the process identifier of the Java application that you ran. Use
@@ -2312,7 +2312,7 @@ perform extensive debugging.
 
     >   `jstat -gc file:///`*path*`/hsperfdata_`*pid*
 
-`-XX:+UsePerfData`
+[`-XX:+UsePerfData`]{#-XX__UsePerfData}
 :   Enables the `perfdata` feature. This option is enabled by default to allow
     JVM monitoring and performance testing. Disabling it suppresses the
     creation of the `hsperfdata_userid` directories. To disable the `perfdata`
@@ -2323,13 +2323,13 @@ perform extensive debugging.
 These `java` options control how garbage collection (GC) is performed by the
 Java HotSpot VM.
 
-`-XX:+AlwaysPreTouch`
+[`-XX:+AlwaysPreTouch`]{#-XX__AlwaysPreTouch}
 :   Requests the VM to touch every page on the Java heap after requesting it from
     the operating system and before handing memory out to the application.
     By default, this option is disabled and all pages are committed as the
     application uses the heap space.
 
-`-XX:ConcGCThreads=`*threads*
+[`-XX:ConcGCThreads=`]{#-XX_ConcGCThreads}*threads*
 :   Sets the number of threads used for concurrent GC. Sets *`threads`* to
     approximately 1/4 of the number of parallel garbage collection threads. The
     default value depends on the number of CPUs available to the JVM.
@@ -2339,24 +2339,24 @@ Java HotSpot VM.
 
     >   `-XX:ConcGCThreads=2`
 
-`-XX:+DisableExplicitGC`
+[`-XX:+DisableExplicitGC`]{#-XX__DisableExplicitGC}
 :   Enables the option that disables processing of calls to the `System.gc()`
     method. This option is disabled by default, meaning that calls to
     `System.gc()` are processed. If processing of calls to `System.gc()` is
     disabled, then the JVM still performs GC when necessary.
 
-`-XX:+ExplicitGCInvokesConcurrent`
+[`-XX:+ExplicitGCInvokesConcurrent`]{#-XX__ExplicitGCInvokesConcurrent}
 :   Enables invoking of concurrent GC by using the `System.gc()` request. This
     option is disabled by default and can be enabled only with the `-XX:+UseG1GC` option.
 
-`-XX:G1AdaptiveIHOPNumInitialSamples=`*number*
+[`-XX:G1AdaptiveIHOPNumInitialSamples=`]{#-XX_G1AdaptiveIHOPNumInitialSamples}*number*
 :   When `-XX:UseAdaptiveIHOP` is enabled, this option sets the number of
     completed marking cycles used to gather samples until G1 adaptively
     determines the optimum value of `-XX:InitiatingHeapOccupancyPercent`. Before,
     G1 uses the value of `-XX:InitiatingHeapOccupancyPercent` directly for
     this purpose. The default value is 3.
 
-`-XX:G1HeapRegionSize=`*size*
+[`-XX:G1HeapRegionSize=`]{#-XX_G1HeapRegionSize}*size*
 :   Sets the size of the regions into which the Java heap is subdivided when
     using the garbage-first (G1) collector. The value is a power of 2 and can
     range from 1 MB to 32 MB. The default region size is determined
@@ -2367,44 +2367,44 @@ Java HotSpot VM.
 
     >   `-XX:G1HeapRegionSize=16m`
 
-`-XX:G1HeapWastePercent=`*percent*
+[`-XX:G1HeapWastePercent=`]{#-XX_G1HeapWastePercent}*percent*
 :   Sets the percentage of heap that you're willing to waste. The Java HotSpot
     VM doesn't initiate the mixed garbage collection cycle when the reclaimable
     percentage is less than the heap waste percentage. The default is 5
     percent.
 
-`-XX:G1MaxNewSizePercent=`*percent*
+[`-XX:G1MaxNewSizePercent=`]{#-XX_G1MaxNewSizePercent}*percent*
 :   Sets the percentage of the heap size to use as the maximum for the young
     generation size. The default value is 60 percent of your Java heap.
 
     This is an experimental flag. This setting replaces the
     `-XX:DefaultMaxNewGenPercent` setting.
 
-`-XX:G1MixedGCCountTarget=`*number*
+[`-XX:G1MixedGCCountTarget=`]{#-XX_G1MixedGCCountTarget}*number*
 :   Sets the target number of mixed garbage collections after a marking cycle
     to collect old regions with at most `G1MixedGCLIveThresholdPercent` live
     data. The default is 8 mixed garbage collections. The goal for mixed
     collections is to be within this target number.
 
-`-XX:G1MixedGCLiveThresholdPercent=`*percent*
+[`-XX:G1MixedGCLiveThresholdPercent=`]{#-XX_G1MixedGCLiveThresholdPercent}*percent*
 :   Sets the occupancy threshold for an old region to be included in a mixed
     garbage collection cycle. The default occupancy is 85 percent.
 
     This is an experimental flag. This setting replaces the
     `-XX:G1OldCSetRegionLiveThresholdPercent` setting.
 
-`-XX:G1NewSizePercent=`*percent*
+[`-XX:G1NewSizePercent=`]{#-XX_G1NewSizePercent}*percent*
 :   Sets the percentage of the heap to use as the minimum for the young
     generation size. The default value is 5 percent of your Java heap.
 
     This is an experimental flag. This setting replaces the
     `-XX:DefaultMinNewGenPercent` setting.
 
-`-XX:G1OldCSetRegionThresholdPercent=`*percent*
+[`-XX:G1OldCSetRegionThresholdPercent=`]{#-XX_G1OldCSetRegionThresholdPercent}*percent*
 :   Sets an upper limit on the number of old regions to be collected during a
     mixed garbage collection cycle. The default is 10 percent of the Java heap.
 
-`-XX:G1ReservePercent=`*percent*
+[`-XX:G1ReservePercent=`]{#-XX_G1ReservePercent}*percent*
 :   Sets the percentage of the heap (0 to 50) that's reserved as a false
     ceiling to reduce the possibility of promotion failure for the G1
     collector. When you increase or decrease the percentage, ensure that you
@@ -2415,7 +2415,7 @@ Java HotSpot VM.
 
     >   `-XX:G1ReservePercent=20`
 
-`-XX:+G1UseAdaptiveIHOP`
+[`-XX:+G1UseAdaptiveIHOP`]{#-XX__G1UseAdaptiveIHOP}
 :   Controls adaptive calculation of the old generation occupancy to start
     background work preparing for an old generation collection. If enabled,
     G1 uses `-XX:InitiatingHeapOccupancyPercent` for the first few times as
@@ -2428,7 +2428,7 @@ Java HotSpot VM.
 
     The default is enabled.
 
-`-XX:InitialHeapSize=`*size*
+[`-XX:InitialHeapSize=`]{#-XX_InitialHeapSize}*size*
 :   Sets the initial size (in bytes) of the memory allocation pool. This value
     must be either 0, or a multiple of 1024 and greater than 1 MB. Append the
     letter `k` or `K` to indicate kilobytes, `m` or `M` to indicate megabytes,
@@ -2452,7 +2452,7 @@ Java HotSpot VM.
     command line, then the initial heap size gets set to the value specified
     with `-Xms`.
 
-`-XX:InitialRAMPercentage=`*percent*
+[`-XX:InitialRAMPercentage=`]{#-XX_InitialRAMPercentage}*percent*
 :   Sets the initial amount of memory that the JVM will use for the Java heap
     before applying ergonomics heuristics as a percentage of the maximum amount
     determined as described in the `-XX:MaxRAM` option.
@@ -2462,7 +2462,7 @@ Java HotSpot VM.
 
     >   `-XX:InitialRAMPercentage=5`
 
-`-XX:InitialSurvivorRatio=`*ratio*
+[`-XX:InitialSurvivorRatio=`]{#-XX_InitialSurvivorRatio}*ratio*
 :   Sets the initial survivor space ratio used by the throughput garbage
     collector (which is enabled by the `-XX:+UseParallelGC` option). Adaptive
     sizing is enabled by default with the throughput garbage collector by
@@ -2491,7 +2491,7 @@ Java HotSpot VM.
 
     >   `-XX:InitialSurvivorRatio=4`
 
-`-XX:InitiatingHeapOccupancyPercent=`*percent*
+[`-XX:InitiatingHeapOccupancyPercent=`]{#-XX_InitiatingHeapOccupancyPercent}*percent*
 :   Sets the percentage of the old generation occupancy (0 to 100) at which to
     start the first few concurrent marking cycles for the G1 garbage collector.
 
@@ -2506,7 +2506,7 @@ Java HotSpot VM.
 
     >   `-XX:InitiatingHeapOccupancyPercent=75`
 
-`-XX:MaxGCPauseMillis=`*time*
+[`-XX:MaxGCPauseMillis=`]{#-XX_MaxGCPauseMillis}*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
     soft goal, and the JVM will make its best effort to achieve it. Only G1
     and Parallel support a maximum GC pause time target. For G1, the default
@@ -2517,7 +2517,7 @@ Java HotSpot VM.
 
     >   `-XX:MaxGCPauseMillis=500`
 
-`-XX:MaxHeapSize=`*size*
+[`-XX:MaxHeapSize=`]{#-XX_MaxHeapSize}*size*
 :   Sets the maximum size (in byes) of the memory allocation pool. This value
     must be a multiple of 1024 and greater than 2 MB. Append the letter `k` or
     `K` to indicate kilobytes, `m` or `M` to indicate megabytes, or `g` or `G`
@@ -2537,7 +2537,7 @@ Java HotSpot VM.
 
     The `-XX:MaxHeapSize` option is equivalent to `-Xmx`.
 
-`-XX:MaxHeapFreeRatio=`*percent*
+[`-XX:MaxHeapFreeRatio=`]{#-XX_MaxHeapFreeRatio}*percent*
 :   Sets the maximum allowed percentage of free heap space (0 to 100) after a
     GC event. If free heap space expands above this value, then the heap is
     shrunk. By default, this value is set to 70%.
@@ -2558,7 +2558,7 @@ Java HotSpot VM.
     description of using this option to keep the Java heap small by reducing
     the dynamic footprint for embedded applications.
 
-`-XX:MaxMetaspaceSize=`*size*
+[`-XX:MaxMetaspaceSize=`]{#-XX_MaxMetaspaceSize}*size*
 :   Sets the maximum amount of native memory that can be allocated for class
     metadata. By default, the size isn't limited. The amount of metadata for an
     application depends on the application itself, other running applications,
@@ -2569,11 +2569,11 @@ Java HotSpot VM.
 
     >   `-XX:MaxMetaspaceSize=256m`
 
-`-XX:MaxNewSize=`*size*
+[`-XX:MaxNewSize=`]{#-XX_MaxNewSize}*size*
 :   Sets the maximum size (in bytes) of the heap for the young generation
     (nursery). The default value is set ergonomically.
 
-`-XX:MaxRAMPercentage=`*percent*
+[`-XX:MaxRAMPercentage=`]{#-XX_MaxRAMPercentage}*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
     before applying ergonomics heuristics as a percentage of the maximum amount
     determined as described in the `-XX:MaxRAM` option. The default value is 25
@@ -2589,7 +2589,7 @@ Java HotSpot VM.
 
     >   `-XX:MaxRAMPercentage=75`
 
-`-XX:MinRAMPercentage=`*percent*
+[`-XX:MinRAMPercentage=`]{#-XX_MinRAMPercentage}*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
     before applying ergonomics heuristics as a percentage of the maximum amount
     determined as described in the `-XX:MaxRAM` option for small heaps. A small
@@ -2600,7 +2600,7 @@ Java HotSpot VM.
 
     >   `-XX:MinRAMPercentage=75`
 
-`-XX:MaxTenuringThreshold=`*threshold*
+[`-XX:MaxTenuringThreshold=`]{#-XX_MaxTenuringThreshold}*threshold*
 :   Sets the maximum tenuring threshold for use in adaptive GC sizing. The
     largest value is 15. The default value is 15 for the parallel (throughput)
     collector.
@@ -2610,13 +2610,13 @@ Java HotSpot VM.
 
     >   `-XX:MaxTenuringThreshold=10`
 
-`-XX:MetaspaceSize=`*size*
+[`-XX:MetaspaceSize=`]{#-XX_MetaspaceSize}*size*
 :   Sets the size of the allocated class metadata space that triggers a garbage
     collection the first time it's exceeded. This threshold for a garbage
     collection is increased or decreased depending on the amount of metadata
     used. The default size depends on the platform.
 
-`-XX:MinHeapFreeRatio=`*percent*
+[`-XX:MinHeapFreeRatio=`]{#-XX_MinHeapFreeRatio}*percent*
 :   Sets the minimum allowed percentage of free heap space (0 to 100) after a
     GC event. If free heap space falls below this value, then the heap is
     expanded. By default, this value is set to 40%.
@@ -2637,7 +2637,7 @@ Java HotSpot VM.
     description of using this option to keep the Java heap small by reducing
     the dynamic footprint for embedded applications.
 
-`-XX:MinHeapSize=`*size*
+[`-XX:MinHeapSize=`]{#-XX_MinHeapSize}*size*
 :   Sets the minimum size (in bytes) of the memory allocation pool. This value
     must be either 0, or a multiple of 1024 and greater than 1 MB. Append the
     letter `k` or `K` to indicate kilobytes, `m` or `M` to indicate megabytes,
@@ -2656,14 +2656,14 @@ Java HotSpot VM.
     If you set this option to 0, then the minimum size is set to the same value
     as the initial size.
 
-`-XX:NewRatio=`*ratio*
+[`-XX:NewRatio=`]{#-XX_NewRatio}*ratio*
 :   Sets the ratio between young and old generation sizes. By default, this
     option is set to 2. The following example shows how to set the young-to-old
     ratio to 1:
 
     >   `-XX:NewRatio=1`
 
-`-XX:NewSize=`*size*
+[`-XX:NewSize=`]{#-XX_NewSize}*size*
 :   Sets the initial size (in bytes) of the heap for the young generation
     (nursery). Append the letter `k` or `K` to indicate kilobytes, `m` or `M`
     to indicate megabytes, or `g` or `G` to indicate gigabytes.
@@ -2687,7 +2687,7 @@ Java HotSpot VM.
 
     The `-XX:NewSize` option is equivalent to `-Xmn`.
 
-`-XX:ParallelGCThreads=`*threads*
+[`-XX:ParallelGCThreads=`]{#-XX_ParallelGCThreads}*threads*
 :   Sets the number of the stop-the-world (STW) worker threads. The default value
     depends on the number of CPUs available to the JVM and the garbage collector
     selected.
@@ -2697,11 +2697,11 @@ Java HotSpot VM.
 
     >   `-XX:ParallelGCThreads=2`
 
-`-XX:+PrintAdaptiveSizePolicy`
+[`-XX:+PrintAdaptiveSizePolicy`]{#-XX__PrintAdaptiveSizePolicy}
 :   Enables printing of information about adaptive-generation sizing. By
     default, this option is disabled.
 
-`-XX:SoftRefLRUPolicyMSPerMB=`*time*
+[`-XX:SoftRefLRUPolicyMSPerMB=`]{#-XX_SoftRefLRUPolicyMSPerMB}*time*
 :   Sets the amount of time (in milliseconds) a softly reachable object is
     kept active on the heap after the last time it was referenced. The default
     value is one second of lifetime per free megabyte in the heap. The
@@ -2718,7 +2718,7 @@ Java HotSpot VM.
 
     `-XX:SoftRefLRUPolicyMSPerMB=2500`
 
-`-XX:-ShrinkHeapInSteps`
+[`-XX:-ShrinkHeapInSteps`]{#-XX__ShrinkHeapInSteps}
 :   Incrementally reduces the Java heap to the target size, specified by the
     option `-XX:MaxHeapFreeRatio`. This option is enabled by default. If
     disabled, then it immediately reduces the Java heap to the target size
@@ -2730,7 +2730,7 @@ Java HotSpot VM.
     `MaxHeapFreeRatio` option to keep the Java heap small by reducing the
     dynamic footprint for embedded applications.
 
-`-XX:StringDeduplicationAgeThreshold=`*threshold*
+[`-XX:StringDeduplicationAgeThreshold=`]{#-XX_StringDeduplicationAgeThreshold}*threshold*
 :   Identifies `String` objects reaching the specified age that are considered
     candidates for deduplication. An object's age is a measure of how many
     times it has survived garbage collection. This is sometimes referred to as
@@ -2741,14 +2741,14 @@ Java HotSpot VM.
     default value for this option is `3`. See the `-XX:+UseStringDeduplication`
     option.
 
-`-XX:SurvivorRatio=`*ratio*
+[`-XX:SurvivorRatio=`]{#-XX_SurvivorRatio}*ratio*
 :   Sets the ratio between eden space size and survivor space size. By default,
     this option is set to 8. The following example shows how to set the
     eden/survivor space ratio to 4:
 
     >   `-XX:SurvivorRatio=4`
 
-`-XX:TargetSurvivorRatio=`*percent*
+[`-XX:TargetSurvivorRatio=`]{#-XX_TargetSurvivorRatio}*percent*
 :   Sets the desired percentage of survivor space (0 to 100) used after young
     garbage collection. By default, this option is set to 50%.
 
@@ -2757,7 +2757,7 @@ Java HotSpot VM.
 
     >   `-XX:TargetSurvivorRatio=30`
 
-`-XX:TLABSize=`*size*
+[`-XX:TLABSize=`]{#-XX_TLABSize}*size*
 :   Sets the initial size (in bytes) of a thread-local allocation buffer
     (TLAB). Append the letter `k` or `K` to indicate kilobytes, `m` or `M` to
     indicate megabytes, or `g` or `G` to indicate gigabytes. If this option is
@@ -2767,13 +2767,13 @@ Java HotSpot VM.
 
     >   `-XX:TLABSize=512k`
 
-`-XX:+UseAdaptiveSizePolicy`
+[`-XX:+UseAdaptiveSizePolicy`]{#-XX__UseAdaptiveSizePolicy}
 :   Enables the use of adaptive generation sizing. This option is enabled by
     default. To disable adaptive generation sizing, specify
     `-XX:-UseAdaptiveSizePolicy` and set the size of the memory allocation pool
     explicitly. See the `-XX:SurvivorRatio` option.
 
-`-XX:+UseG1GC`
+[`-XX:+UseG1GC`]{#-XX__UseG1GC}
 :   Enables the use of the garbage-first (G1) garbage collector. It's a
     server-style garbage collector, targeted for multiprocessor machines with a
     large amount of RAM. This option meets GC pause time goals with high
@@ -2783,7 +2783,7 @@ Java HotSpot VM.
     pause time below 0.5 seconds). By default, this option is enabled and G1 is
     used as the default garbage collector.
 
-`-XX:+UseGCOverheadLimit`
+[`-XX:+UseGCOverheadLimit`]{#-XX__UseGCOverheadLimit}
 :   Enables the use of a policy that limits the proportion of time spent by the
     JVM on GC before an `OutOfMemoryError` exception is thrown. This option is
     enabled, by default, and the parallel GC will throw an `OutOfMemoryError`
@@ -2793,26 +2793,26 @@ Java HotSpot VM.
     little or no progress. To disable this option, specify the option
     `-XX:-UseGCOverheadLimit`.
 
-`-XX:+UseNUMA`
+[`-XX:+UseNUMA`]{#-XX__UseNUMA}
 :   Enables performance optimization of an application on a machine with
     nonuniform memory architecture (NUMA) by increasing the application's use
     of lower latency memory. The default value for this option depends on the
     garbage collector.
 
-`-XX:+UseParallelGC`
+[`-XX:+UseParallelGC`]{#-XX__UseParallelGC}
 :   Enables the use of the parallel scavenge garbage collector (also known as
     the throughput collector) to improve the performance of your application by
     leveraging multiple processors.
 
     By default, this option is disabled and the default collector is used.
 
-`-XX:+UseSerialGC`
+[`-XX:+UseSerialGC`]{#-XX__UseSerialGC}
 :   Enables the use of the serial garbage collector. This is generally the best
     choice for small and simple applications that don't require any special
     functionality from garbage collection. By default, this option is disabled
     and the default collector is used.
 
-`-XX:+UseStringDeduplication`
+[`-XX:+UseStringDeduplication`]{#-XX__UseStringDeduplication}
 :   Enables string deduplication. By default, this option is disabled. To use
     this option, you must enable the garbage-first (G1) garbage collector.
 
@@ -2822,34 +2822,34 @@ Java HotSpot VM.
     character array, identical `String` objects can point to and share the same
     character array.
 
-`-XX:+UseTLAB`
+[`-XX:+UseTLAB`]{#-XX__UseTLAB}
 :   Enables the use of thread-local allocation blocks (TLABs) in the young
     generation space. This option is enabled by default. To disable the use of
     TLABs, specify the option `-XX:-UseTLAB`.
 
-`-XX:+UseZGC`
+[`-XX:+UseZGC`]{#-XX__UseZGC}
 :   Enables the use of the Z garbage collector (ZGC). This is a low latency
     garbage collector, providing max pause times of a few milliseconds, at
     some throughput cost. Pause times are independent of what heap size is
     used. Supports heap sizes from 8MB to 16TB.
 
-`-XX:ZAllocationSpikeTolerance=`*factor*
+[`-XX:ZAllocationSpikeTolerance=`]{#-XX_ZAllocationSpikeTolerance}*factor*
 :   Sets the allocation spike tolerance for ZGC. By default, this option is
     set to 2.0. This factor describes the level of allocation spikes to expect.
     For example, using a factor of 3.0 means the current allocation rate can
     be expected to triple at any time.
 
-`-XX:ZCollectionInterval=`*seconds*
+[`-XX:ZCollectionInterval=`]{#-XX_ZCollectionInterval}*seconds*
 :   Sets the maximum interval (in seconds) between two GC cycles when using
     ZGC. By default, this option is set to 0 (disabled).
 
-`-XX:ZFragmentationLimit=`*percent*
+[`-XX:ZFragmentationLimit=`]{#-XX_ZFragmentationLimit}*percent*
 :   Sets the maximum acceptable heap fragmentation (in percent) for ZGC.
     By default, this option is set to 25. Using a lower value will cause the
     heap to be compacted more aggressively, to reclaim more memory at the cost
     of using more CPU time.
 
-`-XX:+ZProactive`
+[`-XX:+ZProactive`]{#-XX__ZProactive}
 :   Enables proactive GC cycles when using ZGC. By default, this option is
     enabled. ZGC will start a proactive GC cycle if doing so is expected to
     have minimal impact on the running application. This is useful if the
@@ -2857,27 +2857,27 @@ Java HotSpot VM.
     want to keep the heap size down and allow reference processing to happen
     even when there are a lot of free space on the heap.
 
-`-XX:+ZUncommit`
+[`-XX:+ZUncommit`]{#-XX__ZUncommit}
 :   Enables uncommitting of unused heap memory when using ZGC. By default,
     this option is enabled. Uncommitting unused heap memory will lower the
     memory footprint of the JVM, and make that memory available for other
     processes to use.
 
-`-XX:ZUncommitDelay=`*seconds*
+[`-XX:ZUncommitDelay=`]{#-XX_ZUncommitDelay}*seconds*
 :   Sets the amount of time (in seconds) that heap memory must have been
     unused before being uncommitted. By default, this option is set to 300
     (5 minutes). Committing and uncommitting memory are relatively
     expensive operations. Using a lower value will cause heap memory to be
     uncommitted earlier, at the risk of soon having to commit it again.
 
-`-XX:+UseShenandoahGC`
+[`-XX:+UseShenandoahGC`]{#-XX__UseShenandoahGC}
 :   Enables the use of the Shenandoah garbage collector. This is a low pause
     time, concurrent garbage collector. Its pause times are not proportional to
     the size of the heap. Shenandoah garbage collector can work with compressed
     pointers. See `-XX:UseCompressedOops` for further information about
     compressed pointers.
 
-`-XX:ShenandoahGCMode=`*mode*
+[`-XX:ShenandoahGCMode=`]{#-XX_ShenandoahGCMode}*mode*
 :   Sets the GC mode for Shenandoah GC to use. By default, this option is set
     to `satb`. Among other things, this defines which barriers are in use.
     Possible mode values include the following:
@@ -2891,7 +2891,7 @@ Java HotSpot VM.
         generational. Please see [JEP 404](https://openjdk.org/jeps/404) and
         [JEP 521](https://openjdk.org/jeps/521) for its advantages and risks.
 
-`-XX:ShenandoahGCHeuristics=`*heuristics*
+[`-XX:ShenandoahGCHeuristics=`]{#-XX_ShenandoahGCHeuristics}*heuristics*
 :   Sets the heuristics for Shenandoah GC to use. By default, this option is
     set to `adaptive`. This fine-tunes the GC mode selected, by choosing when
     to start the GC, how much to process on each cycle, and what other features
@@ -2916,7 +2916,7 @@ These `java` options are deprecated and might be removed in a future JDK
 release. They're still accepted and acted upon, but a warning is issued when
 they're used.
 
-`-Xloggc:`*filename*
+[`-Xloggc:`]{#-Xloggc_}*filename*
 :   Sets the file to which verbose GC events information should be redirected
     for logging. The `-Xloggc` option overrides `-verbose:gc` if both are given
     with the same java command. `-Xloggc:`*filename* is replaced by
@@ -2927,11 +2927,11 @@ they're used.
 
     `-Xlog:gc:garbage-collection.log`
 
-`-XX:+FlightRecorder`
+[`-XX:+FlightRecorder`]{#-XX__FlightRecorder}
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
 
-`-XX:+ParallelRefProcEnabled`
+[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
 :   Enables parallel reference processing. By default, collectors employing multiple
     threads perform parallel reference processing if the number of parallel threads
     to use is larger than one.
@@ -2939,7 +2939,7 @@ they're used.
     (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
     threads always perform reference processing in parallel.
 
-`-XX:MaxRAM=`*size*
+[`-XX:MaxRAM=`]{#-XX_MaxRAM}*size*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
     before applying ergonomics heuristics. The default value is the amount of
     available memory to the JVM process.
@@ -2958,13 +2958,13 @@ they're used.
 
     >   `-XX:MaxRAM=2G`
 
-`-XX:+AggressiveHeap`
+[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
 :   Enables Java heap optimization. This sets various parameters to be
     optimal for long-running jobs with intensive memory allocation, based on
     the configuration of the computer (RAM and CPU). By default, the option
     is disabled and the heap sizes are configured less aggressively.
 
-`-XX:+NeverActAsServerClassMachine`
+[`-XX:+NeverActAsServerClassMachine`]{#-XX__NeverActAsServerClassMachine}
 :   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
     a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
     JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
@@ -2989,7 +2989,7 @@ they're used.
 These `java` options are still accepted but ignored, and a warning is issued
 when they're used.
 
-`--illegal-access=`*parameter*
+[`--illegal-access=`]{#--illegal-access}*parameter*
 :   Controlled _relaxed strong encapsulation_, as defined in [JEP
     261](https://openjdk.org/jeps/261#Relaxed-strong-encapsulation).
     This option was deprecated in JDK 16 by [JEP
@@ -3283,7 +3283,7 @@ Flags to Xlog].
 The following provides quick reference to the `-Xlog` command and syntax for
 options:
 
-`-Xlog`
+[`-Xlog`]{#-Xlog}
 :   Enables JVM logging on an `info` level.
 
 `-Xlog:help`
@@ -3570,7 +3570,7 @@ Legacy Runtime Flag          Xlog Configuration                     Comment
 
 The following are `-Xlog` examples.
 
-`-Xlog`
+[`-Xlog`]{#-Xlog}
 :   Logs all messages by using the `info` level to `stdout` with `uptime`,
     `levels`, and `tags` decorations. This is equivalent to using:
 
@@ -4075,7 +4075,7 @@ The deployment of the AOT cache is divided into three phases:
 
 The AOT cache can be used with the following command-line options:
 
-`-XX:AOTCache=`*cachefile*
+[`-XX:AOTCache=`]{#-XX_AOTCache}*cachefile*
 :   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
     This option cannot be used together with `-XX:AOTCacheOutput`.
 
@@ -4084,13 +4084,13 @@ The AOT cache can be used with the following command-line options:
     The *cachefile* is written by AOT mode `create`.  In that case, this option is
     equivalent to `-XX:AOTCacheOutput=`*cachefile*.
 
-`-XX:AOTCacheOutput=`*cachefile*
+[`-XX:AOTCacheOutput=`]{#-XX_AOTCacheOutput}*cachefile*
 :   Specifies the location of the AOT cache to write. The standard extension for *cachefile* is `.aot`.
     This option cannot be used together with `-XX:AOTCache`.
 
     This option is compatible with `AOTMode` settings of `record`, `create`, or `auto` (the default).
 
-`-XX:AOTConfiguration=`*configfile*
+[`-XX:AOTConfiguration=`]{#-XX_AOTConfiguration}*configfile*
 :   Specifies the AOT Configuration file for the JVM to write to or read from.
     The standard extension for *configfile* is `.aotconfig`.
 
@@ -4098,7 +4098,7 @@ The AOT cache can be used with the following command-line options:
     The *configfile* is read by AOT mode `create`, and written by the other applicable modes.
     If the AOT mode is `auto`, then `AOTCacheOutput` must also be present.
 
-`-XX:AOTMode=`*mode*
+[`-XX:AOTMode=`]{#-XX_AOTMode}*mode*
 :   Specifies the AOT Mode for this run.
     *mode* must be one of the following: `auto`, `off`, `record`, `create`, or `on`.
 
@@ -4170,7 +4170,7 @@ The AOT cache can be used with the following command-line options:
        options are compatible with the AOT cache. An alternative is to run your application with
        `-XX:AOTMode=auto -Xlog:aot` to see if the AOT cache can be used or not.
 
-`-XX:+AOTClassLinking`
+[`-XX:+AOTClassLinking`]{#-XX__AOTClassLinking}
 :   If this option is enabled, the JVM will perform more advanced optimizations (such
     as ahead-of-time resolution of invokedynamic instructions)
     when creating the AOT cache. As a result, the application will see further improvements

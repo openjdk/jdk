@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,12 +54,14 @@ public class MotifTreeUI extends BasicTreeUI
         super();
     }
 
+    @Override
     public void installUI(JComponent c) {
         super.installUI(c);
     }
 
     // BasicTreeUI overrides
 
+    @Override
     protected void paintVerticalLine( Graphics g, JComponent c, int x, int top, int bottom )
       {
           if (tree.getComponentOrientation().isLeftToRight()) {
@@ -69,6 +71,7 @@ public class MotifTreeUI extends BasicTreeUI
           }
       }
 
+    @Override
     protected void paintHorizontalLine( Graphics g, JComponent c, int y, int left, int right )
       {
           g.fillRect( left, y, right - left + 1, 2 );
@@ -96,6 +99,7 @@ public class MotifTreeUI extends BasicTreeUI
             return new MotifExpandedIcon();
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             g.setColor(highlight);
             g.drawLine(x, y, x+SIZE-1, y);
@@ -113,7 +117,9 @@ public class MotifTreeUI extends BasicTreeUI
             g.drawLine(x+3, y+HALF_SIZE, x+SIZE-4, y+HALF_SIZE);
         }
 
+        @Override
         public int getIconWidth() { return SIZE; }
+        @Override
         public int getIconHeight() { return SIZE; }
     }
 
@@ -126,6 +132,7 @@ public class MotifTreeUI extends BasicTreeUI
             return new MotifCollapsedIcon();
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             super.paintIcon(c, g, x, y);
             g.drawLine(x + HALF_SIZE-1, y + 3, x + HALF_SIZE-1, y + (SIZE - 4));
@@ -141,6 +148,7 @@ public class MotifTreeUI extends BasicTreeUI
      * Returns the default cell renderer that is used to do the
      * stamping of each node.
      */
+    @Override
     public TreeCellRenderer createDefaultCellRenderer() {
         return new MotifTreeCellRenderer();
     }
