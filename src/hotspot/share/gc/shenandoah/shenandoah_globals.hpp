@@ -430,18 +430,6 @@
           "by thread type (worker or mutator) and evacuation type (young, " \
           "old, or promotion.")                                             \
                                                                             \
-  product(uintx, ShenandoahMinYoungPercentage, 20, EXPERIMENTAL,            \
-          "The minimum percentage of the heap to use for the young "        \
-          "generation. Heuristics will not adjust the young generation "    \
-          "to be less than this.")                                          \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uintx, ShenandoahMaxYoungPercentage, 100, EXPERIMENTAL,           \
-          "The maximum percentage of the heap to use for the young "        \
-          "generation. Heuristics will not adjust the young generation "    \
-          "to be more than this.")                                          \
-          range(0, 100)                                                     \
-                                                                            \
   product(uintx, ShenandoahCriticalFreeThreshold, 1, EXPERIMENTAL,          \
           "How much of the heap needs to be free after recovery cycles, "   \
           "either Degenerated or Full GC to be claimed successful. If this "\
