@@ -83,9 +83,9 @@ inline bool G1FullGCMarker::is_task_queue_empty() {
 }
 
 inline void G1FullGCMarker::follow_array(objArrayOop obj, size_t start, size_t end) {
-  obj->oop_iterate_range(mark_closure(),
-                         checked_cast<int>(start),
-                         checked_cast<int>(end));
+  obj->oop_iterate_elements_range(mark_closure(),
+                                  checked_cast<int>(start),
+                                  checked_cast<int>(end));
 }
 
 inline void G1FullGCMarker::dispatch_task(const ScannerTask& task, bool stolen) {
