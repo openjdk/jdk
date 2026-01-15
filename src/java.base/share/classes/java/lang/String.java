@@ -1073,20 +1073,21 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    private static int encodedLengthASCII(byte coder, byte[] value) {
+    // This follows the implementation of encodeASCII
+    private static int encodedLengthASCII(byte coder, byte[] val) {
         if (coder == LATIN1) {
-            return value.length;
+            return val.length;
         }
-        int len = value.length >> 1;
+        int len = val.length >> 1;
         int dp = 0;
         for (int i = 0; i < len; i++) {
-            char c = StringUTF16.getChar(value, i);
+            char c = StringUTF16.getChar(val, i);
             if (c < 0x80) {
                 dp++;
                 continue;
             }
             if (Character.isHighSurrogate(c) && i + 1 < len &&
-                    Character.isLowSurrogate(StringUTF16.getChar(value, i + 1))) {
+                    Character.isLowSurrogate(StringUTF16.getChar(val, i + 1))) {
                 i++;
             }
             dp++;
@@ -1488,6 +1489,7 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    // This follows the implementation of encodeUTF8
     private static int encodedLengthUTF8(byte coder, byte[] val) {
         if (coder == UTF16) {
             return encodedLengthUTF8_UTF16(val);
@@ -1579,6 +1581,7 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    // This follows the implementation of encodeUTF8_UTF16
     private static int encodedLengthUTF8_UTF16(byte[] val) {
         int dp = 0;
         int sp = 0;
@@ -2133,8 +2136,8 @@ public final class String
      *
      * @implNote This method may allocate memory to compute the length for some charsets.
      *
-     * @param cs the charset used to the compute the length
-     * @return length in bytes of the string
+     * @param cs the {@link Charset} used to the compute the length
+     * @return the length in bytes of the given String encoded with the given {@link Charset}
      * @since 27
      */
     public int getBytesLength(Charset cs) {
@@ -2147,12 +2150,15 @@ public final class String
         } else if (cs == US_ASCII.INSTANCE) {
             return encodedLengthASCII(coder, value);
         } else if (cs instanceof sun.nio.cs.UTF_16LE || cs instanceof sun.nio.cs.UTF_16BE) {
-            return byteFor(value.length, coder);
+            return bytesForCoder(value.length, coder);
         }
         return getBytes(cs).length;
     }
 
-    private int byteFor(int length, int coder) {
+    // For the BOM‑less UTF‑16 charsets, the byte length is 'length' for LATIN1,
+    // and 'length << 1' for UTF-16. Lone surrogates get replaced with U+FFFD when
+    // encoding to UTF‑16 by getBytes, and all of LATIN1 can be encoded in UTF‑16.
+    private int bytesForCoder(int length, int coder) {
         return length << (1 - coder);
     }
 
