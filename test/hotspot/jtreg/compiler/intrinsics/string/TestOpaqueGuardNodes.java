@@ -38,7 +38,9 @@ public class TestOpaqueGuardNodes {
     static byte[] bytes = new byte[42];
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:CompileCommand=inline,java.lang.StringCoding::*", "-XX:CompileCommand=exclude,jdk.internal.util.Preconditions::checkFromIndexSize");
+        TestFramework.runWithFlags(
+            "-XX:CompileCommand=inline,java.lang.StringCoding::*",
+            "-XX:CompileCommand=exclude,jdk.internal.util.Preconditions::checkFromIndexSize");
     }
 
     @Setup
