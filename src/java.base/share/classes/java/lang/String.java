@@ -1492,7 +1492,11 @@ public final class String
     // This follows the implementation of encodeUTF8
     private static int encodedLengthUTF8(byte coder, byte[] val) {
         if (coder == UTF16) {
-            return encodedLengthUTF8_UTF16(val);
+            long length = encodedLengthUTF8_UTF16(val, null);
+            if (length > (long)Integer.MAX_VALUE) {
+                throw new IllegalStateException("Required length exceeds implementation limit");
+            }
+            return (int) length;
         }
         int positives = StringCoding.countPositives(val, 0, val.length);
         if (positives == val.length) {
@@ -1527,7 +1531,7 @@ public final class String
         int sl = val.length >> 1;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, exClass) : sl * 3;
+        long allocLen = (sl * 3 < 0) ? encodedLengthUTF8_UTF16(val, exClass) : sl * 3;
         if (allocLen > (long)Integer.MAX_VALUE) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
@@ -1581,47 +1585,6 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    // This follows the implementation of encodeUTF8_UTF16
-    private static int encodedLengthUTF8_UTF16(byte[] val) {
-        int dp = 0;
-        int sp = 0;
-        int sl = val.length >> 1;
-        while (sp < sl) {
-            // ascii fast loop;
-            char c = StringUTF16.getChar(val, sp);
-            if (c >= '\u0080') {
-                break;
-            }
-            dp++;
-            sp++;
-        }
-        while (sp < sl) {
-            char c = StringUTF16.getChar(val, sp++);
-            if (c < 0x80) {
-                dp++;
-            } else if (c < 0x800) {
-                dp += 2;
-            } else if (Character.isSurrogate(c)) {
-                int uc = -1;
-                char c2;
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
-                    uc = Character.toCodePoint(c, c2);
-                }
-                if (uc < 0) {
-                    dp++;
-                } else {
-                    dp += 4;
-                    sp++;  // 2 chars
-                }
-            } else {
-                // 3 bytes, 16 bits
-                dp += 3;
-            }
-        }
-        return dp;
-    }
-
     /**
      * {@return the exact size required to UTF_8 encode this UTF16 string}
      *
@@ -1631,11 +1594,20 @@ public final class String
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
-    private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
+    private static <E extends Exception> long encodedLengthUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
 
+        while (sp < sl) {
+            // ascii fast loop;
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= '\u0080') {
+                break;
+            }
+            dp++;
+            sp++;
+        }
         while (sp < sl) {
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
@@ -2136,10 +2108,12 @@ public final class String
      *
      * @implNote This method may allocate memory to compute the length for some charsets.
      *
-     * @param cs the {@link Charset} used to the compute the length
+     * @param cs The {@link Charset} used to the compute the length
+     * @throws NullPointerException If {@code cs} is {@code null}
      * @since 27
      */
     public int getBytesLength(Charset cs) {
+        Objects.requireNonNull(cs);
         if (cs == UTF_8.INSTANCE) {
             return encodedLengthUTF8(coder, value);
         } else if (cs == ISO_8859_1.INSTANCE) {
