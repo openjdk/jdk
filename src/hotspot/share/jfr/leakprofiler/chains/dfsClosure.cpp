@@ -76,7 +76,7 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
 // corner cases (very deep hierarchies of broad object arrays) - even
 // with array chunking, we may bottom out the probe stack then. Here,
 // we just treat those cases as a "maxdepth reached" case.
-static constexpr size_t max_probe_stack_elems = 64 * K; // 1 MB
+//static constexpr size_t max_probe_stack_elems = 64 * K; // 1 MB
 
 // We use a much smaller array chunk size than GCs do, to avoid running out
 // of probe stack too early. Reason is that Leak Profiler is often used
@@ -86,7 +86,8 @@ static constexpr int array_chunk_size = 64;
 DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
   _max_depth(max_dfs_depth), _ignore_root_set(false),
-  _probe_stack(1024, 4, max_probe_stack_elems),
+//  _probe_stack(1024, 4, max_probe_stack_elems),
+  _probe_stack(),
   _current_item(nullptr)
 {
 }
@@ -116,6 +117,9 @@ void DFSClosure::handle_oop() {
   const oop pointee = current_pointee();
   const size_t depth = current_depth();
   assert(depth < _max_depth, "Sanity");
+
+
+if (UseNewCode) printf(PTR_FORMAT ", depth %zu\n", p2i(pointee), depth);
 
   if (depth == 0 && _ignore_root_set) {
     assert(pointee_was_visited(pointee), "We should have already visited roots");
@@ -201,17 +205,22 @@ void DFSClosure::drain_probe_stack() {
          !GranularTimer::is_finished()) {
 
     const ProbeStackItem item = _probe_stack.pop();
+
+    // anchor current item
     _current_item = &item;
 
     assert(!_current_item->r.is_null(), "invariant");
     assert(current_pointee() != nullptr, "invariant");
 
-    if (current_pointee()->is_objArray()) {
+    //if (current_pointee()->is_objArray()) {
+if (false) {
       handle_objarrayoop();
+printf("handle_objarrayoop\n");
     } else {
       handle_oop();
     }
 
+    // reset current item
     _current_item = nullptr;
 
   }
