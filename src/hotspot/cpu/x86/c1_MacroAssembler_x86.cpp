@@ -290,7 +290,7 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register. It's unbeatably fast, and
     // plenty good enough for what we need.
-    movl(temp, 1);
+    movl(temp, 0);
     crc32(state, temp, /*sizeInBytes*/2);
   } else {
     /* LCG from glibc. */

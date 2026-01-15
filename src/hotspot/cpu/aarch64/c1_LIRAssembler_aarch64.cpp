@@ -2594,8 +2594,9 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj);
 }
 
-void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LIR_Opr dest, LIR_Opr temp_op,
-                                          LIR_Opr freq_op,
+void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
+                                          LIR_Opr freq_opr,
+                                          LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
                                           CodeStub* overflow_stub) {
 #ifndef PRODUCT
   if (CommentedAssembly) {
@@ -2612,49 +2613,59 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
   ProfileStub *counter_stub
     = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
-  Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
-  Address raw_dest_adr = as_Address(counter_addr->as_address_ptr());
+  Register dest = as_reg(dest_opr);
 
-  auto lambda = [counter_stub, overflow_stub, freq_op, ratio_shift, step,
-                 temp, dest, raw_dest_adr] (LIR_Assembler* ce, LIR_Op* op) {
+  auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
+                 md_reg, md_opr, md_offset_opr] (LIR_Assembler* ce, LIR_Op* op) {
 
 #undef __
 #define __ masm->
 
     auto masm = ce->masm();
+    Address counter_address;
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
+    if (md_opr->is_valid()) {
+      if (md_opr->type() == T_METADATA) {
+        __ mov_metadata(md_reg->as_register(),
+                          md_opr->as_constant_ptr()->as_metadata());
+      } else {
+        __ mov(md_reg->as_pointer_register(),
+               md_opr->as_constant_ptr()->as_pointer());
+      }
+      RegisterOrConstant offset =
+        md_offset_opr->is_constant()
+        ? RegisterOrConstant(md_offset_opr->as_constant_ptr()->as_jint())
+        : as_reg(md_offset_opr);
+      counter_address = Address(md_reg->as_pointer_register(), offset);
+    }
     if (step->is_register()) {
-      Address dest_adr = __ legitimize_address(raw_dest_adr, sizeof (jint), rscratch2);
+      Address dest_adr = __ legitimize_address(counter_address, sizeof (jint), rscratch2);
       Register inc = step->as_register();
-      __ ldrw(temp, dest_adr);
+      __ ldrw(dest, dest_adr);
       if (ProfileCaptureRatio > 1) {
         __ lsl(inc, inc, ratio_shift);
       }
-      __ addw(temp, temp, inc);
-      __ strw(temp, dest_adr);
-      if (dest->is_register())  __ mov(dest->as_register(), temp);
+      __ addw(dest, dest, inc);
+      __ strw(dest, dest_adr);
       if (ProfileCaptureRatio > 1) {
         __ lsr(inc, inc, ratio_shift);
       }
-      if (dest->is_register())  __ mov(dest->as_register(), temp);
     } else {
       jint inc = step->as_constant_ptr()->as_jint_bits();
-      switch (dest->type()) {
+      switch (dest_opr->type()) {
         case T_INT: {
-          Address dest_adr = __ legitimize_address(raw_dest_adr, sizeof (jint), rscratch2);
+          Address dest_adr = __ legitimize_address(counter_address, sizeof (jint), rscratch2);
           inc *= ProfileCaptureRatio;
-          __ incrementw(dest_adr, inc, temp);
-          if (dest->is_register())  __ movw(dest->as_register(), temp);
+          __ incrementw(dest_adr, inc, dest);
 
           break;
         }
         case T_LONG: {
-          Address dest_adr = __ legitimize_address(raw_dest_adr, sizeof (jlong), rscratch2);
+          Address dest_adr = __ legitimize_address(counter_address, sizeof (jlong), rscratch2);
           inc *= ProfileCaptureRatio;
-          __ increment(dest_adr, inc, temp);
-          if (dest->is_register())  __ mov(dest->as_register_lo(), temp);
+          __ increment(dest_adr, inc, dest);
 
           break;
         }
@@ -2663,7 +2674,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
       }
 
       if (step->is_valid() && overflow_stub) {
-        if (!freq_op->is_valid()) {
+        if (!freq_opr->is_valid()) {
           if (!step->is_constant()) {
             __ cbz(step->as_register(), *overflow_stub->entry());
           } else {
@@ -2671,18 +2682,14 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
             return;
           }
         } else {
-          Register result =
-            dest->type() == T_INT ? dest->as_register() :
-            dest->type() == T_LONG ? dest->as_register_lo() :
-            noreg;
           if (!step->is_constant()) {
             // If step is 0, make sure the stub check below always fails
             __ cmp(step->as_register(), (u1)0);
-            __ mov(temp, InvocationCounter::count_increment * ProfileCaptureRatio);
-            __ csel(result, result, temp, __ NE);
+            __ mov(rscratch1, InvocationCounter::count_increment * ProfileCaptureRatio);
+            __ csel(dest, dest, rscratch1, __ NE);
           }
-          juint mask = freq_op->as_jint();
-          __ andw(rscratch1, result,  mask);
+          juint mask = freq_opr->as_jint();
+          __ andw(rscratch1, dest,  mask);
           __ cbzw(rscratch1, *overflow_stub->entry());
         }
       }
@@ -2700,7 +2707,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
     __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
     __ cbz(rscratch1, *counter_stub->entry());
     __ bind(*counter_stub->continuation());
-    __ step_random(r_profile_rng, temp);
+    __ step_random(r_profile_rng, rscratch2);
 
     counter_stub->set_action(lambda, nullptr);
     counter_stub->set_name("IncrementEventCounter");
@@ -2725,6 +2732,11 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   int bci          = op->profiled_bci();
   ciMethod* callee = op->profiled_callee();
 
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("profile_call {");
+  }
+#endif
 
   Register temp = op->tmp1()->as_register_lo();
 
@@ -2839,6 +2851,12 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   } else {
     lambda(this, op);
   }
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} profile_call");
+  }
+#endif
 }
 
 

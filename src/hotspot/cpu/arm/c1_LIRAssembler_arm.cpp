@@ -2458,6 +2458,139 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ ldr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
 }
 
+void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
+                                          LIR_Opr freq_opr,
+                                          LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
+                                          CodeStub* overflow_stub) {
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("increment_event_counter {");
+  }
+#endif
+
+  int profile_capture_ratio = ProfileCaptureRatio;
+  int ratio_shift = exact_log2(profile_capture_ratio);
+  uint64_t threshold = (UCONST64(1) << 32) >> ratio_shift;
+
+  assert(threshold > 0, "must be");
+
+  ProfileStub *counter_stub
+    = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
+
+  Register dest = dest_opr->as_register();
+
+  auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
+                 md_reg, md_opr, md_offset_opr] (LIR_Assembler* ce, LIR_Op* op) {
+
+#undef __
+#define __ masm->
+
+    auto masm = ce->masm();
+    Address counter_address;
+
+    if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
+
+    if (md_opr->is_valid()) {
+      if (md_opr->type() == T_METADATA) {
+        __ mov_metadata(md_reg->as_register(),
+			md_opr->as_constant_ptr()->as_metadata());
+      } else {
+        __ lea(md_reg->as_pointer_register(),
+               ExternalAddress(md_opr->as_constant_ptr()->as_pointer()));
+      }
+      RegisterOrConstant offset =
+        md_offset_opr->is_constant()
+        ? RegisterOrConstant(md_offset_opr->as_constant_ptr()->as_jint())
+        : md_offset_opr->as_register();
+      counter_address = Address(md_reg->as_pointer_register(), offset);
+    }
+    if (step->is_register()) {
+      Address dest_adr = counter_address;
+      Register inc = step->as_register();
+      if (ProfileCaptureRatio > 1) {
+	__ mov(inc, AsmOperand(inc, lsl, ratio_shift));
+      }
+      __ increment_mdp_data_at(dest_adr, dest, 1);
+      if (ProfileCaptureRatio > 1) {
+	__ mov(inc, AsmOperand(inc, lsr, ratio_shift));
+      }
+    } else {
+      jint inc = step->as_constant_ptr()->as_jint_bits();
+      switch (dest_opr->type()) {
+        case T_INT: {
+          Address dest_adr = counter_address;
+          inc *= ProfileCaptureRatio;
+	  __ increment_mdp_data_at(dest_adr, dest, 1);
+
+          break;
+        }
+        // case T_LONG: {
+        //   Address dest_adr = counter_address;
+        //   inc *= ProfileCaptureRatio;
+        //   __ increment(dest_adr, inc, dest);
+
+        //   break;
+        // }
+        default:
+          ShouldNotReachHere();
+      }
+
+      if (step->is_valid() && overflow_stub) {
+        if (!freq_opr->is_valid()) {
+          if (!step->is_constant()) {
+            __ cbz(step->as_register(), *overflow_stub->entry());
+          } else {
+            __ b(*overflow_stub->entry());
+            return;
+          }
+        } else {
+          if (!step->is_constant()) {
+            // If step is 0, make sure the stub check below always fails
+            __ cmp(step->as_register(), (u1)0);
+            __ mov(Rtemp, InvocationCounter::count_increment * ProfileCaptureRatio);
+            __ mov(dest, Rtemp, eq);
+          }
+          juint mask = freq_opr->as_jint();
+	  __ mov_slow(Rtemp, mask);
+          __ tst(dest, Rtemp);
+          __ b(*overflow_stub->entry(), eq);
+        }
+      }
+    }
+
+    if (counter_stub != nullptr) {
+      __ b(*counter_stub->continuation());
+    }
+
+#undef __
+#define __ _masm->
+  };
+
+  if (counter_stub != nullptr) {
+    __ mov(Rtemp, AsmOperand(r_profile_rng, lsr, 32 - ratio_shift));
+    __ cmp(Rtemp, 0);
+    __ b(*counter_stub->entry(), eq);
+    __ bind(*counter_stub->continuation());
+    __ step_random(r_profile_rng, Rtemp);
+
+    counter_stub->set_action(lambda, nullptr);
+    counter_stub->set_name("IncrementEventCounter");
+    append_code_stub(counter_stub);
+  } else {
+    lambda(this, nullptr);
+  }
+
+  if (overflow_stub != nullptr) {
+    __ bind(*overflow_stub->continuation());
+  }
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} increment_event_counter");
+  }
+#endif
+}
+
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();

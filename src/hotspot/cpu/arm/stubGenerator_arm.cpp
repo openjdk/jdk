@@ -620,6 +620,7 @@ class StubGenerator: public StubCodeGenerator {
     // Stack is unaligned, maintain double word alignment by pushing
     // odd number of regs.
     __ push(RegisterSet(temp_result) | RegisterSet(temp_lo, temp_hi));
+
     __ ldr(addr, Address(SP, 12));
 
     // atomic_cas64 returns previous value in temp_lo, temp_hi
@@ -627,6 +628,60 @@ class StubGenerator: public StubCodeGenerator {
                     newval_lo, newval_hi, addr, 0);
     __ mov(R0, temp_lo);
     __ mov(R1, temp_hi);
+
+    __ pop(RegisterSet(temp_result) | RegisterSet(temp_lo, temp_hi));
+
+    __ membar(MEMBAR_ATOMIC_OP_POST, Rtemp); // Rtemp free (native ABI)
+    __ bx(LR);
+
+    return start;
+  }
+
+  // Support for jboolean jdk.internal.misc.Unsafe::compareAndSetLong
+  // (jobject o, jlong offset, jlong compare_value, jlong exchange_value)
+  // reordered before by a wrapper to
+  // (jlong compare_value, jlong exchange_value, volatile jlong *dest)
+  //
+  // Arguments :
+  //
+  //      compare_value:  R1 (High), R0 (Low)
+  //      exchange_value: R3 (High), R2 (Low)
+  //      dest:           SP+0
+  //
+  // Results:
+  //
+  //      R0:     true if successful, otherwise false if the memory value
+  //              was not the same as the compare value.
+  //
+  // Overwrites:
+  //
+  address generate_atomic_compareAndSet_long() {
+    address start;
+
+    StubId stub_id = StubId::stubgen_atomic_compareAndSet_long_id;
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    Register cmp_lo      = R0;
+    Register cmp_hi      = R1;
+    Register newval_lo   = R2;
+    Register newval_hi   = R3;
+    Register addr        = Rtemp;  /* After load from stack */
+    Register temp_lo     = R4;
+    Register temp_hi     = R5;
+    Register temp_result = R8;
+    assert_different_registers(cmp_lo, newval_lo, temp_lo, addr, temp_result, R7);
+    assert_different_registers(cmp_hi, newval_hi, temp_hi, addr, temp_result, R7);
+
+    __ membar(MEMBAR_ATOMIC_OP_PRE, Rtemp); // Rtemp free (native ABI)
+
+    __ push(RegisterSet(temp_result) | RegisterSet(temp_lo, temp_hi));
+    __ ldr(addr, Address(SP, 12));
+
+    // atomic_cas64 returns previous value in temp_lo, temp_hi
+    // status in temp_result
+    __ atomic_cas64(temp_lo, temp_hi, temp_result, cmp_lo, cmp_hi,
+                    newval_lo, newval_hi, addr, 0);
+    __ mov(R0, temp_result);
 
     __ pop(RegisterSet(temp_result) | RegisterSet(temp_lo, temp_hi));
 
@@ -3192,10 +3247,11 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_compiler_stubs() {
+    StubRoutines::Arm::_atomic_compareAndSet_long_entry = generate_atomic_compareAndSet_long();
 #ifdef COMPILER2
     // Generate partial_subtype_check first here since its code depends on
     // UseZeroBaseCompressedOops which is defined after heap initialization.
-    StubRoutines::Arm::_partial_subtype_check                = generate_partial_subtype_check();
+    StubRoutines::Arm::_partial_subtype_check           = generate_partial_subtype_check();
 
 #ifdef COMPILE_CRYPTO
     // generate AES intrinsics code

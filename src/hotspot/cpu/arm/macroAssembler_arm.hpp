@@ -28,6 +28,9 @@
 #include "code/relocInfo.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+// State for randomized profile counters. Used by C1.
+constexpr Register r_profile_rng = R9;
+
 // Introduced AddressLiteral and its subclasses to ease portability from
 // x86 and avoid relocation issues
 class AddressLiteral {
