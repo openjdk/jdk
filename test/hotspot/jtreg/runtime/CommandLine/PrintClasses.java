@@ -62,6 +62,6 @@ public class PrintClasses {
 
     pb.command(new PidJcmdExecutor().getCommandLine("VM.classes", "-location"));
     output = new OutputAnalyzer(pb.start());
-    output.stdoutContains(".*(file:/|jar:).*");
+    output.stdoutShouldMatch("^.*(file:/|jar:).*$");
   }
 }
