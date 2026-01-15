@@ -28,6 +28,7 @@
 			</data>
 			<key>ID</key>
 			<string>5000</string>
+			<!-- Note: Values if "Name" keys should not be localized for all languages. It is internal use only. -->
 			<key>Name</key>
 			<string>English (United States)</string>
 		</dict>
