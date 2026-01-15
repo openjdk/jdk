@@ -65,7 +65,7 @@ public class TestTrimNativeHeapIntervalTablesCleanup {
         final int rounds = 30;
         final int maxSize = 200_000;
         final int pruneEvery = 50_000;
-        final int pruneCount = 25_000; 
+        final int pruneCount = 25_000;
         long stringNum = 0;
 
         for (int round = 0; round < rounds; round++) {
@@ -94,7 +94,7 @@ public class TestTrimNativeHeapIntervalTablesCleanup {
                                "public class " + cn + " { int m" + i + "() { return " + i + "; } }"
                                );
                 new ClassLoader(null) {
-                    @Override 
+                    @Override
                     protected Class<?> findClass(String name) throws ClassNotFoundException {
                         if (!name.equals(cn)) throw new ClassNotFoundException(name);
                         return defineClass(name, bytes, 0, bytes.length);
