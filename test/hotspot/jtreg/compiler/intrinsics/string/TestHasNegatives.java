@@ -47,27 +47,6 @@
  * @run main/othervm/timeout=1200 -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 compiler.intrinsics.string.TestHasNegatives
  */
 
-/*
- * @test
- * @bug 8054307
- * @summary Verify `StringCoding::hasNegatives` intrinsic Java wrapper checks
- *          by enabling the ones in the VM intrinsic using
- *          `-XX:+VerifyIntrinsicChecks`
- * @comment This does not check out-of-range conditions. The
- *          `-XX:+VerifyIntrinsicChecks` version of this test simply ensures
- *          that the VM intrinsic will produce no spurious errors.
- * @key randomness
- * @library /compiler/patches
- * @library /test/lib
- * @comment `vm.debug == true` is required since `VerifyIntrinsicChecks` is a
- *          development flag
- * @requires vm.debug == true
- * @build java.base/java.lang.Helper
- * @run main/othervm
- *      -XX:+VerifyIntrinsicChecks
- *      compiler.intrinsics.string.TestHasNegatives
- */
-
 package compiler.intrinsics.string;
 
 import java.lang.Helper;

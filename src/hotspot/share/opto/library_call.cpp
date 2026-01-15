@@ -951,8 +951,7 @@ void LibraryCallKit::generate_string_range_check(Node* array,
                                                  Node* offset,
                                                  Node* count,
                                                  bool char_count,
-                                                 bool halt_on_oob,
-                                                 bool is_opaque) {
+                                                 bool halt_on_oob) {
   if (stopped()) {
     return; // already stopped
   }
@@ -964,10 +963,10 @@ void LibraryCallKit::generate_string_range_check(Node* array,
   }
 
   // Offset and count must not be negative
-  generate_negative_guard(offset, bailout, nullptr, is_opaque);
-  generate_negative_guard(count, bailout, nullptr, is_opaque);
+  generate_negative_guard(offset, bailout, nullptr, halt_on_oob);
+  generate_negative_guard(count, bailout, nullptr, halt_on_oob);
   // Offset + count must not exceed length of array
-  generate_limit_guard(offset, count, load_array_length(array), bailout, is_opaque);
+  generate_limit_guard(offset, count, load_array_length(array), bailout, halt_on_oob);
 
   if (bailout->req() > 1) {
     if (halt_on_oob) {
@@ -1151,7 +1150,7 @@ bool LibraryCallKit::inline_countPositives() {
   Node* len        = argument(2);
 
   ba = must_be_not_null(ba, true);
-  generate_string_range_check(ba, offset, len, false, true, !VerifyIntrinsicChecks);
+  generate_string_range_check(ba, offset, len, false, true);
   if (stopped()) {
     return true;
   }
@@ -6226,8 +6225,8 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   }
 
   // Check source & target bounds
-  generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, true, !VerifyIntrinsicChecks);
-  generate_string_range_check(dst, dst_offset, length, false, true, !VerifyIntrinsicChecks);
+  generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, true);
+  generate_string_range_check(dst, dst_offset, length, false, true);
   if (stopped()) {
     return true;
   }

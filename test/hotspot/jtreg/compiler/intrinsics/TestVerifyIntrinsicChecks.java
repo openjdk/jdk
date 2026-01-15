@@ -24,15 +24,15 @@
 /*
  * @test
  * @bug 8361842
- * @summary Verify the effectiveness of the `VerifyIntrinsicChecks` VM flag
- *          through (bypassing `StringCoding::encodeAsciiArray`, and) feeding
+ * @summary Verify the effectiveness of intrinsics range and limit checks
+ *          (bypassing `StringCoding::encodeAsciiArray`, and) feeding
  *          invalid input to an intrinsified `StringCoding::encodeAsciiArray0`
  *          (note the `0` suffix!).
  * @library /compiler/patches
  * @library /test/lib
  * @build java.base/java.lang.Helper
- * @comment `vm.debug == true` is required since `VerifyIntrinsicChecks` is a
- *          development flag
+ * @comment `vm.debug == true` is required since redundant intrinsics checks
+ *          are only added in debug builds
  * @requires vm.debug == true & vm.flavor == "server" & !vm.graal.enabled
  * @requires (os.arch != "riscv64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"))
  * @run main/othervm compiler.intrinsics.TestVerifyIntrinsicChecks verify
@@ -55,7 +55,6 @@ public final class TestVerifyIntrinsicChecks {
                         "-Xcomp",
                         "-XX:-TieredCompilation",
                         "-XX:CompileCommand=inline,java.lang.StringCoding::encodeAsciiArray0",
-                        "-XX:+VerifyIntrinsicChecks",
                         "--patch-module", "java.base=%s/java.base".formatted(System.getProperty("test.patch.path")),
                         "compiler.intrinsics.TestVerifyIntrinsicChecks",
                         "crash");
