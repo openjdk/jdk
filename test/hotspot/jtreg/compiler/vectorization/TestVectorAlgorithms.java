@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,9 @@ public class TestVectorAlgorithms {
     int[] rI4;
     int eI;
 
+    float[] aF;
+    float[] bF;
+
     int[] oopsX4;
     int[] memX4;
 
@@ -133,6 +136,11 @@ public class TestVectorAlgorithms {
         testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_naive",                () -> { return reduceAddI_VectorAPI_naive(aI); });
         testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_reduction_after_loop", () -> { return reduceAddI_VectorAPI_reduction_after_loop(aI); });
 
+        testGroups.put("dotProductF", new HashMap<String,TestFunction>());
+        testGroups.get("dotProductF").put("dotProductF_loop",                           () -> { return dotProductF_loop(aF, bF); });
+        testGroups.get("dotProductF").put("dotProductF_VectorAPI_naive",                () -> { return dotProductF_VectorAPI_naive(aF, bF); });
+        testGroups.get("dotProductF").put("dotProductF_VectorAPI_reduction_after_loop", () -> { return dotProductF_VectorAPI_reduction_after_loop(aF, bF); });
+
         testGroups.put("scanAddI", new HashMap<String,TestFunction>());
         testGroups.get("scanAddI").put("scanAddI_loop",                      () -> { return scanAddI_loop(aI, rI1); });
         testGroups.get("scanAddI").put("scanAddI_loop_reassociate",          () -> { return scanAddI_loop_reassociate(aI, rI2); });
@@ -174,6 +182,9 @@ public class TestVectorAlgorithms {
                  "reduceAddI_reassociate",
                  "reduceAddI_VectorAPI_naive",
                  "reduceAddI_VectorAPI_reduction_after_loop",
+                 "dotProductF_loop",
+                 "dotProductF_VectorAPI_naive",
+                 "dotProductF_VectorAPI_reduction_after_loop",
                  "scanAddI_loop",
                  "scanAddI_loop_reassociate",
                  "scanAddI_VectorAPI_permute_add",
@@ -215,6 +226,14 @@ public class TestVectorAlgorithms {
             memX4 = new int[4 * numX4];
             for (int i = 0; i < 4 * numX4; i++) {
                 memX4[i] = RANDOM.nextInt();
+            }
+
+            // float inputs. To avoid rounding issues, only use small integers.
+            aF = new float[size];
+            bF = new float[size];
+            for (int i = 0; i < size; i++) {
+                aF[i] = RANDOM.nextInt(32) - 16;
+                bF[i] = RANDOM.nextInt(32) - 16;
             }
 
             // Run all tests
@@ -357,6 +376,37 @@ public class TestVectorAlgorithms {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public int reduceAddI_VectorAPI_naive(int[] a) {
         return VectorAlgorithmsImpl.reduceAddI_VectorAPI_naive(aI);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.MUL_VF,          "> 0"},
+        applyIfCPUFeature = {"sse4.1", "true"},
+        applyIf = {"UseSuperWord", "true"})
+    // See also TestReduction.floatAddDotProduct
+    public float dotProductF_loop(float[] a, float[] b) {
+        return VectorAlgorithmsImpl.dotProductF_loop(a, b);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.MUL_VF,          "> 0"},
+        applyIfCPUFeature = {"sse4.1", "true"},
+        applyIf = {"UseSuperWord", "true"})
+    public float dotProductF_VectorAPI_naive(float[] a, float[] b) {
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_naive(a, b);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.MUL_VF,          "> 0"},
+        applyIfCPUFeature = {"sse4.1", "true"},
+        applyIf = {"UseSuperWord", "true"})
+    public float dotProductF_VectorAPI_reduction_after_loop(float[] a, float[] b) {
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(a, b);
     }
 
     @Test

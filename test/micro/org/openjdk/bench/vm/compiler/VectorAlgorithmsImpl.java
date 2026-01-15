@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import jdk.incubator.vector.*;
 public class VectorAlgorithmsImpl {
     private static final VectorSpecies<Integer> SPECIES_I    = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> SPECIES_I512 = IntVector.SPECIES_512;
+    private static final VectorSpecies<Float> SPECIES_F      = FloatVector.SPECIES_PREFERRED;
 
     public static Object fillI_loop(int[] r) {
         for (int i = 0; i < r.length; i++) {
@@ -174,6 +175,43 @@ public class VectorAlgorithmsImpl {
         int sum = acc.reduceLanes(VectorOperators.ADD);
         for (; i < a.length; i++) {
             sum += a[i];
+        }
+        return sum;
+    }
+
+    public static float dotProductF_loop(float[] a, float[] b) {
+        float sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            sum += a[i] * b[i];
+        }
+        return sum;
+    }
+
+    public static float dotProductF_VectorAPI_naive(float[] a, float[] b) {
+        float sum = 0;
+        int i;
+        for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
+            var va = FloatVector.fromArray(SPECIES_F, a, i);
+            var vb = FloatVector.fromArray(SPECIES_F, b, i);
+            sum += va.mul(vb).reduceLanes(VectorOperators.ADD);
+        }
+        for (; i < a.length; i++) {
+            sum += a[i] * b[i];
+        }
+        return sum;
+    }
+
+    public static float dotProductF_VectorAPI_reduction_after_loop(float[] a, float[] b) {
+        var sums = FloatVector.broadcast(SPECIES_F, 0.0f);
+        int i;
+        for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
+            var va = FloatVector.fromArray(SPECIES_F, a, i);
+            var vb = FloatVector.fromArray(SPECIES_F, b, i);
+            sums = sums.add(va.mul(vb));
+        }
+        float sum = sums.reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            sum += a[i] * b[i];
         }
         return sum;
     }

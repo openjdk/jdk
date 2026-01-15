@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,9 @@ public class VectorAlgorithms {
     public static int[] oopsX4;
     public static int[] memX4;
 
+    public static float[] aF;
+    public static float[] bF;
+
     @Setup
     public void init() {
         RANDOM = new Random(SEED);
@@ -84,6 +87,9 @@ public class VectorAlgorithms {
 
         oopsX4 = new int[SIZE];
         memX4 = new int[NUM_X_OBJECTS * 4];
+
+        aF = new float[SIZE];
+        bF = new float[SIZE];
     }
 
     @Setup(Level.Iteration)
@@ -103,6 +109,11 @@ public class VectorAlgorithms {
         // The relevant field is only at every "4 * i + 3" though.
         for (int i = 0; i < memX4.length; i++) {
             memX4[i] = RANDOM.nextInt();
+        }
+
+        for (int i = 0; i < aF.length; i++) {
+            aF[i] = RANDOM.nextFloat();
+            bF[i] = RANDOM.nextFloat();
         }
     }
 
@@ -178,6 +189,21 @@ public class VectorAlgorithms {
     @Benchmark
     public int reduceAddI_VectorAPI_reduction_after_loop() {
         return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(aI);
+    }
+
+    @Benchmark
+    public float dotProductF_loop() {
+        return VectorAlgorithmsImpl.dotProductF_loop(aF, bF);
+    }
+
+    @Benchmark
+    public float dotProductF_VectorAPI_naive() {
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_naive(aF, bF);
+    }
+
+    @Benchmark
+    public float dotProductF_VectorAPI_reduction_after_loop() {
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(aF, bF);
     }
 
     @Benchmark
