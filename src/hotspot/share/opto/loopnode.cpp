@@ -4978,8 +4978,12 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
-static MinMaxNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phase) {
+static AddNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phase) {
   switch (opcode) {
+    case Op_AddI:
+      return new AddINode(a, b);
+    case Op_AddL:
+      return new AddLNode(a, b);
     case Op_MinD:
       return new MinDNode(a, b);
     case Op_MaxD:
@@ -5005,6 +5009,10 @@ static MinMaxNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* p
   }
 }
 
+static bool is_associative(Node* node) {
+  return node->is_MinMax() || node->Opcode() == Op_AddI || node->Opcode() == Op_AddL;
+}
+
 static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* loop_head, PhaseIdealLoop* phase) {
   if (phi == node->in(1)) {
     return node->in(2);
@@ -5016,7 +5024,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
 
   Node* left;
   Node* right;
-  if (node->in(1)->is_MinMax()) {
+  if (is_associative(node->in(1))) {
     left = reassociate_chain(add_opcode, node->in(1), phi, loop_head, phase);
     right = node->in(2);
   } else {
@@ -5042,7 +5050,7 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
     Node* use = nullptr;
     for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
       Node* n = current->fast_out(i);
-      if (n->is_MinMax()) {
+      if (is_associative(n)) {
         use = n;
         opcode = use->Opcode();
         break;
@@ -5072,12 +5080,12 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
     return;
   }
 
-  // tty->print("[avoid-cmov] try reassociate; chain length: %d\n", chain_length);
-  // tty->print("[avoid-cmov] try reassociate:\n");
-  // tty->print("[avoid-cmov] phi: ");
-  // phi->dump();
-  // tty->print("[avoid-cmov] try reassociate; chain head:\n");
-  // chain_head->dump();
+  tty->print("[avoid-cmov] try reassociate; chain length: %d\n", chain_length);
+  tty->print("[avoid-cmov] try reassociate:\n");
+  tty->print("[avoid-cmov] phi: ");
+  phi->dump();
+  tty->print("[avoid-cmov] try reassociate; chain head:\n");
+  chain_head->dump();
 
   Node* loop_head = lpt->head();
   Node* reassociated = reassociate_chain(opcode, chain_head, phi, loop_head, phase);
@@ -5085,6 +5093,9 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
   Node* new_chain_head = build_min_max(opcode, phi, reassociated, phase);
   phase->register_new_node(new_chain_head, loop_head);
   phase->igvn().replace_node(chain_head, new_chain_head);
+
+  tty->print("[avoid-cmov] after reassociate; new chain head:\n");
+  new_chain_head->dump();
 }
 
 //=============================================================================
