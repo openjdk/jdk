@@ -31,6 +31,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -306,7 +307,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
         try {
             synchronized(entries) {
                 KeyEntry entry = new KeyEntry();
-                entry.date = Instant.now();
+                entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                 // Protect the encoding of the key
                 passwordBytes = convertToBytes(password);
@@ -369,7 +370,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             }
 
             KeyEntry entry = new KeyEntry();
-            entry.date = Instant.now();
+            entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
             entry.protectedPrivKey = key.clone();
             if ((chain != null) &&
@@ -410,7 +411,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
 
             TrustedCertEntry trustedCertEntry = new TrustedCertEntry();
             trustedCertEntry.cert = cert;
-            trustedCertEntry.date = Instant.now();
+            trustedCertEntry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
             entries.put(convertAlias(alias), trustedCertEntry);
         }
     }

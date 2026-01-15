@@ -36,6 +36,7 @@ import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -213,7 +214,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         CertEntry(X509Certificate cert, byte[] keyId, String alias,
                 ObjectIdentifier[] trustedKeyUsage,
                 Set<? extends KeyStore.Entry.Attribute> attributes) {
-            this.date = Instant.now();
+            this.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
             this.cert = cert;
             this.keyId = keyId;
             this.alias = alias;
@@ -626,7 +627,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 checkX509Certs(chain);
 
                 PrivateKeyEntry keyEntry = new PrivateKeyEntry();
-                keyEntry.date = Instant.now();
+                keyEntry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                 if ((key.getFormat().equals("PKCS#8")) ||
                     (key.getFormat().equals("PKCS8"))) {
@@ -671,7 +672,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
             } else if (key instanceof SecretKey) {
                 SecretKeyEntry keyEntry = new SecretKeyEntry();
-                keyEntry.date = Instant.now();
+                keyEntry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                 // Encode secret key in a PKCS#8
                 DerOutputStream secretKeyInfo = new DerOutputStream();
@@ -765,7 +766,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         PrivateKeyEntry entry = new PrivateKeyEntry();
-        entry.date = Instant.now();
+        entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
         if (debug != null) {
             debug.println("Setting a protected private key at alias '" +
@@ -2443,7 +2444,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     }
                 }
                 if (instant == null) {
-                    instant = Instant.now();
+                    instant = Instant.now().truncatedTo(ChronoUnit.MILLIS);
                 }
                 entry.date = instant;
 

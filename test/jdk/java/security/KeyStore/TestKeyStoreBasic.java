@@ -300,10 +300,7 @@ public class TestKeyStoreBasic {
             alias = ALIAS_HEAD + k;
             final Instant instant1 = o1.getCreationInstant(alias);
             final Instant instant2 = o2.getCreationInstant(alias);
-            final int diff = instant1.compareTo(instant2);
-            // There could be a difference in nano seconds on some machines
-            // so comparing with precision of 1 ms
-            if (!(diff >= 0 && diff <= 1000000)) {
+            if (!(instant1.equals(instant2))) {
                 throw new RuntimeException("ERROR: entry creation time (" + k
                                            + ") differs Instants {"
                                            + instant1 + " - "

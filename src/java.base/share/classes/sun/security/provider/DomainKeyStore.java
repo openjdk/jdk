@@ -215,24 +215,8 @@ abstract class DomainKeyStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-
-        AbstractMap.SimpleEntry<String, Collection<KeyStore>> pair =
-            getKeystoresForReading(alias);
-        Date date = null;
-
-        try {
-            String entryAlias = pair.getKey();
-            for (KeyStore keystore : pair.getValue()) {
-                date = keystore.getCreationDate(entryAlias);
-                if (date != null) {
-                    break;
-                }
-            }
-        } catch (KeyStoreException e) {
-            throw new IllegalStateException(e);
-        }
-
-        return date;
+        final Instant instant = this.engineGetCreationInstant(alias);
+        return (instant == null) ? null : Date.from(instant);
     }
 
     /**

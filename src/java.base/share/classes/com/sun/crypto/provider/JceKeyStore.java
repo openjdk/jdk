@@ -30,6 +30,7 @@ import sun.security.util.IOUtils;
 
 import java.io.*;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
@@ -280,7 +281,7 @@ public final class JceKeyStore extends KeyStoreSpi {
 
                 if (key instanceof PrivateKey) {
                     PrivateKeyEntry entry = new PrivateKeyEntry();
-                    entry.date = Instant.now();
+                    entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                     // protect the private key
                     entry.protectedKey = keyProtector.protect((PrivateKey)key);
@@ -298,7 +299,7 @@ public final class JceKeyStore extends KeyStoreSpi {
 
                 } else {
                     SecretKeyEntry entry = new SecretKeyEntry();
-                    entry.date = Instant.now();
+                    entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                     // seal and store the key
                     entry.sealedKey = keyProtector.seal(key);
@@ -341,7 +342,7 @@ public final class JceKeyStore extends KeyStoreSpi {
             // We assume it's a private key, because there is no standard
             // (ASN.1) encoding format for wrapped secret keys
             PrivateKeyEntry entry = new PrivateKeyEntry();
-            entry.date = Instant.now();
+            entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
             entry.protectedKey = key.clone();
             if ((chain != null) &&
@@ -386,7 +387,7 @@ public final class JceKeyStore extends KeyStoreSpi {
 
             TrustedCertEntry trustedCertEntry = new TrustedCertEntry();
             trustedCertEntry.cert = cert;
-            trustedCertEntry.date = Instant.now();
+            trustedCertEntry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
             entries.put(alias.toLowerCase(Locale.ENGLISH), trustedCertEntry);
         }
     }

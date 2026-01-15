@@ -1184,8 +1184,8 @@ public class KeyStore {
     /**
      * Returns the creation date of the entry identified by the given alias.
      * <p>
-     * This method returns a Date, which is mutable and more error-prone.
-     * Use {@link #getCreationInstant(String)} instead.
+     * It is recommended to use the {@link #getCreationInstant(String)}
+     * method instead.
      *
      * @param alias the alias name
      *

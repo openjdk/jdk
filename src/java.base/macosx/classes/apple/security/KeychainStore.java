@@ -31,6 +31,7 @@ import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.security.spec.*;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import javax.crypto.*;
@@ -467,7 +468,7 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
         synchronized(entries) {
             try {
                 KeyEntry entry = new KeyEntry();
-                entry.date = Instant.now();
+                entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                 if (key instanceof PrivateKey) {
                     if ((key.getFormat().equals("PKCS#8")) ||
@@ -545,7 +546,7 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
                                             + "EncryptedPrivateKeyInfo");
             }
 
-            entry.date = Instant.now();
+            entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
             if ((chain != null) &&
                 (chain.length != 0)) {
@@ -949,7 +950,7 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
             if (creationDate != 0)
                 tce.date = Instant.ofEpochMilli(creationDate);
             else
-                tce.date = Instant.now();
+                tce.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
             entries.put(alias.toLowerCase(Locale.ROOT), tce);
         } catch (Exception e) {
@@ -974,7 +975,7 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
         if (creationDate != 0)
             ke.date = Instant.ofEpochMilli(creationDate);
         else
-            ke.date = Instant.now();
+            ke.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
         // Next, create X.509 Certificate objects from the raw data.  This is complicated
         // because a certificate's public key may be too long for Java's default encryption strength.
