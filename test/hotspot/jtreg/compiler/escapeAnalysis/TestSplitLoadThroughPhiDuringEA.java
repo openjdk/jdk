@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +20,39 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.escapeAnalysis;
+
+import java.util.Objects;
 
 /*
  * @test
- * @bug 4303068
- * @summary be allowed to specify the security properties file
- *      as a -D system property
- *
- * @run main/othervm -Djava.security.properties=${test.src}/SecurityPropFile.file -Djava.security.debug=properties SecurityPropFile
+ * @bug 8374435
+ * @summary assert during escape analysis when splitting a Load through a Phi because the input of
+ *          the result Phi is a Load not from an AddP
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-UseCompressedOops ${test.main.class}
  */
+public class TestSplitLoadThroughPhiDuringEA {
+    static class Holder {
+        Object o;
+    }
 
-public class SecurityPropFile {
     public static void main(String[] args) {
-        System.out.println(java.security.Security.getProperty
-                                ("policy.provider"));
-        System.out.println(java.security.Security.getProperty
-                                ("policy.url.1"));
-        System.out.println(java.security.Security.getProperty
-                                ("policy.url.2"));
+        Object o = new Object();
+        Holder h = new Holder();
+        for (int i = 0; i < 20000; i++) {
+            test(true, h, o);
+            test(false, h, o);
+        }
+    }
+
+    private static Object test(boolean b, Holder h, Object o) {
+        h = Objects.requireNonNull(h);
+        if (b) {
+            h = new Holder();
+            // This access has the pattern LoadP -> LoadP, which upsets the compiler because the
+            // pointer input of a LoadP is not an AddP
+            h.o = o.getClass();
+        }
+        return h.o;
     }
 }

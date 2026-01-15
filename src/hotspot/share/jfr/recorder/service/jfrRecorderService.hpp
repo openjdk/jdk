@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,23 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 
+class JavaThread;
 class JfrCheckpointManager;
 class JfrChunkWriter;
+class JfrPostBox;
 class JfrRepository;
 class JfrStackTraceRepository;
 class JfrStorage;
 class JfrStringPool;
 
 class JfrRecorderService : public StackObj {
+  friend class Jfr;
   friend class JfrSafepointClearVMOperation;
   friend class JfrSafepointWriteVMOperation;
  private:
   JfrCheckpointManager& _checkpoint_manager;
   JfrChunkWriter& _chunkwriter;
+  JfrPostBox& _post_box;
   JfrRepository& _repository;
   JfrStackTraceRepository& _stack_trace_repository;
   JfrStorage& _storage;
@@ -64,6 +68,14 @@ class JfrRecorderService : public StackObj {
   void invoke_safepoint_write();
   void post_safepoint_write();
 
+  void transition_and_post_leakprofiler_emit_msg(JavaThread* jt);
+
+  static void emit_leakprofiler_events_on_oom();
+  static void emit_leakprofiler_events_paths_to_gc_roots(int64_t cutoff_ticks,
+                                                         bool emit_all,
+                                                         bool skip_bfs,
+                                                         bool oom,
+                                                         JavaThread* jt);
  public:
   JfrRecorderService();
   void start();
@@ -72,8 +84,12 @@ class JfrRecorderService : public StackObj {
   void flushpoint();
   void process_full_buffers();
   void evaluate_chunk_size_for_rotation();
-  void emit_leakprofiler_events(int64_t cutoff_ticks, bool emit_all, bool skip_bfs);
+  void emit_leakprofiler_events();
+
   static bool is_recording();
+  static void emit_leakprofiler_events(int64_t cutoff_ticks,
+                                       bool emit_all,
+                                       bool skip_bfs);
 };
 
 #endif // SHARE_JFR_RECORDER_SERVICE_JFRRECORDERSERVICE_HPP

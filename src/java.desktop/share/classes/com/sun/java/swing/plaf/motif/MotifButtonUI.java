@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public class MotifButtonUI extends BasicButtonUI {
     // ********************************
     //         Create Listeners
     // ********************************
+    @Override
     protected BasicButtonListener createButtonListener(AbstractButton b){
         return new MotifButtonListener(b);
     }
@@ -81,6 +82,7 @@ public class MotifButtonUI extends BasicButtonUI {
     // ********************************
     //          Install Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -90,6 +92,7 @@ public class MotifButtonUI extends BasicButtonUI {
         LookAndFeel.installProperty(b, "opaque", Boolean.FALSE);
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;
@@ -106,12 +109,14 @@ public class MotifButtonUI extends BasicButtonUI {
     // ********************************
     //          Paint Methods
     // ********************************
+    @Override
     public void paint(Graphics g, JComponent c) {
         fillContentArea( g, (AbstractButton)c , c.getBackground() );
         super.paint(g,c);
     }
 
     // Overridden to ensure we don't paint icon over button borders.
+    @Override
     protected void paintIcon(Graphics g, JComponent c, Rectangle iconRect) {
         Shape oldClip = g.getClip();
         Rectangle newClip =
@@ -127,10 +132,12 @@ public class MotifButtonUI extends BasicButtonUI {
         g.setClip(oldClip);
     }
 
+    @Override
     protected void paintFocus(Graphics g, AbstractButton b, Rectangle viewRect, Rectangle textRect, Rectangle iconRect){
         // focus painting is handled by the border
     }
 
+    @Override
     protected void paintButtonPressed(Graphics g, AbstractButton b) {
 
         fillContentArea( g, b , selectColor );
