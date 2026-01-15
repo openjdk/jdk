@@ -2171,6 +2171,31 @@ public final class StrictMath {
     }
 
     /**
+     * Returns the inverse hyperbolic sine of a {@code double} value.
+     * The inverse hyperbolic sine of <i>x</i> is defined to be a function such that
+     *  asinh({@linkplain Math#sinh sinh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     *  Note that range of the exact asinh is not limited.
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is zero, then the result is a zero with the
+     * same sign as the argument.
+     *
+     * <li>If the argument is positive infinity, then the result is
+     * positive infinity
+     *
+     * <li>If the argument is negative infinity, then the result is
+     * negative infinity
+     *
+     * </ul>
+     * @param   x The number whose inverse hyperbolic sine is to be returned.
+     * @return  The inverse hyperbolic sine of {@code x}.
+     */
+    public static double asinh(double x) {
+        return FdLibm.Asinh.compute(x);
+    }
+
+    /**
      * Returns sqrt(<i>x</i><sup>2</sup>&nbsp;+<i>y</i><sup>2</sup>)
      * without intermediate overflow or underflow.
      *
