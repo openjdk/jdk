@@ -490,7 +490,7 @@ jint ShenandoahHeap::initialize() {
   _phase_timings = new ShenandoahPhaseTimings(max_workers());
   ShenandoahCodeRoots::initialize();
 
-  // Initialization of controller markes use of varaibles esstablished by initialize_heuristics.
+  // Initialization of controller makes use of variables established by initialize_heuristics.
   initialize_controller();
 
   // Certain initialization of heuristics must be deferred until after controller is initialized.

@@ -313,7 +313,6 @@ void ShenandoahDegenGC::op_degenerated() {
   policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
   if (progress) {
     heap->notify_gc_progress();
-    heap->shenandoah_policy()->record_success_degenerated(_generation->is_young(), _abbreviated);
     _generation->heuristics()->record_degenerated();
     heap->start_idle_span();
   } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
