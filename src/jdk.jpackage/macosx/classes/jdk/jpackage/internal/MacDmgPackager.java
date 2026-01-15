@@ -104,7 +104,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         return env.configDir().resolve(pkg.app().name() + "-volume.icns");
     }
 
-    Path licenseFile() {
+    Path licensePListFile() {
         return env.configDir().resolve(pkg.app().name() + "-license.plist");
     }
 
@@ -185,7 +185,9 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 .setExternal(pkg.icon().orElse(null))
                 .saveToFile(volumeIcon());
 
-        MacDmgLicense.prepareLicense(pkg, env, licenseFile());
+        if (pkg.licenseFile().isPresent()) {
+            MacDmgLicense.prepareLicensePListFile(pkg.licenseFile().get(), licensePListFile());
+        }
 
         prepareDMGSetupScript();
     }
@@ -338,7 +340,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     "udifrez",
                     normalizedAbsolutePathString(finalDMG),
                     "-xml",
-                    normalizedAbsolutePathString(licenseFile())
+                    normalizedAbsolutePathString(licensePListFile())
             ).retry()
                     .setMaxAttemptsCount(10)
                     .setAttemptTimeout(3, TimeUnit.SECONDS)

@@ -36,19 +36,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-import jdk.jpackage.internal.model.MacDmgPackage;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 final class MacDmgLicense {
 
-    public static void prepareLicense(MacDmgPackage pkg, BuildEnv env,
-                Path licenseFile) throws IOException {
-        final var licFile = pkg.licenseFile();
-        if (licFile.isEmpty()) {
-            return;
-        }
-
+    public static void prepareLicensePListFile(Path licenseFile, Path licensePListFile)
+            throws IOException {
         byte[] licenseContentOriginal =
-                Files.readAllBytes(licFile.orElseThrow());
+                Files.readAllBytes(licenseFile);
         String licenseInBase64 =
                 Base64.getEncoder().encodeToString(licenseContentOriginal);
 
@@ -63,10 +58,10 @@ final class MacDmgLicense {
         data.put("STR_DATA_SIMPLIFIED_CHINESE",
                 getSTRData("Simplified Chinese", Locale.SIMPLIFIED_CHINESE, "GB2312"));
 
-        env.createResource(DEFAULT_LICENSE_PLIST)
+        new OverridableResource(DEFAULT_LICENSE_PLIST, ResourceLocator.class)
                 .setCategory(I18N.getString("resource.license-setup"))
                 .setSubstitutionData(data)
-                .saveToFile(licenseFile);
+                .saveToFile(licensePListFile);
     }
 
     private static void writeSTRDataString(ByteArrayOutputStream bos,
@@ -104,5 +99,5 @@ final class MacDmgLicense {
         return Base64.getEncoder().encodeToString(bos.toByteArray());
     }
 
-    private static final String DEFAULT_LICENSE_PLIST="lic_template.plist";
+    private static final String DEFAULT_LICENSE_PLIST = "lic_template.plist";
 }
