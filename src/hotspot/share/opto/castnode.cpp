@@ -218,8 +218,45 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
               Node* addr = use->in(MemNode::Address);
               const Type* addr_t = phase->type(addr);
               assert(addr_t->make_oopptr()->isa_aryptr(), "");
+              for (uint i = 0; i < stack.size(); ++i) {
+                Node* n = stack.node_at(i);
+                if (igvn->_worklist.member(n)) {
+                  phase->is_IterGVN()->_worklist.push(this);
+                  return nullptr;
+                }
+                if (n->is_Phi()) {
+                  Node* r = n->in(0);
+                  if (r->is_BaseCountedLoop()) {
+                    BaseCountedLoopNode* cl = r->as_BaseCountedLoop();
+                    Node* loop_phi = cl->phi();
+                    if (n == loop_phi) {
+                      BaseCountedLoopEndNode* cle = cl->loopexit();
+                      if (igvn->_worklist.member(cle->in(1))) {
+                        phase->is_IterGVN()->_worklist.push(this);
+                        return nullptr;
+                      }
+                      Node* cmp = cle->cmp_node();
+                      if (igvn->_worklist.member(cmp)) {
+                        phase->is_IterGVN()->_worklist.push(this);
+                        return nullptr;
+                      }
+                    }
+                  }
+                }
+              }
               uint phi_idx = 0;
               for (phi_idx = 0; phi_idx < stack.size() && !stack.node_at(phi_idx)->is_Phi(); ++phi_idx);
+              Node* ctrl = in(0);
+              if (phi_idx < stack.size()) {
+                PhiNode* phi = stack.node_at(phi_idx)->as_Phi();
+                ctrl = phi->in(0);
+              }
+              {
+                ResourceMark rm;
+                Node_List nlist;
+                assert(ctrl->dominates(ctrl, nlist) == DomResult::Dominate, "");
+              }
+
               if (phi_idx < stack.size() && 0) {
                 ShouldNotReachHere();
                 PhiNode* phi = stack.node_at(phi_idx)->as_Phi();
@@ -333,12 +370,28 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   Node* offset = prev_after;
                   while (last_addp->in(AddPNode::Base) != last_addp->in(AddPNode::Address)) {
                     last_addp = last_addp->in(AddPNode::Address)->as_AddP();
-                    offset = phase->transform(new AddXNode(offset, last_addp->in(AddPNode::Offset)));
+                    Node* off = last_addp->in(AddPNode::Offset);
+                    if (igvn->_worklist.member(off)) {
+                      if (offset->outcnt() == 0 && !offset->is_Con()) {
+                        igvn->remove_dead_node(offset);
+                      }
+                      igvn->_worklist.push(this);
+                      return nullptr;
+                    }
+                    offset = phase->transform(new AddXNode(offset, off));
                   }
                   for (; i < stack.size(); ++i) {
                     Node* n = stack.node_at(i);
                     assert(n->is_AddP(), "");
-                    offset = phase->transform(new AddXNode(offset, n->in(AddPNode::Offset)));
+                    Node* off = n->in(AddPNode::Offset);
+                    if (igvn->_worklist.member(off)) {
+                      if (offset->outcnt() == 0 && !offset->is_Con()) {
+                        igvn->remove_dead_node(offset);
+                      }
+                      igvn->_worklist.push(this);
+                      return nullptr;
+                    }
+                    offset = phase->transform(new AddXNode(offset, off));
                   }
                   const Type* elem_t = addr_t->make_oopptr()->is_aryptr()->elem();
                   assert(elem_t != Type::BOTTOM, "");
@@ -364,7 +417,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                   clones.clear();
                   continue;
                 }
-                // ShouldNotReachHere();
+                ShouldNotReachHere();
                 Node* new_cast = igvn->register_new_node_with_optimizer(new CastPPNode(in(0), base, phase->type(base), DependencyType::NonFloatingNonNarrowing));
                 Node* prev = nullptr;
                 while (clones.size() > 0) {
