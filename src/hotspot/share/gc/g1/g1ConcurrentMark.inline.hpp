@@ -184,9 +184,9 @@ inline bool G1CMTask::should_be_sliced(oop obj) {
 }
 
 inline void G1CMTask::scan_objArray(objArrayOop obj, size_t start, size_t end) {
-  obj->oop_iterate_range(_cm_oop_closure,
-                         checked_cast<int>(start),
-                         checked_cast<int>(end));
+  obj->oop_iterate_elements_range(_cm_oop_closure,
+                                  checked_cast<int>(start),
+                                  checked_cast<int>(end));
 }
 
 inline void G1ConcurrentMark::update_top_at_mark_start(G1HeapRegion* r) {
