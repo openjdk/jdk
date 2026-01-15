@@ -54,11 +54,11 @@ public class TestRangeCheck {
             // to the `StringCoding::countPositives0` intrinsic.
             // `countPositives` validates its input using
             // `Preconditions::checkFromIndexSize`, which also maps to an
-            // intrinsic. If `checkFromIndexSize` is not inlined,
-            // C2 lacks knowledge of the explicit range checks, so an invalid
-            // index (e.g., -1) can reach `countPositives0`. The intrinsic then
-            // replaces the out‑of‑range data input with TOP, preserving the
-            // control flow, which leads to a matcher failure.
+            // intrinsic. When `checkFromIndexSize` is not inlined, C2 does not
+            // know about the explicit range checks, and does not cut off the
+            // dead code. As a result, an invalid value (e.g., `-1`) can be fed
+            // as input into the `countPositives0` intrinsic, get replaced
+            // by TOP, and cause a failure in the matcher.
             return JLA.countPositives(bytes, -1, 42);
         } catch (Exception e) {
             return 0;
