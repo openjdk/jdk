@@ -89,7 +89,7 @@ public:
   oop evacuate_object(oop p, Thread* thread) override;
 
   template<ShenandoahAffiliation FROM_REGION, ShenandoahAffiliation TO_REGION>
-  oop try_evacuate_object(oop p, Thread* thread, uint from_region_age);
+  oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region);
 
   // In the generational mode, we will use these two functions for young, mixed, and global collections.
   // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.

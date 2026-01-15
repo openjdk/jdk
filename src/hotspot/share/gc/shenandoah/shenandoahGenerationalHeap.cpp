@@ -210,7 +210,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 
   ShenandoahHeapRegion* from_region = heap_region_containing(p);
   assert(!from_region->is_humongous(), "never evacuate humongous objects");
-  if (_has_self_forwarded_objects && r->has_evacuation_failures()) {
+  if (_has_self_forwarded_objects && from_region->has_evacuation_failures()) {
     // We don't want GC threads to evacuate objects in regions that have evacuation failures. We'd
     // rather have them concentrate on regions that still have a chance of being completely evacuated.
     return ShenandoahForwarding::try_forward_to_self(p);
@@ -232,26 +232,27 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
       assert(!UseObjectMonitorTable, "Do not expect displaced mark words when using the object monitor table");
     } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
       // If the object is tenurable, try to promote it
-      oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
+      oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region);
 
       // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
       if (result != nullptr) {
         return result;
       }
     }
-    return try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(p, thread, from_region->age());
+    return try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(p, thread, from_region);
   }
 
   assert(target_gen == OLD_GENERATION, "Expected evacuation to old");
-  return try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
+  return try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(p, thread, from_region);
 }
 
 // try_evacuate_object registers the object and dirties the associated remembered set information when evacuating
 // to OLD_GENERATION.
 template<ShenandoahAffiliation FROM_GENERATION, ShenandoahAffiliation TO_GENERATION>
-oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint from_region_age) {
+oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region) {
   bool alloc_from_lab = true;
   bool has_plab = false;
+  uint from_region_age = from_region->age();
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
   constexpr bool is_promotion = (TO_GENERATION == OLD_GENERATION) && (FROM_GENERATION == YOUNG_GENERATION);
@@ -342,7 +343,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     // to itself and try to carry on with the evacuation.
     // control_thread()->handle_alloc_failure_evac(size);
     // oom_evac_handler()->handle_out_of_memory_during_evacuation();
-    oom_evac_handler()->handle_out_of_memory_during_evacuation();
 
     from_region->set_has_evacuation_failures(true);
     _has_self_forwarded_objects = true;
@@ -422,9 +422,9 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   return result;
 }
 
-template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(oop p, Thread* thread, uint from_region_age);
-template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
-template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(oop p, Thread* thread, ShenandoahHeapRegion* from_region);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, ShenandoahHeapRegion* from_region);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, ShenandoahHeapRegion* from_region);
 
 inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, size_t size, bool is_promotion) {
   assert(UseTLAB, "TLABs should be enabled");
