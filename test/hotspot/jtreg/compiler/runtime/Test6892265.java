@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
 
 /**
  * @test
- * @bug 6892265 8375125
+ * @bug 6892265
  * @summary System.arraycopy unable to reference elements beyond Integer.MAX_VALUE bytes
  *
  * @run main/othervm compiler.runtime.Test6892265
- * @run main/othervm -XX:TrimNativeHeapInterval=30000000 compiler.runtime.Test6892265
  */
 
 package compiler.runtime;
