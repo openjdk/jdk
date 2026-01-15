@@ -385,7 +385,6 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, Node* sfpt, intpt
         }
       }
       // Ensure that pinning rematerialization load inside the uncommon path is safe.
-      Node_Stack stack(8);
       if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() &&
           src_elem_modified_after_arraycopy(ac, mem, adr_type->offset(), &_igvn)) {
         // Not safe: use control and memory from the arraycopy to ensure correct memory state.
