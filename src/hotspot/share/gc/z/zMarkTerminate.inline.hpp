@@ -57,7 +57,7 @@ inline void ZMarkTerminate::leave() {
 }
 
 inline void ZMarkTerminate::maybe_reduce_stripes(ZMarkStripeSet* stripes, size_t used_nstripes) {
-  size_t nstripes = stripes->nstripes();
+  const size_t nstripes = stripes->nstripes();
   if (used_nstripes == nstripes && nstripes > 1u) {
     stripes->try_set_nstripes(nstripes, nstripes >> 1);
   }
@@ -95,8 +95,8 @@ inline bool ZMarkTerminate::try_terminate(ZMarkStripeSet* stripes, size_t used_n
 }
 
 inline void ZMarkTerminate::wake_up() {
-  uint nworking = _nworking.load_relaxed();
-  uint nawakening = _nawakening.load_relaxed();
+  const uint nworking = _nworking.load_relaxed();
+  const uint nawakening = _nawakening.load_relaxed();
   if (nworking + nawakening == _nworkers) {
     // Everyone is working or about to
     return;
@@ -116,8 +116,8 @@ inline void ZMarkTerminate::wake_up() {
 }
 
 inline bool ZMarkTerminate::saturated() const {
-  uint nworking = _nworking.load_relaxed();
-  uint nawakening = _nawakening.load_relaxed();
+  const uint nworking = _nworking.load_relaxed();
+  const uint nawakening = _nawakening.load_relaxed();
 
   return nworking + nawakening == _nworkers;
 }
