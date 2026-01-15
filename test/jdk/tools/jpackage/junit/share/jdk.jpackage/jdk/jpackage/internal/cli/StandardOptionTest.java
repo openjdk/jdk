@@ -53,6 +53,8 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.ConvertedOptionsBuilder;
 import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.OptionsBuilder;
 import jdk.jpackage.internal.cli.StandardOption.LauncherProperty;
+import jdk.jpackage.internal.model.AppImageBundleType;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
@@ -175,16 +177,21 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(DirectoryNotEmptyException.class, ex.getCause().getClass());
     }
 
+    @ParameterizedTest
+    @EnumSource(names = {"WINDOWS", "LINUX", "MACOS"})
+    public void test_TYPE_valid(OperatingSystem appImageOS) {
+
+        var spec = new StandardOptionContext(appImageOS).mapOptionSpec(StandardOption.TYPE.getSpec());
+
+        test_TYPE_valid(spec, appImageOS);
+    }
+
     @Test
     public void test_TYPE_valid() {
 
         var spec = StandardOption.TYPE.getSpec();
 
-        Stream.of(StandardBundlingOperation.values()).forEach(bundlingOperation -> {
-            var pkgTypeStr = bundlingOperation.packageTypeValue();
-            var pkgType = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(pkgTypeStr)).orElseThrow();
-            assertSame(bundlingOperation.packageType(), pkgType);
-        });
+        test_TYPE_valid(spec, OperatingSystem.current());
     }
 
     @ParameterizedTest
@@ -334,6 +341,18 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         var expectedOptionTable = Files.readAllLines(GOLDEN_JPACKAGE_OPTIONS_MD);
 
         assertEquals(expectedOptionTable, optionTable);
+    }
+
+    private void test_TYPE_valid(OptionSpec<BundleType> spec, OperatingSystem appImageOS) {
+        Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
+            // Skip app image bundle type if it is from another platform.
+            return !(bundlingOperation.bundleType() instanceof AppImageBundleType)
+                    || (bundlingOperation.os() == appImageOS);
+        }).forEach(bundlingOperation -> {
+            var bundleTypeStr = bundlingOperation.bundleTypeValue();
+            var bundleType = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(bundleTypeStr)).orElseThrow();
+            assertSame(bundlingOperation.bundleType(), bundleType);
+        });
     }
 
     private static Collection<Arguments> test_ARGUMENTS() {
