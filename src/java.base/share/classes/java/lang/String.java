@@ -1155,6 +1155,28 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    // This follows the implementation of encode8859_1
+    private static int encodedLength8859_1(byte coder, byte[] val) {
+        if (coder == LATIN1) {
+            return val.length;
+        }
+        int len = val.length >> 1;
+        int dp = 0;
+        int sp = 0;
+        int sl = len;
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp++);
+            if (c > 0x80) {
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
+                    sp++;
+                }
+            }
+            dp++;
+        }
+        return dp;
+    }
+
     //------------------------------ utf8 ------------------------------------
 
     /**
@@ -1492,11 +1514,7 @@ public final class String
     // This follows the implementation of encodeUTF8
     private static int encodedLengthUTF8(byte coder, byte[] val) {
         if (coder == UTF16) {
-            long length = encodedLengthUTF8_UTF16(val, null);
-            if (length > (long)Integer.MAX_VALUE) {
-                throw new IllegalStateException("Required length exceeds implementation limit");
-            }
-            return (int) length;
+            return encodedLengthUTF8_UTF16(val, null);
         }
         int positives = StringCoding.countPositives(val, 0, val.length);
         if (positives == val.length) {
@@ -1531,11 +1549,8 @@ public final class String
         int sl = val.length >> 1;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? encodedLengthUTF8_UTF16(val, exClass) : sl * 3;
-        if (allocLen > (long)Integer.MAX_VALUE) {
-            throw new OutOfMemoryError("Required length exceeds implementation limit");
-        }
-        byte[] dst = new byte[(int) allocLen];
+        int allocLen = (sl * 3 < 0) ? encodedLengthUTF8_UTF16(val, exClass) : sl * 3;
+        byte[] dst = new byte[allocLen];
         while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
@@ -1594,7 +1609,7 @@ public final class String
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
-    private static <E extends Exception> long encodedLengthUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
+    private static <E extends Exception> int encodedLengthUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
@@ -1636,7 +1651,10 @@ public final class String
                 dp += 3;
             }
         }
-        return dp;
+        if (dp > (long)Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        return (int) dp;
     }
 
     /**
@@ -2104,12 +2122,11 @@ public final class String
     /**
      * {@return the length in bytes of the given String encoded with the given {@link Charset}}
      *
-     * <p>The result will be the same value as {@linkplain #getBytes(Charset) {@code getBytes(cs).length}}.
+     * <p>The result will be the same value as {@link #getBytes(Charset) getBytes(cs).length}.
      *
      * @implNote This method may allocate memory to compute the length for some charsets.
      *
      * @param cs The {@link Charset} used to the compute the length
-     * @throws NullPointerException If {@code cs} is {@code null}
      * @since 27
      */
     public int getBytesLength(Charset cs) {
@@ -2117,9 +2134,7 @@ public final class String
         if (cs == UTF_8.INSTANCE) {
             return encodedLengthUTF8(coder, value);
         } else if (cs == ISO_8859_1.INSTANCE) {
-            if (isLatin1()) {
-                return value.length;
-            }
+            return encodedLength8859_1(coder, value);
         } else if (cs == US_ASCII.INSTANCE) {
             return encodedLengthASCII(coder, value);
         } else if (cs instanceof sun.nio.cs.UTF_16LE || cs instanceof sun.nio.cs.UTF_16BE) {
