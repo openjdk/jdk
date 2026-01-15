@@ -1331,7 +1331,7 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   // compare haystack[(k-1):(k-1+31)].  Subtracting either index gives shift value of
   // (k + 31 - n):  x = (k-1+31)-(n-1) = k-1+31-n+1 = k+31-n.
   // When isU is set, similarly, shift is from haystack[(n-32):(n-1)] to [(k-2):(k-2+31)]
-  
+
   if (sizeKnown) {
     __ movl(temp2, (isU ? 30 : 31) + size);
   } else {
