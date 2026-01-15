@@ -2560,14 +2560,13 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
 #endif
         success = true;
       } else if (n->is_OpaqueGuard()) {
-        // Tests with OpaqueGuard nodes are implicitly known to be true or false. Replace the node with appropriate
-        // value. In debug builds, we leave the test in the graph to have an additional sanity check at runtime. If
-        // the test fails (i.e. a bug), we will execute a Halt node.
+        // Tests with OpaqueGuard nodes are implicitly known to be false. Replace the node with false. In debug
+        // builds, we leave the test in the graph to have an additional sanity check at runtime. If the test
+        // fails (i.e. a bug), we will execute a Halt node.
 #ifdef ASSERT
         _igvn.replace_node(n, n->in(1));
 #else
-        bool is_positive = n->as_OpaqueGuard()->is_positive();
-        _igvn.replace_node(n, _igvn.intcon(is_positive?1:0));
+        _igvn.replace_node(n, _igvn.intcon(0));
 #endif
         success = true;
       } else if (n->is_OpaqueInitializedAssertionPredicate()) {
