@@ -50,11 +50,15 @@ public class TestRangeCheck {
 
     private static int test(byte[] bytes) {
         try {
-            // Calling countPositives to perform Java range checks. With checkFromIndexSize
-            // not inlined, C2 does not know about the explicit range checks and does not
-            // cut off the dead code. As a result, -1 is fed as input into the
-            // StringCoding::countPositives0 intrinsic which is replaced by TOP and causes a
-            // failure in the matcher.
+            // Calling `StringCoding::countPositives`, which is a "front door"
+            // to the `StringCoding::countPositives0` intrinsic.
+            // `countPositives` validates its input using
+            // `Preconditions::checkFromIndexSize`, which also maps to an
+            // intrinsic. When `checkFromIndexSize` is not inlined, C2 does not
+            // know about the explicit range checks, and does not cut off the
+            // dead code. As a result, an invalid value (e.g., `-1`) can be fed
+            // as input into the `countPositives0` intrinsic, got replaced
+            // by TOP, and cause a failure in the matcher.
             return JLA.countPositives(bytes, -1, 42);
         } catch (Exception e) {
             return 0;
