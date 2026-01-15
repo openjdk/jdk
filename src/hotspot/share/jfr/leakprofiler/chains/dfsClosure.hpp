@@ -62,8 +62,8 @@ class DFSClosure : public BasicOopIterateClosure {
   Stack<ProbeStackItem, mtTracing> _probe_stack;
 
   const ProbeStackItem* _current_item;
-  const oop current_pointee() const   { return _current_item->r.dereference(); }
-  size_t current_depth() const        { return _current_item->depth; }
+  oop current_pointee() const     { return _current_item->r.dereference(); }
+  size_t current_depth() const    { return _current_item->depth; }
 
   bool pointee_was_visited(const oop pointee) const { return _mark_bits->is_marked(pointee); }
   void mark_pointee_as_visited(const oop pointee)   { _mark_bits->mark_obj(pointee); }

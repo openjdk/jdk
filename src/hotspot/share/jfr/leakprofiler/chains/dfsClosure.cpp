@@ -103,7 +103,8 @@ void DFSClosure::push_to_probe_stack(UnifiedOopRef ref, int chunkindex) {
   if (_probe_stack.is_full()) {
     return;
   }
-  const unsigned newdepth = checked_cast<unsigned>(current_depth()) + 1;
+  const unsigned newdepth =
+      _current_item == nullptr ? 0 : checked_cast<unsigned>(_current_item->depth + 1);
   ProbeStackItem item { ref, newdepth, chunkindex };
   _probe_stack.push(item);
 }
@@ -177,7 +178,7 @@ void DFSClosure::handle_objarrayoop() {
     return; // stop following this chain
   }
 
-  const objArrayOop pointee_oa = (const objArrayOop) pointee;
+  const objArrayOop pointee_oa = (objArrayOop) pointee;
   const int array_len = pointee_oa->length();
   const int begidx = chunkindex * array_chunk_size;
   const int endidx = MIN2(array_len, (chunkindex + 1) * array_chunk_size);
