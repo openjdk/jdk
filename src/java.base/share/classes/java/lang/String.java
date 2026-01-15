@@ -2122,7 +2122,8 @@ public final class String
     /**
      * {@return the length in bytes of the given String encoded with the given {@link Charset}}
      *
-     * <p>The result will be the same value as {@link #getBytes(Charset) getBytes(cs).length}.
+     * <p>The result will be the same value as {@link #getBytes(Charset) getBytes(cs).length},
+     * and will have equivalent or better performance.
      *
      * @implNote This method may allocate memory to compute the length for some charsets.
      *
@@ -2137,17 +2138,8 @@ public final class String
             return encodedLength8859_1(coder, value);
         } else if (cs == US_ASCII.INSTANCE) {
             return encodedLengthASCII(coder, value);
-        } else if (cs instanceof sun.nio.cs.UTF_16LE || cs instanceof sun.nio.cs.UTF_16BE) {
-            return bytesForCoder(value.length, coder);
         }
         return getBytes(cs).length;
-    }
-
-    // For the BOM‑less UTF‑16 charsets, the byte length is 'length' for LATIN1,
-    // and 'length << 1' for UTF-16. Lone surrogates get replaced with U+FFFD when
-    // encoding to UTF‑16 by getBytes, and all of LATIN1 can be encoded in UTF‑16.
-    private int bytesForCoder(int length, int coder) {
-        return length << (1 - coder);
     }
 
     boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
