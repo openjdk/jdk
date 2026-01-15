@@ -217,7 +217,7 @@ public class SingleByte
             int len = Math.min(dl - dp, sl - sp);
 
             if (isASCIICompatible) {
-                int n = JLA.encodeASCII(sa, sp, da, dp, len);
+                int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, len);
                 sp += n;
                 dp += n;
                 len -= n;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4297,10 +4297,6 @@ int jdk_internal_foreign_abi_NativeEntryPoint::_downcall_stub_address_offset;
   macro(_method_type_offset,           k, "methodType",          java_lang_invoke_MethodType_signature, false); \
   macro(_downcall_stub_address_offset, k, "downcallStubAddress", long_signature, false);
 
-bool jdk_internal_foreign_abi_NativeEntryPoint::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
-
 void jdk_internal_foreign_abi_NativeEntryPoint::compute_offsets() {
   InstanceKlass* k = vmClasses::NativeEntryPoint_klass();
   NEP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
@@ -4336,10 +4332,6 @@ int jdk_internal_foreign_abi_ABIDescriptor::_scratch2_offset;
   macro(_shadowSpace_offset,     k, "shadowSpace",     int_signature, false); \
   macro(_scratch1_offset,        k, "scratch1",        jdk_internal_foreign_abi_VMStorage_signature, false); \
   macro(_scratch2_offset,        k, "scratch2",        jdk_internal_foreign_abi_VMStorage_signature, false);
-
-bool jdk_internal_foreign_abi_ABIDescriptor::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
 
 void jdk_internal_foreign_abi_ABIDescriptor::compute_offsets() {
   InstanceKlass* k = vmClasses::ABIDescriptor_klass();
