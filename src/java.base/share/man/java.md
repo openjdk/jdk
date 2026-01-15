@@ -3283,7 +3283,7 @@ Flags to Xlog].
 The following provides quick reference to the `-Xlog` command and syntax for
 options:
 
-[`-Xlog`]{#-Xlog}
+`-Xlog`
 :   Enables JVM logging on an `info` level.
 
 `-Xlog:help`
