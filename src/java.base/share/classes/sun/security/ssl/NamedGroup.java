@@ -763,10 +763,12 @@ enum NamedGroup {
                 FFDHE_8192
         };
 
+        // Filter default groups names against default constraints.
+        // Those are the values being displayed to the user with
+        // "java -XshowSettings:security:tls" command.
         private static final String[] defaultNames = Arrays.stream(
                         defaultGroups)
                 .filter(ng -> ng.isAvailable)
-                // Filter default groups names against default constraints.
                 .filter(ng -> ng.isPermitted(SSLAlgorithmConstraints.DEFAULT))
                 .map(ng -> ng.name)
                 .toArray(String[]::new);
@@ -774,6 +776,8 @@ enum NamedGroup {
         private static final NamedGroup[] customizedGroups =
                 getCustomizedNamedGroups();
 
+        // Note: user-passed groups are not being filtered against default
+        // algorithm constraints here. They will be displayed as-is.
         private static final String[] customizedNames =
                 customizedGroups == null ?
                         null : Arrays.stream(customizedGroups)
