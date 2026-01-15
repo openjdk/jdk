@@ -1182,12 +1182,13 @@ bool universe_post_init() {
     Universe::heap()->update_capacity_and_used_at_gc();
   }
 
-  // ("weak") refs processing infrastructure initialization
-  Universe::heap()->post_initialize();
-
+  // Initialize serviceability
+  Universe::heap()->initialize_serviceability();
   MemoryService::add_metaspace_memory_pools();
-
   MemoryService::set_universe_heap(Universe::heap());
+
+  // Complete initialization
+  Universe::heap()->post_initialize();
 
 #if INCLUDE_CDS
   AOTMetaspace::post_initialize(CHECK_false);

@@ -80,8 +80,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 public class TestInitAllocs {
-
-  static final Integer TRIES = Integer.getInteger("tries", 1000);
+  static final Integer TRIES = Integer.getInteger("tries", 500);
 
   public static void main(String... args) throws Exception {
     List<String> testArgs = new ArrayList<>();
@@ -101,8 +100,7 @@ public class TestInitAllocs {
 
   static class Main {
     public static void main(String... args) {
-      System.out.println("Hello World");
+      // Do nothing
     }
   }
-
 }

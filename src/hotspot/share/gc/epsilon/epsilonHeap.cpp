@@ -75,6 +75,10 @@ jint EpsilonHeap::initialize() {
 void EpsilonHeap::initialize_serviceability() {
   _pool = new EpsilonMemoryPool(this);
   _memory_manager.add_pool(_pool);
+}
+
+void EpsilonHeap::post_initialize() {
+  CollectedHeap::post_initialize();
   _monitoring_support->mark_ready();
 }
 
