@@ -197,9 +197,6 @@ public:
     return (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
   }
 
-  double get_most_recent_wake_time() const;
-  double get_planned_sleep_interval() const;
-
 protected:
   ShenandoahAllocationRate _allocation_rate;
 

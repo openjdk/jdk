@@ -45,7 +45,6 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _requested_gc_cause(GCCause::_no_gc),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _control_lock(Mutex::nosafepoint - 2, "ShenandoahGCRequest_lock", true) {
-  _planned_sleep_interval = ShenandoahControlIntervalMin / 1000.0;
   set_name("Shenandoah Control Thread");
   create_and_start();
 }
@@ -60,6 +59,7 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
+  double most_recent_wake_time = os::elapsedTime();
   while (!should_terminate()) {
     const GCCause::Cause cancelled_cause = heap->cancelled_cause();
     if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
@@ -223,7 +223,7 @@ void ShenandoahControlThread::run_service() {
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.
-    const double before_sleep = _most_recent_wake_time;
+    const double before_sleep = most_recent_wake_time;
     if (heap->has_changed()) {
       sleep = ShenandoahControlIntervalMin;
     } else if ((before_sleep - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
@@ -233,10 +233,11 @@ void ShenandoahControlThread::run_service() {
     MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
     ml.wait(sleep);
     // Record a conservative estimate of the longest anticipated sleep duration until we sample again.
-    _planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2)) / 1000.0;
-    _most_recent_wake_time = os::elapsedTime();
+    double planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2)) / 1000.0;
+    most_recent_wake_time = os::elapsedTime();
+    heuristics->update_should_start_query_times(most_recent_wake_time, planned_sleep_interval);
     if (LogTarget(Debug, gc, thread)::is_enabled()) {
-      double elapsed = _most_recent_wake_time - before_sleep;
+      double elapsed = most_recent_wake_time - before_sleep;
       double hiccup = elapsed - double(sleep);
       if (hiccup > 0.001) {
         log_debug(gc, thread)("Control Thread hiccup time: %.3fs", hiccup);

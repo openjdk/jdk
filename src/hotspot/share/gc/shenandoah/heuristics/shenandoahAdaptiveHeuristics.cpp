@@ -136,14 +136,6 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
   recalculate_trigger_threshold(global_available);
 }
 
-double ShenandoahAdaptiveHeuristics::get_most_recent_wake_time() const {
-  return (_is_generational)? _regulator_thread->get_most_recent_wake_time(): _control_thread->get_most_recent_wake_time();
-}
-
-double ShenandoahAdaptiveHeuristics::get_planned_sleep_interval() const {
-  return (_is_generational)? _regulator_thread->get_planned_sleep_interval(): _control_thread->get_planned_sleep_interval();
-}
-
 void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_available) {
   // The trigger threshold represents mutator available - "head room".
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
@@ -183,7 +175,7 @@ void ShenandoahAdaptiveHeuristics::start_idle_span() {
 }
 
 void ShenandoahAdaptiveHeuristics::resume_idle_span() {
-  size_t mutator_available = _free_set->capacity() - _free_set->used();
+  size_t mutator_available = _free_set->available_holding_lock();
   recalculate_trigger_threshold(mutator_available);
 }
 
@@ -704,13 +696,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     accept_trigger_with_type(SPIKE);
     return true;
   }
-
-  if (ShenandoahHeuristics::should_start_gc()) {
-    // ShenandoahHeuristics::should_start_gc() has accepted trigger, or declined it.
-    return true;
-  } else {
-    return false;
-  }
+  return ShenandoahHeuristics::should_start_gc();
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount) {

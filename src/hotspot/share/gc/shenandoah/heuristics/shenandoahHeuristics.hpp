@@ -78,6 +78,10 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   };
 #endif
 
+private:
+  double _most_recent_trigger_evaluation_time;
+  double _most_recent_planned_sleep_interval;
+
 protected:
   static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
@@ -102,6 +106,7 @@ protected:
 #ifdef ASSERT
     UnionTag _union_tag;
 #endif
+
     public:
 
     inline void clear() {
@@ -192,6 +197,14 @@ protected:
     _declined_trigger_count++;
   }
 
+  inline double get_most_recent_wake_time() const {
+    return _most_recent_trigger_evaluation_time;
+  }
+
+  inline double get_planned_sleep_interval() const {
+    return _most_recent_planned_sleep_interval;
+  }
+
 public:
   ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
@@ -213,6 +226,11 @@ public:
   void record_degenerated_cycle_start(bool out_of_cycle);
 
   virtual void record_cycle_end();
+
+  void update_should_start_query_times(double now, double planned_sleep_interval) {
+    _most_recent_trigger_evaluation_time = now;
+    _most_recent_planned_sleep_interval = planned_sleep_interval;
+  }
 
   virtual bool should_start_gc();
 

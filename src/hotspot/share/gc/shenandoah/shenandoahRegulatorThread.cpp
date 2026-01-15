@@ -129,6 +129,7 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   double wake_time = os::elapsedTime();
   _most_recent_period = wake_time - _most_recent_wake_time;
   _most_recent_wake_time = wake_time;
+  _young_heuristics->update_should_start_query_times(_most_recent_wake_time, double(_sleep) / 1000.0);
   if (LogTarget(Debug, gc, thread)::is_enabled()) {
     double elapsed = _most_recent_wake_time - before_sleep_time;
     double hiccup = elapsed - double(_sleep);

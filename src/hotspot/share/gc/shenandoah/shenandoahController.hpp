@@ -48,12 +48,6 @@ protected:
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
 
-  // Remember when Controller most recently woke from its periodic sleep
-  double _most_recent_wake_time;
-
-  // How long do we plan to sleep before we again sample control status, in seconds.
-  double _planned_sleep_interval;
-
   // Increments the internal GC count.
   void update_gc_id();
 
@@ -61,9 +55,7 @@ public:
   ShenandoahController():
     _gc_id(0),
     _alloc_failure_waiters_lock(Mutex::safepoint-2, "ShenandoahAllocFailureGC_lock", true),
-    _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true),
-    _most_recent_wake_time(os::elapsedTime()),
-    _planned_sleep_interval(0)
+    _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true)
   { }
 
   // Request a collection cycle. This handles "explicit" gc requests
@@ -83,13 +75,5 @@ public:
 
   // Return the value of a monotonic increasing GC count, maintained by the control thread.
   size_t get_gc_id();
-
-  double get_most_recent_wake_time() const {
-    return _most_recent_wake_time;
-  }
-
-  double get_planned_sleep_interval() const {
-    return _planned_sleep_interval;
-  }
 };
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
