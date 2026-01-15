@@ -1294,7 +1294,7 @@ public final class Main {
             }
 
             if (alias != null) {
-                doPrintEntry("<" + alias + ">", alias, out);
+                doPrintEntry(alias, out);
             } else {
                 doPrintEntries(out);
             }
@@ -2177,9 +2177,10 @@ public final class Main {
     /**
      * Prints a single keystore entry.
      */
-    private void doPrintEntry(String label, String alias, PrintStream out)
+    private void doPrintEntry(String alias, PrintStream out)
         throws Exception
     {
+        String label = "<" + alias + ">";
         CertPathConstraintsParameters cpcp;
         if (!keyStore.containsAlias(alias)) {
             MessageFormat form = new MessageFormat
@@ -2631,7 +2632,7 @@ public final class Main {
         List<String> aliases = Collections.list(keyStore.aliases());
         aliases.sort(String::compareTo);
         for (String alias : aliases) {
-            doPrintEntry("<" + alias + ">", alias, out);
+            doPrintEntry(alias, out);
             if (verbose || rfc) {
                 out.println(rb.getString("NEWLINE"));
                 out.println(rb.getString
