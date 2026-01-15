@@ -70,13 +70,6 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   // Otherwise, return false.  Significant divergence is recognized if (rate - _rate.avg()) / _rate.sd() > threshold.
   bool is_spiking(double rate, double threshold) const;
 
-  double interval() const {
-    return _interval_sec;
-  }
-  double last_sample_time() const {
-    return _last_sample_time;
-  }
-
  private:
 
   // Return the instantaneous rate calculated from (allocated - _last_sample_value) / (time - _last_sample_time).

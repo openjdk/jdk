@@ -842,7 +842,7 @@ ShenandoahAllocationRate::ShenandoahAllocationRate() :
 double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccounted_bytes_allocated) {
   const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
   double now = os::elapsedTime();
-  double time_since_last_update = now -_last_sample_time;
+  double time_since_last_update = now - _last_sample_time;
   if (time_since_last_update < MinSampleTime) {
     unaccounted_bytes_allocated = allocated - _last_sample_value;
     _last_sample_value = 0;
