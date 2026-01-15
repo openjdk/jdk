@@ -28,6 +28,9 @@
 #include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/iterator.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/stack.inline.hpp"
 
 class Edge;
 class EdgeStore;
@@ -44,13 +47,33 @@ class DFSClosure : public BasicOopIterateClosure {
   JFRBitSet* _mark_bits;
   const Edge*_start_edge;
   size_t _max_depth;
-  size_t _depth;
   bool _ignore_root_set;
 
   DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge);
+  DEBUG_ONLY(~DFSClosure());
 
   void add_chain();
-  void closure_impl(UnifiedOopRef reference, const oop pointee);
+
+  struct ProbeStackItem {
+    UnifiedOopRef r;
+    unsigned depth;
+    int chunkindex; // only used if objArrayOop
+  };
+  Stack<ProbeStackItem, mtTracing> _probe_stack;
+
+  const ProbeStackItem* _current_item;
+  const oop current_pointee() const   { return _current_item->r.dereference(); }
+  size_t current_depth() const        { return _current_item->depth; }
+
+  bool pointee_was_visited(const oop pointee) const { return _mark_bits->is_marked(pointee); }
+  void mark_pointee_as_visited(const oop pointee)   { _mark_bits->mark_obj(pointee); }
+  bool pointee_was_sampled(const oop pointee) const { return pointee->mark().is_marked(); }
+
+  void drain_probe_stack();
+  void handle_oop();
+  void handle_objarrayoop();
+
+  void push_to_probe_stack(UnifiedOopRef ref, int chunkindex);
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }

@@ -35,6 +35,8 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/stack.inline.hpp"
 
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 
@@ -48,6 +50,7 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
   // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
   start_edge->pointee()->oop_iterate(&dfs);
+  dfs.drain_probe_stack();
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
@@ -60,65 +63,174 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   dfs._max_depth = 1;
   RootSetClosure<DFSClosure> rs(&dfs);
   rs.process();
+  dfs.drain_probe_stack();
 
   // Depth-first search
   dfs._max_depth = max_dfs_depth;
   dfs._ignore_root_set = true;
   rs.process();
+  dfs.drain_probe_stack();
 }
+
+// A sanity limit to avoid runaway memory scenarios for pathological
+// corner cases (very deep hierarchies of broad object arrays) - even
+// with array chunking, we may bottom out the probe stack then. Here,
+// we just treat those cases as a "maxdepth reached" case.
+static constexpr size_t max_probe_stack_elems = 64 * K; // 1 MB
+
+// We use a much smaller array chunk size than GCs do, to avoid running out
+// of probe stack too early. Reason is that Leak Profiler is often used
+// in memory-starved situations.
+static constexpr int array_chunk_size = 64;
 
 DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
-  _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
+  _max_depth(max_dfs_depth), _ignore_root_set(false),
+  _probe_stack(1024, 4, max_probe_stack_elems),
+  _current_item(nullptr)
+{
 }
 
-void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
-  assert(pointee != nullptr, "invariant");
-  assert(!reference.is_null(), "invariant");
+#ifdef ASSERT
+DFSClosure::~DFSClosure() {
+  if (!GranularTimer::is_finished()) {
+    assert(_probe_stack.is_empty(), "We should have drained the probe stack?");
+  }
+}
+#endif // ASSERT
 
-  if (GranularTimer::is_finished()) {
+void DFSClosure::push_to_probe_stack(UnifiedOopRef ref, int chunkindex) {
+  if (_probe_stack.is_full()) {
     return;
   }
+  const unsigned newdepth = checked_cast<unsigned>(current_depth()) + 1;
+  ProbeStackItem item { ref, newdepth, chunkindex };
+  _probe_stack.push(item);
+}
 
-  if (_depth == 0 && _ignore_root_set) {
-    // Root set is already marked, but we want
-    // to continue, so skip is_marked check.
-    assert(_mark_bits->is_marked(pointee), "invariant");
-    _reference_stack[_depth] = reference;
+void DFSClosure::handle_oop() {
+  assert(_current_item != nullptr, "Sanity");
+  assert(_current_item->chunkindex == 0, "Sanity");
+
+  const oop pointee = current_pointee();
+  const size_t depth = current_depth();
+  assert(depth < _max_depth, "Sanity");
+
+  if (depth == 0 && _ignore_root_set) {
+    assert(pointee_was_visited(pointee), "We should have already visited roots");
+    _reference_stack[depth] = _current_item->r;
+    // continue since we want to process children, too
   } else {
-    if (_mark_bits->is_marked(pointee)) {
-      return;
+    if (pointee_was_visited(pointee)) {
+      return; // already processed
     }
-    _mark_bits->mark_obj(pointee);
-    _reference_stack[_depth] = reference;
-    // is the pointee a sample object?
-    if (pointee->mark().is_marked()) {
+    mark_pointee_as_visited(pointee);
+    _reference_stack[depth] = _current_item->r;
+
+    if (pointee_was_sampled(pointee)) {
       add_chain();
     }
   }
-  assert(_max_depth >= 1, "invariant");
-  if (_depth < _max_depth - 1) {
-    _depth++;
-    pointee->oop_iterate(this);
-    assert(_depth > 0, "invariant");
-    _depth--;
+
+  // trace children if needed
+  if (depth == _max_depth - 1) {
+    return; // stop following this chain
+  }
+
+  pointee->oop_iterate(this);
+}
+
+void DFSClosure::handle_objarrayoop() {
+
+  assert(_current_item != nullptr, "Sanity");
+
+  const oop pointee = current_pointee();
+  const size_t depth = current_depth();
+  assert(depth < _max_depth, "Sanity");
+
+  const int chunkindex = _current_item->chunkindex;
+  assert(chunkindex >= 0, "Sanity");
+
+  if (current_depth() == 0 && _ignore_root_set) {
+    assert(pointee_was_visited(pointee), "We should have already visited roots");
+    _reference_stack[depth] = _current_item->r;
+    // continue since we want to process children, too
+  } else {
+
+    if (chunkindex == 0) {
+      // For the first chunk only, check, process and mark the array oop itself.
+      if (pointee_was_visited(pointee)) {
+        return; // already processed
+      }
+      mark_pointee_as_visited(pointee);
+      _reference_stack[depth] = _current_item->r;
+
+      if (pointee_was_sampled(pointee)) {
+        add_chain();
+      }
+    }
+  }
+
+  // trace children if needed
+
+  if (depth == _max_depth - 1) {
+    return; // stop following this chain
+  }
+
+  const objArrayOop pointee_oa = (const objArrayOop) pointee;
+  const int array_len = pointee_oa->length();
+  const int begidx = chunkindex * array_chunk_size;
+  const int endidx = MIN2(array_len, (chunkindex + 1) * array_chunk_size);
+
+  // push follow-up chunk before pushing the child references, to
+  // keep doing things depth-first.
+  if (endidx < array_len) {
+    push_to_probe_stack(_current_item->r, chunkindex + 1);
+  }
+
+  // push child references
+  if (begidx < endidx) {
+    pointee_oa->oop_iterate_range(this, begidx, endidx);
+  }
+}
+
+void DFSClosure::drain_probe_stack() {
+
+  while (!_probe_stack.is_empty() &&
+         !GranularTimer::is_finished()) {
+
+    const ProbeStackItem item = _probe_stack.pop();
+    _current_item = &item;
+
+    assert(!_current_item->r.is_null(), "invariant");
+    assert(current_pointee() != nullptr, "invariant");
+
+    if (current_pointee()->is_objArray()) {
+      handle_objarrayoop();
+    } else {
+      handle_oop();
+    }
+
+    _current_item = nullptr;
+
   }
 }
 
 void DFSClosure::add_chain() {
-  const size_t array_length = _depth + 2;
+  const size_t depth = current_depth();
+  const size_t array_length = depth + 2;
 
   ResourceMark rm;
   Edge* const chain = NEW_RESOURCE_ARRAY(Edge, array_length);
   size_t idx = 0;
 
   // aggregate from depth-first search
-  for (size_t i = 0; i <= _depth; i++) {
+  for (size_t i = 0; i <= depth; i++) {
     const size_t next = idx + 1;
-    const size_t depth = _depth - i;
+    const size_t depth = depth - i;
     chain[idx++] = Edge(&chain[next], _reference_stack[depth]);
   }
-  assert(_depth + 1 == idx, "invariant");
+  assert(depth + 1 == idx, "invariant");
   assert(array_length == idx + 1, "invariant");
 
   // aggregate from breadth-first search
@@ -135,7 +247,7 @@ void DFSClosure::do_oop(oop* ref) {
   assert(is_aligned(ref, HeapWordSize), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
   if (pointee != nullptr) {
-    closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
+    push_to_probe_stack(UnifiedOopRef::encode_in_heap(ref), 0);
   }
 }
 
@@ -144,7 +256,7 @@ void DFSClosure::do_oop(narrowOop* ref) {
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
   if (pointee != nullptr) {
-    closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
+    push_to_probe_stack(UnifiedOopRef::encode_in_heap(ref), 0);
   }
 }
 
@@ -152,5 +264,5 @@ void DFSClosure::do_root(UnifiedOopRef ref) {
   assert(!ref.is_null(), "invariant");
   const oop pointee = ref.dereference();
   assert(pointee != nullptr, "invariant");
-  closure_impl(ref, pointee);
+  push_to_probe_stack(ref, 0);
 }
