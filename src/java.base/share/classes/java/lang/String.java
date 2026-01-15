@@ -2122,10 +2122,10 @@ public final class String
     /**
      * {@return the length in bytes of the given String encoded with the given {@link Charset}}
      *
-     * <p>The result will be the same value as {@link #getBytes(Charset) getBytes(cs).length},
-     * and will have equivalent or better performance.
+     * <p>The result will be the same value as {@link #getBytes(Charset) getBytes(cs).length}.
      *
-     * @implNote This method may allocate memory to compute the length for some charsets.
+     * @implNote This method provides equivalent or better performance than {@link #getBytes(Charset)
+     *           getBytes(cs).length}. It may allocate memory to compute the length for some charsets.
      *
      * @param cs The {@link Charset} used to the compute the length
      * @since 27
