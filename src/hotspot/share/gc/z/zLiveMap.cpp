@@ -65,7 +65,7 @@ void ZLiveMap::reset(ZGenerationId id) {
 
     if (seqnum != seqnum_initializing) {
       // No one has claimed initialization of the livemap yet
-      if (_seqnum.compare_exchange(seqnum, seqnum_initializing) == seqnum) {
+      if (_seqnum.compare_set(seqnum, seqnum_initializing)) {
         // This thread claimed the initialization
 
         // Reset marking information
