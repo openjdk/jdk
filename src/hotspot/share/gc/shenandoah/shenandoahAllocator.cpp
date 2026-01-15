@@ -270,7 +270,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion
       _alloc_partition_name, actual_size * HeapWordSize, region->index(), req.size() * HeapWordSize, is_alloc_region ? "true" : "false", region->free());
     req.set_actual_size(actual_size);
     in_new_region = obj == region->bottom(); // is in new region when the allocated object is at the bottom of the region.
-    if (req.is_gc_alloc()) {
+    if (ALLOC_PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
       // For GC allocations, we advance update_watermark because the objects relocated into this memory during
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
