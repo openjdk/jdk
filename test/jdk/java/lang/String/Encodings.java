@@ -106,6 +106,7 @@ public class Encodings {
         if (!equals(bs, bytes))
             throw new Exception(charset + ": String.getBytes failed");
 
+        /* String.getBytesLength(Charset charset) */
         if (bs.length != str.getBytesLength(charset))
             throw new Exception(charset + ": String.getBytesLength failed");
 
