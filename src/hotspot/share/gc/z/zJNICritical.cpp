@@ -69,7 +69,7 @@ void ZJNICritical::block() {
     }
 
     // Increment and invert count
-    if (_count.compare_exchange(count, -(count + 1)) != count) {
+    if (!_count.compare_set(count, -(count + 1))) {
       continue;
     }
 
@@ -120,7 +120,7 @@ void ZJNICritical::enter_inner(JavaThread* thread) {
     }
 
     // Increment count
-    if (_count.compare_exchange(count, count + 1) != count) {
+    if (!_count.compare_set(count, count + 1)) {
       continue;
     }
 
@@ -146,12 +146,12 @@ void ZJNICritical::exit_inner() {
 
     if (count > 0) {
       // No block in progress, decrement count
-      if (_count.compare_exchange(count, count - 1) != count) {
+      if (!_count.compare_set(count, count - 1)) {
         continue;
       }
     } else {
       // Block in progress, increment count
-      if (_count.compare_exchange(count, count + 1) != count) {
+      if (!_count.compare_set(count, count + 1)) {
         continue;
       }
 
