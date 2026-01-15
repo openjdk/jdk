@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.internal.model;
 
+import java.util.Objects;
 
-#include "Utilities.h"
-// Platform.java includes
-#include "com_sun_media_sound_Platform.h"
-
-/*
- * Declare library specific JNI_Onload entry if static build
+/**
+ * App image bundle type.
+ *
+ * @see StandardPackageType
  */
-DEF_STATIC_JNI_OnLoad
+public enum AppImageBundleType implements BundleType {
 
-/*
- * Class:     com_sun_media_sound_Platform
- * Method:    nIsBigEndian
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_sun_media_sound_Platform_nIsBigEndian(JNIEnv *env, jclass clss) {
-    return UTIL_IsBigEndianPlatform();
+    WIN_APP_IMAGE("bundle-type.win-app"),
+    LINUX_APP_IMAGE("bundle-type.linux-app"),
+    MAC_APP_IMAGE("bundle-type.mac-app"),
+    ;
+
+    private AppImageBundleType(String key) {
+        this.key = Objects.requireNonNull(key);
+    }
+
+    @Override
+    public String label() {
+        return I18N.getString(key);
+    }
+
+    private final String key;
 }

@@ -434,7 +434,6 @@ jint ShenandoahHeap::initialize() {
       old_generation()->set_promoted_reserve((size_t) 0);
     }
 
-
     // We are initializing free set.  We ignore cset region tallies.
     size_t young_trash_regions, old_trash_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
@@ -1674,7 +1673,7 @@ void ShenandoahHeap::verify(VerifyOption vo) {
   }
 }
 size_t ShenandoahHeap::tlab_capacity() const {
-  return _free_set->capacity();
+  return _free_set->capacity_not_holding_lock();
 }
 
 class ObjectIterateScanRootClosure : public BasicOopIterateClosure {
@@ -2154,7 +2153,7 @@ GCTracer* ShenandoahHeap::tracer() {
 }
 
 size_t ShenandoahHeap::tlab_used() const {
-  return _free_set->used();
+  return _free_set->used_not_holding_lock();
 }
 
 bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
@@ -2544,8 +2543,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
                           ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
                           ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
   ShenandoahHeapLocker locker(lock());
-  size_t young_cset_regions, old_cset_regions;
-  size_t first_old_region, last_old_region, old_region_count;
+  size_t young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count;
   _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
   // If there are no old regions, first_old_region will be greater than last_old_region
   assert((first_old_region > last_old_region) ||
@@ -2564,13 +2562,14 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-    size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
+    size_t allocation_runway =
+      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
     gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
 
     // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
     // memory represents more than 16 regions worth of data.  Note that fragmentation may increase when we promote regular
-    // regions in place when many of these regular regions have an abundant amount of available memory within them.  Fragmentation
-    // will decrease as promote-by-copy consumes the available memory within these partially consumed regions.
+    // regions in place when many of these regular regions have an abundant amount of available memory within them.
+    // Fragmentation will decrease as promote-by-copy consumes the available memory within these partially consumed regions.
     //
     // We consider old-gen to have excessive fragmentation if more than 12.5% of old-gen is free memory that resides
     // within partially consumed regions of memory.
