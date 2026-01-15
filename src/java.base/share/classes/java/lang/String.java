@@ -2132,7 +2132,7 @@ public final class String
     /**
      * {@return the length in bytes of the given String encoded with the given {@link Charset}}
      *
-     * <p>The result will be the same value as {@code getBytes(charset).length}.
+     * <p>The result will be the same value as {@linkplain #getBytes(Charset) {@code getBytes(cs).length}}.
      *
      * @implNote This method may allocate memory to compute the length for some charsets.
      *
