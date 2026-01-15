@@ -761,6 +761,19 @@ public final class MacHelper {
                 cmd.packageType().getSuffix());
     }
 
+    static String getNormalizedVersion(JPackageCommand cmd, String version) {
+        cmd.verifyIsOfType(PackageType.MAC);
+        // macOS requires 1, 2 or 3 components version string.
+        // We always normalize to 3 components.
+        String[] components = version.split("\\.");
+        if (components.length >= 4) {
+            components = version.split("\\.", 4);
+            return String.join(".", Arrays.copyOf(components, components.length - 1));
+        }
+
+        return version;
+    }
+
     static Path getInstallationDirectory(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC);
 

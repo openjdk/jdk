@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,14 @@ import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.jpackage.test.TKit.assertFalse;
 import static jdk.jpackage.test.TKit.assertTrue;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import jdk.jpackage.test.Annotations.Parameter;
@@ -108,6 +113,19 @@ public class RuntimePackageTest {
         // command line jpackage will create a package named 'sed' that will conflict
         // with the default 'sed' package.
         .run(Action.CREATE_AND_UNPACK);
+    }
+
+    @Test
+    @Parameter("27")
+    @Parameter("27.1")
+    @Parameter("27.1.2")
+    @Parameter("27.1.2.3")
+    @Parameter("27.1.2.3.4")
+    public static void testReleaseFileVersion(String version) {
+        init()
+        .addInitializer(cmd -> cmd.setFakeRuntime(Optional.of(version)))
+        // Just create package. It is enough to verify version in bundle name.
+        .run(Action.CREATE);
     }
 
     private static PackageTest init() {

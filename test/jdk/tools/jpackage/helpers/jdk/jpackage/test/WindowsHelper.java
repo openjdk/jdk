@@ -32,6 +32,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +53,23 @@ public class WindowsHelper {
         cmd.verifyIsOfType(PackageType.WINDOWS);
         return String.format("%s-%s%s", cmd.installerName(), cmd.version(),
                 cmd.packageType().getSuffix());
+    }
+
+    static String getNormalizedVersion(JPackageCommand cmd, String version) {
+        cmd.verifyIsOfType(PackageType.WINDOWS);
+        // Windows requires 2 or 4 components version string.
+        // We always normalize to 4 components.
+        String[] components = version.split("\\.");
+        if (components.length == 1) {
+            return version.concat(".0.0.0");
+        } else if (components.length == 3) {
+            return version.concat(".0");
+        } else if (components.length >= 5) {
+            components = version.split("\\.", 5);
+            return String.join(".", Arrays.copyOf(components, components.length - 1));
+        }
+
+        return version;
     }
 
     static Path getInstallationDirectory(JPackageCommand cmd) {

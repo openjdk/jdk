@@ -34,6 +34,7 @@ import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -50,6 +51,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -61,6 +63,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.jpackage.internal.util.RuntimeVersionReader;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -245,6 +248,25 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String version() {
+         if (isRuntime()) {
+            String appVersion = getArgumentValue("--app-version");
+            if (appVersion != null) {
+                return appVersion;
+            } else {
+                Optional<String> releaseVersion = RuntimeVersionReader
+                        .readVersion(Path.of(getArgumentValue("--runtime-image")));
+                if (releaseVersion.isPresent()) {
+                    if (TKit.isWindows()) {
+                        return WindowsHelper.getNormalizedVersion(this, releaseVersion.get());
+                    } else if (TKit.isOSX()) {
+                        return MacHelper.getNormalizedVersion(this, releaseVersion.get());
+                    }
+
+                    return releaseVersion.get();
+                }
+            }
+        }
+
         return getArgumentValue("--app-version", () -> "1.0");
     }
 
@@ -293,6 +315,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setFakeRuntime() {
+        return setFakeRuntime(Optional.empty());
+    }
+
+    public JPackageCommand setFakeRuntime(Optional<String> version) {
         verifyMutable();
 
         ThrowingConsumer<Path, IOException> createBulkFile = path -> {
@@ -320,6 +346,19 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // Package bundles with 0KB size are unexpected and considered
             // an error by PackageTest.
             createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("lib", "bulk")));
+
+            // Create release file with version if provided
+            version.ifPresent(ver -> {
+                Properties props = new Properties();
+                props.setProperty("JAVA_VERSION", ver);
+                try (Writer writer = Files.newBufferedWriter(fakeRuntimeDir.resolve("release"))) {
+                    props.store(writer, null);
+                } catch (IOException ex) {
+                    TKit.trace(String.format(
+                            "Failed to create [%s] file: %s",
+                            fakeRuntimeDir.resolve("release"), ex));
+                    }
+            });
 
             cmd.setArgumentValue("--runtime-image", fakeRuntimeDir);
         });

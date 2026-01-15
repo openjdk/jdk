@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import static jdk.jpackage.internal.cli.StandardOption.RESOURCE_DIR;
 import static jdk.jpackage.internal.cli.StandardOption.VENDOR;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,6 +54,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.util.RuntimeVersionReader;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
@@ -140,7 +142,6 @@ final class FromOptions {
         private RuntimeLayout predefinedRuntimeLayout;
     }
 
-
     private static <T extends Launcher> ApplicationBuilder createApplicationBuilder(Options options,
             Function<Options, Launcher> launcherCtor,
             BiFunction<T, Launcher, T> launcherOverrideCtor,
@@ -173,6 +174,15 @@ final class FromOptions {
 
         if (isRuntimeInstaller) {
             appBuilder.appImageLayout(runtimeLayout);
+            if (!APP_VERSION.containsIn(options)) {
+                // Version is not specified explicitly. Try to get it from the release file.
+                RuntimeVersionReader.readVersion(PREDEFINED_RUNTIME_IMAGE.getFrom(options))
+                        .ifPresent(version -> {
+                            appBuilder.version(version);
+                            Log.verbose(I18N.format("message.release-version",
+                                    version, PREDEFINED_RUNTIME_IMAGE.getFrom(options)));
+                        });
+            }
         } else {
             appBuilder.appImageLayout(appLayout);
 

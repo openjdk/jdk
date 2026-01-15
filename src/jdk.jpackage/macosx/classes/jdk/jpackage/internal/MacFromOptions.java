@@ -30,6 +30,7 @@ import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
+import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_CATEGORY;
@@ -52,6 +53,7 @@ import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -61,6 +63,7 @@ import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
 import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
+import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.FileAssociation;
@@ -210,7 +213,30 @@ final class MacFromOptions {
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
         }
 
-        final var app = superAppBuilder.create();
+        var app = superAppBuilder.create();
+
+        if (!APP_VERSION.containsIn(options)) {
+            // User didn't explicitly specify the version on the command line. jpackage derived it from the input.
+            // In this case it should ensure the derived value is valid MacOS version.
+            var ver = normalizeVersion(app.version());
+            if (!ver.equals(app.version())) {
+                Log.verbose(I18N.format("message.version-normalized",
+                        ver, app.version()));
+            }
+
+            app = new Application.Stub(
+                    app.name(),
+                    app.description(),
+                    ver,
+                    app.vendor(),
+                    app.copyright(),
+                    app.srcDir(),
+                    app.contentDirs(),
+                    app.imageLayout(),
+                    app.runtimeBuilder(),
+                    app.launchers(),
+                    app.extraAppImageFileData());
+        }
 
         final var appBuilder = new MacApplicationBuilder(app);
 
@@ -326,5 +352,18 @@ final class MacFromOptions {
         StandardFaOption.MAC_UTTYPECONFORMSTO.ifPresentIn(options, builder::utTypeConformsTo);
 
         return builder.create(fa);
+    }
+
+    static String normalizeVersion(String version) {
+        // macOS requires 1, 2 or 3 components version string.
+        // When reading from release file it can be 1 or 3 or maybe more.
+        // We always normalize to 3 components.
+        String[] components = version.split("\\.");
+        if (components.length >= 4) {
+            components = version.split("\\.", 4);
+            return String.join(".", Arrays.copyOf(components, components.length - 1));
+        }
+
+        return version;
     }
 }
