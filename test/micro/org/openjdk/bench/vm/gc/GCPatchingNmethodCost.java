@@ -61,16 +61,18 @@ import jdk.test.whitebox.code.NMethod;
  * The benchmark parameters are method count and accessed field count.
  */
 
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 3, jvmArgsAppend = {
+@Fork(value = 1, jvmArgsAppend = {
     "-XX:+UnlockDiagnosticVMOptions",
     "-XX:+UnlockExperimentalVMOptions",
     "-XX:+WhiteBoxAPI",
     "-Xbootclasspath/a:lib-test/wb.jar",
     "-XX:-UseCodeCacheFlushing"
 })
+@Warmup(iterations = 5)
+@Measurement(iterations = 5)
 public class GCPatchingNmethodCost {
 
     private static final int COMP_LEVEL = 1;
@@ -176,28 +178,27 @@ public class GCPatchingNmethodCost {
     public void setupCodeCache() throws Exception {
         initWhiteBox();
         createTestMethods(accessedFieldCount, methodCount);
-        Thread.sleep(1000);
+        System.gc();
+    }
+
+    @Setup(Level.Iteration)
+    public void setupIteration() {
+        fields = new Fields();
     }
 
     @Benchmark
-    @Warmup(iterations = 0)
-    @Measurement(iterations = 1)
     public void youngGC() throws Exception {
         fields = null;
         WB.youngGC();
     }
 
     @Benchmark
-    @Warmup(iterations = 0)
-    @Measurement(iterations = 1)
     public void fullGC() throws Exception {
         fields = null;
         WB.fullGC();
     }
 
     @Benchmark
-    @Warmup(iterations = 0)
-    @Measurement(iterations = 1)
     public void systemGC() throws Exception {
         fields = null;
         System.gc();
