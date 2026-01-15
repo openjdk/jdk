@@ -2130,14 +2130,13 @@ public final class String
     }
 
     /**
-     * Returns the length in bytes of the given String encoded with the given {@link Charset}.
+     * {@return the length in bytes of the given String encoded with the given {@link Charset}}
      *
      * <p>The result will be the same value as {@code getBytes(charset).length}.
      *
      * @implNote This method may allocate memory to compute the length for some charsets.
      *
      * @param cs the {@link Charset} used to the compute the length
-     * @return the length in bytes of the given String encoded with the given {@link Charset}
      * @since 27
      */
     public int getBytesLength(Charset cs) {
