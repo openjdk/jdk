@@ -2383,9 +2383,9 @@ void PrintClassClosure::do_klass(Klass* k)  {
 
     oop pd = java_lang_Class::protection_domain(k->java_mirror());
 
-    assert(pd == nullptr || pd->klass()->is_instance_klass(), "pd klass is not InstanceKlass");
-
     if (pd != nullptr) {
+
+      assert(pd->klass()->is_instance_klass(), "pd klass is not InstanceKlass");
 
       TempNewSymbol css  = SymbolTable::new_symbol("codesource");
       TempNewSymbol csss = SymbolTable::new_symbol("Ljava/security/CodeSource;");
@@ -2396,9 +2396,9 @@ void PrintClassClosure::do_klass(Klass* k)  {
 
         oop cs = pd->obj_field(csfd.offset());
 
-        assert(cs == nullptr || cs->klass()->is_instance_klass(), "cs klass is not InstanceKlass");
-
         if (cs != nullptr) {
+          assert(cs->klass()->is_instance_klass(), "cs klass is not InstanceKlass");
+
           fieldDescriptor locfd;
 
           TempNewSymbol csls  = SymbolTable::new_symbol("locationNoFragString");
@@ -2410,7 +2410,7 @@ void PrintClassClosure::do_klass(Klass* k)  {
             assert(loc == nullptr || loc->klass() == vmClasses::String_klass(), "locationNoFragString field is not a String");
 
             if (loc != nullptr) {
-              java_lang_String::print(loc, _st, MAXPATHLEN);
+              java_lang_String::print(loc, _st, JVM_MAXPATHLEN);
             }
           }
         }
