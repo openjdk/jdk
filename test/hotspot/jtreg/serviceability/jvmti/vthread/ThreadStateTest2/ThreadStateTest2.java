@@ -103,7 +103,7 @@ public class ThreadStateTest2 {
         vt2Finished.set(true);
         log("VT-2 finished");
     };
- 
+
     private void runTest() throws Exception {
         // Force creation of JvmtiThreadState on vthread start.
         setMonitorContendedMode(true);
