@@ -2633,6 +2633,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // Check for Max/Min(A, Max/Min(B, C)) where A == B or A == C
+  if (use->is_MinMax()) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == use->Opcode()) {
+        worklist.push(u);
+      }
+    }
+  }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
     add_users_to_worklist0(proj, worklist);
   };
