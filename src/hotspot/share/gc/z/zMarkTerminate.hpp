@@ -32,7 +32,7 @@ class ZMarkStripeSet;
 
 class ZMarkTerminate {
 private:
-  Atomic<uint>   _nworkers;
+  uint           _nworkers;
   Atomic<uint>   _nworking;
   Atomic<uint>   _nawakening;
   Atomic<bool>   _resurrected;

@@ -41,7 +41,7 @@ inline ZMarkTerminate::ZMarkTerminate()
     _lock() {}
 
 inline void ZMarkTerminate::reset(uint nworkers) {
-  _nworkers.store_relaxed(nworkers);
+  _nworkers = nworkers;
   _nworking.store_relaxed(nworkers);
   _nawakening.store_relaxed(0u);
 }
@@ -97,7 +97,7 @@ inline bool ZMarkTerminate::try_terminate(ZMarkStripeSet* stripes, size_t used_n
 inline void ZMarkTerminate::wake_up() {
   uint nworking = _nworking.load_relaxed();
   uint nawakening = _nawakening.load_relaxed();
-  if (nworking + nawakening == _nworkers.load_relaxed()) {
+  if (nworking + nawakening == _nworkers) {
     // Everyone is working or about to
     return;
   }
@@ -108,7 +108,7 @@ inline void ZMarkTerminate::wake_up() {
   }
 
   ZLocker<ZConditionLock> locker(&_lock);
-  if (_nworking.load_relaxed() + _nawakening.load_relaxed() != _nworkers.load_relaxed()) {
+  if (_nworking.load_relaxed() + _nawakening.load_relaxed() != _nworkers) {
     // Everyone is not working
     _nawakening.add_then_fetch(1u, memory_order_relaxed);
     _lock.notify();
@@ -119,7 +119,7 @@ inline bool ZMarkTerminate::saturated() const {
   uint nworking = _nworking.load_relaxed();
   uint nawakening = _nawakening.load_relaxed();
 
-  return nworking + nawakening == _nworkers.load_relaxed();
+  return nworking + nawakening == _nworkers;
 }
 
 inline void ZMarkTerminate::set_resurrected(bool value) {
