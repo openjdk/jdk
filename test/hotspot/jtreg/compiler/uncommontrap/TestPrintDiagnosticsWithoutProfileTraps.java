@@ -24,9 +24,12 @@
  /**
  * @test
  * @bug 8374807
- * @summary Regression test for -XX:+TraceDeoptimization -XX:-ProfileTraps -XX:-TieredCompilation -Xcomp crash
+ * @summary Regression test for -XX:+TraceDeoptimization -XX:-ProfileTraps
+ *          -XX:-TieredCompilation -Xcomp crash
  * @requires vm.debug
- * @run main/othervm -XX:+TraceDeoptimization -XX:-ProfileTraps -XX:-TieredCompilation -Xcomp compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps
+ * @run main/othervm -XX:+TraceDeoptimization -XX:-ProfileTraps
+ *                   -XX:-TieredCompilation -Xcomp
+ *                   compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps
  */
 
 package compiler.uncommontrap;
