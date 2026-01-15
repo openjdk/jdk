@@ -77,7 +77,7 @@ public class PipelineLeaksFD {
     // Check if lsof is available
     private static boolean checkForLSOF() {
         try {
-            pipesForPid(MY_PID);
+            lsofForAll();
             return true;
         } catch (IOException ioe) {
             System.err.println("Skipping: " + ioe);
@@ -90,8 +90,12 @@ public class PipelineLeaksFD {
     @MethodSource("builders")
     void checkForLeaks(List<ProcessBuilder> builders) throws IOException {
 
-        Set<PipeRecord> pipesBefore = pipesForPid(MY_PID);
+        List<String> lsofLines = lsofForAll();
+        Set<PipeRecord> pipesBefore = pipesFromLSOF(lsofLines, MY_PID);
         if (pipesBefore.size() < 3) {
+            // Dump all lsof output to aid debugging
+            System.out.println("Output from lsof");
+            lsofLines.forEach(System.err::println);
             System.err.println(pipesBefore);
             fail("There should be at least 3 pipes before, (0, 1, 2)");
         }
@@ -122,7 +126,8 @@ public class PipelineLeaksFD {
 
         processes.forEach(PipelineLeaksFD::waitForQuiet);
 
-        Set<PipeRecord> pipesAfter = pipesForPid(MY_PID);
+        lsofLines = lsofForAll();
+        Set<PipeRecord> pipesAfter = pipesFromLSOF(lsofLines, MY_PID);
         if (!pipesBefore.equals(pipesAfter)) {
             Set<PipeRecord> missing = new HashSet<>(pipesBefore);
             missing.removeAll(pipesAfter);
@@ -130,6 +135,9 @@ public class PipelineLeaksFD {
             Set<PipeRecord> extra = new HashSet<>(pipesAfter);
             extra.removeAll(pipesBefore);
             printPipes(extra, "Extra pipes in pipesAfter");
+            // Dump all lsof output to aid debugging
+            System.out.println("\nOutput from lsof");
+            lsofLines.forEach(System.err::println);
             fail("More or fewer pipes than expected");
         }
     }
@@ -151,9 +159,15 @@ public class PipelineLeaksFD {
                 .redirectErrorStream(redirectError)
                 .start()) {
             System.err.printf("Parent PID; %d, Child Pid: %d\n", MY_PID, p.pid());
-            final Set<PipeRecord> pipes = pipesForPid(p.pid());
+            List<String> lsofLines = lsofForAll();
+            final Set<PipeRecord> pipes = pipesFromLSOF(lsofLines, p.pid());
             printPipes(pipes, "Parent and waiting child pipes");
             int uniquePipes = redirectError ? 8 : 9;
+            if (uniquePipes != pipes.size()) {
+                // Dump all lsof output to aid debugging
+                System.out.println("\nOutput from lsof");
+                lsofLines.forEach(System.err::println);
+            }
             assertEquals(uniquePipes, pipes.size(),
                     "wrong number of pipes for redirect: " + redirectError);
             String expectedTypeName = redirectError
@@ -185,12 +199,38 @@ public class PipelineLeaksFD {
      * Collect a Set of file descriptors and identifying information.
      * To identify the pipes in use the `lsof` command is invoked and output scrapped for
      * fd's, pids, unique identities of the pipes (to match with parent).
-     * Files are used for `lsof` input and output to avoid creating pipes.
      * @return A set of PipeRecords, possibly empty
      */
-    static Set<PipeRecord> pipesForPid(long pid) throws IOException {
-        Path lsofEmptyInput = Files.createTempFile("lsof-", "empty");
-        Path lsofOutput = Files.createTempFile("lsof-", "tmp");
+    private static Set<PipeRecord> pipesForPid(long pid) throws IOException {
+        var lines = lsofForAll();
+        return pipesFromLSOF(lines, pid);
+    }
+
+    /**
+     * Extract the PipeRecords from the `lsof` output for this process and a designated child process.
+     *
+     * @param lines lines of lsof output
+     * @param pid pid of child process of interest
+     * @return a Set of PipeRecords for parent and child
+     */
+    private static LinkedHashSet<PipeRecord> pipesFromLSOF(List<String> lines, long pid) {
+        return lines.stream()
+                .map(PipelineLeaksFD::pipeFromLSOF)
+                .filter(pr -> pr != null &&
+                        (pr.pid() == pid || pr.pid() == MY_PID))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
+     * Collect the output of `lsof` for all files.
+     * Files are used for `lsof` input and output to avoid creating pipes.
+     * @return a List of lines output from `lsof`.
+     */
+    private static List<String> lsofForAll() throws IOException {
+        Path tmpDir = Path.of(".");
+        String tmpPrefix = "lsof-";
+        Path lsofEmptyInput = Files.createTempFile(tmpDir, tmpPrefix, ".empty");
+        Path lsofOutput = Files.createTempFile(tmpDir, tmpPrefix, ".tmp");
         try (Process p = new ProcessBuilder("lsof")
                 .redirectOutput(lsofOutput.toFile())
                 .redirectInput(lsofEmptyInput.toFile()) // empty input
@@ -199,13 +239,7 @@ public class PipelineLeaksFD {
             int status = p.waitFor();
             assertEquals(0, status, "Process 'lsof' failed");
 
-            List<String> lines = Files.readAllLines(lsofOutput);
-            // Collect all the pipes for the processes (parent, waiting child)
-            return lines.stream()
-                    .map(PipelineLeaksFD::pipeFromLSOF)
-                    .filter(pr -> pr != null &&
-                            (pr.pid() == pid || pr.pid() == MY_PID))
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            return Files.readAllLines(lsofOutput);
         } catch (InterruptedException ie) {
             throw new IOException("Waiting for lsof exit interrupted", ie);
         }
