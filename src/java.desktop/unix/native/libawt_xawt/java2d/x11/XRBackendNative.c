@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,6 +340,7 @@ JNIEXPORT jint JNICALL
 Java_sun_java2d_xr_XRBackendNative_createPictureNative
  (JNIEnv *env, jclass cls, jint drawable, jlong formatPtr) {
   XRenderPictureAttributes pict_attr;
+  pict_attr.repeat = RepeatNone;
   return XRenderCreatePicture(awt_display, (Drawable) drawable,
                               (XRenderPictFormat *) jlong_to_ptr(formatPtr),
                                0, &pict_attr);
