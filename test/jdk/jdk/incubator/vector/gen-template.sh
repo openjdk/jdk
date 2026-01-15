@@ -512,23 +512,23 @@ gen_binary_bcst_op_no_masked "MAX+max" "scalar_max(a, b)"
 gen_saturating_binary_op_associative "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWISE"
 
 # Reductions.
-gen_reduction_op "AND" "scalar_and" "BITWISE" "-1"
-gen_reduction_op "OR" "scalar_or" "BITWISE" "0"
-gen_reduction_op "XOR" "scalar_xor" "BITWISE" "0"
-gen_reduction_op "ADD" "scalar_add" "" "additiveIdentity()"
-gen_reduction_op "MUL" "scalar_mul" "" "multiplicativeIdentity()"
-gen_reduction_op_func "MIN" "scalar_min" "" "maxValue"
-gen_reduction_op_func "MAX" "scalar_max" "" "minValue"
-gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "maxValue"
-gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "minValue"
-gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "zeroValue"
+gen_reduction_op "AND" "scalar_and" "BITWISE" "AND_IDENTITY"
+gen_reduction_op "OR" "scalar_or" "BITWISE" "OR_IDENTITY"
+gen_reduction_op "XOR" "scalar_xor" "BITWISE" "XOR_IDENTITY"
+gen_reduction_op "ADD" "scalar_add" "" "ADD_IDENTITY"
+gen_reduction_op "MUL" "scalar_mul" "" "MUL_IDENTITY"
+gen_reduction_op_func "MIN" "scalar_min" "" "MIN_IDENTITY"
+gen_reduction_op_func "MAX" "scalar_max" "" "MAX_IDENTITY"
+gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "UMIN_IDENTITY"
+gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "UMAX_IDENTITY"
+gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "FIRST_NONZERO_IDENTITY"
 
 # Boolean reductions.
 gen_bool_reduction_op "anyTrue" "|" "BITWISE" "false"
 gen_bool_reduction_op "allTrue" "\&" "BITWISE" "true"
 
 # Saturating reductions.
-gen_saturating_reduction_op "SUADD" "(\$type\$) VectorMath.addSaturatingUnsigned" "BITWISE" "zeroValue"
+gen_saturating_reduction_op "SUADD" "(\$type\$) VectorMath.addSaturatingUnsigned" "BITWISE" "SUADD_IDENTITY"
 
 #Insert
 gen_with_op "withLane" "" "" ""

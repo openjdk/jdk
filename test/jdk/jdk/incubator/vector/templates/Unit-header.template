@@ -175,17 +175,36 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 
 #if[MaxBit]
+
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
     }
 
     private static final int Max = 256;  // juts so we can do N/$bits$
 #end[MaxBit]
-
 #if[BITWISE]
+
     private static final $type$ CONST_SHIFT = $Boxtype$.SIZE / 2;
 #end[BITWISE]
+
+    // Identity values for reduction operations
+    private static final $type$ ADD_IDENTITY = ($type$)0;
+#if[BITWISE]
+    private static final $type$ AND_IDENTITY = ($type$)-1;
+#end[BITWISE]
+    private static final $type$ FIRST_NONZERO_IDENTITY = ($type$)0;
+    private static final $type$ MAX_IDENTITY = {#if[FP16]?float16ToShortBits($Wideboxtype$.$MinValue$):$Wideboxtype$.$MinValue$};
+    private static final $type$ MIN_IDENTITY = {#if[FP16]?float16ToShortBits($Wideboxtype$.$MaxValue$):$Wideboxtype$.$MaxValue$};
+    private static final $type$ MUL_IDENTITY = {#if[FP16]?float16ToShortBits(Float16.valueOf(1.0f)):($type$)1};
+#if[BITWISE]
+    private static final $type$ OR_IDENTITY = ($type$)0;
+    private static final $type$ SUADD_IDENTITY = ($type$)0;
+    private static final $type$ UMAX_IDENTITY = ($type$)0;   // Minimum unsigned value
+    private static final $type$ UMIN_IDENTITY = ($type$)-1;  // Maximum unsigned value
+    private static final $type$ XOR_IDENTITY = ($type$)0;
+#end[BITWISE]
 #if[FP]
+
     // for floating point addition reduction ops that may introduce rounding errors
     private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_ADD = ($type$)10.0;
 
@@ -2066,10 +2085,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
         return Float16.compare(at, zero) != 0 ? a : b;
     }
 
-    static $type$ multiplicativeIdentity() {
-        return ($type$)float16ToShortBits(Float16.valueOf(1.0f));
-    }
-
     static $type$ scalar_add($type$ a, $type$ b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
@@ -2310,10 +2325,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
         return $Wideboxtype$.compare(a, ($type$) 0) != 0 ? a : b;
     }
 
-    static $type$ multiplicativeIdentity() {
-        return ($type$)1;
-    }
-
 #if[BITWISE]
     static $type$ scalar_or($type$ a, $type$ b) {
         return ($type$)(a | b);
@@ -2364,6 +2375,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         return (($type$)-a);
     }
 
+#if[!BITWISE]
     static $type$ scalar_sin($type$ a) {
         return ($type$)Math.sin((double)a);
     }
@@ -2515,11 +2527,8 @@ public class $vectorteststype$ extends AbstractVectorTest {
     static $type$ strict_scalar_atan2($type$ a, $type$ b) {
         return ($type$)StrictMath.atan2((double)a, (double)b);
     }
+#end[!BITWISE]
 #end[FP16]
-    static $type$ additiveIdentity() {
-        return ($type$)0;
-    }
-
 #if[!FP]
 
     static boolean ult($type$ a, $type$ b) {
@@ -2538,18 +2547,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
         return $Boxtype$.compareUnsigned(a, b) >= 0;
     }
 #end[!FP]
-
-    static $type$ zeroValue() {
-        return (short) 0;
-    }
-
-    static $type$ maxValue() {
-        return {#if[FP16]?float16ToShortBits($Wideboxtype$.$MaxValue$):$Wideboxtype$.$MaxValue$};
-    }
-
-    static $type$ minValue() {
-        return {#if[FP16]?float16ToShortBits($Wideboxtype$.$MinValue$):$Wideboxtype$.$MinValue$};
-    }
 
 #if[FP]
 #if[FP16]

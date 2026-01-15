@@ -115,11 +115,19 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
         Assert.assertEquals(actual, expected, msg);
     }
 
+
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
     }
 
     private static final int Max = 256;  // juts so we can do N/Max
+
+    // Identity values for reduction operations
+    private static final short ADD_IDENTITY = (short)0;
+    private static final short FIRST_NONZERO_IDENTITY = (short)0;
+    private static final short MAX_IDENTITY = float16ToShortBits(Float16.NEGATIVE_INFINITY);
+    private static final short MIN_IDENTITY = float16ToShortBits(Float16.POSITIVE_INFINITY);
+    private static final short MUL_IDENTITY = float16ToShortBits(Float16.valueOf(1.0f));
 
     // for floating point addition reduction ops that may introduce rounding errors
     private static final short RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (short)10.0;
@@ -1638,10 +1646,6 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
         return Float16.compare(at, zero) != 0 ? a : b;
     }
 
-    static short multiplicativeIdentity() {
-        return (short)float16ToShortBits(Float16.valueOf(1.0f));
-    }
-
     static short scalar_add(short a, short b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
@@ -1851,22 +1855,6 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     static short strict_scalar_atan2(short a, short b) {
         return float16ToShortBits(Float16.valueOf(StrictMath.atan2(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
-    }
-    static short additiveIdentity() {
-        return (short)0;
-    }
-
-
-    static short zeroValue() {
-        return (short) 0;
-    }
-
-    static short maxValue() {
-        return float16ToShortBits(Float16.POSITIVE_INFINITY);
-    }
-
-    static short minValue() {
-        return float16ToShortBits(Float16.NEGATIVE_INFINITY);
     }
 
     static boolean isNaN(short a) {
@@ -2710,7 +2698,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short ADDReduce(short[] a, int idx) {
-        short res = additiveIdentity();
+        short res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = scalar_add(res, a[i]);
         }
@@ -2719,7 +2707,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short ADDReduceAll(short[] a) {
-        short res = additiveIdentity();
+        short res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_add(res, ADDReduce(a, i));
         }
@@ -2731,20 +2719,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     static void ADDReduceFloat16VectorMaxTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
-        short ra = additiveIdentity();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = additiveIdentity();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = scalar_add(ra, av.reduceLanes(VectorOperators.ADD));
+                short v = av.reduceLanes(VectorOperators.ADD);
+                r[i] = v;
+                ra = scalar_add(ra, v);
             }
         }
 
@@ -2752,8 +2735,31 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
                 Float16VectorMaxTests::ADDReduce, Float16VectorMaxTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void ADDReduceIdentityValueTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short id = ADD_IDENTITY;
+
+        Assert.assertEquals((short) (scalar_add(id, id)), id,
+                            "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
+
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) (scalar_add(id, x)), x);
+                Assert.assertEquals((short) (scalar_add(x, id)), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((short) (scalar_add(id, x)), x,
+                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((short) (scalar_add(x, id)), x,
+                                "ADD(" + x + ", ADD_IDENTITY) != " + x);
+        }
+    }
+
     static short ADDReduceMasked(short[] a, int idx, boolean[] mask) {
-        short res = additiveIdentity();
+        short res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = scalar_add(res, a[i]);
@@ -2763,7 +2769,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short ADDReduceAllMasked(short[] a, boolean[] mask) {
-        short res = additiveIdentity();
+        short res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_add(res, ADDReduceMasked(a, i, mask));
         }
@@ -2777,20 +2783,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
         short[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float16> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        short ra = additiveIdentity();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = additiveIdentity();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = scalar_add(ra, av.reduceLanes(VectorOperators.ADD, vmask));
+                short v = av.reduceLanes(VectorOperators.ADD, vmask);
+                r[i] = v;
+                ra = scalar_add(ra, v);
             }
         }
 
@@ -2799,7 +2800,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MULReduce(short[] a, int idx) {
-        short res = multiplicativeIdentity();
+        short res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = scalar_mul(res, a[i]);
         }
@@ -2808,7 +2809,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MULReduceAll(short[] a) {
-        short res = multiplicativeIdentity();
+        short res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_mul(res, MULReduce(a, i));
         }
@@ -2820,20 +2821,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     static void MULReduceFloat16VectorMaxTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
-        short ra = multiplicativeIdentity();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = multiplicativeIdentity();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = scalar_mul(ra, av.reduceLanes(VectorOperators.MUL));
+                short v = av.reduceLanes(VectorOperators.MUL);
+                r[i] = v;
+                ra = scalar_mul(ra, v);
             }
         }
 
@@ -2841,8 +2837,31 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
                 Float16VectorMaxTests::MULReduce, Float16VectorMaxTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void MULReduceIdentityValueTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short id = MUL_IDENTITY;
+
+        Assert.assertEquals((short) (scalar_mul(id, id)), id,
+                            "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
+
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((short) (scalar_mul(id, x)), x);
+                Assert.assertEquals((short) (scalar_mul(x, id)), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((short) (scalar_mul(id, x)), x,
+                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((short) (scalar_mul(x, id)), x,
+                                "MUL(" + x + ", MUL_IDENTITY) != " + x);
+        }
+    }
+
     static short MULReduceMasked(short[] a, int idx, boolean[] mask) {
-        short res = multiplicativeIdentity();
+        short res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = scalar_mul(res, a[i]);
@@ -2852,7 +2871,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MULReduceAllMasked(short[] a, boolean[] mask) {
-        short res = multiplicativeIdentity();
+        short res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_mul(res, MULReduceMasked(a, i, mask));
         }
@@ -2866,20 +2885,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
         short[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float16> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        short ra = multiplicativeIdentity();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = multiplicativeIdentity();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = scalar_mul(ra, av.reduceLanes(VectorOperators.MUL, vmask));
+                short v = av.reduceLanes(VectorOperators.MUL, vmask);
+                r[i] = v;
+                ra = scalar_mul(ra, v);
             }
         }
 
@@ -2888,7 +2902,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MINReduce(short[] a, int idx) {
-        short res = maxValue();
+        short res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = scalar_min(res, a[i]);
         }
@@ -2897,7 +2911,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MINReduceAll(short[] a) {
-        short res = maxValue();
+        short res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_min(res, MINReduce(a, i));
         }
@@ -2909,20 +2923,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     static void MINReduceFloat16VectorMaxTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
-        short ra = maxValue();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = maxValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = scalar_min(ra, av.reduceLanes(VectorOperators.MIN));
+                short v = av.reduceLanes(VectorOperators.MIN);
+                r[i] = v;
+                ra = scalar_min(ra, v);
             }
         }
 
@@ -2930,8 +2939,31 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
                 Float16VectorMaxTests::MINReduce, Float16VectorMaxTests::MINReduceAll);
     }
 
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void MINReduceIdentityValueTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short id = MIN_IDENTITY;
+
+        Assert.assertEquals(scalar_min(id, id), id,
+                            "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
+
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(scalar_min(id, x), x);
+                Assert.assertEquals(scalar_min(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(scalar_min(id, x), x,
+                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals(scalar_min(x, id), x,
+                                "MIN(" + x + ", MIN_IDENTITY) != " + x);
+        }
+    }
+
     static short MINReduceMasked(short[] a, int idx, boolean[] mask) {
-        short res = maxValue();
+        short res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = scalar_min(res, a[i]);
@@ -2941,7 +2973,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MINReduceAllMasked(short[] a, boolean[] mask) {
-        short res = maxValue();
+        short res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_min(res, MINReduceMasked(a, i, mask));
         }
@@ -2955,20 +2987,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
         short[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float16> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        short ra = maxValue();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = maxValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = scalar_min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
+                short v = av.reduceLanes(VectorOperators.MIN, vmask);
+                r[i] = v;
+                ra = scalar_min(ra, v);
             }
         }
 
@@ -2977,7 +3004,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MAXReduce(short[] a, int idx) {
-        short res = minValue();
+        short res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = scalar_max(res, a[i]);
         }
@@ -2986,7 +3013,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MAXReduceAll(short[] a) {
-        short res = minValue();
+        short res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_max(res, MAXReduce(a, i));
         }
@@ -2998,20 +3025,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     static void MAXReduceFloat16VectorMaxTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
-        short ra = minValue();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = minValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = scalar_max(ra, av.reduceLanes(VectorOperators.MAX));
+                short v = av.reduceLanes(VectorOperators.MAX);
+                r[i] = v;
+                ra = scalar_max(ra, v);
             }
         }
 
@@ -3019,8 +3041,31 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
                 Float16VectorMaxTests::MAXReduce, Float16VectorMaxTests::MAXReduceAll);
     }
 
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void MAXReduceIdentityValueTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short id = MAX_IDENTITY;
+
+        Assert.assertEquals(scalar_max(id, id), id,
+                            "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
+
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(scalar_max(id, x), x);
+                Assert.assertEquals(scalar_max(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(scalar_max(id, x), x,
+                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals(scalar_max(x, id), x,
+                                "MAX(" + x + ", MAX_IDENTITY) != " + x);
+        }
+    }
+
     static short MAXReduceMasked(short[] a, int idx, boolean[] mask) {
-        short res = minValue();
+        short res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = scalar_max(res, a[i]);
@@ -3030,7 +3075,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short MAXReduceAllMasked(short[] a, boolean[] mask) {
-        short res = minValue();
+        short res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_max(res, MAXReduceMasked(a, i, mask));
         }
@@ -3044,20 +3089,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
         short[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float16> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        short ra = minValue();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = minValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = scalar_max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
+                short v = av.reduceLanes(VectorOperators.MAX, vmask);
+                r[i] = v;
+                ra = scalar_max(ra, v);
             }
         }
 
@@ -3066,7 +3106,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short FIRST_NONZEROReduce(short[] a, int idx) {
-        short res = zeroValue();
+        short res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = firstNonZero(res, a[i]);
         }
@@ -3075,7 +3115,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short FIRST_NONZEROReduceAll(short[] a) {
-        short res = zeroValue();
+        short res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduce(a, i));
         }
@@ -3087,20 +3127,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     static void FIRST_NONZEROReduceFloat16VectorMaxTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
-        short ra = zeroValue();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = zeroValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO));
+                short v = av.reduceLanes(VectorOperators.FIRST_NONZERO);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
@@ -3108,8 +3143,31 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
                 Float16VectorMaxTests::FIRST_NONZEROReduce, Float16VectorMaxTests::FIRST_NONZEROReduceAll);
     }
 
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void FIRST_NONZEROReduceIdentityValueTests(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short id = FIRST_NONZERO_IDENTITY;
+
+        Assert.assertEquals(firstNonZero(id, id), id,
+                            "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
+
+        short x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(firstNonZero(id, x), x);
+                Assert.assertEquals(firstNonZero(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(firstNonZero(id, x), x,
+                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals(firstNonZero(x, id), x,
+                                "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
+        }
+    }
+
     static short FIRST_NONZEROReduceMasked(short[] a, int idx, boolean[] mask) {
-        short res = zeroValue();
+        short res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = firstNonZero(res, a[i]);
@@ -3119,7 +3177,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static short FIRST_NONZEROReduceAllMasked(short[] a, boolean[] mask) {
-        short res = zeroValue();
+        short res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduceMasked(a, i, mask));
         }
@@ -3133,20 +3191,15 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
         short[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float16> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        short ra = zeroValue();
+        short ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = zeroValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask));
+                short v = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 

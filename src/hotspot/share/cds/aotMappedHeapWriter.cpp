@@ -696,7 +696,7 @@ template <typename T> void AOTMappedHeapWriter::relocate_field_in_buffer(T* fiel
     // We use zero-based, 0-shift encoding, so the narrowOop is just the lower
     // 32 bits of request_referent
     intptr_t addr = cast_from_oop<intptr_t>(request_referent);
-    *((narrowOop*)field_addr_in_buffer) = checked_cast<narrowOop>(addr);
+    *((narrowOop*)field_addr_in_buffer) = CompressedOops::narrow_oop_cast(addr);
   } else {
     store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
   }

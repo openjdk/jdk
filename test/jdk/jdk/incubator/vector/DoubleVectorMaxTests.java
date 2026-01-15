@@ -101,11 +101,19 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         Assert.assertEquals(actual, expected, msg);
     }
 
+
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
     }
 
     private static final int Max = 256;  // juts so we can do N/Max
+
+    // Identity values for reduction operations
+    private static final double ADD_IDENTITY = (double)0;
+    private static final double FIRST_NONZERO_IDENTITY = (double)0;
+    private static final double MAX_IDENTITY = Double.NEGATIVE_INFINITY;
+    private static final double MIN_IDENTITY = Double.POSITIVE_INFINITY;
+    private static final double MUL_IDENTITY = (double)1;
 
     // for floating point addition reduction ops that may introduce rounding errors
     private static final double RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (double)10.0;
@@ -1596,10 +1604,6 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         return Double.compare(a, (double) 0) != 0 ? a : b;
     }
 
-    static double multiplicativeIdentity() {
-        return (double)1;
-    }
-
 
     static double scalar_add(double a, double b) {
         return (double)(a + b);
@@ -1787,22 +1791,6 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
 
     static double strict_scalar_atan2(double a, double b) {
         return (double)StrictMath.atan2((double)a, (double)b);
-    }
-    static double additiveIdentity() {
-        return (double)0;
-    }
-
-
-    static double zeroValue() {
-        return (short) 0;
-    }
-
-    static double maxValue() {
-        return Double.POSITIVE_INFINITY;
-    }
-
-    static double minValue() {
-        return Double.NEGATIVE_INFINITY;
     }
 
     static boolean isNaN(double a) {
@@ -2646,7 +2634,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double ADDReduce(double[] a, int idx) {
-        double res = additiveIdentity();
+        double res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = scalar_add(res, a[i]);
         }
@@ -2655,7 +2643,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double ADDReduceAll(double[] a) {
-        double res = additiveIdentity();
+        double res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_add(res, ADDReduce(a, i));
         }
@@ -2667,20 +2655,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static void ADDReduceDoubleVectorMaxTests(IntFunction<double[]> fa) {
         double[] a = fa.apply(SPECIES.length());
         double[] r = fr.apply(SPECIES.length());
-        double ra = additiveIdentity();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = additiveIdentity();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = scalar_add(ra, av.reduceLanes(VectorOperators.ADD));
+                double v = av.reduceLanes(VectorOperators.ADD);
+                r[i] = v;
+                ra = scalar_add(ra, v);
             }
         }
 
@@ -2688,8 +2671,31 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
                 DoubleVectorMaxTests::ADDReduce, DoubleVectorMaxTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void ADDReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = ADD_IDENTITY;
+
+        Assert.assertEquals((double) (scalar_add(id, id)), id,
+                            "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
+
+        double x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((double) (scalar_add(id, x)), x);
+                Assert.assertEquals((double) (scalar_add(x, id)), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((double) (scalar_add(id, x)), x,
+                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((double) (scalar_add(x, id)), x,
+                                "ADD(" + x + ", ADD_IDENTITY) != " + x);
+        }
+    }
+
     static double ADDReduceMasked(double[] a, int idx, boolean[] mask) {
-        double res = additiveIdentity();
+        double res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = scalar_add(res, a[i]);
@@ -2699,7 +2705,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double ADDReduceAllMasked(double[] a, boolean[] mask) {
-        double res = additiveIdentity();
+        double res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_add(res, ADDReduceMasked(a, i, mask));
         }
@@ -2713,20 +2719,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        double ra = additiveIdentity();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = additiveIdentity();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = scalar_add(ra, av.reduceLanes(VectorOperators.ADD, vmask));
+                double v = av.reduceLanes(VectorOperators.ADD, vmask);
+                r[i] = v;
+                ra = scalar_add(ra, v);
             }
         }
 
@@ -2735,7 +2736,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MULReduce(double[] a, int idx) {
-        double res = multiplicativeIdentity();
+        double res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = scalar_mul(res, a[i]);
         }
@@ -2744,7 +2745,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MULReduceAll(double[] a) {
-        double res = multiplicativeIdentity();
+        double res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_mul(res, MULReduce(a, i));
         }
@@ -2756,20 +2757,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static void MULReduceDoubleVectorMaxTests(IntFunction<double[]> fa) {
         double[] a = fa.apply(SPECIES.length());
         double[] r = fr.apply(SPECIES.length());
-        double ra = multiplicativeIdentity();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = multiplicativeIdentity();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = scalar_mul(ra, av.reduceLanes(VectorOperators.MUL));
+                double v = av.reduceLanes(VectorOperators.MUL);
+                r[i] = v;
+                ra = scalar_mul(ra, v);
             }
         }
 
@@ -2777,8 +2773,31 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
                 DoubleVectorMaxTests::MULReduce, DoubleVectorMaxTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void MULReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = MUL_IDENTITY;
+
+        Assert.assertEquals((double) (scalar_mul(id, id)), id,
+                            "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
+
+        double x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((double) (scalar_mul(id, x)), x);
+                Assert.assertEquals((double) (scalar_mul(x, id)), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((double) (scalar_mul(id, x)), x,
+                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((double) (scalar_mul(x, id)), x,
+                                "MUL(" + x + ", MUL_IDENTITY) != " + x);
+        }
+    }
+
     static double MULReduceMasked(double[] a, int idx, boolean[] mask) {
-        double res = multiplicativeIdentity();
+        double res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = scalar_mul(res, a[i]);
@@ -2788,7 +2807,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MULReduceAllMasked(double[] a, boolean[] mask) {
-        double res = multiplicativeIdentity();
+        double res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_mul(res, MULReduceMasked(a, i, mask));
         }
@@ -2802,20 +2821,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        double ra = multiplicativeIdentity();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = multiplicativeIdentity();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = scalar_mul(ra, av.reduceLanes(VectorOperators.MUL, vmask));
+                double v = av.reduceLanes(VectorOperators.MUL, vmask);
+                r[i] = v;
+                ra = scalar_mul(ra, v);
             }
         }
 
@@ -2824,7 +2838,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MINReduce(double[] a, int idx) {
-        double res = maxValue();
+        double res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = scalar_min(res, a[i]);
         }
@@ -2833,7 +2847,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MINReduceAll(double[] a) {
-        double res = maxValue();
+        double res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_min(res, MINReduce(a, i));
         }
@@ -2845,20 +2859,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static void MINReduceDoubleVectorMaxTests(IntFunction<double[]> fa) {
         double[] a = fa.apply(SPECIES.length());
         double[] r = fr.apply(SPECIES.length());
-        double ra = maxValue();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = maxValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = scalar_min(ra, av.reduceLanes(VectorOperators.MIN));
+                double v = av.reduceLanes(VectorOperators.MIN);
+                r[i] = v;
+                ra = scalar_min(ra, v);
             }
         }
 
@@ -2866,8 +2875,31 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
                 DoubleVectorMaxTests::MINReduce, DoubleVectorMaxTests::MINReduceAll);
     }
 
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void MINReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = MIN_IDENTITY;
+
+        Assert.assertEquals(scalar_min(id, id), id,
+                            "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
+
+        double x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(scalar_min(id, x), x);
+                Assert.assertEquals(scalar_min(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(scalar_min(id, x), x,
+                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals(scalar_min(x, id), x,
+                                "MIN(" + x + ", MIN_IDENTITY) != " + x);
+        }
+    }
+
     static double MINReduceMasked(double[] a, int idx, boolean[] mask) {
-        double res = maxValue();
+        double res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = scalar_min(res, a[i]);
@@ -2877,7 +2909,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MINReduceAllMasked(double[] a, boolean[] mask) {
-        double res = maxValue();
+        double res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_min(res, MINReduceMasked(a, i, mask));
         }
@@ -2891,20 +2923,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        double ra = maxValue();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = maxValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = scalar_min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
+                double v = av.reduceLanes(VectorOperators.MIN, vmask);
+                r[i] = v;
+                ra = scalar_min(ra, v);
             }
         }
 
@@ -2913,7 +2940,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MAXReduce(double[] a, int idx) {
-        double res = minValue();
+        double res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = scalar_max(res, a[i]);
         }
@@ -2922,7 +2949,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MAXReduceAll(double[] a) {
-        double res = minValue();
+        double res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_max(res, MAXReduce(a, i));
         }
@@ -2934,20 +2961,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static void MAXReduceDoubleVectorMaxTests(IntFunction<double[]> fa) {
         double[] a = fa.apply(SPECIES.length());
         double[] r = fr.apply(SPECIES.length());
-        double ra = minValue();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = minValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = scalar_max(ra, av.reduceLanes(VectorOperators.MAX));
+                double v = av.reduceLanes(VectorOperators.MAX);
+                r[i] = v;
+                ra = scalar_max(ra, v);
             }
         }
 
@@ -2955,8 +2977,31 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
                 DoubleVectorMaxTests::MAXReduce, DoubleVectorMaxTests::MAXReduceAll);
     }
 
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void MAXReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = MAX_IDENTITY;
+
+        Assert.assertEquals(scalar_max(id, id), id,
+                            "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
+
+        double x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(scalar_max(id, x), x);
+                Assert.assertEquals(scalar_max(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(scalar_max(id, x), x,
+                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals(scalar_max(x, id), x,
+                                "MAX(" + x + ", MAX_IDENTITY) != " + x);
+        }
+    }
+
     static double MAXReduceMasked(double[] a, int idx, boolean[] mask) {
-        double res = minValue();
+        double res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = scalar_max(res, a[i]);
@@ -2966,7 +3011,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double MAXReduceAllMasked(double[] a, boolean[] mask) {
-        double res = minValue();
+        double res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = scalar_max(res, MAXReduceMasked(a, i, mask));
         }
@@ -2980,20 +3025,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        double ra = minValue();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = minValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = scalar_max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
+                double v = av.reduceLanes(VectorOperators.MAX, vmask);
+                r[i] = v;
+                ra = scalar_max(ra, v);
             }
         }
 
@@ -3002,7 +3042,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double FIRST_NONZEROReduce(double[] a, int idx) {
-        double res = zeroValue();
+        double res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = firstNonZero(res, a[i]);
         }
@@ -3011,7 +3051,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double FIRST_NONZEROReduceAll(double[] a) {
-        double res = zeroValue();
+        double res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduce(a, i));
         }
@@ -3023,20 +3063,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     static void FIRST_NONZEROReduceDoubleVectorMaxTests(IntFunction<double[]> fa) {
         double[] a = fa.apply(SPECIES.length());
         double[] r = fr.apply(SPECIES.length());
-        double ra = zeroValue();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = zeroValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO));
+                double v = av.reduceLanes(VectorOperators.FIRST_NONZERO);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
@@ -3044,8 +3079,31 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
                 DoubleVectorMaxTests::FIRST_NONZEROReduce, DoubleVectorMaxTests::FIRST_NONZEROReduceAll);
     }
 
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void FIRST_NONZEROReduceIdentityValueTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double id = FIRST_NONZERO_IDENTITY;
+
+        Assert.assertEquals(firstNonZero(id, id), id,
+                            "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
+
+        double x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(firstNonZero(id, x), x);
+                Assert.assertEquals(firstNonZero(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(firstNonZero(id, x), x,
+                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals(firstNonZero(x, id), x,
+                                "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
+        }
+    }
+
     static double FIRST_NONZEROReduceMasked(double[] a, int idx, boolean[] mask) {
-        double res = zeroValue();
+        double res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = firstNonZero(res, a[i]);
@@ -3055,7 +3113,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static double FIRST_NONZEROReduceAllMasked(double[] a, boolean[] mask) {
-        double res = zeroValue();
+        double res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduceMasked(a, i, mask));
         }
@@ -3069,20 +3127,15 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         double[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        double ra = zeroValue();
+        double ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = zeroValue();
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask));
+                double v = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
