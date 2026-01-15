@@ -354,7 +354,7 @@ private:
     // For example, let us consider the operation r = x ^ y:
     // - During the first step of CCP, type(x) = {0}, type(y) = [-2, 2], w = 3.
     //   Since x is a constant that is the identity element of the xor operation, type(r) = type(y) = [-2, 2], w = 3
-    // - During the second step, type(x) is widen to [0, 2], w = 0.
+    // - During the second step, type(x) is widened to [0, 2], w = 0.
     //   We then compute the range for:
     //   r1 = x ^ y1, type(x) = [0, 2], w = 0, type(y1) = [0, 2], w = 0
     //   r2 = x ^ y2, type(x) = [0, 2], w = 0, type(y2) = [-2, -1], w = 0
