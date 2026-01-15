@@ -652,6 +652,9 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
         return;
     }
 
+    // IPP value of 3 means DPI, 4 means dpcm
+    jobject dpi = (*env)->NewObject(env, intCls, intCtr, 3);
+    CHECK_NULL(dpi);
 
     // NOTE: cupsGetPPD returns a pointer to a filename of a temporary file.
     // unlink() must be called to remove the file after using it.
@@ -688,6 +691,7 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
           CHECK_NULL(ryObj);
           (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
           (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
+          (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, dpi);
         }
 
         for (i = 0; i < resolution->num_choices; i++) {
@@ -716,6 +720,7 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
               CHECK_NULL(ryObj);
               (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
               (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
+              (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, dpi);
             }
         }
 
@@ -749,6 +754,7 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
               CHECK_NULL(ryObj);
               (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
               (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
+              (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, dpi);
             }
         }
     }

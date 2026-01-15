@@ -1696,26 +1696,25 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
                 getAttMap.get("printer-resolution-supported")
                 : null;
             if (attribClass != null) {
-                rawResolutions = attribClass.getIntRangeValue();
+                rawResolutions = attribClass.getIntResolutionValue();
             }
             if (rawResolutions == null) {
                 rawResolutions = ppdResolutions;
             }
             if (rawResolutions == null) {
-               rawResolutions = new int[] { 300, 300 } ;
+               rawResolutions = new int[] { 300, 300, 3 } ;
             }
-            int numRes = rawResolutions.length / 2;
+            int numRes = rawResolutions.length / 3;
             PrinterResolution[] pres = new PrinterResolution[numRes];
-            for (int i=0; i < numRes; i++) {
-                pres[i] =  new PrinterResolution(rawResolutions[i*2],
-                                                 rawResolutions[i*2+1],
-                                                 PrinterResolution.DPI);
+            for (int i = 0; i < numRes; i++) {
+                int units = (rawResolutions[i*3+2] == 4) ? PrinterResolution.DPCM : PrinterResolution.DPI;
+                pres[i] =  new PrinterResolution(rawResolutions[i*3],
+                                                 rawResolutions[i*3+1],
+                                                 units);
             }
             printerResolutions = pres;
         }
-        PrinterResolution []arr = new PrinterResolution[printerResolutions.length];
-        System.arraycopy(printerResolutions, 0, arr, 0, printerResolutions.length);
-        return arr;
+        return printerResolutions.clone();
     }
 
     private boolean isSupportedResolution(PrinterResolution res) {
