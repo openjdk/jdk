@@ -2274,7 +2274,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   bind(L_count_update);
   ldr(rscratch2, Address(mdp, offset));
-  add(rscratch2, offset, DataLayout::counter_increment);
+  add(rscratch2, rscratch2, DataLayout::counter_increment);
   str(rscratch2, Address(mdp, offset));
 }
 
