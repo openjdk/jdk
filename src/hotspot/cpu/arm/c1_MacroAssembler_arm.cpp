@@ -224,8 +224,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic
 
 // Increments mdp data. Sets bumped_count register to adjusted counter.
 void C1_MacroAssembler::increment_mdp_data_at(Address data,
-					      Register bumped_count,
-					      int increment) {
+                                              Register bumped_count,
+                                              int increment) {
   assert(ProfileInterpreter, "must be profiling interpreter");
   assert_different_registers(data.base(), Rtemp);
   assert(data.mode() == basic_offset, "must be");

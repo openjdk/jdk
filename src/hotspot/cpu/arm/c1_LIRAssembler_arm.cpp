@@ -2493,7 +2493,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
     if (md_opr->is_valid()) {
       if (md_opr->type() == T_METADATA) {
         __ mov_metadata(md_reg->as_register(),
-			md_opr->as_constant_ptr()->as_metadata());
+                        md_opr->as_constant_ptr()->as_metadata());
       } else {
         __ lea(md_reg->as_pointer_register(),
                ExternalAddress(md_opr->as_constant_ptr()->as_pointer()));
@@ -2508,11 +2508,11 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
       Address dest_adr = counter_address;
       Register inc = step->as_register();
       if (ProfileCaptureRatio > 1) {
-	__ mov(inc, AsmOperand(inc, lsl, ratio_shift));
+        __ mov(inc, AsmOperand(inc, lsl, ratio_shift));
       }
       __ increment_mdp_data_at(dest_adr, dest, 1);
       if (ProfileCaptureRatio > 1) {
-	__ mov(inc, AsmOperand(inc, lsr, ratio_shift));
+        __ mov(inc, AsmOperand(inc, lsr, ratio_shift));
       }
     } else {
       jint inc = step->as_constant_ptr()->as_jint_bits();
@@ -2520,7 +2520,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
         case T_INT: {
           Address dest_adr = counter_address;
           inc *= ProfileCaptureRatio;
-	  __ increment_mdp_data_at(dest_adr, dest, 1);
+          __ increment_mdp_data_at(dest_adr, dest, 1);
 
           break;
         }
@@ -2551,7 +2551,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
             __ mov(dest, Rtemp, eq);
           }
           juint mask = freq_opr->as_jint();
-	  __ mov_slow(Rtemp, mask);
+          __ mov_slow(Rtemp, mask);
           __ tst(dest, Rtemp);
           __ b(*overflow_stub->entry(), eq);
         }

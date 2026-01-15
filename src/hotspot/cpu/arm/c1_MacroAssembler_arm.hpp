@@ -69,8 +69,8 @@
   void restore_profile_rng();
 
   void increment_mdp_data_at(Address data,
-			     Register bumped_count,
-			     int increment);
+                             Register bumped_count,
+                             int increment);
 
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
