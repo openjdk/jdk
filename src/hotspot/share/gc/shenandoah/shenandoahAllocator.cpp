@@ -33,10 +33,9 @@
 #include "utilities/globalDefinitions.hpp"
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
-ShenandoahAllocator<ALLOC_PARTITION>::ShenandoahAllocator(uint const alloc_region_count, ShenandoahFreeSet* free_set):
-  _alloc_region_count(alloc_region_count), _free_set(free_set), _alloc_partition_name(ShenandoahRegionPartitions::partition_name(ALLOC_PARTITION)) {
+ShenandoahAllocator<ALLOC_PARTITION>::ShenandoahAllocator(uint const alloc_region_count, ShenandoahFreeSet* free_set, bool yield_to_safepoint):
+  _free_set(free_set), _alloc_partition_name(ShenandoahRegionPartitions::partition_name(ALLOC_PARTITION)), _alloc_region_count(alloc_region_count), _yield_to_safepoint(yield_to_safepoint) {
   if (alloc_region_count > 0) {
-    _alloc_regions = PaddedArray<ShenandoahAllocRegion, mtGC>::create_unfreeable(alloc_region_count);
     for (uint i = 0; i < alloc_region_count; i++) {
       _alloc_regions[i].address = nullptr;
       _alloc_regions[i].alloc_region_index = i;
@@ -429,19 +428,13 @@ void ShenandoahAllocator<ALLOC_PARTITION>::reserve_alloc_regions() {
 }
 
 ShenandoahMutatorAllocator::ShenandoahMutatorAllocator(ShenandoahFreeSet* free_set) :
-  ShenandoahAllocator(static_cast<uint>(ShenandoahMutatorAllocRegions), free_set) {
-  _yield_to_safepoint = true;
-}
+  ShenandoahAllocator(static_cast<uint>(ShenandoahMutatorAllocRegions), free_set, true) { }
 
 ShenandoahCollectorAllocator::ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set) :
-  ShenandoahAllocator(static_cast<uint>(ShenandoahCollectorAllocRegions), free_set) {
-  _yield_to_safepoint = false;
-}
+  ShenandoahAllocator(static_cast<uint>(ShenandoahCollectorAllocRegions), free_set, false) { }
 
 ShenandoahOldCollectorAllocator::ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set) :
-  ShenandoahAllocator(0u, free_set) {
-  _yield_to_safepoint = false;
-}
+  ShenandoahAllocator(0u, free_set, false) { }
 
 HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
   shenandoah_assert_not_heaplocked();

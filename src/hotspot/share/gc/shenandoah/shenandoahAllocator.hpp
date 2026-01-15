@@ -31,7 +31,6 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/allocation.hpp"
-#include "memory/padded.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -41,20 +40,24 @@ class ShenandoahHeapRegion;
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 class ShenandoahAllocator : public CHeapObj<mtGC> {
+public:
+  static constexpr uint             MAX_ALLOC_REGION_COUNT = 128;
 protected:
   struct ShenandoahAllocRegion {
     ShenandoahHeapRegion* volatile  address;
     int                             alloc_region_index;
   };
-
-  PaddedEnd<ShenandoahAllocRegion>*  _alloc_regions;
-  uint  const                        _alloc_region_count;
+  // Fields won't change during VM life cycle
   ShenandoahFreeSet* const           _free_set;
-  const char*                        _alloc_partition_name;
-  bool                               _yield_to_safepoint = false;
+  char const * const                 _alloc_partition_name;
+  uint const                         _alloc_region_count;
+  bool const                         _yield_to_safepoint;
+
+  //Fields often get updated
   shenandoah_padding(0);
   volatile uint32_t                  _epoch_id = 0u; // epoch id of _alloc_regions, increase by 1 whenever refresh _alloc_regions.
   shenandoah_padding(1);
+  ShenandoahAllocRegion              _alloc_regions[MAX_ALLOC_REGION_COUNT];
 
 
   // Start index of the shared alloc regions where the allocation will start from.
@@ -123,9 +126,8 @@ protected:
 #endif
 
 public:
-  static constexpr uint             MAX_ALLOC_REGION_COUNT = 128;
 
-  ShenandoahAllocator(uint alloc_region_count, ShenandoahFreeSet* free_set);
+  ShenandoahAllocator(uint alloc_region_count, ShenandoahFreeSet* free_set, bool yield_to_safepoint);
   virtual ~ShenandoahAllocator() { }
 
   // Handle the allocation request - it is the entry point of memory allocation, including humongous allocation:
