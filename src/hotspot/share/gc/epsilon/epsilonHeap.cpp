@@ -62,8 +62,6 @@ jint EpsilonHeap::initialize() {
 
   // Enable monitoring
   _monitoring_support = new EpsilonMonitoringSupport(this);
-  _last_counter_update = 0;
-  _last_heap_print = 0;
 
   // Install barrier set
   BarrierSet::set_barrier_set(new EpsilonBarrierSet());
@@ -156,17 +154,17 @@ HeapWord* EpsilonHeap::allocate_work(size_t size) {
   // At this point, some diagnostic subsystems might not yet be initialized.
   // We pretend the printout happened either way. This keeps allocation path
   // from obsessively checking the subsystems' status on every allocation.
-  size_t last_counter = AtomicAccess::load(&_last_counter_update);
+  size_t last_counter = _last_counter_update.load_relaxed();
   if ((used - last_counter >= _step_counter_update) &&
-      AtomicAccess::cmpxchg(&_last_counter_update, last_counter, used) == last_counter) {
+      _last_counter_update.compare_set(last_counter, used)) {
     if (_monitoring_support->is_ready()) {
       _monitoring_support->update_counters();
     }
   }
 
-  size_t last_heap = AtomicAccess::load(&_last_heap_print);
+  size_t last_heap = _last_heap_print.load_relaxed();
   if ((used - last_heap >= _step_heap_print) &&
-      AtomicAccess::cmpxchg(&_last_heap_print, last_heap, used) == last_heap) {
+      _last_heap_print.compare_set(last_heap, used)) {
     print_heap_info(used);
     if (Metaspace::initialized()) {
       print_metaspace_info();

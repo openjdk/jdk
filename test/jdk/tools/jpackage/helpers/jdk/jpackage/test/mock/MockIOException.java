@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,22 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.test.mock;
 
+import java.io.IOException;
 
-#include "Utilities.h"
-// Platform.java includes
-#include "com_sun_media_sound_Platform.h"
-
-/*
- * Declare library specific JNI_Onload entry if static build
+/**
+ * Simulates I/O error.
+ *
+ * @see CommandMockExit#THROW_MOCK_IO_EXCEPTION
  */
-DEF_STATIC_JNI_OnLoad
+public final class MockIOException extends IOException {
 
-/*
- * Class:     com_sun_media_sound_Platform
- * Method:    nIsBigEndian
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_sun_media_sound_Platform_nIsBigEndian(JNIEnv *env, jclass clss) {
-    return UTIL_IsBigEndianPlatform();
+    MockIOException(String msg) {
+        super(msg);
+    }
+
+    private static final long serialVersionUID = 1L;
 }
