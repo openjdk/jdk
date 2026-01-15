@@ -643,6 +643,14 @@ size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartit
 void ShenandoahRegionPartitions::unretire_to_partition(ShenandoahHeapRegion* r, ShenandoahFreeSetPartitionId which_partition) {
   shenandoah_assert_heaplocked();
   make_free(r->index(), which_partition, r->free());
+  if (!r->has_allocs()) {
+    log_debug(gc, alloc)("%sAllocator: Reverting heap region %li to FREE due to no alloc in the region",
+      partition_name(which_partition), r->index());
+    r->make_empty();
+    r->set_affiliation(FREE);
+    increase_empty_region_counts(which_partition, 1);
+  }
+
 }
 
 

@@ -95,12 +95,14 @@ protected:
   // Attempt to allocate in a shared alloc region using atomic operation without holding the heap lock.
   // Returns nullptr and overwrites regions_ready_for_refresh with the number of shared alloc regions that are ready
   // to be retired if it is unable to satisfy the allocation request from the existing shared alloc regions.
+  // Caller should pass true for template parameter HOLDING_HEAP_LOCK if it is holding heap lock, in this case
+  // the function will not use AtomicAccess to load the shared alloc regions.
   template<bool HOLDING_HEAP_LOCK = false>
   HeapWord* attempt_allocation_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint const alloc_start_index, uint &regions_ready_for_refresh);
 
-  // Allocate in a region, use atomic operations if template parameter ATOMIC is true.
-  // When template parameter ATOMIC is false, heap lock is required.
-  template <bool ATOMIC>
+  // Allocate in a region, use atomic operations if template parameter IS_SHARED_ALLOC_REGION is true.
+  // When template parameter IS_SHARED_ALLOC_REGION is false, heap lock is required.
+  template <bool IS_SHARED_ALLOC_REGION>
   HeapWord* allocate_in(ShenandoahHeapRegion* region, bool is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire);
 
   // Refresh new alloc regions, allocate the object in the new alloc region before making the new alloc region visible to other mutators.

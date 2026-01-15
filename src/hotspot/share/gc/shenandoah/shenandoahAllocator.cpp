@@ -251,18 +251,18 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::attempt_allocation_in_alloc_regi
 }
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
-template <bool ATOMIC>
+template <bool IS_SHARED_ALLOC_REGION>
 HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion* region, bool const is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
   assert(ready_for_retire == false, "Sanity check");
-  if (!ATOMIC) {
+  if (!IS_SHARED_ALLOC_REGION) {
     shenandoah_assert_heaplocked();
   }
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();
   if (req.is_lab_alloc()) {
-    obj = ATOMIC ? region->allocate_lab_atomic(req, actual_size, ready_for_retire) : region->allocate_lab(req, actual_size);
+    obj = IS_SHARED_ALLOC_REGION ? region->allocate_lab_atomic(req, actual_size, ready_for_retire) : region->allocate_lab(req, actual_size);
   } else {
-    obj = ATOMIC ? region->allocate_atomic(actual_size, req, ready_for_retire) : region->allocate(req.size(), req);
+    obj = IS_SHARED_ALLOC_REGION ? region->allocate_atomic(actual_size, req, ready_for_retire) : region->allocate(req.size(), req);
   }
   if (obj != nullptr) {
     assert(actual_size > 0, "Must be");
@@ -277,7 +277,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion
       region->concurrent_set_update_watermark(region->top());
     }
 
-    if (!ATOMIC && region->free_words() < PLAB::min_size()) {
+    if (!IS_SHARED_ALLOC_REGION && region->free_words() < PLAB::min_size()) {
       ready_for_retire = true;
     }
   }
@@ -375,10 +375,6 @@ template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
   assert_at_safepoint();
   shenandoah_assert_heaplocked();
-  if (_alloc_region_count == 0u) {
-    // no-op if _alloc_region_count is 0
-    return;
-  }
 
   log_debug(gc, alloc)("%sAllocator: Releasing all alloc regions", _alloc_partition_name);
   ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
@@ -398,13 +394,6 @@ void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
         total_free_bytes += free_bytes;
         total_regions_to_unretire++;
         _free_set->partitions()->unretire_to_partition(r, ALLOC_PARTITION);
-        if (!r->has_allocs()) {
-          log_debug(gc, alloc)("%sAllocator: Reverting heap region %li to FREE due to no alloc in the region",
-            _alloc_partition_name, r->index());
-          r->make_empty();
-          r->set_affiliation(FREE);
-          _free_set->partitions()->increase_empty_region_counts(ALLOC_PARTITION, 1);
-        }
       }
     }
     assert(alloc_region.address == nullptr, "Alloc region is set to nullptr after release");
@@ -417,10 +406,6 @@ void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 void ShenandoahAllocator<ALLOC_PARTITION>::reserve_alloc_regions() {
   shenandoah_assert_heaplocked();
-  if (_alloc_region_count == 0u) {
-    // no-op if _alloc_region_count is 0
-    return;
-  }
   ShenandoahHeapAccountingUpdater accounting_updater(_free_set, ALLOC_PARTITION);
   if (refresh_alloc_regions() > 0) {
     accounting_updater._need_update = true;
