@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcId.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/debug.hpp"
@@ -58,8 +59,8 @@ class WorkerTaskDispatcher {
   // The task currently being dispatched to the WorkerThreads.
   WorkerTask* _task;
 
-  volatile uint _started;
-  volatile uint _not_finished;
+  Atomic<uint> _started;
+  Atomic<uint> _not_finished;
 
   // Semaphore used to start the WorkerThreads.
   Semaphore _start_semaphore;
