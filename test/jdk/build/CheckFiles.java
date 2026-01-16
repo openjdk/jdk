@@ -23,6 +23,7 @@
  */
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -146,6 +147,47 @@ public class CheckFiles {
                 System.out.println("Jmods directory scan successful.");
             } else {
                 throw new Error("jmods dir scan failed");
+            }
+        }
+
+        Path legalDir = mainDirToScan.resolve("legal");
+        ArrayList<String> allowedEndingsLegalDir = new ArrayList<>();
+        allowedEndingsLegalDir.add(".md");
+        allowedEndingsLegalDir.add("ADDITIONAL_LICENSE_INFO");
+        allowedEndingsLegalDir.add("ASSEMBLY_EXCEPTION");
+        allowedEndingsLegalDir.add("LICENSE");
+
+        // those MUST be in every subdir of the legal dir
+        ArrayList<String> requiredFilesInLegalSubdirs = new ArrayList<>();
+        requiredFilesInLegalSubdirs.add("ADDITIONAL_LICENSE_INFO");
+        requiredFilesInLegalSubdirs.add("ASSEMBLY_EXCEPTION");
+        requiredFilesInLegalSubdirs.add("LICENSE");
+
+        if (Files.isDirectory(legalDir)) {
+            System.out.println("Legal directory to scan:" + legalDir);
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(legalDir)) {
+                for (Path subfolder : stream) {
+                    if (Files.isDirectory(subfolder)) {
+                        System.out.println("Checking legal dir subfolder for required files: " + subfolder.getFileName());
+
+                        for (String fileName : requiredFilesInLegalSubdirs) {
+                            Path filePath = subfolder.resolve(fileName);
+                            if (Files.exists(filePath)) {
+                                System.out.println("  Found " + fileName);
+                            } else {
+                                System.out.println("  Missing " + fileName);
+                                throw new Error("legal dir scan for required files failed");
+                            }
+                        }
+                    }
+                }
+            }
+
+            boolean legalDirRes = scanFiles(legalDir, allowedEndingsLegalDir);
+            if (legalDirRes) {
+                System.out.println("Legal directory scan successful.");
+            } else {
+                throw new Error("Legal dir scan failed");
             }
         }
     }
