@@ -26,29 +26,30 @@
 
 package sun.security.ssl;
 
-import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.util.HexDumpEncoder;
-
-import javax.net.ssl.*;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Locale;
 import java.util.function.Function;
+import javax.net.ssl.SSLProtocolException;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * Pack of the CompressedCertificate handshake message.
  */
 final class CompressedCertificate {
+
     static final SSLConsumer handshakeConsumer =
-        new CompressedCertConsumer();
+            new CompressedCertConsumer();
     static final HandshakeProducer handshakeProducer =
-        new CompressedCertProducer();
+            new CompressedCertProducer();
 
     /**
      * The CompressedCertificate handshake message for TLS 1.3.
      */
     static final class CompressedCertMessage extends HandshakeMessage {
+
         private final int algorithmId;
         private final int uncompressedLength;
         private final byte[] compressedCert;
@@ -75,7 +76,8 @@ final class CompressedCertificate {
             if (m.remaining() < 9) {
                 throw new SSLProtocolException(
                         "Invalid CompressedCertificate message: " +
-                        "insufficient data (length=" + m.remaining() + ")");
+                                "insufficient data (length=" + m.remaining()
+                                + ")");
             }
             this.algorithmId = Record.getInt16(m);
             this.uncompressedLength = Record.getInt24(m);
@@ -85,7 +87,7 @@ final class CompressedCertificate {
                 throw handshakeContext.conContext.fatal(
                         Alert.HANDSHAKE_FAILURE,
                         "Invalid CompressedCertificate message: " +
-                        "unknown extra data");
+                                "unknown extra data");
             }
         }
 
@@ -110,20 +112,20 @@ final class CompressedCertificate {
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
                     """
-                            "CompressedCertificate": '{'
-                              "algorithm": "{0}",
-                              "uncompressed_length": {1}
-                              "compressed_certificate_message": [
-                            {2}
-                              ]
-                            '}'""",
-                Locale.ENGLISH);
+                    "CompressedCertificate": '{'
+                      "algorithm": "{0}",
+                      "uncompressed_length": {1}
+                      "compressed_certificate_message": [
+                    {2}
+                      ]
+                    '}'""",
+                    Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
             Object[] messageFields = {
-                CompressionAlgorithm.nameOf(algorithmId),
-                uncompressedLength,
-                Utilities.indent(hexEncoder.encode(compressedCert), "    ")
+                    CompressionAlgorithm.nameOf(algorithmId),
+                    uncompressedLength,
+                    Utilities.indent(hexEncoder.encode(compressedCert), "    ")
             };
 
             return messageFormat.format(messageFields);
@@ -134,7 +136,8 @@ final class CompressedCertificate {
      * The "Certificate" handshake message producer for TLS 1.3.
      */
     private static final
-            class CompressedCertProducer implements HandshakeProducer {
+    class CompressedCertProducer implements HandshakeProducer {
+
         // Prevent instantiation of this class.
         private CompressedCertProducer() {
             // blank
@@ -147,7 +150,7 @@ final class CompressedCertificate {
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
             // The producing happens in handshake context only.
-            HandshakeContext hc = (HandshakeContext)context;
+            HandshakeContext hc = (HandshakeContext) context;
 
             // Compress the Certificate message.
             HandshakeOutStream hos = new HandshakeOutStream(null);
@@ -165,7 +168,9 @@ final class CompressedCertificate {
                     compressedCertMsg);
 
             if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.fine("Produced Compressed Certificate message", ccm);
+                SSLLogger.fine(
+                        "Produced CompressedCertificate handshake message",
+                        ccm);
             }
 
             ccm.write(hc.handshakeOutput);
@@ -180,6 +185,7 @@ final class CompressedCertificate {
      * The "Certificate" handshake message consumer for TLS 1.3.
      */
     private static final class CompressedCertConsumer implements SSLConsumer {
+
         // Prevent instantiation of this class.
         private CompressedCertConsumer() {
             // blank
@@ -189,17 +195,19 @@ final class CompressedCertificate {
         public void consume(ConnectionContext context,
                 ByteBuffer message) throws IOException {
             // The consuming happens in handshake context only.
-            HandshakeContext hc = (HandshakeContext)context;
+            HandshakeContext hc = (HandshakeContext) context;
 
             // clean up this consumer
-            hc.handshakeConsumers.remove(SSLHandshake.COMPRESSED_CERTIFICATE.id);
+            hc.handshakeConsumers.remove(
+                    SSLHandshake.COMPRESSED_CERTIFICATE.id);
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
 
             // Parse the handshake message
             CompressedCertMessage ccm = new CompressedCertMessage(hc, message);
             if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
-                    "Consuming CompressedCertificate handshake message", ccm);
+                        "Consuming CompressedCertificate handshake message",
+                        ccm);
             }
 
             // check the compression algorithm
@@ -207,7 +215,7 @@ final class CompressedCertificate {
                     hc.certInflaters.get(ccm.algorithmId);
             if (inflater == null) {
                 throw hc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                    "Unsupported certificate compression algorithm");
+                        "Unsupported certificate compression algorithm");
             }
 
             // decompress
@@ -217,7 +225,7 @@ final class CompressedCertificate {
             if (certificateMessage == null ||
                     certificateMessage.length != ccm.uncompressedLength) {
                 throw hc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                    "Improper certificate compression");
+                        "Improper certificate compression");
             }
 
             // Call the Certificate handshake message consumer.
