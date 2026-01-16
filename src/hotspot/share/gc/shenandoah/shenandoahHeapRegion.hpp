@@ -569,8 +569,9 @@ public:
     shenandoah_assert_heaplocked();
     assert(is_active_alloc_region(), "Must be");
 
-    // Before unset _active_alloc_region flag, _atomic_top needs to be set to the end of region,
-    // this avoid race condition when the alloc region removed from the alloc regions array used by lock-free allocation in allocator.
+    // Before unset _active_alloc_region flag, _atomic_top needs to be set to sentinel value using AtomicAccess::cmpxchg,
+    // this avoids race condition when the alloc region removed from the alloc regions array used by lock-free allocation in allocator;
+    // meanwhile the previous value of _atomic_top needs to be synced back to _top.
     HeapWord* previous_atomic_top = nullptr;
     while (true /*always break out in the loop*/) {
       previous_atomic_top = atomic_top();
