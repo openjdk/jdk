@@ -419,7 +419,7 @@ public:
   G1CardSetHashTableValue(const G1CardSetHashTableValue& other) :
     _region_idx(other._region_idx),
     _num_occupied(other._num_occupied.load_relaxed()),
-    _container(other._container.load_relaxed()) 
+    _container(other._container.load_relaxed())
   { }
 
   G1CardSetHashTableValue(uint region_idx, ContainerPtr container) : _region_idx(region_idx), _num_occupied(0), _container(container) { }
