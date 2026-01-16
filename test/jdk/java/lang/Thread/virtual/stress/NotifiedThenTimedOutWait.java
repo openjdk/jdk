@@ -110,6 +110,8 @@ public class NotifiedThenTimedOutWait {
             }
         });
 
+        // We tested with a platform thread in race1. Here we
+        // use a vthread to exercise different timing behavior.
         Thread vthread2 = Thread.startVirtualThread(() -> {
             for (int i = 0; i < iterations; i++) {
                 start.arriveAndAwaitAdvance();
