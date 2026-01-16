@@ -1588,7 +1588,7 @@ You can enter the command as a single line such as the following:
 
 The command creates the keystore named `mykeystore` in the working directory
 (provided it doesn't already exist), and assigns it the password specified by
-[`-keypass`]{#-keypass}. It generates a public/private key pair for the entity whose
+`-keypass`. It generates a public/private key pair for the entity whose
 distinguished name is `myname`, `mygroup`, `mycompany`, and a two-letter
 country code of `mycountry`. It uses the RSA key generation algorithm
 to create the keys; both are 3072 bits.
@@ -2363,7 +2363,7 @@ certificates that don't conform to the standard, such as self-signed
 certificates that would be used for internal testing purposes. Certificates
 that don't conform to the standard might be rejected by the JDK or other
 applications. Users should ensure that they provide the correct options for
-[`-dname`]{#-dname}, `-ext`, and so on.
+`-dname`, `-ext`, and so on.
 
 ## Import a New Trusted Certificate
 

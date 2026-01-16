@@ -797,7 +797,7 @@ the following standards:
     option. Multiple paths should be separated by the system-dependent
     path-separator character.
 
-[`-J`]{#-J}*javaoption*
+`-J`*javaoption*
 :   Passes through the specified *javaoption* string directly to the Java
     interpreter. The `jarsigner` command is a wrapper around the interpreter.
     This option shouldn't contain any spaces. It is useful for adjusting the
