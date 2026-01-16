@@ -233,15 +233,18 @@ public class VectorAlgorithms {
 
     @Benchmark
     public int findI_loop() {
+        // Every invocation should have a different value for e, so that
+        // we don't get branch-prediction that is too good. And also so
+        // that the position where we exit is more evenly distributed.
         idx = (idx + 1) & 0xffff;
-        int e = aI[idx];
+        int e = eI[idx];
         return VectorAlgorithmsImpl.findI_loop(aI, e);
     }
 
     @Benchmark
     public int findI_VectorAPI() {
         idx = (idx + 1) & 0xffff;
-        int e = aI[idx];
+        int e = eI[idx];
         return VectorAlgorithmsImpl.findI_VectorAPI(aI, e);
     }
 
@@ -257,15 +260,18 @@ public class VectorAlgorithms {
 
     @Benchmark
     public Object filterI_loop() {
+        // Every invocation should have a different value for e, so that
+        // we don't get branch-prediction that is too good. And also so
+        // That the length of the resulting data is more evenly distributed.
         idx = (idx + 1) & 0xffff;
-        int e = aI[idx];
+        int e = eI[idx];
         return VectorAlgorithmsImpl.filterI_loop(aI, rI, e);
     }
 
     @Benchmark
     public Object filterI_VectorAPI() {
         idx = (idx + 1) & 0xffff;
-        int e = aI[idx];
+        int e = eI[idx];
         return VectorAlgorithmsImpl.filterI_VectorAPI(aI, rI, e);
     }
 
