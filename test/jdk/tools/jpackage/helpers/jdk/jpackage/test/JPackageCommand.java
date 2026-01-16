@@ -971,7 +971,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         executePrerequisiteActions();
 
         nullableOutputBundle().filter(_ -> {
-            return removeOldOutputBundle;
+            return !(TKit.isOSX() && MacHelper.signPredefinedAppImage(this)) && removeOldOutputBundle;
         }).ifPresent(path -> {
             ThrowingRunnable.toRunnable(() -> {
                 if (Files.isDirectory(path)) {
