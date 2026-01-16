@@ -79,34 +79,34 @@ will compromise your password.
 You can specify one of the following commands. After the command, specify the
 options for it.
 
-`-A`
+[`-A`]{#-A}
 :   Doesn't include addresses.
 
-`-f`
+[`-f`]{#-f}
 :   Issues a forwardable ticket.
 
-`-p`
+[`-p`]{#-p}
 :   Issues a proxiable ticket.
 
-`-c` *cache\_name*
+[`-c`]{#-c} *cache\_name*
 :   The cache name (for example, `FILE:D:\temp\mykrb5cc`).
 
-`-l` *lifetime*
+[`-l`]{#-l} *lifetime*
 :   Sets the lifetime of a ticket. The value can be one of "h:m[:s]",
     "NdNhNmNs", and "N". See the [MIT krb5 Time Duration definition](
     http://web.mit.edu/kerberos/krb5-1.17/doc/basic/date_format.html#duration)
     for more information.
 
-`-r` *renewable\_time*
+[`-r`]{#-r} *renewable\_time*
 :   Sets the total lifetime that a ticket can be renewed.
 
-`-R`
+[`-R`]{#-R}
 :   Renews a ticket.
 
-`-k`
+[`-k`]{#-k}
 :   Uses keytab
 
-`-t` *keytab\_filename*
+[`-t`]{#-t} *keytab\_filename*
 :   The keytab name (for example, `D:\winnt\profiles\duke\krb5.keytab`).
 
 *principal*

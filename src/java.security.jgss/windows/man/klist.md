@@ -45,7 +45,7 @@ the contents of the credentials cache or keytab using the `klist` tool. The
 
 ## Commands
 
-`-c`
+[`-c`]{#-c}
 :   Specifies that the credential cache is to be listed.
 
     The following are the options for credential cache entries:
@@ -62,7 +62,7 @@ the contents of the credentials cache or keytab using the `klist` tool. The
     `-n`
     :   If the `-a` option is specified, don't reverse resolve addresses.
 
-`-k`
+[`-k`]{#-k}
 :   Specifies that key tab is to be listed.
 
     List the keytab entries. The following are the options for keytab entries:
@@ -82,7 +82,7 @@ the contents of the credentials cache or keytab using the `klist` tool. The
     uses default values for the cache name and keytab. The `kinit`
     documentation lists these default values.
 
-`-help`
+[`-help`]{#-help}
 :   Displays instructions.
 
 ## Examples
