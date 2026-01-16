@@ -483,7 +483,7 @@ public:
   size_t free_words() const     { return pointer_delta(end(), top()); }
   size_t free_bytes_for_atomic_alloc() const {
     HeapWord* v_top = volatile_top();
-    return v_top == nullptr ? 0 : byte_size(volatile_top(),    end());
+    return v_top == nullptr ? 0 : byte_size(v_top,    end());
   }
 
   // Does this region contain this address?
