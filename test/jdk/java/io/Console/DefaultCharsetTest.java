@@ -21,33 +21,66 @@
  * questions.
  */
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static jdk.test.lib.Utils.*;
 
 /**
  * @test
- * @bug 8341975 8351435
+ * @bug 8341975 8351435 8361613
  * @summary Tests the default charset. It should honor `stdout.encoding`
  *          which should be the same as System.out.charset()
- * @modules jdk.internal.le
- * @run junit/othervm -Djdk.console=jdk.internal.le -Dstdout.encoding=UTF-8 DefaultCharsetTest
- * @run junit/othervm -Djdk.console=jdk.internal.le -Dstdout.encoding=ISO-8859-1 DefaultCharsetTest
- * @run junit/othervm -Djdk.console=jdk.internal.le -Dstdout.encoding=US-ASCII DefaultCharsetTest
- * @run junit/othervm -Djdk.console=jdk.internal.le -Dstdout.encoding=foo DefaultCharsetTest
- * @run junit/othervm -Djdk.console=jdk.internal.le DefaultCharsetTest
+ * @requires (os.family == "linux") | (os.family == "mac")
+ * @library /test/lib
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.process.ProcessTools
+ * @run junit DefaultCharsetTest
  */
 public class DefaultCharsetTest {
-    @Test
-    public void testDefaultCharset() {
+    @BeforeAll
+    static void checkExpectAvailability() {
+        // check "expect" command availability
+        var expect = Paths.get("/usr/bin/expect");
+        Assumptions.assumeTrue(Files.exists(expect) && Files.isExecutable(expect),
+            "'" + expect + "' not found. Test ignored.");
+    }
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "US-ASCII", "foo", ""})
+    void testDefaultCharset(String stdoutEncoding) throws Exception {
+        // invoking "expect" command
+        OutputAnalyzer oa = ProcessTools.executeProcess(
+            "expect",
+            "-n",
+            TEST_SRC + "/defaultCharset.exp",
+            TEST_CLASSES,
+            TEST_JDK + "/bin/java",
+            "-Dstdout.encoding=" + stdoutEncoding,
+            getClass().getName());
+        oa.reportDiagnosticSummary();
+        oa.shouldHaveExitValue(0);
+    }
+
+    public static void main(String... args) {
         var stdoutEncoding = System.getProperty("stdout.encoding");
         var sysoutCharset = System.out.charset();
         var consoleCharset = System.console().charset();
-        System.out.println("""
-                    stdout.encoding = %s
-                    System.out.charset() = %s
-                    System.console().charset() = %s
-                """.formatted(stdoutEncoding, sysoutCharset.name(), consoleCharset.name()));
-        assertEquals(consoleCharset, sysoutCharset,
-            "Charsets for System.out and Console differ for stdout.encoding: %s".formatted(stdoutEncoding));
+        System.out.printf("""
+                stdout.encoding = %s
+                System.out.charset() = %s
+                System.console().charset() = %s
+            """, stdoutEncoding, sysoutCharset.name(), consoleCharset.name());
+        if (!consoleCharset.equals(sysoutCharset)) {
+            System.err.printf("Charsets for System.out and Console differ for stdout.encoding: %s%n", stdoutEncoding);
+            System.exit(-1);
+        }
     }
 }

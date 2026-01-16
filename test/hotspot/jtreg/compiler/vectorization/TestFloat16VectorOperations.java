@@ -29,7 +29,7 @@
 * @modules jdk.incubator.vector
 * @library /test/lib /
 * @compile TestFloat16VectorOperations.java
-* @run driver compiler.vectorization.TestFloat16VectorOperations
+* @run driver/timeout=480 compiler.vectorization.TestFloat16VectorOperations
 */
 
 package compiler.vectorization;

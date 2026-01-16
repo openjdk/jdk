@@ -27,7 +27,6 @@
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -63,12 +62,14 @@
 
 class ClassLoaderData;
 
+bool CollectedHeap::_is_shutting_down = false;
+
 size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
 
-class GCLogMessage : public FormatBuffer<512> {};
+class GCLogMessage : public FormatBuffer<1024> {};
 
 template <>
 void EventLogBase<GCLogMessage>::print(outputStream* st, GCLogMessage& m) {
@@ -201,34 +202,6 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   }
 }
 
-class CPUTimeThreadClosure : public ThreadClosure {
-private:
-  jlong _cpu_time = 0;
-
-public:
-  virtual void do_thread(Thread* thread) {
-    jlong cpu_time = os::thread_cpu_time(thread);
-    if (cpu_time != -1) {
-      _cpu_time += cpu_time;
-    }
-  }
-  jlong cpu_time() { return _cpu_time; };
-};
-
-double CollectedHeap::elapsed_gc_cpu_time() const {
-  double string_dedup_cpu_time = UseStringDeduplication ?
-    os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) : 0;
-
-  if (string_dedup_cpu_time == -1) {
-    string_dedup_cpu_time = 0;
-  }
-
-  CPUTimeThreadClosure cl;
-  gc_threads_do(&cl);
-
-  return (double)(cl.cpu_time() + _vmthread_cpu_time + string_dedup_cpu_time) / NANOSECS_PER_SEC;
-}
-
 void CollectedHeap::print_before_gc() const {
   print_relative_to_gc(GCWhen::BeforeGC);
 }
@@ -305,7 +278,6 @@ bool CollectedHeap::is_oop(oop object) const {
 CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
-  _soft_ref_policy(),
   _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -407,14 +379,14 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
                                        word_size,
                                        mdtype,
                                        gc_count,
-                                       full_gc_count,
-                                       GCCause::_metadata_GC_threshold);
+                                       full_gc_count);
 
     VMThread::execute(&op);
 
     if (op.gc_succeeded()) {
       return op.result();
     }
+
     loop_count++;
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
@@ -473,12 +445,6 @@ void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint v
 }
 
 #ifdef ASSERT
-void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
-{
-  assert(words >= min_fill_size(), "too small to fill");
-  assert(is_object_aligned(words), "unaligned size");
-}
-
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
 {
   if (ZapFillerObjects && zap) {
@@ -524,14 +490,16 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
 
 void CollectedHeap::fill_with_object(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
   fill_with_object_impl(start, words, zap);
 }
 
 void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
 
   // Multiple objects may be required depending on the filler array maximum size. Fill
@@ -633,38 +601,24 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-void CollectedHeap::log_gc_cpu_time() const {
-  LogTarget(Info, gc, cpu) out;
-  if (os::is_thread_cpu_time_supported() && out.is_enabled()) {
-    double process_cpu_time = os::elapsed_process_cpu_time();
-    double gc_cpu_time = elapsed_gc_cpu_time();
-
-    if (process_cpu_time == -1 || gc_cpu_time == -1) {
-      log_warning(gc, cpu)("Could not sample CPU time");
-      return;
-    }
-
-    double usage;
-    if (gc_cpu_time > process_cpu_time ||
-        process_cpu_time == 0 || gc_cpu_time == 0) {
-      // This can happen e.g. for short running processes with
-      // low CPU utilization
-      usage = 0;
-    } else {
-      usage = 100 * gc_cpu_time / process_cpu_time;
-    }
-    out.print("GC CPU usage: %.2f%% (Process: %.4fs GC: %.4fs)", usage, process_cpu_time, gc_cpu_time);
-  }
+bool CollectedHeap::is_shutting_down() {
+  assert(Heap_lock->owned_by_self(), "Protected by this lock");
+  return _is_shutting_down;
 }
 
-void CollectedHeap::before_exit() {
+void CollectedHeap::initiate_shutdown() {
+  {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
+    MutexLocker hl(Heap_lock);
+    _is_shutting_down = true;
+  }
+
   print_tracing_info();
+}
 
-  // Log GC CPU usage.
-  log_gc_cpu_time();
-
-  // Stop any on-going concurrent work and prepare for exit.
-  stop();
+size_t CollectedHeap::bootstrap_max_memory() const {
+  return MaxNewSize;
 }
 
 #ifndef PRODUCT

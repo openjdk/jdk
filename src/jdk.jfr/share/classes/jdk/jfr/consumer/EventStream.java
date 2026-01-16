@@ -295,7 +295,7 @@ public interface EventStream extends AutoCloseable {
     void setReuse(boolean reuse);
 
     /**
-     * Specifies that events arrives in chronological order, sorted by the time
+     * Specifies that events arrive in chronological order, sorted by the time
      * they were committed to the stream.
      *
      * @param ordered if event objects arrive in chronological order to

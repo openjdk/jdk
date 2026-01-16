@@ -32,7 +32,7 @@
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors BasicTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors BasicTest
  */
 
 import java.io.IOException;
@@ -53,14 +53,13 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
-@Test
 public class BasicTest {
 
     private static final String TEMP_FILE_PREFIX =
@@ -71,14 +70,12 @@ public class BasicTest {
     static HttpClient client = null;
     static ExecutorService clientExec;
     static ExecutorService serverExec;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static String pingURIString, httpURIString, httpsURIString;
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
             httpServer = new Http2TestServer(false, 0, serverExec, sslContext);
             httpServer.addHandler(new Http2EchoHandler(), "/");
@@ -127,7 +124,7 @@ public class BasicTest {
     }
 
     @Test
-    public static void test() throws Exception {
+    void test() throws Exception {
         try {
             initialize();
             warmup(false);

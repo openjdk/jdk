@@ -101,6 +101,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="thai" type="numeric" digits="๐๑๒๓๔๕๖๗๘๙"/>
         <numberingSystem id="tibt" type="numeric" digits="༠༡༢༣༤༥༦༧༨༩"/>
         <numberingSystem id="tirh" type="numeric" digits="&#x114D0;&#x114D1;&#x114D2;&#x114D3;&#x114D4;&#x114D5;&#x114D6;&#x114D7;&#x114D8;&#x114D9;"/>
+        <numberingSystem id="tols" type="numeric" digits="&#x11DE0;&#x11DE1;&#x11DE2;&#x11DE3;&#x11DE4;&#x11DE5;&#x11DE6;&#x11DE7;&#x11DE8;&#x11DE9;"/>
         <numberingSystem id="vaii" type="numeric" digits="꘠꘡꘢꘣꘤꘥꘦꘧꘨꘩"/>
         <numberingSystem id="wara" type="numeric" digits="&#x118E0;&#x118E1;&#x118E2;&#x118E3;&#x118E4;&#x118E5;&#x118E6;&#x118E7;&#x118E8;&#x118E9;"/>
         <numberingSystem id="wcho" type="numeric" digits="&#x1E2F0;&#x1E2F1;&#x1E2F2;&#x1E2F3;&#x1E2F4;&#x1E2F5;&#x1E2F6;&#x1E2F7;&#x1E2F8;&#x1E2F9;"/>

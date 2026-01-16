@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import com.sun.tools.javac.file.FSInfo;
 import com.sun.tools.javac.util.Context;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,6 +30,7 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -38,7 +38,7 @@ import java.util.jar.Manifest;
  * @summary Test com.sun.tools.javac.file.FSInfo
  * @modules jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.javac.file
- * @run testng FSInfoTest
+ * @run junit FSInfoTest
  */
 public class FSInfoTest {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.CH_COOKIE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }
@@ -154,7 +154,7 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.CH_COOKIE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }
@@ -218,7 +218,7 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }
@@ -253,7 +253,7 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }
@@ -280,7 +280,7 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }

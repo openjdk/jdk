@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,18 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
 import javax.swing.text.html.HTMLEditorKit;
 
+import jdk.test.lib.Utils;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /* @test
    @bug 8078268
    @summary  javax.swing.text.html.parser.Parser parseScript incorrectly optimized
+   @library /test/lib
    @run main bug8078268
 */
 public class bug8078268 {
-    private static final float tf = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-    private static final long TIMEOUT = 10_000 * (long)tf;
+    private static final long TIMEOUT = (long) (10_000 * Utils.TIMEOUT_FACTOR);
 
     private static final String FILENAME = "slowparse.html";
 

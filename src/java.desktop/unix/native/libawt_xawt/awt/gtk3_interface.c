@@ -42,7 +42,6 @@
 #include "debug_assert.h"
 
 static void *gtk3_libhandle = NULL;
-static void *gthread_libhandle = NULL;
 
 static void transform_detail_string (const gchar *detail,
                                      GtkStyleContext *context);
@@ -73,15 +72,6 @@ static GtkWidget *gtk3_widgets[_GTK_WIDGET_TYPE_SIZE];
 static void* dl_symbol(const char* name)
 {
     void* result = dlsym(gtk3_libhandle, name);
-    if (!result)
-        longjmp(j, NO_SYMBOL_EXCEPTION);
-
-    return result;
-}
-
-static void* dl_symbol_gthread(const char* name)
-{
-    void* result = dlsym(gthread_libhandle, name);
     if (!result)
         longjmp(j, NO_SYMBOL_EXCEPTION);
 
@@ -264,22 +254,12 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         return FALSE;
     }
 
-    gthread_libhandle = dlopen(GTHREAD_LIB_VERSIONED, RTLD_LAZY | RTLD_LOCAL);
-    if (gthread_libhandle == NULL) {
-        gthread_libhandle = dlopen(GTHREAD_LIB, RTLD_LAZY | RTLD_LOCAL);
-        if (gthread_libhandle == NULL)
-            return FALSE;
-    }
-
     if (setjmp(j) == 0)
     {
         fp_gtk_check_version = dl_symbol("gtk_check_version");
 
         /* GLib */
-        fp_glib_check_version = dlsym(gtk3_libhandle, "glib_check_version");
-        if (!fp_glib_check_version) {
-            dlerror();
-        }
+        fp_glib_check_version = dl_symbol("glib_check_version");
         fp_g_free = dl_symbol("g_free");
         fp_g_object_unref = dl_symbol("g_object_unref");
 
@@ -637,9 +617,6 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         dlclose(gtk3_libhandle);
         gtk3_libhandle = NULL;
 
-        dlclose(gthread_libhandle);
-        gthread_libhandle = NULL;
-
         return NULL;
     }
 
@@ -738,7 +715,6 @@ static int gtk3_unload()
 
     dlerror();
     dlclose(gtk3_libhandle);
-    dlclose(gthread_libhandle);
     if ((gtk3_error = dlerror()) != NULL)
     {
         return FALSE;

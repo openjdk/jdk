@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1294,7 +1294,7 @@ public final class Main {
             }
 
             if (alias != null) {
-                doPrintEntry(rb.getString("the.certificate"), alias, out);
+                doPrintEntry(alias, out);
             } else {
                 doPrintEntries(out);
             }
@@ -1562,9 +1562,6 @@ public final class Main {
 
     private void doGenCRL(PrintStream out)
             throws Exception {
-        if (ids == null) {
-            throw new Exception("Must provide -id when -gencrl");
-        }
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
         X509CertImpl signerCertImpl = new X509CertImpl(encoded);
@@ -2180,9 +2177,10 @@ public final class Main {
     /**
      * Prints a single keystore entry.
      */
-    private void doPrintEntry(String label, String alias, PrintStream out)
+    private void doPrintEntry(String alias, PrintStream out)
         throws Exception
     {
+        String label = "<" + alias + ">";
         CertPathConstraintsParameters cpcp;
         if (!keyStore.containsAlias(alias)) {
             MessageFormat form = new MessageFormat
@@ -2634,7 +2632,7 @@ public final class Main {
         List<String> aliases = Collections.list(keyStore.aliases());
         aliases.sort(String::compareTo);
         for (String alias : aliases) {
-            doPrintEntry("<" + alias + ">", alias, out);
+            doPrintEntry(alias, out);
             if (verbose || rfc) {
                 out.println(rb.getString("NEWLINE"));
                 out.println(rb.getString

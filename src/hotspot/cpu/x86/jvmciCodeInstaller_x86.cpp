@@ -77,14 +77,10 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& obj, bool compre
   address pc = _instructions->start() + pc_offset;
   jobject value = JNIHandles::make_local(obj());
   if (compressed) {
-#ifdef _LP64
     address operand = Assembler::locate_operand(pc, Assembler::narrow_oop_operand);
     int oop_index = _oop_recorder->find_index(value);
     _instructions->relocate(pc, oop_Relocation::spec(oop_index), Assembler::narrow_oop_operand);
     JVMCI_event_3("relocating (narrow oop constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
-#else
-    JVMCI_ERROR("compressed oop on 32bit");
-#endif
   } else {
     address operand = Assembler::locate_operand(pc, Assembler::imm_operand);
     *((jobject*) operand) = value;
@@ -96,13 +92,9 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& obj, bool compre
 void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_TRAPS) {
   address pc = _instructions->start() + pc_offset;
   if (tag == PATCH_NARROW_KLASS) {
-#ifdef _LP64
     address operand = Assembler::locate_operand(pc, Assembler::narrow_oop_operand);
     *((narrowKlass*) operand) = record_narrow_metadata_reference(_instructions, operand, stream, tag, JVMCI_CHECK);
     JVMCI_event_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
-#else
-    JVMCI_ERROR("compressed Klass* on 32bit");
-#endif
   } else {
     address operand = Assembler::locate_operand(pc, Assembler::imm_operand);
     *((void**) operand) = record_metadata_reference(_instructions, operand, stream, tag, JVMCI_CHECK);

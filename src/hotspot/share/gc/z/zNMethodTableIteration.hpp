@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@ private:
   size_t                         _size;
   ZCACHE_ALIGNED volatile size_t _claimed;
 
+  bool in_progress() const;
+
 public:
   ZNMethodTableIteration();
-
-  bool in_progress() const;
 
   void nmethods_do_begin(ZNMethodTableEntry* table, size_t size);
   void nmethods_do_end();

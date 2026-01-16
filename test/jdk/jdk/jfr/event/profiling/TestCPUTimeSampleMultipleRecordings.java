@@ -36,23 +36,18 @@ import jdk.test.lib.jfr.EventNames;
  * @requires vm.hasJFR & os.family == "linux"
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main jdk.jfr.event.profiling.TestCPUTimeSampleMultipleRecordings
+ * @run main/timeout=480 jdk.jfr.event.profiling.TestCPUTimeSampleMultipleRecordings
  */
 public class TestCPUTimeSampleMultipleRecordings {
-
-    static String nativeEvent = EventNames.CPUTimeSample;
-
     static volatile boolean alive = true;
 
     public static void main(String[] args) throws Exception {
         Thread t = new Thread(TestCPUTimeSampleMultipleRecordings::nativeMethod);
-        t.setDaemon(true);
         t.start();
         for (int i = 0; i < 2; i++) {
             try (RecordingStream rs = new RecordingStream()) {
-                rs.enable(nativeEvent).with("throttle", "1ms");
-                rs.onEvent(nativeEvent, e -> {
-                    alive = false;
+                rs.enable(EventNames.CPUTimeSample).with("throttle", "1ms");
+                rs.onEvent(EventNames.CPUTimeSample, e -> {
                     rs.close();
                 });
 
@@ -60,6 +55,7 @@ public class TestCPUTimeSampleMultipleRecordings {
             }
         }
         alive = false;
+        t.join();
     }
 
     public static void nativeMethod() {

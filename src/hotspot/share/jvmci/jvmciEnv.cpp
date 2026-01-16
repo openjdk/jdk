@@ -934,7 +934,7 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   va_list ap;
   va_start(ap, format);
   char msg[max_msg_size];
-  os::vsnprintf(msg, max_msg_size, format, ap);
+  (void) os::vsnprintf(msg, max_msg_size, format, ap);
   va_end(ap);
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {

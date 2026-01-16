@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,6 +23,8 @@ import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * Denotes array type, such as int[][]
+ *
+ * @LastModified: Sept 2025
  */
 public final class ArrayType extends ReferenceType {
 
@@ -43,7 +44,7 @@ public final class ArrayType extends ReferenceType {
     /**
      * Convenience constructor for reference array type, e.g. Object[]
      *
-     * @param className complete name of class (java.lang.String, e.g.)
+     * @param className complete name of class ({@link String}, for example)
      * @param dimensions array dimensions
      */
     public ArrayType(final String className, final int dimensions) {
@@ -56,6 +57,7 @@ public final class ArrayType extends ReferenceType {
      * @param type type of array (may be an array itself)
      * @param dimensions array dimensions
      */
+    @SuppressWarnings("deprecation") //signature
     public ArrayType(final Type type, final int dimensions) {
         super(Const.T_ARRAY, "<dummy>");
         if (dimensions < 1 || dimensions > Const.MAX_BYTE) {
@@ -79,7 +81,7 @@ public final class ArrayType extends ReferenceType {
             buf.append('[');
         }
         buf.append(basicType.getSignature());
-        super.setSignature(buf.toString());
+        this.signature = buf.toString();
     }
 
     /**

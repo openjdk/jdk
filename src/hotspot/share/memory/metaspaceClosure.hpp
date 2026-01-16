@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_METASPACECLOSURE_HPP
 #define SHARE_MEMORY_METASPACECLOSURE_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
@@ -33,8 +34,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resizeableResourceHash.hpp"
-#include <type_traits>
+#include "utilities/resizableHashTable.hpp"
 
 // The metadata hierarchy is separate from the oop hierarchy
   class MetaspaceObj;        // no C++ vtable
@@ -374,7 +374,7 @@ public:
   UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {}
 
 private:
-  ResizeableResourceHashtable<address, bool, AnyObj::C_HEAP,
+  ResizeableHashTable<address, bool, AnyObj::C_HEAP,
                               mtClassShared> _has_been_visited;
 };
 

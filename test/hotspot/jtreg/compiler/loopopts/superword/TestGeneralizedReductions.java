@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,13 +160,13 @@ public class TestGeneralizedReductions {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"avx2", "true"},
-        applyIfAnd = {"SuperWordReductions", "true","UsePopCountInstruction", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "UsePopCountInstruction", "true"},
         applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
                   IRNode.POPCOUNT_VL, ">= 1"})
     @IR(applyIfPlatform = {"riscv64", "true"},
         applyIfCPUFeatureOr = {"zvbb", "true"},
-        applyIfAnd = {"SuperWordReductions", "true","UsePopCountInstruction", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "UsePopCountInstruction", "true", "MaxVectorSize", ">=32"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
                   IRNode.POPCOUNT_VL, ">= 1"})
     private static long testMapReductionOnGlobalAccumulator(long[] array) {

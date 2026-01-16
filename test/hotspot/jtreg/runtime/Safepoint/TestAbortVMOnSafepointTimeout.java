@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -88,7 +88,7 @@ public class TestAbortVMOnSafepointTimeout {
         } else {
             output.shouldContain("SIGILL");
             if (Platform.isLinux()) {
-                output.shouldContain("(sent by safepoint timeout handler");
+                output.shouldContain("(sent by safepoint timeout handler)");
             }
         }
         output.shouldNotHaveExitValue(0);

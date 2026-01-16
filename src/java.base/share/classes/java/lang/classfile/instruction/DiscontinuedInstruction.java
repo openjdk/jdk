@@ -131,7 +131,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * // @link substring="RetInstruction" target="#of(int)" :
      * RetInstruction(int slot) // @link substring="slot" target="#slot()"
      * }
-     * where {@code slot} must be within {@code [0, 65535]}.
+     * where {@code slot} must be {@link java.lang.classfile##u2 u2}.
      * <p>
      * {@link StoreInstruction astore} series of instructions store a {@link
      * TypeKind##returnAddress returnAddress} value to a local variable slot,
@@ -153,16 +153,16 @@ public sealed interface DiscontinuedInstruction extends Instruction {
 
         /**
          * {@return the local variable slot with return address}
-         * The value is within {@code [0, 65535]}.
+         * It is a {@link java.lang.classfile##u2 u2} value.
          */
         int slot();
 
         /**
          * {@return a return from subroutine instruction}
          * <p>
-         * {@code slot} must be in the closed range of {@code [0, 255]} for
-         * {@link Opcode#RET ret}, or within {@code [0, 65535]} for {@link
-         * Opcode#RET_W wide ret}.
+         * {@code slot} must be {@link java.lang.classfile##u1 u1} for
+         * {@link Opcode#RET ret}, or {@link java.lang.classfile##u2 u2} for
+         * {@link Opcode#RET_W wide ret}.
          *
          * @apiNote
          * The explicit {@code op} argument allows creating {@code wide ret}
@@ -183,10 +183,11 @@ public sealed interface DiscontinuedInstruction extends Instruction {
         /**
          * {@return a return from subroutine instruction}
          * <p>
-         * {@code slot} must be within {@code [0, 65535]}.
+         * {@code slot} must be {@link java.lang.classfile##u2 u2}.
          *
          * @param slot the local variable slot to load return address from
-         * @throws IllegalArgumentException if {@code slot} is out of range
+         * @throws IllegalArgumentException if {@code slot} is not {@link
+         *         java.lang.classfile##u2 u2}
          */
         static RetInstruction of(int slot) {
             return of(slot < 256 ? Opcode.RET : Opcode.RET_W, slot);

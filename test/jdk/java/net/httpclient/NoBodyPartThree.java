@@ -28,6 +28,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm
+ *      -Djdk.httpclient.HttpClient.log=quic,errors
  *      -Djdk.httpclient.HttpClient.log=all
  *      NoBodyPartThree
  */
@@ -44,8 +45,10 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
+import jdk.internal.net.http.common.Utils;
 import org.testng.annotations.Test;
 
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -62,6 +65,9 @@ public class NoBodyPartThree extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 var u = uri + "/testAsByteArrayPublisher/first/" + REQID.getAndIncrement();
@@ -72,7 +78,7 @@ public class NoBodyPartThree extends AbstractNoBody {
                 Consumer<Optional<byte[]>> consumer = oba -> {
                     consumerHasBeenCalled = true;
                     oba.ifPresent(ba -> fail("Unexpected non-empty optional:"
-                            + asString(ByteBuffer.wrap(ba))));
+                            + Utils.asString(ByteBuffer.wrap(ba))));
                 };
                 consumerHasBeenCalled = false;
                 var response = client.send(req, BodyHandlers.ofByteArrayConsumer(consumer));
@@ -99,6 +105,9 @@ public class NoBodyPartThree extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 var u = uri + "/testStringPublisher/" + REQID.getAndIncrement();
@@ -121,6 +130,9 @@ public class NoBodyPartThree extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 var u = uri + "/testInputStreamPublisherBuffering/" + REQID.getAndIncrement();
@@ -144,6 +156,9 @@ public class NoBodyPartThree extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 var u = uri + "/testEmptyArrayPublisher/" + REQID.getAndIncrement();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,13 @@
 class CodeCacheUnloadingTask {
 
   const bool                _unloading_occurred;
-  const uint                _num_workers;
 
   // Variables used to claim nmethods.
   nmethod* _first_nmethod;
   nmethod* volatile _claimed_nmethod;
 
 public:
-  CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred);
+  CodeCacheUnloadingTask(bool unloading_occurred);
   ~CodeCacheUnloadingTask();
 
 private:
@@ -54,14 +53,10 @@ public:
 
 // Cleans out the Klass tree from stale data.
 class KlassCleaningTask : public StackObj {
-  volatile bool _clean_klass_tree_claimed;
-  ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
-
-  bool claim_clean_klass_tree_task();
-  InstanceKlass* claim_next_klass();
+  ClassLoaderDataGraphIteratorAtomic _cld_iterator_atomic;
 
 public:
-  KlassCleaningTask();
+  KlassCleaningTask() : _cld_iterator_atomic() { }
 
   void work();
 };
