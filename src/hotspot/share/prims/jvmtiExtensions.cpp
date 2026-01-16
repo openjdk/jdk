@@ -295,7 +295,7 @@ void JvmtiExtensions::register_extensions() {
     (jvmtiExtensionFunction)InitializeRequestStackTrace,
     (char*)"com.sun.hotspot.functions.InitializeRequestStackTrace",
     (char*)"Initializes the VM to enable requesting a stacktrace via RequestStackTrace",
-    sizeof(func_params3)/sizeof(func_params4[0]),
+    sizeof(func_params4)/sizeof(func_params4[0]),
     func_params4,
     sizeof(errors)/sizeof(jvmtiError),   // non-universal errors
     errors
