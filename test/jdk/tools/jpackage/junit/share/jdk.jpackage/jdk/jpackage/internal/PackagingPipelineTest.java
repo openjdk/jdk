@@ -616,7 +616,7 @@ public class PackagingPipelineTest {
                 "1.0",
                 "Acme",
                 "copyright",
-                Optional.empty(),
+                List.of(),
                 List.of(),
                 appImageLayout,
                 runtimeBuilder,

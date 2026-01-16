@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,10 @@ public final class JUnitUtils {
         return EXCEPTION_OM.toMap(ex);
     }
 
+    public static Exception removeExceptionCause(Exception ex) {
+        return new ExceptionCauseRemover(ex);
+    }
+
 
     public static final class ExceptionPattern {
 
@@ -114,6 +118,23 @@ public final class JUnitUtils {
         private String expectedMessage;
         private Class<? extends Exception> expectedType;
         private Class<? extends Throwable> expectedCauseType;
+    }
+
+
+    private static final class ExceptionCauseRemover extends Exception {
+
+        ExceptionCauseRemover(Exception ex) {
+            super(ex.getMessage());
+            type = ex.getClass();
+        }
+
+        public Class<?> getType() {
+            return type;
+        }
+
+        private final Class<?> type;
+
+        private static final long serialVersionUID = 1L;
     }
 
 

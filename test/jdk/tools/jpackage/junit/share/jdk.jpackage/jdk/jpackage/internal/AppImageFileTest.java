@@ -222,7 +222,7 @@ public class AppImageFileTest {
                     version,
                     null,
                     null,
-                    Optional.empty(),
+                    List.of(),
                     List.of(),
                     null,
                     Optional.empty(),
