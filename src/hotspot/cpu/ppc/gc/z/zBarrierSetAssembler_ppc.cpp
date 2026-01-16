@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -948,6 +948,19 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 
   // Stub exit
   __ b(*stub->continuation());
+}
+
+void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ ld(tmp, in_bytes(ZThreadLocalData::mark_bad_mask_offset()), R16_thread);
+  __ and_(tmp, obj, tmp);
+  __ bne(CR0, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ srdi(obj, obj, ZPointerLoadShift);
 }
 
 #undef __

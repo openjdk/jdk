@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -628,6 +629,27 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ jccb(Assembler::notZero, slowpath);
   __ bind(done);
 }
+
+#ifdef COMPILER2
+void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
+  Label done;
+
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, slowpath);
+
+  // Check if the reference is null, and if it is, take the fast path.
+  __ testptr(obj, obj);
+  __ jcc(Assembler::zero, done);
+
+  Address gc_state(r15_thread, ShenandoahThreadLocalData::gc_state_offset());
+
+  // Check if the heap is under weak-reference/roots processing, in
+  // which case we need to take the slow path.
+  __ testb(gc_state, ShenandoahHeap::WEAK_ROOTS);
+  __ jccb(Assembler::notZero, slowpath);
+  __ bind(done);
+}
+#endif // COMPILER2
 
 // Special Shenandoah CAS implementation that handles false negatives
 // due to concurrent evacuation.

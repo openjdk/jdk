@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #ifdef PRODUCT
@@ -123,35 +124,54 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == tmp1_mark, "should be the same here");
     } else {
+      const Register tmp2_hash = tmp2;
+      const Register tmp3_bucket = tmp3;
       Label monitor_found;
+
+      // Save the mark, we might need it to extract the hash.
+      mv(tmp2_hash, tmp1_mark);
+
+      // Look for the monitor in the om_cache.
 
       // Load cache address
       la(tmp3_t, Address(xthread, JavaThread::om_cache_oops_offset()));
 
-      const int num_unrolled = 2;
+      const int num_unrolled = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        ld(tmp1, Address(tmp3_t));
-        beq(obj, tmp1, monitor_found);
+        ld(t0, Address(tmp3_t));
+        ld(tmp1_monitor, Address(tmp3_t, OMCache::oop_to_monitor_difference()));
+        beq(obj, t0, monitor_found);
         add(tmp3_t, tmp3_t, in_bytes(OMCache::oop_to_oop_difference()));
       }
 
-      Label loop;
+      // Look for the monitor in the table.
 
-      // Search for obj in cache.
-      bind(loop);
+      // Get the hash code.
+      srli(tmp2_hash, tmp2_hash, markWord::hash_shift);
 
-      // Check for match.
-      ld(tmp1, Address(tmp3_t));
-      beq(obj, tmp1, monitor_found);
+      // Get the table and calculate the bucket's address.
+      la(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
+      ld(tmp3_t, Address(tmp3_t));
+      ld(tmp1, Address(tmp3_t, ObjectMonitorTable::table_capacity_mask_offset()));
+      andr(tmp2_hash, tmp2_hash, tmp1);
+      ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));
+      slli(tmp2_hash, tmp2_hash, LogBytesPerWord);
+      add(tmp3_bucket, tmp3_t, tmp2_hash);
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      add(tmp3_t, tmp3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      bnez(tmp1, loop);
-      // Cache Miss. Take the slowpath.
-      j(slow_path);
+      // Read the monitor from the bucket.
+      ld(tmp1_monitor, Address(tmp3_bucket));
+
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      li(tmp2, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      bltu(tmp1_monitor, tmp2, slow_path);
+
+      // Check if object matches.
+      ld(tmp3, Address(tmp1_monitor, ObjectMonitor::object_offset()));
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_resolve_weak_handle_in_c2(this, tmp3, tmp2, slow_path);
+      bne(tmp3, obj, slow_path);
 
       bind(monitor_found);
-      ld(tmp1_monitor, Address(tmp3_t, OMCache::oop_to_monitor_difference()));
     }
 
     const Register tmp2_owner_addr = tmp2;

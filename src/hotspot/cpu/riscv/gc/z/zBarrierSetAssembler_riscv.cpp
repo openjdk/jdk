@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -601,6 +601,25 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
 }
+
+#ifdef COMPILER2
+void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_weak_handle_in_c2 {");
+
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ ld(tmp, mark_bad_mask_from_thread(xthread));
+  __ andr(tmp, obj, tmp);
+  __ bnez(tmp, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ srli(obj, obj, ZPointerLoadShift);
+
+  BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_weak_handle_in_c2");
+}
+#endif
 
 static uint16_t patch_barrier_relocation_value(int format) {
   switch (format) {
