@@ -31,13 +31,11 @@
  * @modules java.compiler
  * @run main/othervm -XX:+UseG1GC -Xms128m -Xmx128m
  *                   -XX:TrimNativeHeapInterval=300000
- *                   runtime.nativeheaptrimmer.TestTrimNativeHeapIntervalTablesCleanup string
+ *                   TestTrimNativeHeapIntervalTablesCleanup string
  * @run main/othervm -XX:+UseG1GC -Xms128m -Xmx128m
  *                   -XX:TrimNativeHeapInterval=300000
- *                   runtime.nativeheaptrimmer.TestTrimNativeHeapIntervalTablesCleanup symbol
+ *                   TestTrimNativeHeapIntervalTablesCleanup symbol
  */
-
-package runtime.nativeheaptrimmer;
 
 import java.util.LinkedList;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
