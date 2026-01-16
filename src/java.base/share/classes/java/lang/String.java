@@ -2124,8 +2124,8 @@ public final class String
      *
      * <p>The result will be the same value as {@link #getBytes(Charset) getBytes(cs).length}.
      *
-     * @implNote This method provides equivalent or better performance than {@link #getBytes(Charset)
-     *           getBytes(cs).length}. It may allocate memory to compute the length for some charsets.
+     * @apiNote This method provides equivalent or better performance than {@link #getBytes(Charset)
+     *          getBytes(cs).length}. It may allocate memory to compute the length for some charsets.
      *
      * @param cs The {@link Charset} used to the compute the length
      * @since 27
