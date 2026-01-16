@@ -10685,13 +10685,6 @@ myInit() {
           <eventlink id="VirtualThreadEnd"></eventlink>.
         </description>
       </capabilityfield>
-      <capabilityfield id="can_request_stack_trace" since="27">
-        <description>
-          Can request stack traces.
-          If this capability is enabled then the following function can be called:
-          <functionlink id="RequestStackTrace"></functionlink>.
-        </description>
-      </capabilityfield>
     </capabilitiestypedef>
 
     <function id="GetPotentialCapabilities" jkernel="yes" phase="onload" num="140">
