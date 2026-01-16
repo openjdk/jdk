@@ -162,6 +162,23 @@ public class VectorAlgorithmsImpl {
         return sum;
     }
 
+    public static int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
+        var acc = IntVector.broadcast(SPECIES_I, 0);
+        int i;
+        for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
+            // Element-wide addition into a vector of partial sums is much faster.
+            // Now, we only need to do a reduceLanes after the loop.
+            // This works because int-addition is associative and commutative.
+            acc = acc.add(v);
+        }
+        int sum = acc.reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            sum += a[i];
+        }
+        return sum;
+    }
+
     public static float dotProductF_loop(float[] a, float[] b) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
@@ -195,23 +212,6 @@ public class VectorAlgorithmsImpl {
         float sum = sums.reduceLanes(VectorOperators.ADD);
         for (; i < a.length; i++) {
             sum += a[i] * b[i];
-        }
-        return sum;
-    }
-
-    public static int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
-        var acc = IntVector.broadcast(SPECIES_I, 0);
-        int i;
-        for (i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
-            IntVector v = IntVector.fromArray(SPECIES_I, a, i);
-            // Element-wide addition into a vector of partial sums is much faster.
-            // Now, we only need to do a reduceLanes after the loop.
-            // This works because int-addition is associative and commutative.
-            acc = acc.add(v);
-        }
-        int sum = acc.reduceLanes(VectorOperators.ADD);
-        for (; i < a.length; i++) {
-            sum += a[i];
         }
         return sum;
     }
