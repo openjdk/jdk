@@ -2200,9 +2200,15 @@ Node* GraphKit::uncommon_trap(int trap_request,
   // The debug info is the only real input to this call.
 
   // Halt-and-catch fire here.  The above call should never return!
+  // We only emit code for the HaltNode in debug, which is enough for
+  // verifying correctness. In product, we don't want to emit it so
+  // that we can save on code space. HaltNode often get folded because
+  // the compiler can prove that the unreachable path is dead. But we
+  // cannot generally expect that for uncommon traps, which are often
+  // reachable and occasionally taken.
   halt(control(), frameptr(),
        "uncommon trap returned which should never happen",
-       false /* don't emit code in product, it is just a waste of code space */);
+       false /* don't emit code in product */);
   stop_and_kill_map();
   return call;
 }
