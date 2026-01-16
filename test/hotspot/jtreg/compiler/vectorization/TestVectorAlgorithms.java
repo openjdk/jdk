@@ -87,6 +87,8 @@ public class TestVectorAlgorithms {
     float[] aF;
     float[] bF;
 
+    byte[] aB;
+
     int[] oopsX4;
     int[] memX4;
 
@@ -141,6 +143,11 @@ public class TestVectorAlgorithms {
         testGroups.get("dotProductF").put("dotProductF_VectorAPI_naive",                () -> { return dotProductF_VectorAPI_naive(aF, bF); });
         testGroups.get("dotProductF").put("dotProductF_VectorAPI_reduction_after_loop", () -> { return dotProductF_VectorAPI_reduction_after_loop(aF, bF); });
 
+        testGroups.put("hashCodeB", new HashMap<String,TestFunction>());
+        testGroups.get("hashCodeB").put("hashCodeB_loop",         () -> { return hashCodeB_loop(aB); });
+        testGroups.get("hashCodeB").put("hashCodeB_Arrays",       () -> { return hashCodeB_Arrays(aB); });
+        testGroups.get("hashCodeB").put("hashCodeB_VectorAPI_v1", () -> { return hashCodeB_VectorAPI_v1(aB); });
+
         testGroups.put("scanAddI", new HashMap<String,TestFunction>());
         testGroups.get("scanAddI").put("scanAddI_loop",                      () -> { return scanAddI_loop(aI, rI1); });
         testGroups.get("scanAddI").put("scanAddI_loop_reassociate",          () -> { return scanAddI_loop_reassociate(aI, rI2); });
@@ -185,6 +192,9 @@ public class TestVectorAlgorithms {
                  "dotProductF_loop",
                  "dotProductF_VectorAPI_naive",
                  "dotProductF_VectorAPI_reduction_after_loop",
+                 "hashCodeB_loop",
+                 "hashCodeB_Arrays",
+                 "hashCodeB_VectorAPI_v1",
                  "scanAddI_loop",
                  "scanAddI_loop_reassociate",
                  "scanAddI_VectorAPI_permute_add",
@@ -235,6 +245,9 @@ public class TestVectorAlgorithms {
                 aF[i] = RANDOM.nextInt(32) - 16;
                 bF[i] = RANDOM.nextInt(32) - 16;
             }
+
+            aB = new byte[size];
+            RANDOM.nextBytes(aB);
 
             // Run all tests
             for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
@@ -407,6 +420,27 @@ public class TestVectorAlgorithms {
         applyIf = {"UseSuperWord", "true"})
     public float dotProductF_VectorAPI_reduction_after_loop(float[] a, float[] b) {
         return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(a, b);
+    }
+
+    @Test
+    public int hashCodeB_loop(byte[] a) {
+        return VectorAlgorithmsImpl.hashCodeB_loop(a);
+    }
+
+    @Test
+    public int hashCodeB_Arrays(byte[] a) {
+        return VectorAlgorithmsImpl.hashCodeB_Arrays(a);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B,    IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.MUL_VI,           IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.VECTOR_CAST_B2I,  IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.ADD_VI,           IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.ADD_REDUCTION_VI,                       "> 0"},
+        applyIfCPUFeature = {"avx2", "true"})
+    public int hashCodeB_VectorAPI_v1(byte[] a) {
+        return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v1(a);
     }
 
     @Test

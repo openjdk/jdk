@@ -34,6 +34,8 @@ import jdk.incubator.vector.*;
 public class VectorAlgorithmsImpl {
     private static final VectorSpecies<Integer> SPECIES_I    = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> SPECIES_I512 = IntVector.SPECIES_512;
+    private static final VectorSpecies<Integer> SPECIES_I256 = IntVector.SPECIES_256;
+    private static final VectorSpecies<Byte> SPECIES_B64     = ByteVector.SPECIES_64;
     private static final VectorSpecies<Float> SPECIES_F      = FloatVector.SPECIES_PREFERRED;
 
     public static Object fillI_loop(int[] r) {
@@ -214,6 +216,69 @@ public class VectorAlgorithmsImpl {
             sum += a[i] * b[i];
         }
         return sum;
+    }
+
+    public static int hashCodeB_loop(byte[] a) {
+        int h = 1;
+        for (int i = 0; i < a.length; i++) {
+            h = 31 * h + a[i];
+        }
+        return h;
+    }
+
+    public static int hashCodeB_Arrays(byte[] a) {
+        return Arrays.hashCode(a);
+    }
+
+    // Simplified intrinsic code from C2_MacroAssembler::arrays_hashcode in c2_MacroAssembler_x86.cpp
+    //
+    // Ideas that may help understand the code:
+    //
+    // h(i) = 31 * h(i-1) + a[i]
+    // "unroll" by factor of L=8:
+    // h(i+8) = h(i) * 31^8 + a[i+1] * 31^7 + a[i+2] * 31^6 + ... + a[i+8] * 1
+    //          -----------   ------------------------------------------------
+    //          scalar        vector: notice the powers of 31 in reverse
+    //
+    // We notice that we can load a[i+1 .. i+8], then element-wise multiply with
+    // the vector of reversed powers-of-31, and then do reduceLanes(ADD).
+    // But we can do even better: By looking at multiple such 8-unrolled iterations.
+    // Instead of applying the "next" factor of "31^8" to the reduced scalar, we can
+    // already apply it element-wise. That allows us to move the reduction out
+    // of the loop.
+    //
+    // Note: the intrinsic additionally unrolls the loop by a factor of 4,
+    //       but we want to keep thins simple for demonstration purposes.
+    //
+    private static int[] REVERSE_POWERS_OF_31 = new int[9];
+    static {
+        int p = 1;
+        for (int i = REVERSE_POWERS_OF_31.length - 1; i >= 0; i--) {
+            REVERSE_POWERS_OF_31[i] = p;
+            p *= 31;
+        }
+    }
+    public static int hashCodeB_VectorAPI_v1(byte[] a) {
+        int result = 1; // initialValue
+        var vresult = IntVector.zero(SPECIES_I256);
+        int next = REVERSE_POWERS_OF_31[0]; // 31^L
+        var vnext = IntVector.broadcast(SPECIES_I256, next);
+        var vcoef = IntVector.fromArray(SPECIES_I256, REVERSE_POWERS_OF_31, 1); // powers of 2 in reverse
+        int i;
+        for (i = 0; i < SPECIES_B64.loopBound(a.length); i += SPECIES_B64.length()) {
+            // scalar part: result *= 31^L
+            result *= next;
+            // vector part: element-wise apply the next factor and add in the new values.
+            var vb = ByteVector.fromArray(SPECIES_B64, a, i);
+            var vi = vb.castShape(SPECIES_I256, 0);
+            vresult = vresult.mul(vnext).add(vi);
+        }
+        // reduce the partial hashes in the elements, using the reverse list of powers of 2.
+        result += vresult.mul(vcoef).reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            result = 31 * result + a[i];
+        }
+        return result;
     }
 
     public static Object scanAddI_loop(int[] a, int[] r) {

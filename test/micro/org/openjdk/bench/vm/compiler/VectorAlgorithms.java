@@ -76,6 +76,8 @@ public class VectorAlgorithms {
     public static float[] aF;
     public static float[] bF;
 
+    byte[] aB;
+
     @Setup
     public void init() {
         RANDOM = new Random(SEED);
@@ -90,6 +92,9 @@ public class VectorAlgorithms {
 
         aF = new float[SIZE];
         bF = new float[SIZE];
+
+        aB = new byte[SIZE];
+        RANDOM.nextBytes(aB);
     }
 
     @Setup(Level.Iteration)
@@ -204,6 +209,21 @@ public class VectorAlgorithms {
     @Benchmark
     public float dotProductF_VectorAPI_reduction_after_loop() {
         return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(aF, bF);
+    }
+
+    @Benchmark
+    public int hashCodeB_loop() {
+        return VectorAlgorithmsImpl.hashCodeB_loop(aB);
+    }
+
+    @Benchmark
+    public int hashCodeB_Arrays() {
+        return VectorAlgorithmsImpl.hashCodeB_Arrays(aB);
+    }
+
+    @Benchmark
+    public int hashCodeB_VectorAPI_v1() {
+        return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v1(aB);
     }
 
     @Benchmark
