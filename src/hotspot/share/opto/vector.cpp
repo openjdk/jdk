@@ -332,9 +332,9 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
   // The vector input may also be a Phi (Phi2 above), or it may have been
   // value-numbered to a single node if all inputs were identical.
   if (vbox->is_Phi()) {
-    assert(!vect->is_Phi() || vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
+    bool same_region = vect->is_Phi() && vbox->as_Phi()->region() == vect->as_Phi()->region();
     for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->is_Phi() ? vect->in(i) : vect,
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), same_region ? vect->in(i) : vect,
                                               box_type, vect_type, visited);
       if (!new_box->is_Phi()) {
         C->initial_gvn()->hash_delete(vbox);
