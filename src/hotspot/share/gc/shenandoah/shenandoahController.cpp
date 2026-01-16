@@ -51,7 +51,7 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& re
   }
 
   if (block) {
-    MonitorLocker ml(&_alloc_failure_waiters_lock);
+    MonitorLocker ml(&_alloc_failure_waiters_lock, Mutex::_no_safepoint_check_flag);
     while (!should_terminate() && ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
       ml.wait();
     }
@@ -70,6 +70,6 @@ void ShenandoahController::handle_alloc_failure_evac(size_t words) {
 }
 
 void ShenandoahController::notify_alloc_failure_waiters() {
-  MonitorLocker ml(&_alloc_failure_waiters_lock);
+  MonitorLocker ml(&_alloc_failure_waiters_lock, Mutex::_no_safepoint_check_flag);
   ml.notify_all();
 }

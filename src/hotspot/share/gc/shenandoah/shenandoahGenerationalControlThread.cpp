@@ -47,7 +47,7 @@
 #include "utilities/events.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
-  _control_lock(LOCK_RANK, "ShenandoahGCRequest_lock", true),
+  _control_lock(LOCK_RANK - 1, "ShenandoahControl_lock", true),
   _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
   _gc_mode(none),
@@ -759,7 +759,7 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   // opportunities for cleanup that were made available before the caller
   // requested the GC.
 
-  MonitorLocker ml(&_gc_waiters_lock);
+  MonitorLocker ml(&_gc_waiters_lock, Mutex::_no_safepoint_check_flag);
   size_t current_gc_id = get_gc_id();
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
@@ -771,7 +771,7 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
 }
 
 void ShenandoahGenerationalControlThread::notify_gc_waiters() {
-  MonitorLocker ml(&_gc_waiters_lock);
+  MonitorLocker ml(&_gc_waiters_lock, Mutex::_no_safepoint_check_flag);
   ml.notify_all();
 }
 

@@ -56,8 +56,8 @@ protected:
 public:
   ShenandoahController():
     _gc_id(0),
-    _alloc_failure_waiters_lock(LOCK_RANK, "ShenandoahAllocFailureGC_lock", true),
-    _gc_waiters_lock(LOCK_RANK, "ShenandoahRequestedGC_lock", true)
+    _alloc_failure_waiters_lock(LOCK_RANK, "ShenandoahAllocFailureWaiters_lock", true),
+    _gc_waiters_lock(LOCK_RANK, "ShenandoahGCWaiters_lock", true)
   { }
 
   // Request a collection cycle. This handles "explicit" gc requests

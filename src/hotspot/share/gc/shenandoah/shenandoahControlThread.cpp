@@ -44,7 +44,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
   _requested_gc_cause(GCCause::_no_gc),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
-  _control_lock(LOCK_RANK, "ShenandoahGCRequest_lock", true) {
+  _control_lock(LOCK_RANK - 1, "ShenandoahControl_lock", true) {
   set_name("Shenandoah Control Thread");
   create_and_start();
 }
@@ -380,7 +380,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   // opportunities for cleanup that were made available before the caller
   // requested the GC.
 
-  MonitorLocker ml(&_gc_waiters_lock);
+  MonitorLocker ml(&_gc_waiters_lock, Mutex::_no_safepoint_check_flag);
   size_t current_gc_id = get_gc_id();
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
@@ -392,6 +392,6 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
 
 void ShenandoahControlThread::notify_gc_waiters() {
   _gc_requested.unset();
-  MonitorLocker ml(&_gc_waiters_lock);
+  MonitorLocker ml(&_gc_waiters_lock, Mutex::_no_safepoint_check_flag);
   ml.notify_all();
 }
