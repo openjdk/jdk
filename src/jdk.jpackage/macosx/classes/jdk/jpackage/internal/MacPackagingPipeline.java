@@ -217,6 +217,11 @@ final class MacPackagingPipeline {
 
     enum SignAppImagePackageType implements PackageType {
         VALUE;
+
+        @Override
+        public String label() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     static Package createSignAppImagePackage(MacApplication app, BuildEnv env) {
