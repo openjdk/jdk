@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
+import static jdk.jpackage.internal.OptionUtils.isRuntimeInstaller;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
@@ -215,7 +216,7 @@ final class MacFromOptions {
 
         var app = superAppBuilder.create();
 
-        if (!APP_VERSION.containsIn(options)) {
+        if (isRuntimeInstaller(options) && !APP_VERSION.containsIn(options)) {
             // User didn't explicitly specify the version on the command line. jpackage derived it from the input.
             // In this case it should ensure the derived value is valid MacOS version.
             var ver = normalizeVersion(app.version());
