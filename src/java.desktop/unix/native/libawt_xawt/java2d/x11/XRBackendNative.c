@@ -339,8 +339,7 @@ Java_sun_java2d_xr_XRBackendNative_createPixmap(JNIEnv *env, jobject this,
 JNIEXPORT jint JNICALL
 Java_sun_java2d_xr_XRBackendNative_createPictureNative
  (JNIEnv *env, jclass cls, jint drawable, jlong formatPtr) {
-  XRenderPictureAttributes pict_attr;
-  pict_attr.repeat = RepeatNone;
+  XRenderPictureAttributes pict_attr = {0};
   return XRenderCreatePicture(awt_display, (Drawable) drawable,
                               (XRenderPictFormat *) jlong_to_ptr(formatPtr),
                                0, &pict_attr);
