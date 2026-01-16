@@ -274,7 +274,11 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion
       // For GC allocations, we advance update_watermark because the objects relocated into this memory during
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
-      region->concurrent_set_update_watermark(IS_SHARED_ALLOC_REGION ? region->volatile_top() : region->top());
+      if (IS_SHARED_ALLOC_REGION) {
+        region->concurrent_set_update_watermark(region->top());
+      } else {
+        region->set_update_watermark(region->top());
+      }
     }
 
     if (!IS_SHARED_ALLOC_REGION && region->free_words() < PLAB::min_size()) {
