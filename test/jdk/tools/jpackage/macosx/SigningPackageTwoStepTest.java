@@ -196,7 +196,7 @@ public class SigningPackageTwoStepTest {
         var signedInstallerFromUnsignedPredefinedAppImageWarning =
                 JPackageStringBundle.MAIN.cannedFormattedString("warning.unsigned.app.image", "pkg");
 
-        // The warnings are mutual exclusive
+        // The warnings are mutually exclusive
         final Optional<CannedFormattedString> expected;
         final List<CannedFormattedString> unexpected = new ArrayList<>();
 
