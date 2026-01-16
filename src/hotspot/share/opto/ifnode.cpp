@@ -1574,7 +1574,7 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not
         // For control producers
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
         if (prev_dom_not_imply_this && data_target != top) {
-          // If prev_dom_not_equivalent, s now depends on multiple tests with prev_dom being the
+          // If prev_dom_not_imply_this, s now depends on multiple tests with prev_dom being the
           // lowest dominating one. As a result, it must be pinned there
           Node* clone = s->pin_node_under_control();
           igvn->register_new_node_with_optimizer(clone);

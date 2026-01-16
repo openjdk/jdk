@@ -345,7 +345,7 @@ bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_diviso
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool pin_array_access_nodes) {
+void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool prevdom_not_imply_this) {
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
@@ -386,7 +386,7 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
     return;
   }
 
-  rewire_safe_outputs_to_dominator(dp, prevdom, pin_array_access_nodes);
+  rewire_safe_outputs_to_dominator(dp, prevdom, prevdom_not_imply_this);
 }
 
 void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* dominator, const bool dominator_not_imply_source) {
@@ -1721,7 +1721,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         Node* outside_ctrl = place_outside_loop(n_ctrl, loop_ctrl);
         if (!would_sink_below_pre_loop_exit(loop_ctrl, outside_ctrl)) {
           if (n->depends_only_on_test()) {
-            // If this node depends_only_on_test, it will be rewire to a control input that is not the correct test
+            // If this node depends_only_on_test, it will be rewired to a control input that is not
+            // the correct test. As a result, it must be pinned otherwise it can be incorrectly
+            // rewired to a dominating test equivalent to the new control.
             Node* pinned_clone = n->pin_node_under_control();
             register_new_node(pinned_clone, n_ctrl);
             maybe_pinned_n = pinned_clone;
@@ -1748,8 +1750,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
           _igvn.rehash_node_delayed(u);
           Node* x = nullptr;
           if (n->in(0) != nullptr && n->depends_only_on_test()) {
-            // If this node depends_only_on_test, it will be rewire to a control input that is not
-            // the correct test
+            // If this node depends_only_on_test, it will be rewired to a control input that is not
+            // the correct test. As a result, it must be pinned otherwise it can be incorrectly
+            // rewired to a dominating test equivalent to the new control.
             x = n->pin_node_under_control();
           }
           if (x == nullptr) {
@@ -2321,8 +2324,9 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // that may now be optimized because we have replaced old with phi.
       _igvn.add_users_to_worklist(old);
       if (idx == 0 && use->depends_only_on_test()) {
-        // If this node depends_only_on_test, it will be rewire to a control input that is not the
-        // correct test
+        // If this node depends_only_on_test, it will be rewired to a control input that is not the
+        // correct test. As a result, it must be pinned otherwise it can be incorrectly rewired to
+        // a dominating test equivalent to the new control.
         Node* pinned_clone = use->pin_node_under_control();
         pinned_clone->set_req(0, phi);
         register_new_node_with_ctrl_of(pinned_clone, use);
