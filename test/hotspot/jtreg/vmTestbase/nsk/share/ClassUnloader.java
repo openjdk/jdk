@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,14 @@ import java.util.*;
 import nsk.share.gc.gp.*;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * The <code>ClassUnloader</code> class allows to force VM to unload class(es)
- * using memory stressing technique.
+ * using WhiteBox.fullGC technique.
  *
- * <p>The method <code>unloadClass()</code> is provided which eats memory
- * to enforce GC to cleanup the heap. So, if all references to a class
+ * <p>The method <code>unloadClass()</code> is provided which calls
+ * WhiteBox.fullGC to cleanup the heap. So, if all references to a class
  * and its loader are canceled, this may result in unloading the class.
  *
  * <p>ClassUnloader mainly intends to unload a class which was loaded
@@ -228,24 +229,24 @@ public class ClassUnloader {
 
     /**
      * Forces GC to unload previously loaded classes by cleaning all references
-     * to class loader with its loaded classes and eating memory.
+     * to class loader with its loaded classes.
      *
      * @return  <i>true</i> if classes unloading has been detected
              or <i>false</i> otherwise
      *
      * @throws  Failure if exception other than OutOfMemoryError
-     *           is thrown while eating memory
+     *           is thrown while triggering full GC
      *
-     * @see #eatMemory()
+     * @see WhiteBox.getWhiteBox().fullGC()
      */
-    public boolean unloadClass(ExecutionController stresser) {
+    public boolean unloadClass() {
 
         // free references to class and class loader to be able for collecting by GC
         classObjects.removeAllElements();
         customClassLoader = null;
 
-        // force class unloading by eating memory pool
-        eatMemory(stresser);
+        // force class unloading by triggering full GC
+        WhiteBox.getWhiteBox().fullGC();
 
         // force GC to unload marked class loader and its classes
         if (isClassLoaderReclaimed()) {
@@ -255,35 +256,5 @@ public class ClassUnloader {
 
         // class loader has not been reclaimed
         return false;
-    }
-
-    public boolean unloadClass() {
-        Stresser stresser = new Stresser() {
-
-            @Override
-            public boolean continueExecution() {
-                return true;
-            }
-
-        };
-        return unloadClass(stresser);
-    }
-
-     // Stresses memory by allocating arrays of bytes.
-   public static void eatMemory(ExecutionController stresser) {
-       GarbageUtils.eatMemory(stresser, 50, 1024, 2);
-    }
-
-     // Stresses memory by allocating arrays of bytes.
-    public static void eatMemory() {
-        Stresser stresser = new Stresser() {
-
-            @Override
-            public boolean continueExecution() {
-                return true;
-            }
-
-        };
-        eatMemory(stresser);
     }
 }
