@@ -696,6 +696,25 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
   Node*         base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);
   AllocateNode* alloc  = AllocateNode::Ideal_allocation(base);
 
+  const TypePtr* adr_type = this->adr_type();
+  if (adr_type == nullptr) {
+    // This means the access is dead
+    return phase->C->top();
+  } else if (adr_type->base() == TypePtr::AnyPtr) {
+    // Compile::get_alias_index will complain with these accesses
+    if (adr_type->ptr() == TypePtr::Null) {
+      // Access to null cannot happen, this means the access must be in a dead path
+      return phase->C->top();
+    } else {
+      // Give up on a very wide access
+      return nullptr;
+    }
+  }
+
+  int alias_idx = phase->C->get_alias_index(adr_type);
+  assert(alias_idx != Compile::AliasIdxTop, "must not be a dead node");
+  assert(alias_idx != Compile::AliasIdxBot || !phase->C->do_aliasing(), "must not be a very wide access");
+
   if (offset == Type::OffsetBot)
     return nullptr;            // cannot unalias unless there are precise offsets
 
@@ -819,7 +838,6 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
         // The bases are provably independent: Either they are
         // manifestly distinct allocations, or else the control
         // of this load dominates the store's allocation.
-        int alias_idx = phase->C->get_alias_index(adr_type());
         if (alias_idx == Compile::AliasIdxRaw) {
           mem = st_alloc->in(TypeFunc::Memory);
         } else {
@@ -842,7 +860,6 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       // Found an arraycopy that may affect that load
       return mem;
     } else if (mem->is_MergeMem()) {
-      int alias_idx = phase->C->get_alias_index(adr_type());
       mem = mem->as_MergeMem()->memory_at(alias_idx);
       continue;
     } else if (mem->is_Proj() && mem->in(0)->is_Call()) {
@@ -2188,7 +2205,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   const TypePtr *addr_t = phase->type(address)->isa_ptr();
 
-  if (can_reshape && (addr_t != nullptr)) {
+  if (addr_t != nullptr) {
     // try to optimize our memory input
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
@@ -2221,7 +2238,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Is there a dominating load that loads the same value?  Leave
   // anything that is not a load of a field/array element (like
   // barriers etc.) alone
-  if (in(0) != nullptr && !adr_type()->isa_rawptr() && can_reshape) {
+  if (in(0) != nullptr && !adr_type()->isa_rawptr()) {
     for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
       Node *use = mem->fast_out(i);
       if (use != this &&
@@ -2253,8 +2270,11 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // anti-dependence checks to ask the same Oracle.  Right now, that Oracle is
   // the alias index stuff.  So instead, peek through Stores and IFF we can
   // fold up, do so.
+  // This performs complex analysis that requires a complete graph.
+  assert(can_reshape, "should be in IGVN");
   Node* prev_mem = find_previous_store(phase);
   if (prev_mem != nullptr && prev_mem->is_top()) {
+    // find_previous_store returns top when the access is dead
     return prev_mem;
   }
   if (prev_mem != nullptr) {
@@ -3857,6 +3877,7 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       // the store may also apply to zero-bits in an earlier object
       Node* prev_mem = find_previous_store(phase);
       if (prev_mem != nullptr && prev_mem->is_top()) {
+        // find_previous_store returns top when the access is dead
         return prev_mem;
       }
       // Steps (a), (b):  Walk past independent stores to find an exact match.
