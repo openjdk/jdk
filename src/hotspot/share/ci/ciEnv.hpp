@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,12 @@ private:
   }
   ciObjArrayKlass* get_obj_array_klass(Klass* o) {
     if (o == nullptr) return nullptr;
+    assert(o->is_objArray_klass() && !o->is_refArray_klass(), "must be exact");
     return get_metadata(o)->as_obj_array_klass();
+  }
+  ciRefArrayKlass* get_ref_array_klass(Klass* o) {
+    if (o == nullptr) return nullptr;
+    return get_metadata(o)->as_ref_array_klass();
   }
   ciTypeArrayKlass* get_type_array_klass(Klass* o) {
     if (o == nullptr) return nullptr;

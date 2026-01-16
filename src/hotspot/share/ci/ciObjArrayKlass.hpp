@@ -26,6 +26,7 @@
 #define SHARE_CI_CIOBJARRAYKLASS_HPP
 
 #include "ci/ciArrayKlass.hpp"
+#include "oops/objArrayKlass.hpp"
 
 // ciObjArrayKlass
 //
@@ -46,10 +47,10 @@ protected:
                   int dimension);
 
   ObjArrayKlass* get_ObjArrayKlass() {
-    return (ObjArrayKlass*)get_Klass();
+    return ObjArrayKlass::cast(get_Klass());
   }
 
-  static ciArrayKlass* make_impl(ciKlass* element_klass, bool refined_type = false);
+  static ciObjArrayKlass* make_impl(ciKlass* element_klass, bool refined_type = false);
   static ciSymbol* construct_array_name(ciSymbol* element_name,
                                         int       dimension);
 
@@ -68,7 +69,7 @@ public:
   // What kind of ciObject is this?
   bool is_obj_array_klass() const { return true; }
 
-  static ciArrayKlass* make(ciKlass* element_klass, bool refined_type = true);
+  static ciObjArrayKlass* make(ciKlass* element_klass, bool refined_type = true);
   static ciArrayKlass* make(ciKlass* element_klass, int dims);
 
   virtual ciKlass* exact_klass();

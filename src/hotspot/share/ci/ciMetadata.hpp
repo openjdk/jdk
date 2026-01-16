@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ class ciMetadata: public ciBaseObject {
   virtual bool is_instance_klass() const    { return false; }
   virtual bool is_array_klass() const       { return false; }
   virtual bool is_obj_array_klass() const   { return false; }
+  virtual bool is_ref_array_klass() const   { return false; }
   virtual bool is_type_array_klass() const  { return false; }
   virtual void dump_replay_data(outputStream* st) { /* do nothing */ }
 
@@ -95,6 +96,10 @@ class ciMetadata: public ciBaseObject {
   ciObjArrayKlass*         as_obj_array_klass() {
     assert(is_obj_array_klass(), "bad cast");
     return (ciObjArrayKlass*)this;
+  }
+  ciRefArrayKlass*         as_ref_array_klass() {
+    assert(is_ref_array_klass(), "bad cast");
+    return (ciRefArrayKlass*)this;
   }
   ciTypeArrayKlass*        as_type_array_klass() {
     assert(is_type_array_klass(), "bad cast");
