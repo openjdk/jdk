@@ -677,7 +677,6 @@ void G1ConcurrentMark::print_and_reset_taskqueue_stats() {
 }
 #endif
 
-
 void G1ConcurrentMark::reset_at_marking_complete() {
   TASKQUEUE_STATS_ONLY(print_and_reset_taskqueue_stats());
   // We set the global marking state to some default values when we're
