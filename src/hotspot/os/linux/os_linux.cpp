@@ -4883,13 +4883,13 @@ int os::open(const char *path, int oflag, int mode) {
 
   int fd = ::open(path, oflag, mode);
   // No further checking is needed if open() returned an error or
-  // access mode is not read only
+  // access mode is not read only.
   if (fd == -1 || (oflag & O_ACCMODE) != O_RDONLY) {
     return fd;
   }
 
   // If the open succeeded and is read only, the file might be a directory
-  // which the JVM don't allow to be read
+  // which the JVM doesn't allow to be read.
   {
     struct stat buf;
     int ret = ::fstat(fd, &buf);
