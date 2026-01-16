@@ -37,6 +37,7 @@ import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERRO
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.forMessageWithOptionValueAndName;
 import static jdk.jpackage.internal.cli.StandardValueConverter.addLauncherShortcutConv;
 import static jdk.jpackage.internal.cli.StandardValueConverter.booleanConv;
+import static jdk.jpackage.internal.cli.StandardValueConverter.explodedPathConverter;
 import static jdk.jpackage.internal.cli.StandardValueConverter.identityConv;
 import static jdk.jpackage.internal.cli.StandardValueConverter.mainLauncherShortcutConv;
 import static jdk.jpackage.internal.cli.StandardValueConverter.pathConv;
@@ -44,11 +45,13 @@ import static jdk.jpackage.internal.cli.StandardValueConverter.uuidConv;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
@@ -61,7 +64,7 @@ import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
-import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.SetBuilder;
 
@@ -120,9 +123,12 @@ public final class StandardOption {
                 });
             })).create();
 
-    public static final OptionValue<Path> INPUT = directoryOption("input").addAliases("i")
+    public static final OptionValue<? extends Collection<RootedPath>> INPUT = directoryOption("input").addAliases("i")
             .outOfScope(NOT_BUILDING_APP_IMAGE)
-            .create();
+            .map(explodedPathOptionMapper(explodedPathConverter().create()))
+            .create(optionValueBuilder -> {
+                return optionValueBuilder.to(List::of).create();
+            });
 
     public static final OptionValue<Path> DEST = directoryOption("dest").addAliases("d")
             .valuePattern("destination path")
@@ -193,16 +199,17 @@ public final class StandardOption {
             .inScope(LauncherProperty.VALUE)
             .createArray(toList());
 
-    public static final OptionValue<List<Path>> APP_CONTENT = pathOption("app-content")
+    public static final OptionValue<List<Collection<RootedPath>>> APP_CONTENT = existingPathOption("app-content")
             .tokenizer(",")
             .valuePattern("additional content")
             .outOfScope(NOT_BUILDING_APP_IMAGE)
+            .map(explodedPathOptionMapper(explodedPathConverter().withPathFileName().create()))
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.MACOS) {
                     b.description("help.option.app-content" + resourceKeySuffix(context.os()));
                 }
             }))
-            .createArray(toList());
+            .createArray(toExplodedPathList());
 
     static final OptionValue<Path[]> FILE_ASSOCIATIONS_INTERNAL = fileOption("file-associations")
             .tokenizer(pathSeparator())
@@ -324,10 +331,11 @@ public final class StandardOption {
     // MacOS-specific
     //
 
-    public static final OptionValue<List<Path>> MAC_DMG_CONTENT = pathOption("mac-dmg-content")
+    public static final OptionValue<List<Collection<RootedPath>>> MAC_DMG_CONTENT = existingPathOption("mac-dmg-content")
             .valuePattern("additional content path")
             .tokenizer(",")
-            .createArray(toList());
+            .map(explodedPathOptionMapper(explodedPathConverter().withPathFileName().create()))
+            .createArray(toExplodedPathList());
 
     public static final OptionValue<Boolean> MAC_SIGN = booleanOption("mac-sign").scope(MAC_SIGNING).addAliases("s").create();
 
@@ -513,10 +521,55 @@ public final class StandardOption {
     static Consumer<OptionSpecBuilder<Path>> directoryOptionMutator() {
         return builder -> {
             builder.mutate(pathOptionMutator())
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.asFileSource().ifPresent(propertyFile -> {
+                    b.validatorExceptionFactory(forMessageWithOptionValueAndName(propertyFile));
+                    b.validatorExceptionFormatString("error.properties-parameter-not-directory");
+                });
+            }))
             .validator(StandardValidator.IS_DIRECTORY)
             .validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
             .validatorExceptionFormatString("error.parameter-not-directory");
         };
+    }
+
+    static Consumer<OptionSpecBuilder<Path>> existingPathOptionMutator() {
+
+        return builder -> {
+            builder.mutate(pathOptionMutator())
+            .validator(createExistingPathValidator(Validator.<Path, RuntimeException>build().exceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME), true))
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.asFileSource().ifPresent(propertyFile -> {
+                    var validatorBuilder = Validator.<Path, RuntimeException>build();
+                    validatorBuilder.exceptionFactory(forMessageWithOptionValueAndName(propertyFile));
+                    b.validator(createExistingPathValidator(validatorBuilder, false));
+                });
+            }));
+        };
+    }
+
+    private static Validator<Path, RuntimeException> createExistingPathValidator(Validator.Builder<Path, RuntimeException> builder, boolean cmdline) {
+
+        if (cmdline) {
+            builder.formatString("error.parameter-not-directory");
+        } else {
+            builder.formatString("error.properties-parameter-not-directory");
+        }
+
+        var isDirectoryValidator = builder.predicate(StandardValidator.IS_DIRECTORY).create();
+
+        if (cmdline) {
+            builder.formatString("error.parameter-not-file");
+        } else {
+            builder.formatString("error.properties-parameter-not-file");
+        }
+
+        var isFileValidator = builder.predicate(StandardValidator.IS_FILE_OR_SYMLINK).create();
+
+        @SuppressWarnings("unchecked")
+        var validator = (Validator<Path, RuntimeException>)isDirectoryValidator.or(isFileValidator);
+
+        return validator;
     }
 
     static Consumer<OptionSpecBuilder<Boolean>> booleanOptionMutator() {
@@ -546,6 +599,30 @@ public final class StandardOption {
         };
     }
 
+    static Function<OptionSpecBuilder<Path>, OptionSpecBuilder<RootedPath[]>> explodedPathOptionMapper(ValueConverter<Path, RootedPath[]> conv) {
+        Objects.requireNonNull(conv);
+        return builder -> {
+            return builder.map(conv)
+                    .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
+                    .converterExceptionFormatString("error.path-parameter-ioexception")
+                    // Add empty mutator to OptionSpecMapperOptionScope to make
+                    // mapped option spec have `RootedPath[]` type.
+                    // Otherwise, it will have `Path` type.
+                    .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                    }));
+        };
+    }
+
+    private static <T> Function<OptionValue.Builder<RootedPath[][]>, OptionValue<List<Collection<RootedPath>>>> toExplodedPathList() {
+        return builder -> {
+            return builder.to((RootedPath[][] v) -> {
+                return Stream.of(v).map(arr -> {
+                    return (Collection<RootedPath>)List.of(arr);
+                }).toList();
+            }).create();
+        };
+    }
+
     private static <T> OptionSpecBuilder<T> option(String name, Class<? extends T> valueType) {
         return OptionSpecBuilder.<T>create(valueType)
                 .name(Objects.requireNonNull(name))
@@ -572,6 +649,10 @@ public final class StandardOption {
 
     private static OptionSpecBuilder<Path> pathOption(String name) {
         return option(name, Path.class).mutate(pathOptionMutator());
+    }
+
+    private static OptionSpecBuilder<Path> existingPathOption(String name) {
+        return option(name, Path.class).mutate(existingPathOptionMutator());
     }
 
     private static OptionSpecBuilder<Path> fileOption(String name) {
@@ -624,8 +705,7 @@ public final class StandardOption {
     }
 
     private static OptionValue<AdditionalLauncher[]> createAddLauncherOption(String name) {
-        OptionValueConverter<Path> propertyFileConverter = fileOption(name)
-                .create().getSpec().converter().orElseThrow();
+        var propertyFileSpec = fileOption(name).create().getSpec();
 
         return option(name, AdditionalLauncher.class)
                 .valuePattern("<launcher name>=<file path>")
@@ -657,7 +737,7 @@ public final class StandardOption {
 
                     final Path propertyFile;
                     try {
-                        propertyFile = propertyFileConverter.convert(OptionName.of(name),
+                        propertyFile = propertyFileSpec.convert(OptionName.of(name),
                                 StringToken.of(value, components[1])).orElseThrow();
                     } catch (JPackageException ex) {
                         throw new AddLauncherInvalidPropertyFileException(I18N.format(

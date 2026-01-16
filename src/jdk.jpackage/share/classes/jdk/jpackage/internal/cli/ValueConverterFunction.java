@@ -22,26 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal.cli;
 
-import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Optional;
-import jdk.jpackage.internal.util.RootedPath;
-
-public interface MacDmgPackageMixin {
-
-    Optional<Path> icon();
+@FunctionalInterface
+interface ValueConverterFunction<T, U> {
 
     /**
-     * Returns the source paths that should be copied into the top-level directory of a DMG package.
-     * <p>
-     * Each item in the list can be a directory or a file.
+     * Converts value of one type into another.
      *
-     * @return the source paths of additional top-level content for DMG package
+     * @param value the value to convert
+     * @return the converted value
+     * @throws IllegalArgumentException if the given value can not be converted to
+     *                                  an object of type {@link U}
+     * @throws Exception                if internal converter error occurs
      */
-    Collection<RootedPath> dmgRootDirSources();
-
-    record Stub(Optional<Path> icon, Collection<RootedPath> dmgRootDirSources) implements MacDmgPackageMixin {
-    }
+    U convert(T value) throws Exception, IllegalArgumentException;
 }
