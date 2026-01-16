@@ -69,8 +69,9 @@ public class ArraysFill {
     }
 
     @Benchmark
-    public void testCharFill() {
+    public char testCharFill() {
         Arrays.fill(testCharArray, (char) -1);
+        return (char) (testCharArray[0] + testCharArray[size - 1]);
     }
 
     @Benchmark
@@ -92,17 +93,20 @@ public class ArraysFill {
     }
 
     @Benchmark
-    public void testLongFill() {
+    public long testLongFill() {
         Arrays.fill(testLongArray, -1);
+        return testLongArray[0] + testLongArray[size - 1];
     }
 
     @Benchmark
-    public void testFloatFill() {
+    public float testFloatFill() {
         Arrays.fill(testFloatArray, (float) -1.0);
+        return testFloatArray[0] + testFloatArray[size - 1];
     }
 
     @Benchmark
-    public void testDoubleFill() {
+    public double testDoubleFill() {
         Arrays.fill(testDoubleArray, -1.0);
+        return testDoubleArray[0] + testDoubleArray[size - 1];
     }
 }
