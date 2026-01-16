@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,10 +278,54 @@ public abstract class HttpServer {
      * <p>The class overview describes how incoming request URIs are
      * <a href="#mapping_description">mapped</a> to HttpContext instances.
      *
-     * @apiNote The path should generally, but is not required to, end with '/'.
-     * If the path does not end with '/', eg such as with {@code "/foo"} then
-     * this would match requests with a path of {@code "/foobar"} or
-     * {@code "/foo/bar"}.
+     * @apiNote
+     * The path should generally, but is not required to, end with {@code /}.
+     * If the path does not end with {@code /}, e.g., such as with {@code /foo},
+     * then this would match requests with a path of {@code /foobar} or
+     * {@code /foo/bar}.
+     *
+     * @implNote
+     * The JDK built-in implementation performs <em>strict</em> path prefix
+     * matching such that matching file names must have an exact match, not
+     * partial. Consider following examples:
+     *
+     * <table>
+     * <thead>
+     *   <tr>
+     *   <th rowspan="2">Context path</th>
+     *   <th colspan="4">Request path</th>
+     * </tr>
+     * <tr>
+     *     <th>/foo</th>
+     *     <th>/foo/</th>
+     *     <th>/foo/bar</th>
+     *     <th>/foobar</th>
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr>
+     *   <td>/</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     * </tr>
+     * <tr>
+     *   <td>/foo</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>N</td>
+     * </tr>
+     * <tr>
+     *   <td>/foo/</td>
+     *   <td>N</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>N</td>
+     * </tr>
+     * </tbody>
+     * </table>
      *
      * @param path the root URI path to associate the context with
      * @param handler the handler to invoke for incoming requests
@@ -308,10 +352,54 @@ public abstract class HttpServer {
      * <p>The class overview describes how incoming request URIs are
      * <a href="#mapping_description">mapped</a> to {@code HttpContext} instances.
      *
-     * @apiNote The path should generally, but is not required to, end with '/'.
-     * If the path does not end with '/', eg such as with {@code "/foo"} then
-     * this would match requests with a path of {@code "/foobar"} or
-     * {@code "/foo/bar"}.
+     * @apiNote
+     * The path should generally, but is not required to, end with {@code /}.
+     * If the path does not end with {@code /}, e.g., such as with {@code /foo},
+     * then this would match requests with a path of {@code /foobar} or
+     * {@code /foo/bar}.
+     *
+     * @implNote
+     * The JDK built-in implementation performs <em>strict</em> path prefix
+     * matching such that matching file names must have an exact match, not
+     * partial. Consider following examples:
+     *
+     * <table>
+     * <thead>
+     *   <tr>
+     *   <th rowspan="2">Context path</th>
+     *   <th colspan="4">Request path</th>
+     * </tr>
+     * <tr>
+     *     <th>/foo</th>
+     *     <th>/foo/</th>
+     *     <th>/foo/bar</th>
+     *     <th>/foobar</th>
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr>
+     *   <td>/</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     * </tr>
+     * <tr>
+     *   <td>/foo</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>N</td>
+     * </tr>
+     * <tr>
+     *   <td>/foo/</td>
+     *   <td>N</td>
+     *   <td>Y</td>
+     *   <td>Y</td>
+     *   <td>N</td>
+     * </tr>
+     * </tbody>
+     * </table>
      *
      * @param path the root URI path to associate the context with
      * @throws IllegalArgumentException if path is invalid, or if a context
