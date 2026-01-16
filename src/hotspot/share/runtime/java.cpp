@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/task.hpp"
@@ -465,10 +466,7 @@ void before_exit(JavaThread* thread, bool halt) {
     event.commit();
   }
 
-  // 2nd argument (emit_event_shutdown) should be set to false
-  // because EventShutdown would be emitted at Threads::destroy_vm().
-  // (one of the callers of before_exit())
-  JFR_ONLY(Jfr::on_vm_shutdown(true, false, halt);)
+  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
@@ -476,7 +474,18 @@ void before_exit(JavaThread* thread, bool halt) {
 
   NativeHeapTrimmer::cleanup();
 
-  // Run before exit and then stop concurrent GC threads
+  if (JvmtiExport::should_post_thread_life()) {
+    JvmtiExport::post_thread_end(thread);
+  }
+
+  // Always call even when there are not JVMTI environments yet, since environments
+  // may be attached late and JVMTI must track phases of VM execution.
+  JvmtiExport::post_vm_death();
+  JvmtiAgentList::unload_agents();
+
+  // No user code can be executed in the current thread after this point.
+
+  // Run before exit and then stop concurrent GC threads.
   Universe::before_exit();
 
   if (PrintBytecodeHistogram) {
@@ -491,15 +500,6 @@ void before_exit(JavaThread* thread, bool halt) {
     MemMapPrinter::print_all_mappings(tty);
   }
 #endif
-
-  if (JvmtiExport::should_post_thread_life()) {
-    JvmtiExport::post_thread_end(thread);
-  }
-
-  // Always call even when there are not JVMTI environments yet, since environments
-  // may be attached late and JVMTI must track phases of VM execution
-  JvmtiExport::post_vm_death();
-  JvmtiAgentList::unload_agents();
 
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
@@ -762,4 +762,24 @@ void JDK_Version::to_string(char* buffer, size_t buflen) const {
       ss.print("+%d", _build);
     }
   }
+}
+
+void JDK_Version::set_java_version(const char* version) {
+  _java_version = os::strdup(version);
+}
+
+void JDK_Version::set_runtime_name(const char* name) {
+  _runtime_name = os::strdup(name);
+}
+
+void JDK_Version::set_runtime_version(const char* version) {
+  _runtime_version = os::strdup(version);
+}
+
+void JDK_Version::set_runtime_vendor_version(const char* vendor_version) {
+  _runtime_vendor_version = os::strdup(vendor_version);
+}
+
+void JDK_Version::set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url) {
+  _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url);
 }

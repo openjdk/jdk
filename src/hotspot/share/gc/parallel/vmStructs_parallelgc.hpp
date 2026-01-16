@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,8 @@
   nonstatic_field(PSOldGen,                    _max_gen_size,                                 const size_t)                          \
                                                                                                                                      \
                                                                                                                                      \
-     static_field(ParallelScavengeHeap,        _young_gen,                                    PSYoungGen*)                           \
-     static_field(ParallelScavengeHeap,        _old_gen,                                      PSOldGen*)                             \
+  nonstatic_field(ParallelScavengeHeap,        _young_gen,                                    PSYoungGen*)                           \
+  nonstatic_field(ParallelScavengeHeap,        _old_gen,                                      PSOldGen*)                             \
                                                                                                                                      \
 
 #define VM_TYPES_PARALLELGC(declare_type,                                 \

@@ -75,6 +75,7 @@
   do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException                ) \
   do_klass(Reference_klass,                             java_lang_ref_Reference                               ) \
   do_klass(IllegalCallerException_klass,                java_lang_IllegalCallerException                      ) \
+  do_klass(PreemptedException_klass,                    jdk_internal_vm_PreemptedException                    ) \
                                                                                                                 \
   /* ref klasses and set reference types */                                                                     \
   do_klass(SoftReference_klass,                         java_lang_ref_SoftReference                           ) \
@@ -188,6 +189,9 @@
                                                                                                                 \
   /* GC support */                                                                                              \
   do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
+                                                                                                                \
+  /* Scoped Values */                                                                                           \
+  do_klass(ScopedValue_Carrier_klass,                   java_lang_ScopedValue_Carrier                         ) \
                                                                                                                 \
   /*end*/
 

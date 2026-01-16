@@ -29,22 +29,96 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The {@link CodeFrame} represents a frame (i.e. scope) of code, appending {@link Code} to the {@code 'codeList'}
+ * The {@link CodeFrame} represents a frame (i.e. scope) of generated code by appending {@link Code} to the {@link #codeList}
  * as {@link Token}s are rendered, and adding names to the {@link NameSet}s with {@link Template#addStructuralName}/
- * {@link Template#addDataName}. {@link Hook}s can be added to a frame, which allows code to be inserted at that
- * location later. When a {@link Hook} is {@link Hook#anchor}ed, it separates the Template into an outer and inner
- * {@link CodeFrame}, ensuring that names that are added inside the inner frame are only available inside that frame.
+ * {@link Template#addDataName}. {@link Hook}s can be added to a code frame, which allows code to be inserted at that
+ * location later.
  *
  * <p>
- * On the other hand, each {@link TemplateFrame} represents the frame (or scope) of exactly one use of a
- * Template.
+ * The {@link CodeFrame} thus implements the {@link Name} non-transparency aspect of {@link ScopeToken}.
  *
  * <p>
- * For simple Template nesting, the {@link CodeFrame}s and {@link TemplateFrame}s overlap exactly.
- * However, when using {@link Hook#insert}, we simply nest {@link TemplateFrame}s, going further "in",
- * but we jump to an outer {@link CodeFrame}, ensuring that we insert {@link Code} at the outer frame,
- * and operating on the names of the outer frame. Once the {@link Hook#insert}ion is complete, we jump
- * back to the caller {@link TemplateFrame} and {@link CodeFrame}.
+ * The {@link CodeFrame}s are nested relative to the order of the final rendered code. This can
+ * diverge from the nesting order of the {@link Template} when using {@link Hook#insert}, where
+ * the execution jumps from the current (caller) {@link CodeFrame} scope to the scope of the
+ * {@link Hook#anchor}. This ensures that the {@link Name}s of the anchor scope are accessed,
+ * and not the ones from the caller scope. Once the {@link Hook#insert}ion is complete, we
+ * jump back to the caller {@link CodeFrame}.
+ *
+ * <p>
+ * Note, that {@link CodeFrame}s and {@link TemplateFrame}s often go together. But they do diverge when
+ * we call {@link Hook#insert}. On the {@link CodeFrame} side, the inserted scope is nested in the anchoring
+ * scope, so that the inserted scope has access to the Names of the anchoring scope, and not the caller
+ * scope. But the {@link TemplateFrame} of the inserted scope is nested in the caller scope, so
+ * that the inserted scope has access to hashtag replacements of the caller scope, and not the
+ * anchoring scope.
+ */
+
+/*
+ * Below, we look at an example, and show the use of CodeFrames (c) and TemplateFrames (t).
+ *
+ * Explanations:
+ *  - Generally, every scope has a CodeFrame and a TemplateFrame. There can be multiple
+ *    scopes inside a Template, and so there can be multiple CodeFrames and TemplateFrames.
+ *    In the drawing below, we draw the frames vertically, and give each a unique id.
+ *  - When we nest scopes inside scopes, we create a new CodeFrame and a new TemplateFrame,
+ *    and so they grow the same nested structure. Example: t3 is nested inside t2 and
+ *    c3 is nested inside c2b.
+ *  - The exception to this:
+ *    - At a hook.anchor, there are two CodeFrames. The first one (e.g. c2a) we call the
+ *      hook CodeFrame, it is kept empty until we insert code to the hook. The second
+ *      (e.g. c2b) we call the inner CodeFrame of the anchoring, into which we keep
+ *      generating the code that is inside the scope of the hook.anchor.
+ *    - At a hook.insert, the TemplateFrame (e.g. t4) is nested into the caller (e.g. t3),
+ *      while the CodeFrame (e.g. c4) is nested into the anchoring CodeFrame (e.g. c2a).
+ *
+ * Template(
+ *   t1 c1
+ *   t1 c1
+ *   t1 c1  Anchoring Scope
+ *   t1 c1  hook.anchor(scope(
+ *   t1 c1  t2 c2a
+ *   t1 c1  t2 c2a <------ CodeFrame nesting--------+
+ *   t1 c1  t2 c2a         with generated code      |
+ *   t1 c1  t2             and Names                |
+ *   t1 c1  t2  ^                                   |
+ *   t1 c1  t2  +- Two CodeFramees                  |
+ *   t1 c1  t2  v                                   |
+ *   t1 c1  t2                                      |
+ *   t1 c1  t2 c2b                                  |
+ *   t1 c1  t2 c2b                                  |
+ *   t1 c1  t2 c2b     Caller Scope                 |
+ *   t1 c1  t2 c2b ... scope(                       |
+ *   t1 c1  t2 c2b ... t3 c3                        |     Insertion Scope
+ *   t1 c1  t2 c2b ... t3 c3                        |     hook.insert(transparentScope(
+ *   t1 c1  t2 c2b ... t3 c3                        |     t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                        +---- t4 ----c4
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3 <-- TemplateFrame nesting ---t4     c4
+ *   t1 c1  t2 c2b ... t3 c3     with hashtag             t4     c4                            // t: Concerns Template Frame
+ *   t1 c1  t2 c2b ... t3 c3     and setFuelCost          t4     c4                            // c: Concerns Code Frame
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 "use hashtag #x"           -> t: hashtag queried in Insertion (t4) and Caller Scope (t3)
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                               c: code added to Anchoring Scope (c2a)
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 let("x", 42)               -> t: hashtag definition escapes to Caller Scope (t3) because
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  Insertion Scope is transparent
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 dataNames(...)...sample()  -> c: sample from Insertion (c4) and Anchoring Scope (c2a)
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  (CodeFrame nesting: c2a -> c4)
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 addDataName(...)           -> c: names escape to the Caller Scope (c3) because
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  Insertion Scope is transparent
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                              ))
+ *   t1 c1  t2 c2b ... t3 c3
+ *   t1 c1  t2 c2b ... t3 c3
+ *   t1 c1  t2 c2b ... )
+ *   t1 c1  t2 c2b
+ *   t1 c1  t2 c2b
+ *   t1 c1  ))
+ *   t1 c1
+ *   t1 c1
+ * )
+ *
  */
 class CodeFrame {
     public final CodeFrame parent;
@@ -78,25 +152,16 @@ class CodeFrame {
     }
 
     /**
-     * Creates a normal frame, which has a {@link #parent} and which defines an inner
-     * {@link NameSet}, for the names that are generated inside this frame. Once this
-     * frame is exited, the name from inside this frame are not available anymore.
+     * Creates a normal frame, which has a {@link #parent}. It can either be
+     * transparent for names, meaning that names are added and accessed to and
+     * from an outer frame. Names that are added in a transparent frame are
+     * still available in the outer frames, as far out as the next non-transparent
+     * frame. If a frame is non-transparent, this frame defines an inner
+     * {@link NameSet}, for the names that are generated inside this frame. Once
+     * this frame is exited, the names from inside this frame are not available.
      */
-    public static CodeFrame make(CodeFrame parent) {
-        return new CodeFrame(parent, false);
-    }
-
-    /**
-     * Creates a special frame, which has a {@link #parent} but uses the {@link NameSet}
-     * from the parent frame, allowing {@link Template#addDataName}/
-     * {@link Template#addStructuralName} to persist in the outer frame when the current frame
-     * is exited. This is necessary for {@link Hook#insert},  where we would possibly want to
-     * make field or variable definitions during the insertion that are not just local to the
-     * insertion but affect the {@link CodeFrame} that we {@link Hook#anchor} earlier and are
-     * now {@link Hook#insert}ing into.
-     */
-    public static CodeFrame makeTransparentForNames(CodeFrame parent) {
-        return new CodeFrame(parent, true);
+    public static CodeFrame make(CodeFrame parent, boolean isTransparentForNames) {
+        return new CodeFrame(parent, isTransparentForNames);
     }
 
     void addString(String s) {

@@ -879,9 +879,7 @@ public class VM {
   }
 
   /** Indicates whether a given program counter is in Java code. This
-      includes but is not spanned by the interpreter and code cache.
-      Only used in the debugging system, for implementing
-      JavaThread.currentFrameGuess() on x86. */
+      includes but is not spanned by the interpreter and code cache. */
   public boolean isJavaPCDbg(Address addr) {
     // FIXME: this is not a complete enough set: must include areas
     // like vtable stubs

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ public class AfterThreadDeathTest extends TestScaffold {
                 println("Ok; got expected IllegalThreadStateException");
                 return;
             } catch (Exception ee) {
+                ee.printStackTrace(System.err);
                 failure("FAILED: Did not get expected"
                       + " IllegalThreadStateException"
                       + " on a StepRequest.enable().  \n"
@@ -132,6 +133,13 @@ public class AfterThreadDeathTest extends TestScaffold {
         targetClass = bpe.location().declaringType();
         mainThread = bpe.thread();
         erm = vm().eventRequestManager();
+
+        /*
+         * The "main" thread will be referenced during the ThreadDeathEvent, which
+         * uses SUSPEND_NONE, so the thread might get gc'd and cause an unexpected
+         * ObjectCollectedException. Disable it from collection to prevent problems.
+         */
+        mainThread.disableCollection();
 
         /*
          * Set event requests

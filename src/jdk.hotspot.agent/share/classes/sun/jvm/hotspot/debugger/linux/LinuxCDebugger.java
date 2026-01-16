@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,12 +30,10 @@ import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.riscv64.*;
 import sun.jvm.hotspot.debugger.ppc64.*;
-import sun.jvm.hotspot.debugger.linux.x86.*;
 import sun.jvm.hotspot.debugger.linux.amd64.*;
 import sun.jvm.hotspot.debugger.linux.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.aarch64.*;
@@ -81,18 +79,13 @@ class LinuxCDebugger implements CDebugger {
 
   public CFrame topFrameForThread(ThreadProxy thread) throws DebuggerException {
     String cpu = dbg.getCPU();
-    if (cpu.equals("x86")) {
-       X86ThreadContext context = (X86ThreadContext) thread.getContext();
-       Address ebp = context.getRegisterAsAddress(X86ThreadContext.EBP);
-       if (ebp == null) return null;
-       Address pc  = context.getRegisterAsAddress(X86ThreadContext.EIP);
-       if (pc == null) return null;
-       return new LinuxX86CFrame(dbg, ebp, pc);
-    } else if (cpu.equals("amd64")) {
+    if (cpu.equals("amd64")) {
        AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
+       Address sp  = context.getRegisterAsAddress(AMD64ThreadContext.RSP);
+       if (sp == null) return null;
        Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
        if (pc == null) return null;
-       return LinuxAMD64CFrame.getTopFrame(dbg, pc, context);
+       return LinuxAMD64CFrame.getTopFrame(dbg, sp, pc, context);
     }  else if (cpu.equals("ppc64")) {
         PPC64ThreadContext context = (PPC64ThreadContext) thread.getContext();
         Address sp = context.getRegisterAsAddress(PPC64ThreadContext.SP);
@@ -102,18 +95,22 @@ class LinuxCDebugger implements CDebugger {
         return new LinuxPPC64CFrame(dbg, sp, pc, LinuxDebuggerLocal.getAddressSize());
     } else if (cpu.equals("aarch64")) {
        AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
+       Address sp = context.getRegisterAsAddress(AARCH64ThreadContext.SP);
+       if (sp == null) return null;
        Address fp = context.getRegisterAsAddress(AARCH64ThreadContext.FP);
        if (fp == null) return null;
        Address pc  = context.getRegisterAsAddress(AARCH64ThreadContext.PC);
        if (pc == null) return null;
-       return new LinuxAARCH64CFrame(dbg, fp, pc);
+       return new LinuxAARCH64CFrame(dbg, sp, fp, pc);
     } else if (cpu.equals("riscv64")) {
        RISCV64ThreadContext context = (RISCV64ThreadContext) thread.getContext();
+       Address sp = context.getRegisterAsAddress(RISCV64ThreadContext.SP);
+       if (sp == null) return null;
        Address fp = context.getRegisterAsAddress(RISCV64ThreadContext.FP);
        if (fp == null) return null;
        Address pc  = context.getRegisterAsAddress(RISCV64ThreadContext.PC);
        if (pc == null) return null;
-       return new LinuxRISCV64CFrame(dbg, fp, pc);
+       return new LinuxRISCV64CFrame(dbg, sp, fp, pc);
     } else {
        // Runtime exception thrown by LinuxThreadContextFactory if unknown cpu
        ThreadContext context = thread.getContext();

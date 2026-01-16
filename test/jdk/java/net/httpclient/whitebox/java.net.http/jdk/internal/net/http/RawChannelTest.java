@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.internal.net.http;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -43,8 +44,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.atomic.AtomicReference;
+
 import jdk.internal.net.http.websocket.RawChannel;
-import jdk.internal.net.http.websocket.WebSocketRequest;
 import org.testng.annotations.Test;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -57,6 +59,20 @@ import static org.testng.Assert.assertEquals;
  */
 public class RawChannelTest {
 
+    // can't use jdk.test.lib when injected in java.net.httpclient
+    // Seed can be specified on the @run line with -Dseed=<seed>
+    private static class RandomFactory {
+        private static long getSeed() {
+            long seed = Long.getLong("seed", new Random().nextLong());
+            System.out.println("Seed from RandomFactory = "+seed+"L");
+            return seed;
+        }
+        public static Random getRandom() {
+            return new Random(getSeed());
+        }
+    }
+
+    private static final Random RANDOM = RandomFactory.getRandom();
     private final AtomicLong clientWritten = new AtomicLong();
     private final AtomicLong serverWritten = new AtomicLong();
     private final AtomicLong clientRead = new AtomicLong();
@@ -90,7 +106,8 @@ public class RawChannelTest {
             server.setReuseAddress(false);
             server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = server.getLocalPort();
-            new TestServer(server).start();
+            TestServer testServer = new TestServer(server);
+            testServer.start();
 
             final RawChannel chan = channelOf(port);
             print("RawChannel is %s", String.valueOf(chan));
@@ -129,6 +146,7 @@ public class RawChannelTest {
                         } catch (IOException e) {
                             outputCompleted.completeExceptionally(e);
                             e.printStackTrace();
+                            closeChannel(chan);
                         }
                         return;
                     }
@@ -145,6 +163,9 @@ public class RawChannelTest {
                         chan.registerEvent(this);
                         writeStall.countDown(); // signal send buffer is full
                     } catch (IOException e) {
+                        print("OP_WRITE failed: " + e);
+                        outputCompleted.completeExceptionally(e);
+                        closeChannel(chan);
                         throw new UncheckedIOException(e);
                     }
                 }
@@ -168,6 +189,7 @@ public class RawChannelTest {
                             read = chan.read();
                         } catch (IOException e) {
                             inputCompleted.completeExceptionally(e);
+                            closeChannel(chan);
                             e.printStackTrace();
                         }
                         if (read == null) {
@@ -179,7 +201,10 @@ public class RawChannelTest {
                             try {
                                 chan.registerEvent(this);
                             } catch (IOException e) {
-                                e.printStackTrace();
+                                print("OP_READ failed to register event: " + e);
+                                inputCompleted.completeExceptionally(e);
+                                closeChannel(chan);
+                                throw new UncheckedIOException(e);
                             }
                             readStall.countDown();
                             break;
@@ -191,20 +216,32 @@ public class RawChannelTest {
                     print("OP_READ read %s bytes (%s total)", total, clientRead.get());
                 }
             });
+
             CompletableFuture.allOf(outputCompleted,inputCompleted)
                     .whenComplete((r,t) -> {
-                        try {
-                            print("closing channel");
-                            chan.close();
-                        } catch (IOException x) {
-                            x.printStackTrace();
-                        }
+                        closeChannel(chan);
                     });
             exit.await(); // All done, we need to compare results:
             assertEquals(clientRead.get(), serverWritten.get());
             assertEquals(serverRead.get(), clientWritten.get());
+            Throwable serverError = testServer.failed.get();
+            if (serverError != null) {
+                throw new AssertionError("TestServer failed: "
+                        + serverError, serverError);
+            }
         }
     }
+
+    private static void closeChannel(RawChannel chan) {
+        print("closing channel");
+        try {
+            chan.close();
+        } catch (IOException x) {
+            print("Failed to close channel: " + x);
+            x.printStackTrace();
+        }
+    }
+
 
     private static RawChannel channelOf(int port) throws Exception {
         URI uri = URI.create("http://localhost:" + port + "/");
@@ -237,9 +274,22 @@ public class RawChannelTest {
     private class TestServer extends Thread { // Powered by Slowpokes
 
         private final ServerSocket server;
+        private final AtomicReference<Throwable> failed = new AtomicReference<>();
 
         TestServer(ServerSocket server) throws IOException {
             this.server = server;
+        }
+
+        private void fail(Closeable s, String actor, Throwable t) {
+            failed.compareAndSet(null, t);
+            print("Server %s got exception: %s", actor, t);
+            t.printStackTrace();
+            try {
+                s.close();
+            } catch (Exception x) {
+                print("Server %s failed to close socket: %s", actor, t);
+            }
+
         }
 
         @Override
@@ -252,21 +302,23 @@ public class RawChannelTest {
 
                 Thread reader = new Thread(() -> {
                     try {
+                        print("Server reader started");
                         long n = readSlowly(is);
                         print("Server read %s bytes", n);
                         s.shutdownInput();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        fail(s, "reader", e);
                     }
                 });
 
                 Thread writer = new Thread(() -> {
                     try {
+                        print("Server writer started");
                         long n = writeSlowly(os);
                         print("Server written %s bytes", n);
                         s.shutdownOutput();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        fail(s, "writer", e);
                     }
                 });
 
@@ -276,7 +328,7 @@ public class RawChannelTest {
                 reader.join();
                 writer.join();
             } catch (Exception e) {
-                e.printStackTrace();
+                fail(server,"acceptor", e);
             } finally {
                 exit.countDown();
             }
@@ -365,6 +417,8 @@ public class RawChannelTest {
     }
 
     private static byte[] byteArrayOfSize(int bound) {
-        return new byte[new Random().nextInt(1 + bound)];
+        // bound must be > 1; No need to check it,
+        // nextInt will throw IllegalArgumentException if needed
+        return new byte[RANDOM.nextInt(1, bound + 1)];
     }
 }

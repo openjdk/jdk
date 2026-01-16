@@ -27,7 +27,7 @@
  * @summary Tests the java -m jdk.httpserver command with port not specified
  * @modules jdk.httpserver
  * @library /test/lib
- * @run testng/othervm/manual CommandLinePortNotSpecifiedTest
+ * @run junit/othervm/manual CommandLinePortNotSpecifiedTest
  */
 
 import java.io.IOException;
@@ -39,10 +39,11 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class CommandLinePortNotSpecifiedTest {
 
@@ -55,8 +56,8 @@ public class CommandLinePortNotSpecifiedTest {
     static final String TEST_DIR_STR = TEST_DIR.toString();
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
@@ -92,8 +93,8 @@ public class CommandLinePortNotSpecifiedTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    @AfterTest
-    public void teardown() throws IOException {
+    @AfterAll
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

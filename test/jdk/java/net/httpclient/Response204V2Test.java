@@ -76,7 +76,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 
 public class Response204V2Test implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
@@ -284,10 +284,6 @@ public class Response204V2Test implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         // HTTP/2
         HttpTestHandler handler204 = new Handler204();
 

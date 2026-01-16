@@ -64,21 +64,31 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        // while building the interim javac, the ClassReader will produce a warning when loading a class
-        // keeping the constant of a feature that has been integrated or dropped, serves the purpose of muting such warnings.
+        // The JDK build process involves creating an interim javac which is then
+        // used to compile the rest of the JDK. The jdk.internal.javac.PreviewFeature
+        // annotation from the current sources is used when compiling interim javac.
+        // That's because the javac APIs of the current sources may be annotated with
+        // this annotation and they may be using the enum constants of the current sources.
+        // Furthermore, when compiling interim javac, the class files from the bootstrap JDK get
+        // used and those may also contain the PreviewFeature annotation. However, they may be
+        // using the enum constants of the bootstrap JDK's PreviewFeature annotation.
+        // If javac sees an annotation with an unknown enum constant, it produces a warning,
+        // and that in turn fails the build.
+        // So, in the current sources, we need to preserve the PreviewFeature enum constants
+        // for as long as the interim javac build needs it. As a result, we retain PreviewFeature
+        // enum constants for preview features that are present in the bootstrap JDK.
+        // Older constants can be removed.
+        //
+        // For example, Class-File API became final in JDK 24. As soon as JDK 23 was dropped as
+        // the bootstrap JDK, the CLASSFILE_API enum constant became eligible for removal.
 
         //---
-        IMPLICIT_CLASSES, //to be removed when boot JDK is 25
-        SCOPED_VALUES,
-        @JEP(number=505, title="Structured Concurrency", status="Fifth Preview")
+        @JEP(number=525, title="Structured Concurrency", status="Sixth Preview")
         STRUCTURED_CONCURRENCY,
-        CLASSFILE_API,
-        STREAM_GATHERERS,
-        MODULE_IMPORTS, //remove when the boot JDK is JDK 25
-        KEY_DERIVATION, //remove when the boot JDK is JDK 25
-        @JEP(number = 502, title = "Stable Values", status = "Preview")
-        STABLE_VALUES,
-        @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
+        @JEP(number = 526, title = "Lazy Constants", status = "Second Preview")
+        LAZY_CONSTANTS,
+        @JEP(number=524, title="PEM Encodings of Cryptographic Objects",
+            status="Second Preview")
         PEM_API,
         LANGUAGE_MODEL,
         /**

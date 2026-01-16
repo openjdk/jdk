@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,13 +42,18 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
  * @summary tests the order in which the Properties.store() method writes out the properties
  * @bug 8231640 8282023
- * @run testng/othervm PropertiesStoreTest
+ * @run junit/othervm PropertiesStoreTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class PropertiesStoreTest {
 
     private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
@@ -60,7 +62,6 @@ public class PropertiesStoreTest {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN, Locale.US);
     private static final Locale PREV_LOCALE = Locale.getDefault();
 
-    @DataProvider(name = "propsProvider")
     private Object[][] createProps() {
         final Properties simple = new Properties();
         simple.setProperty("1", "one");
@@ -101,7 +102,6 @@ public class PropertiesStoreTest {
     /**
      * Returns a {@link Locale} to use for testing
      */
-    @DataProvider(name = "localeProvider")
     private Object[][] provideLocales() {
         // pick a non-english locale for testing
         Set<Locale> locales = Arrays.stream(Locale.getAvailableLocales())
@@ -122,7 +122,8 @@ public class PropertiesStoreTest {
      * Tests that the {@link Properties#store(Writer, String)} API writes out the properties
      * in the expected order
      */
-    @Test(dataProvider = "propsProvider")
+    @ParameterizedTest
+    @MethodSource("createProps")
     public void testStoreWriterKeyOrder(final Properties props, final String[] expectedOrder) throws Exception {
         // Properties.store(...) to a temp file
         final Path tmpFile = Files.createTempFile("8231640", "props");
@@ -136,7 +137,8 @@ public class PropertiesStoreTest {
      * Tests that the {@link Properties#store(OutputStream, String)} API writes out the properties
      * in the expected order
      */
-    @Test(dataProvider = "propsProvider")
+    @ParameterizedTest
+    @MethodSource("createProps")
     public void testStoreOutputStreamKeyOrder(final Properties props, final String[] expectedOrder) throws Exception {
         // Properties.store(...) to a temp file
         final Path tmpFile = Files.createTempFile("8231640", "props");
@@ -161,7 +163,7 @@ public class PropertiesStoreTest {
         try (final InputStream is = Files.newInputStream(storedProps)) {
             loaded.load(is);
         }
-        Assert.assertEquals(loaded, props, "Unexpected properties loaded from stored state");
+        Assertions.assertEquals(props, loaded, "Unexpected properties loaded from stored state");
 
         // now read lines from the stored file and keep track of the order in which the keys were
         // found in that file. Compare that order with the expected store order of the keys.
@@ -169,10 +171,10 @@ public class PropertiesStoreTest {
         try (final BufferedReader reader = Files.newBufferedReader(storedProps)) {
             actualOrder = readInOrder(reader);
         }
-        Assert.assertEquals(actualOrder.size(), expectedOrder.length,
+        Assertions.assertEquals(expectedOrder.length, actualOrder.size(),
                 "Unexpected number of keys read from stored properties");
         if (!Arrays.equals(actualOrder.toArray(new String[0]), expectedOrder)) {
-            Assert.fail("Unexpected order of stored property keys. Expected order: " + Arrays.toString(expectedOrder)
+            Assertions.fail("Unexpected order of stored property keys. Expected order: " + Arrays.toString(expectedOrder)
                     + ", found order: " + actualOrder);
         }
     }
@@ -180,7 +182,8 @@ public class PropertiesStoreTest {
     /**
      * Tests that {@link Properties#store(Writer, String)} writes out a proper date comment
      */
-    @Test(dataProvider = "localeProvider")
+    @ParameterizedTest
+    @MethodSource("provideLocales")
     public void testStoreWriterDateComment(final Locale testLocale) throws Exception {
         // switch the default locale to the one being tested
         Locale.setDefault(testLocale);
@@ -202,7 +205,8 @@ public class PropertiesStoreTest {
     /**
      * Tests that {@link Properties#store(OutputStream, String)} writes out a proper date comment
      */
-    @Test(dataProvider = "localeProvider")
+    @ParameterizedTest
+    @MethodSource("provideLocales")
     public void testStoreOutputStreamDateComment(final Locale testLocale) throws Exception {
         // switch the default locale to the one being tested
         Locale.setDefault(testLocale);
@@ -232,19 +236,19 @@ public class PropertiesStoreTest {
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("#")) {
                     if (comment != null) {
-                        Assert.fail("More than one comment line found in the stored properties file " + file);
+                        Assertions.fail("More than one comment line found in the stored properties file " + file);
                     }
                     comment = line.substring(1);
                 }
             }
         }
         if (comment == null) {
-            Assert.fail("No comment line found in the stored properties file " + file);
+            Assertions.fail("No comment line found in the stored properties file " + file);
         }
         try {
             FORMATTER.parse(comment);
         } catch (DateTimeParseException pe) {
-            Assert.fail("Unexpected date comment: " + comment, pe);
+            Assertions.fail("Unexpected date comment: " + comment, pe);
         }
     }
 

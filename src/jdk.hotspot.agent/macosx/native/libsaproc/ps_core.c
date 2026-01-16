@@ -814,18 +814,6 @@ static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size
 
    if (is_debug()) {
       print_debug("integer regset\n");
-#if defined(i586) || defined(i386)
-      // print the regset
-      print_debug("\teax = 0x%x\n", newthr->regs.r_eax);
-      print_debug("\tebx = 0x%x\n", newthr->regs.r_ebx);
-      print_debug("\tecx = 0x%x\n", newthr->regs.r_ecx);
-      print_debug("\tedx = 0x%x\n", newthr->regs.r_edx);
-      print_debug("\tesp = 0x%x\n", newthr->regs.r_esp);
-      print_debug("\tebp = 0x%x\n", newthr->regs.r_ebp);
-      print_debug("\tesi = 0x%x\n", newthr->regs.r_esi);
-      print_debug("\tedi = 0x%x\n", newthr->regs.r_edi);
-      print_debug("\teip = 0x%x\n", newthr->regs.r_eip);
-#endif
 
 #if defined(amd64) || defined(x86_64)
       // print the regset

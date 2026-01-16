@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,19 +64,6 @@ import org.w3c.dom.NodeList;
  *    must remain installed
  *  - Uninstall WinLongVersionTest-2.0.0.2; all packages installed in the test
  *    scenario must be uninstalled
- */
-
-/*
- * @test
- * @summary jpackage with long version number
- * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
- * @requires (jpackage.test.SQETest != null)
- * @build jdk.jpackage.test.*
- * @requires (os.family == "windows")
- * @compile -Xlint:all -Werror WinLongVersionTest.java
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=WinLongVersionTest.test
  */
 
 /*
@@ -193,9 +180,8 @@ public class WinLongVersionTest {
             cmd.setFakeRuntime();
 
             // Create package without Upgrade table
-            Document doc = XmlUtils.initDocumentBuilder().parse(
-                    Files.newInputStream(TKit.SRC_ROOT.resolve(
-                            "windows/classes/jdk/jpackage/internal/resources/main.wxs")));
+            Document doc = XmlUtils.initDocumentBuilder().parse(TKit.SRC_ROOT.resolve(
+                    "windows/classes/jdk/jpackage/internal/resources/main.wxs").toFile());
             XPath xPath = XPathFactory.newInstance().newXPath();
             NodeList nodes = (NodeList) xPath.evaluate("/Wix/Product/Upgrade",
                     doc, XPathConstants.NODESET);

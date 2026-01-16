@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,23 @@
  * @bug 8004502
  * @summary Sanity check that NoSuchAlgorithmException is thrown when requesting
  *   a CertStore of type "LDAP" and LDAP is not available.
+ * @library /test/lib
  */
 
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertStore;
 import java.security.cert.LDAPCertStoreParameters;
+import jtreg.SkippedException;
 
 
 public class NoLDAP {
     public static void main(String[] args) throws Exception {
         try {
             Class.forName("javax.naming.ldap.LdapName");
-            System.out.println("LDAP is present, test skipped");
-            return;
-        } catch (ClassNotFoundException ignore) { }
+            throw new SkippedException("LDAP is present");
+        } catch (ClassNotFoundException ignore) {
+            System.err.println("Expected: class not found exception " + ignore.getMessage());
+        }
 
         try {
             CertStore.getInstance("LDAP", new LDAPCertStoreParameters());

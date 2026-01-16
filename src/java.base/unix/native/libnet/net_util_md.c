@@ -76,9 +76,6 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
         jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
         break;
-    case EINTR:
-        JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException", msg);
-        break;
     default:
         errno = errorNumber;
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", msg);
@@ -282,7 +279,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     } else {
         jint address;
         if (family != java_net_InetAddress_IPv4) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "IPv6 protocol family unavailable");
             return -1;
         }
         address = getInetAddress_addr(env, iaObj);
@@ -627,11 +624,11 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         pfd.fd = fd;
         pfd.events = 0;
         if (flags & NET_WAIT_READ)
-          pfd.events |= POLLIN;
+            pfd.events |= POLLIN;
         if (flags & NET_WAIT_WRITE)
-          pfd.events |= POLLOUT;
+            pfd.events |= POLLOUT;
         if (flags & NET_WAIT_CONNECT)
-          pfd.events |= POLLOUT;
+            pfd.events |= POLLOUT;
 
         errno = 0;
         read_rv = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
@@ -639,13 +636,13 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         newNanoTime = JVM_NanoTime(env, 0);
         nanoTimeout -= (newNanoTime - prevNanoTime);
         if (nanoTimeout < NET_NSEC_PER_MSEC) {
-          return read_rv > 0 ? 0 : -1;
+            return read_rv > 0 ? 0 : -1;
         }
         prevNanoTime = newNanoTime;
 
         if (read_rv > 0) {
-          break;
+            break;
         }
-      } /* while */
+    } /* while */
     return (nanoTimeout / NET_NSEC_PER_MSEC);
 }

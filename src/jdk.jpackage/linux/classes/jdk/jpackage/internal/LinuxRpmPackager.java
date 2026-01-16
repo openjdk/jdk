@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,6 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
 
         Path rpmFile = outputPackageFile();
 
-        Log.verbose(I18N.format("message.outputting-bundle-location", rpmFile.getParent()));
-
         //run rpmbuild
         Executor.of(sysEnv.rpmbuild().toString(),
                 "-bb", specFile().toAbsolutePath().toString(),
@@ -147,8 +145,6 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
                         env.buildRoot().toAbsolutePath()),
                 "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName())
         ).executeExpectSuccess();
-
-        Log.verbose(I18N.format("message.output-bundle-location", rpmFile.getParent()));
     }
 
     private Path installPrefix() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,30 @@
 package gc.arguments;
 
 /*
- * @test TestParallelRefProc
- * @summary Test defaults processing for -XX:+ParallelRefProcEnabled.
+ * @test id=Serial
+ * @summary Test defaults processing for -XX:+ParallelRefProcEnabled with Serial GC.
  * @library /test/lib
  * @library /
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestParallelRefProc
+ * @requires vm.gc.Serial
+ * @run driver gc.arguments.TestParallelRefProc Serial
+ */
+
+/*
+ * @test id=Parallel
+ * @summary Test defaults processing for -XX:+ParallelRefProcEnabled with Parallel GC.
+ * @library /test/lib
+ * @library /
+ * @requires vm.gc.Parallel
+ * @run driver gc.arguments.TestParallelRefProc Parallel
+ */
+
+/*
+ * @test id=G1
+ * @summary Test defaults processing for -XX:+ParallelRefProcEnabled with G1 GC.
+ * @library /test/lib
+ * @library /
+ * @requires vm.gc.G1
+ * @run driver gc.arguments.TestParallelRefProc G1
  */
 
 import java.util.Arrays;
@@ -38,32 +55,44 @@ import java.util.ArrayList;
 
 import jdk.test.lib.process.OutputAnalyzer;
 
-import jtreg.SkippedException;
-import jdk.test.whitebox.gc.GC;
-
 public class TestParallelRefProc {
 
     public static void main(String args[]) throws Exception {
-        boolean noneGCSupported = true;
-        if (GC.Serial.isSupported()) {
-            noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseSerialGC" }, false);
+        if (args.length == 0) {
+            throw new IllegalArgumentException("Test type must be specified as argument");
         }
-        if (GC.Parallel.isSupported()) {
-            noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseParallelGC", "-XX:ParallelGCThreads=1" }, false);
-            testFlag(new String[] { "-XX:+UseParallelGC", "-XX:ParallelGCThreads=2" }, true);
-            testFlag(new String[] { "-XX:+UseParallelGC", "-XX:-ParallelRefProcEnabled", "-XX:ParallelGCThreads=2" }, false);
+
+        String testType = args[0];
+
+        switch (testType) {
+            case "Serial":
+                testSerial();
+                break;
+            case "Parallel":
+                testParallel();
+                break;
+            case "G1":
+                testG1();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown test type \"" + testType + "\"");
         }
-        if (GC.G1.isSupported()) {
-            noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=1" }, false);
-            testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=2" }, true);
-            testFlag(new String[] { "-XX:+UseG1GC", "-XX:-ParallelRefProcEnabled", "-XX:ParallelGCThreads=2" }, false);
-        }
-        if (noneGCSupported) {
-            throw new SkippedException("Skipping test because none of Serial/Parallel/G1 is supported.");
-        }
+    }
+
+    private static void testSerial() throws Exception {
+        testFlag(new String[] { "-XX:+UseSerialGC" }, false);
+    }
+
+    private static void testParallel() throws Exception {
+        testFlag(new String[] { "-XX:+UseParallelGC", "-XX:ParallelGCThreads=1" }, false);
+        testFlag(new String[] { "-XX:+UseParallelGC", "-XX:ParallelGCThreads=2" }, true);
+        testFlag(new String[] { "-XX:+UseParallelGC", "-XX:-ParallelRefProcEnabled", "-XX:ParallelGCThreads=2" }, false);
+    }
+
+    private static void testG1() throws Exception {
+        testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=1" }, false);
+        testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=2" }, true);
+        testFlag(new String[] { "-XX:+UseG1GC", "-XX:-ParallelRefProcEnabled", "-XX:ParallelGCThreads=2" }, false);
     }
 
     private static final String parallelRefProcEnabledPattern =
@@ -77,7 +106,7 @@ public class TestParallelRefProc {
         result.addAll(Arrays.asList(args));
         result.add("-XX:+PrintFlagsFinal");
         result.add("-version");
-        OutputAnalyzer output = GCArguments.executeLimitedTestJava(result);
+        OutputAnalyzer output = GCArguments.executeTestJava(result);
 
         output.shouldHaveExitValue(0);
 

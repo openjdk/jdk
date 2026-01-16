@@ -66,7 +66,7 @@ import java.util.Optional;
  * </tr>
  * </table>
  */
-public interface Package extends BundleSpec {
+public non-sealed interface Package extends BundleSpec {
 
     /**
      * Gets the application of this package.

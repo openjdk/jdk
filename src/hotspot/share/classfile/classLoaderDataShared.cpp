@@ -24,7 +24,7 @@
 
 #include "cds/aotLogging.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -151,6 +151,35 @@ void ArchivedClassLoaderData::clear_archived_oops() {
 }
 
 // ------------------------------
+
+void ClassLoaderDataShared::load_archived_platform_and_system_class_loaders() {
+#if INCLUDE_CDS_JAVA_HEAP
+  // The streaming object loader prefers loading the class loader related objects before
+  //  the CLD constructor which has a NoSafepointVerifier.
+  if (!HeapShared::is_loading_streaming_mode()) {
+    return;
+  }
+
+  // Ensure these class loaders are eagerly materialized before their CLDs are created.
+  HeapShared::get_root(_platform_loader_root_index, false /* clear */);
+  HeapShared::get_root(_system_loader_root_index, false /* clear */);
+
+  if (Universe::is_module_initialized() || !CDSConfig::is_using_full_module_graph()) {
+    return;
+  }
+
+  // When using the full module graph, we need to load unnamed modules too.
+  ModuleEntry* platform_loader_module_entry = _archived_platform_loader_data.unnamed_module();
+  if (platform_loader_module_entry != nullptr) {
+    platform_loader_module_entry->preload_archived_oops();
+  }
+
+  ModuleEntry* system_loader_module_entry = _archived_system_loader_data.unnamed_module();
+  if (system_loader_module_entry != nullptr) {
+    system_loader_module_entry->preload_archived_oops();
+  }
+#endif
+}
 
 static ClassLoaderData* null_class_loader_data() {
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();

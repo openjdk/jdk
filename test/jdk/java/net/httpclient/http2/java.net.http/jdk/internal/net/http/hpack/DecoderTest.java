@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.internal.net.http.hpack;
 
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -33,9 +32,9 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static jdk.internal.net.http.hpack.TestHelper.*;
+import org.junit.jupiter.api.Test;
 
 //
 // Tests whose names start with "testX" are the ones captured from real HPACK
@@ -402,9 +401,9 @@ public final class DecoderTest {
     @Test
     public void sizeUpdate() throws IOException {
         Decoder d = new Decoder(4096);
-        assertEquals(d.getTable().maxSize(), 4096);
+        assertEquals(4096, d.getTable().maxSize());
         d.decode(ByteBuffer.wrap(new byte[]{0b00111110}), true, nopCallback()); // newSize = 30
-        assertEquals(d.getTable().maxSize(), 30);
+        assertEquals(30, d.getTable().maxSize());
     }
 
     @Test
@@ -650,8 +649,8 @@ public final class DecoderTest {
                     throw new UncheckedIOException(e);
                 }
             } while (i.hasNext());
-            assertEquals(d.getTable().getStateString(), expectedHeaderTable);
-            assertEquals(actual.stream().collect(Collectors.joining("\n")), expectedHeaderList);
+            assertEquals(expectedHeaderTable, d.getTable().getStateString());
+            assertEquals(expectedHeaderList, actual.stream().collect(Collectors.joining("\n")));
         });
 
         // Now introduce last ByteBuffer which is empty and EOF (mimics idiom
@@ -690,8 +689,8 @@ public final class DecoderTest {
                 throw new UncheckedIOException(e);
             }
 
-            assertEquals(d.getTable().getStateString(), expectedHeaderTable);
-            assertEquals(actual.stream().collect(Collectors.joining("\n")), expectedHeaderList);
+            assertEquals(expectedHeaderTable, d.getTable().getStateString());
+            assertEquals(expectedHeaderList, actual.stream().collect(Collectors.joining("\n")));
         });
     }
 
@@ -717,8 +716,8 @@ public final class DecoderTest {
             throw new UncheckedIOException(e);
         }
 
-        assertEquals(d.getTable().getStateString(), expectedHeaderTable);
-        assertEquals(actual.stream().collect(Collectors.joining("\n")), expectedHeaderList);
+        assertEquals(expectedHeaderTable, d.getTable().getStateString());
+        assertEquals(expectedHeaderList, actual.stream().collect(Collectors.joining("\n")));
     }
 
     private static DecodingCallback nopCallback() {

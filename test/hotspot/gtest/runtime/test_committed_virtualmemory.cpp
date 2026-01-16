@@ -83,14 +83,21 @@ public:
     ASSERT_TRUE(found_stack_top);
   }
 
+  static const int PAGE_CONTAINED_IN_RANGE_TAG = -1;
+  static bool is_page_in_committed_region(int a) { return (a == PAGE_CONTAINED_IN_RANGE_TAG); }
+  static void set_page_as_contained_in_committed_region(int &a) { a = PAGE_CONTAINED_IN_RANGE_TAG; }
+
   static void check_covered_pages(address addr, size_t size, address base, size_t touch_pages, int* page_num) {
     const size_t page_sz = os::vm_page_size();
     size_t index;
     for (index = 0; index < touch_pages; index ++) {
+      if (is_page_in_committed_region(page_num[index])) { // Already tagged?
+        continue;
+      }
       address page_addr = base + page_num[index] * page_sz;
       // The range covers this page, marks the page
       if (page_addr >= addr && page_addr < addr + size) {
-        page_num[index] = -1;
+        set_page_as_contained_in_committed_region(page_num[index]);
       }
     }
   }
@@ -135,7 +142,7 @@ public:
     if (precise_tracking_supported) {
       // All touched pages should be committed
       for (size_t index = 0; index < touch_pages; index ++) {
-        ASSERT_EQ(page_num[index], -1);
+        ASSERT_TRUE(is_page_in_committed_region(page_num[index]));
       }
     }
 

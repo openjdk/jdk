@@ -42,7 +42,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">Kiingereza cha Australia</language>
 			<language type="en_CA">Kiingereza cha Kanada</language>
 			<language type="en_GB">Kiingereza cha Uingereza</language>
-			<language type="en_GB" alt="short">Kiingereza cha Uingereza</language>
 			<language type="en_US">Kiingereza cha Marekani</language>
 			<language type="en_US" alt="short">Kiingereza cha Marekani)</language>
 			<language type="es_419">Kihispania cha Amerika Kusini</language>
@@ -221,7 +220,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BT">Bhutani</territory>
 			<territory type="BY">Belarusi</territory>
 			<territory type="CC">Visiwa vya Kokos (Keeling)</territory>
-			<territory type="CD">Kongo - Kinshasa</territory>
 			<territory type="CV">Kepuvede</territory>
 			<territory type="CW">Kurakao</territory>
 			<territory type="EA">Keuta na Melilla</territory>
@@ -503,13 +501,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Saa za Afghanistani</standard>
-				</long>
-			</metazone>
-			<metazone type="Africa_Western">
-				<long>
-					<generic>Saa za Afrika Magharibi</generic>
-					<standard>Saa za Wastani za Afrika Magharibi</standard>
-					<daylight>Saa za Majira ya Joto za Afrika Magharibi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -989,29 +980,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
-					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000000" count="one">¤ M0;¤-M0</pattern>
+					<pattern type="1000" count="one">¤ elfu 0</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ elfu 0</pattern>
+					<pattern type="1000" count="other">¤ elfu 0</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ elfu 0</pattern>
+					<pattern type="10000" count="one">¤ elfu 00</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ elfu 00</pattern>
+					<pattern type="10000" count="other">¤ elfu 00</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ elfu 00</pattern>
+					<pattern type="100000" count="one">¤ elfu 000</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ elfu 000</pattern>
+					<pattern type="100000" count="other">¤ elfu 000</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ elfu 000</pattern>
+					<pattern type="1000000" count="one">¤ M0</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ M0</pattern>
 					<pattern type="1000000" count="other">¤ M0</pattern>
-					<pattern type="10000000" count="one">¤ M00;¤M-M00</pattern>
-					<pattern type="10000000" count="other">¤ M00;¤-M00</pattern>
-					<pattern type="100000000" count="one">¤ M000;¤M-000</pattern>
+					<pattern type="10000000" count="one">¤ M00</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber">¤ M00</pattern>
+					<pattern type="10000000" count="other">¤ M00</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ M00</pattern>
+					<pattern type="100000000" count="one">¤ M000</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ M000</pattern>
 					<pattern type="100000000" count="other">¤ M000</pattern>
-					<pattern type="1000000000" count="one">¤ B0;¤-B0</pattern>
-					<pattern type="1000000000" count="other">¤ B0;¤-B0</pattern>
-					<pattern type="10000000000" count="one">¤ B00;¤-B00</pattern>
-					<pattern type="10000000000" count="other">¤ B00;¤-B00</pattern>
-					<pattern type="100000000000" count="one">¤ B000;¤-B000</pattern>
-					<pattern type="100000000000" count="other">¤ B000;¤-B000</pattern>
-					<pattern type="1000000000000" count="one">¤ T0;¤-T0</pattern>
+					<pattern type="1000000000" count="one">¤ B0</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ B0</pattern>
+					<pattern type="1000000000" count="other">¤ B0</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ B0</pattern>
+					<pattern type="10000000000" count="one">¤ B00</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ B00</pattern>
+					<pattern type="10000000000" count="other">¤ B00</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ B00</pattern>
+					<pattern type="100000000000" count="one">¤ B000</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ B000</pattern>
+					<pattern type="100000000000" count="other">¤ B000</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ B000</pattern>
+					<pattern type="1000000000000" count="one">¤ T0</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ T0</pattern>
 					<pattern type="1000000000000" count="other">¤ T0</pattern>
-					<pattern type="10000000000000" count="one">¤ T00;¤-T00</pattern>
+					<pattern type="10000000000000" count="one">¤ T00</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ T00</pattern>
 					<pattern type="10000000000000" count="other">¤ T00</pattern>
-					<pattern type="100000000000000" count="one">¤ T000;¤-T000</pattern>
-					<pattern type="100000000000000" count="other">¤ T000;¤-T000</pattern>
+					<pattern type="100000000000000" count="one">¤ T000</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ T000</pattern>
+					<pattern type="100000000000000" count="other">¤ T000</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ T000</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>

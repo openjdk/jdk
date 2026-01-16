@@ -262,7 +262,6 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util to
         java.desktop,
-        java.net.http,
         java.prefs,
         java.security.jgss,
         java.smartcardio,

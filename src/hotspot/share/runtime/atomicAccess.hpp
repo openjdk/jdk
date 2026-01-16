@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_ATOMICACCESS_HPP
 #define SHARE_RUNTIME_ATOMICACCESS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
@@ -33,8 +34,6 @@
 #include "utilities/bytes.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
-
-#include <type_traits>
 
 enum atomic_memory_order {
   // The modes that align with C++11 are intended to
@@ -420,8 +419,8 @@ private:
   struct XchgImpl;
 
   // Platform-specific implementation of xchg.  Support for sizes
-  // of 4, and sizeof(intptr_t) are required.  The class is a function
-  // object that must be default constructable, with these requirements:
+  // of 1, 4, and 8 are required.  The class is a function object
+  // that must be default constructable, with these requirements:
   //
   // - dest is of type T*.
   // - exchange_value is of type T.
@@ -636,7 +635,6 @@ inline void AtomicAccess::dec(D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
   using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   // Assumes two's complement integer representation.
-  #pragma warning(suppress: 4146)
   AtomicAccess::add(dest, I(-1), order);
 }
 
@@ -653,7 +651,6 @@ inline D AtomicAccess::sub(D volatile* dest, I sub_value, atomic_memory_order or
   STATIC_ASSERT(sizeof(I) <= sizeof(AddendType));
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
-  #pragma warning(suppress: 4146) // In case AddendType is not signed.
   return AtomicAccess::add(dest, -addend, order);
 }
 

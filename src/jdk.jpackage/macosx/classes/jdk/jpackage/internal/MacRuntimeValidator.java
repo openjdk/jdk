@@ -30,12 +30,11 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.function.Predicate;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.RuntimeLayout;
 
 final class MacRuntimeValidator {
 
-    static void validateRuntimeHasJliLib(RuntimeLayout runtimeLayout) throws ConfigException {
+    static void validateRuntimeHasJliLib(RuntimeLayout runtimeLayout) {
         final var jliName = Path.of("libjli.dylib");
         try (var walk = Files.walk(runtimeLayout.runtimeDirectory().resolve("lib"))) {
             if (walk.map(Path::getFileName).anyMatch(Predicate.isEqual(jliName))) {
@@ -51,7 +50,7 @@ final class MacRuntimeValidator {
                 runtimeLayout.unresolve().runtimeDirectory().resolve("lib/**").resolve(jliName)).create();
     }
 
-    static void validateRuntimeHasNoBinDir(RuntimeLayout runtimeLayout) throws ConfigException {
+    static void validateRuntimeHasNoBinDir(RuntimeLayout runtimeLayout) {
         if (Files.isDirectory(runtimeLayout.runtimeDirectory().resolve("bin"))) {
             throw I18N.buildConfigException()
                     .message("error.invalid-runtime-image-bin-dir", runtimeLayout.rootDirectory())

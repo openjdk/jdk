@@ -28,14 +28,15 @@ import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NotLinkException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 public final class FileUtils {
@@ -99,6 +100,19 @@ public final class FileUtils {
         }
     }
 
+    public static Path readSymlinkTargetRecursive(Path symlink) throws IOException, NotLinkException {
+        try {
+            var target = Files.readSymbolicLink(symlink);
+            if (Files.isSymbolicLink(target)) {
+                return readSymlinkTargetRecursive(target);
+            } else {
+                return target;
+            }
+        } catch (NotLinkException ex) {
+            throw ex;
+        }
+    }
+
     private static boolean isPathMatch(Path what, List<Path> paths) {
         return paths.stream().anyMatch(what::endsWith);
     }
@@ -106,6 +120,17 @@ public final class FileUtils {
     private static record CopyAction(Path src, Path dest) {
 
         void apply(CopyOption... options) throws IOException {
+            if (List.of(options).contains(StandardCopyOption.REPLACE_EXISTING)) {
+                // They requested copying with replacing the existing content.
+                if (src == null && Files.isRegularFile(dest)) {
+                    // This copy action creates a directory, but a file at the same path already exists, so delete it.
+                    Files.deleteIfExists(dest);
+                } else if (src != null && Files.isDirectory(dest)) {
+                    // This copy action copies a file, but a directory at the same path exists already, so delete it.
+                    deleteRecursive(dest);
+                }
+            }
+
             if (src == null) {
                 Files.createDirectories(dest);
             } else {
@@ -144,15 +169,13 @@ public final class FileUtils {
             }
         }
 
-        private void runActionOnPath(ThrowingConsumer<Path> action, Path path) {
+        private void runActionOnPath(ThrowingConsumer<Path, IOException> action, Path path) {
             try {
                 action.accept(path);
             } catch (IOException ex) {
                 if (this.ex == null) {
                     this.ex = ex;
                 }
-            } catch (Throwable t) {
-                throw ExceptionBox.rethrowUnchecked(t);
             }
         }
 

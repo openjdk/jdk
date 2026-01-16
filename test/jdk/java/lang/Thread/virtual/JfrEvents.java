@@ -302,10 +302,10 @@ class JfrEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned event when waiting for a class initializer.
+     * Test jdk.VirtualThreadPinned event when waiting for a class initializer while pinned.
      */
     @Test
-    void testWaitingForClassInitializer() throws Exception {
+    void testWaitingForClassInitializerWhenPinned() throws Exception {
         class TestClass {
             static {
                 LockSupport.park();
@@ -328,7 +328,9 @@ class JfrEvents {
             });
             Thread vthread2 = Thread.ofVirtual().unstarted(() -> {
                 started2.set(true);
-                TestClass.m();
+                VThreadPinner.runPinned(() -> {
+                    TestClass.m();
+                });
             });
 
             try {
@@ -341,7 +343,7 @@ class JfrEvents {
                 vthread2.start();
                 awaitTrue(started2);
 
-                // give time for second virtual thread to wait on the MutexLocker
+                // give time for second virtual thread to wait in VM
                 Thread.sleep(3000);
 
             } finally {

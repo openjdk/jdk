@@ -46,7 +46,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @test
  * @summary Basic test to verify that simple GET/POST/HEAD
  *          requests work as expected with HTTP/3, using IPv4
- *          or IPv6
+ *          or IPv6, using CUBIC or Reno
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
@@ -64,20 +64,21 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djava.net.preferIPv4Stack=true
  *              H3SimpleTest
+ * @run testng/othervm
+ *              -Djdk.internal.httpclient.debug=true
+ *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
+ *              -Djdk.internal.httpclient.quic.congestionController=reno
+ *              H3SimpleTest
  */
 // -Djava.security.debug=all
 public class H3SimpleTest implements HttpServerAdapters {
 
-    private SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private HttpTestServer h3Server;
     private String requestURI;
 
     @BeforeClass
     public void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         // create an H3 only server
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");

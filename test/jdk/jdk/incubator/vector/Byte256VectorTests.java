@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,20 @@ public class Byte256VectorTests extends AbstractVectorTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-
     private static final byte CONST_SHIFT = Byte.SIZE / 2;
+
+    // Identity values for reduction operations
+    private static final byte ADD_IDENTITY = (byte)0;
+    private static final byte AND_IDENTITY = (byte)-1;
+    private static final byte FIRST_NONZERO_IDENTITY = (byte)0;
+    private static final byte MAX_IDENTITY = Byte.MIN_VALUE;
+    private static final byte MIN_IDENTITY = Byte.MAX_VALUE;
+    private static final byte MUL_IDENTITY = (byte)1;
+    private static final byte OR_IDENTITY = (byte)0;
+    private static final byte SUADD_IDENTITY = (byte)0;
+    private static final byte UMAX_IDENTITY = (byte)0;   // Minimum unsigned value
+    private static final byte UMIN_IDENTITY = (byte)-1;  // Maximum unsigned value
+    private static final byte XOR_IDENTITY = (byte)0;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
 
@@ -390,6 +402,36 @@ public class Byte256VectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], a[i], "at index #" + i + ", input = " + a[i]);
+        }
+    }
+
+    interface FBoolUnOp {
+        boolean apply(boolean a);
+    }
+
+    static void assertArraysEquals(boolean[] r, boolean[] a, FBoolUnOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i]), "(" + a[i] + ") at index #" + i);
+        }
+    }
+
+    interface FBoolBinOp {
+        boolean apply(boolean a, boolean b);
+    }
+
+    static void assertArraysEquals(boolean[] r, boolean[] a, boolean[] b, FBoolBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b[i]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
         }
     }
 
@@ -1232,8 +1274,23 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     @DataProvider
-    public Object[][] maskCompareOpProvider() {
-        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+    public Object[][] longMaskProvider() {
+        return LONG_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] boolMaskBinaryOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().
+                map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] boolMaskUnaryOpProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
@@ -3566,7 +3623,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ANDReduce(byte[] a, int idx) {
-        byte res = -1;
+        byte res = AND_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res &= a[i];
         }
@@ -3575,7 +3632,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ANDReduceAll(byte[] a) {
-        byte res = -1;
+        byte res = AND_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res &= ANDReduce(a, i);
         }
@@ -3587,20 +3644,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
     static void ANDReduceByte256VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = -1;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = AND_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.AND);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = -1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra &= av.reduceLanes(VectorOperators.AND);
+                byte v = av.reduceLanes(VectorOperators.AND);
+                r[i] = v;
+                ra &= v;
             }
         }
 
@@ -3608,8 +3660,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::ANDReduce, Byte256VectorTests::ANDReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void ANDReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = AND_IDENTITY;
+
+        Assert.assertEquals((byte) (id & id), id,
+                            "AND(AND_IDENTITY, AND_IDENTITY) != AND_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) (id & x), x);
+                Assert.assertEquals((byte) (x & id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) (id & x), x,
+                                "AND(AND_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) (x & id), x,
+                                "AND(" + x + ", AND_IDENTITY) != " + x);
+        }
+    }
+
     static byte ANDReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = -1;
+        byte res = AND_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res &= a[i];
@@ -3619,7 +3694,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ANDReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = -1;
+        byte res = AND_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res &= ANDReduceMasked(a, i, mask);
         }
@@ -3633,20 +3708,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = -1;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = AND_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.AND, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = -1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra &= av.reduceLanes(VectorOperators.AND, vmask);
+                byte v = av.reduceLanes(VectorOperators.AND, vmask);
+                r[i] = v;
+                ra &= v;
             }
         }
 
@@ -3655,7 +3725,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ORReduce(byte[] a, int idx) {
-        byte res = 0;
+        byte res = OR_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res |= a[i];
         }
@@ -3664,7 +3734,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ORReduceAll(byte[] a) {
-        byte res = 0;
+        byte res = OR_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res |= ORReduce(a, i);
         }
@@ -3679,17 +3749,12 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = OR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.OR);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra |= av.reduceLanes(VectorOperators.OR);
+                byte v = av.reduceLanes(VectorOperators.OR);
+                r[i] = v;
+                ra |= v;
             }
         }
 
@@ -3697,8 +3762,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::ORReduce, Byte256VectorTests::ORReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void ORReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = OR_IDENTITY;
+
+        Assert.assertEquals((byte) (id | id), id,
+                            "OR(OR_IDENTITY, OR_IDENTITY) != OR_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) (id | x), x);
+                Assert.assertEquals((byte) (x | id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) (id | x), x,
+                                "OR(OR_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) (x | id), x,
+                                "OR(" + x + ", OR_IDENTITY) != " + x);
+        }
+    }
+
     static byte ORReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = 0;
+        byte res = OR_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res |= a[i];
@@ -3708,7 +3796,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ORReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = 0;
+        byte res = OR_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res |= ORReduceMasked(a, i, mask);
         }
@@ -3725,17 +3813,12 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = OR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.OR, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra |= av.reduceLanes(VectorOperators.OR, vmask);
+                byte v = av.reduceLanes(VectorOperators.OR, vmask);
+                r[i] = v;
+                ra |= v;
             }
         }
 
@@ -3744,7 +3827,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte XORReduce(byte[] a, int idx) {
-        byte res = 0;
+        byte res = XOR_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res ^= a[i];
         }
@@ -3753,7 +3836,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte XORReduceAll(byte[] a) {
-        byte res = 0;
+        byte res = XOR_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res ^= XORReduce(a, i);
         }
@@ -3768,17 +3851,12 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = XOR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.XOR);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra ^= av.reduceLanes(VectorOperators.XOR);
+                byte v = av.reduceLanes(VectorOperators.XOR);
+                r[i] = v;
+                ra ^= v;
             }
         }
 
@@ -3786,8 +3864,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::XORReduce, Byte256VectorTests::XORReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void XORReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = XOR_IDENTITY;
+
+        Assert.assertEquals((byte) (id ^ id), id,
+                            "XOR(XOR_IDENTITY, XOR_IDENTITY) != XOR_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) (id ^ x), x);
+                Assert.assertEquals((byte) (x ^ id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) (id ^ x), x,
+                                "XOR(XOR_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) (x ^ id), x,
+                                "XOR(" + x + ", XOR_IDENTITY) != " + x);
+        }
+    }
+
     static byte XORReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = 0;
+        byte res = XOR_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res ^= a[i];
@@ -3797,7 +3898,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte XORReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = 0;
+        byte res = XOR_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res ^= XORReduceMasked(a, i, mask);
         }
@@ -3814,17 +3915,12 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = XOR_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.XOR, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra ^= av.reduceLanes(VectorOperators.XOR, vmask);
+                byte v = av.reduceLanes(VectorOperators.XOR, vmask);
+                r[i] = v;
+                ra ^= v;
             }
         }
 
@@ -3833,7 +3929,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ADDReduce(byte[] a, int idx) {
-        byte res = 0;
+        byte res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res += a[i];
         }
@@ -3842,7 +3938,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ADDReduceAll(byte[] a) {
-        byte res = 0;
+        byte res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res += ADDReduce(a, i);
         }
@@ -3857,17 +3953,12 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra += av.reduceLanes(VectorOperators.ADD);
+                byte v = av.reduceLanes(VectorOperators.ADD);
+                r[i] = v;
+                ra += v;
             }
         }
 
@@ -3875,8 +3966,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::ADDReduce, Byte256VectorTests::ADDReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void ADDReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = ADD_IDENTITY;
+
+        Assert.assertEquals((byte) (id + id), id,
+                            "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) (id + x), x);
+                Assert.assertEquals((byte) (x + id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) (id + x), x,
+                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) (x + id), x,
+                                "ADD(" + x + ", ADD_IDENTITY) != " + x);
+        }
+    }
+
     static byte ADDReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = 0;
+        byte res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res += a[i];
@@ -3886,7 +4000,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte ADDReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = 0;
+        byte res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res += ADDReduceMasked(a, i, mask);
         }
@@ -3903,17 +4017,12 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra += av.reduceLanes(VectorOperators.ADD, vmask);
+                byte v = av.reduceLanes(VectorOperators.ADD, vmask);
+                r[i] = v;
+                ra += v;
             }
         }
 
@@ -3922,7 +4031,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MULReduce(byte[] a, int idx) {
-        byte res = 1;
+        byte res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res *= a[i];
         }
@@ -3931,7 +4040,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MULReduceAll(byte[] a) {
-        byte res = 1;
+        byte res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res *= MULReduce(a, i);
         }
@@ -3943,20 +4052,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
     static void MULReduceByte256VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = 1;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra *= av.reduceLanes(VectorOperators.MUL);
+                byte v = av.reduceLanes(VectorOperators.MUL);
+                r[i] = v;
+                ra *= v;
             }
         }
 
@@ -3964,8 +4068,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::MULReduce, Byte256VectorTests::MULReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void MULReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = MUL_IDENTITY;
+
+        Assert.assertEquals((byte) (id * id), id,
+                            "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) (id * x), x);
+                Assert.assertEquals((byte) (x * id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) (id * x), x,
+                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) (x * id), x,
+                                "MUL(" + x + ", MUL_IDENTITY) != " + x);
+        }
+    }
+
     static byte MULReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = 1;
+        byte res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res *= a[i];
@@ -3975,7 +4102,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MULReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = 1;
+        byte res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res *= MULReduceMasked(a, i, mask);
         }
@@ -3989,20 +4116,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = 1;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra *= av.reduceLanes(VectorOperators.MUL, vmask);
+                byte v = av.reduceLanes(VectorOperators.MUL, vmask);
+                r[i] = v;
+                ra *= v;
             }
         }
 
@@ -4011,7 +4133,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MINReduce(byte[] a, int idx) {
-        byte res = Byte.MAX_VALUE;
+        byte res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (byte) Math.min(res, a[i]);
         }
@@ -4020,7 +4142,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MINReduceAll(byte[] a) {
-        byte res = Byte.MAX_VALUE;
+        byte res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) Math.min(res, MINReduce(a, i));
         }
@@ -4032,20 +4154,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
     static void MINReduceByte256VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = Byte.MAX_VALUE;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MAX_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) Math.min(ra, av.reduceLanes(VectorOperators.MIN));
+                byte v = av.reduceLanes(VectorOperators.MIN);
+                r[i] = v;
+                ra = (byte) Math.min(ra, v);
             }
         }
 
@@ -4053,8 +4170,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::MINReduce, Byte256VectorTests::MINReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void MINReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = MIN_IDENTITY;
+
+        Assert.assertEquals((byte) Math.min(id, id), id,
+                            "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) Math.min(id, x), x);
+                Assert.assertEquals((byte) Math.min(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) Math.min(id, x), x,
+                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) Math.min(x, id), x,
+                                "MIN(" + x + ", MIN_IDENTITY) != " + x);
+        }
+    }
+
     static byte MINReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = Byte.MAX_VALUE;
+        byte res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (byte) Math.min(res, a[i]);
@@ -4064,7 +4204,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MINReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = Byte.MAX_VALUE;
+        byte res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) Math.min(res, MINReduceMasked(a, i, mask));
         }
@@ -4078,20 +4218,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = Byte.MAX_VALUE;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MAX_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) Math.min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
+                byte v = av.reduceLanes(VectorOperators.MIN, vmask);
+                r[i] = v;
+                ra = (byte) Math.min(ra, v);
             }
         }
 
@@ -4100,7 +4235,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MAXReduce(byte[] a, int idx) {
-        byte res = Byte.MIN_VALUE;
+        byte res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (byte) Math.max(res, a[i]);
         }
@@ -4109,7 +4244,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MAXReduceAll(byte[] a) {
-        byte res = Byte.MIN_VALUE;
+        byte res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) Math.max(res, MAXReduce(a, i));
         }
@@ -4121,20 +4256,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
     static void MAXReduceByte256VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = Byte.MIN_VALUE;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MIN_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) Math.max(ra, av.reduceLanes(VectorOperators.MAX));
+                byte v = av.reduceLanes(VectorOperators.MAX);
+                r[i] = v;
+                ra = (byte) Math.max(ra, v);
             }
         }
 
@@ -4142,8 +4272,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::MAXReduce, Byte256VectorTests::MAXReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void MAXReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = MAX_IDENTITY;
+
+        Assert.assertEquals((byte) Math.max(id, id), id,
+                            "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) Math.max(id, x), x);
+                Assert.assertEquals((byte) Math.max(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) Math.max(id, x), x,
+                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) Math.max(x, id), x,
+                                "MAX(" + x + ", MAX_IDENTITY) != " + x);
+        }
+    }
+
     static byte MAXReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = Byte.MIN_VALUE;
+        byte res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (byte) Math.max(res, a[i]);
@@ -4153,7 +4306,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte MAXReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = Byte.MIN_VALUE;
+        byte res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) Math.max(res, MAXReduceMasked(a, i, mask));
         }
@@ -4167,20 +4320,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = Byte.MIN_VALUE;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MIN_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) Math.max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
+                byte v = av.reduceLanes(VectorOperators.MAX, vmask);
+                r[i] = v;
+                ra = (byte) Math.max(ra, v);
             }
         }
 
@@ -4189,7 +4337,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte UMINReduce(byte[] a, int idx) {
-        byte res = Byte.MAX_VALUE;
+        byte res = UMIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (byte) VectorMath.minUnsigned(res, a[i]);
         }
@@ -4198,7 +4346,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte UMINReduceAll(byte[] a) {
-        byte res = Byte.MAX_VALUE;
+        byte res = UMIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.minUnsigned(res, UMINReduce(a, i));
         }
@@ -4210,20 +4358,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
     static void UMINReduceByte256VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = Byte.MAX_VALUE;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = UMIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.UMIN);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MAX_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN));
+                byte v = av.reduceLanes(VectorOperators.UMIN);
+                r[i] = v;
+                ra = (byte) VectorMath.minUnsigned(ra, v);
             }
         }
 
@@ -4231,8 +4374,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::UMINReduce, Byte256VectorTests::UMINReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void UMINReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = UMIN_IDENTITY;
+
+        Assert.assertEquals((byte) VectorMath.minUnsigned(id, id), id,
+                            "UMIN(UMIN_IDENTITY, UMIN_IDENTITY) != UMIN_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) VectorMath.minUnsigned(id, x), x);
+                Assert.assertEquals((byte) VectorMath.minUnsigned(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) VectorMath.minUnsigned(id, x), x,
+                                "UMIN(UMIN_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) VectorMath.minUnsigned(x, id), x,
+                                "UMIN(" + x + ", UMIN_IDENTITY) != " + x);
+        }
+    }
+
     static byte UMINReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = Byte.MAX_VALUE;
+        byte res = UMIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (byte) VectorMath.minUnsigned(res, a[i]);
@@ -4242,7 +4408,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte UMINReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = Byte.MAX_VALUE;
+        byte res = UMIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.minUnsigned(res, UMINReduceMasked(a, i, mask));
         }
@@ -4256,20 +4422,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = Byte.MAX_VALUE;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = UMIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.UMIN, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MAX_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN, vmask));
+                byte v = av.reduceLanes(VectorOperators.UMIN, vmask);
+                r[i] = v;
+                ra = (byte) VectorMath.minUnsigned(ra, v);
             }
         }
 
@@ -4278,7 +4439,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte UMAXReduce(byte[] a, int idx) {
-        byte res = Byte.MIN_VALUE;
+        byte res = UMAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (byte) VectorMath.maxUnsigned(res, a[i]);
         }
@@ -4287,7 +4448,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte UMAXReduceAll(byte[] a) {
-        byte res = Byte.MIN_VALUE;
+        byte res = UMAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.maxUnsigned(res, UMAXReduce(a, i));
         }
@@ -4299,20 +4460,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
     static void UMAXReduceByte256VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = Byte.MIN_VALUE;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = UMAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.UMAX);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MIN_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX));
+                byte v = av.reduceLanes(VectorOperators.UMAX);
+                r[i] = v;
+                ra = (byte) VectorMath.maxUnsigned(ra, v);
             }
         }
 
@@ -4320,8 +4476,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::UMAXReduce, Byte256VectorTests::UMAXReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void UMAXReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = UMAX_IDENTITY;
+
+        Assert.assertEquals((byte) VectorMath.maxUnsigned(id, id), id,
+                            "UMAX(UMAX_IDENTITY, UMAX_IDENTITY) != UMAX_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) VectorMath.maxUnsigned(id, x), x);
+                Assert.assertEquals((byte) VectorMath.maxUnsigned(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) VectorMath.maxUnsigned(id, x), x,
+                                "UMAX(UMAX_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) VectorMath.maxUnsigned(x, id), x,
+                                "UMAX(" + x + ", UMAX_IDENTITY) != " + x);
+        }
+    }
+
     static byte UMAXReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = Byte.MIN_VALUE;
+        byte res = UMAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (byte) VectorMath.maxUnsigned(res, a[i]);
@@ -4331,7 +4510,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte UMAXReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = Byte.MIN_VALUE;
+        byte res = UMAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.maxUnsigned(res, UMAXReduceMasked(a, i, mask));
         }
@@ -4345,20 +4524,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = Byte.MIN_VALUE;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = UMAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.UMAX, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Byte.MIN_VALUE;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX, vmask));
+                byte v = av.reduceLanes(VectorOperators.UMAX, vmask);
+                r[i] = v;
+                ra = (byte) VectorMath.maxUnsigned(ra, v);
             }
         }
 
@@ -4367,7 +4541,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte FIRST_NONZEROReduce(byte[] a, int idx) {
-        byte res = (byte) 0;
+        byte res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = firstNonZero(res, a[i]);
         }
@@ -4376,7 +4550,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte FIRST_NONZEROReduceAll(byte[] a) {
-        byte res = (byte) 0;
+        byte res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduce(a, i));
         }
@@ -4388,20 +4562,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
     static void FIRST_NONZEROReduceByte256VectorTests(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
-        byte ra = (byte) 0;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (byte) 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO));
+                byte v = av.reduceLanes(VectorOperators.FIRST_NONZERO);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
@@ -4409,8 +4578,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::FIRST_NONZEROReduce, Byte256VectorTests::FIRST_NONZEROReduceAll);
     }
 
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void FIRST_NONZEROReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = FIRST_NONZERO_IDENTITY;
+
+        Assert.assertEquals(firstNonZero(id, id), id,
+                            "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(firstNonZero(id, x), x);
+                Assert.assertEquals(firstNonZero(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(firstNonZero(id, x), x,
+                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals(firstNonZero(x, id), x,
+                                "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
+        }
+    }
+
     static byte FIRST_NONZEROReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = (byte) 0;
+        byte res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = firstNonZero(res, a[i]);
@@ -4420,7 +4612,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte FIRST_NONZEROReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = (byte) 0;
+        byte res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduceMasked(a, i, mask));
         }
@@ -4434,20 +4626,15 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        byte ra = (byte) 0;
+        byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (byte) 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask));
+                byte v = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
@@ -4504,7 +4691,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte SUADDReduce(byte[] a, int idx) {
-        byte res = 0;
+        byte res = SUADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (byte) VectorMath.addSaturatingUnsigned(res, a[i]);
         }
@@ -4513,7 +4700,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte SUADDReduceAll(byte[] a) {
-        byte res = 0;
+        byte res = SUADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.addSaturatingUnsigned(res, SUADDReduce(a, i));
         }
@@ -4528,17 +4715,12 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = SUADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.SUADD);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) VectorMath.addSaturatingUnsigned(ra, av.reduceLanes(VectorOperators.SUADD));
+                byte v = av.reduceLanes(VectorOperators.SUADD);
+                r[i] = v;
+                ra = (byte) VectorMath.addSaturatingUnsigned(ra, v);
             }
         }
 
@@ -4546,8 +4728,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 Byte256VectorTests::SUADDReduce, Byte256VectorTests::SUADDReduceAll);
     }
 
+    @Test(dataProvider = "byteSaturatingUnaryOpProvider")
+    static void SUADDReduceIdentityValueTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte id = SUADD_IDENTITY;
+
+        Assert.assertEquals((byte) VectorMath.addSaturatingUnsigned(id, id), id,
+                            "SUADD(SUADD_IDENTITY, SUADD_IDENTITY) != SUADD_IDENTITY");
+
+        byte x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((byte) VectorMath.addSaturatingUnsigned(id, x), x);
+                Assert.assertEquals((byte) VectorMath.addSaturatingUnsigned(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((byte) VectorMath.addSaturatingUnsigned(id, x), x,
+                                "SUADD(SUADD_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((byte) VectorMath.addSaturatingUnsigned(x, id), x,
+                                "SUADD(" + x + ", SUADD_IDENTITY) != " + x);
+        }
+    }
+
     static byte SUADDReduceMasked(byte[] a, int idx, boolean[] mask) {
-        byte res = 0;
+        byte res = SUADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (byte) VectorMath.addSaturatingUnsigned(res, a[i]);
@@ -4557,7 +4762,7 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     static byte SUADDReduceAllMasked(byte[] a, boolean[] mask) {
-        byte res = 0;
+        byte res = SUADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (byte) VectorMath.addSaturatingUnsigned(res, SUADDReduceMasked(a, i, mask));
         }
@@ -4573,17 +4778,12 @@ public class Byte256VectorTests extends AbstractVectorTest {
         byte ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = SUADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.SUADD, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                ra = (byte) VectorMath.addSaturatingUnsigned(ra, av.reduceLanes(VectorOperators.SUADD, vmask));
+                byte v = av.reduceLanes(VectorOperators.SUADD, vmask);
+                r[i] = v;
+                ra = (byte) VectorMath.addSaturatingUnsigned(ra, v);
             }
         }
 
@@ -6390,6 +6590,157 @@ public class Byte256VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, mask, Byte256VectorTests::REVERSE_BYTES);
     }
 
+    static boolean band(boolean a, boolean b) {
+        return a & b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskandByte256VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.and(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte256VectorTests::band);
+    }
+
+    static boolean bor(boolean a, boolean b) {
+        return a | b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskorByte256VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.or(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte256VectorTests::bor);
+    }
+
+    static boolean bxor(boolean a, boolean b) {
+        return a != b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskxorByte256VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.xor(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte256VectorTests::bxor);
+    }
+
+    static boolean bandNot(boolean a, boolean b) {
+        return a & !b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskandNotByte256VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.andNot(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte256VectorTests::bandNot);
+    }
+
+    static boolean beq(boolean a, boolean b) {
+        return a == b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskeqByte256VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.eq(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, Byte256VectorTests::beq);
+    }
+
+    static boolean unot(boolean a) {
+        return !a;
+    }
+
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    static void masknotByte256VectorTests(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                av.not().intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, Byte256VectorTests::unot);
+    }
+
+    private static final long LONG_MASK_BITS = 0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length());
+
+    static void assertArraysEquals(long[] r, long[] a, long bits) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], a[i] & bits);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], a[i] & bits, "(" + a[i] + ") at index #" + i);
+        }
+    }
+
+    @Test(dataProvider = "longMaskProvider")
+    static void maskFromToLongByte256VectorTests(IntFunction<long[]> fa) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = new long[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i++) {
+                VectorMask vmask = VectorMask.fromLong(SPECIES, a[i]);
+                r[i] = vmask.toLong();
+            }
+        }
+        assertArraysEquals(r, a, LONG_MASK_BITS);
+    }
+
     @Test(dataProvider = "byteCompareOpProvider")
     static void ltByte256VectorTestsBroadcastSmokeTest(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
@@ -6700,113 +7051,20 @@ public class Byte256VectorTests extends AbstractVectorTest {
         }
     }
 
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskEqualsByte256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskEqualsByte256VectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            boolean equals = av.equals(bv);
-            int to = i + SPECIES.length();
-            Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                boolean equals = av.equals(bv);
+                int to = i + SPECIES.length();
+                Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+            }
         }
-    }
-
-    static boolean band(boolean a, boolean b) {
-        return a & b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskAndByte256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.and(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte256VectorTests::band);
-    }
-
-    static boolean bor(boolean a, boolean b) {
-        return a | b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskOrByte256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.or(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte256VectorTests::bor);
-    }
-
-    static boolean bxor(boolean a, boolean b) {
-        return a != b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskXorByte256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.xor(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte256VectorTests::bxor);
-    }
-
-    static boolean bandNot(boolean a, boolean b) {
-        return a & !b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskAndNotByte256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.andNot(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte256VectorTests::bandNot);
-    }
-
-    static boolean beq(boolean a, boolean b) {
-        return (a == b);
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskEqByte256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.eq(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, Byte256VectorTests::beq);
     }
 
     @Test(dataProvider = "maskProvider")
@@ -6911,23 +7169,6 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 }
             }
         }
-    }
-
-    @DataProvider
-    public static Object[][] longMaskProvider() {
-        return new Object[][]{
-                {0xFFFFFFFFFFFFFFFFL},
-                {0x0000000000000000L},
-                {0x5555555555555555L},
-                {0x0123456789abcdefL},
-        };
-    }
-
-    @Test(dataProvider = "longMaskProvider")
-    static void maskFromToLongByte256VectorTestsSmokeTest(long inputLong) {
-        var vmask = VectorMask.fromLong(SPECIES, inputLong);
-        long outputLong = vmask.toLong();
-        Assert.assertEquals(outputLong, (inputLong & (((0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length()))))));
     }
 
     @DataProvider

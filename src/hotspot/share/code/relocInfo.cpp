@@ -26,6 +26,8 @@
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
+#include "cppstdlib/new.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -35,9 +37,6 @@
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
-
-#include <new>
-#include <type_traits>
 
 const RelocationHolder RelocationHolder::none; // its type is relocInfo::none
 

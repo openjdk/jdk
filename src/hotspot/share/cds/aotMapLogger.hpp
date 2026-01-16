@@ -32,7 +32,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
-class ArchiveHeapInfo;
+class ArchiveMappedHeapInfo;
+class ArchiveStreamedHeapInfo;
 class CompileTrainingData;
 class DumpRegion;
 class FileMapInfo;
@@ -64,6 +65,7 @@ class AOTMapLogger : AllStatic {
     MetaspaceObj::Type _type;
   };
 
+public:
   // FakeOop and subtypes
   class FakeOop;
   class   FakeMirror;
@@ -71,15 +73,48 @@ class AOTMapLogger : AllStatic {
   class   FakeString;
   class   FakeTypeArray;
 
+#if INCLUDE_CDS_JAVA_HEAP
+  struct OopData {
+    address _buffered_addr;
+    address _requested_addr;
+    intptr_t _target_location;
+    uint32_t _narrow_location;
+    oopDesc* _raw_oop;
+    Klass* _klass;
+    size_t _size;
+    bool _is_root_segment;
+  };
+
+  class OopDataIterator : public CHeapObj<mtClassShared> {
+  protected:
+    OopData null_data() {
+      return { nullptr,
+               nullptr,
+               0,
+               0,
+               nullptr,
+               nullptr,
+               0,
+               false };
+    }
+
+  public:
+    virtual bool has_next() = 0;
+    virtual OopData next() = 0;
+    virtual OopData obj_at(narrowOop* p) = 0;
+    virtual OopData obj_at(oop* p) = 0;
+    virtual GrowableArrayCHeap<OopData, mtClass>* roots() = 0;
+    virtual ~OopDataIterator() {}
+  };
+#endif
+
+private:
   class RequestedMetadataAddr;
   class RuntimeGatherArchivedMetaspaceObjs;
 
   static bool _is_logging_at_bootstrap;
   static bool _is_runtime_logging;
-  static size_t _num_root_segments;
-  static size_t _num_obj_arrays_logged;
   static GrowableArrayCHeap<FakeOop, mtClass>* _roots;
-  static ArchiveHeapInfo* _dumptime_heap_info;
 
   static intx _buffer_to_requested_delta;
   static intx _requested_to_mapped_metadata_delta;
@@ -114,12 +149,14 @@ class AOTMapLogger : AllStatic {
 
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static void dumptime_log_heap_region(ArchiveHeapInfo* heap_info);
+  static void dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* mapped_heap_info);
+  static void dumptime_log_streamed_heap_region(ArchiveStreamedHeapInfo* streamed_heap_info);
   static void runtime_log_heap_region(FileMapInfo* mapinfo);
 
-  static void print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr = true);
+  static void print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_location = true);
   static void print_oop_details(FakeOop fake_oop, outputStream* st);
-  static void log_oops(address buf_start, address buf_end);
+  static void log_mapped_oops(address buf_start, address buf_end);
+  static void log_archived_objects(OopDataIterator* iter);
   class ArchivedFieldPrinter; // to be replaced by ArchivedFieldPrinter2
 #endif
 
@@ -128,7 +165,7 @@ public:
   static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
 
   static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                           ArchiveHeapInfo* heap_info,
+                           ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info,
                            char* bitmap, size_t bitmap_size_in_bytes);
   static void runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo);
 };

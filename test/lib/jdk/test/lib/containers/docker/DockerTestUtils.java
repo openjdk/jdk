@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.regex.Pattern;
+import jdk.internal.platform.Metrics;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -47,6 +49,7 @@ import jtreg.SkippedException;
 public class DockerTestUtils {
     private static boolean isDockerEngineAvailable = false;
     private static boolean wasDockerEngineChecked = false;
+    private static final Metrics metrics = Metrics.systemMetrics();
 
     // Specifies how many lines to copy from child STDOUT to main test output.
     // Having too many lines in the main test output will result
@@ -83,18 +86,22 @@ public class DockerTestUtils {
         return isDockerEngineAvailable;
     }
 
+    /**
+     * Checks if the actual engine command is podman.
+     *
+     * @return {@code true} if engine is podman. {@code false} otherwise.
+     */
+    public static boolean isPodman() {
+        return Container.ENGINE_COMMAND.contains("podman");
+    }
 
     /**
-     * Convenience method, will check if docker engine is available and usable;
-     * will print the appropriate message when not available.
+     * Checks if the docker engine is available and usable, throws an exception if not.
      *
-     * @return true if docker engine is available
      * @throws Exception
      */
-    public static boolean canTestDocker() throws Exception {
-        if (isDockerEngineAvailable()) {
-            return true;
-        } else {
+    public static void checkCanTestDocker() throws Exception {
+        if (!isDockerEngineAvailable()) {
             throw new SkippedException("Docker engine is not available on this system");
         }
     }
@@ -119,6 +126,37 @@ public class DockerTestUtils {
             return false;
         }
         return true;
+    }
+
+    private static String getEngineInfo(String format) throws Exception {
+        return execute(Container.ENGINE_COMMAND, "info", "-f", format).getStdout();
+    }
+
+    /**
+     * Checks if the engine can use resource limits, throws an exception if not.
+     *
+     * @throws Exception
+     */
+    public static void checkCanUseResourceLimits() throws Exception {
+        if (isRootless() && "cgroupv1".equals(metrics.getProvider())) {
+            throw new SkippedException("Resource limits are not available on this system");
+        }
+    }
+
+    /**
+     * Determine if the engine is running in root-less mode.
+     *
+     * @return {@code true} when running root-less (podman or docker). {@code false}
+     *         otherwise.
+     *
+     * @throws Exception
+     */
+    public static boolean isRootless() throws Exception {
+        // Docker and Podman have different INFO structures.
+        // The node path for Podman is .Host.Security.Rootless, that also holds for
+        // Podman emulating Docker CLI. The node path for Docker is .SecurityOptions.
+        return (getEngineInfo("{{.Host.Security.Rootless}}").contains("true") ||
+                getEngineInfo("{{.SecurityOptions}}").contains("name=rootless"));
     }
 
      /**
@@ -202,6 +240,9 @@ public class DockerTestUtils {
      */
     public static List<String> buildJavaCommand(DockerRunOptions opts) throws Exception {
         List<String> cmd = buildContainerCommand();
+        if (!opts.engineOpts.isEmpty()) {
+            cmd.addAll(opts.engineOpts);
+        }
         cmd.add("run");
         if (opts.tty)
             cmd.add("--tty=true");
@@ -250,7 +291,9 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static void removeDockerImage(String imageNameAndTag) throws Exception {
+        if(!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
             execute(Container.ENGINE_COMMAND, "rmi", "--force", imageNameAndTag);
+        }
     }
 
 
@@ -299,6 +342,16 @@ public class DockerTestUtils {
         System.out.println("Full child process STDOUT was saved to " + stdoutLogFile);
 
         return output;
+    }
+
+    public static void shouldMatchWithValue(OutputAnalyzer output, String metric, String value) throws Exception {
+        String pattern = "^" + Pattern.quote(metric) + ":\\s*" + Pattern.quote(value) + ".*$";
+        output.shouldMatch(pattern);
+    }
+
+    public static void shouldNotMatchWithValue(OutputAnalyzer output, String metric, String value) throws Exception {
+        String pattern = "^" + Pattern.quote(metric) + ":\\s*" + Pattern.quote(value) + ".*$";
+        output.shouldNotMatch(pattern);
     }
 
 

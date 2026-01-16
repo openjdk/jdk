@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public abstract class HttpsServer extends HttpServer {
      * Creates a {@code HttpsServer} instance which is initially not bound to any
      * local address/port. The {@code HttpsServer} is acquired from the currently
      * installed {@link HttpServerProvider}. The server must be bound using
-     * {@link #bind(InetSocketAddress,int)} before it can be used. The server
+     * {@link #bind(InetSocketAddress, int)} before it can be used. The server
      * must also have a {@code HttpsConfigurator} established with
      * {@link #setHttpsConfigurator(HttpsConfigurator)}.
      *
@@ -80,7 +80,7 @@ public abstract class HttpsServer extends HttpServer {
      * established with {@link #setHttpsConfigurator(HttpsConfigurator)}.
      *
      * @param addr the address to listen on, if {@code null} then
-     *             {@link #bind(InetSocketAddress,int)} must be called to set
+     *             {@link #bind(InetSocketAddress, int)} must be called to set
      *             the address
      * @param backlog the socket backlog. If this value is less than or equal to
      *               zero, then a system default value is used.

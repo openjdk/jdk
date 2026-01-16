@@ -25,7 +25,7 @@
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 
-ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(size_t num_bits) :
+ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(idx_t num_bits) :
     _num_bits(num_bits),
     _num_words(align_up(num_bits, BitsPerWord) / BitsPerWord),
     _bitmap(NEW_C_HEAP_ARRAY(uintx, _num_words, mtGC))

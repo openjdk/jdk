@@ -241,7 +241,7 @@ recognize your tests.
 Test file location should reflect a location of the tested part of the product.
 
 * All unit tests for a class from `foo/bar/baz.cpp` should be placed
-`foo/bar/test_baz.cpp` in `hotspot/test/native/` directory. Having all
+`foo/bar/test_baz.cpp` in the `test/hotspot/gtest/` directory. Having all
 tests for a class in one file is a common practice for unit tests, it
 helps to see all existing tests at once, share functions and/or
 resources without losing encapsulation.
@@ -254,7 +254,7 @@ sub-system under tests belongs to `gc/g1`, tests should be placed in
 
 Please note that framework prepends directory name to a test group
 name. For example, if `TEST(foo, check_this)` and `TEST(bar, check_that)`
-are defined in `hotspot/test/native/gc/shared/test_foo.cpp` file, they
+are defined in `test/hotspot/gtest/gc/shared/test_foo.cpp` file, they
 will be reported as `gc/shared/foo::check_this` and
 `gc/shared/bar::check_that`.
 

@@ -1,6 +1,7 @@
 PrimitivePatternsSwitchErrors.java:15:18: compiler.err.pattern.dominated
 PrimitivePatternsSwitchErrors.java:24:18: compiler.err.pattern.dominated
 PrimitivePatternsSwitchErrors.java:31:24: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.Long)
+PrimitivePatternsSwitchErrors.java:62:18: compiler.err.pattern.dominated
 PrimitivePatternsSwitchErrors.java:70:18: compiler.err.pattern.dominated
 PrimitivePatternsSwitchErrors.java:78:18: compiler.err.pattern.dominated
 PrimitivePatternsSwitchErrors.java:84:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: long, byte)
@@ -29,6 +30,14 @@ PrimitivePatternsSwitchErrors.java:248:18: compiler.err.prob.found.req: (compile
 PrimitivePatternsSwitchErrors.java:255:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Long, int)
 PrimitivePatternsSwitchErrors.java:261:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Short, char)
 PrimitivePatternsSwitchErrors.java:266:16: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: T, byte)
+PrimitivePatternsSwitchErrors.java:273:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:289:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:295:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:302:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:309:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:321:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:330:13: compiler.err.unconditional.pattern.and.default
+PrimitivePatternsSwitchErrors.java:329:18: compiler.err.pattern.dominated
 PrimitivePatternsSwitchErrors.java:30:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:37:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:44:16: compiler.err.not.exhaustive
@@ -43,4 +52,4 @@ PrimitivePatternsSwitchErrors.java:254:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:260:16: compiler.err.not.exhaustive
 - compiler.note.preview.filename: PrimitivePatternsSwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
-43 errors
+52 errors

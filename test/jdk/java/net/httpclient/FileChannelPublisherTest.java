@@ -90,7 +90,7 @@ class FileChannelPublisherTest {
 
     private static final int DEFAULT_BUFFER_SIZE = Utils.getBuffer().capacity();
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     private static final HttpClient CLIENT = HttpClient.newBuilder().sslContext(SSL_CONTEXT).proxy(NO_PROXY).build();
 
@@ -101,14 +101,6 @@ class FileChannelPublisherTest {
             HTTPS1 = ServerRequestPair.of(Version.HTTP_1_1, true),
             HTTP2 = ServerRequestPair.of(Version.HTTP_2, false),
             HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new UncheckedIOException(exception);
-        }
-    }
 
     private record ServerRequestPair(
             String serverName,

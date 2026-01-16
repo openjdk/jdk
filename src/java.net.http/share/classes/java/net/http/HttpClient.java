@@ -102,13 +102,17 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
  *        .authenticator(Authenticator.getDefault())
  *        .build();
+ *
+ *   HttpRequest request = HttpRequest.newBuilder()
+ *       .uri(URI.create("https://foo.com/"))
+ *       .build();
  *   HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
  *   System.out.println(response.statusCode());
  *   System.out.println(response.body());  }
  *
  * <p><b>Asynchronous Example</b>
  * {@snippet :
- *    HttpRequest request = HttpRequest.newBuilder()
+ *   HttpRequest request = HttpRequest.newBuilder()
  *        .uri(URI.create("https://foo.com/"))
  *        .timeout(Duration.ofMinutes(2))
  *        .header("Content-Type", "application/json")
@@ -308,10 +312,22 @@ public abstract class HttpClient implements AutoCloseable {
          * need to be established, for example if a connection can be reused
          * from a previous request, then this timeout duration has no effect.
          *
+         * @implSpec
+         * A connection timeout applies to the entire connection phase, from the
+         * moment a connection is requested until it is established.
+         * Implementations are recommended to ensure that the connection timeout
+         * covers any SSL/TLS handshakes.
+         *
+         * @implNote
+         * The built-in JDK implementation of the connection timeout covers any
+         * SSL/TLS handshakes.
+         *
          * @param duration the duration to allow the underlying connection to be
          *                 established
          * @return this builder
          * @throws IllegalArgumentException if the duration is non-positive
+         * @see HttpRequest.Builder#timeout(Duration) Configuring timeout for
+         * request execution
          */
         public Builder connectTimeout(Duration duration);
 
@@ -933,7 +949,7 @@ public abstract class HttpClient implements AutoCloseable {
      * <p> If interrupted while waiting, this method may attempt to stop all
      * operations by calling {@link #shutdownNow()}. It then continues to wait
      * until all actively executing operations have completed.
-     * The interrupt status will be re-asserted before this method returns.
+     * The interrupted status will be re-asserted before this method returns.
      *
      * <p> If already terminated, invoking this method has no effect.
      *

@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.MacPkgPackageMixin;
 import jdk.jpackage.internal.model.PkgSigningConfig;
@@ -42,20 +41,16 @@ final class MacPkgPackageBuilder {
         return this;
     }
 
-    MacPkgPackage create() throws ConfigException {
+    MacPkgPackage create() {
         var pkg = MacPkgPackage.create(pkgBuilder.create(), new MacPkgPackageMixin.Stub(createSigningConfig()));
         validatePredefinedAppImage(pkg);
         return pkg;
     }
 
-    private Optional<PkgSigningConfig> createSigningConfig() throws ConfigException {
-        if (signingBuilder != null) {
-            return signingBuilder.create().map(cfg -> {
-                return new PkgSigningConfig.Stub(cfg.identity(), cfg.keychain().map(Keychain::name));
-            });
-        } else {
-            return Optional.empty();
-        }
+    private Optional<PkgSigningConfig> createSigningConfig() {
+        return Optional.ofNullable(signingBuilder).flatMap(SigningIdentityBuilder::create).map(cfg -> {
+            return new PkgSigningConfig.Stub(cfg.identity(), cfg.keychain().map(Keychain::name));
+        });
     }
 
     private static void validatePredefinedAppImage(MacPkgPackage pkg) {

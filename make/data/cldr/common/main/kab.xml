@@ -1076,20 +1076,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">Nun</month>
 							<month type="12">Duǧ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">Y</month>
-							<month type="2" draft="unconfirmed">F</month>
-							<month type="3" draft="unconfirmed">M</month>
-							<month type="4" draft="unconfirmed">Y</month>
-							<month type="5" draft="unconfirmed">M</month>
-							<month type="6" draft="unconfirmed">Y</month>
-							<month type="7" draft="unconfirmed">Y</month>
-							<month type="8" draft="unconfirmed">Ɣ</month>
-							<month type="9" draft="unconfirmed">C</month>
-							<month type="10" draft="unconfirmed">T</month>
-							<month type="11" draft="unconfirmed">W</month>
-							<month type="12" draft="unconfirmed">D</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Yennayer</month>
 							<month type="2">Fuṛar</month>
@@ -1106,20 +1092,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">Yen</month>
-							<month type="2" draft="unconfirmed">Fur</month>
-							<month type="3" draft="unconfirmed">Meɣ</month>
-							<month type="4" draft="unconfirmed">Yeb</month>
-							<month type="5" draft="unconfirmed">May</month>
-							<month type="6" draft="unconfirmed">Yun</month>
-							<month type="7" draft="unconfirmed">Yul</month>
-							<month type="8" draft="unconfirmed">Ɣuc</month>
-							<month type="9" draft="unconfirmed">Cte</month>
-							<month type="10" draft="unconfirmed">Tub</month>
-							<month type="11" draft="unconfirmed">Wam</month>
-							<month type="12" draft="unconfirmed">Duǧ</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">Y</month>
 							<month type="2">F</month>
@@ -1139,51 +1111,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">Yan</day>
-							<day type="mon">San</day>
-							<day type="tue">Kraḍ</day>
-							<day type="wed">Kuẓ</day>
-							<day type="thu">Sam</day>
-							<day type="fri">Sḍis</day>
-							<day type="sat">Say</day>
+							<day type="sun">Acer</day>
+							<day type="mon">Arim</day>
+							<day type="tue">Aram</day>
+							<day type="wed">Ahad</day>
+							<day type="thu">Amhad</day>
+							<day type="fri">Sem</day>
+							<day type="sat">Sed</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">C</day>
-							<day type="mon" draft="unconfirmed">R</day>
-							<day type="tue" draft="unconfirmed">R</day>
-							<day type="wed" draft="unconfirmed">H</day>
-							<day type="thu" draft="unconfirmed">M</day>
-							<day type="fri" draft="unconfirmed">S</day>
-							<day type="sat" draft="unconfirmed">S</day>
+							<day type="sun">C</day>
+							<day type="mon">R</day>
+							<day type="tue">R</day>
+							<day type="wed">H</day>
+							<day type="thu">M</day>
+							<day type="fri">S</day>
+							<day type="sat">S</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">Cr</day>
-							<day type="mon" draft="unconfirmed">Ri</day>
-							<day type="tue" draft="unconfirmed">Ra</day>
-							<day type="wed" draft="unconfirmed">Hd</day>
-							<day type="thu" draft="unconfirmed">Mh</day>
-							<day type="fri" draft="unconfirmed">Sm</day>
-							<day type="sat" draft="unconfirmed">Sd</day>
+							<day type="sun">Acer</day>
+							<day type="mon">Arim</day>
+							<day type="tue">Aram</day>
+							<day type="wed">Ahad</day>
+							<day type="thu">Amhad</day>
+							<day type="fri">Sem</day>
+							<day type="sat">Sed</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">Yanass</day>
-							<day type="mon">Sanass</day>
-							<day type="tue">Kraḍass</day>
-							<day type="wed">Kuẓass</day>
-							<day type="thu">Samass</day>
-							<day type="fri">Sḍisass</day>
-							<day type="sat">Sayass</day>
+							<day type="sun">Acer</day>
+							<day type="mon">Arim</day>
+							<day type="tue">Aram</day>
+							<day type="wed">Ahad</day>
+							<day type="thu">Amhad</day>
+							<day type="fri">Sem</day>
+							<day type="sat">Sed</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">Ace</day>
-							<day type="mon" draft="unconfirmed">Ari</day>
-							<day type="tue" draft="unconfirmed">Ara</day>
-							<day type="wed" draft="unconfirmed">Aha</day>
-							<day type="thu" draft="unconfirmed">Amh</day>
-							<day type="fri" draft="unconfirmed">Sem</day>
-							<day type="sat" draft="unconfirmed">Sed</day>
+							<day type="sun">Acer</day>
+							<day type="mon">Arim</day>
+							<day type="tue">Aram</day>
+							<day type="wed">Ahad</day>
+							<day type="thu">Amhad</day>
+							<day type="fri">Sem</day>
+							<day type="sat">Sed</day>
 						</dayWidth>
 						<!-- These are longer than the wide forms (at least for Lǧem). Commenting out for now.
 							 <dayWidth type="abbreviated">
@@ -1197,31 +1169,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							 </dayWidth>
 						-->
 						<dayWidth type="narrow">
-							<day type="sun">Y</day>
-							<day type="mon">S</day>
-							<day type="tue">K</day>
-							<day type="wed">K</day>
-							<day type="thu">S</day>
+							<day type="sun">C</day>
+							<day type="mon">R</day>
+							<day type="tue">R</day>
+							<day type="wed">H</day>
+							<day type="thu">M</day>
 							<day type="fri">S</day>
 							<day type="sat">S</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">Cr</day>
-							<day type="mon" draft="unconfirmed">Ri</day>
-							<day type="tue" draft="unconfirmed">Ra</day>
-							<day type="wed" draft="unconfirmed">Hd</day>
-							<day type="thu" draft="unconfirmed">Md</day>
-							<day type="fri" draft="unconfirmed">Sm</day>
-							<day type="sat" draft="unconfirmed">Sd</day>
+							<day type="sun">Acer</day>
+							<day type="mon">Arim</day>
+							<day type="tue">Aram</day>
+							<day type="wed">Ahad</day>
+							<day type="thu">Amhad</day>
+							<day type="fri">Sem</day>
+							<day type="sat">Sed</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">Acer</day>
-							<day type="mon" draft="unconfirmed">Arim</day>
-							<day type="tue" draft="unconfirmed">Aram</day>
-							<day type="wed" draft="unconfirmed">Ahad</day>
-							<day type="thu" draft="unconfirmed">Amhad</day>
-							<day type="fri" draft="unconfirmed">Sem</day>
-							<day type="sat" draft="unconfirmed">Sed</day>
+							<day type="sun">Acer</day>
+							<day type="mon">Arim</day>
+							<day type="tue">Aram</day>
+							<day type="wed">Ahad</day>
+							<day type="thu">Amhad</day>
+							<day type="fri">Sem</day>
+							<day type="sat">Sed</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -2299,9 +2271,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Nairobi">
 				<exemplarCity draft="unconfirmed">Nayrubi</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity draft="unconfirmed">Enderbury</exemplarCity>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity draft="unconfirmed">Kumuṛ</exemplarCity>
 			</zone>
@@ -2615,9 +2584,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="unconfirmed">Akud n Tefriqt n umalu</generic>
-					<standard draft="unconfirmed">Akud amezday n Tefriqt n umalu</standard>
-					<daylight draft="unconfirmed">Akud n unebdu n Tefriqt n umalu</daylight>
+					<standard draft="unconfirmed">Akud n Tefriqt n umalu</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2965,6 +2932,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard draft="unconfirmed">Akud n Gwiyan</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">Akud amezday n Haway-Aliwsyan</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3518,30 +3490,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">0K¤</pattern>
-					<pattern type="1000" count="other" draft="provisional">0K¤</pattern>
-					<pattern type="10000" count="one" draft="provisional">00K¤</pattern>
-					<pattern type="10000" count="other" draft="provisional">00K¤</pattern>
-					<pattern type="100000" count="one" draft="provisional">000K¤</pattern>
-					<pattern type="100000" count="other" draft="provisional">000K¤</pattern>
+					<pattern type="1000" count="one">0G¤</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber">0G ¤</pattern>
+					<pattern type="1000" count="other">0G¤</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">0G ¤</pattern>
+					<pattern type="10000" count="one">00G¤</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber">00G ¤</pattern>
+					<pattern type="10000" count="other">00G¤</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">00G ¤</pattern>
+					<pattern type="100000" count="one">000G¤</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber">000G ¤</pattern>
+					<pattern type="100000" count="other">000G¤</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">000G ¤</pattern>
 					<pattern type="1000000" count="one" draft="provisional">0M¤</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">0M ¤</pattern>
 					<pattern type="1000000" count="other" draft="provisional">0M¤</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">0M ¤</pattern>
 					<pattern type="10000000" count="one" draft="provisional">00M¤</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber">00M ¤</pattern>
 					<pattern type="10000000" count="other" draft="provisional">00M¤</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">00M ¤</pattern>
 					<pattern type="100000000" count="one" draft="provisional">000M¤</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber">000M ¤</pattern>
 					<pattern type="100000000" count="other" draft="provisional">000M¤</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">0G¤</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">0G¤</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">00G¤</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">00G¤</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">000G¤</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">000G¤</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">000M ¤</pattern>
+					<pattern type="1000000000" count="one">0L¤</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber">0L ¤</pattern>
+					<pattern type="1000000000" count="other">0L¤</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">0L ¤</pattern>
+					<pattern type="10000000000" count="one">00L¤</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">00L ¤</pattern>
+					<pattern type="10000000000" count="other">00L¤</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">00L ¤</pattern>
+					<pattern type="100000000000" count="one">000L¤</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber">000L ¤</pattern>
+					<pattern type="100000000000" count="other">000L¤</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">000L ¤</pattern>
 					<pattern type="1000000000000" count="one" draft="provisional">0T¤</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">0T ¤</pattern>
 					<pattern type="1000000000000" count="other" draft="provisional">0T¤</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">0T ¤</pattern>
 					<pattern type="10000000000000" count="one" draft="provisional">00T¤</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">00T ¤</pattern>
 					<pattern type="10000000000000" count="other" draft="provisional">00T¤</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">00T ¤</pattern>
 					<pattern type="100000000000000" count="one" draft="provisional">000T¤</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">000T ¤</pattern>
 					<pattern type="100000000000000" count="other" draft="provisional">000T¤</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">000T ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>

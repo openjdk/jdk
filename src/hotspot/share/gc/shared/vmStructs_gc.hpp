@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,8 +132,7 @@
   declare_toplevel_type(CollectedHeap)                                    \
   declare_toplevel_type(ContiguousSpace)                                  \
   declare_toplevel_type(BarrierSet)                                       \
-           declare_type(ModRefBarrierSet,             BarrierSet)         \
-           declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
+           declare_type(CardTableBarrierSet,             BarrierSet)      \
   declare_toplevel_type(CardTable)                                        \
   declare_toplevel_type(BarrierSet::Name)                                 \
                                                                           \
@@ -183,7 +182,6 @@
                                                                             \
   declare_constant(AgeTable::table_size)                                    \
                                                                             \
-  declare_constant(BarrierSet::ModRef)                                      \
   declare_constant(BarrierSet::CardTableBarrierSet)                         \
                                                                             \
   declare_constant(BOTConstants::LogBase)                                   \

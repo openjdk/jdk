@@ -500,6 +500,8 @@ class ClassFileParser {
 
   InstanceKlass* create_instance_klass(bool cf_changed_in_CFLH, const ClassInstanceInfo& cl_inst_info, TRAPS);
 
+  const ClassFileStream& stream() const { return *_stream; }
+
   const ClassFileStream* clone_stream() const;
 
   void set_klass_to_deallocate(InstanceKlass* klass);

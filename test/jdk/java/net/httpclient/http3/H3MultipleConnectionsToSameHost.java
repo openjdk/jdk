@@ -23,7 +23,7 @@
 
 /*
  * @test id=with-continuations
- * @bug 8087112
+ * @bug 8087112 8372409
  * @requires os.family != "windows" | ( os.name != "Windows 10" & os.name != "Windows Server 2016"
  *                                      & os.name != "Windows Server 2019" )
  * @library /test/lib /test/jdk/java/net/httpclient/lib
@@ -37,7 +37,7 @@
  *                     -Djdk.internal.httpclient.quic.poller.usePlatformThreads=false
  *                     -Djdk.httpclient.quic.maxEndpoints=-1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
@@ -46,7 +46,7 @@
  */
 /*
  * @test id=without-continuations
- * @bug 8087112
+ * @bug 8087112 8372409
  * @requires os.family == "windows" & ( os.name == "Windows 10" | os.name == "Windows Server 2016"
  *                                     | os.name == "Windows Server 2019" )
  * @library /test/lib /test/jdk/java/net/httpclient/lib
@@ -61,7 +61,7 @@
  *                     -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *                     -Djdk.httpclient.quic.maxEndpoints=-1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
@@ -71,7 +71,7 @@
  */
 /*
  * @test id=useNioSelector
- * @bug 8087112
+ * @bug 8087112 8372409
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
@@ -85,7 +85,7 @@
  *                     -Djdk.internal.httpclient.quic.useNioSelector=true
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.quic.maxEndpoints=1
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
@@ -93,6 +93,31 @@
  * @summary Send 100 large concurrent requests, with connections whose max stream
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with non-blocking IO and selector
+ */
+/*
+ * @test id=reno-cc
+ * @bug 8087112 8372409
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=120
+ *                     -Djdk.httpclient.keepalive.timeout.h3=120
+ *                     -Djdk.test.server.quic.idleTimeout=90
+ *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
+ *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
+ *                     -Djdk.httpclient.quic.maxPtoBackoff=9
+ *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
+ *                     -Djdk.httpclient.quic.maxEndpoints=1
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.httpclient.retryOnStreamlimit=50
+ *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
+ *                     -Dsimpleget.requests=100
+ *                     -Djdk.internal.httpclient.quic.congestionController=reno
+ *                     H3MultipleConnectionsToSameHost
+ * @summary Send 100 large concurrent requests, with connections whose max stream
+ *          limit is artificially low, in order to cause concurrent connections
+ *          to the same host to be created, with Reno congestion controller
  */
 
 // Interesting additional settings for debugging and manual testing:
@@ -147,7 +172,7 @@ import static jdk.internal.net.http.Http3ClientProperties.MAX_STREAM_LIMIT_WAIT_
 public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     static HttpTestServer httpsServer;
     static HttpClient client = null;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static String httpsURIString;
     static ExecutorService serverExec =
             Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
@@ -155,8 +180,6 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
 
             httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, serverExec);
@@ -173,9 +196,6 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     }
 
     private static void warmup() throws Exception {
-        SimpleSSLContext sslct = new SimpleSSLContext();
-        var sslContext = sslct.get();
-
         // warmup server
         try (var client2 = createClient(sslContext, Executors.newVirtualThreadPerTaskExecutor())) {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
@@ -214,7 +234,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
             long done = System.nanoTime();
             System.out.println("Initialization and warmup took "+ TimeUnit.NANOSECONDS.toMillis(done-prestart)+" millis");
             // Thread.sleep(30000);
-            int maxBidiStreams = Utils.getIntegerNetProperty("jdk.httpclient.quic.maxBidiStreams", 100);
+            int maxBidiStreams = Utils.getIntegerNetProperty("jdk.internal.httpclient.quic.maxBidiStreams", 100);
             long timeout = MAX_STREAM_LIMIT_WAIT_TIMEOUT;
 
             Set<String> connections = new ConcurrentSkipListSet<>();

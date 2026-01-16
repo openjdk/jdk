@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@
 #define assert_alloc_region(p, message)                                  \
   do {                                                                   \
     assert((p), "[%s] %s c: %u r: " PTR_FORMAT,                          \
-           _name, (message), _count, p2i(_alloc_region)                  \
+           _name, (message), _count, p2i(_alloc_region.load_relaxed())   \
           );                                                             \
   } while (0)
 
 
 inline void G1AllocRegion::reset_alloc_region() {
-  _alloc_region = _dummy_region;
+  _alloc_region.store_relaxed(_dummy_region.load_relaxed());
 }
 
 inline HeapWord* G1AllocRegion::par_allocate(G1HeapRegion* alloc_region, size_t word_size) {
@@ -51,7 +51,7 @@ inline HeapWord* G1AllocRegion::par_allocate(G1HeapRegion* alloc_region, size_t 
 inline HeapWord* G1AllocRegion::attempt_allocation(size_t min_word_size,
                                                    size_t desired_word_size,
                                                    size_t* actual_word_size) {
-  G1HeapRegion* alloc_region = _alloc_region;
+  G1HeapRegion* alloc_region = _alloc_region.load_acquire();
   assert_alloc_region(alloc_region != nullptr && !alloc_region->is_empty(), "not initialized properly");
 
   HeapWord* result = alloc_region->par_allocate(min_word_size, desired_word_size, actual_word_size);
@@ -97,8 +97,9 @@ inline HeapWord* G1AllocRegion::attempt_allocation_using_new_region(size_t min_w
 inline HeapWord* MutatorAllocRegion::attempt_retained_allocation(size_t min_word_size,
                                                                  size_t desired_word_size,
                                                                  size_t* actual_word_size) {
-  if (_retained_alloc_region != nullptr) {
-    HeapWord* result = _retained_alloc_region->par_allocate(min_word_size, desired_word_size, actual_word_size);
+  G1HeapRegion* retained_alloc_region = _retained_alloc_region.load_acquire();
+  if (retained_alloc_region != nullptr) {
+    HeapWord* result = retained_alloc_region->par_allocate(min_word_size, desired_word_size, actual_word_size);
     if (result != nullptr) {
       trace("alloc retained", min_word_size, desired_word_size, *actual_word_size, result);
       return result;

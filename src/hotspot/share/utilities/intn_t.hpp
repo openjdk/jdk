@@ -25,9 +25,8 @@
 #ifndef SHARE_UTILITIES_INTN_T_HPP
 #define SHARE_UTILITIES_INTN_T_HPP
 
+#include "cppstdlib/limits.hpp"
 #include "utilities/count_leading_zeros.hpp"
-
-#include <limits>
 
 template <unsigned int nbits>
 class uintn_t;
@@ -80,6 +79,7 @@ public:
   static_assert(min < max, "");
 
   constexpr bool operator==(intn_t o) const { return (_v & _mask) == (o._v & _mask); }
+  constexpr bool operator!=(intn_t o) const { return !(*this == o); }
   constexpr bool operator<(intn_t o) const { return int(*this) < int(o); }
   constexpr bool operator>(intn_t o) const { return int(*this) > int(o); }
   constexpr bool operator<=(intn_t o) const { return int(*this) <= int(o); }

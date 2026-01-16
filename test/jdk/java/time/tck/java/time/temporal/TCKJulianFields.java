@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@
  */
 package tck.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -71,14 +71,17 @@ import java.time.temporal.IsoFields;
 import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalField;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test Julian Fields.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKJulianFields extends AbstractTCKTest {
 
     private static final LocalDate JAN01_1970 = LocalDate.of(1970, 1, 1);
@@ -86,7 +89,6 @@ public class TCKJulianFields extends AbstractTCKTest {
     private static final LocalDate NOV12_1945 = LocalDate.of(1945, 11, 12);
     private static final LocalDate JAN01_0001 = LocalDate.of(1, 1, 1);
 
-    @DataProvider(name="samples")
     Object[][] data_samples() {
         return new Object[][] {
             {ChronoField.EPOCH_DAY, JAN01_1970, 0L},
@@ -112,55 +114,61 @@ public class TCKJulianFields extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_basics() {
-        assertEquals(JulianFields.JULIAN_DAY.isDateBased(), true);
-        assertEquals(JulianFields.JULIAN_DAY.isTimeBased(), false);
+        assertEquals(true, JulianFields.JULIAN_DAY.isDateBased());
+        assertEquals(false, JulianFields.JULIAN_DAY.isTimeBased());
 
-        assertEquals(JulianFields.MODIFIED_JULIAN_DAY.isDateBased(), true);
-        assertEquals(JulianFields.MODIFIED_JULIAN_DAY.isTimeBased(), false);
+        assertEquals(true, JulianFields.MODIFIED_JULIAN_DAY.isDateBased());
+        assertEquals(false, JulianFields.MODIFIED_JULIAN_DAY.isTimeBased());
 
-        assertEquals(JulianFields.RATA_DIE.isDateBased(), true);
-        assertEquals(JulianFields.RATA_DIE.isTimeBased(), false);
+        assertEquals(true, JulianFields.RATA_DIE.isDateBased());
+        assertEquals(false, JulianFields.RATA_DIE.isTimeBased());
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_samples_get(TemporalField field, LocalDate date, long expected) {
-        assertEquals(date.getLong(field), expected);
+        assertEquals(expected, date.getLong(field));
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_samples_set(TemporalField field, LocalDate date, long value) {
-        assertEquals(field.adjustInto(LocalDate.MAX, value), date);
-        assertEquals(field.adjustInto(LocalDate.MIN, value), date);
-        assertEquals(field.adjustInto(JAN01_1970, value), date);
-        assertEquals(field.adjustInto(DEC31_1969, value), date);
-        assertEquals(field.adjustInto(NOV12_1945, value), date);
+        assertEquals(date, field.adjustInto(LocalDate.MAX, value));
+        assertEquals(date, field.adjustInto(LocalDate.MIN, value));
+        assertEquals(date, field.adjustInto(JAN01_1970, value));
+        assertEquals(date, field.adjustInto(DEC31_1969, value));
+        assertEquals(date, field.adjustInto(NOV12_1945, value));
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_samples_parse_STRICT(TemporalField field, LocalDate date, long value) {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field)
                 .toFormatter().withResolverStyle(ResolverStyle.STRICT);
         LocalDate parsed = LocalDate.parse(Long.toString(value), f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_samples_parse_SMART(TemporalField field, LocalDate date, long value) {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field)
                 .toFormatter().withResolverStyle(ResolverStyle.SMART);
         LocalDate parsed = LocalDate.parse(Long.toString(value), f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
-    @Test(dataProvider="samples")
+    @ParameterizedTest
+    @MethodSource("data_samples")
     public void test_samples_parse_LENIENT(TemporalField field, LocalDate date, long value) {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field)
                 .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
         LocalDate parsed = LocalDate.parse(Long.toString(value), f);
-        assertEquals(parsed, date);
+        assertEquals(date, parsed);
     }
 
 }

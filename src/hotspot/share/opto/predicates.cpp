@@ -65,7 +65,7 @@ bool AssertionPredicate::has_assertion_predicate_opaque(const Node* predicate_pr
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.
 bool AssertionPredicate::has_halt(const IfTrueNode* success_proj) {
-  ProjNode* other_proj = success_proj->other_if_proj();
+  IfProjNode* other_proj = success_proj->other_if_proj();
   return other_proj->outcnt() == 1 && other_proj->unique_out()->Opcode() == Op_Halt;
 }
 
@@ -198,12 +198,21 @@ TemplateAssertionPredicate TemplateAssertionPredicate::clone_and_replace_opaque_
                                                                                       Node* new_opaque_input,
                                                                                       CountedLoopNode* new_loop_node,
                                                                                       PhaseIdealLoop* phase) const {
-  DEBUG_ONLY(verify();)
   OpaqueLoopInitNode* new_opaque_init = new OpaqueLoopInitNode(phase->C, new_opaque_input);
   phase->register_new_node(new_opaque_init, new_control);
+  return clone_and_replace_init(new_control, new_opaque_init, new_loop_node, phase);
+}
+
+// Clone this Template Assertion Predicate and replace the old OpaqueLoopInit node with 'new_init'.
+// Note: 'new_init' could also have the 'OpaqueLoopInit` as parent node further up.
+TemplateAssertionPredicate TemplateAssertionPredicate::clone_and_replace_init(Node* new_control,
+                                                                              Node* new_init,
+                                                                              CountedLoopNode* new_loop_node,
+                                                                              PhaseIdealLoop* phase) const {
+  DEBUG_ONLY(verify();)
   TemplateAssertionExpression template_assertion_expression(opaque_node(), phase);
   OpaqueTemplateAssertionPredicateNode* new_opaque_node =
-      template_assertion_expression.clone_and_replace_init(new_control, new_opaque_init, new_loop_node);
+      template_assertion_expression.clone_and_replace_init(new_control, new_init, new_loop_node);
   AssertionPredicateIfCreator assertion_predicate_if_creator(phase);
   IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, _if_node->Opcode(),
                                                                                 new_opaque_node,
@@ -238,8 +247,40 @@ class ReplaceOpaqueStrideInput : public BFSActions {
     return node->is_OpaqueLoopStride();
   }
 
-  void target_node_action(Node* target_node) override {
-    _igvn.replace_input_of(target_node, 1, _new_opaque_stride_input);
+  void target_node_action(Node* child, uint i) override {
+    assert(child->in(i)->is_OpaqueLoopStride(), "must be OpaqueLoopStride");
+    _igvn.replace_input_of(child->in(i), 1, _new_opaque_stride_input);
+  }
+};
+
+// This class is used to replace the OpaqueLoopInitNode with a new node while leaving the other nodes
+// unchanged.
+class ReplaceOpaqueInitNode : public BFSActions {
+  Node* _new_opaque_init_node;
+  PhaseIterGVN& _igvn;
+
+  public:
+  ReplaceOpaqueInitNode(Node* new_opaque_init_node, PhaseIterGVN& igvn)
+      : _new_opaque_init_node(new_opaque_init_node),
+        _igvn(igvn) {}
+  NONCOPYABLE(ReplaceOpaqueInitNode);
+
+  void replace_for(OpaqueTemplateAssertionPredicateNode* opaque_node) {
+    DataNodeBFS bfs(*this);
+    bfs.run(opaque_node);
+  }
+
+  bool should_visit(Node* node) const override {
+    return TemplateAssertionExpressionNode::is_maybe_in_expression(node);
+  }
+
+  bool is_target_node(Node* node) const override {
+    return node->is_OpaqueLoopInit();
+  }
+
+  void target_node_action(Node* child, uint i) override {
+    assert(child->in(i)->is_OpaqueLoopInit(), "must be old OpaqueLoopInit");
+    _igvn.replace_input_of(child, i, _new_opaque_init_node);
   }
 };
 
@@ -248,6 +289,13 @@ void TemplateAssertionPredicate::replace_opaque_stride_input(Node* new_stride, P
   DEBUG_ONLY(verify();)
   ReplaceOpaqueStrideInput replace_opaque_stride_input(new_stride, igvn);
   replace_opaque_stride_input.replace_for(opaque_node());
+}
+
+// Replace the OpaqueLoopInitNode with 'new_init' and leave the other nodes unchanged.
+void TemplateAssertionPredicate::replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn) const {
+  DEBUG_ONLY(verify();)
+  ReplaceOpaqueInitNode replace_opaque_init_node(new_init, igvn);
+  replace_opaque_init_node.replace_for(opaque_node());
 }
 
 // Create a new Initialized Assertion Predicate from this template at the template success projection.
@@ -308,7 +356,8 @@ class OpaqueLoopNodesVerifier : public BFSActions {
     return node->is_Opaque1();
   }
 
-  void target_node_action(Node* target_node) override {
+  void target_node_action(Node* child, uint i) override {
+    Node* target_node = child->in(i);
     if (target_node->is_OpaqueLoopInit()) {
       assert(!_found_init, "should only find one OpaqueLoopInitNode");
       _found_init = true;
@@ -347,7 +396,7 @@ bool InitializedAssertionPredicate::is_predicate(const Node* maybe_success_proj)
 
 #ifdef ASSERT
 bool InitializedAssertionPredicate::has_halt(const IfTrueNode* success_proj) {
-  ProjNode* other_proj = success_proj->other_if_proj();
+  IfProjNode* other_proj = success_proj->other_if_proj();
   if (other_proj->outcnt() != 1) {
     return false;
   }
@@ -1001,7 +1050,7 @@ InitializedAssertionPredicate CreateAssertionPredicatesVisitor::initialize_from_
 }
 
 bool NodeInSingleLoopBody::check_node_in_loop_body(Node* node) const {
-  return _phase->is_member(_ilt, _phase->get_ctrl(node));
+  return _phase->ctrl_is_member(_ilt, node);
 }
 
 // Clone the provided Template Assertion Predicate and set '_init' as new input for the OpaqueLoopInitNode.
@@ -1094,6 +1143,18 @@ void ClonePredicateToTargetLoop::clone_template_assertion_predicate(
   _target_loop_predicate_chain.insert_predicate(cloned_template_assertion_predicate);
 }
 
+// Clones the provided Template Assertion Predicate to the head of the current predicate chain at the target loop and
+// replaces the current OpaqueLoopInit with 'new_init'.
+//  Note: 'new_init' could also have the 'OpaqueLoopInit` as parent node further up.
+void ClonePredicateToTargetLoop::clone_template_assertion_predicate_and_replace_init(
+    const TemplateAssertionPredicate& template_assertion_predicate, Node* new_init) {
+  TemplateAssertionPredicate cloned_template_assertion_predicate =
+      template_assertion_predicate.clone_and_replace_init(_old_target_loop_entry, new_init, _target_loop_head->as_CountedLoop(), _phase);
+  template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_assertion_predicate.tail(),
+                                                             _node_in_loop_body, _phase);
+  _target_loop_predicate_chain.insert_predicate(cloned_template_assertion_predicate);
+}
+
 CloneUnswitchedLoopPredicatesVisitor::CloneUnswitchedLoopPredicatesVisitor(
     LoopNode* true_path_loop_head, LoopNode* false_path_loop_head,
     const NodeInOriginalLoopBody& node_in_true_path_loop_body, const NodeInClonedLoopBody& node_in_false_path_loop_body,
@@ -1180,6 +1241,10 @@ void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate
   } else {
     _phase->replace_control(new_control_out, initialized_assertion_predicate_success_proj);
   }
+}
+
+void UpdateInitForTemplateAssertionPredicates::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
+  template_assertion_predicate.replace_opaque_init_node(_new_init, _phase->igvn());
 }
 
 // Do the following to find and eliminate useless Parse and Template Assertion Predicates:

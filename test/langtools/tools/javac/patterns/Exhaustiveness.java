@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368 8366968 8364991
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1543,7 +1544,7 @@ public class Exhaustiveness extends TestRunner {
     private static final int NESTING_CONSTANT = 4;
 
     Set<String> createDeeplyNestedVariants() {
-        Set<String> variants = new HashSet<>();
+        Set<String> variants = new LinkedHashSet<>();
         variants.add("C _");
         variants.add("R(I _, I _, I _)");
         for (int n = 0; n < NESTING_CONSTANT; n++) {
@@ -1636,10 +1637,11 @@ public class Exhaustiveness extends TestRunner {
     @Test
     public void testDeeplyNestedNotExhaustive(Path base) throws Exception {
         List<String> variants = createDeeplyNestedVariants().stream().collect(Collectors.toCollection(ArrayList::new));
-        variants.remove((int) (Math.random() * variants.size()));
+        int removed = (int) (Math.random() * variants.size());
+        variants.remove(removed);
         String code = testCodeForVariants(variants);
 
-        System.err.println("analyzing:");
+        System.err.println("analyzing (removed: " + removed + "):");
         System.err.println(code);
         doTest(base,
                new String[0],
@@ -2180,6 +2182,309 @@ public class Exhaustiveness extends TestRunner {
                    }
                }
                """);
+    }
+
+    @Test //JDK-8366968
+    public void testNonSealedDiamond(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+
+                   sealed interface Base permits Special, Value {}
+
+                   non-sealed interface Value extends Base {}
+
+                   sealed interface Special extends Base permits SpecialValue {}
+
+                   non-sealed interface SpecialValue extends Value, Special {}
+
+                   static int demo(final Base base) {
+                       return switch (base) {
+                           case Value value -> 0;
+                       };
+
+                   }
+
+               }
+               """);
+    }
+
+    @Test //JDK-8366968
+    public void testNonSealedDiamond2(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+
+                   sealed interface Base permits Special, Value {}
+
+                   non-sealed interface Value extends Base {}
+
+                   non-sealed interface Special extends Base {}
+
+                   interface SpecialValue extends Value, Special {}
+
+                   static int demo(final Base base) {
+                       return switch (base) {
+                           case Value value -> 0;
+                       };
+
+                   }
+
+               }
+               """,
+               "Demo.java:12:16: compiler.err.not.exhaustive",
+               "1 error");
+    }
+
+    @Test //JDK-8366968
+    public void testNonAbstract(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+                   sealed interface I permits Base, C3 { }
+                   sealed class Base implements I permits C1, C2 { }
+                   final class C1 extends Base { }
+                   final class C2 extends Base { }
+                   final class C3 implements I { }
+
+                   void method1(I i) {
+                       switch (i) {
+                           case C1 _ -> {}
+                           case C2 _ -> {}
+                           case C3 _ -> {}
+                       }
+                   }
+               }
+               """,
+               "Demo.java:9:9: compiler.err.not.exhaustive.statement",
+               "1 error");
+    }
+
+    @Test //JDK-8366968
+    public void testNonSealedDiamondGeneric(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+                   class SomeType {}
+                   sealed interface Base<T extends SomeType> permits Special, Value {}
+                   non-sealed interface Value<T extends SomeType> extends Base<T> {}
+                   sealed interface Special<T extends SomeType> extends Base<T> permits SpecialValue {}
+                   non-sealed interface SpecialValue<T extends SomeType> extends Value<T>, Special<T> {}
+
+                   static <T extends SomeType> int demo(final Base<T> base) {
+                       return switch (base) {
+                            case Value<T> value -> 0;
+                       };
+                   }
+               }
+               """);
+    }
+
+    @Test //JDK-8366968
+    public void testNonSealedDiamondMultiple(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+
+                   sealed interface Base permits Special, Value {}
+
+                   non-sealed interface Value extends Base {}
+
+                   sealed interface Special extends Base permits SpecialValue, Special2 {}
+
+                   non-sealed interface SpecialValue extends Value, Special {}
+                   non-sealed interface Special2 extends Special {}
+
+                   static int demo(final Base base) {
+                       return switch (base) {
+                           case Value value -> 0;
+                       };
+
+                   }
+
+               }
+               """,
+               "Demo.java:13:16: compiler.err.not.exhaustive",
+               "1 error");
+    }
+
+    @Test //JDK-8364991
+    public void testDifferentReductionPaths(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(Root r) {
+                       return switch (r) {
+                           case Root(R1 _, _, _) -> 0;
+                           case Root(R2 _, R1 _, _) -> 0;
+                           case Root(R2 _, R2 _, R1 _) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2 _) -> 0; //functionally equivalent to: Root(R2 _, R2(R2 _, R2 _), R2(R2 _, R2 _))
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2(Base b1, Base b2) implements Base {}
+                   record Root(Base b1, Base b2, Base b3) {}
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(Root<Base> r) {
+                       return switch (r) {
+                           case Root(R1 _, _, _) -> 0;
+                           case Root(R2 _, R1 _, _) -> 0;
+                           case Root(R2 _, R2 _, R1 _) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R1 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R1 _, R2 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R1 _), R2(R2 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R1 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R1 _, R2 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2(R2 _, R1 _)) -> 0;
+                           case Root(R2 _, R2(R2 _, R2 _), R2 _) -> 0; //functionally equivalent to: Root(R2 _, R2(R2 _, R2 _), R2(R2 _, R2 _))
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2(Base b1, Base b2) implements Base {}
+                   record Root<T>(T b1, T b2, T b3) {}
+               }
+               """);
+    }
+
+    @Test //JDK-8364991
+    public void testDifferentReductionPathsSimplified(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test1(Root r) {
+                       return switch (r) {
+                           case Root(R2(R1 _), R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2(R2 _), R2(R1 _)) -> 0;
+                           case Root(R2(R2 _), R2 _) -> 0;
+                       };
+                   }
+                   private int test2(Root r) {
+                       return switch (r) {
+                           case Root(R2(R1 _), R2(R1 _)) -> 0;
+                           case Root(R2(R2 _), R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2 _,     R2(R2 _)) -> 0;
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2(Base b1) implements Base {}
+                   record Root(R2 b2, R2 b3) {}
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test1(Root<R2<Base>> r) {
+                       return switch (r) {
+                           case Root(R2(R1 _), R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2(R2 _), R2(R1 _)) -> 0;
+                           case Root(R2(R2 _), R2 _) -> 0;
+                       };
+                   }
+                   private int test2(Root<R2<Base>> r) {
+                       return switch (r) {
+                           case Root(R2(R1 _), R2(R1 _)) -> 0;
+                           case Root(R2(R2 _), R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2 _,     R2(R2 _)) -> 0;
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2<T>(T b1) implements Base {}
+                   record Root<T>(T b2, T b3) {}
+               }
+               """);
+    }
+
+    @Test //JDK-8364991
+    public void testBindingPatternDoesNotStandInPlaceOfRecordPatterns(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(Root r) {
+                       return switch (r) {
+                           case Root(R2 _, R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2(R2 _), R2 _) -> 0;
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2(Base b) implements Base {}
+                   record Root(R2 b2, R2 b3) {}
+               }
+               """,
+               "Test.java:4:16: compiler.err.not.exhaustive",
+               "1 error");
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(Root<R2<Base>> r) {
+                       return switch (r) {
+                           case Root(R2 _, R2(R1 _)) -> 0;
+                           case Root(R2(R1 _), R2(R2 _)) -> 0;
+                           case Root(R2(R2 _), R2 _) -> 0;
+                       };
+                   }
+                   sealed interface Base {}
+                   record R1() implements Base {}
+                   record R2<T>(T b) implements Base {}
+                   record Root<T>(T b2, T b3) {}
+               }
+               """,
+               "Test.java:4:16: compiler.err.not.exhaustive",
+               "1 error");
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {

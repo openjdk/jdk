@@ -280,7 +280,7 @@ public:
 
   // Record a nest host resolution/validation error
   static void add_nest_host_error(const constantPoolHandle& pool, int which,
-                                  const char* message);
+                                  const stringStream& message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
 
   static void add_to_initiating_loader(JavaThread* current, InstanceKlass* k,
@@ -326,11 +326,10 @@ private:
   static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
 
 protected:
-  // Used by AOTLinkedClassBulkLoader, LambdaProxyClassDictionary, and SystemDictionaryShared
+  // Used by AOTLinkedClassBulkLoader, LambdaProxyClassDictionary, VMClasses and SystemDictionaryShared
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
-  static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,
@@ -342,6 +341,9 @@ protected:
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
+  JFR_ONLY(static void post_class_load_event(EventClassLoad* event,
+                                             const InstanceKlass* k,
+                                             const ClassLoaderData* init_cld);)
 
 public:
   static bool is_system_class_loader(oop class_loader);

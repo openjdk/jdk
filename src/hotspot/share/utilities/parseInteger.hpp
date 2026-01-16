@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,14 +26,14 @@
 #ifndef SHARE_UTILITIES_PARSE_INTEGER_HPP
 #define SHARE_UTILITIES_PARSE_INTEGER_HPP
 
+#include "cppstdlib/cstdlib.hpp"
+#include "cppstdlib/limits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include <errno.h>
-#include <limits>
-#include <stdlib.h>
 
 // *************************************************************************
 // ** Attention compatibility!                                            **

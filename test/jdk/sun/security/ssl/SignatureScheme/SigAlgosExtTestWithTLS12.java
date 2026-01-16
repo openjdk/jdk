@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2021, 2024, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,6 +56,16 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 public class SigAlgosExtTestWithTLS12 extends SSLEngineTemplate {
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl,handshake
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
 
     private static final boolean CLIENT_AUTH
             = Boolean.getBoolean("test.clientAuth");
@@ -114,7 +124,9 @@ public class SigAlgosExtTestWithTLS12 extends SSLEngineTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("javax.net.debug", "ssl:handshake");
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl,handshake");
+        }
 
         try {
             new SigAlgosExtTestWithTLS12().run();

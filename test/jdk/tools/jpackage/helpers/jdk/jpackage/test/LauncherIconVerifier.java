@@ -66,18 +66,11 @@ public final class LauncherIconVerifier {
     }
 
     public void applyTo(JPackageCommand cmd) throws IOException {
-        final String curLauncherName;
-        final String label;
-        if (launcherName == null) {
-            curLauncherName = cmd.name();
-            label = "main";
-        } else {
-            curLauncherName = launcherName;
-            label = String.format("[%s]", launcherName);
-        }
+        final String label = Optional.ofNullable(launcherName).map(v -> {
+            return String.format("[%s]", v);
+        }).orElse("main");
 
-        Path iconPath = cmd.appLayout().desktopIntegrationDirectory().resolve(
-                curLauncherName + TKit.ICON_SUFFIX);
+        Path iconPath = cmd.appLayout().desktopIntegrationDirectory().resolve(iconFileName(cmd));
 
         if (TKit.isWindows()) {
             TKit.assertPathExists(iconPath, false);
@@ -96,6 +89,14 @@ public final class LauncherIconVerifier {
                         "Check icon file [%s] of %s launcher is a copy of source icon file [%s]",
                         iconPath, label, expectedIcon));
             }
+        }
+    }
+
+    private Path iconFileName(JPackageCommand cmd) {
+        if (TKit.isLinux()) {
+            return LinuxHelper.getLauncherIconFileName(cmd, launcherName);
+        } else {
+            return Path.of(Optional.ofNullable(launcherName).orElseGet(cmd::name) + TKit.ICON_SUFFIX);
         }
     }
 

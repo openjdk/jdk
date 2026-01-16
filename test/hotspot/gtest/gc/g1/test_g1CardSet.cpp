@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "unittest.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -385,8 +386,8 @@ void G1CardSetTest::cardset_basic_test() {
 class G1CardSetMtTestTask : public WorkerTask {
   G1CardSet* _card_set;
 
-  size_t _added;
-  size_t _found;
+  Atomic<size_t> _added;
+  Atomic<size_t> _found;
 
 public:
   G1CardSetMtTestTask(G1CardSet* card_set) :
@@ -413,12 +414,12 @@ public:
         found++;
       }
     }
-    AtomicAccess::add(&_added, added);
-    AtomicAccess::add(&_found, found);
+    _added.add_then_fetch(added);
+    _found.add_then_fetch(found);
   }
 
-  size_t added() const { return _added; }
-  size_t found() const { return _found; }
+  size_t added() const { return _added.load_relaxed(); }
+  size_t found() const { return _found.load_relaxed(); }
 };
 
 void G1CardSetTest::cardset_mt_test() {

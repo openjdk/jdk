@@ -45,7 +45,7 @@ import java.util.List;
         revision = JcstressRunner.VERSION, extension = "jar", unpack = false)
 public class JcstressRunner {
 
-    public static final String VERSION = "0.17-SNAPSHOT-20241217";
+    public static final String VERSION = "0.17-SNAPSHOT-20250619";
     public static final String MAIN_CLASS = "org.openjdk.jcstress.Main";
 
     public static final String TIME_BUDGET_PROPERTY = "jcstress.time_budget";

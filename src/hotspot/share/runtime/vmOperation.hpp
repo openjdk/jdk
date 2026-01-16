@@ -48,7 +48,6 @@
   template(Verify)                                \
   template(HeapDumper)                            \
   template(CollectForMetadataAllocation)          \
-  template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
   template(SerialCollectForAllocation)            \
   template(SerialGCCollect)                       \
@@ -69,10 +68,6 @@
   template(ZRelocateStartYoung)                   \
   template(ZRendezvousGCThreads)                  \
   template(ZVerifyOld)                            \
-  template(XMarkStart)                            \
-  template(XMarkEnd)                              \
-  template(XRelocateStart)                        \
-  template(XVerify)                               \
   template(HandshakeAllThreads)                   \
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \
@@ -114,7 +109,6 @@
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
-  template(JvmtiPostObjectFree)                   \
   template(RendezvousGCThreads)                   \
   template(JFRInitializeCPUTimeSampler)       \
   template(JFRTerminateCPUTimeSampler)        \

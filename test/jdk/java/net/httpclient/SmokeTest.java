@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ import java.util.logging.Logger;
  * in docs directory.
  */
 public class SmokeTest {
-    static SSLContext ctx;
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
     static SSLParameters sslparams;
     static HttpServer s1 ;
     static HttpsServer s2;
@@ -808,7 +808,6 @@ public class SmokeTest {
         executor = Executors.newCachedThreadPool();
         s1.setExecutor(executor);
         s2.setExecutor(executor);
-        ctx = new SimpleSSLContext().get();
         sslparams = ctx.getDefaultSSLParameters();
         //sslparams.setProtocols(new String[]{"TLSv1.2"});
         s2.setHttpsConfigurator(new Configurator(addr.getAddress(), ctx));

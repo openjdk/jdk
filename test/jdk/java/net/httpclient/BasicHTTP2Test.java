@@ -71,7 +71,7 @@ import static org.testng.Assert.assertTrue;
 
 public class BasicHTTP2Test implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     String https2URI;
     DatagramSocket udp;
@@ -239,10 +239,6 @@ public class BasicHTTP2Test implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         // HTTP/2
         HttpTestHandler handler = new Handler();
         HttpTestHandler h3Handler = new Handler();

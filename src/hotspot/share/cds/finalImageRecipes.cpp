@@ -89,7 +89,9 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
         if (field_entries != nullptr) {
           for (int i = 0; i < field_entries->length(); i++) {
             ResolvedFieldEntry* rfe = field_entries->adr_at(i);
-            if (rfe->is_resolved(Bytecodes::_getfield) ||
+            if (rfe->is_resolved(Bytecodes::_getstatic) ||
+                rfe->is_resolved(Bytecodes::_putstatic) ||
+                rfe->is_resolved(Bytecodes::_getfield) ||
                 rfe->is_resolved(Bytecodes::_putfield)) {
               cp_indices.append(rfe->constant_pool_index());
               flags |= CP_RESOLVE_FIELD_AND_METHOD;
@@ -204,6 +206,8 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
 
         if (ik->has_aot_safe_initializer() && (flags & WAS_INITED) != 0) {
           assert(ik->class_loader() == nullptr, "supported only for boot classes for now");
+          ResourceMark rm(THREAD);
+          log_info(aot, init)("Initializing %s", ik->external_name());
           ik->initialize(CHECK);
         }
       }

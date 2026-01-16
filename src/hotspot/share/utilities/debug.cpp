@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -62,8 +63,10 @@
 #include "utilities/nativeStackPrinter.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
-#include <new>
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -261,6 +264,8 @@ void report_untested(const char* file, int line, const char* message) {
 
 void report_java_out_of_memory(const char* message) {
   static int out_of_memory_reported = 0;
+
+  JFR_ONLY(Jfr::on_report_java_out_of_memory();)
 
   // A number of threads may attempt to report OutOfMemoryError at around the
   // same time. To avoid dumping the heap or executing the data collection
@@ -664,7 +669,6 @@ void help() {
   tty->print_cr("  pns(void* sp, void* fp, void* pc) - print native (i.e. mixed) stack trace, e.g.");
 #ifdef LINUX
   AMD64_ONLY(  tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64"));
-  IA32_ONLY(   tty->print_cr("                   pns($sp, $ebp, $pc) on Linux/x86"));
   AARCH64_ONLY(tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/AArch64"));
   RISCV_ONLY(  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/RISC-V"));
   PPC64_ONLY(  tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64"));

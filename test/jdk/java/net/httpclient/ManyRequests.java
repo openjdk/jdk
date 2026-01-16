@@ -104,7 +104,7 @@ public class ManyRequests {
                          + " requests; delay=" + INSERT_DELAY
                          + ", chunks=" + CHUNK_SIZE
                          + ", XFixed=" + XFIXED);
-        SSLContext ctx = new SimpleSSLContext().get();
+        SSLContext ctx = SimpleSSLContext.findSSLContext();
 
         InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         HttpsServer server = HttpsServer.create(addr, 0);

@@ -83,7 +83,7 @@ import static org.testng.Assert.assertEquals;
  */
 public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     DatagramChannel receiver;
     String h3URI;
 
@@ -224,10 +224,6 @@ public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         receiver = DatagramChannel.open();
         receiver.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         h3URI = URIBuilder.newBuilder()

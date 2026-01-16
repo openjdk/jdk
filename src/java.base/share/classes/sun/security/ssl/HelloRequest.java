@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ final class HelloRequest {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             HelloRequestMessage hrm = new HelloRequestMessage(shc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced HelloRequest handshake message", hrm);
             }
 
@@ -137,7 +137,7 @@ final class HelloRequest {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             HelloRequestMessage hrm = new HelloRequestMessage(shc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine("Produced HelloRequest handshake message", hrm);
             }
 
@@ -177,7 +177,7 @@ final class HelloRequest {
             // be sent by the server at any time.  Please don't clean up this
             // handshake consumer.
             HelloRequestMessage hrm = new HelloRequestMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming HelloRequest handshake message", hrm);
             }
@@ -190,7 +190,7 @@ final class HelloRequest {
                 }
 
                 if (!chc.conContext.secureRenegotiation) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
                                 "Continue with insecure renegotiation");
                     }
@@ -206,7 +206,7 @@ final class HelloRequest {
                 //
                 SSLHandshake.CLIENT_HELLO.produce(context, hrm);
             } else {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore HelloRequest, handshaking is in progress");
                 }

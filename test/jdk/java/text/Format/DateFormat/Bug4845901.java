@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,22 @@
  * the same time zone abbreviation for standard and daylight saving
  * time.
  * @library /java/text/testlib
- * @run main Bug4845901
+ * @run junit/othervm Bug4845901
  */
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.text.SimpleDateFormat;
 
 public class Bug4845901 {
-    public static void main (String args[]) {
+
+    @Test
+    void test() {
         Locale locale = Locale.getDefault();
-        if (!TestUtils.usesGregorianCalendar(locale)) {
-            System.out.println("Skipping this test because locale is " + locale);
-            return;
-        }
+        Assumptions.assumeTrue(TestUtils.usesGregorianCalendar(locale),
+                locale + " does not use a Gregorian calendar");
 
         TimeZone savedTZ = TimeZone.getDefault();
         TimeZone.setDefault(TimeZone.getTimeZone("Australia/Sydney"));

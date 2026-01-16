@@ -1555,7 +1555,7 @@ public class ML_DSA {
         return res;
     }
 
-    // precondition: -2^31 * MONT_Q <= a, b < 2^31, -2^31 < a * b < 2^31 * MONT_Q
+    // precondition: -2^31 <= a, b < 2^31, -2^31 * MONT_Q <= a * b < 2^31 * MONT_Q
     // computes a * b * 2^-32 mod MONT_Q
     // the result is greater than -MONT_Q and less than MONT_Q
     // See e.g. Algorithm 3 in https://eprint.iacr.org/2018/039.pdf

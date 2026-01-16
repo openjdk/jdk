@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@
 #include "utilities/exceptions.hpp"
 #if defined(LINUX)
 #include "os_linux.hpp"
+#endif
+#if defined(BSD)
+#include "os_bsd.hpp"
 #endif
 
 # include <errno.h>
@@ -141,6 +144,18 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   if (nspid != -1) {
     jio_snprintf(buffer, TMP_BUFFER_LEN, "/proc/%d/root%s", vmid, tmpdir);
     tmpdir = buffer;
+  }
+#endif
+#ifdef __APPLE__
+  char buffer[PATH_MAX] = {0};
+  // Check if the current user is root and the target VM is running as non-root.
+  // Otherwise the output of os::get_temp_directory() is used.
+  //
+  if (os::Posix::is_current_user_root() && !os::Bsd::is_process_root(vmid)) {
+    int path_size = os::Bsd::get_user_tmp_dir_macos(user, vmid, buffer, sizeof buffer);
+    if (path_size > 0 && (size_t)path_size < sizeof buffer) {
+      tmpdir = buffer;
+    }
   }
 #endif
   const char* perfdir = PERFDATA_NAME;
@@ -931,7 +946,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     if (result == -1 ) break;
     if (!os::write(fd, &zero_int, 1)) {
       if (errno == ENOSPC) {
-        warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
+        warning("Insufficient space for shared memory file: %s/%s\n", dirname, filename);
       }
       result = OS_ERR;
       break;
@@ -1138,7 +1153,8 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   // for linux, determine if vmid is for a containerized process
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
-  const char* luser = get_user_name(vmid, &nspid, CHECK);
+  const char* luser = NOT_MACOS(get_user_name(vmid, &nspid, CHECK))
+                      MACOS_ONLY(get_user_name(os::Bsd::get_process_uid(vmid)));
 
   if (luser == nullptr) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),

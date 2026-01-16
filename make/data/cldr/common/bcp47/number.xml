@@ -105,6 +105,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="thai" description="Thai digits"/>
             <type name="tirh" description="Tirhuta digits" since="28"/>
             <type name="tibt" description="Tibetan digits"/>
+            <type name="tols" description="Tolong Siki digits" since="48"/>
             <type name="traditio" description="Traditional numerals — may be algorithmic" alias="traditional" since="21"/>
             <type name="vaii" description="Vai digits" since="21"/>
             <type name="wara" description="Warang Citi digits" since="28"/>

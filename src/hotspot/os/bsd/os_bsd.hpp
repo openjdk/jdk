@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,12 @@ class os::Bsd {
   static pthread_t main_thread(void)                                { return _main_thread; }
 
   static pid_t gettid();
+  static uid_t get_process_uid(pid_t pid);
+  static bool is_process_root(pid_t pid);
+
+#ifdef __APPLE__
+  static int get_user_tmp_dir_macos(const char* user, int vmid, char* output_buffer, int buffer_size);
+#endif
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024, 2025, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ TEST_VM(CompressedKlass, basics) {
   if (!UseCompressedClassPointers) {
     return;
   }
-  ASSERT_LE((address)0, CompressedKlassPointers::base());
   ASSERT_LE(CompressedKlassPointers::base(), CompressedKlassPointers::klass_range_start());
   ASSERT_LT(CompressedKlassPointers::klass_range_start(), CompressedKlassPointers::klass_range_end());
   ASSERT_LE(CompressedKlassPointers::klass_range_end(), CompressedKlassPointers::encoding_range_end());
@@ -50,7 +49,7 @@ TEST_VM(CompressedKlass, basics) {
     ASSERT_EQ(CompressedKlassPointers::encoding_range_end() - CompressedKlassPointers::base(), (ptrdiff_t)expected_size);
   }
 #else
-  ASSERT_EQ(CompressedKlassPointers::base(), (address)0);
+  ASSERT_EQ(CompressedKlassPointers::base(), nullptr);
   ASSERT_EQ(CompressedKlassPointers::encoding_range_end(), (address)(UINT_MAX));
 #endif // _LP64
 }

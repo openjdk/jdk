@@ -29,7 +29,6 @@ import static jdk.jpackage.internal.MacPackagingPipeline.LayoutUtils.packagerLay
 
 import java.nio.file.Files;
 import java.util.Objects;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPackageMixin;
@@ -49,7 +48,7 @@ final class MacPackageBuilder {
         return pkgBuilder;
     }
 
-    MacPackage create() throws ConfigException {
+    MacPackage create() {
 
         final var app = (MacApplication)pkgBuilder.app();
 

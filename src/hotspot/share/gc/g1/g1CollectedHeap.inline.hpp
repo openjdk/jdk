@@ -191,18 +191,26 @@ void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint 
   _region_attr.set_humongous_candidate(index);
 }
 
-void G1CollectedHeap::register_new_survivor_region_with_region_attr(G1HeapRegion* r) {
-  _region_attr.set_new_survivor_region(r->hrm_index());
+void G1CollectedHeap::register_young_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
+  _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
 }
 
-void G1CollectedHeap::register_region_with_region_attr(G1HeapRegion* r) {
-  _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
+void G1CollectedHeap::register_new_survivor_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
+  _region_attr.set_new_survivor_region(r->hrm_index(), r->has_pinned_objects());
+}
+
+void G1CollectedHeap::update_region_attr(G1HeapRegion* r) {
+  _region_attr.set_is_remset_tracked(r->hrm_index(), r->rem_set()->is_tracked());
   _region_attr.set_is_pinned(r->hrm_index(), r->has_pinned_objects());
 }
 
-void G1CollectedHeap::register_old_region_with_region_attr(G1HeapRegion* r) {
+void G1CollectedHeap::register_old_collection_set_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
+  assert(r->is_old(), "must be");
   assert(r->rem_set()->is_complete(), "must be");
-  _region_attr.set_in_old(r->hrm_index(), true);
+  _region_attr.set_in_old(r->hrm_index(), true, r->has_pinned_objects());
   _rem_set->exclude_region_from_scan(r->hrm_index());
 }
 

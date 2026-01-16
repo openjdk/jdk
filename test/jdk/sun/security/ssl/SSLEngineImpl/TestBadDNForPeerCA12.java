@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @library /test/lib
  * @summary SSLEngine throws IAE during parsing of X500Principal
  * @run main/othervm TestBadDNForPeerCA12
- * @run main/othervm -Djavax.net.debug=all TestBadDNForPeerCA12
  */
 
 import javax.net.ssl.KeyManagerFactory;
@@ -44,6 +43,17 @@ import java.security.KeyStore;
 import java.util.Base64;
 
 public class TestBadDNForPeerCA12 {
+
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=all
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
 
     // Test was originally written for TLSv1.2
     private static final String proto = "TLSv1.2";
@@ -107,6 +117,10 @@ public class TestBadDNForPeerCA12 {
      * Main entry point for this demo.
      */
     public static void main(String[] args) throws Exception {
+
+        if (debug) {
+            System.setProperty("javax.net.debug", "all");
+        }
 
         TestBadDNForPeerCA12 test = new TestBadDNForPeerCA12();
 

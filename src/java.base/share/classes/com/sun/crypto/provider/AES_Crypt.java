@@ -54,11 +54,11 @@ final class AES_Crypt extends SymmetricCipher {
     private int rounds;
     private byte[] prevKey = null;
 
-    // Following two attributes are specific to Intrinsics where sessionK is
-    // used for PPC64, S390, and RISCV64 architectures, whereas K is used for
-    // everything else.
-    private int[][] sessionK = null;
-    private int[] K = null;
+    // Following attributes are specific to Intrinsics, where sessionKe is the
+    // unprocessed key that is also used for decryption on PPC64, S390 and
+    // RISCV64 architectures. Other ones use sessionKd for decryption.
+    private int[] sessionKe = null; // key for encryption
+    private int[] sessionKd = null; // preprocessed key for decryption
 
     // Round constant
     private static final int[] RCON = {
@@ -904,7 +904,6 @@ final class AES_Crypt extends SymmetricCipher {
      */
     void init(boolean decrypting, String algorithm, byte[] key)
             throws InvalidKeyException {
-        int decrypt = decrypting ? 1 : 0;
 
         if (!algorithm.equalsIgnoreCase("AES")
                 && !algorithm.equalsIgnoreCase("Rijndael")) {
@@ -920,29 +919,34 @@ final class AES_Crypt extends SymmetricCipher {
             throw new InvalidKeyException("Invalid key length (" + key.length
                     + ").");
         }
+
         if (!MessageDigest.isEqual(prevKey, key)) {
-            if (sessionK == null) {
-                sessionK = new int[2][];
-            } else {
-                Arrays.fill(sessionK[0], 0);
-                Arrays.fill(sessionK[1], 0);
+            if (sessionKe != null) {
+                Arrays.fill(sessionKe, 0);
             }
-            sessionK[0] = genRoundKeys(key, rounds);
-            sessionK[1] = genInvRoundKeys(sessionK[0], rounds);
+            sessionKe = genRoundKeys(key, rounds);
+            if (sessionKd != null) {
+                Arrays.fill(sessionKd, 0);
+                sessionKd = null;
+            }
             if (prevKey != null) {
                 Arrays.fill(prevKey, (byte) 0);
             }
             prevKey = key.clone();
         }
-        K = sessionK[decrypt];
+
+        if (decrypting && (sessionKd == null)) {
+            sessionKd = genInvRoundKeys(sessionKe, rounds);
+        }
     }
 
     /**
      * Generate the cipher's round keys as outlined in section 5.2 of the spec.
      *
      * @param key [in] the symmetric key byte array.
+     * @param rounds [in] the number of rounds for generating the round keys.
      *
-     * @return w the cipher round keys.
+     * @return the cipher round keys.
      */
     private static int[] genRoundKeys(byte[] key, int rounds) {
         int wLen = WB * (rounds + 1);
@@ -970,53 +974,58 @@ final class AES_Crypt extends SymmetricCipher {
     /**
      * Generate the inverse cipher round keys.
      *
-     * @return w1 the inverse cipher round keys.
+     * @param w [in] the targeted word for substitution.
+     * @param rounds [in] the number of rounds for generating the round keys.
+     *
+     * @return the inverse cipher round keys.
      */
     private static int[] genInvRoundKeys(int[] w, int rounds) {
-        int kLen = w.length;;
-        int[] temp = new int[WB];
-        int[] dw = new int[kLen];
+        int[] dw = new int[w.length];
 
         // Intrinsics requires the inverse key expansion to be reverse order
         // except for the first and last round key as the first two round keys
         // are without a mix column transform.
         for (int i = 1; i < rounds; i++) {
-            System.arraycopy(w, i * WB, temp, 0, WB);
-            temp[0] = TMI0[temp[0] >>> 24] ^ TMI1[(temp[0] >> 16) & 0xFF]
-                    ^ TMI2[(temp[0] >> 8) & 0xFF] ^ TMI3[temp[0] & 0xFF];
-            temp[1] = TMI0[temp[1] >>> 24] ^ TMI1[(temp[1] >> 16) & 0xFF]
-                    ^ TMI2[(temp[1] >> 8) & 0xFF] ^ TMI3[temp[1] & 0xFF];
-            temp[2] = TMI0[temp[2] >>> 24] ^ TMI1[(temp[2] >> 16) & 0xFF]
-                    ^ TMI2[(temp[2] >> 8) & 0xFF] ^ TMI3[temp[2] & 0xFF];
-            temp[3] = TMI0[temp[3] >>> 24] ^ TMI1[(temp[3] >> 16) & 0xFF]
-                    ^ TMI2[(temp[3] >> 8) & 0xFF] ^ TMI3[temp[3] & 0xFF];
-            System.arraycopy(temp, 0, dw, kLen - (i * WB), WB);
+            int widx = i * WB;
+            int idx = w.length - widx;
+
+            dw[idx] = TMI0[w[widx] >>> 24] ^ TMI1[(w[widx] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx] >> 8) & 0xFF] ^ TMI3[w[widx] & 0xFF];
+            dw[idx + 1] = TMI0[w[widx + 1] >>> 24]
+                    ^ TMI1[(w[widx + 1] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx + 1] >> 8) & 0xFF]
+                    ^ TMI3[w[widx + 1] & 0xFF];
+            dw[idx + 2] = TMI0[w[widx + 2] >>> 24]
+                    ^ TMI1[(w[widx + 2] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx + 2] >> 8) & 0xFF]
+                    ^ TMI3[w[widx + 2] & 0xFF];
+            dw[idx + 3] = TMI0[w[widx + 3] >>> 24]
+                    ^ TMI1[(w[widx + 3] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx + 3] >> 8) & 0xFF]
+                    ^ TMI3[w[widx + 3] & 0xFF];
         }
-        System.arraycopy(w, kLen - WB, dw, WB, WB);
+        System.arraycopy(w, w.length - WB, dw, WB, WB);
         System.arraycopy(w, 0, dw, 0, WB);
-        Arrays.fill(temp, 0);
 
         return dw;
     }
 
     /**
-     * Subtitute the word as a step of key expansion.
+     * Substitute the word as a step of key expansion.
      *
-     * @param state [in] the targeted word for substituion.
-     * @param sub [in] the substitute table for cipher and inverse cipher.
+     * @param word [in] the targeted word for substitution.
      *
      * @return the substituted word.
      */
     private static int subWord(int word) {
-        byte b0 = (byte) (word >>> 24);
-        byte b1 = (byte) ((word >> 16) & 0xFF);
-        byte b2 = (byte) ((word >> 8) & 0xFF);
-        byte b3 = (byte) (word & 0xFF);
+        byte b0 = (byte) (word >> 24);
+        byte b1 = (byte) (word >> 16);
+        byte b2 = (byte) (word >> 8);
 
         return ((SBOX[(b0 & 0xF0) >> 4][b0 & 0x0F] & 0xFF) << 24)
                 | ((SBOX[(b1 & 0xF0) >> 4][b1 & 0x0F] & 0xFF) << 16)
                 | ((SBOX[(b2 & 0xF0) >> 4][b2 & 0x0F] & 0xFF) << 8)
-                | (SBOX[(b3 & 0xF0) >> 4][b3 & 0x0F] & 0xFF);
+                | (SBOX[(word & 0xF0) >> 4][word & 0x0F] & 0xFF);
     }
 
     /**
@@ -1029,6 +1038,7 @@ final class AES_Crypt extends SymmetricCipher {
      */
     @IntrinsicCandidate
     private void implEncryptBlock(byte[] p, int po, byte[] c, int co) {
+        int[] K = sessionKe;
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
         int w = K.length - WB;
@@ -1207,6 +1217,7 @@ final class AES_Crypt extends SymmetricCipher {
      */
     @IntrinsicCandidate
     private void implDecryptBlock(byte[] c, int co, byte[] p, int po) {
+        int[] K = sessionKd;
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
 

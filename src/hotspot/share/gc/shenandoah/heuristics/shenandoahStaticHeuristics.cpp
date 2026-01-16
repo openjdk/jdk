@@ -26,7 +26,6 @@
 
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
@@ -41,20 +40,19 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* spac
 ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 
 bool ShenandoahStaticHeuristics::should_start_gc() {
-  size_t max_capacity = _space_info->max_capacity();
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
-  size_t available = _space_info->available();
+  size_t available = _space_info->soft_mutator_available();
+  size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  // Make sure the code below treats available without the soft tail.
-  size_t soft_tail = max_capacity - capacity;
-  available = (available > soft_tail) ? (available - soft_tail) : 0;
+  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
+                "allocated_since_gc_start: "  PROPERFMT,
+                PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(allocated));
 
   size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < threshold_available) {
-    log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
-                 byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(threshold_available), proper_unit_for_byte_size(threshold_available));
+    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
+                 PROPERFMTARGS(available), PROPERFMTARGS(threshold_available));
     accept_trigger();
     return true;
   }

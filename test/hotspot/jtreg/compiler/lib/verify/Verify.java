@@ -150,6 +150,8 @@ public final class Verify {
             default -> {
                 if (isVectorAPIClass(ca)) {
                     checkEQForVectorAPIClass(a, b, field, aParent, bParent);
+                } else if (isFloat16Class(ca)) {
+                    checkEQForFloat16Class(a, b, field, aParent, bParent);
                 } else {
                     checkEQArbitraryClasses(a, b);
                 }
@@ -454,6 +456,40 @@ public final class Verify {
             throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
         }
         checkEQdispatch(va, vb, field + ".toArray", aParent, bParent);
+    }
+
+    private static boolean isFloat16Class(Class<?> c) {
+        return c.getName().equals("jdk.incubator.vector.Float16");
+    }
+
+    /**
+     * We do not want to import jdk.incubator.vector.Float16 explicitly, because it would mean we would
+     * also have to add "--add-modules=jdk.incubator.vector" to the command-line of every test that uses
+     * the Verify class. So we hack this via reflection.
+     *
+     * An additional challenge is the boxing and NaNs, see also isFloatEQ.
+     */
+    private void checkEQForFloat16Class(Object a, Object b, String field, Object aParent, Object bParent) {
+        Class<?> ca = a.getClass();
+        short bitsA;
+        short bitsB;
+        try {
+            Method m = isFloatCheckWithRawBits ? ca.getMethod("float16ToRawShortBits", ca)
+                                               : ca.getMethod("float16ToShortBits", ca);
+            m.setAccessible(true);
+            bitsA = (short)m.invoke(null, a);
+            bitsB = (short)m.invoke(null, b);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException("Could not invoke float16ToRawShortBits on " + ca.getName(), e);
+        }
+
+        if (bitsA != bitsB) {
+            System.err.println("ERROR: Equality matching failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
+            System.err.println("  Values: " + a + " vs " + b);
+            System.err.println("  Bits:   " + bitsA + " vs " + bitsB);
+            print(a, b, field, aParent, bParent);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
     }
 
     private void checkEQArbitraryClasses(Object a, Object b) {

@@ -75,7 +75,7 @@ public class ClhsdbJstackXcompStress {
                 System.err.println(out.getStderr());
             }
 
-            out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+            out.stderrShouldBeEmptyIgnoreVMWarnings();
             out.stdoutShouldNotContain("Error occurred during stack walking:");
             out.stdoutShouldContain(LingeredAppWithRecComputation.THREAD_NAME);
             List<String> stdoutList = Arrays.asList(out.getStdout().split("\\R"));

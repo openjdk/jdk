@@ -44,6 +44,10 @@ public:
     }
   }
 
+  size_t parallel_region_stride() override {
+    return _closure->parallel_region_stride();
+  }
+
   bool is_thread_safe() override {
     return _closure->is_thread_safe();
   }
@@ -62,6 +66,10 @@ public:
     if (r->affiliation() != AFFILIATION) {
       _closure->heap_region_do(r);
     }
+  }
+
+  size_t parallel_region_stride() override {
+    return _closure->parallel_region_stride();
   }
 
   bool is_thread_safe() override {

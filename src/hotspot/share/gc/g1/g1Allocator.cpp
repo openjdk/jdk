@@ -123,6 +123,14 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
   }
 }
 
+size_t G1Allocator::free_bytes_in_retained_old_region() const {
+  if (_retained_old_gc_alloc_region == nullptr) {
+    return 0;
+  } else {
+    return _retained_old_gc_alloc_region->free();
+  }
+}
+
 void G1Allocator::init_gc_alloc_regions(G1EvacInfo* evacuation_info) {
   assert_at_safepoint_on_vm_thread();
 

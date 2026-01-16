@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,13 +63,13 @@ import java.io.IOException;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Tests the serialization of ChronoLocalDate using a CopticDate.
  */
-@Test
 public class TCKCopticSerialization extends AbstractTCKTest {
 
     @Test

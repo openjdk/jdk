@@ -486,4 +486,41 @@ public class RequestBuilderTest {
         assertNotEquals(builder.build(), newBuilder(uri).header("x", "Z").build());
         assertNotEquals(builder.build(), newBuilder(uri).header("z", "y").build());
     }
+
+    @Test
+    public void testNullMessages() {
+        HttpRequest.Builder builder = HttpRequest.newBuilder();
+
+        try {
+            builder.method(null, null);
+            fail("builder.method(null, null) should have thrown NullPointerException");
+        } catch (NullPointerException e) {
+            assertTrue(e.getMessage().contains("HTTP method"),
+                "Expected exception message to contain 'HTTP method', but got: " + e.getMessage());
+        }
+
+        try {
+            builder.POST(null);
+            fail("builder.POST(null) should have thrown NullPointerException");
+        } catch (NullPointerException e) {
+            assertTrue(e.getMessage().contains("BodyPublisher"),
+                "Expected exception message to contain 'BodyPublisher', but got: " + e.getMessage());
+        }
+
+        try {
+            builder.PUT(null);
+            fail("builder.PUT(null) should have thrown NullPointerException");
+        } catch (NullPointerException e) {
+            assertTrue(e.getMessage().contains("BodyPublisher"),
+                "Expected exception message to contain 'BodyPublisher', but got: " + e.getMessage());
+        }
+
+        try {
+            builder.method("PATCH", null);
+            fail("builder.method(\"PATCH\", null) should have thrown NullPointerException");
+        } catch (NullPointerException e) {
+            assertTrue(e.getMessage().contains("BodyPublisher"),
+                "Expected exception message to contain 'BodyPublisher', but got: " + e.getMessage());
+        }
+    }
 }

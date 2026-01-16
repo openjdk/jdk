@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,6 @@ final record WinExePackager(BuildEnv env, WinExePackage pkg, Path outputDir, Pat
 
     private void wrapMsiInExe() throws IOException {
 
-        Log.verbose(I18N.format("message.outputting-to-location", outputDir.toAbsolutePath()));
-
         final var msi = msi();
 
         // Copy template msi wrapper next to msi file
@@ -102,7 +100,5 @@ final record WinExePackager(BuildEnv env, WinExePackage pkg, Path outputDir, Pat
         Files.copy(exePath, dstExePath, StandardCopyOption.REPLACE_EXISTING);
 
         dstExePath.toFile().setExecutable(true);
-
-        Log.verbose(I18N.format("message.output-location", outputDir.toAbsolutePath()));
     }
 }

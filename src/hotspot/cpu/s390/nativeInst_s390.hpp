@@ -649,6 +649,13 @@ class NativeGeneralJump: public NativeInstruction {
 
 class NativePostCallNop: public NativeInstruction {
 public:
+  enum z_specific_constants {
+    // Once the check is implemented, this has to specify number of bytes checked on the first
+    // read. If the check would read beyond size of the instruction at the deopt handler stub
+    // code entry point, then it has to happen in two stages - to prevent out of bounds access
+    // in case the return address points to the entry point which could be at the end of page.
+    first_check_size = 0 // check is unimplemented
+  };
   bool check() const { Unimplemented(); return false; }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
   bool patch(int32_t oopmap_slot, int32_t cb_offset) { Unimplemented(); return false; }

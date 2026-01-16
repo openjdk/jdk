@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,10 @@ public:
   void init_gc_alloc_regions(G1EvacInfo* evacuation_info);
   void release_gc_alloc_regions(G1EvacInfo* evacuation_info);
   void abandon_gc_alloc_regions();
+
   bool is_retained_old_region(G1HeapRegion* hr);
+  // Return the amount of free bytes in the current retained old region.
+  size_t free_bytes_in_retained_old_region() const;
 
   // Node index of current thread.
   inline uint current_node_index() const;

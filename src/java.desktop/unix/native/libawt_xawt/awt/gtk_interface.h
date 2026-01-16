@@ -38,9 +38,6 @@
 #define TRUE            (!FALSE)
 #endif
 
-#define GTHREAD_LIB_VERSIONED VERSIONED_JNI_LIB_NAME("gthread-2.0", "0")
-#define GTHREAD_LIB JNI_LIB_NAME("gthread-2.0")
-
 #define _G_TYPE_CIC(ip, gt, ct)       ((ct*) ip)
 #define G_TYPE_CHECK_INSTANCE_CAST(instance, g_type, c_type)  \
                                     (_G_TYPE_CIC ((instance), (g_type), c_type))
@@ -850,9 +847,6 @@ typedef struct GtkApi {
 gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose);
 gboolean gtk_check_version(GtkVersion version);
 
-typedef struct _GThreadFunctions GThreadFunctions;
-static gboolean (*fp_g_thread_get_initialized)(void);
-static void (*fp_g_thread_init)(GThreadFunctions *vtable);
 static void (*fp_gdk_threads_init)(void);
 static void (*fp_gdk_threads_enter)(void);
 static void (*fp_gdk_threads_leave)(void);

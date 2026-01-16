@@ -45,8 +45,7 @@ sealed interface QuicTimedEvent
         permits PacketSpaceManager.PacketTransmissionTask,
                 QuicTimerQueue.Marker,
                 QuicEndpoint.ClosedConnection,
-                IdleTimeoutManager.IdleTimeoutEvent,
-                IdleTimeoutManager.StreamDataBlockedEvent,
+                IdleTimeoutManager.TimedEvent,
                 QuicConnectionImpl.MaxInitialTimer {
 
     /**

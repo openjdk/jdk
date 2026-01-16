@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,20 +44,25 @@ import java.util.concurrent.Executor;
 public class StubConnection implements Connection {
 
     private boolean autoCommit = false;
+    private boolean isclosed;
+
+    public StubConnection() {
+        isclosed = false;
+    }
 
     @Override
     public Statement createStatement() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return new StubStatement(this);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return new StubPreparedStatement(this);
     }
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return new StubCallableStatement(this);
     }
 
     @Override
@@ -89,17 +94,17 @@ public class StubConnection implements Connection {
 
     @Override
     public void close() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        isclosed = true;
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return isclosed;
     }
 
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return new StubDatabaseMetaData();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,10 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -46,9 +42,13 @@ import static java.io.ObjectInputFilter.Status.ALLOWED;
 import static java.io.ObjectInputFilter.Status.REJECTED;
 import static java.io.ObjectInputFilter.Status.UNDECIDED;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 /* @test
- * @run testng/othervm SerialFactoryExample
- * @run testng/othervm -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread SerialFactoryExample
+ * @run junit/othervm SerialFactoryExample
+ * @run junit/othervm -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread SerialFactoryExample
  * @summary Test SerialFactoryExample
  */
 
@@ -76,10 +76,9 @@ import static java.io.ObjectInputFilter.Status.UNDECIDED;
  *
  * The `doWithSerialFilter` calls can be nested. When nested, the filters are concatenated.
  */
-@Test
 public class SerialFactoryExample {
 
-    @DataProvider(name = "Examples")
+    // Test cases for filters
     static Object[][] examples() {
         return new Object[][]{
                 {new Point(1, 2), null,
@@ -108,7 +107,8 @@ public class SerialFactoryExample {
     }
 
 
-    @Test(dataProvider = "Examples")
+    @ParameterizedTest
+    @MethodSource("examples")
     void examples(Serializable obj, ObjectInputFilter filter, Status expected) {
         // Establish FilterInThread as the application-wide filter factory
         FilterInThread filterInThread;
@@ -128,11 +128,11 @@ public class SerialFactoryExample {
                 Object o = deserializeObject(bytes);
             });
             if (expected.equals(REJECTED))
-                Assert.fail("IllegalClassException should have occurred");
+                Assertions.fail("IllegalClassException should have occurred");
         } catch (UncheckedIOException uioe) {
             IOException ioe = uioe.getCause();
-            Assert.assertEquals(ioe.getClass(), InvalidClassException.class, "Wrong exception");
-            Assert.assertEquals(REJECTED, expected, "Exception should not have occurred");
+            Assertions.assertEquals(InvalidClassException.class, ioe.getClass(), "Wrong exception");
+            Assertions.assertEquals(expected, REJECTED, "Exception should not have occurred");
         }
     }
 
@@ -142,7 +142,8 @@ public class SerialFactoryExample {
      * @param filter a filter
      * @param expected status
      */
-    @Test(dataProvider = "Examples")
+    @ParameterizedTest
+    @MethodSource("examples")
     void checkStatus(Serializable obj, ObjectInputFilter filter, Status expected) {
         // Establish FilterInThread as the application-wide filter factory
         FilterInThread filterInThread;
@@ -166,12 +167,12 @@ public class SerialFactoryExample {
                 System.out.println("    filter in effect: " + filterInThread.currFilter);
                 if (compositeFilter != null) {
                     Status actualStatus = compositeFilter.checkInput(info);
-                    Assert.assertEquals(actualStatus, expected, "Wrong Status");
+                    Assertions.assertEquals(expected, actualStatus, "Wrong Status");
                 }
             });
 
         } catch (Exception ex) {
-            Assert.fail("unexpected exception", ex);
+            Assertions.fail("unexpected exception", ex);
         }
     }
 

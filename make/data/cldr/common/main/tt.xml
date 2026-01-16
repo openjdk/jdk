@@ -13,20 +13,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<localeDisplayNames>
 		<languages>
 			<language type="af">африкаанс</language>
+			<language type="ak" draft="unconfirmed">акан</language>
 			<language type="am">амхар</language>
-			<language type="ar">гарәп</language>
-			<language type="ar_001">Заманча стандарт гарәп</language>
+			<language type="ar">гарәпчә</language>
+			<language type="ar_001">заманча стандарт гарәпчә</language>
 			<language type="arn">мапуче</language>
 			<language type="as">ассам</language>
+			<language type="ast" draft="unconfirmed">астурианча</language>
 			<language type="az">әзәрбайҗан</language>
+			<language type="az" alt="short" draft="unconfirmed">азәричә</language>
 			<language type="ba">башкорт</language>
+			<language type="bal" draft="unconfirmed">бәлүҗчә</language>
 			<language type="ban">бали</language>
 			<language type="be">белорус</language>
 			<language type="bem">бемба</language>
 			<language type="bg">болгар</language>
-			<language type="bn">бенгали</language>
+			<language type="bgc" draft="unconfirmed">һарианви</language>
+			<language type="bho" draft="unconfirmed">бһоҗпури</language>
+			<language type="blo" draft="unconfirmed">ании</language>
+			<language type="bn">бенгалча</language>
 			<language type="bo">тибет</language>
 			<language type="br">бретон</language>
+			<language type="brx" draft="unconfirmed">бодо</language>
 			<language type="bs">босния</language>
 			<language type="ca">каталан</language>
 			<language type="ceb">себуано</language>
@@ -35,13 +43,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ckb">үзәк көрд</language>
 			<language type="co">корсика</language>
 			<language type="cs">чех</language>
+			<language type="csw" draft="unconfirmed">сазлык кричәсе</language>
+			<language type="cv" draft="unconfirmed">чуашча</language>
 			<language type="cy">уэльс</language>
 			<language type="da">дания</language>
 			<language type="de">алман</language>
 			<language type="de_CH">югары алман (Швейцария)</language>
+			<language type="doi" draft="unconfirmed">догри</language>
 			<language type="dsb">түбән сорб</language>
 			<language type="dv">мальдив</language>
 			<language type="dz">дзонг-кха</language>
+			<language type="ee" draft="unconfirmed">әвәчә</language>
 			<language type="el">грек</language>
 			<language type="en">инглиз</language>
 			<language type="en_GB">Британия инглизчәсе</language>
@@ -60,7 +72,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fil">филиппин</language>
 			<language type="fo">фарер</language>
 			<language type="fr">француз</language>
+			<language type="fy" draft="unconfirmed">көнбатыш фризчәсе</language>
 			<language type="ga">ирланд</language>
+			<language type="gaa" draft="unconfirmed">га</language>
 			<language type="gd">шотланд гэль</language>
 			<language type="gl">галисия</language>
 			<language type="gn">гуарани</language>
@@ -77,14 +91,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hu">венгр</language>
 			<language type="hy">әрмән</language>
 			<language type="hz">гереро</language>
+			<language type="ia" draft="unconfirmed">интерлингуа</language>
 			<language type="ibb">ибибио</language>
 			<language type="id">индонезия</language>
+			<language type="ie" draft="unconfirmed">интерлингве</language>
 			<language type="ig">игбо</language>
+			<language type="ii" draft="unconfirmed">сичуан йи</language>
 			<language type="is">исланд</language>
 			<language type="it">итальян</language>
 			<language type="iu">инуктикут</language>
 			<language type="ja">япон</language>
+			<language type="jv" draft="unconfirmed">җавача</language>
 			<language type="ka">грузин</language>
+			<language type="kea" draft="unconfirmed">кабувердиану</language>
+			<language type="kgp" draft="unconfirmed">каинганг</language>
 			<language type="kk">казакъ</language>
 			<language type="km">кхмер</language>
 			<language type="kn">каннада</language>
@@ -94,12 +114,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kru">курух</language>
 			<language type="ks">кашмири</language>
 			<language type="ku">көрд</language>
+			<language type="ku" menu="core" draft="unconfirmed">көрдчә</language>
+			<language type="ku" menu="extension" draft="unconfirmed">курманҗи</language>
+			<language type="kxv" draft="unconfirmed">куви</language>
 			<language type="ky">кыргыз</language>
 			<language type="la">латин</language>
 			<language type="lb">люксембург</language>
+			<language type="lij" draft="unconfirmed">лигурча</language>
+			<language type="lmo" draft="unconfirmed">ломбардча</language>
 			<language type="lo">лаос</language>
 			<language type="lt">литва</language>
 			<language type="lv">латыш</language>
+			<language type="mai" draft="unconfirmed">маитһили</language>
 			<language type="men">менде</language>
 			<language type="mg">малагаси</language>
 			<language type="mi">маори</language>
@@ -111,23 +137,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mr">маратхи</language>
 			<language type="ms">малай</language>
 			<language type="mt">мальта</language>
+			<language type="mul" draft="unconfirmed">Берничә тел</language>
 			<language type="my">бирма</language>
+			<language type="nds" draft="unconfirmed">түбән алманча</language>
 			<language type="ne">непали</language>
 			<language type="niu">ниуэ</language>
 			<language type="nl">голланд</language>
 			<language type="nl_BE">фламандча</language>
+			<language type="nn" draft="unconfirmed">нурвәҗчә нүнорск</language>
+			<language type="no" draft="unconfirmed">нурвәҗчә</language>
+			<language type="nqo" draft="unconfirmed">нко</language>
+			<language type="nso" draft="unconfirmed">төньяк сото</language>
 			<language type="ny">ньянҗа</language>
 			<language type="oc">окситан</language>
 			<language type="om">оромо</language>
 			<language type="or">ория</language>
 			<language type="pa">пәнҗаби</language>
 			<language type="pap">папьяменто</language>
+			<language type="pcm" draft="unconfirmed">Нигерия пидҗине</language>
 			<language type="pl">поляк</language>
+			<language type="prg" draft="unconfirmed">прусча</language>
 			<language type="ps">пушту</language>
 			<language type="pt">португал</language>
 			<language type="pt_PT">португал (Европа)</language>
 			<language type="qu">кечуа</language>
 			<language type="quc">киче</language>
+			<language type="raj" draft="unconfirmed">раҗастһани</language>
 			<language type="rm">ретороман</language>
 			<language type="ro">румын</language>
 			<language type="ru">рус</language>
@@ -135,6 +170,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sa">санскрит</language>
 			<language type="sah">саха</language>
 			<language type="sat">сантали</language>
+			<language type="sc" draft="unconfirmed">сардинчә</language>
 			<language type="sd">синдһи</language>
 			<language type="se">төньяк саам</language>
 			<language type="si">сингал</language>
@@ -147,14 +183,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="so">сомали</language>
 			<language type="sq">албан</language>
 			<language type="sr">серб</language>
+			<language type="st" draft="unconfirmed">көньяк сото</language>
+			<language type="su" draft="unconfirmed">сундача</language>
 			<language type="sv">швед</language>
+			<language type="sw" draft="unconfirmed">суаһили</language>
 			<language type="syr">сүрия</language>
+			<language type="szl" draft="unconfirmed">силезиячә</language>
 			<language type="ta">тамил</language>
 			<language type="te">телугу</language>
 			<language type="tg">таҗик</language>
 			<language type="th">тай</language>
 			<language type="ti">тигринья</language>
 			<language type="tk">төрекмән</language>
+			<language type="tn" draft="unconfirmed">тсвана</language>
 			<language type="to">тонга</language>
 			<language type="tr">төрек</language>
 			<language type="tt">татар</language>
@@ -165,28 +206,87 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ur">урду</language>
 			<language type="uz">үзбәк</language>
 			<language type="ve">венда</language>
+			<language type="vec" draft="unconfirmed">вәнәтчә</language>
 			<language type="vi">вьетнам</language>
+			<language type="vmw" draft="unconfirmed">махувача</language>
 			<language type="wo">волоф</language>
+			<language type="xh" draft="unconfirmed">кхоса</language>
+			<language type="xnr" draft="unconfirmed">кангричә</language>
 			<language type="yi">идиш</language>
 			<language type="yo">йоруба</language>
-			<language type="zh">кытай</language>
+			<language type="yrl" draft="unconfirmed">ньеңату</language>
+			<language type="yue" draft="unconfirmed">кантунча</language>
+			<language type="yue" alt="menu" draft="unconfirmed">кытайча, кантунча</language>
+			<language type="za" draft="unconfirmed">жуаңча</language>
+			<language type="zh">кытайча</language>
 			<language type="zh" alt="menu">мандарин кытайчасы</language>
 			<language type="zh_Hans">гадиләштерелгән кытай</language>
 			<language type="zh_Hans" alt="long">гадиләштерелгән мандарин кытайчасы</language>
 			<language type="zh_Hant">традицион кытай</language>
 			<language type="zh_Hant" alt="long">традицион мандарин кытайчасы</language>
+			<language type="zu" draft="unconfirmed">зулуча</language>
+			<language type="zxx" draft="unconfirmed">Лингвистик эчтәлек юк</language>
 		</languages>
 		<scripts>
+			<script type="Adlm" draft="unconfirmed">адлам</script>
 			<script type="Arab">гарәп</script>
+			<script type="Aran" draft="unconfirmed">нәстәликъ</script>
+			<script type="Armn" draft="unconfirmed">әрмәни</script>
+			<script type="Beng" draft="unconfirmed">бенгал</script>
+			<script type="Bopo" draft="unconfirmed">бопомофо</script>
+			<script type="Brai" draft="unconfirmed">брайл</script>
+			<script type="Cakm" draft="unconfirmed">чакма</script>
+			<script type="Cans" draft="unconfirmed">UCAS</script>
+			<script type="Cher" draft="unconfirmed">чероки</script>
 			<script type="Cyrl">кирилл</script>
+			<script type="Deva" draft="unconfirmed">деванагари</script>
+			<script type="Ethi" draft="unconfirmed">хәбәши</script>
+			<script type="Geor" draft="unconfirmed">гөрҗи</script>
+			<script type="Grek" draft="unconfirmed">юнан</script>
+			<script type="Gujr" draft="unconfirmed">гөҗәрат</script>
+			<script type="Guru" draft="unconfirmed">гурмукхи</script>
+			<script type="Hanb" draft="unconfirmed">һан - бопомофо</script>
+			<script type="Hang" draft="unconfirmed">һангыл</script>
+			<script type="Hani" draft="unconfirmed">һан</script>
 			<script type="Hans">гадиләштерелгән</script>
 			<script type="Hans" alt="stand-alone">гадиләштерелгән кытай</script>
 			<script type="Hant">традицион</script>
 			<script type="Hant" alt="stand-alone">традицион кытай</script>
+			<script type="Hebr" draft="unconfirmed">гыйбрани</script>
+			<script type="Hira" draft="unconfirmed">һирагана</script>
+			<script type="Hrkt" draft="unconfirmed">япун иҗек әлифбалары</script>
+			<script type="Jamo" draft="unconfirmed">җамо</script>
 			<script type="Jpan">япон</script>
+			<script type="Kana" draft="unconfirmed">катакана</script>
+			<script type="Khmr" draft="unconfirmed">кмәр</script>
+			<script type="Knda" draft="unconfirmed">каннада</script>
 			<script type="Kore">корея</script>
+			<script type="Laoo" draft="unconfirmed">лао</script>
 			<script type="Latn">латин</script>
+			<script type="Mlym" draft="unconfirmed">малаялам</script>
+			<script type="Mong" draft="unconfirmed">могыл</script>
+			<script type="Mtei" draft="unconfirmed">мейтей маек</script>
+			<script type="Mymr" draft="unconfirmed">бурма</script>
+			<script type="Nkoo" draft="unconfirmed">нко</script>
+			<script type="Olck" draft="unconfirmed">ол чики</script>
+			<script type="Orya" draft="unconfirmed">ория</script>
+			<script type="Rohg" draft="unconfirmed">хәнифи</script>
+			<script type="Sinh" draft="unconfirmed">синһала</script>
+			<script type="Sund" draft="unconfirmed">сунда</script>
+			<script type="Syrc" draft="unconfirmed">сүрияни</script>
+			<script type="Taml" draft="unconfirmed">тамил</script>
+			<script type="Telu" draft="unconfirmed">телугу</script>
+			<script type="Tfng" draft="unconfirmed">тифинаг</script>
+			<script type="Thaa" draft="unconfirmed">тана</script>
+			<script type="Thai" draft="unconfirmed">тай</script>
+			<script type="Tibt" draft="unconfirmed">төбет</script>
+			<script type="Vaii" draft="unconfirmed">вай</script>
+			<script type="Yiii" draft="unconfirmed">йи</script>
+			<script type="Zmth" draft="unconfirmed">математик күргәзү</script>
+			<script type="Zsye" draft="unconfirmed">эмоҗи</script>
+			<script type="Zsym" draft="unconfirmed">симболлар</script>
 			<script type="Zxxx">язусыз</script>
+			<script type="Zyyy" draft="unconfirmed">уртак</script>
 			<script type="Zzzz">билгесез язу</script>
 		</scripts>
 		<territories>
@@ -273,6 +373,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CN">Кытай</territory>
 			<territory type="CO">Колумбия</territory>
 			<territory type="CP">Клиппертон утравы</territory>
+			<territory type="CQ">Сарк</territory>
 			<territory type="CR">Коста-Рика</territory>
 			<territory type="CU">Куба</territory>
 			<territory type="CV">Кабо-Верде</territory>
@@ -493,11 +594,125 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Зимбабве</territory>
 			<territory type="ZZ">билгесез төбәк</territory>
 		</territories>
+		<keys>
+			<key type="calendar" draft="unconfirmed">тәкъвим</key>
+			<key type="cf" draft="unconfirmed">валюта форматы</key>
+			<key type="collation" draft="unconfirmed">сортлау тәртибе</key>
+			<key type="currency" draft="unconfirmed">валюта</key>
+			<key type="hc" draft="unconfirmed">сәгать системасы (12 - 24)</key>
+			<key type="lb" draft="unconfirmed">юл ахыры стиле</key>
+			<key type="ms" draft="unconfirmed">үлчәү системасы</key>
+			<key type="numbers" draft="unconfirmed">саннар</key>
+		</keys>
 		<types>
+			<type key="calendar" type="buddhist" draft="unconfirmed">буддист тәкъвиме</type>
+			<type key="calendar" type="buddhist" scope="core" draft="unconfirmed">буддист</type>
+			<type key="calendar" type="chinese" draft="unconfirmed">кытай тәкъвиме</type>
+			<type key="calendar" type="chinese" scope="core" draft="unconfirmed">кытай</type>
+			<type key="calendar" type="coptic" draft="unconfirmed">кыйбти тәкъвим</type>
+			<type key="calendar" type="coptic" scope="core" draft="unconfirmed">кыйбти</type>
+			<type key="calendar" type="dangi" draft="unconfirmed">данги тәкъвиме</type>
+			<type key="calendar" type="dangi" scope="core" draft="unconfirmed">данги</type>
+			<type key="calendar" type="ethiopic" draft="unconfirmed">хәбәши тәкъвим</type>
+			<type key="calendar" type="ethiopic" scope="core" draft="unconfirmed">хәбәши</type>
+			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">хәбәши амәте галәм тәкъвим</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core" draft="unconfirmed">хәбәши амәте галәм</type>
 			<type key="calendar" type="gregorian">григориан ел исәбе</type>
+			<type key="calendar" type="gregorian" scope="core">милади</type>
+			<type key="calendar" type="hebrew" draft="unconfirmed">гыйбрани тәкъвиме</type>
+			<type key="calendar" type="hebrew" scope="core" draft="unconfirmed">гыйбрани</type>
+			<type key="calendar" type="islamic" draft="unconfirmed">һиҗри тәкъвим</type>
+			<type key="calendar" type="islamic" scope="core" draft="unconfirmed">һиҗри</type>
+			<type key="calendar" type="islamic-civil" draft="unconfirmed">һиҗри тәкъвим (15 йүл 622)</type>
+			<type key="calendar" type="islamic-civil" scope="core" draft="unconfirmed">һиҗри (15.07.622)</type>
+			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">һиҗри тәкъвим (Өммелкора)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core" draft="unconfirmed">һиҗри (Өммелкора)</type>
 			<type key="calendar" type="iso8601">ISO-8601 календаре</type>
+			<type key="calendar" type="japanese" draft="unconfirmed">япун тәкъвиме</type>
+			<type key="calendar" type="japanese" scope="core" draft="unconfirmed">япун</type>
+			<type key="calendar" type="persian" draft="unconfirmed">иран тәкъвиме</type>
+			<type key="calendar" type="persian" scope="core" draft="unconfirmed">иран</type>
+			<type key="calendar" type="roc" draft="unconfirmed">Кытай җөмһүрияте тәкъвиме</type>
+			<type key="calendar" type="roc" scope="core" draft="unconfirmed">мингуо</type>
+			<type key="cf" type="account" draft="unconfirmed">хисапчылык валюта форматы</type>
+			<type key="cf" type="account" scope="core" draft="unconfirmed">хисапчылык</type>
+			<type key="cf" type="standard" draft="unconfirmed">гадәти валюта форматы</type>
+			<type key="cf" type="standard" scope="core" draft="unconfirmed">гадәти</type>
+			<type key="collation" type="ducet" draft="unconfirmed">беренчел юникод сортлау тәртибе</type>
+			<type key="collation" type="ducet" scope="core" draft="unconfirmed">беренчел юникод</type>
+			<type key="collation" type="search" draft="unconfirmed">гомуми максатлы эзләү</type>
+			<type key="collation" type="search" scope="core" draft="unconfirmed">эзләү</type>
 			<type key="collation" type="standard">гадәти тәртипләү ысулы</type>
+			<type key="collation" type="standard" scope="core">гадәти</type>
+			<type key="em" type="default" scope="core" draft="unconfirmed">беренчел</type>
+			<type key="em" type="emoji" scope="core" draft="unconfirmed">эмоҗи</type>
+			<type key="em" type="text" scope="core" draft="unconfirmed">мәтен</type>
+			<type key="hc" type="h11" draft="unconfirmed">12 сәгать системасы (0–11)</type>
+			<type key="hc" type="h11" scope="core" draft="unconfirmed">12 (0–11)</type>
+			<type key="hc" type="h12" draft="unconfirmed">12 сәгать системасы (1–12)</type>
+			<type key="hc" type="h12" scope="core" draft="unconfirmed">12 (1–12)</type>
+			<type key="hc" type="h23" draft="unconfirmed">24 сәгать системасы (0–23)</type>
+			<type key="hc" type="h23" scope="core" draft="unconfirmed">24 (0–23)</type>
+			<type key="hc" type="h24" draft="unconfirmed">24 сәгать системасы (1–24)</type>
+			<type key="hc" type="h24" scope="core" draft="unconfirmed">24 (1–24)</type>
+			<type key="lb" type="loose" draft="unconfirmed">ирекле юл ахыры стиле</type>
+			<type key="lb" type="loose" scope="core" draft="unconfirmed">ирекле</type>
+			<type key="lb" type="normal" draft="unconfirmed">гадәти юл ахыры стиле</type>
+			<type key="lb" type="normal" scope="core" draft="unconfirmed">гадәти</type>
+			<type key="lb" type="strict" draft="unconfirmed">кискен юл ахыры стиле</type>
+			<type key="lb" type="strict" scope="core" draft="unconfirmed">кискен</type>
+			<type key="lw" type="breakall" scope="core" draft="unconfirmed">барын күчерү</type>
+			<type key="lw" type="keepall" scope="core" draft="unconfirmed">барын калдыру</type>
+			<type key="lw" type="normal" scope="core" draft="unconfirmed">гадәти</type>
+			<type key="lw" type="phrase" scope="core" draft="unconfirmed">гыйбарәләрдә калдыру</type>
+			<type key="ms" type="metric" draft="unconfirmed">метрик система</type>
+			<type key="ms" type="metric" scope="core" draft="unconfirmed">метрик</type>
+			<type key="ms" type="uksystem" draft="unconfirmed">инглиз үлчәү системасы</type>
+			<type key="ms" type="uksystem" scope="core" draft="unconfirmed">БП</type>
+			<type key="ms" type="ussystem" draft="unconfirmed">БШ үлчәү системасы</type>
+			<type key="ms" type="ussystem" scope="core" draft="unconfirmed">БШ</type>
+			<type key="numbers" type="arab" draft="unconfirmed">һинд-гарәп рәкымнары</type>
+			<type key="numbers" type="arabext" draft="unconfirmed">киңәйтелгән һинд-гарәп рәкымнары</type>
+			<type key="numbers" type="armn" draft="unconfirmed">әрмәни рәкымнары</type>
+			<type key="numbers" type="armnlow" draft="unconfirmed">кече хәреф әрмәни рәкымнары</type>
+			<type key="numbers" type="beng" draft="unconfirmed">бенгал рәкымнары</type>
+			<type key="numbers" type="cakm" draft="unconfirmed">чакма рәкымнары</type>
+			<type key="numbers" type="deva" draft="unconfirmed">деванагари рәкымнары</type>
+			<type key="numbers" type="ethi" draft="unconfirmed">хәбәши рәкымнар</type>
+			<type key="numbers" type="fullwide" draft="unconfirmed">тулы киңлектә рәкымнар</type>
+			<type key="numbers" type="geor" draft="unconfirmed">гөрҗи рәкымнары</type>
+			<type key="numbers" type="grek" draft="unconfirmed">юнан рәкымнары</type>
+			<type key="numbers" type="greklow" draft="unconfirmed">кече хәреф юнан рәкымнары</type>
+			<type key="numbers" type="gujr" draft="unconfirmed">гөҗәрат рәкымнары</type>
+			<type key="numbers" type="guru" draft="unconfirmed">гурмухи рәкымнары</type>
+			<type key="numbers" type="hanidec" draft="unconfirmed">кытай унарлы рәкымнары</type>
+			<type key="numbers" type="hans" draft="unconfirmed">гадиләштерелгән кытай рәкымнары</type>
+			<type key="numbers" type="hansfin" draft="unconfirmed">финанс гадиләштерелгән кытай рәкымнары</type>
+			<type key="numbers" type="hant" draft="unconfirmed">горфи кытай рәкымнары</type>
+			<type key="numbers" type="hantfin" draft="unconfirmed">финанс горфи кытай рәкымнары</type>
+			<type key="numbers" type="hebr" draft="unconfirmed">гыйбрани рәкымнары</type>
+			<type key="numbers" type="java" draft="unconfirmed">җава рәкымнары</type>
+			<type key="numbers" type="jpan" draft="unconfirmed">япун рәкымнары</type>
+			<type key="numbers" type="jpanfin" draft="unconfirmed">финанс япун рәкымнары</type>
+			<type key="numbers" type="khmr" draft="unconfirmed">кмәр рәкымнары</type>
+			<type key="numbers" type="knda" draft="unconfirmed">каннада рәкымнары</type>
+			<type key="numbers" type="laoo" draft="unconfirmed">лао рәкымнары</type>
 			<type key="numbers" type="latn">көнбатыш цифрлары</type>
+			<type key="numbers" type="mlym" draft="unconfirmed">малаялам рәкымнары</type>
+			<type key="numbers" type="mtei" draft="unconfirmed">меетей майек рәкымнары</type>
+			<type key="numbers" type="mymr" draft="unconfirmed">мьянмар рәкымнары</type>
+			<type key="numbers" type="olck" draft="unconfirmed">ол чики рәкымнары</type>
+			<type key="numbers" type="orya" draft="unconfirmed">одия рәкымнары</type>
+			<type key="numbers" type="roman" draft="unconfirmed">рум рәкымнары</type>
+			<type key="numbers" type="romanlow" draft="unconfirmed">кече хәреф рум рәкымнары</type>
+			<type key="numbers" type="taml" draft="unconfirmed">горфи тамил рәкымнары</type>
+			<type key="numbers" type="tamldec" draft="unconfirmed">тамил рәкымнары</type>
+			<type key="numbers" type="telu" draft="unconfirmed">телугу рәкымнары</type>
+			<type key="numbers" type="thai" draft="unconfirmed">тай рәкымнары</type>
+			<type key="numbers" type="tibt" draft="unconfirmed">төбет рәкымнары</type>
+			<type key="numbers" type="vaii" draft="unconfirmed">вай рәкымнары</type>
+			<type key="ss" type="none" scope="core" draft="unconfirmed">сүн</type>
+			<type key="ss" type="standard" scope="core" draft="unconfirmed">каб</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">метрик</measurementSystemName>
@@ -547,20 +762,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -832,6 +1059,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1} {0} 'сәгатьтә'</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
@@ -840,22 +1070,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1} {0} 'сәгатьтә'</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y 'ел'</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y 'ел', MMM</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y 'ел', d MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y 'ел', d MMM, E</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
@@ -1645,6 +1884,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Easter">
 				<exemplarCity>Пасха утравы</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>Куяйкә</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>Пунта-Аренас</exemplarCity>
 			</zone>
@@ -1909,7 +2151,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Пномпень</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -2586,9 +2828,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Көнбатыш Африка вакыты</generic>
-					<standard>Көнбатыш Африка стандарт вакыты</standard>
-					<daylight>Көнбатыш Африка җәйге вакыты</daylight>
+					<standard>Көнбатыш Африка вакыты</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2943,6 +3183,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>Гайана вакыты</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Гавай-Алеут стандарт вакыты</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3509,22 +3754,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other">¤0 мең</pattern>
-					<pattern type="10000" count="other">¤00 мең</pattern>
-					<pattern type="100000" count="other">¤000 мең</pattern>
-					<pattern type="1000000" count="other">¤0 млн</pattern>
-					<pattern type="10000000" count="other">¤00 млн</pattern>
-					<pattern type="100000000" count="other">¤000 млн</pattern>
-					<pattern type="1000000000" count="other">¤0 млрд</pattern>
-					<pattern type="10000000000" count="other">¤00 млрд</pattern>
-					<pattern type="100000000000" count="other">¤000 млрд</pattern>
-					<pattern type="1000000000000" count="other">¤0 трлн</pattern>
-					<pattern type="10000000000000" count="other">¤00 трлн</pattern>
-					<pattern type="100000000000000" count="other">¤000 трлн</pattern>
+					<pattern type="1000" count="other">0 мең ¤</pattern>
+					<pattern type="10000" count="other">00 мең ¤</pattern>
+					<pattern type="100000" count="other">000 мең ¤</pattern>
+					<pattern type="1000000" count="other">0 млн ¤</pattern>
+					<pattern type="10000000" count="other">00 млн ¤</pattern>
+					<pattern type="100000000" count="other">000 млн ¤</pattern>
+					<pattern type="1000000000" count="other">0 млрд ¤</pattern>
+					<pattern type="10000000000" count="other">00 млрд ¤</pattern>
+					<pattern type="100000000000" count="other">000млрд ¤</pattern>
+					<pattern type="1000000000000" count="other">0 трлн ¤</pattern>
+					<pattern type="10000000000000" count="other">00 трлн ¤</pattern>
+					<pattern type="100000000000000" count="other">000 трлн ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4137,6 +4386,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Көнчыгыш Кариб доллары</displayName>
 				<displayName count="other">Көнчыгыш Кариб долларлары</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>кариб гульдены</displayName>
+				<displayName count="other">кариб гульдены</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName>Көнбатыш Африка КФА франкы</displayName>
 				<displayName count="other">Көнбатыш Африка КФА франклары</displayName>
@@ -4161,6 +4414,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Замбия квачасы</displayName>
 				<displayName count="other">Замбия квачалары</displayName>
 			</currency>
+			<currency type="ZWG">
+				<displayName>Зимбабве алтыны</displayName>
+				<displayName count="other">Зимбабве алтыны</displayName>
+			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">{0}+</pattern>
@@ -4176,6 +4433,272 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} һәр {1}</compoundUnitPattern>
 			</compoundUnit>
+			<unit type="area-square-kilometer">
+				<displayName draft="unconfirmed">квадрат километр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} квадрат километр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/км²</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName draft="unconfirmed">гектар</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} гектар</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName draft="unconfirmed">квадрат метр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} квадрат метр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/квадрат метр</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="unconfirmed">квадрат сантиметр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} квадрат сантиметр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/квадрат сантиметр</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName draft="unconfirmed">квадрат миль</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} квадрат миль</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/квадрат миль</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName draft="unconfirmed">акр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} акр</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName draft="unconfirmed">квадрат ярд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} квадрат ярд</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName draft="unconfirmed">квадрат фут</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} квадрат фут</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName draft="unconfirmed">квадрат дюйм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} квадрат дюйм</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/квадрат дюйм</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName draft="unconfirmed">дунам</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дунам</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">гасыр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} гасыр</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">унъеллык</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} унъеллык</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName draft="unconfirmed">ел</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ел</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ел</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="unconfirmed">чирек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} чирек</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ч</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="unconfirmed">ай</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ай</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ай</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="unconfirmed">атна</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} атна</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/атна</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="unconfirmed">көн</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} көн</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/көн</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName draft="unconfirmed">сәгать</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} сәгать</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/сәгать</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName draft="unconfirmed">минут</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} минут</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/минут</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName draft="unconfirmed">секунд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} секунд</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/секунд</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName draft="unconfirmed">миллисекунд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} миллисекунд</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">микросекунд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} микросекунд</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">наносекунд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} наносекунд</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName draft="unconfirmed">типографик эм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} эм</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="unconfirmed">пиксел</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пиксел</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName draft="unconfirmed">мегапиксел</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мегапиксел</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName draft="unconfirmed">пиксел/сантиметрә</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пиксел/сантиметрә</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName draft="unconfirmed">пиксел/дүйм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пиксел/дүйм</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName draft="unconfirmed">Җир радиусы</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Җир радиусы</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName draft="unconfirmed">километр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} километр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/километр</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName draft="unconfirmed">метр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} метр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/метр</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="unconfirmed">дециметр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дециметр</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName draft="unconfirmed">сантиметр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} сантиметр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/см</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName draft="unconfirmed">миллиметр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} миллиметр</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="unconfirmed">микрометр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} микрометр</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="unconfirmed">нанометр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} нанометр</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName draft="unconfirmed">пикометр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пикометр</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName draft="unconfirmed">миль</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} миль</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName draft="unconfirmed">ярд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ярд</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName draft="unconfirmed">фут</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} фут</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/фут</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName draft="unconfirmed">дюйм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дюйм</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/дюйм</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="unconfirmed">парсек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} парсек</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="unconfirmed">яктылык елы</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} яктылык елы</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="unconfirmed">астрономик берәмлек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} астрономик берәмлек</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="unconfirmed">диңгез миле</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} диңгез миле</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">скандинав миле</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} скандинав миле</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="unconfirmed">пункт</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пкт</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="unconfirmed">Кояш радиусы</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Кояш радиусы</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName draft="unconfirmed">кубик километр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} кубик километр</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName draft="unconfirmed">кубик метр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} кубик метр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/кубик метр</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName draft="unconfirmed">кубик сантиметр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} кубик сантиметр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/кубик сантиметр</perUnitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName draft="unconfirmed">мегалитр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мегалитр</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName draft="unconfirmed">гектолитр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} гектолитр</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName draft="unconfirmed">литр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} литр</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/литр</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName draft="unconfirmed">децилитр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} децилитр</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName draft="unconfirmed">сантилитр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} сантилитр</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName draft="unconfirmed">миллилитр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} миллилитр</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName draft="unconfirmed">метрик пинт</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} метрик пинт</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName draft="unconfirmed">метрик чынаяк</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} метрик чынаяк</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName draft="unconfirmed">метрик сыек унция</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} метрик сыек унция</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName draft="unconfirmed">төн</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} төн</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/төн</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>кардиналь юнәлеш</displayName>
 				<coordinateUnitPattern type="east">{0} көнчыгыш</coordinateUnitPattern>
@@ -4185,6 +4708,267 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="area-square-kilometer">
+				<displayName draft="unconfirmed">км²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} км²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/км²</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName draft="unconfirmed">гектар</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} га</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName draft="unconfirmed">м²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/м²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="unconfirmed">см²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} см²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/см²</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName draft="unconfirmed">ми²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ми²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ми²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName draft="unconfirmed">акр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} акр</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName draft="unconfirmed">ярд²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ярд²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName draft="unconfirmed">фут²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} фут²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName draft="unconfirmed">дюйм²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дюйм²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/дюйм²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName draft="unconfirmed">дунам</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дунам</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">г</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} г</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">унъеллык</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} унъеллык</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName draft="unconfirmed">ел</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ел</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/е</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="unconfirmed">чирек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} чир.</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ч</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="unconfirmed">ай</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ай</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ай</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="unconfirmed">атна</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ат.</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ат.</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="unconfirmed">көн</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} көн</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/көн</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName draft="unconfirmed">сәгать</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} сг</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/сг</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName draft="unconfirmed">минут</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мин</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/минут</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName draft="unconfirmed">секунд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} сек</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ск</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName draft="unconfirmed">миллисекунд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мск</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">μсек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} μск</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">наносек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} нск</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName draft="unconfirmed">эм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} эм</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="unconfirmed">пиксел</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пкс</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName draft="unconfirmed">мегапиксел</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} МП</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName draft="unconfirmed">пкс/см</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пкс/см</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName draft="unconfirmed">пкс/дүйм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пкс/дүйм</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName draft="unconfirmed">км</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} км</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/км</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName draft="unconfirmed">м</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/м</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="unconfirmed">дм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дм</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName draft="unconfirmed">см</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} см</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/см</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName draft="unconfirmed">мм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мм</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="unconfirmed">микрон</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мкм</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="unconfirmed">нм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} нм</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName draft="unconfirmed">пм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пм</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName draft="unconfirmed">миль</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ми</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName draft="unconfirmed">ярд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ярд</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName draft="unconfirmed">фут</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} фут</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/фут</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName draft="unconfirmed">дюйм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дюйм</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/дюйм</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="unconfirmed">парсек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пк</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="unconfirmed">яктылык елы</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} якт. елы</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="unconfirmed">а. б.</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} а. б.</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="unconfirmed">диң. ми</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} д. ми</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">ск. ми</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ск. ми</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="unconfirmed">пункт</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пкт</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="unconfirmed">Кояш радиусы</displayName>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName draft="unconfirmed">км³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} км³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName draft="unconfirmed">м³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м³</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/м³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName draft="unconfirmed">см³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} см³</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/см³</perUnitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName draft="unconfirmed">Мл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Мл</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName draft="unconfirmed">гл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} гл</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName draft="unconfirmed">литр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} л</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/л</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName draft="unconfirmed">дл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дл</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName draft="unconfirmed">сл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} сл</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName draft="unconfirmed">мл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мл</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName draft="unconfirmed">мпт</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мпт</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName draft="unconfirmed">м. чын.</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м. чын.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName draft="unconfirmed">м. сыек унц.</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м. сыек унц.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName draft="unconfirmed">төн</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} төн</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/төн</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>юнәлеш</displayName>
 				<coordinateUnitPattern type="east">{0} көнчыгыш</coordinateUnitPattern>
@@ -4192,6 +4976,266 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<coordinateUnitPattern type="south">{0} көньяк</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0} көнбатыш</coordinateUnitPattern>
 			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="area-square-kilometer">
+				<displayName draft="unconfirmed">км²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} км²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/км²</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName draft="unconfirmed">гектар</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} га</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName draft="unconfirmed">м²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/м²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="unconfirmed">см²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} см²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/см²</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName draft="unconfirmed">ми²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ми²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ми²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName draft="unconfirmed">акр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} акр</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName draft="unconfirmed">ярд²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ярд²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName draft="unconfirmed">фут²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} фут²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName draft="unconfirmed">дюйм²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дюйм²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/дюйм²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName draft="unconfirmed">дунам</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дунам</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName draft="unconfirmed">г</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}г</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="unconfirmed">унъеллык</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}унъеллык</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName draft="unconfirmed">ел</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}е</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/е</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="unconfirmed">чир.</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}ч</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ч</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="unconfirmed">ай</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}а</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ай</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="unconfirmed">атна</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}ат.</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ат.</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="unconfirmed">көн</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}к</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/к</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName draft="unconfirmed">сг</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}с</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/сг</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName draft="unconfirmed">мин</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}м</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/минут</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName draft="unconfirmed">сек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}ск</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ск</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName draft="unconfirmed">мсек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мск</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">μсек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}μск</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">нск</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}нск</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName draft="unconfirmed">эм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}эм</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="unconfirmed">пкс</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}пкс</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName draft="unconfirmed">МП</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}МП</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName draft="unconfirmed">пкс/см</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}пкс/см</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName draft="unconfirmed">пкс/дүйм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}пкс/дүйм</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName draft="unconfirmed">км</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}км</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/км</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName draft="unconfirmed">м</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}м</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/м</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="unconfirmed">дм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}дм</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName draft="unconfirmed">см</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}см</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/см</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName draft="unconfirmed">мм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}мм</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="unconfirmed">мкм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}мкм</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="unconfirmed">нм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}нм</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName draft="unconfirmed">пм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}пм</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName draft="unconfirmed">ми</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ми</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName draft="unconfirmed">ярд</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ярд</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName draft="unconfirmed">фут</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} фут</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/фут</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName draft="unconfirmed">дюйм</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дюйм</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/дюйм</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="unconfirmed">парсек</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} пк</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="unconfirmed">якт. елы</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} якт. елы</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="unconfirmed">а. б.</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} а.б.</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="unconfirmed">д. ми</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} д. ми</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">ск. ми</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}ск. ми</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="unconfirmed">пкт</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}пкт</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName draft="unconfirmed">км³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} км³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName draft="unconfirmed">м³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м³</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/м³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName draft="unconfirmed">см³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} см³</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/см³</perUnitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName draft="unconfirmed">Мл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Мл</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName draft="unconfirmed">гл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} гл</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName draft="unconfirmed">литр</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} л</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/л</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName draft="unconfirmed">дл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} дл</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName draft="unconfirmed">сл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} сл</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName draft="unconfirmed">мл</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мл</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName draft="unconfirmed">мпт</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} мпт</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName draft="unconfirmed">м. чын.</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м. чын.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName draft="unconfirmed">м. сыек унц.</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} м. сыек унц.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName draft="unconfirmed">төн</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} төн</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/төн</perUnitPattern>
+			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>

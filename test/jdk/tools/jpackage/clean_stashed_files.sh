@@ -80,6 +80,7 @@ linuxAllActions="${linuxActions} ${linuxRpmActions} ${linuxDebActions}"
 actions='
   rmPostImageScript
   sortAppImageListing
+  derandomizeServiceTestCfgFiles
 '
 allActions="${actions} ${winAllActions} ${macAllActions} ${linuxAllActions}"
 
@@ -94,6 +95,13 @@ sortAppImageListing() {
   find "$stash_dir" -name 'app-image-listing.txt' -type f -exec sort -o {} {} \;
 }
 
+derandomizeServiceTestCfgFiles() {
+  # Convert variable part of 'java-options=-Djpackage.test.appOutput=/tmp/AddLServiceTest-0000019a5a3fac9c-launcher-as-service.txt'
+  # in '*.cfg' files of the ServiceTest test.
+  find "$stash_dir" -path '*/ServiceTest/*.cfg' -type f | xargs -I {} sed $sed_inplace_option \
+      -e 's|ServiceTest-[[:xdigit:]]\{1,\}-\([^ ]*\.txt\)|ServiceTest-<SEED>-\1|g' \
+      '{}'
+}
 
 #
 # MAC:
@@ -120,7 +128,7 @@ macDmgFilterScpt() {
   #  - Trim random absolute temp path
   #  - Replace "/dmg-workdir/" (new) with "/images/" (old)
   find "$stash_dir" -name '*.scpt' -type f | xargs -I {} sed $sed_inplace_option \
-      -e 's|/jdk.jpackage[0-9]\{1,\}/|/jdk.jpackage/|' \
+      -e 's|/jdk\.jpackage[0-9]\{1,\}/|/jdk.jpackage/|' \
       -e 's|/dmg-workdir/|/images/|' \
       '{}'
 }

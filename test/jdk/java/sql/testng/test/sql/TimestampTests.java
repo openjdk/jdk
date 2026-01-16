@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -665,6 +665,44 @@ public class TimestampTests extends BaseTest {
 
         // The earliest possible Instant will certainly overflow.
         expectThrows(IllegalArgumentException.class, () -> Timestamp.from(Instant.MIN));
+    }
+
+    /*
+     * Validate that two Timestamp hashCode values are equal when
+     * the Timestamp values match, including the nanos.
+     */
+    @Test
+    public void test54() {
+        long t = System.currentTimeMillis();
+        Timestamp ts1 = new Timestamp(t);
+        Timestamp ts2 = new Timestamp(t);
+        ts1.setNanos(123456789);
+        ts2.setNanos(123456789);
+        assertTrue(ts1.equals(ts1));
+        assertTrue(ts2.equals(ts2));
+        assertTrue(ts1.equals(ts2));
+        // As the Timestamp values, including the nanos are the same, the hashCode's
+        // should be equal
+        assertEquals(ts1.hashCode(), ts2.hashCode());
+    }
+
+    /*
+     * Validate that two Timestamp hashCode values are not equal when only
+     * the nanos value for the Timestamp differ.
+     */
+    @Test
+    public void test55() {
+        long t = System.currentTimeMillis();
+        Timestamp ts1 = new Timestamp(t);
+        Timestamp ts2 = new Timestamp(t);
+        // Modify the nanos so that the Timestamp values differ
+        ts1.setNanos(123456789);
+        ts2.setNanos(987654321);
+        assertTrue(ts1.equals(ts1));
+        assertTrue(ts2.equals(ts2));
+        assertFalse(ts1.equals(ts2));
+        // As the nanos differ, the hashCode values should differ
+        assertNotEquals(ts1.hashCode(), ts2.hashCode());
     }
 
     /*

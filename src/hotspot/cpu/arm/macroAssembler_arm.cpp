@@ -1750,14 +1750,14 @@ void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype
   POISON_REG(mask, 1, R2, poison)               \
   POISON_REG(mask, 2, R3, poison)
 
-// Attempt to lightweight-lock an object
+// Attempt to fast-lock an object
 // Registers:
 //  - obj: the object to be locked
 //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
 // Result:
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
-void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+void MacroAssembler::fast_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
   assert_different_registers(obj, t1, t2, t3);
 
 #ifdef ASSERT
@@ -1807,14 +1807,14 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
   // Success: fall through
 }
 
-// Attempt to lightweight-unlock an object
+// Attempt to fast-unlock an object
 // Registers:
 //  - obj: the object to be unlocked
 //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
 // Result:
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
-void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
   assert_different_registers(obj, t1, t2, t3);
 
 #ifdef ASSERT

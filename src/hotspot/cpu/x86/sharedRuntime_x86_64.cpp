@@ -2141,7 +2141,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    __ lightweight_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
+    __ fast_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -2266,7 +2266,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
+    __ fast_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
 
     // slow path re-enters here
     __ bind(unlock_done);

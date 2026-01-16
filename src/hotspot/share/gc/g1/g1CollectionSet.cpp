@@ -126,8 +126,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   assert(!hr->rem_set()->has_cset_group(), "Should have already uninstalled group remset");
 
-  assert(!hr->in_collection_set(), "should not already be in the collection set");
-  _g1h->register_old_region_with_region_attr(hr);
+  _g1h->register_old_collection_set_region_with_region_attr(hr);
 
   assert(_regions_cur_length < _regions_max_length, "Collection set now larger than maximum size.");
   _regions[_regions_cur_length++] = hr->hrm_index();
@@ -164,6 +163,7 @@ void G1CollectionSet::clear() {
   assert_at_safepoint_on_vm_thread();
   _regions_cur_length = 0;
   _groups.clear();
+  assert(_optional_groups.length() == 0, "must be");
 }
 
 void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
@@ -217,7 +217,11 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == CSetBuildType::Active, "Precondition");
 
-  assert(!hr->in_collection_set(), "invariant");
+  // Add to remembered set/cardset group.
+  _g1h->policy()->remset_tracker()->update_at_allocate(hr);
+  _g1h->young_regions_cset_group()->add(hr);
+
+  // Synchronize with the region attribute table.
   _g1h->register_young_region_with_region_attr(hr);
 
   // We use UINT_MAX as "invalid" marker in verification.
@@ -234,11 +238,13 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
 }
 
 void G1CollectionSet::add_survivor_regions(G1HeapRegion* hr) {
+  assert_at_safepoint_on_vm_thread();
   assert(hr->is_survivor(), "Must only add survivor regions, but is %s", hr->get_type_str());
   add_young_region_common(hr);
 }
 
 void G1CollectionSet::add_eden_region(G1HeapRegion* hr) {
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(hr->is_eden(), "Must only add eden regions, but is %s", hr->get_type_str());
   add_young_region_common(hr);
 }
@@ -724,7 +730,7 @@ bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_ti
 
   stop_incremental_building();
 
-  _g1h->verify_region_attr_remset_is_tracked();
+  _g1h->verify_region_attr_is_remset_tracked();
 
   return num_regions_selected > 0;
 }
@@ -736,7 +742,7 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
       // Clear collection set marker and make sure that the remembered set information
       // is correct as we still need it later.
       _g1h->clear_region_attr(r);
-      _g1h->register_region_with_region_attr(r);
+      _g1h->update_region_attr(r);
       r->clear_index_in_opt_cset();
     };
 
@@ -745,7 +751,7 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
     _optional_groups.remove_selected(_optional_groups.length(), _optional_groups.num_regions());
   }
 
-  _g1h->verify_region_attr_remset_is_tracked();
+  _g1h->verify_region_attr_is_remset_tracked();
 }
 
 #ifdef ASSERT

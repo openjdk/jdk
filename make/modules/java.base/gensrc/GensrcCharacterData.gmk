@@ -72,5 +72,22 @@ TARGETS += $(GENSRC_CHARACTERDATA)
 
 ################################################################################
 
+
+GENSRC_STRINGCASEFOLDING := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/lang/CaseFolding.java
+
+STRINGCASEFOLDING_TEMPLATE := $(MODULE_SRC)/share/classes/jdk/internal/lang/CaseFolding.java.template
+CASEFOLDINGTXT := $(MODULE_SRC)/share/data/unicodedata/CaseFolding.txt
+
+$(GENSRC_STRINGCASEFOLDING): $(BUILD_TOOLS_JDK) $(STRINGCASEFOLDING_TEMPLATE) $(CASEFOLDINGTXT)
+	$(call LogInfo, Generating $@)
+	$(call MakeTargetDir)
+	$(TOOL_GENERATECASEFOLDING) \
+	    $(STRINGCASEFOLDING_TEMPLATE) \
+	    $(CASEFOLDINGTXT) \
+	    $(GENSRC_STRINGCASEFOLDING)
+
+TARGETS += $(GENSRC_STRINGCASEFOLDING)
+
+
 endif # include guard
 include MakeIncludeEnd.gmk

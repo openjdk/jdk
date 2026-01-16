@@ -577,7 +577,6 @@ public class QuicPacketEncoder {
         final byte[] encodedPacketNumber;
         final List<QuicFrame> frames;
         final int payloadSize;
-        private int tagSize;
 
         OutgoingHandshakePacket(QuicConnectionId sourceId,
                                 QuicConnectionId destinationId,
@@ -590,7 +589,6 @@ public class QuicPacketEncoder {
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
             this.payloadSize = frames.stream().mapToInt(QuicFrame::size).reduce(0, Math::addExact);
-            this.tagSize = tagSize;
             this.length = computeLength(payloadSize, encodedPacketNumber.length, tagSize);
             this.size = computeSize(length);
         }
@@ -676,7 +674,6 @@ public class QuicPacketEncoder {
         final int size;
         final byte[] encodedPacketNumber;
         final List<QuicFrame> frames;
-        private int tagSize;
         final int payloadSize;
 
         OutgoingZeroRttPacket(QuicConnectionId sourceId,
@@ -689,7 +686,6 @@ public class QuicPacketEncoder {
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
-            this.tagSize = tagSize;
             this.payloadSize = this.frames.stream().mapToInt(QuicFrame::size)
                     .reduce(0, Math::addExact);
             this.length = computeLength(payloadSize, encodedPacketNumber.length, tagSize);
@@ -778,7 +774,6 @@ public class QuicPacketEncoder {
         final int size;
         final byte[] encodedPacketNumber;
         final List<QuicFrame> frames;
-        private int tagSize;
         final int payloadSize;
 
         OutgoingOneRttPacket(QuicConnectionId destinationId,
@@ -789,7 +784,6 @@ public class QuicPacketEncoder {
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
-            this.tagSize = tagSize;
             this.payloadSize = this.frames.stream().mapToInt(QuicFrame::size)
                     .reduce(0, Math::addExact);
             this.size = computeSize(payloadSize, encodedPacketNumber.length, tagSize);
@@ -853,7 +847,6 @@ public class QuicPacketEncoder {
         final int size;
         final byte[] encodedPacketNumber;
         final List<QuicFrame> frames;
-        private int tagSize;
         final int payloadSize;
 
         private record InitialPacketVariableComponents(int length, byte[] token, QuicConnectionId sourceId,
@@ -873,7 +866,6 @@ public class QuicPacketEncoder {
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
-            this.tagSize = tagSize;
             this.payloadSize = this.frames.stream()
                     .mapToInt(QuicFrame::size)
                     .reduce(0, Math::addExact);

@@ -430,6 +430,13 @@ inline NativeCall* nativeCall_before(address return_address) {
 
 class NativePostCallNop: public NativeInstruction {
 public:
+  enum arm_specific_constants {
+    // If the check is adjusted to read beyond size of the instruction sequence at the deopt
+    // handler stub code entry point, it has to happen in two stages - to prevent out of bounds
+    // access in case the return address points to the entry point which could be at
+    // the end of page.
+    first_check_size = instruction_size
+  };
   bool check() const { return is_nop(); }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
   bool patch(int32_t oopmap_slot, int32_t cb_offset) { return false; }

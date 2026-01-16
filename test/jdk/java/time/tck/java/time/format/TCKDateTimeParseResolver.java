@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,9 @@ import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -122,13 +123,16 @@ import java.time.temporal.TemporalUnit;
 import java.time.temporal.ValueRange;
 import java.util.Map;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test parse resolving.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKDateTimeParseResolver {
     // TODO: tests with weird TenporalField implementations
     // TODO: tests with non-ISO chronologies
@@ -137,7 +141,6 @@ public class TCKDateTimeParseResolver {
     private static final ZoneId EUROPE_PARIS = ZoneId.of("Europe/Paris");
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveOneNoChange")
     Object[][] data_resolveOneNoChange() {
         return new Object[][]{
                 {YEAR, 2012},
@@ -148,20 +151,20 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveOneNoChange")
+    @ParameterizedTest
+    @MethodSource("data_resolveOneNoChange")
     public void test_resolveOneNoChange(TemporalField field1, long value1) {
         String str = Long.toString(value1);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field1).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), null);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.isSupported(field1), true);
-        assertEquals(accessor.getLong(field1), value1);
+        assertEquals(null, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(true, accessor.isSupported(field1));
+        assertEquals(value1, accessor.getLong(field1));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveTwoNoChange")
     Object[][] data_resolveTwoNoChange() {
         return new Object[][]{
                 {YEAR, 2012, MONTH_OF_YEAR, 5},
@@ -185,7 +188,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveTwoNoChange")
+    @ParameterizedTest
+    @MethodSource("data_resolveTwoNoChange")
     public void test_resolveTwoNoChange(TemporalField field1, long value1, TemporalField field2, long value2) {
         String str = value1 + " " + value2;
         DateTimeFormatter f = new DateTimeFormatterBuilder()
@@ -193,16 +197,15 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field2).toFormatter();
         TemporalAccessor accessor = f.parse(str);
 
-        assertEquals(accessor.query(TemporalQueries.localDate()), null);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.isSupported(field1), true);
-        assertEquals(accessor.isSupported(field2), true);
-        assertEquals(accessor.getLong(field1), value1);
-        assertEquals(accessor.getLong(field2), value2);
+        assertEquals(null, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(true, accessor.isSupported(field1));
+        assertEquals(true, accessor.isSupported(field2));
+        assertEquals(value1, accessor.getLong(field1));
+        assertEquals(value2, accessor.getLong(field2));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveThreeNoChange")
     Object[][] data_resolveThreeNoChange() {
         return new Object[][]{
                 {YEAR, 2012, MONTH_OF_YEAR, 5, DAY_OF_WEEK, 5},
@@ -216,7 +219,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveThreeNoChange")
+    @ParameterizedTest
+    @MethodSource("data_resolveThreeNoChange")
     public void test_resolveThreeNoChange(TemporalField field1, long value1, TemporalField field2, long value2, TemporalField field3, long value3) {
         String str = value1 + " " + value2 + " " + value3;
         DateTimeFormatter f = new DateTimeFormatterBuilder()
@@ -225,20 +229,19 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field3).toFormatter();
         TemporalAccessor accessor = f.parse(str);
 
-        assertEquals(accessor.query(TemporalQueries.localDate()), null);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.isSupported(field1), true);
-        assertEquals(accessor.isSupported(field2), true);
-        assertEquals(accessor.isSupported(field3), true);
-        assertEquals(accessor.getLong(field1), value1);
-        assertEquals(accessor.getLong(field2), value2);
-        assertEquals(accessor.getLong(field3), value3);
+        assertEquals(null, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(true, accessor.isSupported(field1));
+        assertEquals(true, accessor.isSupported(field2));
+        assertEquals(true, accessor.isSupported(field3));
+        assertEquals(value1, accessor.getLong(field1));
+        assertEquals(value2, accessor.getLong(field2));
+        assertEquals(value3, accessor.getLong(field3));
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveOneToField")
     Object[][] data_resolveOneToField() {
         return new Object[][]{
                 {YEAR_OF_ERA, 2012, YEAR, 2012L, null, null},
@@ -251,7 +254,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveOneToField")
+    @ParameterizedTest
+    @MethodSource("data_resolveOneToField")
     public void test_resolveOneToField(TemporalField field1, long value1,
                                        TemporalField expectedField1, Long expectedValue1,
                                        TemporalField expectedField2, Long expectedValue2) {
@@ -259,38 +263,37 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field1).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), null);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
+        assertEquals(null, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
         if (expectedField1 != null) {
-            assertEquals(accessor.isSupported(expectedField1), true);
-            assertEquals(accessor.getLong(expectedField1), expectedValue1.longValue());
+            assertEquals(true, accessor.isSupported(expectedField1));
+            assertEquals(expectedValue1.longValue(), accessor.getLong(expectedField1));
         }
         if (expectedField2 != null) {
-            assertEquals(accessor.isSupported(expectedField2), true);
-            assertEquals(accessor.getLong(expectedField2), expectedValue2.longValue());
+            assertEquals(true, accessor.isSupported(expectedField2));
+            assertEquals(expectedValue2.longValue(), accessor.getLong(expectedField2));
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveOneToDate")
     Object[][] data_resolveOneToDate() {
         return new Object[][]{
                 {EPOCH_DAY, 32, LocalDate.of(1970, 2, 2)},
         };
     }
 
-    @Test(dataProvider="resolveOneToDate")
+    @ParameterizedTest
+    @MethodSource("data_resolveOneToDate")
     public void test_resolveOneToDate(TemporalField field1, long value1, LocalDate expectedDate) {
         String str = Long.toString(value1);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field1).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
+        assertEquals(expectedDate, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveOneToTime")
     Object[][] data_resolveOneToTime() {
         return new Object[][]{
                 {HOUR_OF_DAY, 8, LocalTime.of(8, 0)},
@@ -304,20 +307,20 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveOneToTime")
+    @ParameterizedTest
+    @MethodSource("data_resolveOneToTime")
     public void test_resolveOneToTime(TemporalField field1, long value1, LocalTime expectedTime) {
         String str = Long.toString(value1);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field1).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), null);
-        assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime);
+        assertEquals(null, accessor.query(TemporalQueries.localDate()));
+        assertEquals(expectedTime, accessor.query(TemporalQueries.localTime()));
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveTwoToField")
     Object[][] data_resolveTwoToField() {
         return new Object[][]{
                 // cross-check
@@ -330,7 +333,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveTwoToField")
+    @ParameterizedTest
+    @MethodSource("data_resolveTwoToField")
     public void test_resolveTwoToField(TemporalField field1, long value1,
                                        TemporalField field2, long value2,
                                        TemporalField expectedField1, Long expectedValue1,
@@ -341,20 +345,19 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field2).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), null);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
+        assertEquals(null, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
         if (expectedField1 != null) {
-            assertEquals(accessor.isSupported(expectedField1), true);
-            assertEquals(accessor.getLong(expectedField1), expectedValue1.longValue());
+            assertEquals(true, accessor.isSupported(expectedField1));
+            assertEquals(expectedValue1.longValue(), accessor.getLong(expectedField1));
         }
         if (expectedField2 != null) {
-            assertEquals(accessor.isSupported(expectedField2), true);
-            assertEquals(accessor.getLong(expectedField2), expectedValue2.longValue());
+            assertEquals(true, accessor.isSupported(expectedField2));
+            assertEquals(expectedValue2.longValue(), accessor.getLong(expectedField2));
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveTwoToDate")
     Object[][] data_resolveTwoToDate() {
         return new Object[][]{
                 // merge
@@ -379,7 +382,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveTwoToDate")
+    @ParameterizedTest
+    @MethodSource("data_resolveTwoToDate")
     public void test_resolveTwoToDate(TemporalField field1, long value1,
                                       TemporalField field2, long value2,
                                       LocalDate expectedDate) {
@@ -389,12 +393,11 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field2).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
+        assertEquals(expectedDate, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveTwoToTime")
     Object[][] data_resolveTwoToTime() {
         return new Object[][]{
                 // merge
@@ -466,7 +469,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveTwoToTime")
+    @ParameterizedTest
+    @MethodSource("data_resolveTwoToTime")
     public void test_resolveTwoToTime(TemporalField field1, long value1,
                                 TemporalField field2, long value2,
                                 LocalTime expectedTime) {
@@ -476,12 +480,11 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field2).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), null);
-        assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime);
+        assertEquals(null, accessor.query(TemporalQueries.localDate()));
+        assertEquals(expectedTime, accessor.query(TemporalQueries.localTime()));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveThreeToDate")
     Object[][] data_resolveThreeToDate() {
         return new Object[][]{
                 // merge
@@ -497,7 +500,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveThreeToDate")
+    @ParameterizedTest
+    @MethodSource("data_resolveThreeToDate")
     public void test_resolveThreeToDate(TemporalField field1, long value1,
                                       TemporalField field2, long value2,
                                       TemporalField field3, long value3,
@@ -509,12 +513,11 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field3).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
+        assertEquals(expectedDate, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveFourToDate")
     Object[][] data_resolveFourToDate() {
         return new Object[][]{
                 // merge
@@ -528,7 +531,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveFourToDate")
+    @ParameterizedTest
+    @MethodSource("data_resolveFourToDate")
     public void test_resolveFourToDate(TemporalField field1, long value1,
                                         TemporalField field2, long value2,
                                         TemporalField field3, long value3,
@@ -542,12 +546,11 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field4).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate);
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
+        assertEquals(expectedDate, accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveFourToTime")
     Object[][] data_resolveFourToTime() {
         return new Object[][]{
                 // merge
@@ -597,7 +600,8 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveFourToTime")
+    @ParameterizedTest
+    @MethodSource("data_resolveFourToTime")
     public void test_resolveFourToTime(ResolverStyle style,
                        long hour, long min, long sec, long nano, LocalTime expectedTime, Period excessPeriod) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
@@ -610,9 +614,9 @@ public class TCKDateTimeParseResolver {
         for (ResolverStyle s : styles) {
             if (expectedTime != null) {
                 TemporalAccessor accessor = f.withResolverStyle(s).parse("");
-                assertEquals(accessor.query(TemporalQueries.localDate()), null, "ResolverStyle: " + s);
-                assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime, "ResolverStyle: " + s);
-                assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), excessPeriod, "ResolverStyle: " + s);
+                assertEquals(null, accessor.query(TemporalQueries.localDate()), "ResolverStyle: " + s);
+                assertEquals(expectedTime, accessor.query(TemporalQueries.localTime()), "ResolverStyle: " + s);
+                assertEquals(excessPeriod, accessor.query(DateTimeFormatter.parsedExcessDays()), "ResolverStyle: " + s);
             } else {
                 try {
                     f.withResolverStyle(style).parse("");
@@ -624,7 +628,8 @@ public class TCKDateTimeParseResolver {
         }
     }
 
-    @Test(dataProvider="resolveFourToTime")
+    @ParameterizedTest
+    @MethodSource("data_resolveFourToTime")
     public void test_resolveThreeToTime(ResolverStyle style,
                                        long hour, long min, long sec, long nano, LocalTime expectedTime, Period excessPeriod) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
@@ -636,9 +641,9 @@ public class TCKDateTimeParseResolver {
         for (ResolverStyle s : styles) {
             if (expectedTime != null) {
                 TemporalAccessor accessor = f.withResolverStyle(s).parse("");
-                assertEquals(accessor.query(TemporalQueries.localDate()), null, "ResolverStyle: " + s);
-                assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime.minusNanos(nano), "ResolverStyle: " + s);
-                assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), excessPeriod, "ResolverStyle: " + s);
+                assertEquals(null, accessor.query(TemporalQueries.localDate()), "ResolverStyle: " + s);
+                assertEquals(expectedTime.minusNanos(nano), accessor.query(TemporalQueries.localTime()), "ResolverStyle: " + s);
+                assertEquals(excessPeriod, accessor.query(DateTimeFormatter.parsedExcessDays()), "ResolverStyle: " + s);
             } else {
                 try {
                     f.withResolverStyle(style).parse("");
@@ -650,7 +655,8 @@ public class TCKDateTimeParseResolver {
         }
     }
 
-    @Test(dataProvider="resolveFourToTime")
+    @ParameterizedTest
+    @MethodSource("data_resolveFourToTime")
     public void test_resolveFourToDateTime(ResolverStyle style,
                        long hour, long min, long sec, long nano, LocalTime expectedTime, Period excessPeriod) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
@@ -665,15 +671,14 @@ public class TCKDateTimeParseResolver {
             LocalDate expectedDate = LocalDate.of(2012, 6, 30).plus(excessPeriod);
             for (ResolverStyle s : styles) {
                 TemporalAccessor accessor = f.withResolverStyle(s).parse("");
-                assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate, "ResolverStyle: " + s);
-                assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime, "ResolverStyle: " + s);
-                assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ZERO, "ResolverStyle: " + s);
+                assertEquals(expectedDate, accessor.query(TemporalQueries.localDate()), "ResolverStyle: " + s);
+                assertEquals(expectedTime, accessor.query(TemporalQueries.localTime()), "ResolverStyle: " + s);
+                assertEquals(Period.ZERO, accessor.query(DateTimeFormatter.parsedExcessDays()), "ResolverStyle: " + s);
             }
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveSecondOfDay")
     Object[][] data_resolveSecondOfDay() {
         return new Object[][]{
                 {STRICT, 0, 0, 0},
@@ -696,16 +701,17 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveSecondOfDay")
+    @ParameterizedTest
+    @MethodSource("data_resolveSecondOfDay")
     public void test_resolveSecondOfDay(ResolverStyle style, long value, Integer expectedSecond, int expectedDays) {
         String str = Long.toString(value);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(SECOND_OF_DAY).toFormatter();
 
         if (expectedSecond != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQueries.localDate()), null);
-            assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.ofSecondOfDay(expectedSecond));
-            assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
+            assertEquals(null, accessor.query(TemporalQueries.localDate()));
+            assertEquals(LocalTime.ofSecondOfDay(expectedSecond), accessor.query(TemporalQueries.localTime()));
+            assertEquals(Period.ofDays(expectedDays), accessor.query(DateTimeFormatter.parsedExcessDays()));
         } else {
             try {
                 f.withResolverStyle(style).parse(str);
@@ -717,7 +723,6 @@ public class TCKDateTimeParseResolver {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveMinuteOfDay")
     Object[][] data_resolveMinuteOfDay() {
         return new Object[][]{
                 {STRICT, 0, 0, 0},
@@ -740,16 +745,17 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveMinuteOfDay")
+    @ParameterizedTest
+    @MethodSource("data_resolveMinuteOfDay")
     public void test_resolveMinuteOfDay(ResolverStyle style, long value, Integer expectedMinute, int expectedDays) {
         String str = Long.toString(value);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(MINUTE_OF_DAY).toFormatter();
 
         if (expectedMinute != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQueries.localDate()), null);
-            assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.ofSecondOfDay(expectedMinute * 60));
-            assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
+            assertEquals(null, accessor.query(TemporalQueries.localDate()));
+            assertEquals(LocalTime.ofSecondOfDay(expectedMinute * 60), accessor.query(TemporalQueries.localTime()));
+            assertEquals(Period.ofDays(expectedDays), accessor.query(DateTimeFormatter.parsedExcessDays()));
         } else {
             try {
                 f.withResolverStyle(style).parse(str);
@@ -761,7 +767,6 @@ public class TCKDateTimeParseResolver {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveClockHourOfDay")
     Object[][] data_resolveClockHourOfDay() {
         return new Object[][]{
                 {STRICT, 1, 1, 0},
@@ -784,16 +789,17 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveClockHourOfDay")
+    @ParameterizedTest
+    @MethodSource("data_resolveClockHourOfDay")
     public void test_resolveClockHourOfDay(ResolverStyle style, long value, Integer expectedHour, int expectedDays) {
         String str = Long.toString(value);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(CLOCK_HOUR_OF_DAY).toFormatter();
 
         if (expectedHour != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQueries.localDate()), null);
-            assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.of(expectedHour, 0));
-            assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
+            assertEquals(null, accessor.query(TemporalQueries.localDate()));
+            assertEquals(LocalTime.of(expectedHour, 0), accessor.query(TemporalQueries.localTime()));
+            assertEquals(Period.ofDays(expectedDays), accessor.query(DateTimeFormatter.parsedExcessDays()));
         } else {
             try {
                 f.withResolverStyle(style).parse(str);
@@ -805,7 +811,6 @@ public class TCKDateTimeParseResolver {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveClockHourOfAmPm")
     Object[][] data_resolveClockHourOfAmPm() {
         return new Object[][]{
                 {STRICT, 1, 1},
@@ -828,18 +833,19 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveClockHourOfAmPm")
+    @ParameterizedTest
+    @MethodSource("data_resolveClockHourOfAmPm")
     public void test_resolveClockHourOfAmPm(ResolverStyle style, long value, Integer expectedValue) {
         String str = Long.toString(value);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(CLOCK_HOUR_OF_AMPM).toFormatter();
 
         if (expectedValue != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQueries.localDate()), null);
-            assertEquals(accessor.query(TemporalQueries.localTime()), null);
-            assertEquals(accessor.isSupported(CLOCK_HOUR_OF_AMPM), false);
-            assertEquals(accessor.isSupported(HOUR_OF_AMPM), true);
-            assertEquals(accessor.getLong(HOUR_OF_AMPM), expectedValue.longValue());
+            assertEquals(null, accessor.query(TemporalQueries.localDate()));
+            assertEquals(null, accessor.query(TemporalQueries.localTime()));
+            assertEquals(false, accessor.isSupported(CLOCK_HOUR_OF_AMPM));
+            assertEquals(true, accessor.isSupported(HOUR_OF_AMPM));
+            assertEquals(expectedValue.longValue(), accessor.getLong(HOUR_OF_AMPM));
         } else {
             try {
                 f.withResolverStyle(style).parse(str);
@@ -851,7 +857,6 @@ public class TCKDateTimeParseResolver {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="resolveAmPm")
     Object[][] data_resolveAmPm() {
         return new Object[][]{
                 {STRICT, 0, null, 0},
@@ -871,17 +876,18 @@ public class TCKDateTimeParseResolver {
         };
     }
 
-    @Test(dataProvider="resolveAmPm")
+    @ParameterizedTest
+    @MethodSource("data_resolveAmPm")
     public void test_resolveAmPm(ResolverStyle style, long value, LocalTime expectedTime, Integer expectedValue) {
         String str = Long.toString(value);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(AMPM_OF_DAY).toFormatter();
 
         if (expectedValue != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQueries.localDate()), null);
-            assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime);
-            assertEquals(accessor.isSupported(AMPM_OF_DAY), true);
-            assertEquals(accessor.getLong(AMPM_OF_DAY), expectedValue.longValue());
+            assertEquals(null, accessor.query(TemporalQueries.localDate()));
+            assertEquals(expectedTime, accessor.query(TemporalQueries.localTime()));
+            assertEquals(true, accessor.isSupported(AMPM_OF_DAY));
+            assertEquals(expectedValue.longValue(), accessor.getLong(AMPM_OF_DAY));
         } else {
             try {
                 f.withResolverStyle(style).parse(str);
@@ -898,9 +904,9 @@ public class TCKDateTimeParseResolver {
     public void test_withChronology_noOverride() {
         DateTimeFormatter f = new DateTimeFormatterBuilder().parseDefaulting(EPOCH_DAY, 2).toFormatter();
         TemporalAccessor accessor = f.parse("");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(1970, 1, 3));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
+        assertEquals(LocalDate.of(1970, 1, 3), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(IsoChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
     }
 
     @Test
@@ -908,18 +914,18 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().parseDefaulting(EPOCH_DAY, 2).toFormatter();
         f = f.withChronology(MinguoChronology.INSTANCE);
         TemporalAccessor accessor = f.parse("");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(1970, 1, 3));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.chronology()), MinguoChronology.INSTANCE);
+        assertEquals(LocalDate.of(1970, 1, 3), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(MinguoChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
     }
 
     @Test
     public void test_withChronology_parsedChronology_noOverride() {
         DateTimeFormatter f = new DateTimeFormatterBuilder().parseDefaulting(EPOCH_DAY, 2).appendChronologyId().toFormatter();
         TemporalAccessor accessor = f.parse("ThaiBuddhist");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(1970, 1, 3));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.chronology()), ThaiBuddhistChronology.INSTANCE);
+        assertEquals(LocalDate.of(1970, 1, 3), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(ThaiBuddhistChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
     }
 
     @Test
@@ -927,9 +933,9 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().parseDefaulting(EPOCH_DAY, 2).appendChronologyId().toFormatter();
         f = f.withChronology(MinguoChronology.INSTANCE);
         TemporalAccessor accessor = f.parse("ThaiBuddhist");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(1970, 1, 3));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.chronology()), ThaiBuddhistChronology.INSTANCE);
+        assertEquals(LocalDate.of(1970, 1, 3), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(ThaiBuddhistChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
     }
 
     //-----------------------------------------------------------------------
@@ -938,9 +944,9 @@ public class TCKDateTimeParseResolver {
     public void test_withZone_noOverride() {
         DateTimeFormatter f = new DateTimeFormatterBuilder().parseDefaulting(EPOCH_DAY, 2).toFormatter();
         TemporalAccessor accessor = f.parse("");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(1970, 1, 3));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.zoneId()), null);
+        assertEquals(LocalDate.of(1970, 1, 3), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(null, accessor.query(TemporalQueries.zoneId()));
     }
 
     @Test
@@ -948,18 +954,18 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().parseDefaulting(EPOCH_DAY, 2).toFormatter();
         f = f.withZone(EUROPE_ATHENS);
         TemporalAccessor accessor = f.parse("");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(1970, 1, 3));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.zoneId()), EUROPE_ATHENS);
+        assertEquals(LocalDate.of(1970, 1, 3), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(EUROPE_ATHENS, accessor.query(TemporalQueries.zoneId()));
     }
 
     @Test
     public void test_withZone_parsedZone_noOverride() {
         DateTimeFormatter f = new DateTimeFormatterBuilder().parseDefaulting(EPOCH_DAY, 2).appendZoneId().toFormatter();
         TemporalAccessor accessor = f.parse("Europe/Paris");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(1970, 1, 3));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.zoneId()), EUROPE_PARIS);
+        assertEquals(LocalDate.of(1970, 1, 3), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(EUROPE_PARIS, accessor.query(TemporalQueries.zoneId()));
     }
 
     @Test
@@ -967,9 +973,9 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().parseDefaulting(EPOCH_DAY, 2).appendZoneId().toFormatter();
         f = f.withZone(EUROPE_ATHENS);
         TemporalAccessor accessor = f.parse("Europe/Paris");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(1970, 1, 3));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.zoneId()), EUROPE_PARIS);
+        assertEquals(LocalDate.of(1970, 1, 3), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(EUROPE_PARIS, accessor.query(TemporalQueries.zoneId()));
     }
 
     //-----------------------------------------------------------------------
@@ -978,8 +984,8 @@ public class TCKDateTimeParseResolver {
         LocalTime lt = LocalTime.of(12, 30, 40);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(lt)).toFormatter();
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQueries.localDate()), null);
-        assertEquals(accessor.query(TemporalQueries.localTime()), lt);
+        assertEquals(null, accessor.query(TemporalQueries.localDate()));
+        assertEquals(lt, accessor.query(TemporalQueries.localTime()));
     }
 
     //-------------------------------------------------------------------------
@@ -988,9 +994,9 @@ public class TCKDateTimeParseResolver {
         LocalDate ldt = LocalDate.of(2010, 6, 30);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(ldt)).toFormatter();
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(2010, 6, 30));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
+        assertEquals(LocalDate.of(2010, 6, 30), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(IsoChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
     }
 
     @Test
@@ -999,24 +1005,28 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(mdt)).toFormatter();
         f = f.withChronology(MinguoChronology.INSTANCE);
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.from(mdt));
-        assertEquals(accessor.query(TemporalQueries.localTime()), null);
-        assertEquals(accessor.query(TemporalQueries.chronology()), MinguoChronology.INSTANCE);
+        assertEquals(LocalDate.from(mdt), accessor.query(TemporalQueries.localDate()));
+        assertEquals(null, accessor.query(TemporalQueries.localTime()));
+        assertEquals(MinguoChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_fieldResolvesToChronoLocalDate_noOverrideChrono_wrongChrono() {
-        ChronoLocalDate cld = ThaiBuddhistChronology.INSTANCE.dateNow();
-        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cld)).toFormatter();
-        f.parse("1234567890");
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            ChronoLocalDate cld = ThaiBuddhistChronology.INSTANCE.dateNow();
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cld)).toFormatter();
+            f.parse("1234567890");
+        });
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_fieldResolvesToChronoLocalDate_overrideChrono_wrongChrono() {
-        ChronoLocalDate cld = ThaiBuddhistChronology.INSTANCE.dateNow();
-        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cld)).toFormatter();
-        f = f.withChronology(MinguoChronology.INSTANCE);
-        f.parse("1234567890");
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            ChronoLocalDate cld = ThaiBuddhistChronology.INSTANCE.dateNow();
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cld)).toFormatter();
+            f = f.withChronology(MinguoChronology.INSTANCE);
+            f.parse("1234567890");
+        });
     }
 
     //-------------------------------------------------------------------------
@@ -1025,9 +1035,9 @@ public class TCKDateTimeParseResolver {
         LocalDateTime ldt = LocalDateTime.of(2010, 6, 30, 12, 30);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(ldt)).toFormatter();
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(2010, 6, 30));
-        assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.of(12, 30));
-        assertEquals(accessor.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
+        assertEquals(LocalDate.of(2010, 6, 30), accessor.query(TemporalQueries.localDate()));
+        assertEquals(LocalTime.of(12, 30), accessor.query(TemporalQueries.localTime()));
+        assertEquals(IsoChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
     }
 
     @Test
@@ -1036,24 +1046,28 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(mdt.atTime(LocalTime.NOON))).toFormatter();
         f = f.withChronology(MinguoChronology.INSTANCE);
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.from(mdt));
-        assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.NOON);
-        assertEquals(accessor.query(TemporalQueries.chronology()), MinguoChronology.INSTANCE);
+        assertEquals(LocalDate.from(mdt), accessor.query(TemporalQueries.localDate()));
+        assertEquals(LocalTime.NOON, accessor.query(TemporalQueries.localTime()));
+        assertEquals(MinguoChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_fieldResolvesToChronoLocalDateTime_noOverrideChrono_wrongChrono() {
-        ChronoLocalDateTime<?> cldt = ThaiBuddhistChronology.INSTANCE.dateNow().atTime(LocalTime.NOON);
-        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cldt)).toFormatter();
-        f.parse("1234567890");
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            ChronoLocalDateTime<?> cldt = ThaiBuddhistChronology.INSTANCE.dateNow().atTime(LocalTime.NOON);
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cldt)).toFormatter();
+            f.parse("1234567890");
+        });
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_fieldResolvesToChronoLocalDateTime_overrideChrono_wrongChrono() {
-        ChronoLocalDateTime<?> cldt = ThaiBuddhistChronology.INSTANCE.dateNow().atTime(LocalTime.NOON);
-        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cldt)).toFormatter();
-        f = f.withChronology(MinguoChronology.INSTANCE);
-        f.parse("1234567890");
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            ChronoLocalDateTime<?> cldt = ThaiBuddhistChronology.INSTANCE.dateNow().atTime(LocalTime.NOON);
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cldt)).toFormatter();
+            f = f.withChronology(MinguoChronology.INSTANCE);
+            f.parse("1234567890");
+        });
     }
 
     //-------------------------------------------------------------------------
@@ -1062,10 +1076,10 @@ public class TCKDateTimeParseResolver {
         ZonedDateTime zdt = ZonedDateTime.of(2010, 6, 30, 12, 30, 0, 0, EUROPE_PARIS);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(zdt)).toFormatter();
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(2010, 6, 30));
-        assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.of(12, 30));
-        assertEquals(accessor.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
-        assertEquals(accessor.query(TemporalQueries.zoneId()), EUROPE_PARIS);
+        assertEquals(LocalDate.of(2010, 6, 30), accessor.query(TemporalQueries.localDate()));
+        assertEquals(LocalTime.of(12, 30), accessor.query(TemporalQueries.localTime()));
+        assertEquals(IsoChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
+        assertEquals(EUROPE_PARIS, accessor.query(TemporalQueries.zoneId()));
     }
 
     @Test
@@ -1075,25 +1089,29 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(mzdt)).toFormatter();
         f = f.withChronology(MinguoChronology.INSTANCE);
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.from(mdt));
-        assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.NOON);
-        assertEquals(accessor.query(TemporalQueries.chronology()), MinguoChronology.INSTANCE);
-        assertEquals(accessor.query(TemporalQueries.zoneId()), EUROPE_PARIS);
+        assertEquals(LocalDate.from(mdt), accessor.query(TemporalQueries.localDate()));
+        assertEquals(LocalTime.NOON, accessor.query(TemporalQueries.localTime()));
+        assertEquals(MinguoChronology.INSTANCE, accessor.query(TemporalQueries.chronology()));
+        assertEquals(EUROPE_PARIS, accessor.query(TemporalQueries.zoneId()));
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_fieldResolvesToChronoZonedDateTime_noOverrideChrono_wrongChrono() {
-        ChronoZonedDateTime<?> cldt = ThaiBuddhistChronology.INSTANCE.dateNow().atTime(LocalTime.NOON).atZone(EUROPE_PARIS);
-        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cldt)).toFormatter();
-        f.parse("1234567890");
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            ChronoZonedDateTime<?> cldt = ThaiBuddhistChronology.INSTANCE.dateNow().atTime(LocalTime.NOON).atZone(EUROPE_PARIS);
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cldt)).toFormatter();
+            f.parse("1234567890");
+        });
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_fieldResolvesToChronoZonedDateTime_overrideChrono_wrongChrono() {
-        ChronoZonedDateTime<?> cldt = ThaiBuddhistChronology.INSTANCE.dateNow().atTime(LocalTime.NOON).atZone(EUROPE_PARIS);
-        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cldt)).toFormatter();
-        f = f.withChronology(MinguoChronology.INSTANCE);
-        f.parse("1234567890");
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            ChronoZonedDateTime<?> cldt = ThaiBuddhistChronology.INSTANCE.dateNow().atTime(LocalTime.NOON).atZone(EUROPE_PARIS);
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(cldt)).toFormatter();
+            f = f.withChronology(MinguoChronology.INSTANCE);
+            f.parse("1234567890");
+        });
     }
 
     @Test
@@ -1101,15 +1119,17 @@ public class TCKDateTimeParseResolver {
         ZonedDateTime zdt = ZonedDateTime.of(2010, 6, 30, 12, 30, 0, 0, EUROPE_PARIS);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(zdt)).toFormatter();
         f = f.withZone(EUROPE_PARIS);
-        assertEquals(f.parse("1234567890", ZonedDateTime::from), zdt);
+        assertEquals(zdt, f.parse("1234567890", ZonedDateTime::from));
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class)
+    @Test
     public void test_fieldResolvesToChronoZonedDateTime_overrideZone_wrongZone() {
-        ZonedDateTime zdt = ZonedDateTime.of(2010, 6, 30, 12, 30, 0, 0, EUROPE_PARIS);
-        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(zdt)).toFormatter();
-        f = f.withZone(ZoneId.of("Europe/London"));
-        f.parse("1234567890");
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            ZonedDateTime zdt = ZonedDateTime.of(2010, 6, 30, 12, 30, 0, 0, EUROPE_PARIS);
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(new ResolvingField(zdt)).toFormatter();
+            f = f.withZone(ZoneId.of("Europe/London"));
+            f.parse("1234567890");
+        });
     }
 
     //-------------------------------------------------------------------------
@@ -1170,15 +1190,15 @@ public class TCKDateTimeParseResolver {
             .appendValue(INSTANT_SECONDS).toFormatter();
         TemporalAccessor acc = fmt.parse("86402");
         Instant expected = Instant.ofEpochSecond(86402);
-        assertEquals(acc.isSupported(INSTANT_SECONDS), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(INSTANT_SECONDS), 86402L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
-        assertEquals(Instant.from(acc), expected);
+        assertEquals(true, acc.isSupported(INSTANT_SECONDS));
+        assertEquals(true, acc.isSupported(NANO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MICRO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(86402L, acc.getLong(INSTANT_SECONDS));
+        assertEquals(0L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MILLI_OF_SECOND));
+        assertEquals(expected, Instant.from(acc));
     }
 
     @Test
@@ -1187,15 +1207,15 @@ public class TCKDateTimeParseResolver {
             .appendValue(INSTANT_SECONDS).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
         TemporalAccessor acc = fmt.parse("86402.123456789");
         Instant expected = Instant.ofEpochSecond(86402, 123456789);
-        assertEquals(acc.isSupported(INSTANT_SECONDS), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(INSTANT_SECONDS), 86402L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
-        assertEquals(Instant.from(acc), expected);
+        assertEquals(true, acc.isSupported(INSTANT_SECONDS));
+        assertEquals(true, acc.isSupported(NANO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MICRO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(86402L, acc.getLong(INSTANT_SECONDS));
+        assertEquals(123456789L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(123456L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(123L, acc.getLong(MILLI_OF_SECOND));
+        assertEquals(expected, Instant.from(acc));
     }
 
     // SPEC: ChronoField.SECOND_OF_DAY
@@ -1204,14 +1224,14 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendValue(SECOND_OF_DAY).toFormatter();
         TemporalAccessor acc = fmt.parse("864");
-        assertEquals(acc.isSupported(SECOND_OF_DAY), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(SECOND_OF_DAY), 864L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
+        assertEquals(true, acc.isSupported(SECOND_OF_DAY));
+        assertEquals(true, acc.isSupported(NANO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MICRO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(864L, acc.getLong(SECOND_OF_DAY));
+        assertEquals(0L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MILLI_OF_SECOND));
     }
 
     @Test
@@ -1219,14 +1239,14 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendValue(SECOND_OF_DAY).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
         TemporalAccessor acc = fmt.parse("864.123456789");
-        assertEquals(acc.isSupported(SECOND_OF_DAY), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(SECOND_OF_DAY), 864L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
+        assertEquals(true, acc.isSupported(SECOND_OF_DAY));
+        assertEquals(true, acc.isSupported(NANO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MICRO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(864L, acc.getLong(SECOND_OF_DAY));
+        assertEquals(123456789L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(123456L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(123L, acc.getLong(MILLI_OF_SECOND));
     }
 
     // SPEC: ChronoField.SECOND_OF_MINUTE
@@ -1235,14 +1255,14 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendValue(SECOND_OF_MINUTE).toFormatter();
         TemporalAccessor acc = fmt.parse("32");
-        assertEquals(acc.isSupported(SECOND_OF_MINUTE), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(SECOND_OF_MINUTE), 32L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
+        assertEquals(true, acc.isSupported(SECOND_OF_MINUTE));
+        assertEquals(true, acc.isSupported(NANO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MICRO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(32L, acc.getLong(SECOND_OF_MINUTE));
+        assertEquals(0L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(0L, acc.getLong(MILLI_OF_SECOND));
     }
 
     @Test
@@ -1250,14 +1270,14 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder()
             .appendValue(SECOND_OF_MINUTE).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
         TemporalAccessor acc = fmt.parse("32.123456789");
-        assertEquals(acc.isSupported(SECOND_OF_MINUTE), true);
-        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
-        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
-        assertEquals(acc.getLong(SECOND_OF_MINUTE), 32L);
-        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
-        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
-        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
+        assertEquals(true, acc.isSupported(SECOND_OF_MINUTE));
+        assertEquals(true, acc.isSupported(NANO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MICRO_OF_SECOND));
+        assertEquals(true, acc.isSupported(MILLI_OF_SECOND));
+        assertEquals(32L, acc.getLong(SECOND_OF_MINUTE));
+        assertEquals(123456789L, acc.getLong(NANO_OF_SECOND));
+        assertEquals(123456L, acc.getLong(MICRO_OF_SECOND));
+        assertEquals(123L, acc.getLong(MILLI_OF_SECOND));
     }
 
 }

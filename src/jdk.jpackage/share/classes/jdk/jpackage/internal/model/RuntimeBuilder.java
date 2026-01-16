@@ -44,7 +44,17 @@ public interface RuntimeBuilder {
      * @param appImageLayout the app image where to create Java runtime.
      * @throws PackagerException if packaging error occurs
      */
-    void create(AppImageLayout appImageLayout) throws PackagerException;
+    void create(AppImageLayout appImageLayout);
+
+    /**
+     * Returns {@code true} if "--strip-native-commands" was not used with jlink.
+     * Default implementation returns {@code false}.
+     *
+     * @return {@code true} if "--strip-native-commands" was not used with jlink
+     */
+    default boolean withNativeCommands() {
+        return false;
+    }
 
     /**
      * Gets the default set of paths where jlink should look up for system Java

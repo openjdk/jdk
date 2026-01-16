@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,10 +115,12 @@ public class GIFImageMetadata extends GIFMetadata {
               null, null);
     }
 
+    @Override
     public boolean isReadOnly() {
         return true;
     }
 
+    @Override
     public Node getAsTree(String formatName) {
         if (formatName.equals(nativeMetadataFormatName)) {
             return getNativeTree();
@@ -252,6 +254,7 @@ public class GIFImageMetadata extends GIFMetadata {
         return root;
     }
 
+    @Override
     public IIOMetadataNode getStandardChromaNode() {
         IIOMetadataNode chroma_node = new IIOMetadataNode("Chroma");
         IIOMetadataNode node = null; // scratch node
@@ -294,6 +297,7 @@ public class GIFImageMetadata extends GIFMetadata {
         return chroma_node;
     }
 
+    @Override
     public IIOMetadataNode getStandardCompressionNode() {
         IIOMetadataNode compression_node = new IIOMetadataNode("Compression");
         IIOMetadataNode node = null; // scratch node
@@ -315,6 +319,7 @@ public class GIFImageMetadata extends GIFMetadata {
         return compression_node;
     }
 
+    @Override
     public IIOMetadataNode getStandardDataNode() {
         IIOMetadataNode data_node = new IIOMetadataNode("Data");
         IIOMetadataNode node = null; // scratch node
@@ -332,6 +337,7 @@ public class GIFImageMetadata extends GIFMetadata {
         return data_node;
     }
 
+    @Override
     public IIOMetadataNode getStandardDimensionNode() {
         IIOMetadataNode dimension_node = new IIOMetadataNode("Dimension");
         IIOMetadataNode node = null; // scratch node
@@ -365,6 +371,7 @@ public class GIFImageMetadata extends GIFMetadata {
 
     // Document not in image
 
+    @Override
     public IIOMetadataNode getStandardTextNode() {
         if (comments == null) {
             return null;
@@ -391,6 +398,7 @@ public class GIFImageMetadata extends GIFMetadata {
         return text_node;
     }
 
+    @Override
     public IIOMetadataNode getStandardTransparencyNode() {
         if (!transparentColorFlag) {
             return null;
@@ -414,22 +422,26 @@ public class GIFImageMetadata extends GIFMetadata {
         return transparency_node;
     }
 
+    @Override
     public void setFromTree(String formatName, Node root)
         throws IIOInvalidTreeException
     {
         throw new IllegalStateException("Metadata is read-only!");
     }
 
+    @Override
     protected void mergeNativeTree(Node root) throws IIOInvalidTreeException
     {
         throw new IllegalStateException("Metadata is read-only!");
     }
 
+    @Override
     protected void mergeStandardTree(Node root) throws IIOInvalidTreeException
     {
         throw new IllegalStateException("Metadata is read-only!");
     }
 
+    @Override
     public void reset() {
         throw new IllegalStateException("Metadata is read-only!");
     }

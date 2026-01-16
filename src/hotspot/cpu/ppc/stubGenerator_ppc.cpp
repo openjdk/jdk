@@ -2956,7 +2956,7 @@ class StubGenerator: public StubCodeGenerator {
   // Arguments for generated stub:
   //   R3_ARG1   - source byte array address
   //   R4_ARG2   - destination byte array address
-  //   R5_ARG3   - K (key) in little endian int array
+  //   R5_ARG3   - sessionKe (key) in little endian int array
   address generate_aescrypt_decryptBlock() {
     assert(UseAES, "need AES instructions and misaligned SSE support");
     StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;

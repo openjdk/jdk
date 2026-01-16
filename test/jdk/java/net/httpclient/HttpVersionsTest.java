@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ import static org.testng.Assert.assertTrue;
 
 public class HttpVersionsTest {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     Http2TestServer http2TestServer;
     Http2TestServer https2TestServer;
     String http2URI;
@@ -205,10 +205,6 @@ public class HttpVersionsTest {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         http2TestServer =  new Http2TestServer("localhost", false, 0, executor, 50, null, null, true);
         http2TestServer.addHandler(new Http2VerEchoHandler(), "/http2/vts");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/vts";

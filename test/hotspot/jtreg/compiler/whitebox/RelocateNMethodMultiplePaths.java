@@ -23,10 +23,9 @@
  */
 
 /*
- * @test id=SerialC1
+ * @test id=C1
  * @bug 8316694
  * @requires vm.debug == true
- * @requires vm.gc.Serial
  * @summary test that relocated nmethod is correctly deoptimized
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
@@ -34,15 +33,14 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
  * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
- * @test id=SerialC2
+ * @test id=C2
  * @bug 8316694
  * @requires vm.debug == true
- * @requires vm.gc.Serial
  * @summary test that relocated nmethod is correctly deoptimized
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
@@ -50,135 +48,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
- * compiler.whitebox.RelocateNMethodMultiplePaths
- */
-
-/*
- * @test id=ParallelC1
- * @bug 8316694
- * @requires vm.debug == true
- * @requires vm.gc.Parallel
- * @summary test that relocated nmethod is correctly deoptimized
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
- * compiler.whitebox.RelocateNMethodMultiplePaths
- */
-
-/*
- * @test id=ParallelC2
- * @bug 8316694
- * @requires vm.debug == true
- * @requires vm.gc.Parallel
- * @summary test that relocated nmethod is correctly deoptimized
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
- * compiler.whitebox.RelocateNMethodMultiplePaths
- */
-
-/*
- * @test id=G1C1
- * @bug 8316694
- * @requires vm.debug == true
- * @requires vm.gc.G1
- * @summary test that relocated nmethod is correctly deoptimized
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
- * compiler.whitebox.RelocateNMethodMultiplePaths
- */
-
-/*
- * @test id=G1C2
- * @bug 8316694
- * @requires vm.debug == true
- * @requires vm.gc.G1
- * @summary test that relocated nmethod is correctly deoptimized
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
- * compiler.whitebox.RelocateNMethodMultiplePaths
- */
-
-/*
- * @test id=ShenandoahC1
- * @bug 8316694
- * @requires vm.debug == true
- * @requires vm.gc.Shenandoah
- * @summary test that relocated nmethod is correctly deoptimized
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
- * compiler.whitebox.RelocateNMethodMultiplePaths
- */
-
-/*
- * @test id=ShenandoahC2
- * @bug 8316694
- * @requires vm.debug == true
- * @requires vm.gc.Shenandoah
- * @summary test that relocated nmethod is correctly deoptimized
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
- * compiler.whitebox.RelocateNMethodMultiplePaths
- */
-
-/*
- * @test id=ZGCC1
- * @bug 8316694
- * @requires vm.debug == true
- * @requires vm.gc.Z
- * @summary test that relocated nmethod is correctly deoptimized
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
- * compiler.whitebox.RelocateNMethodMultiplePaths
- */
-
-/*
- * @test id=ZGCC2
- * @bug 8316694
- * @requires vm.debug == true
- * @requires vm.gc.Z
- * @summary test that relocated nmethod is correctly deoptimized
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
- * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation
  * compiler.whitebox.RelocateNMethodMultiplePaths
  */
 

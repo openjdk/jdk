@@ -567,8 +567,8 @@ void G1GCPhaseTimes::print(bool evacuation_failed) {
   accounted_ms += print_evacuate_optional_collection_set();
   accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
 
-  assert(_gc_pause_time_ms >= accounted_ms, "GC pause time(%.3lfms) cannot be "
-         "smaller than the sum of each phase(%.3lfms).", _gc_pause_time_ms, accounted_ms);
+  assert(_gc_pause_time_ms >= accounted_ms, "GC pause time(%.15lf ms) cannot be "
+         "smaller than the sum of each phase(%.15lf ms).", _gc_pause_time_ms, accounted_ms);
 
   print_other(accounted_ms);
 

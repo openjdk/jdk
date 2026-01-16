@@ -460,6 +460,13 @@ int MachNode::operand_index(Node* def) const {
   return -1;
 }
 
+int MachNode::operand_num_edges(uint oper_index) const {
+  if (num_opnds() > oper_index) {
+    return _opnds[oper_index]->num_edges();
+  }
+  return 0;
+}
+
 //------------------------------peephole---------------------------------------
 // Apply peephole rule(s) to this instruction
 int MachNode::peephole(Block *block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc *ra_) {

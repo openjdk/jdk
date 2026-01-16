@@ -59,7 +59,7 @@ import static org.testng.Assert.assertEquals;
 
 public class HeadTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;        // HTTP/1.1
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
@@ -147,10 +147,6 @@ public class HeadTest implements HttpServerAdapters {
     // TODO: See if test performs better with Vthreads, see H3SimplePost and H3SimpleGet
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new HeadHandler(), "/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/";

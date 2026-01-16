@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@ import jdk.internal.net.http.qpack.readers.StringReader;
 import jdk.internal.net.http.qpack.writers.HeaderFrameWriter;
 import jdk.internal.net.http.qpack.writers.IntegerWriter;
 import jdk.internal.net.http.qpack.writers.StringWriter;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.ProtocolException;
@@ -44,6 +41,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -59,12 +60,12 @@ import java.util.concurrent.atomic.AtomicReference;
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
- * @run testng/othervm -Djdk.http.qpack.allowBlockingEncoding=true
+ * @run junit/othervm -Djdk.http.qpack.allowBlockingEncoding=true
  *                      StringLengthLimitsTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class StringLengthLimitsTest {
 
-    @DataProvider
     Object[][] stringReaderLimitsData() {
         return new Object[][]{
                 {STRING_READER_STRING_LENGTH, STRING_READER_STRING_LENGTH, false, false},
@@ -74,7 +75,8 @@ public class StringLengthLimitsTest {
         };
     }
 
-    @Test(dataProvider = "stringReaderLimitsData")
+    @ParameterizedTest
+    @MethodSource("stringReaderLimitsData")
     public void stringReaderLimits(int length, int limit, boolean huffmanBit,
                                    boolean exceptionExpected) throws IOException {
         IntegerWriter intWriter = new IntegerWriter();
@@ -82,26 +84,25 @@ public class StringLengthLimitsTest {
 
         var byteBuffer = ByteBuffer.allocate(2);
         if (!intWriter.write(byteBuffer)) {
-            Assert.fail("Error with test buffer preparations");
+            Assertions.fail("Error with test buffer preparations");
         }
         byteBuffer.flip();
 
         StringReader stringReader = new StringReader();
         StringBuilder unusedOutput = new StringBuilder();
         if (exceptionExpected) {
-            QPackException exception = Assert.expectThrows(QPackException.class,
+            QPackException exception = Assertions.assertThrows(QPackException.class,
                     () -> stringReader.read(byteBuffer, unusedOutput, limit));
             Throwable cause = exception.getCause();
-            Assert.assertNotNull(cause);
-            Assert.assertTrue(cause instanceof ProtocolException);
+            Assertions.assertNotNull(cause);
+            Assertions.assertTrue(cause instanceof ProtocolException);
             System.err.println("Got expected ProtocolException: " + cause);
         } else {
             boolean done = stringReader.read(byteBuffer, unusedOutput, limit);
-            Assert.assertFalse(done, "read done");
+            Assertions.assertFalse(done, "read done");
         }
     }
 
-    @DataProvider
     Object[][] encoderInstructionLimitsData() {
         int maxEntrySize = ENCODER_INSTRUCTIONS_DT_CAPACITY - 32;
         return new Object[][]{
@@ -144,7 +145,8 @@ public class StringLengthLimitsTest {
         };
     }
 
-    @Test(dataProvider = "encoderInstructionLimitsData")
+    @ParameterizedTest
+    @MethodSource("encoderInstructionLimitsData")
     public void encoderInstructionLimits(EncoderInstruction instruction,
                                          int nameLength, boolean nameHuffman,
                                          int valueLength, boolean valueHuffman,
@@ -177,9 +179,9 @@ public class StringLengthLimitsTest {
         }
         Throwable error = observedError.get();
         if (successExpected && error != null) {
-            Assert.fail("Unexpected error", error);
+            Assertions.fail("Unexpected error", error);
         } else if (error == null && !successExpected) {
-            Assert.fail("Expected error");
+            Assertions.fail("Expected error");
         }
     }
 
@@ -244,7 +246,6 @@ public class StringLengthLimitsTest {
         return instructionBuffers;
     }
 
-    @DataProvider
     Object[][] fieldLineLimitsData() {
         return new Object[][]{
                 // Post-Base Index
@@ -273,7 +274,8 @@ public class StringLengthLimitsTest {
         };
     }
 
-    @Test(dataProvider = "fieldLineLimitsData")
+    @ParameterizedTest
+    @MethodSource("fieldLineLimitsData")
     public void fieldLineLimits(int nameLength, int valueLength,
                                 String name, String value,
                                 boolean isPostBase, boolean successExpected) throws IOException {
@@ -385,9 +387,9 @@ public class StringLengthLimitsTest {
         var error = decodingCallbackError.get();
         System.err.println("Decoding callback error: " + error);
         if (successExpected && error != null) {
-            Assert.fail("Unexpected error", error);
+            Assertions.fail("Unexpected error", error);
         } else if (error == null && !successExpected) {
-            Assert.fail("Error expected");
+            Assertions.fail("Error expected");
         }
     }
 

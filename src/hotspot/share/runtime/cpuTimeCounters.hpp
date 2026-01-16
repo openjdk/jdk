@@ -28,6 +28,7 @@
 #define SHARE_RUNTIME_CPUTIMECOUNTERS_HPP
 
 
+#include "gc/shared/gc_globals.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
@@ -83,7 +84,9 @@ public:
     assert(_instance == nullptr, "we can only allocate one CPUTimeCounters object");
     if (UsePerfData && os::is_thread_cpu_time_supported()) {
       _instance = new CPUTimeCounters();
-      create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
+      if (UseG1GC || UseParallelGC) {
+        create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
+      }
     }
   }
 

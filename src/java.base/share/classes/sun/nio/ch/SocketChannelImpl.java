@@ -62,7 +62,6 @@ import static java.net.StandardProtocolFamily.UNIX;
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
 import sun.net.ConnectionResetException;
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 import jdk.internal.util.Exceptions;
 
@@ -828,7 +827,6 @@ class SocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
-        NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
         return Net.localAddress(fd);
     }
@@ -871,7 +869,6 @@ class SocketChannelImpl
 
             if (isNetSocket() && (localAddress == null)) {
                 InetSocketAddress isa = (InetSocketAddress) sa;
-                NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
             }
             remoteAddress = sa;
 
@@ -1376,6 +1373,7 @@ class SocketChannelImpl
             // nothing to do
             return 0;
         }
+        len = Math.min(len, Streams.MAX_BUFFER_SIZE);
 
         readLock.lock();
         try {
@@ -1472,7 +1470,7 @@ class SocketChannelImpl
                 beginWrite(true);
                 configureSocketNonBlockingIfVirtualThread();
                 while (pos < end && isOpen()) {
-                    int size = end - pos;
+                    int size = Math.min(end - pos, Streams.MAX_BUFFER_SIZE);
                     int n = tryWrite(b, pos, size);
                     while (IOStatus.okayToRetry(n) && isOpen()) {
                         park(Net.POLLOUT);

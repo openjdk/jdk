@@ -61,7 +61,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
 
 public class FilePublisherTest implements HttpServerAdapters {
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpServerAdapters.HttpTestServer httpTestServer;    // HTTP/1.1      [ 4 servers ]
     HttpServerAdapters.HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpServerAdapters.HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -183,10 +183,6 @@ public class FilePublisherTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         defaultFsPath = defaultFsFile();
         zipFs = newZipFs();
         zipFsPath = zipFsFile(zipFs);

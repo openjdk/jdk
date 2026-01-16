@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,8 +286,8 @@ public class AbstractSSLTubeTest extends AbstractRandomTest {
         }
     }
 
-    protected static SSLEngine createSSLEngine(boolean client) throws IOException {
-        SSLContext context = (new SimpleSSLContext()).get();
+    protected static SSLEngine createSSLEngine(boolean client) {
+        SSLContext context = SimpleSSLContextWhiteboxAdapter.findSSLContext();
         SSLEngine engine = context.createSSLEngine();
         SSLParameters params = context.getSupportedSSLParameters();
         if (client) {

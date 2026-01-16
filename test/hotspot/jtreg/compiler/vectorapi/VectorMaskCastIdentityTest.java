@@ -24,6 +24,7 @@
 /*
 * @test
 * @bug 8356760
+* @key randomness
 * @library /test/lib /
 * @summary Optimize VectorMask.fromLong for all-true/all-false cases
 * @modules jdk.incubator.vector

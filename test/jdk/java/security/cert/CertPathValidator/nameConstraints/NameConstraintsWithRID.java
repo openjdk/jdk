@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
  *
  * @bug 6845286
  * @summary Add regression test for name constraints
+ * @enablePreview
  * @author Xuelei Fan
  */
 
 import java.io.*;
 import java.net.SocketException;
+import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
@@ -90,25 +92,21 @@ public class NameConstraintsWithRID {
         "FbcNIaCtg8blO5ImdOz5hAi+NuY=\n" +
         "-----END CERTIFICATE-----";
 
+    private static final PEMDecoder PEM_DECODER = PEMDecoder.of();
+
     private static CertPath generateCertificatePath()
             throws CertificateException {
         // generate certificate from cert strings
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        ByteArrayInputStream is;
+        Certificate targetCert = PEM_DECODER.decode(targetCertStr, X509Certificate.class);
 
-        is = new ByteArrayInputStream(targetCertStr.getBytes());
-        Certificate targetCert = cf.generateCertificate(is);
+        Certificate subCaCert = PEM_DECODER.decode(subCaCertStr, X509Certificate.class);
 
-        is = new ByteArrayInputStream(subCaCertStr.getBytes());
-        Certificate subCaCert = cf.generateCertificate(is);
-
-        is = new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        Certificate selfSignedCert = cf.generateCertificate(is);
+        Certificate selfSignedCert = PEM_DECODER.decode(selfSignedCertStr, X509Certificate.class);
 
         // generate certification path
-        List<Certificate> list = Arrays.asList(new Certificate[] {
-                        targetCert, subCaCert, selfSignedCert});
+        List<Certificate> list = Arrays.asList(targetCert, subCaCert, selfSignedCert);
 
         return cf.generateCertPath(list);
     }
@@ -116,15 +114,11 @@ public class NameConstraintsWithRID {
     private static Set<TrustAnchor> generateTrustAnchors()
             throws CertificateException {
         // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        Certificate selfSignedCert = cf.generateCertificate(is);
+        X509Certificate selfSignedCert = PEM_DECODER.decode(selfSignedCertStr, X509Certificate.class);
 
         // generate a trust anchor
         TrustAnchor anchor =
-            new TrustAnchor((X509Certificate)selfSignedCert, null);
+            new TrustAnchor(selfSignedCert, null);
 
         return Collections.singleton(anchor);
     }

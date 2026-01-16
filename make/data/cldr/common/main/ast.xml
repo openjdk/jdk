@@ -1198,13 +1198,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">calendariu de la República de China</type>
 			<type key="cf" type="account">formatu monetariu contable</type>
 			<type key="cf" type="standard">formatu monetariu estándar</type>
-			<type key="collation" type="big5han">orde de clasificación chinu tradicional - Big5</type>
 			<type key="collation" type="compat">orde de clasificación anterior, por compatibilidá</type>
 			<type key="collation" type="dictionary">orde de clasificación de diccionariu</type>
 			<type key="collation" type="ducet">orde de clasificación Unicode predetermináu</type>
 			<type key="collation" type="emoji">orde de clasificación Emoji</type>
 			<type key="collation" type="eor">regles d’ordenamientu europees</type>
-			<type key="collation" type="gb2312han">orde de clasificación chinu simplificáu - GB2312</type>
 			<type key="collation" type="phonebook">orde de clasificación de llista telefónica</type>
 			<type key="collation" type="pinyin">orde de clasificación pinyin</type>
 			<type key="collation" type="search">gueta xeneral</type>
@@ -1705,20 +1703,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0">antes de la Encarnación</era>
-						<era type="1">después de la Encarnación</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">a. E.</era>
-						<era type="1">d. E.</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0">aE</era>
-						<era type="1">dE</era>
-					</eraNarrow>
-				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="yMMMd">
@@ -3376,11 +3360,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat type="daylight">Hora braniega de {0}</regionFormat>
 			<regionFormat type="standard">Hora estándar de {0}</regionFormat>
 			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
 				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Etc/UTC">
@@ -3555,9 +3534,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Tokyo">
 				<exemplarCity>Tokiu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
 				<exemplarCity>Pyong Yang</exemplarCity>
@@ -3768,9 +3744,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Hora d’África del oeste</generic>
-					<standard>Hora estándar d’África del oeste</standard>
-					<daylight>Hora braniega d’África del oeste</daylight>
+					<standard>Hora d’África del oeste</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4204,6 +4178,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>Hora de La Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hora estándar de Hawaii-Aleutianes</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4772,6 +4751,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -6431,7 +6414,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} milimol per llitru</unitPattern>
 				<unitPattern count="other">{0} milimoles per llitru</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partes per millón</displayName>
 				<unitPattern count="one">{0} parte per millón</unitPattern>
 				<unitPattern count="other">{0} partes per millón</unitPattern>
@@ -7343,7 +7326,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}mmol/L</unitPattern>
 				<unitPattern count="other">{0}mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>

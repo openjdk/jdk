@@ -80,8 +80,7 @@
     interpreter_frame_monitor_block_bottom_offset    = interpreter_frame_initial_sp_offset,
 
     // Entry frames
-#ifdef AMD64
-#ifdef _WIN64
+#ifdef _WINDOWS
     entry_frame_after_call_words                     =  28,
     entry_frame_call_wrapper_offset                  =  2,
 
@@ -91,10 +90,7 @@
     entry_frame_call_wrapper_offset                  = -6,
 
     arg_reg_save_area_bytes                          =  0,
-#endif // _WIN64
-#else
-    entry_frame_call_wrapper_offset                  =  2,
-#endif // AMD64
+#endif // _WINDOWS
 
     // size, in words, of frame metadata (e.g. pc and link)
     metadata_words                                   = sender_sp_offset,

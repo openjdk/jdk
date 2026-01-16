@@ -45,7 +45,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
-MallocMemorySnapshot MallocMemorySummary::_snapshot;
+DeferredStatic<MallocMemorySnapshot> MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -101,7 +101,7 @@ void MallocMemorySnapshot::make_adjustment() {
 }
 
 void MallocMemorySummary::initialize() {
-  // Uses placement new operator to initialize static area.
+  _snapshot.initialize();
   MallocLimitHandler::initialize(MallocLimit);
 }
 

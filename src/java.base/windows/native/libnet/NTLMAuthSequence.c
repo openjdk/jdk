@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,6 +230,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     }
 
     if (ss < 0) {
+        SetLastError(ss);
+        JNU_ThrowIOExceptionWithLastError(env, "InitializeSecurityContext");
         endSequence (pCred, pCtx, env, status);
         return 0;
     }
@@ -238,6 +240,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
         ss = CompleteAuthToken( pCtx, &OutBuffDesc );
 
         if (ss < 0) {
+            SetLastError(ss);
+            JNU_ThrowIOExceptionWithLastError(env, "CompleteAuthToken");
             endSequence (pCred, pCtx, env, status);
             return 0;
         }

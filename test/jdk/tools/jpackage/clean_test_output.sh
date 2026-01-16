@@ -114,6 +114,9 @@ filterFile () {
       # Use the same name for all exceptions.
       -e 's|[^ ]\{1,\}\.[^ ]\{1,\}\Exception:|<Exception>:|g'
       -e 's|[^ ]\{1,\}\.[^ ]\{1,\}\ExceptionBox:|<Exception>:|g'
+
+      # Convert variable part of 'ServiceTest-0000019a5516cf7a-A2-launcher-as-service.txt' path
+      -e 's|ServiceTest-[[:xdigit:]]\{1,\}-\([^ ]*\.txt\)|ServiceTest-<SEED>-\1|g'
   )
 
   sed $sed_inplace_option "$1" "${expressions[@]}"

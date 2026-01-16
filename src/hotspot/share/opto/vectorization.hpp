@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -209,6 +209,14 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
   }
 
+  bool is_trace_cost() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST);
+  }
+
+  bool is_trace_cost_verbose() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST_VERBOSE);
+  }
+
   bool is_trace_speculative_runtime_checks() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
   }
@@ -228,6 +236,8 @@ public:
   // Some nodes must be pre-loop invariant, so that they can be used for conditions
   // before or inside the pre-loop. For example, alignment of main-loop vector
   // memops must be achieved in the pre-loop, via the exit check in the pre-loop.
+  // Note: this condition is NOT strong enough for speculative checks, those happen
+  //       before the pre-loop. See is_available_for_speculative_check
   bool is_pre_loop_invariant(Node* n) const {
     // Must be in the main-loop, otherwise we can't access the pre-loop.
     // This fails during SuperWord::unrolling_analysis, but that is ok.
@@ -247,6 +257,28 @@ public:
     // compute n before the pre-loop.
     Node* early = phase()->compute_early_ctrl(n, ctrl);
     return is_before_pre_loop(early);
+  }
+
+  // Nodes that are to be used in speculative checks must be available early enough.
+  // Note: the speculative check happens before the pre-loop, either at the auto
+  //       vectorization predicate or the multiversion if. This is before the
+  //       pre-loop, and thus the condition here is stronger then the one from
+  //       is_pre_loop_invariant.
+  bool is_available_for_speculative_check(Node* n) const {
+    assert(are_speculative_checks_possible(), "meaningless without speculative check");
+    ParsePredicateSuccessProj* parse_predicate_proj = auto_vectorization_parse_predicate_proj();
+    // Find the control of the predicate:
+    ProjNode* proj = (parse_predicate_proj != nullptr) ? parse_predicate_proj : multiversioning_fast_proj();
+    Node* check_ctrl = proj->in(0)->as_If()->in(0);
+
+    // Often, the control of n already dominates that of the predicate.
+    Node* n_ctrl = phase()->get_ctrl(n);
+    if (phase()->is_dominator(n_ctrl, check_ctrl)) { return true; }
+
+    // But in some cases, the ctrl of n is after that of the predicate,
+    // but the early ctrl is before the predicate.
+    Node* n_early = phase()->compute_early_ctrl(n, n_ctrl);
+    return phase()->is_dominator(n_early, check_ctrl);
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
@@ -472,6 +504,8 @@ private:
 //
 class VLoopMemorySlices : public StackObj {
 private:
+  static constexpr char const* FAILURE_DIFFERENT_MEMORY_INPUT = "Load only slice has multiple memory inputs";
+
   const VLoop& _vloop;
   const VLoopBody& _body;
 
@@ -489,7 +523,7 @@ public:
   const GrowableArray<Node*>& inputs() const { return _inputs; }
   const GrowableArray<PhiNode*>& heads() const { return _heads; }
 
-  void find_memory_slices();
+  VStatus find_memory_slices();
   void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
   bool same_memory_slice(MemNode* m1, MemNode* m2) const;
 
@@ -584,6 +618,32 @@ private:
   const Type* container_type(Node* n) const;
 };
 
+// Mark all nodes from the loop that are part of any VPointer expression.
+class PointerExpressionNodes : public MemPointerParserCallback {
+private:
+  const VLoop&     _vloop;
+  const VLoopBody& _body;
+  VectorSet        _in_pointer_expression;
+
+public:
+  PointerExpressionNodes(Arena* arena,
+                         const VLoop& vloop,
+                         const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _in_pointer_expression(arena) {}
+
+  virtual void callback(Node* n) override {
+    if (!_vloop.in_bb(n)) { return; }
+    _in_pointer_expression.set(_body.bb_idx(n));
+  }
+
+  bool contains(const Node* n) const {
+    if (!_vloop.in_bb(n)) { return false; }
+    return _in_pointer_expression.test(_body.bb_idx(n));
+  }
+};
+
 // Submodule of VLoopAnalyzer.
 // We compute and cache the VPointer for every load and store.
 class VLoopVPointers : public StackObj {
@@ -599,6 +659,9 @@ private:
   // Map bb_idx -> index in _vpointers. -1 if not mapped.
   GrowableArray<int> _bb_idx_to_vpointer;
 
+  // Mark all nodes that are part of any pointers expression.
+  PointerExpressionNodes _pointer_expression_nodes;
+
 public:
   VLoopVPointers(Arena* arena,
                  const VLoop& vloop,
@@ -610,12 +673,17 @@ public:
     _bb_idx_to_vpointer(arena,
                         vloop.estimated_body_length(),
                         vloop.estimated_body_length(),
-                        -1) {}
+                        -1),
+    _pointer_expression_nodes(arena, _vloop, _body) {}
   NONCOPYABLE(VLoopVPointers);
 
   void compute_vpointers();
   const VPointer& vpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
+
+  bool is_in_pointer_expression(const Node* n) const {
+    return _pointer_expression_nodes.contains(n);
+  }
 
 private:
   void count_vpointers();
@@ -809,6 +877,15 @@ public:
   const VLoopTypes& types()                      const { return _types; }
   const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
+
+  // Compute the cost of the (scalar) body.
+  float cost_for_scalar_loop() const;
+  bool has_zero_cost(Node* n) const;
+
+  // Cost-modeling with tracing.
+  float cost_for_scalar_node(int opcode) const;
+  float cost_for_vector_node(int opcode, int vlen, BasicType bt) const;
+  float cost_for_vector_reduction_node(int opcode, int vlen, BasicType bt, bool requires_strict_order) const;
 
 private:
   bool setup_submodules();
@@ -1111,6 +1188,22 @@ private:
       }
     }
     return true;
+  }
+
+  // We already know that all non-iv summands are pre loop invariant.
+  // See init_are_non_iv_summands_pre_loop_invariant
+  // That is good enough for alignment computations in the pre-loop limit. But it is not
+  // sufficient if we want to use the variables of the VPointer at the speculative check,
+  // which is further up before the pre-loop.
+  bool can_make_pointer_expression_at_speculative_check() const {
+    bool success = true;
+    mem_pointer().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
+      Node* variable = s.variable();
+      if (variable != _vloop.iv() && !_vloop.is_available_for_speculative_check(variable)) {
+        success = false;
+      }
+    });
+    return success;
   }
 
   // In the pointer analysis, and especially the AlignVector analysis, we assume that

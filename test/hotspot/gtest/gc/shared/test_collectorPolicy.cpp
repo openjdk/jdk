@@ -140,17 +140,6 @@ class TestGenCollectorPolicy {
       ASSERT_EQ(param, NewSize);
     }
   };
-
-  class SetMaxNewSizeCmd : public BinaryExecutor {
-   public:
-    SetMaxNewSizeCmd(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
-    void execute() {
-      size_t heap_alignment = GCArguments::compute_heap_alignment();
-      size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
-              - param1 + param2;
-      FLAG_SET_CMDLINE(MaxNewSize, new_size_value);
-    }
-  };
 };
 
 

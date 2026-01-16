@@ -27,7 +27,7 @@
 #define CPU_PPC_GC_G1_G1BARRIERSETASSEMBLER_PPC_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef COMPILER2
@@ -39,7 +39,7 @@ class StubAssembler;
 class G1PreBarrierStub;
 class G1PreBarrierStubC2;
 
-class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
+class G1BarrierSetAssembler: public CardTableBarrierSetAssembler {
 protected:
   virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                Register from, Register to, Register count,

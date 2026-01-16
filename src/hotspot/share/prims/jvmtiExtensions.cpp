@@ -29,6 +29,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 
 // the list of extension functions
 GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
@@ -77,7 +78,7 @@ static jvmtiError JNICALL GetVirtualThread(const jvmtiEnv* env, ...) {
   va_end(ap);
 
   ThreadInVMfromNative tiv(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
   ThreadsListHandle tlh(current_thread);
 
   jvmtiError err;
@@ -135,7 +136,7 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
 
   MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
   ThreadInVMfromNative tiv(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  MountUnmountDisabler disabler;
 
   ThreadsListHandle tlh(current_thread);
   JavaThread* java_thread;

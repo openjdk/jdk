@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ public class Klass extends Metadata implements ClassConstants {
     superField   = new MetadataField(type.getAddressField("_super"), 0);
     layoutHelper = new IntField(type.getJIntField("_layout_helper"), 0);
     name         = type.getAddressField("_name");
-    accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
     try {
       traceIDField  = type.getField("_trace_id");
     } catch(Exception e) {
@@ -95,7 +94,6 @@ public class Klass extends Metadata implements ClassConstants {
   private static MetadataField  superField;
   private static IntField layoutHelper;
   private static AddressField  name;
-  private static CIntField accessFlags;
   private static MetadataField  subklass;
   private static MetadataField  nextSibling;
   private static MetadataField  nextLink;
@@ -117,9 +115,6 @@ public class Klass extends Metadata implements ClassConstants {
   public Klass    getJavaSuper()        { return null;  }
   public int      getLayoutHelper()     { return            layoutHelper.getValue(this); }
   public Symbol   getName()             { return            getSymbol(name); }
-  public long     getAccessFlags()      { return            accessFlags.getValue(this);  }
-  // Convenience routine
-  public AccessFlags getAccessFlagsObj(){ return new AccessFlags(getAccessFlags());      }
   public Klass    getSubklassKlass()    { return (Klass)    subklass.getValue(this);     }
   public Klass    getNextSiblingKlass() { return (Klass)    nextSibling.getValue(this);  }
   public Klass    getNextLinkKlass()    { return (Klass)    nextLink.getValue(this);  }
@@ -175,7 +170,6 @@ public class Klass extends Metadata implements ClassConstants {
     visitor.doMetadata(superField, true);
       visitor.doInt(layoutHelper, true);
       // visitor.doOop(name, true);
-      visitor.doCInt(accessFlags, true);
     visitor.doMetadata(subklass, true);
     visitor.doMetadata(nextSibling, true);
     visitor.doCInt(vtableLen, true);
@@ -205,12 +199,4 @@ public class Klass extends Metadata implements ClassConstants {
   // The subclasses override this to produce the correct form, eg
   //   Ljava/lang/String; For ArrayKlasses getName itself is the signature.
   public String signature() { return getName().asString(); }
-
-  // Convenience routines
-  public boolean isPublic()                 { return getAccessFlagsObj().isPublic(); }
-  public boolean isFinal()                  { return getAccessFlagsObj().isFinal(); }
-  public boolean isInterface()              { return getAccessFlagsObj().isInterface(); }
-  public boolean isAbstract()               { return getAccessFlagsObj().isAbstract(); }
-  public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
-  public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
 }

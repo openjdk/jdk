@@ -23,6 +23,7 @@
 /**
 * @test
 * @bug 8361582
+* @key randomness
 * @summary Ensure the correct backend replicate node is being generated for
 *          half precision float constants on >16B SVE machines
 * @modules jdk.incubator.vector

@@ -7,6 +7,7 @@ runtime/symbols/TestSharedArchiveConfigFile.java      0000000 generic-all
 gc/arguments/TestG1HeapSizeFlags.java                 0000000 generic-all
 gc/arguments/TestParallelHeapSizeFlags.java           0000000 generic-all
 gc/arguments/TestSerialHeapSizeFlags.java             0000000 generic-all
+gc/arguments/TestVerifyBeforeAndAfterGCFlags.java     0000000 generic-all
 
 gc/arguments/TestCompressedClassFlags.java            0000000 generic-all
 gc/TestAllocateHeapAtMultiple.java                    0000000 generic-all

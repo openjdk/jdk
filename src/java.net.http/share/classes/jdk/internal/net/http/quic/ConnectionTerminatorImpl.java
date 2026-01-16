@@ -25,11 +25,13 @@
 package jdk.internal.net.http.quic;
 
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
@@ -52,7 +54,6 @@ import static jdk.internal.net.http.quic.QuicConnectionImpl.QuicConnectionState.
 import static jdk.internal.net.http.quic.TerminationCause.appLayerClose;
 import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
 import static jdk.internal.net.http.quic.TerminationCause.forTransportError;
-import static jdk.internal.net.quic.QuicTransportErrors.INTERNAL_ERROR;
 import static jdk.internal.net.quic.QuicTransportErrors.NO_ERROR;
 
 final class ConnectionTerminatorImpl implements ConnectionTerminator {
@@ -70,13 +71,18 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
     }
 
     @Override
-    public void keepAlive() {
-        this.connection.idleTimeoutManager.keepAlive();
+    public void markActive() {
+        this.connection.idleTimeoutManager.markActive();
     }
 
     @Override
     public boolean tryReserveForUse() {
         return this.connection.idleTimeoutManager.tryReserveForUse();
+    }
+
+    @Override
+    public void appLayerMaxIdle(final Duration maxIdle, final Supplier<Boolean> trafficGenerationCheck) {
+        this.connection.idleTimeoutManager.appLayerMaxIdle(maxIdle, trafficGenerationCheck);
     }
 
     @Override
@@ -143,8 +149,9 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             Log.logError("{0}: stateless reset from peer ({1})", connection.logTag(),
                     (peerIsServer ? "server" : "client"));
         }
+        var label = "quic:" + connection.uniqueId();
         final SilentTermination st = forSilentTermination("stateless reset from peer ("
-                + (peerIsServer ? "server" : "client") + ")");
+                + (peerIsServer ? "server" : "client") + ") on " + label);
         terminate(st);
     }
 
@@ -337,10 +344,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             }
         }
         failHandshakeCFs();
-        // remap the connection to a draining connection
-        final QuicEndpoint endpoint = this.connection.endpoint();
-        assert endpoint != null : "QUIC endpoint is null";
-        endpoint.draining(connection);
         discardConnectionState();
         connection.streams.terminate(terminationCause);
         if (Log.quic()) {
@@ -432,7 +435,7 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         final ProtectionRecord protectionRecord = ProtectionRecord.single(packet,
                 connection::allocateDatagramForEncryption);
         // while sending the packet containing the CONNECTION_CLOSE frame, the pushDatagram will
-        // remap (or remove) the QuicConnectionImpl in QuicEndpoint.
+        // remap the QuicConnectionImpl in QuicEndpoint.
         connection.pushDatagram(protectionRecord);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import static org.testng.Assert.*;
  * @bug 8217375
  * @modules java.base/sun.security.util:+open
  * @compile ../../tools/jarsigner/Utils.java
- * @run testng/othervm FindSection
+ * @run testng/othervm --enable-final-field-mutation=ALL-UNNAMED FindSection
  * @summary Check {@link ManifestDigester#findSection}.
  */
 public class FindSection {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,32 @@
  * questions.
  */
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Predicate;
+
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
+
+import static javax.swing.SwingUtilities.isEventDispatchThread;
 
 /**
  * <p>This class contains utilities useful for regression testing.
@@ -123,26 +141,44 @@ public class Util {
     }
 
     /**
-     * Find a sub component by class name.
-     * Always run this method on the EDT thread
+     * Find a subcomponent by class name.
      */
     public static Component findSubComponent(Component parent, String className) {
-        String parentClassName = parent.getClass().getName();
+        return findComponent((Container) parent,
+                             c -> c.getClass()
+                                   .getName()
+                                   .contains(className));
+    }
 
-        if (parentClassName.contains(className)) {
-            return parent;
+    /**
+     * Find a component based on predicate.
+     */
+    public static Component findComponent(final Container container,
+                                          final Predicate<Component> predicate) {
+        try {
+            if (isEventDispatchThread()) {
+                return findComponentImpl(container, predicate);
+            } else {
+                return Util.invokeOnEDT(() -> findComponentImpl(container, predicate));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error occurred while finding component", e);
         }
+    }
 
-        if (parent instanceof Container) {
-            for (Component child : ((Container) parent).getComponents()) {
-                Component subComponent = findSubComponent(child, className);
-
-                if (subComponent != null) {
-                    return subComponent;
+    private static Component findComponentImpl(final Container container,
+                                               final Predicate<Component> predicate) {
+        for (Component child : container.getComponents()) {
+            if (predicate.test(child)) {
+                return child;
+            }
+            if (child instanceof Container cont && cont.getComponentCount() > 0) {
+                Component result = findComponentImpl(cont, predicate);
+                if (result != null) {
+                    return result;
                 }
             }
         }
-
         return null;
     }
 

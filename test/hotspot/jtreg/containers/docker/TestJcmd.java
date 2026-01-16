@@ -29,6 +29,7 @@
  * @requires container.support
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @library /test/lib
@@ -57,12 +58,12 @@ public class TestJcmd {
     private static final String IMAGE_NAME = Common.imageName("jcmd");
     private static final int TIME_TO_RUN_CONTAINER_PROCESS = (int) (10 * Utils.TIMEOUT_FACTOR); // seconds
     private static final String CONTAINER_NAME = "test-container";
-    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
+    private static final boolean IS_PODMAN = DockerTestUtils.isPodman();
     private static final String ROOT_UID = "0";
 
 
     public static void main(String[] args) throws Exception {
-        DockerTestUtils.canTestDocker();
+        DockerTestUtils.checkCanTestDocker();
 
         // podman versions below 3.3.1 hava a bug where cross-container testing with correct
         // permissions fails. See JDK-8273216

@@ -33,6 +33,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Collator;
+import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -45,7 +47,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -323,12 +324,13 @@ public enum Option {
 
         @Override
         protected void help(Log log) {
-            StringJoiner sj = new StringJoiner(", ");
+            List<String> releases = new ArrayList<>();
             for(Source source :  Source.values()) {
                 if (source.isSupported())
-                    sj.add(source.name);
+                    releases.add(source.name);
             }
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, sj.toString()));
+            String formatted = formatAbbreviatedList(releases);
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
         }
     },
 
@@ -344,12 +346,13 @@ public enum Option {
 
         @Override
         protected void help(Log log) {
-            StringJoiner sj = new StringJoiner(", ");
+            List<String> releases = new ArrayList<>();
             for(Target target :  Target.values()) {
                 if (target.isSupported())
-                    sj.add(target.name);
+                    releases.add(target.name);
             }
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, sj.toString()));
+            String formatted = formatAbbreviatedList(releases);
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
         }
     },
 
@@ -364,15 +367,8 @@ public enum Option {
                                                                                            false))
                                                  .collect(Collectors.toCollection(LinkedHashSet :: new));
 
-            StringBuilder targets = new StringBuilder();
-            String delim = "";
-            for (String platform : platforms) {
-                targets.append(delim);
-                targets.append(platform);
-                delim = ", ";
-            }
-
-            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, targets.toString()));
+            String formatted = formatAbbreviatedList(platforms);
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, formatted));
         }
     },
 
@@ -1367,6 +1363,41 @@ public enum Option {
 
         // Finally, show the description
         log.printRawLines(WriterKind.STDOUT, LARGE_INDENT + descr.replace("\n", "\n" + LARGE_INDENT));
+    }
+
+    /**
+     * Formats a collection of values as an abbreviated, comma separated list
+     * for use in javac help output.
+     *
+     * This helper assumes that the supported values form a dense sequence
+     * between the fourth and the (n - 3)rd entries.
+     * That matches the current policy for these values but is not
+     * guaranteed, and should be reconsidered if the structure of the values changes.
+     *
+     * @param values the values to format
+     * @return a comma separated representation of the values
+     */
+    private static String formatAbbreviatedList(Collection<String> values) {
+        List<String> list = (values instanceof List)
+                ? (List<String>) values
+                : new ArrayList<>(values);
+
+        int size = list.size();
+        if (size == 0) {
+            return "";
+        }
+        if (size <= 6) {
+            return String.join(", ", list);
+        }
+        StringJoiner sj = new StringJoiner(", ");
+        for (int i = 0; i < 3; i++) {
+            sj.add(list.get(i));
+        }
+        sj.add("...");
+        for (int i = size - 3; i < size; i++) {
+            sj.add(list.get(i));
+        }
+        return sj.toString();
     }
 
     /**

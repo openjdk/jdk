@@ -57,6 +57,7 @@ public class NMTPrintMallocSiteOfCorruptedMemory {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(new String[] {"-Xbootclasspath/a:.",
                                                                                     "-XX:+UnlockDiagnosticVMOptions",
                                                                                     "-XX:+WhiteBoxAPI",
+                                                                                    "-XX:-CreateCoredumpOnCrash",
                                                                                     "-XX:NativeMemoryTracking=detail",
                                                                                     "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                                                                     "NMTPrintMallocSiteOfCorruptedMemory",

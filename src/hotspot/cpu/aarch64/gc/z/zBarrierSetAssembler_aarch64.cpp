@@ -879,7 +879,6 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     ShouldNotReachHere();
   }
 
-  OrderAccess::fence();
   ICache::invalidate_word((address)patch_addr);
 }
 
