@@ -170,9 +170,9 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
   assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
 
   ShenandoahHeapRegionReadyForRetireChecker retire_checker(ready_for_retire);
-  HeapWord* obj = volatile_top();
+  HeapWord* obj = atomic_top();
   if (obj == nullptr) {
-    // _volatile_top has been updated to nullptr, it is not allowed to do atomic alloc
+    // _atomic_top has been updated to nullptr, it is not allowed to do atomic alloc
     return nullptr;
   }
 
@@ -186,7 +186,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
         return obj;
       }
       if (obj == nullptr) {
-        // _volatile_top has been updated to nullptr, it is not allowed to retry atomic alloc
+        // _atomic_top has been updated to nullptr, it is not allowed to retry atomic alloc
         return nullptr;
       }
     } else {
@@ -202,9 +202,9 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
   assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
 
   ShenandoahHeapRegionReadyForRetireChecker retire_checker(ready_for_retire);
-  HeapWord* obj = volatile_top();
+  HeapWord* obj = atomic_top();
   if (obj == nullptr) {
-    // _volatile_top has been updated to nullptr, it is not allowed to do atomic alloc
+    // _atomic_top has been updated to nullptr, it is not allowed to do atomic alloc
     return nullptr;
   }
   for (;/*Always return in the loop*/;) {
@@ -224,7 +224,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
       }
 
       if (obj == nullptr) {
-        // _volatile_top has been updated to nullptr, it is not allowed to retry atomic alloc
+        // _atomic_top has been updated to nullptr, it is not allowed to retry atomic alloc
         return nullptr;
       }
     } else {
@@ -236,9 +236,9 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
   }
 }
 
-bool ShenandoahHeapRegion::try_allocate(HeapWord* const obj, size_t const size, HeapWord* &prior_top) {
+bool ShenandoahHeapRegion::try_allocate(HeapWord* const obj, size_t const size, HeapWord* &prior_atomic_top) {
   HeapWord* new_top = obj + size;
-  if ((prior_top = AtomicAccess::cmpxchg(&_volatile_top, obj, new_top)) == obj) {
+  if ((prior_atomic_top = AtomicAccess::cmpxchg(&_atomic_top, obj, new_top)) == obj) {
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
     assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
     return true;

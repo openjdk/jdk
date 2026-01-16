@@ -41,7 +41,8 @@
   volatile_nonstatic_field(ShenandoahHeapRegion, _state,               ShenandoahHeapRegion::RegionState) \
   nonstatic_field(ShenandoahHeapRegion, _index,                        size_t const)                      \
   nonstatic_field(ShenandoahHeapRegion, _bottom,                       HeapWord* const)                   \
-  volatile_nonstatic_field(ShenandoahHeapRegion, _volatile_top,        HeapWord*)                         \
+  volatile_nonstatic_field(ShenandoahHeapRegion, _atomic_top,          HeapWord*)                         \
+  volatile_nonstatic_field(ShenandoahHeapRegion, _top,                 HeapWord*)                         \
   volatile_nonstatic_field(ShenandoahHeapRegion, _tlab_allocs,         size_t)                            \
   volatile_nonstatic_field(ShenandoahHeapRegion, _gclab_allocs,        size_t)                            \
   volatile_nonstatic_field(ShenandoahHeapRegion, _plab_allocs,         size_t)                            \

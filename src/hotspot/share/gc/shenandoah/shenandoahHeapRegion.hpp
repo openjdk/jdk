@@ -250,8 +250,8 @@ private:
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
-  HeapWord* volatile _volatile_top;
-  HeapWord*          _top;
+  HeapWord* volatile _atomic_top; // for atomic alloc functions, always set to nullprt if a region is not an active alloc region.
+  HeapWord* volatile _top;
 
   size_t volatile _tlab_allocs;
   size_t volatile _gclab_allocs;
@@ -390,8 +390,8 @@ public:
   inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size, bool &ready_for_retire);
 
   // Use AtomicAccess::cmpxchg to allocate the object,
-  // prior value of _volatile_top will be always written to reference prior_volatile_top.
-  inline bool try_allocate(HeapWord* const obj, size_t const size, HeapWord* &prior_volatile_top);
+  // prior value of _atomic_top will be always written to reference prior_atomic_top.
+  inline bool try_allocate(HeapWord* const obj, size_t const size, HeapWord* &prior_atomic_top);
 
   inline void clear_live_data();
   void set_live_data(size_t s);
@@ -458,16 +458,16 @@ public:
   // Find humongous start region that this region belongs to
   ShenandoahHeapRegion* humongous_start_region() const;
 
-  HeapWord* volatile_top() const {
-    return AtomicAccess::load(&_volatile_top);
+  HeapWord* atomic_top() const {
+    return AtomicAccess::load(&_atomic_top);
   }
 
   HeapWord* top() const {
-    HeapWord* v_top = volatile_top();
-    return v_top == nullptr ? _top : v_top;
+    HeapWord* v_top = atomic_top();
+    return v_top == nullptr ? AtomicAccess::load(&_top) : v_top;
   }
   void set_top(HeapWord* v) {
-    _top = v;
+    AtomicAccess::store(&_top, v);
   }
 
   HeapWord* new_top() const     { return _new_top; }
@@ -482,7 +482,7 @@ public:
   size_t free() const           { return byte_size(top(),    end()); }
   size_t free_words() const     { return pointer_delta(end(), top()); }
   size_t free_bytes_for_atomic_alloc() const {
-    HeapWord* v_top = volatile_top();
+    HeapWord* v_top = atomic_top();
     return v_top == nullptr ? 0 : byte_size(v_top,    end());
   }
 
@@ -556,9 +556,9 @@ public:
 
   inline void set_active_alloc_region() {
     assert(_active_alloc_region.is_unset(), "Must be");
-    // Sync _top to _volatile_top before setting _active_alloc_region flag to prepare for CAS allocation
-    assert(_volatile_top == nullptr, "Must be");
-    AtomicAccess::store(&_volatile_top, _top);
+    // Sync _top to _atomic_top before setting _active_alloc_region flag to prepare for CAS allocation
+    assert(atomic_top() == nullptr, "Must be");
+    AtomicAccess::store(&_atomic_top, _top);
     _active_alloc_region.set();
   }
 
@@ -569,19 +569,19 @@ public:
     shenandoah_assert_heaplocked();
     assert(is_active_alloc_region(), "Must be");
 
-    // Before unset _active_alloc_region flag, _volatile_top needs to be set to the end of region,
+    // Before unset _active_alloc_region flag, _atomic_top needs to be set to the end of region,
     // this avoid race condition when the alloc region removed from the alloc regions array used by lock-free allocation in allocator.
-    HeapWord* previous_volatile_top = nullptr;
-    while (true /*Always break out in the loop*/) {
-      previous_volatile_top = volatile_top();
-      assert(previous_volatile_top != nullptr, "Must not");
-      set_top(previous_volatile_top); // Sync current _volatile_top back to _top
-      if (AtomicAccess::cmpxchg(&_volatile_top, previous_volatile_top, (HeapWord*) nullptr) == previous_volatile_top) {
-        // break when successfully exchange _volatile_top to nullptr
+    HeapWord* previous_atomic_top = nullptr;
+    while (true /*always break out in the loop*/) {
+      previous_atomic_top = atomic_top();
+      assert(previous_atomic_top != nullptr, "Must not");
+      set_top(previous_atomic_top); // Sync current _atomic_top back to _top
+      if (AtomicAccess::cmpxchg(&_atomic_top, previous_atomic_top, (HeapWord*) nullptr) == previous_atomic_top) {
+        // break when successfully exchange _atomic_top to nullptr
         break;
       }
     }
-    assert(_top == previous_volatile_top, "Must be");
+    assert(_top == previous_atomic_top, "Must be");
     _active_alloc_region.unset();
   }
 
