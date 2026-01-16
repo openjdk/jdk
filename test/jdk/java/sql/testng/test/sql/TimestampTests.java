@@ -30,13 +30,19 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.TimeZone;
-import static org.testng.Assert.*;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import util.BaseTest;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TimestampTests extends BaseTest {
 
     private static TimeZone defaultTimeZone = null;
@@ -45,7 +51,7 @@ public class TimestampTests extends BaseTest {
      * Need to set and use a custom TimeZone which does not
      * observe daylight savings time for this test.
      */
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
         defaultTimeZone = TimeZone.getDefault();
         TimeZone tzone = TimeZone.getTimeZone("GMT+01");
@@ -56,7 +62,7 @@ public class TimestampTests extends BaseTest {
     /*
      * Conservatively reset the default time zone after test.
      */
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() throws Exception {
         TimeZone.setDefault(defaultTimeZone);
     }
@@ -64,10 +70,12 @@ public class TimestampTests extends BaseTest {
     /*
      * Validate an IllegalArgumentException is thrown for an invalid Timestamp
      */
-    @Test(dataProvider = "invalidTimestampValues",
-            expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("invalidTimestampValues")
     public void test(String ts) throws Exception {
-        Timestamp.valueOf(ts);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Timestamp.valueOf(ts);
+        });
     }
 
     /*
@@ -80,7 +88,7 @@ public class TimestampTests extends BaseTest {
         String ExpectedTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
         Timestamp ts2 = Timestamp.valueOf(ExpectedTS);
-        assertEquals(ts, ts2, "Error ts1 != ts2");
+        assertEquals(ts2, ts, "Error ts1 != ts2");
     }
 
     /*
@@ -91,7 +99,7 @@ public class TimestampTests extends BaseTest {
         String testTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
         Timestamp ts2 = Timestamp.valueOf(testTS);
-        assertEquals(ts, ts2, "Error ts1 != ts2");
+        assertEquals(ts2, ts, "Error ts1 != ts2");
     }
 
     /*
@@ -104,7 +112,7 @@ public class TimestampTests extends BaseTest {
         String ExpectedTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
         Timestamp ts2 = Timestamp.valueOf(ExpectedTS);
-        assertEquals(ts, ts2, "Error ts1 != ts2");
+        assertEquals(ts2, ts, "Error ts1 != ts2");
     }
 
     /*
@@ -117,7 +125,7 @@ public class TimestampTests extends BaseTest {
         String ExpectedTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
         Timestamp ts2 = Timestamp.valueOf(ExpectedTS);
-        assertEquals(ts, ts2, "Error ts1 != ts2");
+        assertEquals(ts2, ts, "Error ts1 != ts2");
     }
 
     /*
@@ -130,7 +138,7 @@ public class TimestampTests extends BaseTest {
         String ExpectedTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
         Timestamp ts2 = Timestamp.valueOf(ExpectedTS);
-        assertEquals(ts, ts2, "Error ts1 != ts2");
+        assertEquals(ts2, ts, "Error ts1 != ts2");
     }
 
     /*
@@ -142,7 +150,7 @@ public class TimestampTests extends BaseTest {
         String ExpectedTS = "2005-01-01 10:20:50.00";
         Timestamp ts = Timestamp.valueOf(testTS);
         Timestamp ts2 = Timestamp.valueOf(ExpectedTS);
-        assertEquals(ts, ts2, "Error ts1 != ts2");
+        assertEquals(ts2, ts, "Error ts1 != ts2");
     }
 
     /*
@@ -219,7 +227,8 @@ public class TimestampTests extends BaseTest {
      * Validate that two Timestamps are equal when one is created from the
      * toString() of the other
      */
-    @Test(dataProvider = "validTimestampValues")
+    @ParameterizedTest
+    @MethodSource("validTimestampValues")
     public void test13(String ts, String expectedTS) {
         Timestamp ts1 = Timestamp.valueOf(ts);
         Timestamp ts2 = Timestamp.valueOf(ts1.toString());
@@ -263,10 +272,12 @@ public class TimestampTests extends BaseTest {
      * Validate that a NullPointerException is thrown if a null is passed to
      * the before method
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test17() throws Exception {
-        Timestamp ts1 = Timestamp.valueOf("1996-12-13 14:15:25.745634");
-        ts1.before(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            Timestamp ts1 = Timestamp.valueOf("1996-12-13 14:15:25.745634");
+            ts1.before(null);
+        });
     }
 
     /*
@@ -316,10 +327,12 @@ public class TimestampTests extends BaseTest {
      * Validate that a NullPointerException is thrown if a null is passed to the
      * after method
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test22() throws Exception {
-        Timestamp ts1 = Timestamp.valueOf("1966-08-30 08:08:08");
-        ts1.after(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            Timestamp ts1 = Timestamp.valueOf("1966-08-30 08:08:08");
+            ts1.after(null);
+        });
     }
 
     /*
@@ -476,21 +489,25 @@ public class TimestampTests extends BaseTest {
     /*
      * Validate an IllegalArgumentException is thrown for an invalid nanos value
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test38() throws Exception {
-        Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
-        ts1.setNanos(-1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
+            ts1.setNanos(-1);
+        });
 
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for an invalid nanos value
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test39() throws Exception {
-        int nanos = 999999999;
-        Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
-        ts1.setNanos(nanos + 1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            int nanos = 999999999;
+            Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
+            ts1.setNanos(nanos + 1);
+        });
     }
 
     /*
@@ -541,10 +558,12 @@ public class TimestampTests extends BaseTest {
     /*
      * Validate an NPE occurs when a null LocalDateTime is passed to valueOF
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test44() throws Exception {
-        LocalDateTime ldt = null;
-        Timestamp.valueOf(ldt);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            LocalDateTime ldt = null;
+            Timestamp.valueOf(ldt);
+        });
     }
 
     /*
@@ -572,10 +591,12 @@ public class TimestampTests extends BaseTest {
     /*
      * Validate an NPE occurs when a null instant is passed to from
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test47() throws Exception {
-        Instant instant = null;
-        Timestamp.from(instant);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            Instant instant = null;
+            Timestamp.from(instant);
+        });
     }
 
     // Added SQE tests
@@ -628,7 +649,8 @@ public class TimestampTests extends BaseTest {
      * Validate that two Timestamps are equal when one is created from the
      * toString() of the other
      */
-    @Test(dataProvider = "validateNanos")
+    @ParameterizedTest
+    @MethodSource("validateNanos")
     public void test51(String ts, int nanos) {
         Timestamp ts1 = Timestamp.valueOf(ts);
         Timestamp ts2 = Timestamp.valueOf(ts1.toString());
@@ -636,35 +658,36 @@ public class TimestampTests extends BaseTest {
                 "Error with Nanos");
     }
 
-    @Test(dataProvider = "validTimestampLongValues")
+    @ParameterizedTest
+    @MethodSource("validTimestampLongValues")
     public void test52(long value, String ts) {
         Timestamp ts1 = new Timestamp(value);
-        assertEquals(ts1.toString(), ts, "ts1.toString() != ts");
+        assertEquals(ts, ts1.toString(), "ts1.toString() != ts");
     }
 
     @Test
     public void test53() {
         // The latest Instant that can be converted to a Timestamp.
         Instant instant1 = Instant.ofEpochSecond(Long.MAX_VALUE / 1000, 999_999_999);
-        assertEquals(Timestamp.from(instant1).toInstant(), instant1);
+        assertEquals(instant1, Timestamp.from(instant1).toInstant());
 
         // One nanosecond more, and converting it gets an overflow.
         Instant instant2 = instant1.plusNanos(1);
-        expectThrows(IllegalArgumentException.class, () -> Timestamp.from(instant2));
+        assertThrows(IllegalArgumentException.class, () -> Timestamp.from(instant2));
 
         // The earliest Instant that can be converted to a Timestamp.
         Instant instant3 = Instant.ofEpochSecond(Long.MIN_VALUE / 1000, 0);
-        assertEquals(Timestamp.from(instant3).toInstant(), instant3);
+        assertEquals(instant3, Timestamp.from(instant3).toInstant());
 
         // One nanosecond less, and converting it gets an overflow.
         Instant instant4 = instant3.minusNanos(1);
-        expectThrows(IllegalArgumentException.class, () -> Timestamp.from(instant4));
+        assertThrows(IllegalArgumentException.class, () -> Timestamp.from(instant4));
 
         // The latest possible Instant will certainly overflow.
-        expectThrows(IllegalArgumentException.class, () -> Timestamp.from(Instant.MAX));
+        assertThrows(IllegalArgumentException.class, () -> Timestamp.from(Instant.MAX));
 
         // The earliest possible Instant will certainly overflow.
-        expectThrows(IllegalArgumentException.class, () -> Timestamp.from(Instant.MIN));
+        assertThrows(IllegalArgumentException.class, () -> Timestamp.from(Instant.MIN));
     }
 
     /*
@@ -683,7 +706,7 @@ public class TimestampTests extends BaseTest {
         assertTrue(ts1.equals(ts2));
         // As the Timestamp values, including the nanos are the same, the hashCode's
         // should be equal
-        assertEquals(ts1.hashCode(), ts2.hashCode());
+        assertEquals(ts2.hashCode(), ts1.hashCode());
     }
 
     /*
@@ -702,7 +725,7 @@ public class TimestampTests extends BaseTest {
         assertTrue(ts2.equals(ts2));
         assertFalse(ts1.equals(ts2));
         // As the nanos differ, the hashCode values should differ
-        assertNotEquals(ts1.hashCode(), ts2.hashCode());
+        assertNotEquals(ts2.hashCode(), ts1.hashCode());
     }
 
     /*
@@ -710,7 +733,6 @@ public class TimestampTests extends BaseTest {
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
      */
-    @DataProvider(name = "invalidTimestampValues")
     private Object[][] invalidTimestampValues() {
         return new Object[][]{
             {"2009-11-01-01 10:50:01"},
@@ -744,7 +766,6 @@ public class TimestampTests extends BaseTest {
      * to validate that an IllegalArgumentException will not be thrown from the
      * valueOf method and the corect value from toString() is returned
      */
-    @DataProvider(name = "validTimestampValues")
     private Object[][] validTimestampValues() {
         return new Object[][]{
             {"1961-08-30 00:00:00", "1961-08-30 00:00:00.0"},
@@ -773,7 +794,6 @@ public class TimestampTests extends BaseTest {
         };
     }
 
-    @DataProvider(name = "validTimestampLongValues")
     private Object[][] validTimestampLongValues() {
         return new Object[][]{
             {1L, "1970-01-01 01:00:00.001"},
@@ -812,7 +832,6 @@ public class TimestampTests extends BaseTest {
      * validate that the correct Nanos value is generated from the specified
      * Timestamp
      */
-    @DataProvider(name = "validateNanos")
     private Object[][] validateNanos() {
         return new Object[][]{
             {"1961-08-30 00:00:00", 0},

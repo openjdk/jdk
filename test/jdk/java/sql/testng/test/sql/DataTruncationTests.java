@@ -24,10 +24,14 @@ package test.sql;
 
 import java.sql.DataTruncation;
 import java.sql.SQLException;
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
 import util.BaseTest;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DataTruncationTests extends BaseTest {
 
     private final String READ_TRUNCATION = "01004";

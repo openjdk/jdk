@@ -25,10 +25,14 @@ package test.sql;
 import java.sql.SQLException;
 import java.sql.SQLTransientConnectionException;
 import java.sql.SQLTransientException;
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
 import util.BaseTest;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SQLTransientConnectionExceptionTests extends BaseTest {
 
     /**

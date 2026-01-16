@@ -24,83 +24,105 @@ package test.sql;
 
 import java.sql.Time;
 import java.time.LocalTime;
-import static org.testng.Assert.*;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import util.BaseTest;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TimeTests extends BaseTest {
 
     /*
      * Validate an IllegalArgumentException is thrown for calling getYear
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test01() {
-        Time t = Time.valueOf("08:30:59");
-        t.getYear();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time t = Time.valueOf("08:30:59");
+            t.getYear();
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling getMonth
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test02() {
-        Time t = Time.valueOf("08:30:59");
-        t.getMonth();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time t = Time.valueOf("08:30:59");
+            t.getMonth();
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling getDay
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test03() {
-        Time t = Time.valueOf("08:30:59");
-        t.getDay();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time t = Time.valueOf("08:30:59");
+            t.getDay();
+        });
     }
 
     /**
      * Validate an IllegalArgumentException is thrown for calling getDate
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test04() {
-        Time t = Time.valueOf("08:30:59");
-        t.getDate();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time t = Time.valueOf("08:30:59");
+            t.getDate();
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling setYear
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test05() {
-        Time t = Time.valueOf("08:30:59");
-        t.setYear(8);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time t = Time.valueOf("08:30:59");
+            t.setYear(8);
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling setMonth
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test06() {
-        Time t = Time.valueOf("08:30:59");
-        t.setMonth(8);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time t = Time.valueOf("08:30:59");
+            t.setMonth(8);
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling setDate
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test07() {
-        Time t = Time.valueOf("08:30:59");
-        t.setDate(30);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time t = Time.valueOf("08:30:59");
+            t.setDate(30);
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling getDate
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test08() {
-        Time t = Time.valueOf("08:30:59");
-        t.getDate();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time t = Time.valueOf("08:30:59");
+            t.getDate();
+        });
     }
 
     /*
@@ -128,20 +150,24 @@ public class TimeTests extends BaseTest {
     /*
      * Validate an NPE occurs when a null LocalDate is passed to valueOf
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test11() throws Exception {
-        LocalTime ld = null;
-        Time.valueOf(ld);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            LocalTime ld = null;
+            Time.valueOf(ld);
+        });
     }
 
     /*
      * Validate an UnsupportedOperationException occurs when toInstant() is
      * called
      */
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void test12() throws Exception {
-        Time t = new Time(System.currentTimeMillis());
-        t.toInstant();
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+            Time t = new Time(System.currentTimeMillis());
+            t.toInstant();
+        });
     }
 
     /*
@@ -149,7 +175,8 @@ public class TimeTests extends BaseTest {
      * toString() of the other and that the correct value is returned from
      * toString()
      */
-    @Test(dataProvider = "validTimeValues")
+    @ParameterizedTest
+    @MethodSource("validTimeValues")
     public void test13(String time, String expected) {
         Time t1 = Time.valueOf(time);
         Time t2 = Time.valueOf(t1.toString());
@@ -182,10 +209,12 @@ public class TimeTests extends BaseTest {
     /*
      * Validate an IllegalArgumentException is thrown for an invalid Time string
      */
-    @Test(dataProvider = "invalidTimeValues",
-            expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("invalidTimeValues")
     public void test16(String time) throws Exception {
-        Time.valueOf(time);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Time.valueOf(time);
+        });
     }
 
     /*
@@ -299,7 +328,6 @@ public class TimeTests extends BaseTest {
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
      */
-    @DataProvider(name = "invalidTimeValues")
     private Object[][] invalidTimeValues() {
         return new Object[][]{
             {"2009-11-01 10:50:01"},
@@ -330,7 +358,6 @@ public class TimeTests extends BaseTest {
      * valueOf method.  It also contains the expected return value from
      * toString()
      */
-    @DataProvider(name = "validTimeValues")
     private Object[][] validTimeValues() {
         return new Object[][]{
             {"10:50:01", "10:50:01"},

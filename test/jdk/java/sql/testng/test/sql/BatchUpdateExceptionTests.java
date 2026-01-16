@@ -28,11 +28,15 @@ import java.io.ObjectInputStream;
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.Arrays;
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
 import util.SerializedBatchUpdateException;
 import util.BaseTest;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BatchUpdateExceptionTests extends BaseTest {
 
     private final int[] uc = {1, 2, 3};

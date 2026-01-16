@@ -26,10 +26,14 @@ import java.sql.ClientInfoStatus;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
 import util.BaseTest;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SQLClientInfoExceptionTests extends BaseTest {
 
     private final HashMap<String, ClientInfoStatus> map = new HashMap<>();

@@ -22,26 +22,31 @@
  */
 package test.sql;
 
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import util.BaseTest;
 import util.StubConnection;
 
 import java.sql.CallableStatement;
 import java.sql.SQLException;
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CallableStatementTests extends BaseTest {
     private CallableStatement cstmt;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUpMethod() throws Exception {
         cstmt = new StubConnection().prepareCall("{call SuperHero_Proc(?)}");
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDownMethod() throws Exception {
         cstmt.close();
     }
@@ -50,80 +55,94 @@ public class CallableStatementTests extends BaseTest {
      * Verify that enquoteLiteral creates a  valid literal and converts every
      * single quote to two single quotes
      */
-    @Test(dataProvider = "validEnquotedLiteralValues")
+    @ParameterizedTest
+    @MethodSource("validEnquotedLiteralValues")
     public void test00(String s, String expected) throws SQLException {
-        assertEquals(cstmt.enquoteLiteral(s), expected);
+        assertEquals(expected, cstmt.enquoteLiteral(s));
     }
 
     /*
      * Validate a NullPointerException is thrown if the string passed to
      * enquoteLiteral is null
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test01() throws SQLException {
-        cstmt.enquoteLiteral(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            cstmt.enquoteLiteral(null);
+        });
     }
 
     /*
      * Validate that enquoteIdentifier returns the expected value
      */
-    @Test(dataProvider = "validIdentifierValues")
+    @ParameterizedTest
+    @MethodSource("validEnquotedIdentifierValues")
     public void test02(String s, boolean alwaysQuote, String expected) throws SQLException {
-        assertEquals(cstmt.enquoteIdentifier(s, alwaysQuote), expected);
+        assertEquals(expected, cstmt.enquoteIdentifier(s, alwaysQuote));
     }
 
     /*
      * Validate that a SQLException is thrown for values that are not valid
      * for a SQL identifier
      */
-    @Test(dataProvider = "invalidIdentifierValues",
-            expectedExceptions = SQLException.class)
+    @ParameterizedTest
+    @MethodSource("invalidEnquotedIdentifierValues")
     public void test03(String s, boolean alwaysQuote) throws SQLException {
-        cstmt.enquoteIdentifier(s, alwaysQuote);
+        Assertions.assertThrows(SQLException.class, () -> {
+            cstmt.enquoteIdentifier(s, alwaysQuote);
+        });
     }
 
     /*
      * Validate a NullPointerException is thrown is the string passed to
      * enquoteIdentiifer is null
      */
-    @Test(dataProvider = "trueFalse",
-            expectedExceptions = NullPointerException.class)
+    @ParameterizedTest
+    @MethodSource("trueFalse")
     public void test04(boolean alwaysQuote) throws SQLException {
-        cstmt.enquoteIdentifier(null, alwaysQuote);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            cstmt.enquoteIdentifier(null, alwaysQuote);
+        });
     }
 
     /*
      * Validate that isSimpleIdentifier returns the expected value
      */
-    @Test(dataProvider = "simpleIdentifierValues")
+    @ParameterizedTest
+    @MethodSource("simpleIdentifierValues")
     public void test05(String s, boolean expected) throws SQLException {
-        assertEquals(cstmt.isSimpleIdentifier(s), expected);
+        assertEquals(expected, cstmt.isSimpleIdentifier(s));
     }
 
     /*
      * Validate a NullPointerException is thrown if the string passed to
      * isSimpleIdentifier is null
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test06() throws SQLException {
-        cstmt.isSimpleIdentifier(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            cstmt.isSimpleIdentifier(null);
+        });
     }
 
     /*
      * Verify that enquoteLiteral creates a  valid literal and converts every
      * single quote to two single quotes
      */
-    @Test(dataProvider = "validEnquotedNCharLiteralValues")
+    @ParameterizedTest
+    @MethodSource("validEnquotedNCharLiteralValues")
     public void test07(String s, String expected) throws SQLException {
-        assertEquals(cstmt.enquoteNCharLiteral(s), expected);
+        assertEquals(expected, cstmt.enquoteNCharLiteral(s));
     }
 
     /*
      * Validate a NullPointerException is thrown if the string passed to
      * enquoteNCharLiteral is null
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test08() throws SQLException {
-        cstmt.enquoteNCharLiteral(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            cstmt.enquoteNCharLiteral(null);
+        });
     }
 }

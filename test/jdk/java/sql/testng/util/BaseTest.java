@@ -30,8 +30,9 @@ import java.io.ObjectOutputStream;
 import java.sql.JDBCType;
 import java.sql.SQLException;
 
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BaseTest {
 
     protected final String reason = "reason";
@@ -77,7 +78,6 @@ public class BaseTest {
      * DataProvider used to specify the value to set and check for
      * methods using boolean values
      */
-    @DataProvider(name = "trueFalse")
     protected Object[][] trueFalse() {
         return new Object[][]{
             {true},
@@ -88,7 +88,6 @@ public class BaseTest {
     /*
      * DataProvider used to specify the standard JDBC Types
      */
-    @DataProvider(name = "jdbcTypes")
     protected Object[][] jdbcTypes() {
         Object[][] o = new Object[JDBCType.values().length][1];
         int pos = 0;
@@ -103,7 +102,6 @@ public class BaseTest {
      * that enquoteLiteral converts a string to a literal and every instance of
      * a single quote will be converted into two single quotes in the literal.
      */
-    @DataProvider(name = "validEnquotedLiteralValues")
     protected Object[][] validEnquotedLiteralValues() {
         return new Object[][]{
                 {"Hello", "'Hello'"},
@@ -119,7 +117,6 @@ public class BaseTest {
      * that enqouteIdentifier returns a simple SQL Identifier or a
      * quoted identifier
      */
-    @DataProvider(name = "validIdentifierValues")
     protected Object[][] validEnquotedIdentifierValues() {
         return new Object[][]{
                 {"b", false, "b"},
@@ -142,7 +139,6 @@ public class BaseTest {
      * DataProvider used to provide strings are invalid for enquoteIdentifier
      * resulting in a SQLException being thrown
      */
-    @DataProvider(name = "invalidIdentifierValues")
     protected Object[][] invalidEnquotedIdentifierValues() {
         return new Object[][]{
                 {"Hel\"lo", false},
@@ -157,7 +153,6 @@ public class BaseTest {
      * that isSimpleIdentifier returns the correct value based on the
      * identifier specified.
      */
-    @DataProvider(name = "simpleIdentifierValues")
     protected Object[][] simpleIdentifierValues() {
         return new Object[][]{
                 {"b", true},
@@ -181,7 +176,6 @@ public class BaseTest {
      * literal and every instance of
      * a single quote will be converted into two single quotes in the literal.
      */
-    @DataProvider(name = "validEnquotedNCharLiteralValues")
     protected Object[][] validEnquotedNCharLiteralValues() {
         return new Object[][]{
                 {"Hello", "N'Hello'"},

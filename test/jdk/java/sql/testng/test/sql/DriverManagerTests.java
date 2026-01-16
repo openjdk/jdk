@@ -39,14 +39,18 @@ import java.util.Collections;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static org.testng.Assert.*;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
 import util.StubDriver;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DriverManagerTests {
 
     private final String StubDriverURL = "jdbc:tennis:boy";
@@ -58,20 +62,20 @@ public class DriverManagerTests {
     public DriverManagerTests() {
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() throws Exception {
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUpMethod() throws Exception {
         removeAllDrivers();
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDownMethod() throws Exception {
     }
 
@@ -113,7 +117,7 @@ public class DriverManagerTests {
         int[] vals = {-1, 0, 5};
         for (int val : vals) {
             DriverManager.setLoginTimeout(val);
-            assertEquals(val, DriverManager.getLoginTimeout());
+            assertEquals(DriverManager.getLoginTimeout(), val);
         }
     }
 
@@ -121,20 +125,24 @@ public class DriverManagerTests {
      * Validate that NullPointerException is thrown when null is passed to
      * registerDriver
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test1() throws Exception {
-        Driver d = null;
-        DriverManager.registerDriver(d);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            Driver d = null;
+            DriverManager.registerDriver(d);
+        });
     }
 
     /**
      * Validate that NullPointerException is thrown when null is passed to
      * registerDriver
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test2() throws Exception {
-        Driver d = null;
-        DriverManager.registerDriver(d, null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            Driver d = null;
+            DriverManager.registerDriver(d, null);
+        });
     }
 
     /**
@@ -150,68 +158,84 @@ public class DriverManagerTests {
      * Validate that SQLException is thrown when there is no Driver to service
      * the URL
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test4() throws Exception {
-        DriverManager.getConnection(InvalidURL);
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.getConnection(InvalidURL);
+        });
     }
 
     /**
      * Validate that SQLException is thrown when there is no Driver to service
      * the URL
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test5() throws Exception {
-        DriverManager.getConnection(InvalidURL, new Properties());
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.getConnection(InvalidURL, new Properties());
+        });
     }
 
     /**
      * Validate that SQLException is thrown when there is no Driver to service
      * the URL
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test6() throws Exception {
-        DriverManager.getConnection(InvalidURL, "LuckyDog", "tennisanyone");
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.getConnection(InvalidURL, "LuckyDog", "tennisanyone");
+        });
     }
 
     /**
      * Validate that SQLException is thrown when null is passed for the URL
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test7() throws Exception {
-        DriverManager.getConnection(null);
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.getConnection(null);
+        });
     }
 
     /**
      * Validate that SQLException is thrown when null is passed for the URL
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test8() throws Exception {
-        DriverManager.getConnection(null, new Properties());
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.getConnection(null, new Properties());
+        });
     }
 
     /**
      * Validate that SQLException is thrown when null is passed for the URL
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test9() throws Exception {
-        DriverManager.getConnection(null, "LuckyDog", "tennisanyone");
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.getConnection(null, "LuckyDog", "tennisanyone");
+        });
     }
 
     /**
      * Validate that SQLException is thrown when there is no Driver to service
      * the URL
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test10() throws Exception {
-        DriverManager.getDriver(InvalidURL);
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.getDriver(InvalidURL);
+        });
     }
 
     /**
      * Validate that SQLException is thrown when null is passed for the URL
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test11() throws Exception {
-        DriverManager.getDriver(null);
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.getDriver(null);
+        });
     }
 
     /**
@@ -229,10 +253,12 @@ public class DriverManagerTests {
      * Validate that SQLException is thrown when the URL is not valid for any of
      * the registered drivers
      */
-    @Test(expectedExceptions = SQLException.class)
+    @Test
     public void test13() throws Exception {
-        DriverManager.registerDriver(new StubDriver());
-        DriverManager.getDriver(InvalidURL);
+        Assertions.assertThrows(SQLException.class, () -> {
+            DriverManager.registerDriver(new StubDriver());
+            DriverManager.getDriver(InvalidURL);
+        });
     }
 
     /**
@@ -370,9 +396,9 @@ public class DriverManagerTests {
         }
 
         Collection<Driver> expectedDrivers = Collections.list(DriverManager.getDrivers());
-        assertEquals(expectedDrivers.size(), n);
+        assertEquals(n, expectedDrivers.size());
         Collection<Driver> drivers = DriverManager.drivers().collect(Collectors.toList());
 
-        assertEquals(drivers, expectedDrivers);
+        assertEquals(expectedDrivers, drivers);
     }
 }

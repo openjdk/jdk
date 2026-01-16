@@ -25,40 +25,43 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import static org.testng.Assert.*;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /*
  * @test
  * @library /java/sql/modules
  * @build luckydogdriver/* mystubdriver/*
- * @run testng/othervm DriverManagerModuleTests
+ * @run junit/othervm DriverManagerModuleTests
  * @summary Tests that a JDBC Driver that is a module can be loaded
  * via the service-provider loading mechanism.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DriverManagerModuleTests {
 
     private final String LUCKYDOGDRIVER_URL = "jdbc:tennis:myDB";
     private static final String STUBDRIVERURL = "jdbc:stub:myDB";
     private static final String CONNECTION_CLASS_NAME = "com.luckydogtennis.StubConnection";
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() throws Exception {
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUpMethod() throws Exception {
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDownMethod() throws Exception {
     }
 

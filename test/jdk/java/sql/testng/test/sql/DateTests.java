@@ -25,27 +25,36 @@ package test.sql;
 import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
-import static org.testng.Assert.*;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import util.BaseTest;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DateTests extends BaseTest {
 
     /*
      * Validate an IllegalArgumentException is thrown for an invalid Date string
      */
-    @Test(dataProvider = "invalidDateValues",
-            expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("invalidDateValues")
     public void test(String d) throws Exception {
-        Date.valueOf(d);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Date.valueOf(d);
+        });
     }
 
     /*
      * Test that a date created from a date string is equal to the value
      * returned from toString()
      */
-    @Test(dataProvider = "validDateValues")
+    @ParameterizedTest
+    @MethodSource("validDateValues")
     public void test00(String d, String expectedD) {
         Date d1 = Date.valueOf(d);
         Date d2 = Date.valueOf(expectedD);
@@ -207,20 +216,24 @@ public class DateTests extends BaseTest {
     /*
      * Validate an NPE occurs when a null LocalDate is passed to valueOf
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void test15() throws Exception {
-        LocalDate ld = null;
-        Date.valueOf(ld);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            LocalDate ld = null;
+            Date.valueOf(ld);
+        });
     }
 
     /*
      * Validate an UnsupportedOperationException occurs when toInstant() is
      * called
      */
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void test16() throws Exception {
-        Date d = Date.valueOf("1961-08-30");
-        Instant instant = d.toInstant();
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+            Date d = Date.valueOf("1961-08-30");
+            Instant instant = d.toInstant();
+        });
     }
 
     /*
@@ -271,55 +284,67 @@ public class DateTests extends BaseTest {
     /*
      * Validate an IllegalArgumentException is thrown for calling getHours
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test21() throws Exception {
-        Date d = Date.valueOf("1961-08-30");
-        d.getHours();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Date d = Date.valueOf("1961-08-30");
+            d.getHours();
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling getMinutes
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test22() throws Exception {
-        Date d = Date.valueOf("1961-08-30");
-        d.getMinutes();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Date d = Date.valueOf("1961-08-30");
+            d.getMinutes();
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling getSeconds
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test23() throws Exception {
-        Date d = Date.valueOf("1961-08-30");
-        d.getSeconds();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Date d = Date.valueOf("1961-08-30");
+            d.getSeconds();
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling setHours
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test24() throws Exception {
-        Date d = Date.valueOf("1961-08-30");
-        d.setHours(8);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Date d = Date.valueOf("1961-08-30");
+            d.setHours(8);
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling setMinutes
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test25() throws Exception {
-        Date d = Date.valueOf("1961-08-30");
-        d.setMinutes(0);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Date d = Date.valueOf("1961-08-30");
+            d.setMinutes(0);
+        });
     }
 
     /*
      * Validate an IllegalArgumentException is thrown for calling setSeconds
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test26() throws Exception {
-        Date d = Date.valueOf("1961-08-30");
-        d.setSeconds(0);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Date d = Date.valueOf("1961-08-30");
+            d.setSeconds(0);
+        });
     }
 
     /*
@@ -327,7 +352,6 @@ public class DateTests extends BaseTest {
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
      */
-    @DataProvider(name = "invalidDateValues")
     private Object[][] invalidDateValues() {
         return new Object[][]{
             {"20009-11-01"},
@@ -360,7 +384,6 @@ public class DateTests extends BaseTest {
      * to validate that an IllegalArgumentException will not be thrown from the
      * valueOf method and the corect value from toString() is returned
      */
-    @DataProvider(name = "validDateValues")
     private Object[][] validDateValues() {
         return new Object[][]{
             {"2009-08-30", "2009-08-30"},
