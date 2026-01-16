@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateHash;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 
@@ -41,12 +42,10 @@ import jdk.jpackage.test.MacSign.CertificateRequest;
  */
 public final class MacSignVerify {
 
-    public static void verifyAppImageSigned(
-            JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+    public static void verifyAppImageSigned(JPackageCommand cmd, ResolvableCertificateRequest certRequest) {
 
-        cmd.verifyIsOfType(PackageType.MAC);
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
         Objects.requireNonNull(certRequest);
-        Objects.requireNonNull(keychain);
 
         final Path bundleRoot;
         if (cmd.isImagePackageType()) {
@@ -70,13 +69,12 @@ public final class MacSignVerify {
                 String.format("Check [%s] has sign origin as expected", bundleRoot));
     }
 
-    public static void verifyPkgSigned(JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+    public static void verifyPkgSigned(JPackageCommand cmd, ResolvableCertificateRequest certRequest) {
         cmd.verifyIsOfType(PackageType.MAC_PKG);
-        assertPkgSigned(cmd.outputBundle(), certRequest,
-                Objects.requireNonNull(keychain.mapCertificateRequests().get(certRequest)));
+        assertPkgSigned(cmd.outputBundle(), certRequest);
     }
 
-    public static void assertSigned(Path path, CertificateRequest certRequest) {
+    public static void assertSigned(Path path, ResolvableCertificateRequest certRequest) {
         assertSigned(path);
         TKit.assertEquals(certRequest.name(), findCodesignSignOrigin(path).orElse(null),
                 String.format("Check [%s] signed with certificate", path));
@@ -106,6 +104,10 @@ public final class MacSignVerify {
     public static void assertUnsigned(Path path) {
         TKit.assertTrue(findSpctlSignOrigin(SpctlType.EXEC, path).isEmpty(),
                 String.format("Check [%s] unsigned", path));
+    }
+
+    public static void assertPkgSigned(Path path, ResolvableCertificateRequest certRequest) {
+        assertPkgSigned(path, certRequest.certRequest(), certRequest.cert());
     }
 
     public static void assertPkgSigned(Path path, CertificateRequest certRequest, X509Certificate cert) {

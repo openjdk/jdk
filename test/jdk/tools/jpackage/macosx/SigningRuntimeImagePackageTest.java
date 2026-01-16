@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,31 @@
  * questions.
  */
 
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import static jdk.jpackage.test.JPackageCommand.RuntimeImageType.RUNTIME_TYPE_FAKE;
 
 import java.nio.file.Path;
-import java.util.function.Predicate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.internal.util.MacBundle;
+import jdk.jpackage.internal.util.Slot;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
+import jdk.jpackage.test.MacHelper.SignKeyOption;
+import jdk.jpackage.test.MacHelper.SignKeyOptionWithKeychain;
 import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSignVerify;
+import jdk.jpackage.test.MacSignVerify.SpctlType;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.TKit;
 
 /**
  * Tests generation of dmg and pkg with --mac-sign and related arguments. Test
@@ -43,126 +57,182 @@ import jdk.jpackage.test.PackageTest;
  * app image signing and it will be covered by SigningPackageTest.
  *
  * <p>
- * Following combinations are tested:
- * <ol>
- * <li>"--runtime-image" points to unsigned JDK bundle and --mac-sign is not
- * provided. Expected result: runtime image ad-hoc signed.
- * <li>"--runtime-image" points to unsigned JDK bundle and --mac-sign is
- * provided. Expected result: Everything is signed with provided certificate.
- * <li>"--runtime-image" points to signed JDK bundle and --mac-sign is not
- * provided. Expected result: runtime image is signed with original certificate.
- * <li>"--runtime-image" points to signed JDK bundle and --mac-sign is provided.
- * Expected result: runtime image is signed with provided certificate.
- * <li>"--runtime-image" points to JDK image and --mac-sign is not provided.
- * Expected result: runtime image ad-hoc signed.
- * <li>"--runtime-image" points to JDK image and --mac-sign is provided.
- * Expected result: Everything is signed with provided certificate.
- * </ol>
- *
- * This test requires that the machine is configured with test certificate for
- * "Developer ID Installer: jpackage.openjdk.java.net" in jpackagerTest keychain
- * with always allowed access to this keychain for user which runs test. note:
- * "jpackage.openjdk.java.net" can be over-ridden by system property
- * "jpackage.mac.signing.key.user.name"
+ * Prerequisites: Keychains with self-signed certificates as specified in
+ * {@link SigningBase.StandardKeychain#MAIN} and
+ * {@link SigningBase.StandardKeychain#SINGLE}.
  */
 
 /*
  * @test
  * @summary jpackage with --type pkg,dmg --runtime-image --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library base
  * @key jpackagePlatformPackage
- * @build SigningBase
  * @build jdk.jpackage.test.*
- * @build SigningRuntimeImagePackageTest
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @compile -Xlint:all -Werror SigningPackageTest.java
+ * @compile -Xlint:all -Werror SigningRuntimeImagePackageTest.java
  * @requires (jpackage.test.MacSignTests == "run")
  * @requires (jpackage.test.SQETest == null)
- * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningRuntimeImagePackageTest
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningRuntimeImagePackageTest {
 
-    private static JPackageCommand addSignOptions(JPackageCommand cmd, MacSign.ResolvedKeychain keychain, int certIndex) {
-        if (certIndex != SigningBase.CertIndex.INVALID_INDEX.value()) {
-            cmd.addArguments(
-                    "--mac-sign",
-                    "--mac-signing-keychain", keychain.name(),
-                    "--mac-signing-key-user-name", SigningBase.getDevName(certIndex));
-        }
-        return cmd;
-    }
-
-    private static Path createInputRuntimeBundle(MacSign.ResolvedKeychain keychain, int certIndex) {
-        return MacHelper.createRuntimeBundle(cmd -> {
-            addSignOptions(cmd, keychain, certIndex);
-        });
+    @Test
+    @ParameterSupplier
+    public static void test(RuntimeTestSpec spec) {
+        spec.test();
     }
 
     @Test
-    // useJDKBundle  - If "true" predefined runtime image will be converted to
-    //                 JDK bundle. If "false" JDK image will be used.
-    // JDKBundleCert - Certificate to sign JDK bundle before calling jpackage.
-    // signCert      - Certificate to sign bundle produced by jpackage.
-    // 1) unsigned JDK bundle and --mac-sign is not provided
-    @Parameter({"true", "INVALID_INDEX", "INVALID_INDEX"})
-    // 2) unsigned JDK bundle and --mac-sign is provided
-    @Parameter({"true", "INVALID_INDEX", "ASCII_INDEX"})
-    // 3) signed JDK bundle and --mac-sign is not provided
-    @Parameter({"true", "UNICODE_INDEX", "INVALID_INDEX"})
-    // 4) signed JDK bundle and --mac-sign is provided
-    @Parameter({"true", "UNICODE_INDEX", "ASCII_INDEX"})
-    // 5) JDK image and --mac-sign is not provided
-    @Parameter({"false", "INVALID_INDEX", "INVALID_INDEX"})
-    // 6) JDK image and --mac-sign is provided
-    @Parameter({"false", "INVALID_INDEX", "ASCII_INDEX"})
-    public static void test(boolean useJDKBundle,
-                            SigningBase.CertIndex jdkBundleCert,
-                            SigningBase.CertIndex signCert) throws Exception {
-        MacSign.withKeychain(toConsumer(keychain -> {
-            test(keychain, useJDKBundle, jdkBundleCert, signCert);
-        }), SigningBase.StandardKeychain.MAIN.keychain());
+    public static void testBundleSignedRuntime() {
+
+        Slot<Path> predefinedRuntime = Slot.createEmpty();
+
+        var signRuntime = runtimeImageSignOption();
+
+        new PackageTest().addRunOnceInitializer(() -> {
+            predefinedRuntime.set(createRuntime(Optional.of(signRuntime), RuntimeType.BUNDLE));
+        }).addInitializer(cmd -> {
+            cmd.ignoreDefaultRuntime(true);
+            cmd.removeArgumentWithValue("--input");
+            cmd.setArgumentValue("--runtime-image", predefinedRuntime.get());
+        }).addInstallVerifier(cmd -> {
+            MacSignVerify.verifyAppImageSigned(cmd, signRuntime.certRequest());
+        }).run();
     }
 
-    private static void test(MacSign.ResolvedKeychain keychain, boolean useJDKBundle,
-            SigningBase.CertIndex jdkBundleCert,
-            SigningBase.CertIndex signCert) throws Exception {
+    public static Collection<Object[]> test() {
 
-        final Path inputRuntime[] = new Path[1];
+        List<RuntimeTestSpec> data = new ArrayList<>();
 
-        new PackageTest()
-                .addRunOnceInitializer(() -> {
-                    if (useJDKBundle) {
-                        inputRuntime[0] = createInputRuntimeBundle(keychain, jdkBundleCert.value());
-                    } else {
-                        inputRuntime[0] = JPackageCommand.createInputRuntimeImage();
-                    }
-                })
-                .addInitializer(cmd -> {
-                    cmd.addArguments("--runtime-image", inputRuntime[0]);
-                    // Remove --input parameter from jpackage command line as we don't
-                    // create input directory in the test and jpackage fails
-                    // if --input references non existent directory.
-                    cmd.removeArgumentWithValue("--input");
-                    addSignOptions(cmd, keychain, signCert.value());
-                })
-                .addInstallVerifier(cmd -> {
-                    final var certIndex = Stream.of(signCert, jdkBundleCert)
-                            .filter(Predicate.isEqual(SigningBase.CertIndex.INVALID_INDEX).negate())
-                            .findFirst().orElse(SigningBase.CertIndex.INVALID_INDEX).value();
+        for (var runtimeSpec : List.of(
+                Map.entry(RuntimeType.IMAGE, false /* unsigned */),
+                Map.entry(RuntimeType.BUNDLE, false /* unsigned */),
+                Map.entry(RuntimeType.BUNDLE, true /* signed */)
+        )) {
+            var runtimeType = runtimeSpec.getKey();
+            var signRuntime = runtimeSpec.getValue();
 
-                    final var signed = certIndex != SigningBase.CertIndex.INVALID_INDEX.value();
+            Optional<SignKeyOptionWithKeychain> runtimeSignOption;
+            if (signRuntime) {
+                // Sign the runtime bundle with the key not used in the jpackage command line being tested.
+                // This way we can test if jpackage keeps or replaces the signature of
+                // the predefined runtime bundle when backing it in the pkg or dmg installer.
+                runtimeSignOption = Optional.of(runtimeImageSignOption());
+            } else {
+                runtimeSignOption = Optional.empty();
+            }
 
-                    final var unfoldedBundleDir = cmd.appRuntimeDirectory();
+            for (var signPackage : SigningPackageTest.TestSpec.testCases(false)) {
+                data.add(new RuntimeTestSpec(runtimeSignOption, runtimeType, signPackage));
+            }
+        }
 
-                    final var libjli = unfoldedBundleDir.resolve("Contents/MacOS/libjli.dylib");
+        return data.stream().map(v -> {
+            return new Object[] {v};
+        }).toList();
+    }
 
-                    SigningBase.verifyCodesign(libjli, signed, certIndex);
-                    SigningBase.verifyCodesign(unfoldedBundleDir, signed, certIndex);
-                    if (signed) {
-                        SigningBase.verifySpctl(unfoldedBundleDir, "exec", certIndex);
-                    }
-                })
-                .run();
+    enum RuntimeType {
+        IMAGE,
+        BUNDLE,
+        ;
+    }
+
+    record RuntimeTestSpec(
+            Optional<SignKeyOptionWithKeychain> signRuntime,
+            RuntimeType runtimeType,
+            SigningPackageTest.TestSpec signPackage) {
+
+        RuntimeTestSpec {
+            Objects.requireNonNull(signRuntime);
+            Objects.requireNonNull(runtimeType);
+            Objects.requireNonNull(signPackage);
+        }
+
+        @Override
+        public String toString() {
+            var runtimeToken = new StringBuilder();
+            runtimeToken.append("runtime={").append(runtimeType);
+            signRuntime.ifPresent(v -> {
+                runtimeToken.append(", ").append(v);
+            });
+            runtimeToken.append('}');
+            return Stream.of(runtimeToken, signPackage).map(Objects::toString).collect(Collectors.joining("; "));
+        }
+
+        Optional<ResolvableCertificateRequest> packagedAppImageSignIdentity() {
+            if (runtimeType == RuntimeType.IMAGE) {
+                return signPackage.appImageSignOption().map(SignKeyOption::certRequest);
+            } else {
+                return signPackage.appImageSignOption().or(() -> {
+                    return signRuntime.map(SignKeyOptionWithKeychain::signKeyOption);
+                }).map(SignKeyOption::certRequest);
+            }
+        }
+
+        void test() {
+
+            Slot<Path> predefinedRuntime = Slot.createEmpty();
+
+            var test = signPackage.initTest().addRunOnceInitializer(() -> {
+                predefinedRuntime.set(createRuntime(signRuntime, runtimeType));
+            }).addInitializer(cmd -> {
+                cmd.ignoreDefaultRuntime(true);
+                cmd.removeArgumentWithValue("--input");
+                cmd.setArgumentValue("--runtime-image", predefinedRuntime.get());
+            }).addInstallVerifier(cmd -> {
+                packagedAppImageSignIdentity().ifPresent(certRequest -> {
+                    MacSignVerify.verifyAppImageSigned(cmd, certRequest);
+                });
+            });
+
+            MacSign.withKeychain(_ -> {
+                test.run();
+            }, signPackage.keychain());
+        }
+    }
+
+    private static SignKeyOptionWithKeychain runtimeImageSignOption() {
+        // Sign the runtime bundle with the key not used in the jpackage command line being tested.
+        // This way we can test if jpackage keeps or replaces the signature of
+        // the predefined runtime bundle when backing it in the pkg or dmg installer.
+        return new SignKeyOptionWithKeychain(
+                SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
+                SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD,
+                SigningBase.StandardKeychain.MAIN.keychain());
+    }
+
+    private static Path createRuntime(Optional<SignKeyOptionWithKeychain> signRuntime, RuntimeType runtimeType) {
+        if (runtimeType == RuntimeType.IMAGE && signRuntime.isEmpty()) {
+            return JPackageCommand.createInputRuntimeImage(RUNTIME_TYPE_FAKE);
+        } else {
+            Slot<Path> runtimeBundle = Slot.createEmpty();
+
+            MacSign.withKeychain(keychain -> {
+                var runtimeBundleBuilder = MacHelper.buildRuntimeBundle();
+                signRuntime.ifPresent(signingOption -> {
+                    runtimeBundleBuilder.mutator(signingOption::setTo);
+                });
+                runtimeBundle.set(runtimeBundleBuilder.type(RUNTIME_TYPE_FAKE).create());
+            }, SigningBase.StandardKeychain.MAIN.keychain());
+
+            if (runtimeType == RuntimeType.IMAGE) {
+                return MacBundle.fromPath(runtimeBundle.get()).orElseThrow().homeDir();
+            } else {
+                // Verify the runtime bundle is properly signed/unsigned.
+                signRuntime.map(SignKeyOptionWithKeychain::certRequest).ifPresentOrElse(certRequest -> {
+                    MacSignVerify.assertSigned(runtimeBundle.get(), certRequest);
+                    var signOrigin = MacSignVerify.findSpctlSignOrigin(SpctlType.EXEC, runtimeBundle.get()).orElse(null);
+                    TKit.assertEquals(certRequest.name(), signOrigin,
+                            String.format("Check [%s] has sign origin as expected", runtimeBundle.get()));
+                }, () -> {
+                    MacSignVerify.assertAdhocSigned(runtimeBundle.get());
+                });
+                return runtimeBundle.get();
+            }
+        }
     }
 }

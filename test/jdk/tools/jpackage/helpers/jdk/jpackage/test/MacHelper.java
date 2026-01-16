@@ -46,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -66,6 +67,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.jpackage.internal.util.Enquoter;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.PListReader;
@@ -75,6 +77,8 @@ import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.CertificateType;
+import jdk.jpackage.test.MacSign.ResolvedKeychain;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import org.xml.sax.SAXException;
@@ -430,18 +434,50 @@ public final class MacHelper {
         }
     }
 
+    public static final class RuntimeBundleBuilder {
+
+        public Path create() {
+            return createRuntimeBundle(type, Optional.ofNullable(mutator));
+        }
+
+        public RuntimeBundleBuilder type(JPackageCommand.RuntimeImageType v) {
+            type = Objects.requireNonNull(v);
+            return this;
+        }
+
+        public RuntimeBundleBuilder mutator(Consumer<JPackageCommand> v) {
+            mutator = v;
+            return this;
+        }
+
+        public RuntimeBundleBuilder mutate(Consumer<RuntimeBundleBuilder> mutator) {
+            mutator.accept(this);
+            return this;
+        }
+
+        private RuntimeBundleBuilder() {
+        }
+
+        private JPackageCommand.RuntimeImageType type = JPackageCommand.RuntimeImageType.RUNTIME_TYPE_HELLO_APP;
+        private Consumer<JPackageCommand> mutator;
+    };
+
+    public static RuntimeBundleBuilder buildRuntimeBundle() {
+        return new RuntimeBundleBuilder();
+    }
+
     public static Path createRuntimeBundle(Consumer<JPackageCommand> mutator) {
-        return createRuntimeBundle(Optional.of(mutator));
+        return buildRuntimeBundle().mutator(Objects.requireNonNull(mutator)).create();
     }
 
     public static Path createRuntimeBundle() {
-        return createRuntimeBundle(Optional.empty());
+        return buildRuntimeBundle().create();
     }
 
-    public static Path createRuntimeBundle(Optional<Consumer<JPackageCommand>> mutator) {
+    private static Path createRuntimeBundle(JPackageCommand.RuntimeImageType type, Optional<Consumer<JPackageCommand>> mutator) {
         Objects.requireNonNull(mutator);
 
-        final var runtimeImage = JPackageCommand.createInputRuntimeImage();
+        final var runtimeImage = JPackageCommand.createInputRuntimeImage(type);
 
         final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
 
@@ -495,25 +531,244 @@ public final class MacHelper {
         return cmd;
     }
 
-    public record SignKeyOption(Type type, CertificateRequest certRequest) {
+    public static final class ResolvableCertificateRequest {
+
+        public ResolvableCertificateRequest(
+                CertificateRequest certRequest,
+                Function<CertificateRequest, X509Certificate> certResolver,
+                String label) {
+
+            Objects.requireNonNull(certRequest);
+            Objects.requireNonNull(certResolver);
+            Objects.requireNonNull(label);
+            if (label.isBlank()) {
+                throw new IllegalArgumentException();
+            }
+
+            this.certRequest = certRequest;
+            this.certResolver = certResolver;
+            this.label = label;
+        }
+
+        public ResolvableCertificateRequest(
+                CertificateRequest certRequest,
+                ResolvedKeychain keychain,
+                String label) {
+            this(certRequest, keychain.asCertificateResolver(), label);
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+
+        public CertificateRequest certRequest() {
+            return certRequest;
+        }
+
+        public X509Certificate cert() {
+            return certResolver.apply(certRequest);
+        }
+
+        public CertificateType type() {
+            return certRequest.type();
+        }
+
+        public String name() {
+            return certRequest.name();
+        }
+
+        public String shortName() {
+            return certRequest.shortName();
+        }
+
+        public int days() {
+            return certRequest.days();
+        }
+
+        public boolean expired() {
+            return certRequest.expired();
+        }
+
+        public boolean trusted() {
+            return certRequest.trusted();
+        }
+
+        private final CertificateRequest certRequest;
+        private final Function<CertificateRequest, X509Certificate> certResolver;
+        private final String label;
+    }
+
+    public interface NamedCertificateRequestSupplier {
+
+        String name();
+
+        CertificateRequest certRequest();
+
+        default ResolvableCertificateRequest certRequest(ResolvedKeychain keychain) {
+            Objects.requireNonNull(keychain);
+            var certRequest = Objects.requireNonNull(certRequest());
+            if (keychain.spec().certificateRequests().contains(certRequest)) {
+                return new ResolvableCertificateRequest(certRequest, keychain.asCertificateResolver(), name());
+            } else {
+                throw new IllegalArgumentException(String.format(
+                        "Certificate request %s not found in [%s] keychain",
+                        name(), keychain.spec().keychain().name()));
+            }
+        }
+    }
+
+    public record SignKeyOption(Type type, ResolvableCertificateRequest certRequest, Optional<String> customOptionValue) {
 
         public SignKeyOption {
             Objects.requireNonNull(type);
             Objects.requireNonNull(certRequest);
+            Objects.requireNonNull(customOptionValue);
+            if (customOptionValue.isEmpty() == (type == Type.SIGN_KEY_USER_NAME)) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        public SignKeyOption(Type type, ResolvableCertificateRequest certRequest) {
+            this(type, certRequest, Optional.empty());
+        }
+
+        public SignKeyOption(
+                Type type,
+                NamedCertificateRequestSupplier certRequestSupplier,
+                ResolvedKeychain keychain) {
+
+            this(type, certRequestSupplier.certRequest(keychain));
+        }
+
+        public SignKeyOption(String optionValue, ResolvableCertificateRequest certRequest) {
+            this(Type.SIGN_KEY_USER_NAME, certRequest, Optional.of(optionValue));
+        }
+
+        public SignKeyOption(
+                String optionValue,
+                NamedCertificateRequestSupplier certRequestSupplier,
+                ResolvedKeychain keychain) {
+
+            this(optionValue, certRequestSupplier.certRequest(keychain));
+        }
+
+        public enum Name {
+            KEY_USER_NAME("--mac-signing-key-user-name"),
+            KEY_IDENTITY_APP_IMAGE("--mac-app-image-sign-identity"),
+            KEY_IDENTITY_INSTALLER("--mac-installer-sign-identity"),
+            ;
+
+            Name(String optionName) {
+                this.optionName = Objects.requireNonNull(optionName);
+            }
+
+            public String optionName() {
+                return optionName;
+            }
+
+            public boolean passThrough() {
+                return this != KEY_USER_NAME;
+            }
+
+            private final String optionName;
         }
 
         public enum Type {
-            SIGN_KEY_USER_NAME,
-            SIGN_KEY_IDENTITY,
+            /**
+             * "--mac-signing-key-user-name" option with custom value
+             */
+            SIGN_KEY_USER_NAME(Name.KEY_USER_NAME),
+
+            /**
+             * "--mac-signing-key-user-name" option with the short user name, e.g.:
+             * {@code --mac-signing-key-user-name foo}
+             */
+            SIGN_KEY_USER_SHORT_NAME(Name.KEY_USER_NAME),
+
+            /**
+             * "--mac-signing-key-user-name" option with the full user name (aka signing
+             * identity name), e.g.:
+             * {@code --mac-signing-key-user-name 'Developer ID Application: foo'}
+             */
+            SIGN_KEY_USER_FULL_NAME(Name.KEY_USER_NAME),
+
+            /**
+             * "--mac-installer-sign-identity" or "--mac-app-image-sign-identity" option
+             * with the signing identity name, e.g.:
+             * {@code --mac-app-image-sign-identity 'Developer ID Application: foo'}
+             */
+            SIGN_KEY_IDENTITY(Map.of(
+                    MacSign.CertificateType.CODE_SIGN, Name.KEY_IDENTITY_APP_IMAGE,
+                    MacSign.CertificateType.INSTALLER, Name.KEY_IDENTITY_INSTALLER)),
+
+            /**
+             * "--mac-app-image-sign-identity" regardless of the type of signing identity
+             * (for signing app image or .pkg installer).
+             */
+            SIGN_KEY_IDENTITY_APP_IMAGE(Name.KEY_IDENTITY_APP_IMAGE),
+
+            /**
+             * "--mac-installer-sign-identity" regardless of the type of signing identity
+             * (for signing app image or .pkg installer).
+             */
+            SIGN_KEY_IDENTITY_INSTALLER(Name.KEY_IDENTITY_INSTALLER),
+
             ;
+
+            Type(Map<MacSign.CertificateType, Name> optionNameMap) {
+                Objects.requireNonNull(optionNameMap);
+                this.optionNameMapper = certType -> {
+                    return Optional.of(optionNameMap.get(certType));
+                };
+            }
+
+            Type(Name optionName) {
+                Objects.requireNonNull(optionName);
+                this.optionNameMapper = _ -> Optional.of(optionName);
+            }
+
+            Type() {
+                this.optionNameMapper = _ -> Optional.empty();
+            }
+
+            public Optional<Name> mapOptionName(MacSign.CertificateType certType) {
+                return optionNameMapper.apply(Objects.requireNonNull(certType));
+            }
+
+            public static Type[] defaultValues() {
+                return new Type[] {
+                        SIGN_KEY_USER_SHORT_NAME,
+                        SIGN_KEY_USER_FULL_NAME,
+                        SIGN_KEY_IDENTITY
+                };
+            }
+
+            private final Function<MacSign.CertificateType, Optional<Name>> optionNameMapper;
         }
 
         @Override
         public String toString() {
             var sb = new StringBuilder();
+            sb.append('{');
             applyTo((optionName, _) -> {
-                sb.append(String.format("{%s: %s}", optionName, certRequest));
+                sb.append(optionName);
+                switch (type) {
+                    case SIGN_KEY_USER_FULL_NAME -> {
+                        sb.append("/full");
+                    }
+                    case SIGN_KEY_USER_NAME -> {
+                        customOptionValue.ifPresent(optionValue -> {
+                            sb.append("=").append(ENQUOTER.applyTo(optionValue));
+                        });
+                    }
+                    default -> {
+                        // NOP
+                    }
+                }
+                sb.append(": ");
             });
+            sb.append(certRequest).append('}');
             return sb.toString();
         }
 
@@ -527,35 +782,127 @@ public final class MacHelper {
             return sign(cmd);
         }
 
-        private void applyTo(BiConsumer<String, String> sink) {
-            switch (certRequest.type()) {
-                case INSTALLER -> {
-                    switch (type) {
-                        case SIGN_KEY_IDENTITY -> {
-                            sink.accept("--mac-installer-sign-identity", certRequest.name());
-                            return;
-                        }
-                        case SIGN_KEY_USER_NAME -> {
-                            sink.accept("--mac-signing-key-user-name", certRequest.shortName());
-                            return;
-                        }
-                    }
-                }
-                case CODE_SIGN -> {
-                    switch (type) {
-                        case SIGN_KEY_IDENTITY -> {
-                            sink.accept("--mac-app-image-sign-identity", certRequest.name());
-                            return;
-                        }
-                        case SIGN_KEY_USER_NAME -> {
-                            sink.accept("--mac-signing-key-user-name", certRequest.shortName());
-                            return;
-                        }
-                    }
-                }
-            }
+        public List<String> asCmdlineArgs() {
+            String[] args = new String[2];
+            applyTo((optionName, optionValue) -> {
+                args[0] = optionName;
+                args[1] = optionValue;
+            });
+            return List.of(args);
+        }
 
-            throw new AssertionError();
+        private void applyTo(BiConsumer<String, String> sink) {
+            type.mapOptionName(certRequest.type()).ifPresent(optionName -> {
+                sink.accept(optionName.optionName(), optionValue());
+            });
+        }
+
+        private String optionValue() {
+            return customOptionValue.orElseGet(() -> {
+                switch (type) {
+                    case    SIGN_KEY_IDENTITY,
+                            SIGN_KEY_USER_FULL_NAME,
+                            SIGN_KEY_IDENTITY_APP_IMAGE,
+                            SIGN_KEY_IDENTITY_INSTALLER -> {
+                        return certRequest.name();
+                    }
+                    case SIGN_KEY_USER_SHORT_NAME -> {
+                        return certRequest.shortName();
+                    }
+                    default -> {
+                        throw new IllegalStateException();
+                    }
+                }
+            });
+        }
+
+        private static final Enquoter ENQUOTER = Enquoter.identity()
+                .setEnquotePredicate(Enquoter.QUOTE_IF_WHITESPACES).setQuoteChar('\'');
+    }
+
+    public record SignKeyOptionWithKeychain(SignKeyOption signKeyOption, ResolvedKeychain keychain) {
+
+        public SignKeyOptionWithKeychain {
+            Objects.requireNonNull(signKeyOption);
+            Objects.requireNonNull(keychain);
+        }
+
+        public SignKeyOptionWithKeychain(
+                SignKeyOption.Type type,
+                ResolvableCertificateRequest certRequest,
+                ResolvedKeychain keychain) {
+
+            this(new SignKeyOption(type, certRequest), keychain);
+        }
+
+        public SignKeyOptionWithKeychain(
+                SignKeyOption.Type type,
+                NamedCertificateRequestSupplier certRequestSupplier,
+                ResolvedKeychain keychain) {
+
+            this(type, certRequestSupplier.certRequest(keychain), keychain);
+        }
+
+        public SignKeyOptionWithKeychain(
+                String optionValue,
+                ResolvableCertificateRequest certRequest,
+                ResolvedKeychain keychain) {
+
+            this(new SignKeyOption(optionValue, certRequest), keychain);
+        }
+
+        public SignKeyOptionWithKeychain(
+                String optionValue,
+                NamedCertificateRequestSupplier certRequestSupplier,
+                ResolvedKeychain keychain) {
+
+            this(optionValue, certRequestSupplier.certRequest(keychain), keychain);
+        }
+
+        public SignKeyOptionWithKeychain(
+                SignKeyOption.Type type,
+                CertificateRequest certRequest,
+                ResolvedKeychain keychain) {
+
+            this(new SignKeyOption(
+                    type,
+                    new ResolvableCertificateRequest(
+                            certRequest,
+                            keychain.asCertificateResolver(),
+                            certRequest.toString())),
+                    keychain);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s@%s", signKeyOption, keychain.name());
+        }
+
+        public SignKeyOption.Type type() {
+            return signKeyOption.type();
+        }
+
+        public ResolvableCertificateRequest certRequest() {
+            return signKeyOption.certRequest();
+        }
+
+        public JPackageCommand addTo(JPackageCommand cmd) {
+            Optional.ofNullable(cmd.getArgumentValue("--mac-signing-keychain")).ifPresentOrElse(configuredKeychain -> {
+                if (!configuredKeychain.equals(keychain.name())) {
+                    throw new IllegalStateException(String.format(
+                            "Command line [%s] already has the '--mac-signing-keychain' option, not adding another one with [%s] value",
+                            cmd, keychain.name()));
+                }
+            }, () -> {
+                useKeychain(cmd, keychain);
+            });
+            return signKeyOption.addTo(cmd);
+        }
+
+        public JPackageCommand setTo(JPackageCommand cmd) {
+            cmd.removeArgumentWithValue("--mac-signing-keychain");
+            useKeychain(cmd, keychain);
+            return signKeyOption.setTo(cmd);
         }
     }
 
