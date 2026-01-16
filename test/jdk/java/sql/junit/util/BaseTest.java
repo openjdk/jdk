@@ -75,17 +75,6 @@ public class BaseTest {
     }
 
     /*
-     * DataProvider used to specify the value to set and check for
-     * methods using boolean values
-     */
-    protected Object[][] trueFalse() {
-        return new Object[][]{
-            {true},
-            {false}
-        };
-    }
-
-    /*
      * DataProvider used to specify the standard JDBC Types
      */
     protected Object[][] jdbcTypes() {

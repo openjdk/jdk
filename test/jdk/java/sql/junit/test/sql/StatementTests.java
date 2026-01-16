@@ -34,6 +34,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import org.junit.jupiter.params.provider.ValueSource;
 import util.BaseTest;
 import util.StubConnection;
 
@@ -98,7 +99,7 @@ public class StatementTests extends BaseTest {
      * enquoteIdentiifer is null
      */
     @ParameterizedTest
-    @MethodSource("trueFalse")
+    @ValueSource(booleans = {true, false})
     public void test04(boolean alwaysQuote) throws SQLException {
         Assertions.assertThrows(NullPointerException.class, () -> {
             stmt.enquoteIdentifier(null, alwaysQuote);

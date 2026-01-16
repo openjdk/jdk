@@ -22,6 +22,7 @@
  */
 package test.sql;
 
+import org.junit.jupiter.params.provider.ValueSource;
 import util.BaseTest;
 import util.StubConnection;
 
@@ -99,7 +100,7 @@ public class PreparedStatementTests extends BaseTest {
      * enquoteIdentiifer is null
      */
     @ParameterizedTest
-    @MethodSource("trueFalse")
+    @ValueSource(booleans = {true, false})
     public void test04(boolean alwaysQuote) throws SQLException {
         Assertions.assertThrows(NullPointerException.class, () -> {
             pstmt.enquoteIdentifier(null, alwaysQuote);
