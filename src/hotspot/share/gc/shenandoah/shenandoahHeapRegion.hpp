@@ -389,7 +389,9 @@ public:
 
   inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size, bool &ready_for_retire);
 
-  inline bool try_allocate(HeapWord* const obj, size_t const size);
+  // Use AtomicAccess::cmpxchg to allocate the object,
+  // prior value of _volatile_top will be always written to reference prior_volatile_top.
+  inline bool try_allocate(HeapWord* const obj, size_t const size, HeapWord* &prior_volatile_top);
 
   inline void clear_live_data();
   void set_live_data(size_t s);
@@ -461,7 +463,8 @@ public:
   }
 
   HeapWord* top() const {
-    return is_active_alloc_region() ? volatile_top() : _top;
+    HeapWord* v_top = volatile_top();
+    return v_top == nullptr ? _top : v_top;
   }
   void set_top(HeapWord* v) {
     _top = v;
@@ -479,8 +482,8 @@ public:
   size_t free() const           { return byte_size(top(),    end()); }
   size_t free_words() const     { return pointer_delta(end(), top()); }
   size_t free_bytes_for_atomic_alloc() const {
-    assert(is_active_alloc_region(), "Must be");
-    return byte_size(volatile_top(),    end());
+    HeapWord* v_top = volatile_top();
+    return v_top == nullptr ? 0 : byte_size(volatile_top(),    end());
   }
 
   // Does this region contain this address?
@@ -554,6 +557,7 @@ public:
   inline void set_active_alloc_region() {
     assert(_active_alloc_region.is_unset(), "Must be");
     // Sync _top to _volatile_top before setting _active_alloc_region flag to prepare for CAS allocation
+    assert(_volatile_top == nullptr, "Must be");
     AtomicAccess::store(&_volatile_top, _top);
     _active_alloc_region.set();
   }
@@ -563,18 +567,21 @@ public:
   // when the region is removed from the alloc region array in ShenandoahAllocator.
   inline void unset_active_alloc_region() {
     shenandoah_assert_heaplocked();
+    assert(is_active_alloc_region(), "Must be");
 
     // Before unset _active_alloc_region flag, _volatile_top needs to be set to the end of region,
     // this avoid race condition when the alloc region removed from the alloc regions array used by lock-free allocation in allocator.
-    HeapWord* current_volatile_top = volatile_top();
-    while (current_volatile_top != end() &&
-           AtomicAccess::cmpxchg(&_volatile_top, current_volatile_top, end()) != current_volatile_top) {
-      // Failed to exchange _volatile_top with end, get new _volatile_top and retry
-      current_volatile_top = volatile_top();
+    HeapWord* previous_volatile_top = nullptr;
+    while (true /*Always break out in the loop*/) {
+      previous_volatile_top = volatile_top();
+      assert(previous_volatile_top != nullptr, "Must not");
+      set_top(previous_volatile_top); // Sync current _volatile_top back to _top
+      if (AtomicAccess::cmpxchg(&_volatile_top, previous_volatile_top, (HeapWord*) nullptr) == previous_volatile_top) {
+        // break when successfully exchange _volatile_top to nullptr
+        break;
+      }
     }
-    set_top(current_volatile_top); // Sync current _volatile_top back to _top
-
-    assert(is_active_alloc_region(), "Must be");
+    assert(_top == previous_volatile_top, "Must be");
     _active_alloc_region.unset();
   }
 
