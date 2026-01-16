@@ -3175,7 +3175,6 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, int const r
     if (ALLOC_PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
       increase_bytes_allocated(reserved_bytes);
     }
-    r->set_active_alloc_region();
   }
 
   return reserved_regions_count;

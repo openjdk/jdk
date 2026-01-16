@@ -171,7 +171,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
 
   ShenandoahHeapRegionReadyForRetireChecker retire_checker(ready_for_retire);
   for (;/*Always return in the loop*/;) {
-    HeapWord* obj = top();
+    HeapWord* obj = volatile_top();
     size_t free_words = pointer_delta( end(), obj);
     if (free_words >= size) {
       if (try_allocate(obj, size)) {
@@ -195,7 +195,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
   ShenandoahHeapRegionReadyForRetireChecker retire_checker(ready_for_retire);
   for (;/*Always return in the loop*/;) {
     size_t adjusted_size = req.size();
-    HeapWord* obj = top();
+    HeapWord* obj = volatile_top();
     size_t free_words = pointer_delta(end(), obj);
     size_t aligned_free_words = align_down((free_words * HeapWordSize) >> LogHeapWordSize, MinObjAlignment);
     if (adjusted_size > aligned_free_words) {
@@ -220,7 +220,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
 
 bool ShenandoahHeapRegion::try_allocate(HeapWord* const obj, size_t const size) {
   HeapWord* new_top = obj + size;
-  if (AtomicAccess::cmpxchg(&_top, obj, new_top) == obj) {
+  if (AtomicAccess::cmpxchg(&_volatile_top, obj, new_top) == obj) {
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
     assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
     return true;

@@ -69,6 +69,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _empty_time(os::elapsedTime()),
   _top_before_promoted(nullptr),
   _state(committed ? _empty_committed : _empty_uncommitted),
+  _volatile_top(start + RegionSizeWords),
   _top(start),
   _tlab_allocs(0),
   _gclab_allocs(0),
@@ -572,6 +573,8 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
+  assert(!is_active_alloc_region(), "Must not be active alloc region");
+  assert(volatile_top() == end(), "Must be");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   set_top(bottom());

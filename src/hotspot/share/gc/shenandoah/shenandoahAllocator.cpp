@@ -274,7 +274,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion
       // For GC allocations, we advance update_watermark because the objects relocated into this memory during
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
-      region->concurrent_set_update_watermark(region->top());
+      region->concurrent_set_update_watermark(IS_SHARED_ALLOC_REGION ? region->volatile_top() : region->top());
     }
 
     if (!IS_SHARED_ALLOC_REGION && region->free_words() < PLAB::min_size()) {
@@ -301,7 +301,7 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion* alloc_region = &_alloc_regions[i];
     ShenandoahHeapRegion* region = alloc_region->address;
-    const size_t free_bytes = region == nullptr ? 0 : region->free();
+    const size_t free_bytes = region == nullptr ? 0 : region->free_bytes_for_atomic_alloc();
     if (region == nullptr || free_bytes / HeapWordSize < PLAB::min_size()) {
       if (region != nullptr) {
         region->unset_active_alloc_region();
@@ -334,13 +334,8 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
           *obj = allocate_in<false>(reserved[i], true, *req, *in_new_region, ready_for_retire);
           assert(*obj != nullptr, "Should always succeed");
           satisfy_alloc_req_first = false;
-          if (ready_for_retire) {
-            log_debug(gc, alloc)("%sAllocator: heap region %li has no space left after satisfying alloc req.",
-              _alloc_partition_name, reserved[i]->index());
-            reserved[i]->unset_active_alloc_region();
-            continue;
-          }
         }
+        reserved[i]->set_active_alloc_region();
         log_debug(gc, alloc)("%sAllocator: Storing heap region %li to alloc region %i",
           _alloc_partition_name, reserved[i]->index(), refreshable[i]->alloc_region_index);
         AtomicAccess::store(&refreshable[i]->address, reserved[i]);
