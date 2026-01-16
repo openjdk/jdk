@@ -566,6 +566,7 @@ void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  mixed_candidate_garbage_words = 0;
   set_top(bottom());
   clear_live_data();
   reset_alloc_metadata();
