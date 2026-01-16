@@ -265,13 +265,6 @@ final class SSLConfiguration implements Cloneable {
         }
 
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
-        this.maximumProtocolVersion = ProtocolVersion.NONE;
-        for (ProtocolVersion pv : enabledProtocols) {
-            if (pv.compareTo(maximumProtocolVersion) > 0) {
-                this.maximumProtocolVersion = pv;
-            }
-        }
-
         // Configurations per SSLSocket or SSLEngine instance.
         this.isClientMode = isClientMode;
         this.enableSessionCreation = true;
@@ -341,13 +334,6 @@ final class SSLConfiguration implements Cloneable {
         sa = params.getProtocols();
         if (sa != null) {
             this.enabledProtocols = ProtocolVersion.namesOf(sa);
-
-            this.maximumProtocolVersion = ProtocolVersion.NONE;
-            for (ProtocolVersion pv : enabledProtocols) {
-                if (pv.compareTo(maximumProtocolVersion) > 0) {
-                    this.maximumProtocolVersion = pv;
-                }
-            }
         }   // otherwise, use the default values
 
         if (params.getNeedClientAuth()) {
