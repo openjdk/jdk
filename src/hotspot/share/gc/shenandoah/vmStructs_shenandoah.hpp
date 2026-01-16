@@ -30,7 +30,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 
-#define VM_STRUCTS_SHENANDOAH(nonstatic_field, volatile_nonstatic_field, static_field)                \
+#define VM_STRUCTS_SHENANDOAH(nonstatic_field, volatile_nonstatic_field, static_field)                    \
   nonstatic_field(ShenandoahHeap, _num_regions,                        size_t)                            \
   nonstatic_field(ShenandoahHeap, _regions,                            ShenandoahHeapRegion**)            \
   nonstatic_field(ShenandoahHeap, _log_min_obj_alignment_in_bytes,     int)                               \
