@@ -804,6 +804,12 @@ The following commands are available:
         `f` = has final method, `W` = methods rewritten, `C` = marked with `@Contended` annotation,
         `R` = has been redefined, `S` = is shared class (BOOLEAN, false)
 
+    -   `-location`: (Optional) Print the location of the class file from which the class is loaded (if available)
+         If provided by its defining ClassLoader, this option will print a URL specifying the location of the 
+         class file (directory, jar or other URL location) from which this class was loaded.
+
+         Note: JDK (and other classes) loaded by a ClassLoader that does not provide a location URL to the JVM will omit this field.
+
 `VM.classloader_stats`
 :   Print statistics about all ClassLoaders.
 
