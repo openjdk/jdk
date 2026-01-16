@@ -27,12 +27,13 @@
  * @summary Trigger StringTable::clean_dead_entries or SymbolTable::clean_dead_entries
  *          with -XX:TrimNativeHeapInterval enabled,should not violate lock ordering.
  * @requires vm.debug
+ * @requires vm.gc != "Epsilon"
  * @library /test/lib
  * @modules java.compiler
- * @run main/othervm -XX:+UseG1GC -Xms128m -Xmx128m
+ * @run main/othervm -Xms128m -Xmx128m
  *                   -XX:TrimNativeHeapInterval=300000
  *                   TestTrimNativeHeapIntervalTablesCleanup string
- * @run main/othervm -XX:+UseG1GC -Xms128m -Xmx128m
+ * @run main/othervm -Xms128m -Xmx128m
  *                   -XX:TrimNativeHeapInterval=300000
  *                   TestTrimNativeHeapIntervalTablesCleanup symbol
  */
