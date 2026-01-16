@@ -150,7 +150,7 @@ public class DefaultMetalTheme extends MetalTheme {
     /**
      * Returns the ideal font style for the font identified by key.
      */
-    static int getDefaultFontStyle(int key) {
+    public static int getDefaultFontStyle(int key) {
         if (key != WINDOW_TITLE_FONT) {
             Object boldMetal = null;
             if (AppContext.getAppContext().get(
