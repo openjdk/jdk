@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
-import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
+import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_CATEGORY;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_STORE;
@@ -52,11 +52,13 @@ import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 import jdk.jpackage.internal.SigningIdentityBuilder.ExpiredCertificateException;
 import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
+import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
@@ -71,6 +73,7 @@ import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
@@ -276,16 +279,12 @@ final class MacFromOptions {
 
         final var builder = new MacPackageBuilder(createPackageBuilder(options, app.app(), type));
 
-        app.externalApp()
-                .map(ExternalApplication::extra)
-                .flatMap(MAC_SIGN::findIn)
-                .ifPresent(builder::predefinedAppImageSigned);
-
-        PREDEFINED_RUNTIME_IMAGE.findIn(options)
-                .map(MacBundle::new)
-                .filter(MacBundle::isValid)
-                .map(MacBundle::isSigned)
-                .ifPresent(builder::predefinedAppImageSigned);
+        for (OptionValue<Path> ov : List.of(PREDEFINED_APP_IMAGE, PREDEFINED_RUNTIME_IMAGE)) {
+            ov.findIn(options)
+                    .flatMap(MacBundle::fromPath)
+                    .map(MacPackagingPipeline::isSigned)
+                    .ifPresent(builder::predefinedAppImageSigned);
+        }
 
         return builder;
     }

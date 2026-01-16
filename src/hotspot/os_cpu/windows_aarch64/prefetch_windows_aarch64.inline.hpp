@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2020, 2026, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 #ifndef OS_CPU_WINDOWS_AARCH64_PREFETCH_WINDOWS_AARCH64_INLINE_HPP
 #define OS_CPU_WINDOWS_AARCH64_PREFETCH_WINDOWS_AARCH64_INLINE_HPP
 
-#include "runtime/prefetch.hpp"
-
+// Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read (const void *loc, intx interval) {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.jpackage.internal;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Log
@@ -105,29 +104,6 @@ public class Log {
             }
         }
 
-        public void verbose(List<String> strings,
-                List<String> output, int returnCode, long pid) {
-            if (verbose) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Command [PID: ");
-                sb.append(pid);
-                sb.append("]:\n   ");
-
-                for (String s : strings) {
-                    sb.append(" " + s);
-                }
-                verbose(sb.toString());
-                if (output != null && !output.isEmpty()) {
-                    sb = new StringBuilder("Output:");
-                    for (String s : output) {
-                        sb.append("\n    " + s);
-                    }
-                    verbose(sb.toString());
-                }
-                verbose("Returned: " + returnCode + "\n");
-            }
-        }
-
         private String addTimestamp(String msg) {
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
             Date time = new Date(System.currentTimeMillis());
@@ -176,10 +152,5 @@ public class Log {
 
     public static void verbose(Throwable t) {
        instance.get().verbose(t);
-    }
-
-    public static void verbose(List<String> strings, List<String> out,
-            int ret, long pid) {
-       instance.get().verbose(strings, out, ret, pid);
     }
 }

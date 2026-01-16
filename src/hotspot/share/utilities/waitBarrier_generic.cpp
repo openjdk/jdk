@@ -181,7 +181,7 @@ void GenericWaitBarrier::Cell::disarm(int32_t expected_tag) {
            tag, waiters);
 
     int64_t new_state = encode(0, waiters);
-    if (_state.compare_exchange(state, new_state) == state) {
+    if (_state.compare_set(state, new_state)) {
       // Successfully disarmed.
       break;
     }
@@ -218,7 +218,7 @@ void GenericWaitBarrier::Cell::wait(int32_t expected_tag) {
            tag, waiters);
 
     int64_t new_state = encode(tag, waiters + 1);
-    if (_state.compare_exchange(state, new_state) == state) {
+    if (_state.compare_set(state, new_state)) {
       // Success! Proceed to wait.
       break;
     }
@@ -247,7 +247,7 @@ void GenericWaitBarrier::Cell::wait(int32_t expected_tag) {
            tag, waiters);
 
     int64_t new_state = encode(tag, waiters - 1);
-    if (_state.compare_exchange(state, new_state) == state) {
+    if (_state.compare_set(state, new_state)) {
       // Success!
       break;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.util;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -32,39 +32,43 @@ import java.util.regex.Pattern;
 /**
  * Add quotes to the given string in a configurable way.
  */
-final class Enquoter {
+public final class Enquoter {
 
     private Enquoter() {
         setQuoteChar('"');
     }
 
-    static Enquoter forPropertyValues() {
+    public static Enquoter identity() {
+        return new Enquoter();
+    }
+
+    public static Enquoter forPropertyValues() {
         return new Enquoter()
                 .setEnquotePredicate(QUOTE_IF_WHITESPACES)
                 .setEscaper(PREPEND_BACKSLASH);
     }
 
-    static Enquoter forShellLiterals() {
+    public static Enquoter forShellLiterals() {
         return forShellLiterals('\'');
     }
 
-    static Enquoter forShellLiterals(char quoteChar) {
+    public static Enquoter forShellLiterals(char quoteChar) {
         return new Enquoter()
                 .setQuoteChar(quoteChar)
                 .setEnquotePredicate(x -> true)
                 .setEscaper(PREPEND_BACKSLASH);
     }
 
-    String applyTo(String v) {
+    public String applyTo(String v) {
         if (!needQuotes.test(v)) {
             return v;
         } else {
             var buf = new StringBuilder();
             buf.appendCodePoint(beginQuoteChr);
-            Optional.of(escaper).ifPresentOrElse(op -> {
+            Optional.ofNullable(escaper).ifPresentOrElse(op -> {
                 v.codePoints().forEachOrdered(chr -> {
                     if (chr == beginQuoteChr || chr == endQuoteChr) {
-                        escaper.accept(chr, buf);
+                        op.accept(chr, buf);
                     } else {
                         buf.appendCodePoint(chr);
                     }
@@ -77,28 +81,23 @@ final class Enquoter {
         }
     }
 
-    Enquoter setQuoteChar(char chr) {
+    public Enquoter setQuoteChar(char chr) {
         beginQuoteChr = chr;
         endQuoteChr = chr;
         return this;
     }
 
-    Enquoter setEscaper(BiConsumer<Integer, StringBuilder> v) {
+    public Enquoter setEscaper(BiConsumer<Integer, StringBuilder> v) {
         escaper = v;
         return this;
     }
 
-    Enquoter setEnquotePredicate(Predicate<String> v) {
+    public Enquoter setEnquotePredicate(Predicate<String> v) {
         needQuotes = v;
         return this;
     }
 
-    private int beginQuoteChr;
-    private int endQuoteChr;
-    private BiConsumer<Integer, StringBuilder> escaper;
-    private Predicate<String> needQuotes = str -> false;
-
-    private static final Predicate<String> QUOTE_IF_WHITESPACES = new Predicate<String>() {
+    public static final Predicate<String> QUOTE_IF_WHITESPACES = new Predicate<String>() {
         @Override
         public boolean test(String t) {
             return pattern.matcher(t).find();
@@ -106,8 +105,13 @@ final class Enquoter {
         private final Pattern pattern = Pattern.compile("\\s");
     };
 
-    private static final BiConsumer<Integer, StringBuilder> PREPEND_BACKSLASH = (chr, buf) -> {
+    public static final BiConsumer<Integer, StringBuilder> PREPEND_BACKSLASH = (chr, buf) -> {
         buf.append('\\');
         buf.appendCodePoint(chr);
     };
+
+    private int beginQuoteChr;
+    private int endQuoteChr;
+    private BiConsumer<Integer, StringBuilder> escaper;
+    private Predicate<String> needQuotes = str -> false;
 }

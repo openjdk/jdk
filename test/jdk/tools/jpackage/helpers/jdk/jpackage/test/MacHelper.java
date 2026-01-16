@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import static jdk.jpackage.internal.util.PListWriter.writeStringArray;
 import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
 import static jdk.jpackage.internal.util.XmlUtils.initDocumentBuilder;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 
 import java.io.ByteArrayInputStream;
@@ -45,31 +46,31 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.RetryExecutor;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
@@ -89,39 +90,55 @@ public final class MacHelper {
         // See JDK-8373105. "hdiutil" does not handle such cases very good.
         final var mountRoot = TKit.createTempDirectory("mountRoot");
 
-        // Explode DMG assuming this can require interaction, thus use `yes`.
-        String attachCMD[] = {
-            "sh", "-c",
-            String.join(" ", "yes", "|", "/usr/bin/hdiutil", "attach",
-                    JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
-                    "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
-                    "-nobrowse", "-plist")};
-        RetryExecutor attachExecutor = new RetryExecutor();
-        try {
-            // 10 times with 6 second delays.
-            attachExecutor.setMaxAttemptsCount(10)
-                    .setAttemptTimeoutMillis(6000)
-                    .setWriteOutputToFile(true)
-                    .saveOutput(true)
-                    .execute(attachCMD);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        // Explode the DMG assuming this can require interaction if the DMG has a license, thus use `yes`.
+        final var attachExec = Executor.of("sh", "-c", String.join(" ",
+                "yes",
+                "|",
+                "/usr/bin/hdiutil",
+                "attach",
+                JPackageCommand.escapeAndJoin(cmd.outputBundle().toString()),
+                "-mountroot", PathUtils.normalizedAbsolutePathString(mountRoot),
+                "-nobrowse",
+                "-plist"
+        )).saveOutput().storeOutputInFiles().binaryOutput();
 
-        Path mountPoint = null;
+        final var attachResult = attachExec.executeAndRepeatUntilExitCode(0, 10, 6);
+
+        final Path mountPoint;
+
+        boolean mountPointInitialized = false;
         try {
+            byte[] stdout = attachResult.byteStdout();
+
+            // If the DMG has a license, it will be printed to the stdout before the plist content.
+            // All bytes before the XML declaration of the plist must be skipped.
+            // We need to find the location of the {'<', '?', 'x', 'm', 'l'} byte array
+            // (the XML declaration) in the captured binary stdout.
+            // Instead of crafting an ad-hoc function that operates on byte arrays,
+            // we will convert the byte array into a String instance using
+            // an 8-bit character set (ISO-8859-1) and use the standard String#indexOf().
+            var startPlistIndex = new String(stdout, StandardCharsets.ISO_8859_1).indexOf("<?xml");
+
+            byte[] plistXml;
+            if (startPlistIndex > 0) {
+                plistXml = Arrays.copyOfRange(stdout, startPlistIndex, stdout.length);
+            } else {
+                plistXml = stdout;
+            }
+
             // One of "dict" items of "system-entities" array property should contain "mount-point" string property.
-            mountPoint = readPList(attachExecutor.getOutput()).queryArrayValue("system-entities", false).map(PListReader.class::cast).map(dict -> {
-                try {
-                    return dict.queryValue("mount-point");
-                } catch (NoSuchElementException ex) {
-                    return (String)null;
-                }
-            }).filter(Objects::nonNull).map(Path::of).findFirst().orElseThrow();
+            mountPoint = readPList(plistXml).queryArrayValue("system-entities", false)
+                    .map(PListReader.class::cast)
+                    .map(dict -> {
+                        return dict.findValue("mount-point");
+                    })
+                    .filter(Optional::isPresent).map(Optional::get)
+                    .map(Path::of).findFirst().orElseThrow();
+            mountPointInitialized = true;
         } finally {
-            if (mountPoint == null) {
+            if (!mountPointInitialized) {
                 TKit.trace("Unexpected plist file missing `system-entities` array:");
-                attachExecutor.getOutput().forEach(TKit::trace);
+                attachResult.toCharacterResult(attachExec.charset(), false).stdout().forEach(TKit::trace);
                 TKit.trace("Done");
             }
         }
@@ -138,39 +155,27 @@ public final class MacHelper {
                 ThrowingConsumer.toConsumer(consumer).accept(childPath);
             }
         } finally {
-            String detachCMD[] = {
-                "/usr/bin/hdiutil",
-                "detach",
-                "-verbose",
-                mountPoint.toAbsolutePath().toString()};
             // "hdiutil detach" might not work right away due to resource busy error, so
             // repeat detach several times.
-            RetryExecutor detachExecutor = new RetryExecutor();
-            // Image can get detach even if we got resource busy error, so stop
-            // trying to detach it if it is no longer attached.
-            final Path mp = mountPoint;
-            detachExecutor.setExecutorInitializer(exec -> {
-                if (!Files.exists(mp)) {
-                    detachExecutor.abort();
+            new RetryExecutor<Void, RuntimeException>(RuntimeException.class).setExecutable(context -> {
+                var exec = Executor.of("/usr/bin/hdiutil", "detach").storeOutputInFiles();
+                if (context.isLastAttempt()) {
+                    // The last attempt, force detach.
+                    exec.addArgument("-force");
                 }
-            });
-            try {
-                // 10 times with 6 second delays.
-                detachExecutor.setMaxAttemptsCount(10)
-                        .setAttemptTimeoutMillis(6000)
-                        .setWriteOutputToFile(true)
-                        .saveOutput(true)
-                        .execute(detachCMD);
-            } catch (IOException ex) {
-                if (!detachExecutor.isAborted()) {
-                    // Now force to detach if it still attached
-                    if (Files.exists(mountPoint)) {
-                        Executor.of("/usr/bin/hdiutil", "detach",
-                                    "-force", "-verbose")
-                                 .addArgument(mountPoint).execute();
-                    }
+                exec.addArgument(mountPoint);
+
+                // The image can get detached even if we get a resource busy error,
+                // so execute the detach command without checking the exit code.
+                var result = exec.executeWithoutExitCodeCheck();
+
+                if (result.getExitCode() == 0 || !Files.exists(mountPoint)) {
+                    // Detached successfully!
+                    return null;
+                } else {
+                    throw new RuntimeException(String.format("[%s] mount point still attached", mountPoint));
                 }
-            }
+            }).setMaxAttemptsCount(10).setAttemptTimeout(6, TimeUnit.SECONDS).execute();
         }
     }
 
@@ -184,19 +189,13 @@ public final class MacHelper {
 
     public static PListReader readPList(Path path) {
         TKit.assertReadableFileExists(path);
-        return ThrowingSupplier.toSupplier(() -> readPList(Files.readAllLines(
-                path))).get();
+        return readPList(toFunction(Files::readAllBytes).apply(path));
     }
 
-    public static PListReader readPList(List<String> lines) {
-        return readPList(lines.stream());
-    }
-
-    public static PListReader readPList(Stream<String> lines) {
-        return ThrowingSupplier.toSupplier(() -> new PListReader(lines
-                // Skip leading lines before xml declaration
-                .dropWhile(Pattern.compile("\\s?<\\?xml\\b.+\\?>").asPredicate().negate())
-                .collect(Collectors.joining()).getBytes(StandardCharsets.UTF_8))).get();
+    public static PListReader readPList(byte[] xml) {
+        return ThrowingSupplier.toSupplier(() -> {
+            return new PListReader(xml);
+        }).get();
     }
 
     public static Map<String, String> flatMapPList(PListReader plistReader) {
@@ -281,13 +280,13 @@ public final class MacHelper {
             throw new UnsupportedOperationException();
         }
 
-        var runtimeImage = Optional.ofNullable(cmd.getArgumentValue("--runtime-image")).map(Path::of);
+        var runtimeImageBundle = Optional.ofNullable(cmd.getArgumentValue("--runtime-image")).map(Path::of).flatMap(MacBundle::fromPath);
         var appImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of);
 
-        if (cmd.isRuntime() && Files.isDirectory(runtimeImage.orElseThrow().resolve("Contents/_CodeSignature"))) {
+        if (cmd.isRuntime() && runtimeImageBundle.map(MacHelper::isBundleSigned).orElse(false)) {
             // If the predefined runtime is a signed bundle, bundled image should be signed too.
             return true;
-        } else if (appImage.map(AppImageFile::load).map(AppImageFile::macSigned).orElse(false)) {
+        } else if (appImage.map(MacHelper::isBundleSigned).orElse(false)) {
             // The external app image is signed, so the app image is signed too.
             return true;
         }
@@ -315,6 +314,14 @@ public final class MacHelper {
                 createFaPListFragmentFromFaProperties(cmd, xml);
             }
         }).run();
+    }
+
+    static boolean isBundleSigned(Path bundleRoot) {
+        return isBundleSigned(MacBundle.fromPath(bundleRoot).orElseThrow(IllegalArgumentException::new));
+    }
+
+    static boolean isBundleSigned(MacBundle bundle) {
+        return MacSignVerify.findSpctlSignOrigin(MacSignVerify.SpctlType.EXEC, bundle.root(), true).isPresent();
     }
 
     private static void createFaPListFragmentFromFaProperties(JPackageCommand cmd, XMLStreamWriter xml)
@@ -399,7 +406,7 @@ public final class MacHelper {
 
         var predefinedAppImage = Path.of(Optional.ofNullable(cmd.getArgumentValue("--app-image")).orElseThrow(IllegalArgumentException::new));
 
-        var plistPath = ApplicationLayout.macAppImage().resolveAt(predefinedAppImage).contentDirectory().resolve("Info.plist");
+        var plistPath = MacBundle.fromPath(predefinedAppImage).orElseThrow().infoPlistFile();
 
         try (var plistStream = Files.newInputStream(plistPath)) {
             var plist = new PListReader(initDocumentBuilder().parse(plistStream));

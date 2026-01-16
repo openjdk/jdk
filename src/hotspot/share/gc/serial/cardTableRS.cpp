@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/serial/serialHeap.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "memory/iterator.inline.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
 
 void CardTableRS::scan_old_to_young_refs(TenuredGeneration* tg, HeapWord* saved_top) {

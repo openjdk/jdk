@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -98,8 +98,8 @@ public class TestEmergencyDumpAtOOM {
             // Check OldObjectSample events
             if (oldObjects.get() > 0L) {
                 if (shouldCrash) {
-                    Asserts.assertEquals("VM Error", shutdownReason.get());
-                    Asserts.assertEquals("Out of Memory", dumpReason.get());
+                    Asserts.assertEquals("CrashOnOutOfMemoryError", shutdownReason.get());
+                    Asserts.assertEquals("CrashOnOutOfMemoryError", dumpReason.get());
                 } else {
                     Asserts.assertEquals("No remaining non-daemon Java threads", shutdownReason.get());
                 }

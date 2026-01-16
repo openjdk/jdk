@@ -450,6 +450,13 @@ public class BytecodeHelpers {
         return ret;
     }
 
+    public static void validateIncrement(Opcode opcode, int slot, int constant) {
+        if (validateAndIsWideIinc(slot, constant) && opcode != Opcode.IINC_W) {
+            throw new IllegalArgumentException(
+                    "IINC: operands require wide encoding for %s".formatted(opcode));
+        }
+    }
+
     public static void validateRet(Opcode opcode, int slot) {
         if (opcode == Opcode.RET && (slot & ~0xFF) == 0 ||
                 opcode == Opcode.RET_W && (slot & ~0xFFFF) == 0)

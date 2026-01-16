@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,15 @@ public interface Types {
      * TypeMirror} objects are the same type. In particular, two
      * {@code TypeMirror} objects can have different annotations and
      * still be considered the same.
+     *
+     * @apiNote The identity of a {@code TypeMirror} involves implicit
+     * state not directly accessible from its methods, including state
+     * about the presence of unrelated types. {@code TypeMirror}
+     * objects created by different implementations of these
+     * interfaces should <i>not</i> be expected to compare as equal
+     * even if &quot;the same&quot; type is being modeled; this is
+     * analogous to the inequality of {@code Class} objects for the
+     * same class file loaded through different class loaders.
      *
      * @param t1  the first type
      * @param t2  the second type

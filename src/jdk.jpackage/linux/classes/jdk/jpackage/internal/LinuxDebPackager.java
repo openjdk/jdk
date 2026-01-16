@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
@@ -76,11 +75,11 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
             try {
                 // Try the real path first as it works better on newer Ubuntu versions
-                return findProvidingPackages(realPath, sysEnv.dpkg());
+                return findProvidingPackages(realPath, sysEnv);
             } catch (IOException ex) {
                 // Try the default path if differ
                 if (!realPath.equals(file)) {
-                    return findProvidingPackages(file, sysEnv.dpkg());
+                    return findProvidingPackages(file, sysEnv);
                 } else {
                     throw ex;
                 }
@@ -107,7 +106,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
         properties.forEach(property -> cmdline.add(property.name));
 
-        Map<String, String> actualValues = Executor.of(cmdline.toArray(String[]::new))
+        Map<String, String> actualValues = Executor.of(cmdline)
                 .saveOutput(true)
                 .executeExpectSuccess()
                 .getOutput().stream()
@@ -158,9 +157,8 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         cmdline.addAll(List.of("-b", env.appImageDir().toString(), debFile.toAbsolutePath().toString()));
 
         // run dpkg
-        RetryExecutor.retryOnKnownErrorMessage(
-                "semop(1): encountered an error: Invalid argument").execute(
-                        cmdline.toArray(String[]::new));
+        Executor.of(cmdline).retryOnKnownErrorMessage(
+                "semop(1): encountered an error: Invalid argument").execute();
 
         Log.verbose(I18N.format("message.output-to-location", debFile.toAbsolutePath()));
     }
@@ -233,7 +231,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         }
     }
 
-    private static Stream<String> findProvidingPackages(Path file, Path dpkg) throws IOException {
+    private static Stream<String> findProvidingPackages(Path file, LinuxDebSystemEnvironment sysEnv) throws IOException {
         //
         // `dpkg -S` command does glob pattern lookup. If not the absolute path
         // to the file is specified it might return mltiple package names.
@@ -279,9 +277,9 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         Set<String> archPackages = new HashSet<>();
         Set<String> otherPackages = new HashSet<>();
 
-        var debArch = LinuxPackageArch.getValue(LINUX_DEB);
+        var debArch = sysEnv.packageArch().value();
 
-        Executor.of(dpkg.toString(), "-S", file.toString())
+        Executor.of(sysEnv.dpkg().toString(), "-S", file.toString())
                 .saveOutput(true).executeExpectSuccess()
                 .getOutput().forEach(line -> {
                     Matcher matcher = PACKAGE_NAME_REGEX.matcher(line);

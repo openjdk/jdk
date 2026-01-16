@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,10 +73,7 @@ public class Algorithms {
          * <p>
          *
          * Note that this method can throw Failure if any exception
-         * is thrown while eating memory. To avoid OOM while allocating
-         * exception we preallocate it before the lunch starts. It means
-         * that exception stack trace does not correspond to the place
-         * where exception is thrown, but points at start of the method.
+         * is thrown while eating memory.
          *
          * This method uses nsk.share.test.Stresser class to control
          * it's execution. Consumed number of iterations depends on

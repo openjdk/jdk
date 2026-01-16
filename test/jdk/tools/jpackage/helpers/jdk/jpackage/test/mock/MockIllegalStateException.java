@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jpackage.test.mock;
 
-#ifndef SHARE_RUNTIME_PREFETCH_HPP
-#define SHARE_RUNTIME_PREFETCH_HPP
+/**
+ * Indicates command mock internal error.
+ */
+public final class MockIllegalStateException extends IllegalStateException {
 
-#include "memory/allStatic.hpp"
+    public MockIllegalStateException(String msg) {
+        super(msg);
+    }
 
-// If calls to prefetch methods are in a loop, the loop should be cloned
-// such that if Prefetch{Scan,Copy}Interval and/or PrefetchFieldInterval
-// say not to do prefetching, these methods aren't called.  At the very
-// least, they take up a memory issue slot.  They should be implemented
-// as inline assembly code: doing an actual call isn't worth the cost.
-
-class Prefetch : AllStatic {
- public:
-  // Prefetch anticipating read; must not fault, semantically a no-op
-  static void read(const void* loc, intx interval);
-
-  // Prefetch anticipating write; must not fault, semantically a no-op
-  static void write(void* loc, intx interval);
-};
-
-#endif // SHARE_RUNTIME_PREFETCH_HPP
+    private static final long serialVersionUID = 1L;
+}

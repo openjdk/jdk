@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,20 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import java.util.ArrayList;
 import jdk.jpackage.internal.model.StandardPackageType;
+import jdk.jpackage.internal.util.CommandOutputControl;
+import jdk.jpackage.internal.util.Result;
 
-final class LinuxPackageArch {
+record LinuxPackageArch(String value) {
 
-    static String getValue(StandardPackageType pkgType) {
+    static Result<LinuxPackageArch> create(StandardPackageType pkgType) {
         switch (pkgType) {
             case LINUX_RPM -> {
-                return RpmPackageArch.VALUE;
+                return rpm().map(LinuxPackageArch::new);
             }
             case LINUX_DEB -> {
-                return DebPackageArch.VALUE;
+                return deb().map(LinuxPackageArch::new);
             }
             default -> {
                 throw new IllegalArgumentException();
@@ -44,62 +46,51 @@ final class LinuxPackageArch {
         }
     }
 
-    private static class DebPackageArch {
-
-        static final String VALUE = toSupplier(DebPackageArch::getValue).get();
-
-        private static String getValue() throws IOException {
-            return Executor.of("dpkg", "--print-architecture").saveOutput(true)
-                    .executeExpectSuccess().getOutput().get(0);
-        }
+    private static Result<String> deb() {
+        var exec = Executor.of("dpkg", "--print-architecture").saveOutput(true);
+        return Result.of(exec::executeExpectSuccess, IOException.class)
+                .flatMap(LinuxPackageArch::getStdoutFirstLine);
     }
 
-    private static class RpmPackageArch {
-
-        /*
-         * Various ways to get rpm arch. Needed to address JDK-8233143. rpmbuild is mandatory for
-         * rpm packaging, try it first. rpm is optional and may not be available, use as the last
-         * resort.
-         */
-        private static enum RpmArchReader {
-            Rpmbuild("rpmbuild", "--eval=%{_target_cpu}"),
-            Rpm("rpm", "--eval=%{_target_cpu}");
-
-            RpmArchReader(String... cmdline) {
-                this.cmdline = cmdline;
+    private static Result<String> rpm() {
+        var errors = new ArrayList<Exception>();
+        for (var tool : RpmArchReader.values()) {
+            var result = tool.getRpmArch();
+            if (result.hasValue()) {
+                return result;
+            } else {
+                errors.addAll(result.errors());
             }
-
-            String getRpmArch() throws IOException {
-                Executor exec = Executor.of(cmdline).saveOutput(true);
-                switch (this) {
-                    case Rpm -> {
-                        exec.executeExpectSuccess();
-                    }
-                    case Rpmbuild -> {
-                        if (exec.execute() != 0) {
-                            return null;
-                        }
-                    }
-                    default -> {
-                        throw new UnsupportedOperationException();
-                    }
-                }
-                return exec.getOutput().get(0);
-            }
-
-            private final String[] cmdline;
         }
 
-        static final String VALUE = toSupplier(RpmPackageArch::getValue).get();
+        return Result.ofErrors(errors);
+    }
 
-        private static String getValue() throws IOException {
-            for (var rpmArchReader : RpmArchReader.values()) {
-                var rpmArchStr = rpmArchReader.getRpmArch();
-                if (rpmArchStr != null) {
-                    return rpmArchStr;
-                }
-            }
-            throw new RuntimeException("error.rpm-arch-not-detected");
+    /*
+     * Various ways to get rpm arch. Needed to address JDK-8233143. rpmbuild is mandatory for
+     * rpm packaging, try it first. rpm is optional and may not be available, use as the last
+     * resort.
+     */
+    private enum RpmArchReader {
+        RPMBUILD("rpmbuild", "--eval=%{_target_cpu}"),
+        RPM("rpm", "--eval=%{_target_cpu}");
+
+        RpmArchReader(String... cmdline) {
+            this.cmdline = cmdline;
         }
+
+        Result<String> getRpmArch() {
+            var exec = Executor.of(cmdline).saveOutput(true);
+            return Result.of(exec::executeExpectSuccess, IOException.class)
+                    .flatMap(LinuxPackageArch::getStdoutFirstLine);
+        }
+
+        private final String[] cmdline;
+    }
+
+    private static Result<String> getStdoutFirstLine(CommandOutputControl.Result result) {
+        return Result.of(() -> {
+            return result.stdout().stream().findFirst().orElseThrow(result::unexpected);
+        }, IOException.class);
     }
 }

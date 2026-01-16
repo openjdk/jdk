@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -780,10 +782,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     /**
-     * Starts a new thread. In this thread calls
-     * {@link #useToolProviderByDefault(ToolProvider)} with the specified
-     * {@code jpackageToolProvider} and then calls {@code workload.run()}. Joins the
-     * thread.
+     * In a separate thread calls {@link #useToolProviderByDefault(ToolProvider)}
+     * with the specified {@code jpackageToolProvider} and then calls
+     * {@code workload.run()}. Joins the thread.
      * <p>
      * The idea is to run the {@code workload} in the context of the specified
      * jpackage {@code ToolProvider} without altering the global variable holding
@@ -794,13 +795,23 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
      * @param jpackageToolProvider jpackage {@code ToolProvider}
      * @param workload             the workload to run
      */
-    public static void withToolProvider(ToolProvider jpackageToolProvider, Runnable workload) {
-        Objects.requireNonNull(jpackageToolProvider);
+    public static void withToolProvider(Runnable workload, ToolProvider jpackageToolProvider) {
         Objects.requireNonNull(workload);
-        ThrowingRunnable.toRunnable(Thread.ofVirtual().start(() -> {
+        Objects.requireNonNull(jpackageToolProvider);
+
+        CompletableFuture.runAsync(() -> {
+            var oldValue = defaultToolProvider.get();
             useToolProviderByDefault(jpackageToolProvider);
-            workload.run();
-        })::join).run();
+            try {
+                workload.run();
+            } finally {
+                defaultToolProvider.set(oldValue);
+            }
+            // Run the future in a new native thread. Don't run it in a virtual/pooled thread.
+            // Pooled and/or virtual threads are problematic when used with inheritable thread-local variables.
+            // TKit class depends on such a variable, which results in intermittent test failures
+            // if the default executor runs this future.
+        }, Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())).join();
     }
 
     public JPackageCommand useToolProvider(boolean v) {
@@ -1022,7 +1033,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().iterator());
         }
 
-        if (result.exitCode() == 0 && expectedExitCode.isPresent()) {
+        if (result.getExitCode() == 0 && expectedExitCode.isPresent()) {
             verifyActions.run();
         }
 
@@ -1374,7 +1385,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             if (!isImagePackageType() && hasArgument("--app-image")) {
                 // Build native macOS package from an external app image.
                 // If the external app image is signed, ".jpackage.xml" file should be kept, otherwise removed.
-                return AppImageFile.load(Path.of(getArgumentValue("--app-image"))).macSigned();
+                return MacHelper.isBundleSigned(Path.of(getArgumentValue("--app-image")));
             }
         }
 
@@ -1395,13 +1406,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             final AppImageFile aif = AppImageFile.load(rootDir);
 
             if (TKit.isOSX()) {
-                boolean expectedValue = MacHelper.appImageSigned(this);
-                boolean actualValue = aif.macSigned();
-                TKit.assertEquals(expectedValue, actualValue,
-                    "Check for unexpected value of <signed> property in app image file");
-
-                expectedValue = hasArgument("--mac-app-store");
-                actualValue = aif.macAppStore();
+                var expectedValue = hasArgument("--mac-app-store");
+                var actualValue = aif.macAppStore();
                 TKit.assertEquals(expectedValue, actualValue,
                     "Check for unexpected value of <app-store> property in app image file");
             }
@@ -1426,7 +1432,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         } else {
             if (TKit.isOSX() && hasArgument("--app-image")) {
                 String appImage = getArgumentValue("--app-image");
-                if (AppImageFile.load(Path.of(appImage)).macSigned()) {
+                if (MacHelper.isBundleSigned(Path.of(appImage))) {
                     assertFileNotInAppImage(lookupPath);
                 } else {
                     assertFileInAppImage(lookupPath);

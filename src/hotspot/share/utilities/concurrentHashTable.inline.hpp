@@ -157,7 +157,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   if (is_locked()) {
     return false;
   }
-  if (_first.compare_exchange(expect, node) == expect) {
+  if (_first.compare_set(expect, node)) {
     return true;
   }
   return false;
@@ -172,7 +172,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   }
   // We will expect a clean first pointer.
   Node* tmp = first();
-  if (_first.compare_exchange(tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
+  if (_first.compare_set(tmp, set_state(tmp, STATE_LOCK_BIT))) {
     return true;
   }
   return false;

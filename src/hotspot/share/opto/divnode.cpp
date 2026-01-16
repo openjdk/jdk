@@ -1112,8 +1112,6 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !ti->is_con() ) return nullptr;
   jint con = ti->get_con();
 
-  Node *hook = new Node(1);
-
   // First, special check for modulo 2^k-1
   if( con >= 0 && con < max_jint && is_power_of_2(con+1) ) {
     uint k = exact_log2(con+1);  // Extract k
@@ -1129,7 +1127,9 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *x = in(1);            // Value being mod'd
       Node *divisor = in(2);      // Also is mask
 
-      hook->init_req(0, x);       // Add a use to x to prevent him from dying
+      // Add a use to x to prevent it from dying
+      Node* hook = new Node(1);
+      hook->init_req(0, x);
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
         Node *xl = phase->transform( new AndINode(x,divisor) );
@@ -1185,6 +1185,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Save in(1) so that it cannot be changed or deleted
+  Node* hook = new Node(1);
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivI to MulL
@@ -1407,8 +1408,6 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !tl->is_con() ) return nullptr;
   jlong con = tl->get_con();
 
-  Node *hook = new Node(1);
-
   // Expand mod
   if(con >= 0 && con < max_jlong && is_power_of_2(con + 1)) {
     uint k = log2i_exact(con + 1);  // Extract k
@@ -1426,13 +1425,15 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *x = in(1);            // Value being mod'd
       Node *divisor = in(2);      // Also is mask
 
-      hook->init_req(0, x);       // Add a use to x to prevent him from dying
+      // Add a use to x to prevent it from dying
+      Node* hook = new Node(1);
+      hook->init_req(0, x);
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
         Node *xl = phase->transform( new AndLNode(x,divisor) );
         Node *xh = phase->transform( new RShiftLNode(x,phase->intcon(k)) ); // Must be signed
         x = phase->transform( new AddLNode(xh,xl) );
-        hook->set_req(0, x);    // Add a use to x to prevent him from dying
+        hook->set_req(0, x);    // Add a use to x to prevent it from dying
       }
 
       // Generate sign-fixup code.  Was original value positive?
@@ -1482,6 +1483,8 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Save in(1) so that it cannot be changed or deleted
+  // Add a use to x to prevent him from dying
+  Node* hook = new Node(1);
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivL to MulL
