@@ -170,7 +170,7 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
 // Parameters: (thread, ucontext, user_data)
 static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
   JvmtiEnv* jvmti_env = JvmtiEnv::JvmtiEnv_from_jvmti_env((jvmtiEnv*)env);
-  if (jvmti_env->get_capabilities()->can_request_stack_trace == 0) {
+  if (!JvmtiExport::can_request_stack_trace()) {
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
 
@@ -195,6 +195,12 @@ static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
   }
 #endif
   return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+}
+
+// No parameters.
+static jvmtiError JNICALL InitializeRequestStackTrace(const jvmtiEnv* env, ...) {
+  JvmtiExport::set_can_request_stack_trace(true);
+  return JVMTI_ERROR_NONE;
 }
 
 // register extension functions and events. In this implementation we
@@ -224,6 +230,9 @@ void JvmtiExtensions::register_extensions() {
     { (char*)"thread", JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_TRUE },
     { (char*)"ucontext", JVMTI_KIND_OUT_BUF, JVMTI_TYPE_CVOID, JNI_FALSE },
     { (char*)"user_data", JVMTI_KIND_IN, JVMTI_TYPE_JLONG, JNI_FALSE }
+  };
+  // InitializeRequestStackTrace
+  static jvmtiParamInfo func_params4[] = {
   };
 
   static jvmtiError errors[] = {
@@ -271,10 +280,21 @@ void JvmtiExtensions::register_extensions() {
     errors
   };
 
+  static jvmtiExtensionFunctionInfo ext_func4 = {
+    (jvmtiExtensionFunction)InitializeRequestStackTrace,
+    (char*)"com.sun.hotspot.functions.InitializeRequestStackTrace",
+    (char*)"Initializes the VM to enable requesting a stacktrace via RequestStackTrace",
+    sizeof(func_params3)/sizeof(func_params4[0]),
+    func_params4,
+    sizeof(errors)/sizeof(jvmtiError),   // non-universal errors
+    errors
+  };
+
   _ext_functions->append(&ext_func0);
   _ext_functions->append(&ext_func1);
   _ext_functions->append(&ext_func2);
   _ext_functions->append(&ext_func3);
+  _ext_functions->append(&ext_func4);
 
   // register our extension event
 

@@ -1721,6 +1721,7 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
   return err;
 } /* end GetThreadListStackTraces */
 
+
 // thread - NOT protected by ThreadsListHandle and NOT pre-checked
 // count_ptr - pre-checked for null
 jvmtiError

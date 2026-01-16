@@ -127,7 +127,6 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
   jc.can_get_current_contended_monitor = 1;
   jc.can_generate_early_vmstart = 1;
   jc.can_generate_early_class_hook_events = 1;
-  jc.can_request_stack_trace = 1;
   return jc;
 }
 
@@ -398,7 +397,6 @@ void JvmtiManageCapabilities::update() {
   JvmtiExport::set_should_clean_up_heap_objects(avail.can_generate_breakpoint_events);
   JvmtiExport::set_can_get_owned_monitor_info(avail.can_get_owned_monitor_info ||
                                               avail.can_get_owned_monitor_stack_depth_info);
-  JvmtiExport::set_can_request_stack_trace(avail.can_request_stack_trace);
 }
 
 #ifndef PRODUCT
