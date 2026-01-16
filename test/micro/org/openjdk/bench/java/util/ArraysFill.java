@@ -74,18 +74,21 @@ public class ArraysFill {
     }
 
     @Benchmark
-    public void testByteFill() {
+    public byte testByteFill() {
         Arrays.fill(testByteArray, (byte) -1);
+        return (byte) (testByteArray[0] + testByteArray[size - 1]);
     }
 
     @Benchmark
-    public void testShortFill() {
+    public short testShortFill() {
         Arrays.fill(testShortArray, (short) -1);
+        return (short) (testShortArray[0] + testShortArray[size - 1]);
     }
 
     @Benchmark
-    public void testIntFill() {
+    public int testIntFill() {
         Arrays.fill(testIntArray, -1);
+        return testIntArray[0] + testIntArray[size - 1];
     }
 
     @Benchmark
