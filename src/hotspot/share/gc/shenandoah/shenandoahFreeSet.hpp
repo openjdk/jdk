@@ -845,11 +845,14 @@ public:
     ShenandoahRebuildLocker locker(rebuild_lock());
     return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
   }
+  inline size_t reserved()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector);           }
   inline size_t available() {
     shenandoah_assert_not_heaplocked();
     ShenandoahRebuildLocker locker(rebuild_lock());
     return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
+  inline size_t available_holding_lock() const
+                                  { return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator); }
 
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
   inline size_t humongous_waste_in_mutator() const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator); }
