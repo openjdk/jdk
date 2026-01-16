@@ -507,6 +507,58 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
   avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
 
+  // Suppose we don't trigger now, but decide to trigger in the next regulator cycle.  What will be the GC time then?
+  predicted_future_gc_time = predict_gc_time(now + get_planned_sleep_interval());
+  if (predicted_future_gc_time > avg_cycle_time) {
+    future_planned_gc_time = predicted_future_gc_time;
+    future_planned_gc_time_is_average = false;
+  } else {
+    future_planned_gc_time = avg_cycle_time;
+    future_planned_gc_time_is_average = true;
+  }
+
+  log_debug(gc)("%s: average GC time: %.2f ms, predicted GC time: %.2f ms, allocation rate: %.0f %s/s",
+                _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time * 1000,
+                byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
+  size_t allocatable_bytes = allocatable_words * HeapWordSize;
+  avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
+
+  // First check for traditional triggers.  If these fail, check for accelerated triggers.
+  if (future_planned_gc_time > avg_time_to_deplete_available) {
+    log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
+                " to deplete free headroom (%zu%s) (margin of error = %.2f)",
+                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
+                byte_size_in_proper_unit(avg_alloc_rate),    proper_unit_for_byte_size(avg_alloc_rate),
+                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
+                _margin_of_error_sd);
+
+    size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
+    size_t penalties      = capacity / 100 * _gc_time_penalties;
+    size_t allocation_headroom = available;
+    allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
+    allocation_headroom -= MIN2(allocation_headroom, penalties);
+    log_info(gc, ergo)("Free headroom: %zu%s (free) - %zu%s (spike) - %zu%s (penalties) = %zu%s",
+                       byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
+                       byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
+                       byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
+                       byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
+    accept_trigger_with_type(RATE);
+    return true;
+  }
+
+  is_spiking = _allocation_rate.is_spiking(spike_rate, _spike_threshold_sd);
+  spike_time_to_deplete_available = (spike_rate == 0)? future_planned_gc_time: allocatable_bytes / spike_rate;
+  if (is_spiking && future_planned_gc_time > spike_time_to_deplete_available) {
+    log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
+                " to deplete free headroom (%zu%s) (spike threshold = %.2f)",
+                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
+                byte_size_in_proper_unit(spike_rate),        proper_unit_for_byte_size(spike_rate),
+                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
+                _spike_threshold_sd);
+    accept_trigger_with_type(SPIKE);
+    return true;
+  }
+
   if ((now - _previous_allocation_timestamp) >= ShenandoahAccelerationSamplePeriod) {
     predicted_future_accelerated_gc_time =
       predict_gc_time(now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod));
@@ -646,56 +698,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     }
   }
 
-  // Suppose we don't trigger now, but decide to trigger in the next regulator cycle.  What will be the GC time then?
-  predicted_future_gc_time = predict_gc_time(now + get_planned_sleep_interval());
-  if (predicted_future_gc_time > avg_cycle_time) {
-    future_planned_gc_time = predicted_future_gc_time;
-    future_planned_gc_time_is_average = false;
-  } else {
-    future_planned_gc_time = avg_cycle_time;
-    future_planned_gc_time_is_average = true;
-  }
-
-  log_debug(gc)("%s: average GC time: %.2f ms, predicted GC time: %.2f ms, allocation rate: %.0f %s/s",
-                _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time * 1000,
-                byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
-  size_t allocatable_bytes = allocatable_words * HeapWordSize;
-  avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
-
-  if (future_planned_gc_time > avg_time_to_deplete_available) {
-    log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
-                " to deplete free headroom (%zu%s) (margin of error = %.2f)",
-                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
-                byte_size_in_proper_unit(avg_alloc_rate),    proper_unit_for_byte_size(avg_alloc_rate),
-                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
-                _margin_of_error_sd);
-
-    size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
-    size_t penalties      = capacity / 100 * _gc_time_penalties;
-    size_t allocation_headroom = available;
-    allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
-    allocation_headroom -= MIN2(allocation_headroom, penalties);
-    log_info(gc, ergo)("Free headroom: %zu%s (free) - %zu%s (spike) - %zu%s (penalties) = %zu%s",
-                       byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
-                       byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
-                       byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
-                       byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
-    accept_trigger_with_type(RATE);
-    return true;
-  }
-
-  is_spiking = _allocation_rate.is_spiking(spike_rate, _spike_threshold_sd);
-  spike_time_to_deplete_available = (spike_rate == 0)? future_planned_gc_time: allocatable_bytes / spike_rate;
-  if (is_spiking && future_planned_gc_time > spike_time_to_deplete_available) {
-    log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
-                " to deplete free headroom (%zu%s) (spike threshold = %.2f)",
-                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
-                byte_size_in_proper_unit(spike_rate),        proper_unit_for_byte_size(spike_rate),
-                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
-                _spike_threshold_sd);
-    accept_trigger_with_type(SPIKE);
-    return true;
-  }
   return ShenandoahHeuristics::should_start_gc();
 }
 
