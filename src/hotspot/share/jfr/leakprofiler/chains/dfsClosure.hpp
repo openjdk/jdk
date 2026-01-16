@@ -54,7 +54,7 @@ class DFSClosure : public BasicOopIterateClosure {
 
   void add_chain();
 
-  struct ProbeStackItem {
+  struct ProbeStackItem { // 16 bytes
     UnifiedOopRef r;
     unsigned depth;
     int chunkindex; // only used if objArrayOop
@@ -63,7 +63,7 @@ class DFSClosure : public BasicOopIterateClosure {
 
   const ProbeStackItem* _current_item;
   oop current_pointee() const     { return _current_item->r.dereference(); }
-  size_t current_depth() const    { return _current_item->depth; }
+  size_t current_depth() const    { return _current_item == nullptr ? 0 : _current_item->depth; }
 
   bool pointee_was_visited(const oop pointee) const { return _mark_bits->is_marked(pointee); }
   void mark_pointee_as_visited(const oop pointee)   { _mark_bits->mark_obj(pointee); }
@@ -73,7 +73,7 @@ class DFSClosure : public BasicOopIterateClosure {
   void handle_oop();
   void handle_objarrayoop();
 
-  void push_to_probe_stack(UnifiedOopRef ref, int chunkindex);
+  void push_to_probe_stack(UnifiedOopRef ref, oop pointee, size_t depth, int chunkindex);
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }

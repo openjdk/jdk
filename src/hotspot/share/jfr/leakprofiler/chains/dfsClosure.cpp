@@ -38,6 +38,47 @@
 #include "utilities/debug.hpp"
 #include "utilities/stack.inline.hpp"
 
+#include <stdio.h>
+
+#define TRC(msg) { \
+  if (UseNewCode) { \
+    printf(msg); \
+    printf("\n"); \
+    fflush(stdout); \
+  } \
+}
+
+#define TRCFMT(format, ...) { \
+  if (UseNewCode) { \
+    printf(format, __VA_ARGS__); \
+    printf("\n"); \
+    fflush(stdout); \
+  } \
+}
+
+#define TRCOOP(prefix, o) { \
+  if (UseNewCode) { \
+    char txt[1024]; \
+    stringStream ss(txt, sizeof(txt)); \
+    o->klass()->name()->print_value_on(&ss); \
+    printf("%s: " PTR_FORMAT " %s ", prefix, p2i(o), txt); \
+    printf("\n"); \
+    fflush(stdout); \
+  } \
+}
+
+#define TRCOOPFMT(prefix, o, format, ...) { \
+  if (UseNewCode) { \
+    char txt[1024]; \
+    stringStream ss(txt, sizeof(txt)); \
+    o->klass()->name()->print_value_on(&ss); \
+    printf("%s: " PTR_FORMAT " %s ", prefix, p2i(o), txt); \
+    printf(format, __VA_ARGS__); \
+    printf("\n"); \
+    fflush(stdout); \
+  } \
+}
+
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 
 void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
@@ -58,6 +99,8 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   assert(edge_store != nullptr, "invariant");
   assert(mark_bits != nullptr, "invariant");
 
+TRC("SCANNING ROOTS");
+
   // Mark root set, to avoid going sideways
   DFSClosure dfs(edge_store, mark_bits, nullptr);
   dfs._max_depth = 1;
@@ -65,11 +108,18 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   rs.process();
   dfs.drain_probe_stack();
 
+
+TRC("DONE SCANNING ROOTS");
+TRC("SCANNING DEEP");
+
   // Depth-first search
   dfs._max_depth = max_dfs_depth;
   dfs._ignore_root_set = true;
   rs.process();
   dfs.drain_probe_stack();
+
+TRC("DONE SCANNING DEPP");
+
 }
 
 // A sanity limit to avoid runaway memory scenarios for pathological
@@ -100,14 +150,28 @@ DFSClosure::~DFSClosure() {
 }
 #endif // ASSERT
 
-void DFSClosure::push_to_probe_stack(UnifiedOopRef ref, int chunkindex) {
-  if (_probe_stack.is_full()) {
+void DFSClosure::push_to_probe_stack(UnifiedOopRef ref, oop pointee, size_t depth, int chunkindex) {
+
+  if (pointee == nullptr) {
+    // Don't push null references
     return;
   }
-  const unsigned newdepth =
-      _current_item == nullptr ? 0 : checked_cast<unsigned>(_current_item->depth + 1);
-  ProbeStackItem item { ref, newdepth, chunkindex };
+
+  if (depth > 0 && pointee_was_visited(pointee)) {
+    // Don't push oops we already visited (exception: root oops)
+    return;
+  }
+
+  if (_probe_stack.is_full()) {
+    // Probe stack exhausted; see remarks about probe stack max depth above.
+    return;
+  }
+
+  ProbeStackItem item { ref, checked_cast<unsigned>(depth), chunkindex };
   _probe_stack.push(item);
+
+TRCOOPFMT("pushed", pointee, "path depth %u, probestack depth %zu", item.depth, _probe_stack.size());
+
 }
 
 void DFSClosure::handle_oop() {
@@ -116,10 +180,10 @@ void DFSClosure::handle_oop() {
 
   const oop pointee = current_pointee();
   const size_t depth = current_depth();
-  assert(depth < _max_depth, "Sanity");
+  assert(depth < _max_depth, "Sanity (%zu)", depth);
 
 
-if (UseNewCode) printf(PTR_FORMAT ", depth %zu\n", p2i(pointee), depth);
+TRCOOPFMT("popped", pointee, "path depth %zu, probestack depth %zu", depth, _probe_stack.size());
 
   if (depth == 0 && _ignore_root_set) {
     assert(pointee_was_visited(pointee), "We should have already visited roots");
@@ -131,8 +195,8 @@ if (UseNewCode) printf(PTR_FORMAT ", depth %zu\n", p2i(pointee), depth);
     }
     mark_pointee_as_visited(pointee);
     _reference_stack[depth] = _current_item->r;
-
     if (pointee_was_sampled(pointee)) {
+TRC("=> SAMPLE OBJECT FOUND");
       add_chain();
     }
   }
@@ -148,7 +212,7 @@ if (UseNewCode) printf(PTR_FORMAT ", depth %zu\n", p2i(pointee), depth);
 void DFSClosure::handle_objarrayoop() {
 
   assert(_current_item != nullptr, "Sanity");
-
+ShouldNotReachHere();
   const oop pointee = current_pointee();
   const size_t depth = current_depth();
   assert(depth < _max_depth, "Sanity");
@@ -187,10 +251,11 @@ void DFSClosure::handle_objarrayoop() {
   const int begidx = chunkindex * array_chunk_size;
   const int endidx = MIN2(array_len, (chunkindex + 1) * array_chunk_size);
 
-  // push follow-up chunk before pushing the child references, to
-  // keep doing things depth-first.
+  // Push follow-up chunk: same reference, same depth, next chunk index.
+  // Do this before pushing the child references to preserve depth-first
+  // traversal.
   if (endidx < array_len) {
-    push_to_probe_stack(_current_item->r, chunkindex + 1);
+    push_to_probe_stack(_current_item->r, pointee, depth, chunkindex + 1);
   }
 
   // push child references
@@ -201,10 +266,13 @@ void DFSClosure::handle_objarrayoop() {
 
 void DFSClosure::drain_probe_stack() {
 
+  DEBUG_ONLY(unsigned last_depth = 0;)
+
   while (!_probe_stack.is_empty() &&
          !GranularTimer::is_finished()) {
 
     const ProbeStackItem item = _probe_stack.pop();
+    assert(item.depth <= (last_depth + 1), "jumping nodes?");
 
     // anchor current item
     _current_item = &item;
@@ -215,10 +283,11 @@ void DFSClosure::drain_probe_stack() {
     //if (current_pointee()->is_objArray()) {
 if (false) {
       handle_objarrayoop();
-printf("handle_objarrayoop\n");
     } else {
       handle_oop();
     }
+
+    DEBUG_ONLY(last_depth = item.depth;)
 
     // reset current item
     _current_item = nullptr;
@@ -234,11 +303,20 @@ void DFSClosure::add_chain() {
   Edge* const chain = NEW_RESOURCE_ARRAY(Edge, array_length);
   size_t idx = 0;
 
+if (UseNewCode) {
+  TRC("---- reference stack ----");
+  for (size_t i = 0; i <= depth; i++) {
+    const oop pointee = _reference_stack[i].dereference();
+    TRCOOP("", pointee);
+  }
+  TRC("---- reference stack end ----");
+}
+
   // aggregate from depth-first search
   for (size_t i = 0; i <= depth; i++) {
     const size_t next = idx + 1;
-    const size_t depth = depth - i;
-    chain[idx++] = Edge(&chain[next], _reference_stack[depth]);
+    const size_t d = depth - i;
+    chain[idx++] = Edge(&chain[next], _reference_stack[d]);
   }
   assert(depth + 1 == idx, "invariant");
   assert(array_length == idx + 1, "invariant");
@@ -256,23 +334,20 @@ void DFSClosure::do_oop(oop* ref) {
   assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, HeapWordSize), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
-  if (pointee != nullptr) {
-    push_to_probe_stack(UnifiedOopRef::encode_in_heap(ref), 0);
-  }
+  push_to_probe_stack(UnifiedOopRef::encode_in_heap(ref), pointee, current_depth() + 1, 0);
 }
 
 void DFSClosure::do_oop(narrowOop* ref) {
   assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
-  if (pointee != nullptr) {
-    push_to_probe_stack(UnifiedOopRef::encode_in_heap(ref), 0);
-  }
+  push_to_probe_stack(UnifiedOopRef::encode_in_heap(ref), pointee, current_depth() + 1, 0);
 }
 
 void DFSClosure::do_root(UnifiedOopRef ref) {
   assert(!ref.is_null(), "invariant");
   const oop pointee = ref.dereference();
   assert(pointee != nullptr, "invariant");
-  push_to_probe_stack(ref, 0);
+  assert(_current_item == nullptr, "invariant");
+  push_to_probe_stack(ref, pointee, 0, 0);
 }
