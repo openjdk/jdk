@@ -325,7 +325,6 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
     ShenandoahAffiliation affiliation = ALLOC_PARTITION == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
     // Step 3: Install the new reserved alloc regions
     if (reserved_regions > 0) {
-      int refreshed_regions = 0;
       for (int i = 0; i < reserved_regions; i++) {
         assert(reserved[i]->affiliation() == affiliation, "Affiliation of reserved region must match, invalid affiliation: %s", shenandoah_affiliation_name(reserved[i]->affiliation()));
         assert(_free_set->membership(reserved[i]->index()) == ShenandoahFreeSetPartitionId::NotFree, "Reserved heap region must have been retired from free set.");
@@ -339,13 +338,10 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
         log_debug(gc, alloc)("%sAllocator: Storing heap region %li to alloc region %i",
           _alloc_partition_name, reserved[i]->index(), refreshable[i]->alloc_region_index);
         AtomicAccess::store(&refreshable[i]->address, reserved[i]);
-        refreshed_regions++;
       }
 
-      if (refreshed_regions > 0) {
-        // Increase _epoch_id by 1 when any of alloc regions has been refreshed.
-        AtomicAccess::inc(&_epoch_id);
-      }
+      // Increase _epoch_id by 1 when any of alloc regions has been refreshed.
+      AtomicAccess::inc(&_epoch_id);
     }
     return reserved_regions;
   }
