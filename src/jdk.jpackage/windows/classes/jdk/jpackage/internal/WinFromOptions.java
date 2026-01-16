@@ -44,7 +44,6 @@ import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
 import java.util.Arrays;
 
-import jdk.internal.jshell.tool.resources.version;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.Launcher;
