@@ -119,6 +119,7 @@ public:
   static void init_shared_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void write_shared_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void move_shared_strings_into_runtime_table();
 
   // Jcmd
   static void dump(outputStream* st, bool verbose=false);
