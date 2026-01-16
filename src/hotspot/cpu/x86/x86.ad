@@ -1699,12 +1699,12 @@ static void emit_cmpfp_fixup(MacroAssembler* masm) {
 }
 
 static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
-  // If any floating point comparison instruction is used, unordered case never triggers jump
-  // For above equal condition, CF=0 is false when at least one input is NaN
+  // If any floating point comparison instruction is used, unordered case always triggers jump
+  // For below condition, CF=1 is true when at least one input is NaN
   Label done;
-  __ setcc(Assembler::above, dst);
-  __ jcc(Assembler::aboveEqual, done);
   __ movl(dst, -1);
+  __ jcc(Assembler::below, done);
+  __ setcc(Assembler::notEqual, dst);
   __ bind(done);
 }
 
@@ -5530,7 +5530,7 @@ operand rFlagsRegU()
 operand rFlagsRegUCF() %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
-  predicate(!VM_Version::supports_avx10_2());
+  predicate(!UseAPX || !VM_Version::supports_avx10_2());
 
   format %{ "RFLAGS_U_CF" %}
   interface(REG_INTER);
@@ -5539,7 +5539,7 @@ operand rFlagsRegUCF() %{
 operand rFlagsRegUCFE() %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
-  predicate(VM_Version::supports_avx10_2());
+  predicate(UseAPX && VM_Version::supports_avx10_2());
 
   format %{ "RFLAGS_U_CFE" %}
   interface(REG_INTER);
@@ -6072,7 +6072,7 @@ operand cmpOpU()
 // don't need to use cmpOpUCF2 for eq/ne
 operand cmpOpUCF() %{
   match(Bool);
-  predicate(!VM_Version::supports_avx10_2() &&
+  predicate((!UseAPX || !VM_Version::supports_avx10_2()) &&
             (n->as_Bool()->_test._test == BoolTest::lt ||
              n->as_Bool()->_test._test == BoolTest::ge ||
              n->as_Bool()->_test._test == BoolTest::le ||
@@ -6095,7 +6095,7 @@ operand cmpOpUCF() %{
 // Floating comparisons that can be fixed up with extra conditional jumps
 operand cmpOpUCF2() %{
   match(Bool);
-  predicate(!VM_Version::supports_avx10_2() &&
+  predicate((!UseAPX || !VM_Version::supports_avx10_2()) &&
             (n->as_Bool()->_test._test == BoolTest::ne ||
              n->as_Bool()->_test._test == BoolTest::eq) &&
             n->in(1)->in(1) != n->in(1)->in(2));
@@ -6122,7 +6122,7 @@ operand cmpOpUCF2() %{
 operand cmpOpUCFE()
 %{
   match(Bool);
-  predicate(VM_Version::supports_avx10_2() &&
+  predicate((UseAPX && VM_Version::supports_avx10_2()) &&
             (n->as_Bool()->_test._test == BoolTest::ne ||
              n->as_Bool()->_test._test == BoolTest::eq ||
              n->as_Bool()->_test._test == BoolTest::lt ||
@@ -9174,7 +9174,6 @@ instruct cmovI_imm_01UCFE(rRegI dst, immI_1 src, rFlagsRegUCFE cr, cmpOpUCFE cop
 %}
 
 instruct cmovI_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
-  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
   ins_cost(200);
@@ -9183,20 +9182,7 @@ instruct cmovI_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
   %}
 %}
 
-instruct cmovI_regUCFE(cmpOpUCFE cop, rFlagsRegUCFE cr, rRegI dst, rRegI src) %{
-  predicate(UseAPX);
-  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
-
-  ins_cost(200);
-  format %{ "cmovl$cop $dst, $src\t# signed, unsigned, int" %}
-  ins_encode %{
-    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_cmov_reg);
-%}
-
 instruct cmovI_regUCFE_ndd(rRegI dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegI src1, rRegI src2) %{
-  predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
 
   ins_cost(200);
@@ -9208,7 +9194,7 @@ instruct cmovI_regUCFE_ndd(rRegI dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegI src
 %}
 
 instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
-  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -9224,7 +9210,7 @@ instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 // Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
 // inputs of the CMove
 instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
-  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
   effect(TEMP dst);
 
@@ -9280,25 +9266,12 @@ instruct cmovI_memU(cmpOpU cop, rFlagsRegU cr, rRegI dst, memory src)
 %}
 
 instruct cmovI_memUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, memory src) %{
-  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
 
   ins_cost(250);
   expand %{
     cmovI_memU(cop, cr, dst, src);
   %}
-%}
-
-instruct cmovI_memUCFE(cmpOpUCFE cop, rFlagsRegUCFE cr, rRegI dst, memory src) %{
-  predicate(UseAPX);
-  match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
-
-  ins_cost(250);
-  format %{ "cmovl$cop $dst, $src\t# signed, unsigned, int" %}
-  ins_encode %{
-    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Address);
-  %}
-  ins_pipe(pipe_cmov_mem);
 %}
 
 instruct cmovI_rReg_rReg_memU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI src1, memory src2)
@@ -9316,7 +9289,6 @@ instruct cmovI_rReg_rReg_memU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI sr
 
 instruct cmovI_rReg_rReg_memUCFE_ndd(rRegI dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegI src1, memory src2)
 %{
-  predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 (LoadI src2))));
 
   ins_cost(250);
@@ -9370,25 +9342,12 @@ instruct cmovN_regU(cmpOpU cop, rFlagsRegU cr, rRegN dst, rRegN src)
 %}
 
 instruct cmovN_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
-  predicate(!UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
   ins_cost(200);
   expand %{
     cmovN_regU(cop, cr, dst, src);
   %}
-%}
-
-instruct cmovN_regUCFE(cmpOpUCFE cop, rFlagsRegUCFE cr, rRegN dst, rRegN src) %{
-  predicate(UseAPX);
-  match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
-
-  ins_cost(200);
-  format %{ "cmovl$cop $dst, $src\t# signed, unsigned, compressed ptr" %}
-  ins_encode %{
-    __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_cmov_reg);
 %}
 
 // Conditional move ndd
@@ -9406,7 +9365,6 @@ instruct cmovN_regU_ndd(rRegN dst, cmpOpU cop, rFlagsRegU cr, rRegN src1, rRegN 
 %}
 
 instruct cmovN_regUCFE_ndd(rRegN dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegN src1, rRegN src2) %{
-  predicate(UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary src1 src2)));
 
   ins_cost(200);
@@ -9418,7 +9376,7 @@ instruct cmovN_regUCFE_ndd(rRegN dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegN src
 %}
 
 instruct cmovN_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
-  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -9434,7 +9392,7 @@ instruct cmovN_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) 
 // Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
 // inputs of the CMove
 instruct cmovN_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
-  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveN (Binary cop cr) (Binary src dst)));
 
   ins_cost(200); // XXX
@@ -9504,7 +9462,6 @@ instruct cmovP_regU_ndd(rRegP dst, cmpOpU cop, rFlagsRegU cr, rRegP src1, rRegP 
 %}
 
 instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
-  predicate(!UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
 
   ins_cost(200);
@@ -9513,20 +9470,7 @@ instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
   %}
 %}
 
-instruct cmovP_regUCFE(cmpOpUCFE cop, rFlagsRegUCFE cr, rRegP dst, rRegP src) %{
-  predicate(UseAPX);
-  match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
-
-  ins_cost(200);
-  format %{ "cmovq$cop $dst, $src\t# signed, unsigned, ptr" %}
-  ins_encode %{
-    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_cmov_reg);
-%}
-
 instruct cmovP_regUCFE_ndd(rRegP dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegP src1, rRegP src2) %{
-  predicate(UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
 
   ins_cost(200);
@@ -9538,7 +9482,7 @@ instruct cmovP_regUCFE_ndd(rRegP dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegP src
 %}
 
 instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
-  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -9554,7 +9498,7 @@ instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
 // Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
 // inputs of the CMove
 instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
-  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveP (Binary cop cr) (Binary src dst)));
 
   ins_cost(200); // XXX
@@ -9675,7 +9619,7 @@ instruct cmovL_regU_ndd(rRegL dst, cmpOpU cop, rFlagsRegU cr, rRegL src1, rRegL 
 
 instruct cmovL_imm_01UCF(rRegL dst, immL1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %{
-  predicate(!UseAPX && n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
+  predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
 
   ins_cost(100); // XXX
@@ -9689,7 +9633,7 @@ instruct cmovL_imm_01UCF(rRegL dst, immL1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 
 instruct cmovL_imm_01UCFE(rRegL dst, immL1 src, rFlagsRegUCFE cr, cmpOpUCFE cop)
 %{
-  predicate(UseAPX && n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
+  predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
 
   ins_cost(100); // XXX
@@ -9702,7 +9646,6 @@ instruct cmovL_imm_01UCFE(rRegL dst, immL1 src, rFlagsRegUCFE cr, cmpOpUCFE cop)
 %}
 
 instruct cmovL_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
-  predicate(!UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
 
   ins_cost(200);
@@ -9711,21 +9654,8 @@ instruct cmovL_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
   %}
 %}
 
-instruct cmovL_regUCFE(cmpOpUCFE cop, rFlagsRegUCFE cr, rRegL dst, rRegL src) %{
-  predicate(UseAPX);
-  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
-
-  ins_cost(200);
-  format %{ "cmovq$cop $dst, $src\t# signed, unsigned, long" %}
-  ins_encode %{
-    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_cmov_reg);
-%}
-
 instruct cmovL_regUCFE_ndd(rRegL dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegL src1, rRegL src2)
 %{
-  predicate(UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
 
   ins_cost(200);
@@ -9737,7 +9667,7 @@ instruct cmovL_regUCFE_ndd(rRegL dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegL src
 %}
 
 instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
-  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -9753,7 +9683,7 @@ instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 // Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
 // inputs of the CMove
 instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
-  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
 
   ins_cost(200); // XXX
@@ -9780,25 +9710,12 @@ instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)
 %}
 
 instruct cmovL_memUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, memory src) %{
-  predicate(!UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst (LoadL src))));
 
   ins_cost(200);
   expand %{
     cmovL_memU(cop, cr, dst, src);
   %}
-%}
-
-instruct cmovL_memUCFE(cmpOpUCFE cop, rFlagsRegUCFE cr, rRegL dst, memory src) %{
-  predicate(UseAPX);
-  match(Set dst (CMoveL (Binary cop cr) (Binary dst (LoadL src))));
-
-  ins_cost(200);
-  format %{ "cmovq$cop $dst, $src\t# signed, unsigned, long" %}
-  ins_encode %{
-    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Address);
-  %}
-  ins_pipe(pipe_cmov_mem);
 %}
 
 instruct cmovL_rReg_rReg_memU_ndd(rRegL dst, cmpOpU cop, rFlagsRegU cr, rRegL src1, memory src2)
@@ -9816,7 +9733,6 @@ instruct cmovL_rReg_rReg_memU_ndd(rRegL dst, cmpOpU cop, rFlagsRegU cr, rRegL sr
 
 instruct cmovL_rReg_rReg_memUCFE_ndd(rRegL dst, cmpOpUCFE cop, rFlagsRegUCFE cr, rRegL src1, memory src2)
 %{
-  predicate(UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 (LoadL src2))));
 
   ins_cost(200);
@@ -14592,26 +14508,6 @@ instruct cmpF_reg(rRegI dst, regF src1, regF src2, rFlagsReg cr)
 %}
 
 // Compare into -1,0,1
-instruct cmpF_regE(rRegI dst, regF src1, regF src2, rFlagsReg cr)
-%{
-  match(Set dst (CmpF3 src1 src2));
-  effect(KILL cr);
-
-  ins_cost(250);
-  format %{ "ucomxss $src1, $src2\n\t"
-            "seta    $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n\t"
-            "movzbl  $dst, $dst\n"
-    "done:" %}
-  ins_encode %{
-    __ ucomxss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(masm, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// Compare into -1,0,1
 instruct cmpF_mem(rRegI dst, regF src1, memory src2, rFlagsReg cr)
 %{
   match(Set dst (CmpF3 src1 (LoadF src2)));
@@ -14633,26 +14529,6 @@ instruct cmpF_mem(rRegI dst, regF src1, memory src2, rFlagsReg cr)
 %}
 
 // Compare into -1,0,1
-instruct cmpF_memE(rRegI dst, regF src1, memory src2, rFlagsReg cr)
-%{
-  match(Set dst (CmpF3 src1 (LoadF src2)));
-  effect(KILL cr);
-
-  ins_cost(250);
-  format %{ "ucomxss $src1, $src2\n\t"
-            "seta    $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n\t"
-            "movzbl  $dst, $dst\n"
-    "done:" %}
-  ins_encode %{
-    __ ucomxss($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(masm, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// Compare into -1,0,1
 instruct cmpF_imm(rRegI dst, regF src, immF con, rFlagsReg cr) %{
   match(Set dst (CmpF3 src con));
   effect(KILL cr);
@@ -14667,25 +14543,6 @@ instruct cmpF_imm(rRegI dst, regF src, immF con, rFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp3(masm, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// Compare into -1,0,1
-instruct cmpF_immE(rRegI dst, regF src, immF con, rFlagsReg cr) %{
-  match(Set dst (CmpF3 src con));
-  effect(KILL cr);
-
-  ins_cost(250);
-  format %{ "ucomxss $src, [$constantaddress]\t# load from constant table: float=$con\n\t"
-            "seta    $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n\t"
-            "movzbl  $dst, $dst\n"
-    "done:" %}
-  ins_encode %{
-    __ ucomxss($src$$XMMRegister, $constantaddress($con));
     emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -14713,26 +14570,6 @@ instruct cmpD_reg(rRegI dst, regD src1, regD src2, rFlagsReg cr)
 %}
 
 // Compare into -1,0,1
-instruct cmpD_regE(rRegI dst, regD src1, regD src2, rFlagsReg cr)
-%{
-  match(Set dst (CmpD3 src1 src2));
-  effect(KILL cr);
-
-  ins_cost(250);
-  format %{ "ucomxsd $src1, $src2\n\t"
-            "seta    $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n\t"
-            "movzbl  $dst, $dst\n"
-    "done:" %}
-  ins_encode %{
-    __ ucomxsd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(masm, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// Compare into -1,0,1
 instruct cmpD_mem(rRegI dst, regD src1, memory src2, rFlagsReg cr)
 %{
   match(Set dst (CmpD3 src1 (LoadD src2)));
@@ -14754,26 +14591,6 @@ instruct cmpD_mem(rRegI dst, regD src1, memory src2, rFlagsReg cr)
 %}
 
 // Compare into -1,0,1
-instruct cmpD_memE(rRegI dst, regD src1, memory src2, rFlagsReg cr)
-%{
-  match(Set dst (CmpD3 src1 (LoadD src2)));
-  effect(KILL cr);
-
-  ins_cost(250);
-  format %{ "ucomxsd $src1, $src2\n\t"
-            "seta    $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n\t"
-            "movzbl  $dst, $dst\n"
-    "done:" %}
-  ins_encode %{
-    __ ucomxsd($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(masm, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// Compare into -1,0,1
 instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
   match(Set dst (CmpD3 src con));
   effect(KILL cr);
@@ -14788,25 +14605,6 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp3(masm, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// Compare into -1,0,1
-instruct cmpD_immE(rRegI dst, regD src, immD con, rFlagsReg cr) %{
-  match(Set dst (CmpD3 src con));
-  effect(KILL cr);
-
-  ins_cost(250);
-  format %{ "ucomxsd $src, [$constantaddress]\t# load from constant table: float=$con\n\t"
-            "seta    $dst\n\t"
-            "jae,s   done\n\t"
-            "movl    $dst, #-1\n\t"
-            "movzbl  $dst, $dst\n"
-    "done:" %}
-  ins_encode %{
-    __ ucomxsd($src$$XMMRegister, $constantaddress($con));
     emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
