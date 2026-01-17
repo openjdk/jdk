@@ -204,7 +204,7 @@ public class CoreUtils {
     private static final String CORE_PATTERN_FILE_NAME = "/proc/sys/kernel/core_pattern";
     private static final String LOCATION_STRING = "location: ";
     private static final String ALT_LOCATION_STRING = "alternatively, falling back to";
-    
+
     private static String parseCoreFileLocationFromOutput(String crashOutputString) {
         System.out.println("crashOutputString = [" + crashOutputString + "]");
 
