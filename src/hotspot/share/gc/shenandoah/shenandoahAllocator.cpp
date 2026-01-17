@@ -338,11 +338,10 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
           *obj = allocate_in<false>(reserved[i], true, *req, *in_new_region, ready_for_retire);
           assert(*obj != nullptr, "Should always succeed");
           satisfy_alloc_req_first = false;
-          // Enforce order here,
-          // allocate_in must be executed before set the region to active alloc region.
-          OrderAccess::fence();
         }
         reserved[i]->set_active_alloc_region();
+        // Enforce order here,
+        // set_active_alloc_region must be executed before storing the region to the shared address
         OrderAccess::fence();
         log_debug(gc, alloc)("%sAllocator: Storing heap region %li to alloc region %i",
           _alloc_partition_name, reserved[i]->index(), refreshable[i]->alloc_region_index);
