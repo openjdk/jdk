@@ -71,6 +71,23 @@ public class EnsureCapacity {
         byte[] actual = out.toByteArray();
         byte[] expected = new byte[] { 1, 2, 3, 4, 5, 6 };
         assertEquals(expected, actual);
+
+        // verify that overriding ensureCapacity() affects behavior of standard write methods
+
+        EvenOutputStream out2 = new EvenOutputStream();
+        assertEquals(0, out2.getBufferLength());
+
+        out2.write(89);
+        assertEquals(2, out2.getBufferLength());
+
+        out2.write(12);
+        assertEquals(2, out2.getBufferLength());
+
+        out2.write(new byte[] { 1, 2, 3 }, 0, 3);
+        assertEquals(6, out2.getBufferLength());
+
+        out2.write(77);
+        assertEquals(6, out2.getBufferLength());
     }
 
     private static void assertAtLeast(int actual, int min) {
@@ -95,9 +112,27 @@ public class EnsureCapacity {
         }
     }
 
+    // provides extra visibility into internals
     private static final class TestOutputStream extends ByteArrayOutputStream {
         public void ensureCapacity(int minCapacity) {
             super.ensureCapacity(minCapacity);
+        }
+        public int getBufferLength() {
+            return buf.length;
+        }
+    }
+
+    // starts empty, is always sized to an even number of bytes
+    private static final class EvenOutputStream extends ByteArrayOutputStream {
+        public EvenOutputStream() {
+            super(0);
+        }
+        protected void ensureCapacity(int minCapacity) {
+            int deficit = minCapacity - buf.length;
+            if (deficit > 0) {
+                minCapacity += minCapacity % 2;
+                buf = Arrays.copyOf(buf, minCapacity);
+            }
         }
         public int getBufferLength() {
             return buf.length;

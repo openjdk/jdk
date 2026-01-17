@@ -34,18 +34,23 @@ import jdk.internal.util.ArraysSupport;
 /**
  * This class implements an output stream in which the data is
  * written into a byte array. The buffer automatically grows as data
- * is written to it.
- * The data can be retrieved using {@code toByteArray()} and
- * {@code toString()}.
+ * is written to it. The data can be retrieved using {@code toByteArray()}
+ * and {@code toString()}.
+ *
  * <p>
  * Closing a {@code ByteArrayOutputStream} has no effect. The methods in
  * this class can be called after the stream has been closed without
  * generating an {@code IOException}.
  *
+ * <p>
+ * Subclasses of this class may override {@code ensureCapacity(int)} in
+ * order to customize the buffer growth behavior. Subclasses which add
+ * additional write methods should either manage buffer growth manually
+ * or invoke {@code ensureCapacity(int)} to grow the buffer.
+ *
  * @author  Arthur van Hoff
  * @since   1.0
  */
-
 public class ByteArrayOutputStream extends OutputStream {
 
     /**
@@ -85,30 +90,15 @@ public class ByteArrayOutputStream extends OutputStream {
      * Increases the capacity if necessary to ensure that this
      * {@code ByteArrayOutputStream} can hold at least the number of
      * elements specified by the {@code minCapacity} argument.
-     * If the {@code minCapacity} argument is nonpositive, this
-     * method takes no action and simply returns.
-     *
-     * @param minCapacity the desired minimum capacity.
-     * @since 27
-     */
-    protected void ensureCapacity(int minCapacity) {
-        if (minCapacity > 0) {
-            ensureCapacityInternal(minCapacity);
-        }
-    }
-
-    /**
-     * Increases the capacity if necessary to ensure that this
-     * {@code ByteArrayOutputStream} can hold at least the number of
-     * elements specified by the {@code minCapacity} argument.
      *
      * @param  minCapacity the desired minimum capacity.
      * @throws OutOfMemoryError if {@code minCapacity < 0} and
      * {@code minCapacity - buf.length > 0}.  This is interpreted as a
-     * request for the unsatisfiably large capacity.
+     * request for the unsatisfiably large capacity
      * {@code (long) Integer.MAX_VALUE + (minCapacity - Integer.MAX_VALUE)}.
+     * @since 27
      */
-    private void ensureCapacityInternal(int minCapacity) {
+    protected void ensureCapacity(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = buf.length;
         int minGrowth = minCapacity - oldCapacity;
@@ -125,7 +115,7 @@ public class ByteArrayOutputStream extends OutputStream {
      */
     @Override
     public synchronized void write(int b) {
-        ensureCapacityInternal(count + 1);
+        ensureCapacity(count + 1);
         buf[count] = (byte) b;
         count += 1;
     }
@@ -145,7 +135,7 @@ public class ByteArrayOutputStream extends OutputStream {
     @Override
     public synchronized void write(byte[] b, int off, int len) {
         Objects.checkFromIndexSize(off, len, b.length);
-        ensureCapacityInternal(count + len);
+        ensureCapacity(count + len);
         System.arraycopy(b, off, buf, count, len);
         count += len;
     }
