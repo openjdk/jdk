@@ -462,10 +462,15 @@ public:
     return AtomicAccess::load(&_atomic_top);
   }
 
+  template<bool CHECK_ATOMIC_TOP = true>
   HeapWord* top() const {
-    HeapWord* v_top = atomic_top();
-    return v_top == nullptr ? AtomicAccess::load(&_top) : v_top;
+    if (CHECK_ATOMIC_TOP) {
+      HeapWord* v_top = atomic_top();
+      return v_top == nullptr ? AtomicAccess::load(&_top) : v_top;
+    }
+    return AtomicAccess::load(&_top);
   }
+
   void set_top(HeapWord* v) {
     AtomicAccess::store(&_top, v);
   }
@@ -558,7 +563,7 @@ public:
     assert(_active_alloc_region.is_unset(), "Must be");
     // Sync _top to _atomic_top before setting _active_alloc_region flag to prepare for CAS allocation
     assert(atomic_top() == nullptr, "Must be");
-    AtomicAccess::store(&_atomic_top, _top);
+    AtomicAccess::store(&_atomic_top, top<false>());
     _active_alloc_region.set();
   }
 
@@ -577,12 +582,13 @@ public:
       previous_atomic_top = atomic_top();
       assert(previous_atomic_top != nullptr, "Must not");
       set_top(previous_atomic_top); // Sync current _atomic_top back to _top
+      OrderAccess::fence();
       if (AtomicAccess::cmpxchg(&_atomic_top, previous_atomic_top, (HeapWord*) nullptr) == previous_atomic_top) {
         // break when successfully exchange _atomic_top to nullptr
         break;
       }
     }
-    assert(_top == previous_atomic_top, "Must be");
+    assert(top<false>() == previous_atomic_top, "Must be");
     _active_alloc_region.unset();
   }
 
