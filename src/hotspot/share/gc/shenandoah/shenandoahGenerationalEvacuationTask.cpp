@@ -186,6 +186,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     assert(region->is_regular(), "Use different service to promote humongous regions");
     assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
     assert(region->get_top_before_promote() == tams, "Region %zu has been used for allocations before promotion", region->index());
+    assert(!region->is_active_alloc_region(), "Must not be atomic alloc region");
   }
 
   ShenandoahOldGeneration* const old_gen = _heap->old_generation();

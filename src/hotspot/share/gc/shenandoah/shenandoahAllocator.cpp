@@ -256,6 +256,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion
   assert(ready_for_retire == false, "Sanity check");
   if (!IS_SHARED_ALLOC_REGION) {
     shenandoah_assert_heaplocked();
+    assert(!region->is_active_alloc_region(), "Must not");
   }
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();
@@ -339,6 +340,9 @@ int ShenandoahAllocator<ALLOC_PARTITION>::refresh_alloc_regions(ShenandoahAllocR
           satisfy_alloc_req_first = false;
         }
         reserved[i]->set_active_alloc_region();
+        // Enforce order here,
+        // set_active_alloc_region must be executed before storing the region to the shared address
+        OrderAccess::fence();
         log_debug(gc, alloc)("%sAllocator: Storing heap region %li to alloc region %i",
           _alloc_partition_name, reserved[i]->index(), refreshable[i]->alloc_region_index);
         AtomicAccess::store(&refreshable[i]->address, reserved[i]);

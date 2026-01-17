@@ -3101,6 +3101,7 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, int const r
 
   for (idx_t idx = iterator.current(); iterator.has_next() && reserved_regions_count < regions_to_reserve; idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
+    assert(r->get_top_before_promote() == nullptr, "Must not be PIP region");
     if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) {
       continue;
     }
@@ -3234,6 +3235,7 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_interna
   bool const use_affiliated_region_first = ALLOC_PARTITION != ShenandoahFreeSetPartitionId::Mutator;
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
+    assert(r->get_top_before_promote() == nullptr, "Must not be PIP region");
     if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
       continue;
     }

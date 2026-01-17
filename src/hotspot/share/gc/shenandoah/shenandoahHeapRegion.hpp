@@ -459,14 +459,21 @@ public:
   ShenandoahHeapRegion* humongous_start_region() const;
 
   HeapWord* atomic_top() const {
-    return AtomicAccess::load(&_atomic_top);
+    return AtomicAccess::load_acquire(&_atomic_top);
   }
 
+  template<bool CHECK_ATOMIC_TOP = true>
   HeapWord* top() const {
-    HeapWord* v_top = atomic_top();
-    return v_top == nullptr ? AtomicAccess::load(&_top) : v_top;
+    if (CHECK_ATOMIC_TOP) {
+      HeapWord* v_top = atomic_top();
+      return v_top == nullptr ? AtomicAccess::load(&_top) : v_top;
+    }
+    assert(atomic_top() == nullptr, "Must be");
+    return AtomicAccess::load(&_top);
   }
+
   void set_top(HeapWord* v) {
+    assert(!is_active_alloc_region(), "Sanity check");
     AtomicAccess::store(&_top, v);
   }
 
@@ -555,10 +562,11 @@ public:
   }
 
   inline void set_active_alloc_region() {
+    shenandoah_assert_heaplocked();
     assert(_active_alloc_region.is_unset(), "Must be");
     // Sync _top to _atomic_top before setting _active_alloc_region flag to prepare for CAS allocation
     assert(atomic_top() == nullptr, "Must be");
-    AtomicAccess::store(&_atomic_top, _top);
+    AtomicAccess::release_store(&_atomic_top, top<false>());
     _active_alloc_region.set();
   }
 
@@ -572,17 +580,21 @@ public:
     // Before unset _active_alloc_region flag, _atomic_top needs to be set to sentinel value using AtomicAccess::cmpxchg,
     // this avoids race condition when the alloc region removed from the alloc regions array used by lock-free allocation in allocator;
     // meanwhile the previous value of _atomic_top needs to be synced back to _top.
-    HeapWord* previous_atomic_top = nullptr;
+    HeapWord* prior_atomic_top = nullptr;
+    HeapWord* current_atomic_top = atomic_top();
     while (true /*always break out in the loop*/) {
-      previous_atomic_top = atomic_top();
-      assert(previous_atomic_top != nullptr, "Must not");
-      set_top(previous_atomic_top); // Sync current _atomic_top back to _top
-      if (AtomicAccess::cmpxchg(&_atomic_top, previous_atomic_top, (HeapWord*) nullptr) == previous_atomic_top) {
-        // break when successfully exchange _atomic_top to nullptr
+      assert(current_atomic_top != nullptr, "Must not");
+      AtomicAccess::store(&_top, current_atomic_top); // Sync current _atomic_top back to _top
+      OrderAccess::fence();
+      prior_atomic_top = AtomicAccess::cmpxchg(&_atomic_top, current_atomic_top, (HeapWord*) nullptr, memory_order_release);
+      if (prior_atomic_top == current_atomic_top) {
+        // break out the loop when successfully exchange _atomic_top to nullptr
         break;
       }
+      current_atomic_top = prior_atomic_top;
     }
-    assert(_top == previous_atomic_top, "Must be");
+    OrderAccess::fence();
+    assert(top<false>() == current_atomic_top, "Value of _atomic_top must have synced to _top.");
     _active_alloc_region.unset();
   }
 

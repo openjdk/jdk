@@ -107,9 +107,10 @@ HeapWord* ShenandoahHeapRegion::allocate_fill(size_t size) {
 
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocRequest& req) {
   shenandoah_assert_heaplocked_or_safepoint();
+  assert(!is_active_alloc_region(), "Must not");
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
 
-  HeapWord* obj = top();
+  HeapWord* obj = top<false>();
   if (pointer_delta(end(), obj) >= size) {
     make_regular_allocation(req.affiliation());
     adjust_alloc_metadata(req, size);
@@ -133,7 +134,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab(const ShenandoahAllocRequest& req, 
 
   size_t adjusted_size = req.size();
   HeapWord* obj = nullptr;
-  HeapWord* old_top = top();
+  HeapWord* old_top = top<false>();
   size_t free_words = align_down(byte_size(old_top, end()) >> LogHeapWordSize, MinObjAlignment);
   if (adjusted_size > free_words) {
     adjusted_size = free_words;
@@ -238,7 +239,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
 
 bool ShenandoahHeapRegion::try_allocate(HeapWord* const obj, size_t const size, HeapWord* &prior_atomic_top) {
   HeapWord* new_top = obj + size;
-  if ((prior_atomic_top = AtomicAccess::cmpxchg(&_atomic_top, obj, new_top)) == obj) {
+  if ((prior_atomic_top = AtomicAccess::cmpxchg(&_atomic_top, obj, new_top, memory_order_release)) == obj) {
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
     assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
     return true;
@@ -357,10 +358,14 @@ inline bool ShenandoahHeapRegion::is_affiliated() const {
 }
 
 inline void ShenandoahHeapRegion::save_top_before_promote() {
-  _top_before_promoted = top();
+  assert(!is_active_alloc_region(), "Must not");
+  assert(atomic_top() == nullptr, "Must be");
+  _top_before_promoted = top<false>();
 }
 
 inline void ShenandoahHeapRegion::restore_top_before_promote() {
+  assert(!is_active_alloc_region(), "Must not");
+  assert(atomic_top() == nullptr, "Must be");
   _top = _top_before_promoted;
   _top_before_promoted = nullptr;
  }
