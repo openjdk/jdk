@@ -205,7 +205,7 @@ public class CoreUtils {
     private static final String LOCATION_STRING = "location: ";
     private static final String ALT_LOCATION_STRING = "alternatively, falling back to";
     
-    private static String parseCoreFileLocationFromOutput(String crashOutputString) throws IOException {
+    private static String parseCoreFileLocationFromOutput(String crashOutputString) {
         System.out.println("crashOutputString = [" + crashOutputString + "]");
 
         // Find the line of output that contains LOCATION_STRING
