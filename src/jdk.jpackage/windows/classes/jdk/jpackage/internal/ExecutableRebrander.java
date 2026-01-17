@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.DottedVersion;
@@ -119,43 +120,58 @@ final class ExecutableRebrander {
 
     private static void rebrandExecutable(BuildEnv env, final Path target,
             List<UpdateResourceAction> actions) throws IOException {
+
+        Objects.requireNonNull(env);
+        Objects.requireNonNull(target);
         Objects.requireNonNull(actions);
         actions.forEach(Objects::requireNonNull);
 
-        String tempDirectory = env.buildRoot().toAbsolutePath().toString();
-        if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(tempDirectory)) {
-            Log.verbose(I18N.format("message.potential.windows.defender.issue", tempDirectory));
-        }
-
-        var shortTargetPath = ShortPathUtils.toShortPath(target);
-        long resourceLock = lockResource(shortTargetPath.orElse(target).toString());
-        if (resourceLock == 0) {
-            throw new JPackageException(I18N.format("error.lock-resource", shortTargetPath.orElse(target)));
-        }
-
-        final boolean resourceUnlockedSuccess;
         try {
-            for (var action : actions) {
-                action.editResource(resourceLock);
-            }
-        } finally {
-            if (resourceLock == 0) {
-                resourceUnlockedSuccess = true;
-            } else {
-                resourceUnlockedSuccess = unlockResource(resourceLock);
-                if (shortTargetPath.isPresent()) {
-                    // Windows will rename the executable in the unlock operation.
-                    // Should restore executable's name.
-                    var tmpPath = target.getParent().resolve(
-                            target.getFileName().toString() + ".restore");
-                    Files.move(shortTargetPath.get(), tmpPath);
-                    Files.move(tmpPath, target);
-                }
-            }
-        }
+            Globals.instance().objectFactory().<Void, RuntimeException>retryExecutor(RuntimeException.class).setExecutable(() -> {
 
-        if (!resourceUnlockedSuccess) {
-            throw new JPackageException(I18N.format("error.unlock-resource", shortTargetPath.orElse(target)));
+                var shortTargetPath = ShortPathUtils.toShortPath(target);
+                long resourceLock = lockResource(shortTargetPath.orElse(target).toString());
+                if (resourceLock == 0) {
+                    throw new JPackageException(I18N.format("error.lock-resource", shortTargetPath.orElse(target)));
+                }
+
+                final boolean resourceUnlockedSuccess;
+                try {
+                    for (var action : actions) {
+                        try {
+                            action.editResource(resourceLock);
+                        } catch (IOException ex) {
+                            throw new UncheckedIOException(ex);
+                        }
+                    }
+                } finally {
+                    if (resourceLock == 0) {
+                        resourceUnlockedSuccess = true;
+                    } else {
+                        resourceUnlockedSuccess = unlockResource(resourceLock);
+                        if (shortTargetPath.isPresent()) {
+                            // Windows will rename the executable in the unlock operation.
+                            // Should restore executable's name.
+                            var tmpPath = target.getParent().resolve(
+                                    target.getFileName().toString() + ".restore");
+                            try {
+                                Files.move(shortTargetPath.get(), tmpPath);
+                                Files.move(tmpPath, target);
+                            } catch (IOException ex) {
+                                throw new UncheckedIOException(ex);
+                            }
+                        }
+                    }
+                }
+
+                if (!resourceUnlockedSuccess) {
+                    throw new JPackageException(I18N.format("error.unlock-resource", shortTargetPath.orElse(target)));
+                }
+
+                return null;
+            }).setMaxAttemptsCount(5).setAttemptTimeout(3, TimeUnit.SECONDS).execute();
+        } catch (UncheckedIOException ex) {
+            throw ex.getCause();
         }
     }
 
