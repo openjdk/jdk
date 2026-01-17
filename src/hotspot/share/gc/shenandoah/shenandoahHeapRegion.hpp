@@ -582,6 +582,7 @@ public:
       previous_atomic_top = atomic_top();
       assert(previous_atomic_top != nullptr, "Must not");
       set_top(previous_atomic_top); // Sync current _atomic_top back to _top
+      // previous_atomic_top MUST be stored to _top before swapping _atomic_top with nullptr
       OrderAccess::fence();
       if (AtomicAccess::cmpxchg(&_atomic_top, previous_atomic_top, (HeapWord*) nullptr) == previous_atomic_top) {
         // break when successfully exchange _atomic_top to nullptr
