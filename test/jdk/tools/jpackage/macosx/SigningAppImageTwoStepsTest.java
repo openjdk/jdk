@@ -93,6 +93,11 @@ public class SigningAppImageTwoStepsTest {
                 return new TestSpec(Optional.ofNullable(signAppImage), sign);
             }
 
+            Builder keychain(SigningBase.StandardKeychain v) {
+                keychain = Objects.requireNonNull(v);
+                return this;
+            }
+
             Builder certRequest(SigningBase.StandardCertificateRequest v) {
                 certRequest = Objects.requireNonNull(v);
                 return this;
@@ -117,9 +122,10 @@ public class SigningAppImageTwoStepsTest {
                 return new SignKeyOptionWithKeychain(
                         signIdentityType,
                         certRequest,
-                        SigningBase.StandardKeychain.MAIN.keychain());
+                        keychain.keychain());
             }
 
+            private SigningBase.StandardKeychain keychain = SigningBase.StandardKeychain.MAIN;
             private SigningBase.StandardCertificateRequest certRequest = SigningBase.StandardCertificateRequest.CODESIGN;
             private SignKeyOption.Type signIdentityType = SignKeyOption.Type.SIGN_KEY_IDENTITY;
 
@@ -170,6 +176,9 @@ public class SigningAppImageTwoStepsTest {
             for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
                 builder.signIdentityType(signIdentityType)
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN);
+                if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
+                    builder.keychain(SigningBase.StandardKeychain.SINGLE);
+                }
                 data.add(builder.sign().create());
             }
         }
