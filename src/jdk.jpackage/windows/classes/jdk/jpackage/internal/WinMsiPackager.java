@@ -151,9 +151,6 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
 
         wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(wixToolset.getVersion(),
                 wixToolset.getType()));
-
-        wixFragments.stream().map(WixFragmentBuilder::getLoggableWixFeatures).flatMap(
-                List::stream).distinct().toList().forEach(Log::verbose);
     }
 
     WinMsiPackager(BuildEnv env, WinMsiPackage pkg, Path outputDir, WinSystemEnvironment sysEnv) {
