@@ -31,7 +31,6 @@ import static jdk.jpackage.internal.util.CollectionUtils.toCollection;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -140,16 +139,6 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             packageFile.save(ApplicationLayout.build().setAll(getConfigRoot()).create());
         }
         super.addFilesToConfigRoot();
-    }
-
-    @Override
-    List<String> getLoggableWixFeatures() {
-        if (isWithWix36Features()) {
-            return List.of(MessageFormat.format(I18N.getString("message.use-wix36-features"),
-                    getWixVersion()));
-        } else {
-            return List.of();
-        }
     }
 
     @Override

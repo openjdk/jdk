@@ -30,19 +30,18 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.util.XmlConsumer;
 import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.util.XmlConsumer;
 import jdk.jpackage.internal.util.XmlUtils;
 
 /**
@@ -70,10 +69,6 @@ abstract class WixFragmentBuilder {
         additionalResources = null;
         configRoot = env.configDir();
         fragmentResource = env.createResource(defaultResourceName).setPublicName(outputFileName);
-    }
-
-    List<String> getLoggableWixFeatures() {
-        return List.of();
     }
 
     void configureWixPipeline(WixPipeline.Builder wixPipeline) {
