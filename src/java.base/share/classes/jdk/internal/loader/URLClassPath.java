@@ -393,7 +393,7 @@ public class URLClassPath {
         // or unopenedUrls is exhausted.
         while (loaders.size() < index + 1) {
             final URL url;
-             synchronized (path) {
+            synchronized (path) {
                 url = nextURL();
                 if (url == null)
                     return null;
