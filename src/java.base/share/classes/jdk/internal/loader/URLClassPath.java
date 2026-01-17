@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -101,8 +100,11 @@ public class URLClassPath {
     /* The original search path of URLs. */
     private final ArrayList<URL> path;
 
-    /* The deque of unopened URLs */
-    private final ArrayDeque<URL> unopenedUrls;
+    /* Index of URL in the search path to process next */
+    private int pathCursor = 0;
+
+    /* A list of loader-discovered URLs, if any */
+    private ArrayList<URL> loaderPath;
 
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
@@ -128,14 +130,8 @@ public class URLClassPath {
      */
     public URLClassPath(URL[] urls,
                         URLStreamHandlerFactory factory) {
-        ArrayList<URL> path = new ArrayList<>(urls.length);
-        ArrayDeque<URL> unopenedUrls = new ArrayDeque<>(urls.length);
-        for (URL url : urls) {
-            path.add(url);
-            unopenedUrls.add(url);
-        }
-        this.path = path;
-        this.unopenedUrls = unopenedUrls;
+        //  Reject null URLs
+        this.path = new ArrayList<>(List.of(urls));
 
         if (factory != null) {
             jarHandler = factory.createURLStreamHandler("jar");
@@ -174,15 +170,6 @@ public class URLClassPath {
                 off = next + 1;
             } while (next != -1);
         }
-
-        // can't use ArrayDeque#addAll or new ArrayDeque(Collection);
-        // it's too early in the bootstrap to trigger use of lambdas
-        int size = path.size();
-        ArrayDeque<URL> unopenedUrls = new ArrayDeque<>(size);
-        for (int i = 0; i < size; i++)
-            unopenedUrls.add(path.get(i));
-
-        this.unopenedUrls = unopenedUrls;
         this.path = path;
         // the application class loader uses the built-in protocol handler to avoid protocol
         // handler lookup when opening JAR files on the class path.
@@ -215,9 +202,8 @@ public class URLClassPath {
     public synchronized void addURL(URL url) {
         if (closed || url == null)
             return;
-        synchronized (unopenedUrls) {
+        synchronized (path) {
             if (! path.contains(url)) {
-                unopenedUrls.addLast(url);
                 path.add(url);
             }
         }
@@ -249,7 +235,7 @@ public class URLClassPath {
      * Returns the original search path of URLs.
      */
     public URL[] getURLs() {
-        synchronized (unopenedUrls) {
+        synchronized (path) {
             return path.toArray(new URL[0]);
         }
     }
@@ -380,6 +366,21 @@ public class URLClassPath {
     }
 
     /*
+     * Returns the next URL to process or null if finished
+     */
+    private URL nextURL() {
+        // Check any loader-discovered class path first
+        if (loaderPath !=  null && !loaderPath.isEmpty())  {
+            return loaderPath.removeLast();
+        }
+        // Check the original search path
+        if (pathCursor < path.size()) {
+            return path.get(pathCursor++);
+        }
+        // All paths exhausted
+        return null;
+    }
+    /*
      * Returns the Loader at the specified position in the URL search
      * path. The URLs are opened and expanded as needed. Returns null
      * if the specified index is out of range.
@@ -392,8 +393,8 @@ public class URLClassPath {
         // or unopenedUrls is exhausted.
         while (loaders.size() < index + 1) {
             final URL url;
-            synchronized (unopenedUrls) {
-                url = unopenedUrls.pollFirst();
+             synchronized (path) {
+                url = nextURL();
                 if (url == null)
                     return null;
             }
@@ -475,12 +476,17 @@ public class URLClassPath {
     }
 
     /*
-     * Pushes the specified URLs onto the head of unopened URLs.
+     * Pushes the specified URLs onto the list of loader-discovered URLs
      */
     private void push(URL[] urls) {
-        synchronized (unopenedUrls) {
+        synchronized (path) {
+            // Lazily create list
+            if (loaderPath  == null) {
+                loaderPath = new ArrayList<>();
+            }
+            // URLs will be consumed tail-first
             for (int i = urls.length - 1; i >= 0; --i) {
-                unopenedUrls.addFirst(urls[i]);
+                loaderPath.addLast(urls[i]);
             }
         }
     }
