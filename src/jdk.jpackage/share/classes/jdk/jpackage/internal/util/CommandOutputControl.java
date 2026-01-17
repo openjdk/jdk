@@ -796,6 +796,10 @@ public final class CommandOutputControl {
 
     public interface ExecutableAttributes {
         List<String> commandLine();
+
+        default String printableCommandLine() {
+            return CommandLineFormat.DEFAULT.apply(commandLine());
+        }
     }
 
     public sealed interface Executable {
@@ -812,22 +816,12 @@ public final class CommandOutputControl {
             Objects.requireNonNull(pid);
             commandLine.forEach(Objects::requireNonNull);
         }
-
-        @Override
-        public String toString() {
-            return CommandLineFormat.DEFAULT.apply(commandLine());
-        }
     }
 
     public record ToolProviderAttributes(String name, List<String> args) implements ExecutableAttributes {
         public ToolProviderAttributes {
             Objects.requireNonNull(name);
             args.forEach(Objects::requireNonNull);
-        }
-
-        @Override
-        public String toString() {
-            return CommandLineFormat.DEFAULT.apply(commandLine());
         }
 
         @Override
@@ -838,13 +832,8 @@ public final class CommandOutputControl {
 
     public static ExecutableAttributes EMPTY_EXECUTABLE_ATTRIBUTES = new ExecutableAttributes() {
         @Override
-        public String toString() {
-            return "<unknown>";
-        }
-
-        @Override
         public List<String> commandLine() {
-            return List.of();
+            return List.of("<unknown>");
         }
     };
 
@@ -867,6 +856,51 @@ public final class CommandOutputControl {
             Objects.requireNonNull(output);
             Objects.requireNonNull(byteOutput);
             Objects.requireNonNull(execAttrs);
+        }
+
+        public static Builder build() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+
+            public Result create() {
+                return new Result(
+                        exitCode,
+                        Optional.ofNullable(content).map(List::copyOf).map(StringListContent::new).map(c -> {
+                            return new CommandOutput<List<String>>(Optional.of(c), c.size(), true);
+                        }),
+                        Optional.empty(),
+                        Optional.ofNullable(execAttrs).orElse(EMPTY_EXECUTABLE_ATTRIBUTES));
+            }
+
+            public Builder exitCode(int v) {
+                exitCode = Optional.of(v);
+                return this;
+            }
+
+            public Builder noExitCode() {
+                exitCode = Optional.empty();
+                return this;
+            }
+
+            public Builder execAttrs(ExecutableAttributes v) {
+                execAttrs = v;
+                return this;
+            }
+
+            public Builder content(List<String> v) {
+                content = v;
+                return this;
+            }
+
+            public Builder content(String... v) {
+                return content(List.of(v));
+            }
+
+            private ExecutableAttributes execAttrs;
+            private List<String> content;
+            private Optional<Integer> exitCode = Optional.empty();
         }
 
         public Result(int exitCode) {
@@ -1019,7 +1053,8 @@ public final class CommandOutputControl {
         }
 
         private UnexpectedResultException(Result value) {
-            this(value, String.format("Unexpected result from executing the command %s", value.execAttrs()));
+            this(value, String.format("Unexpected result from executing the command %s",
+                    value.execAttrs().printableCommandLine()));
         }
 
         public Result getResult() {
@@ -1034,11 +1069,21 @@ public final class CommandOutputControl {
     public static final class UnexpectedExitCodeException extends UnexpectedResultException {
 
         public UnexpectedExitCodeException(Result value, String message) {
-            super(value, message);
+            super(requireExitCode(value), message);
         }
 
         public UnexpectedExitCodeException(Result value) {
-            this(value, String.format("Unexpected exit code %d from executing the command %s", value.getExitCode(), value.execAttrs()));
+            this(value, String.format("Unexpected exit code %d from executing the command %s",
+                    requireExitCode(value).getExitCode(), value.execAttrs().printableCommandLine()));
+        }
+
+        private static Result requireExitCode(Result v) {
+            Objects.requireNonNull(v);
+            if (v.exitCode().isPresent()) {
+                return v;
+            } else {
+                throw new IllegalArgumentException();
+            }
         }
 
         private static final long serialVersionUID = 1L;
