@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -44,6 +45,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
@@ -55,18 +57,14 @@ public class WindowsHelper {
                 cmd.packageType().getSuffix());
     }
 
-    static String getNormalizedVersion(JPackageCommand cmd, String version) {
-        cmd.verifyIsOfType(PackageType.WINDOWS);
+    static String getNormalizedVersion(String version) {
         // Windows requires 2 or 4 components version string.
         // We always normalize to 4 components.
-        String[] components = version.split("\\.");
-        if (components.length == 1) {
-            return version.concat(".0.0.0");
-        } else if (components.length == 3) {
-            return version.concat(".0");
-        } else if (components.length >= 5) {
-            components = version.split("\\.", 5);
-            return String.join(".", Arrays.copyOf(components, components.length - 1));
+        DottedVersion ver = DottedVersion.greedy(version);
+        BigInteger[] components = ver.getComponents();
+        if (components.length == 1 || components.length == 3 ||
+                components.length >= 5) {
+            return ver.toComponentsStringWithPadding(4);
         }
 
         return version;

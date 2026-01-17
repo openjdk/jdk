@@ -25,28 +25,25 @@
 
 package jdk.jpackage.internal.util;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.Properties;
+import jdk.internal.util.OperatingSystem;
 
-public final class RuntimeVersionReader {
+public final class RuntimeImageUtils {
 
-    public static Optional<String> readVersion(Path releaseFilePath) throws IOException {
-        if (!Files.isRegularFile(releaseFilePath)) {
-            return Optional.empty();
-        }
-
-        try (Reader reader = Files.newBufferedReader(releaseFilePath)) {
-            Properties props = new Properties();
-            props.load(reader);
-            String version = props.getProperty("JAVA_VERSION");
-            if (version != null) {
-                version = version.replaceAll("^\"|\"$", "");
+    public static Path getReleaseFilePath(Path runtimePath) {
+        final Path releaseFile;
+        if (!OperatingSystem.isMacOS()) {
+            releaseFile = runtimePath.resolve("release");
+        } else {
+            // On Mac `runtimePath` can be runtime root or runtime home.
+            Path runtimeHome = runtimePath.resolve("Contents/Home");
+            if (!Files.isDirectory(runtimeHome)) {
+                runtimeHome = runtimePath;
             }
-            return Optional.ofNullable(version);
+            releaseFile = runtimeHome.resolve("release");
         }
+
+        return releaseFile;
     }
 }

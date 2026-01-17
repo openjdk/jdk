@@ -45,6 +45,8 @@ import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.cli.StandardOption.RESOURCE_DIR;
 import static jdk.jpackage.internal.cli.StandardOption.VENDOR;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -54,6 +56,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.util.RuntimeImageUtils;
 import jdk.jpackage.internal.util.RuntimeVersionReader;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
@@ -176,12 +179,18 @@ final class FromOptions {
             appBuilder.appImageLayout(runtimeLayout);
             if (!APP_VERSION.containsIn(options)) {
                 // Version is not specified explicitly. Try to get it from the release file.
-                RuntimeVersionReader.readVersion(PREDEFINED_RUNTIME_IMAGE.getFrom(options))
-                        .ifPresent(version -> {
-                            appBuilder.version(version);
-                            Log.verbose(I18N.format("message.release-version",
-                                    version, PREDEFINED_RUNTIME_IMAGE.getFrom(options)));
-                        });
+                final Path releaseFile = RuntimeImageUtils.getReleaseFilePath(
+                        PREDEFINED_RUNTIME_IMAGE.getFrom(options));
+                try {
+                    RuntimeVersionReader.readVersion(releaseFile)
+                            .ifPresent(version -> {
+                                appBuilder.version(version);
+                                Log.verbose(I18N.format("message.release-version",
+                                        version, PREDEFINED_RUNTIME_IMAGE.getFrom(options)));
+                            });
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
             }
         } else {
             appBuilder.appImageLayout(appLayout);

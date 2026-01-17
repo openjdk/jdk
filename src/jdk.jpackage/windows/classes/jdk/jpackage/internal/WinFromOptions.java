@@ -43,10 +43,13 @@ import static jdk.jpackage.internal.cli.StandardOption.WIN_UPDATE_URL;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_UPGRADE_UUID;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
+import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.function.UnaryOperator;
 
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinExePackage;
@@ -83,24 +86,10 @@ final class WinFromOptions {
         if (isRuntimeInstaller(options) && !APP_VERSION.containsIn(options)) {
             // User didn't explicitly specify the version on the command line. jpackage derived it from the input.
             // In this case it should ensure the derived value is valid Windows version.
-            var ver = normalizeVersion(app.version());
-            if (!ver.equals(app.version())) {
-                Log.verbose(I18N.format("message.version-normalized",
-                        ver, app.version()));
-            }
-
-            app = new Application.Stub(
-                    app.name(),
-                    app.description(),
-                    ver,
-                    app.vendor(),
-                    app.copyright(),
-                    app.srcDir(),
-                    app.contentDirs(),
-                    app.imageLayout(),
-                    app.runtimeBuilder(),
-                    app.launchers(),
-                    app.extraAppImageFileData());
+            UnaryOperator<String> versionNormalizer = version -> {
+                return normalizeVersion(version);
+            };
+            app = ApplicationBuilder.normalizeVersion(app, app.version(), versionNormalizer);
         }
 
         return WinApplication.create(app);
@@ -147,14 +136,11 @@ final class WinFromOptions {
         // Windows requires 2 or 4 components version string.
         // When reading from release file it can be 1 or 3 or maybe more.
         // We always normalize to 4 components.
-        String[] components = version.split("\\.");
-        if (components.length == 1) {
-            return version.concat(".0.0.0");
-        } else if (components.length == 3) {
-            return version.concat(".0");
-        } else if (components.length >= 5) {
-            components = version.split("\\.", 5);
-            return String.join(".", Arrays.copyOf(components, components.length - 1));
+        DottedVersion ver = DottedVersion.greedy(version);
+        BigInteger[] components = ver.getComponents();
+        if (components.length == 1 || components.length == 3 ||
+                components.length >= 5) {
+            return ver.toComponentsStringWithPadding(4);
         }
 
         return version;

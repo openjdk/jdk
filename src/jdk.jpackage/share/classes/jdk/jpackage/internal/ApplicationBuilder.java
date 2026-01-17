@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
@@ -225,6 +226,28 @@ final class ApplicationBuilder {
         } else {
             return appLaunchers;
         }
+    }
+
+    static Application normalizeVersion(Application app, String version,
+            UnaryOperator<String> versionNormalizer) {
+        final var ver = versionNormalizer.apply(version);
+        if (!ver.equals(app.version())) {
+            Log.verbose(I18N.format("message.version-normalized",
+                    ver, app.version()));
+        }
+
+        return new Application.Stub(
+                app.name(),
+                app.description(),
+                ver,
+                app.vendor(),
+                app.copyright(),
+                app.srcDir(),
+                app.contentDirs(),
+                app.imageLayout(),
+                app.runtimeBuilder(),
+                app.launchers(),
+                app.extraAppImageFileData());
     }
 
     static Launcher overrideLauncherStartupInfo(Launcher launcher, LauncherStartupInfo startupInfo) {

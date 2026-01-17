@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,6 +222,16 @@ public final class DottedVersion {
 
     public String toComponentsString() {
         return Stream.of(components).map(BigInteger::toString).collect(Collectors.joining("."));
+    }
+
+    public String toComponentsStringWithPadding(int numberOfComponents) {
+        if (components.length >= numberOfComponents) {
+            return Stream.of(components).map(BigInteger::toString)
+                    .limit(numberOfComponents).collect(Collectors.joining("."));
+        } else {
+            return toComponentsString()
+                    .concat(".0".repeat(numberOfComponents - components.length));
+        }
     }
 
     public BigInteger[] getComponents() {

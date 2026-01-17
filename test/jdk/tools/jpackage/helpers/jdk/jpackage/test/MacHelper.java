@@ -42,6 +42,7 @@ import java.io.UncheckedIOException;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -72,6 +73,7 @@ import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.XmlUtils;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.MacSign.CertificateRequest;
@@ -761,14 +763,13 @@ public final class MacHelper {
                 cmd.packageType().getSuffix());
     }
 
-    static String getNormalizedVersion(JPackageCommand cmd, String version) {
-        cmd.verifyIsOfType(PackageType.MAC);
+    static String getNormalizedVersion(String version) {
         // macOS requires 1, 2 or 3 components version string.
         // We always normalize to 3 components.
-        String[] components = version.split("\\.");
+        DottedVersion ver = DottedVersion.greedy(version);
+        BigInteger[] components = ver.getComponents();
         if (components.length >= 4) {
-            components = version.split("\\.", 4);
-            return String.join(".", Arrays.copyOf(components, components.length - 1));
+            return ver.toComponentsStringWithPadding(3);
         }
 
         return version;
