@@ -259,10 +259,7 @@ public final class MacHelper {
      *         predefined app image in place and {@code false} otherwise.
      */
     public static boolean signPredefinedAppImage(JPackageCommand cmd) {
-        Objects.requireNonNull(cmd);
-        if (!TKit.isOSX()) {
-            throw new UnsupportedOperationException();
-        }
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
         return cmd.hasArgument("--mac-sign") && cmd.hasArgument("--app-image") && cmd.isImagePackageType();
     }
 
@@ -279,10 +276,7 @@ public final class MacHelper {
      *         otherwise.
      */
     public static boolean appImageSigned(JPackageCommand cmd) {
-        Objects.requireNonNull(cmd);
-        if (!TKit.isOSX()) {
-            throw new UnsupportedOperationException();
-        }
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
 
         var runtimeImageBundle = Optional.ofNullable(cmd.getArgumentValue("--runtime-image")).map(Path::of).flatMap(MacBundle::fromPath);
         var appImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of);
@@ -291,23 +285,102 @@ public final class MacHelper {
             // If the predefined runtime is a signed bundle, bundled image should be signed too.
             return true;
         } else if (appImage.map(MacHelper::isBundleSigned).orElse(false)) {
-            // The external app image is signed, so the app image is signed too.
+            // The predefined app image is signed, so the app image is signed too.
             return true;
-        }
-
-        if (!cmd.isImagePackageType() && appImage.isPresent()) {
-            // Building a ".pkg" or a ".dmg" bundle from the predefined app image.
-            // The predefined app image is unsigned, so the app image bundled
-            // in the output native package will be unsigned too
-            // (even if the ".pkg" file may be signed itself, and we never sign ".dmg" files).
-            return false;
         }
 
         if (!cmd.hasArgument("--mac-sign")) {
             return false;
+        } else {
+            return isSignWithoutSignIdentity(cmd) || hasAppImageSignIdentity(cmd);
         }
+    }
 
-        return (cmd.hasArgument("--mac-signing-key-user-name") || cmd.hasArgument("--mac-app-image-sign-identity"));
+    /**
+     * Returns {@code true} if the given jpackage command line is configured such
+     * that the native package it will produce will be signed.
+     *
+     * @param cmd the jpackage command to examine
+     * @return {@code true} if the given jpackage command line is configured such
+     *         the native package it will produce will be signed and {@code false}
+     *         otherwise.
+     */
+    public static boolean nativePackageSigned(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC);
+
+        switch (cmd.packageType()) {
+            case MAC_DMG -> {
+                return false;
+            }
+            case MAC_PKG -> {
+                if (!cmd.hasArgument("--mac-sign")) {
+                    return false;
+                } else {
+                    return isSignWithoutSignIdentity(cmd) || hasPkgInstallerSignIdentity(cmd);
+                }
+            }
+            default -> {
+                throw new IllegalStateException();
+            }
+        }
+    }
+
+    /**
+     * Returns {@code true} if the given jpackage command line has app image signing
+     * identity option. The command line must have "--mac-sign" option.
+     *
+     * @param cmd the jpackage command to examine
+     * @return {@code true} if the given jpackage command line has app image signing
+     *         identity option and {@code false} otherwise.
+     */
+    public static boolean hasAppImageSignIdentity(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
+        if (!cmd.hasArgument("--mac-sign")) {
+            throw new IllegalArgumentException();
+        }
+        return Stream.of(
+                "--mac-signing-key-user-name",
+                "--mac-app-image-sign-identity"
+        ).anyMatch(cmd::hasArgument);
+    }
+
+    /**
+     * Returns {@code true} if the given jpackage command line has PKG installer signing
+     * identity option. The command line must have "--mac-sign" option.
+     *
+     * @param cmd the jpackage command to examine
+     * @return {@code true} if the given jpackage command line has PKG installer signing
+     *         identity option and {@code false} otherwise.
+     */
+    public static boolean hasPkgInstallerSignIdentity(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
+        if (!cmd.hasArgument("--mac-sign")) {
+            throw new IllegalArgumentException();
+        }
+        return Stream.of(
+                "--mac-signing-key-user-name",
+                "--mac-installer-sign-identity"
+        ).anyMatch(cmd::hasArgument);
+    }
+
+    /**
+     * Returns {@code true} if the given jpackage command line doesn't have signing
+     * identity options. The command line must have "--mac-sign" option.
+     *
+     * @param cmd the jpackage command to examine
+     * @return {@code true} if the given jpackage command line doesn't have signing
+     *         identity options and {@code false} otherwise.
+     */
+    public static boolean isSignWithoutSignIdentity(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
+        if (!cmd.hasArgument("--mac-sign")) {
+            throw new IllegalArgumentException();
+        }
+        return Stream.of(
+                "--mac-signing-key-user-name",
+                "--mac-app-image-sign-identity",
+                "--mac-installer-sign-identity"
+        ).noneMatch(cmd::hasArgument);
     }
 
     public static void writeFaPListFragment(JPackageCommand cmd, XMLStreamWriter xml) {
@@ -714,6 +787,12 @@ public final class MacHelper {
              */
             SIGN_KEY_IDENTITY_INSTALLER(Name.KEY_IDENTITY_INSTALLER),
 
+            /**
+             * No explicit option specifying signing identity. jpackage will pick one from
+             * the specified keychain.
+             */
+            SIGN_KEY_IMPLICIT,
+
             ;
 
             Type(Map<MacSign.CertificateType, Name> optionNameMap) {
@@ -740,7 +819,8 @@ public final class MacHelper {
                 return new Type[] {
                         SIGN_KEY_USER_SHORT_NAME,
                         SIGN_KEY_USER_FULL_NAME,
-                        SIGN_KEY_IDENTITY
+                        SIGN_KEY_IDENTITY,
+                        SIGN_KEY_IMPLICIT
                 };
             }
 
@@ -751,23 +831,25 @@ public final class MacHelper {
         public String toString() {
             var sb = new StringBuilder();
             sb.append('{');
-            applyTo((optionName, _) -> {
-                sb.append(optionName);
-                switch (type) {
-                    case SIGN_KEY_USER_FULL_NAME -> {
-                        sb.append("/full");
+            if (type != Type.SIGN_KEY_IMPLICIT) {
+                applyTo((optionName, _) -> {
+                    sb.append(optionName);
+                    switch (type) {
+                        case SIGN_KEY_USER_FULL_NAME -> {
+                            sb.append("/full");
+                        }
+                        case SIGN_KEY_USER_NAME -> {
+                            customOptionValue.ifPresent(optionValue -> {
+                                sb.append("=").append(ENQUOTER.applyTo(optionValue));
+                            });
+                        }
+                        default -> {
+                            // NOP
+                        }
                     }
-                    case SIGN_KEY_USER_NAME -> {
-                        customOptionValue.ifPresent(optionValue -> {
-                            sb.append("=").append(ENQUOTER.applyTo(optionValue));
-                        });
-                    }
-                    default -> {
-                        // NOP
-                    }
-                }
-                sb.append(": ");
-            });
+                    sb.append(": ");
+                });
+            }
             sb.append(certRequest).append('}');
             return sb.toString();
         }
@@ -787,12 +869,16 @@ public final class MacHelper {
         }
 
         public List<String> asCmdlineArgs() {
-            String[] args = new String[2];
-            applyTo((optionName, optionValue) -> {
-                args[0] = optionName;
-                args[1] = optionValue;
-            });
-            return List.of(args);
+            if (type == Type.SIGN_KEY_IMPLICIT) {
+                return List.of();
+            } else {
+                String[] args = new String[2];
+                applyTo((optionName, optionValue) -> {
+                    args[0] = optionName;
+                    args[1] = optionValue;
+                });
+                return List.of(args);
+            }
         }
 
         public Optional<Boolean> passThrough() {
@@ -960,18 +1046,21 @@ public final class MacHelper {
     }
 
     static void verifyUnsignedBundleSignature(JPackageCommand cmd) {
-        if (!cmd.isImagePackageType()) {
+
+        if (!cmd.isImagePackageType() && !nativePackageSigned(cmd)) {
             MacSignVerify.assertUnsigned(cmd.outputBundle());
         }
 
-        final Path bundleRoot;
-        if (cmd.isImagePackageType()) {
-            bundleRoot = cmd.outputBundle();
-        } else {
-            bundleRoot = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
-        }
+        if (!appImageSigned(cmd)) {
+            final Path bundleRoot;
+            if (cmd.isImagePackageType()) {
+                bundleRoot = cmd.outputBundle();
+            } else {
+                bundleRoot = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+            }
 
-        MacSignVerify.assertAdhocSigned(bundleRoot);
+            MacSignVerify.assertAdhocSigned(bundleRoot);
+        }
     }
 
     static PackageHandlers createDmgPackageHandlers() {
