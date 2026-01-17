@@ -150,13 +150,15 @@ public class SigningAppImageTwoStepsTest {
                 }, signOption.keychain());
             }, appImageCmd::execute);
 
-            var cmd = new JPackageCommand()
-                    .setPackageType(PackageType.IMAGE)
-                    .addArguments("--app-image", appImageCmd.outputBundle())
-                    .mutate(sign::addTo);
+            MacSign.withKeychain(keychain -> {
+                var cmd = new JPackageCommand()
+                        .setPackageType(PackageType.IMAGE)
+                        .addArguments("--app-image", appImageCmd.outputBundle())
+                        .mutate(sign::addTo);
 
-            cmd.executeAndAssertHelloAppImageCreated();
-            MacSignVerify.verifyAppImageSigned(cmd, sign.certRequest());
+                cmd.executeAndAssertHelloAppImageCreated();
+                MacSignVerify.verifyAppImageSigned(cmd, sign.certRequest());
+            }, sign.keychain());
         }
     }
 
