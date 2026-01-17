@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import sun.jvmstat.monitor.MonitoredHost;
 
 /*
  * Linux implementation of HotSpotVirtualMachine
@@ -228,7 +230,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // Return the socket file for the given process.
     private File findSocketFile(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
-        return new File(findTargetProcessTmpDirectory(pid, ns_pid), ".java_pid" + ns_pid);
+        return new File(findTargetProcessTmpDirectory(pid), ".java_pid" + ns_pid);
     }
 
     // On Linux a simple handshake is used to start the attach mechanism
@@ -243,14 +245,14 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // Do not canonicalize the file path, or we will fail to attach to a VM in a container.
             f.createNewFile();
         } catch (IOException _) {
-            f = new File(findTargetProcessTmpDirectory(pid, ns_pid), fn.toString());
+            f = new File(findTargetProcessTmpDirectory(pid), fn.toString());
             f.createNewFile();
         }
         return f;
     }
 
-    private String findTargetProcessTmpDirectory(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
-        final var procPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
+    private String findTargetProcessTmpDirectory(long pid) throws AttachNotSupportedException {
+        final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
         /* We need to handle at least 4 different cases:
          * 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
@@ -261,21 +263,44 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
          * 4. Caller and target processes share neither PID namespace nor root filesystem (host to container)
          *
          * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared
-         * with the target/attachee process, we can try, except in the case where the ns_pid also exists in this pid ns
-         * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not,
-         * then we will potentially attempt to attach to some arbitrary process with the same pid (in this pid ns)
-         * as that of the intended target (in its * pid ns).
+         * with the target/attachee process, so we should check whether /tmp on both is same. This method would throw
+         * AttachNotSupportedException if they are different because we cannot make a connection with target VM.
          *
-         * so in that case we should prehaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
-         *
-         * however we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
+         * In addition, we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
          * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to
          * attaching to the actual target JVM ... c.f: checkCatchesAndSendQuitTo() below.
-         *
-         * note that if pid == ns_pid we are in a shared pid ns with the target and may (potentially) share /tmp
          */
 
-        return (Files.isWritable(procPidRoot) ? procPidRoot : TMPDIR).toString();
+        try {
+            if (Files.isWritable(tmpOnProcPidRoot)) {
+                return tmpOnProcPidRoot.toString();
+            } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
+                return TMPDIR.toString();
+            } else {
+                throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
+            }
+        } catch (IOException ioe) {
+            try {
+                boolean found = MonitoredHost.getMonitoredHost("//localhost")
+                                             .activeVms()
+                                             .stream()
+                                             .anyMatch(i -> pid == i.intValue());
+                if (found) {
+                    // We can use /tmp because target process is on same host
+                    // even if we cannot access /proc/<PID>/root.
+                    // The process with capsh/setcap would fall this pattern.
+                    return TMPDIR.toString();
+                } else {
+                    throw new AttachNotSupportedException("Unable to access the filesystem of the target process", ioe);
+                }
+            } catch (AttachNotSupportedException e) {
+                // AttachNotSupportedException happened in above should go through
+                throw e;
+            } catch (Exception e) {
+                // Other exceptions would be wrapped with AttachNotSupportedException
+                throw new AttachNotSupportedException("Unable to access the filesystem of the target process", e);
+            }
+        }
     }
 
     // Return the inner most namespaced PID if there is one,
