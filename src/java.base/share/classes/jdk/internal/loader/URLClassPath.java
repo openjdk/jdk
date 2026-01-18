@@ -110,7 +110,7 @@ public class URLClassPath {
     /* A list of loader-discovered URLs, if any.
      * Access is guared by a monitor on 'path'
      */
-    private ArrayList<URL> loaderPath;
+    private final ArrayList<URL> loaderPath = new ArrayList<>();
 
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
@@ -377,7 +377,7 @@ public class URLClassPath {
      */
     private URL nextURL() {
         // Check any loader-discovered class path first
-        if (loaderPath !=  null && !loaderPath.isEmpty())  {
+        if (!loaderPath.isEmpty())  {
             return loaderPath.removeLast();
         }
         // Check the original search path
@@ -487,10 +487,6 @@ public class URLClassPath {
      */
     private void push(URL[] urls) {
         synchronized (path) {
-            // Lazily create list
-            if (loaderPath  == null) {
-                loaderPath = new ArrayList<>();
-            }
             // URLs will be consumed tail-first
             for (int i = urls.length - 1; i >= 0; --i) {
                 loaderPath.addLast(urls[i]);
