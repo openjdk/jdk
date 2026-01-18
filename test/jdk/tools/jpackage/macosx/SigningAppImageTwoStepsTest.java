@@ -164,6 +164,12 @@ public class SigningAppImageTwoStepsTest {
 
     public static Collection<Object[]> test() {
 
+        var signIdentityTypes = List.of(
+                SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
+                SignKeyOption.Type.SIGN_KEY_IDENTITY_APP_IMAGE,
+                SignKeyOption.Type.SIGN_KEY_IMPLICIT
+        );
+
         List<TestSpec> data = new ArrayList<>();
 
         for (var appImageSign : withAndWithout(SignKeyOption.Type.SIGN_KEY_IDENTITY)) {
@@ -175,7 +181,7 @@ public class SigningAppImageTwoStepsTest {
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD)
                         .signAppImage();
             });
-            for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
+            for (var signIdentityType : signIdentityTypes) {
                 builder.signIdentityType(signIdentityType)
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN);
                 if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
