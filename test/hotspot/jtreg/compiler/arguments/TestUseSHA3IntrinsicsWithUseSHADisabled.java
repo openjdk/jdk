@@ -46,22 +46,22 @@ import jdk.test.lib.process.ExitCode;
 public class TestUseSHA3IntrinsicsWithUseSHADisabled {
     private static final String OPTION_NAME = "UseSHA3Intrinsics";
     private static final String MASTER_OPTION = "UseSHA";
-    private static final String WARNING_MESSAGE = 
+    private static final String WARNING_MESSAGE =
         "Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU\\.";
     private static final String UNLOCK_DIAGNOSTIC = "-XX:+UnlockDiagnosticVMOptions";
 
     public static void main(String[] args) throws Throwable {
         // Verify that UseSHA3Intrinsics can be explicitly enabled when UseSHA is enabled (default)
         testExplicitEnableWithUseSHAEnabled();
-        
+
         // Verify that UseSHA3Intrinsics is forced to false when UseSHA is disabled,
         // even if explicitly set to true
         testForcedDisableWhenUseSHADisabled();
-        
+
         // Verify that a warning is printed when trying to enable UseSHA3Intrinsics
         // while UseSHA is disabled
         testWarningWhenEnablingWithUseSHADisabled();
-        
+
         // Verify that UseSHA3Intrinsics can be explicitly disabled even when UseSHA is enabled
         testExplicitDisableWithUseSHAEnabled();
     }
@@ -69,13 +69,13 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabled {
     private static void testExplicitEnableWithUseSHAEnabled() throws Throwable {
         // Verify the option value is true when explicitly enabled (with UseSHA enabled by default)
         CommandLineOptionTest.verifyOptionValueForSameVM(
-            OPTION_NAME, 
+            OPTION_NAME,
             "true",
             "UseSHA3Intrinsics should be enabled when explicitly set to true with UseSHA enabled",
             UNLOCK_DIAGNOSTIC,
             CommandLineOptionTest.prepareBooleanFlag(OPTION_NAME, true)
         );
-        
+
         // Verify no warning is printed when enabling UseSHA3Intrinsics with UseSHA enabled
         CommandLineOptionTest.verifySameJVMStartup(
             null,  // No specific output expected
@@ -129,7 +129,7 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabled {
             CommandLineOptionTest.prepareBooleanFlag(MASTER_OPTION, true),
             CommandLineOptionTest.prepareBooleanFlag(OPTION_NAME, false)
         );
-        
+
         // Verify no warning is printed when explicitly disabling UseSHA3Intrinsics
         CommandLineOptionTest.verifySameJVMStartup(
             null,  // No specific output expected
