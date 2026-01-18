@@ -508,7 +508,7 @@ public final class Unsafe {
                     putPrimitiveBitsMONative(MO_PLAIN, BT_BYTE, o, offset, bits);
                     return;
                 } else if (basicType == BT_BOOLEAN) {
-                    bits = bool2byte(byte2bool((byte)bits)); // do not store garbage booleans
+                    bits = boolTrunc((byte)bits); // do not store garbage booleans
                     break;
                 }
             }
@@ -711,13 +711,13 @@ public final class Unsafe {
     /** @see #getInt(Object, long) */
     @ForceInline
     public boolean getBoolean(Object o, long offset) {
-        return byte2bool((byte)getPrimitiveBitsMO(MO_PLAIN, BT_BOOLEAN, o, offset));
+        return byte2bool(boolTrunc((byte)getPrimitiveBitsMO(MO_PLAIN, BT_BOOLEAN, o, offset)));
     }
 
     /** Special-access version. */
     @ForceInline
     public boolean getBooleanMO(byte memoryOrder, Object o, long offset) {
-        return byte2bool((byte)getPrimitiveBitsMO(memoryOrder, BT_BOOLEAN, o, offset));
+        return byte2bool(boolTrunc((byte)getPrimitiveBitsMO(memoryOrder, BT_BOOLEAN, o, offset)));
     }
 
     /** @see #putInt(Object, long, int) */
@@ -2475,7 +2475,10 @@ public final class Unsafe {
      *
      * <p>Java booleans in the heap are also stored in bytes, but are
      * strongly normalized to the value-set 0..1 (i.e., they are
-     * truncated to the least-significant bit).
+     * truncated to the least-significant bit).  When the JVM stores
+     * a value from the stack to a boolean array, it simply zeroes
+     * out all but the lowest bit.  See method {@code boolTrunc},
+     * which performs this same operation for local purposes here.
      *
      * <p>The main reason for having different conventions for
      * conversion is performance: Truncation to the least-significant
@@ -2493,6 +2496,22 @@ public final class Unsafe {
     @ForceInline
     private boolean byte2bool(byte b) {
         return b != 0;
+    }
+
+    /**
+     * Alternative version of byte2bool which truncates down to the low bit.
+     * This is the technique used by the JVM internally (not JNI).
+     * Unsafe uses a mix of the two conversion rules for historical reasons.
+     * User code should not rely on which byte2bool normalization is used
+     * in any given algorithm that might read non-normalized bytes as booleans.
+     * Although {@code boolTrunc} appears to be an extra step addeed to
+     * plain {@code byte2bool}, after optimization the addition of the
+     * truncation step ensures that there is no control flow (or c-move)
+     * required to normalize the value to 0 or 1.
+     */
+    @ForceInline
+    private byte boolTrunc(byte b) {
+        return (byte)(b & 1);
     }
 
     /**
