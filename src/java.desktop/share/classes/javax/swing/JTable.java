@@ -57,6 +57,8 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.io.Serial;
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -5607,9 +5609,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             return value;
         }
 
-        public void writeExternal(java.io.ObjectOutput out) throws IOException {}
+        public void writeExternal(ObjectOutput out) throws IOException {}
 
-        public void readExternal(java.io.ObjectInput in) throws IOException {}
+        public void readExternal(ObjectInput in) throws IOException {}
     }
 
     static class NumberEditor extends GenericEditor {

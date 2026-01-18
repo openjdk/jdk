@@ -61,8 +61,8 @@ public class EditingJTableNotSerializable {
     private static JTable jt;
     private static void testSerializeEditingTable(StringBuilder str) {
         try {
-            Object[][] data = new Object[][]{ new Object[]{ 1,2,3,4,5}};
-            Object[] names = new Object[]{ 1,2,3,4,5};
+            Object[][] data = new Object[][]{ new Object[]{1, 2, 3, 4, 5}};
+            Object[] names = new Object[]{1, 2, 3, 4, 5};
             SwingUtilities.invokeAndWait(() -> {
                 jt = new JTable(data, names);
                 jt.editCellAt(0,3);
@@ -79,8 +79,8 @@ public class EditingJTableNotSerializable {
 
     private static void testSerializeNonEditingTable(StringBuilder str) {
         try {
-            Object[][] data = new Object[][]{ new Object[]{ 1,2,3,4,5}};
-            Object[] names = new Object[]{ 1,2,3,4,5};
+            Object[][] data = new Object[][]{ new Object[]{1, 2, 3, 4, 5}};
+            Object[] names = new Object[]{1, 2, 3, 4, 5};
             SwingUtilities.invokeAndWait(() -> {
                 jt = new JTable(data, names);
                 jt.editCellAt(0,3);
