@@ -80,6 +80,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         prerequisiteActions = new Actions();
         verifyActions = new Actions();
         excludeStandardAsserts(StandardAssert.MAIN_LAUNCHER_DESCRIPTION);
+        removeOldOutputBundle = true;
     }
 
     private JPackageCommand(JPackageCommand cmd, boolean immutable) {
@@ -91,6 +92,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         suppressOutput = cmd.suppressOutput;
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
+        removeOldOutputBundle = cmd.removeOldOutputBundle;
         this.immutable = immutable;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
@@ -292,34 +294,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
-
-        ThrowingConsumer<Path, IOException> createBulkFile = path -> {
-            Files.createDirectories(path.getParent());
-            try (FileOutputStream out = new FileOutputStream(path.toFile())) {
-                byte[] bytes = new byte[4 * 1024];
-                new SecureRandom().nextBytes(bytes);
-                out.write(bytes);
-            }
-        };
-
         addPrerequisiteAction(cmd -> {
-            Path fakeRuntimeDir = TKit.createTempDirectory("fake_runtime");
-
-            TKit.trace(String.format("Init fake runtime in [%s] directory",
-                    fakeRuntimeDir));
-
-            if (TKit.isOSX()) {
-                // Make MacAppImageBuilder happy
-                createBulkFile.accept(fakeRuntimeDir.resolve(Path.of(
-                        "lib/jli/libjli.dylib")));
-            }
-
-            // Make sure fake runtime takes some disk space.
-            // Package bundles with 0KB size are unexpected and considered
-            // an error by PackageTest.
-            createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("lib", "bulk")));
-
-            cmd.setArgumentValue("--runtime-image", fakeRuntimeDir);
+            cmd.setArgumentValue("--runtime-image", createInputRuntimeImage(RuntimeImageType.RUNTIME_TYPE_FAKE));
         });
 
         return this;
@@ -388,24 +364,77 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return cmd;
     }
 
+    public enum RuntimeImageType {
+
+        /**
+         * Runtime suitable for running the default "Hello" test app.
+         */
+        RUNTIME_TYPE_HELLO_APP,
+
+        /**
+         * Fake runtime.
+         */
+        RUNTIME_TYPE_FAKE,
+
+        ;
+    }
+
     public static Path createInputRuntimeImage() {
+        return createInputRuntimeImage(RuntimeImageType.RUNTIME_TYPE_HELLO_APP);
+    }
+
+    public static Path createInputRuntimeImage(RuntimeImageType role) {
+        Objects.requireNonNull(role);
 
         final Path runtimeImageDir;
+        switch (role) {
 
-        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
-            runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-        } else {
-            runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+            case RUNTIME_TYPE_FAKE -> {
+                Consumer<Path> createBulkFile = ThrowingConsumer.toConsumer(path -> {
+                    Files.createDirectories(path.getParent());
+                    try (FileOutputStream out = new FileOutputStream(path.toFile())) {
+                        byte[] bytes = new byte[4 * 1024];
+                        new SecureRandom().nextBytes(bytes);
+                        out.write(bytes);
+                    }
+                });
 
-            new Executor().setToolProvider(JavaTool.JLINK)
-                    .dumpOutput()
-                    .addArguments(
-                            "--output", runtimeImageDir.toString(),
-                            "--add-modules", "java.desktop",
-                            "--strip-debug",
-                            "--no-header-files",
-                            "--no-man-pages")
-                    .execute();
+                runtimeImageDir = TKit.createTempDirectory("fake_runtime");
+
+                TKit.trace(String.format("Init fake runtime in [%s] directory", runtimeImageDir));
+
+                if (TKit.isOSX()) {
+                    // Make MacAppImageBuilder happy
+                    createBulkFile.accept(runtimeImageDir.resolve(Path.of("lib/jli/libjli.dylib")));
+                }
+
+                // Make sure fake runtime takes some disk space.
+                // Package bundles with 0KB size are unexpected and considered
+                // an error by PackageTest.
+                createBulkFile.accept(runtimeImageDir.resolve(Path.of("lib", "bulk")));
+            }
+
+            case RUNTIME_TYPE_HELLO_APP -> {
+                if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null && !isFakeRuntime(DEFAULT_RUNTIME_IMAGE)) {
+                    runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
+                } else {
+                    runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+
+                    new Executor().setToolProvider(JavaTool.JLINK)
+                            .dumpOutput()
+                            .addArguments(
+                                    "--output", runtimeImageDir.toString(),
+                                    "--add-modules", "java.desktop",
+                                    "--strip-debug",
+                                    "--no-header-files",
+                                    "--no-man-pages")
+                            .execute();
+                }
+            }
+
+            default -> {
+                throw ExceptionBox.reachedUnreachable();
+            }
         }
 
         return runtimeImageDir;
@@ -844,6 +873,28 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    /**
+     * Configures this instance to optionally remove the existing output bundle
+     * before running the jpackage command.
+     *
+     * @param v {@code true} to remove existing output bundle before running the
+     *          jpackage command, and {@code false} otherwise
+     * @return this
+     */
+    public JPackageCommand removeOldOutputBundle(boolean v) {
+        verifyMutable();
+        removeOldOutputBundle = v;
+        return this;
+    }
+
+    /**
+     * Returns {@code true} if this instance will remove existing output bundle
+     * before running the jpackage command, and {@code false} otherwise.
+     */
+    public boolean isRemoveOldOutputBundle() {
+        return removeOldOutputBundle;
+    }
+
     public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
         return validateOutput(validator::apply);
     }
@@ -946,21 +997,18 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         verifyMutable();
         executePrerequisiteActions();
 
-        if (hasArgument("--dest")) {
-            nullableOutputBundle().ifPresent(path -> {
-                ThrowingRunnable.toRunnable(() -> {
-                    if (Files.isDirectory(path)) {
-                        TKit.deleteDirectoryRecursive(path, String.format(
-                                "Delete [%s] folder before running jpackage",
-                                path));
-                    } else if (TKit.deleteIfExists(path)) {
-                        TKit.trace(String.format(
-                                "Deleted [%s] file before running jpackage",
-                                path));
-                    }
-                }).run();
-            });
-        }
+        nullableOutputBundle().filter(_ -> {
+            return !(TKit.isOSX() && MacHelper.signPredefinedAppImage(this)) && removeOldOutputBundle;
+        }).ifPresent(path -> {
+            ThrowingRunnable.toRunnable(() -> {
+                if (Files.isDirectory(path)) {
+                    TKit.deleteDirectoryRecursive(path,
+                            String.format("Delete [%s] folder before running jpackage", path));
+                } else if (TKit.deleteIfExists(path)) {
+                    TKit.trace(String.format("Deleted [%s] file before running jpackage", path));
+                }
+            }).run();
+        });
 
         Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
         if (resourceDir != null && Files.isDirectory(resourceDir)) {
@@ -1090,7 +1138,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         private final Map<ReadOnlyPathAssert, List<TKit.PathSnapshot>> snapshots;
     }
 
-    public static enum ReadOnlyPathAssert{
+    public static enum ReadOnlyPathAssert {
         APP_IMAGE(new Builder("--app-image").enable(cmd -> {
             // External app image should be R/O unless it is an app image signing on macOS.
             return !(TKit.isOSX() && MacHelper.signPredefinedAppImage(cmd));
@@ -1774,6 +1822,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean suppressOutput;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
+    private boolean removeOldOutputBundle;
     private boolean immutable;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;

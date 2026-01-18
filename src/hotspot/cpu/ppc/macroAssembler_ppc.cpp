@@ -4535,7 +4535,7 @@ void MacroAssembler::push_cont_fastpath() {
   Label done;
   ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   cmpld(CR0, R1_SP, R0);
-  ble(CR0, done);
+  ble(CR0, done);          // if (SP <= _cont_fastpath) goto done;
   st_ptr(R1_SP, JavaThread::cont_fastpath_offset(), R16_thread);
   bind(done);
 }
@@ -4546,7 +4546,7 @@ void MacroAssembler::pop_cont_fastpath() {
   Label done;
   ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   cmpld(CR0, R1_SP, R0);
-  ble(CR0, done);
+  blt(CR0, done);          // if (SP < _cont_fastpath) goto done;
   li(R0, 0);
   st_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   bind(done);
