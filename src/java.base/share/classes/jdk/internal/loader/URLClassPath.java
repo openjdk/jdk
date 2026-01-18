@@ -487,10 +487,8 @@ public class URLClassPath {
      */
     private void push(URL[] urls) {
         synchronized (path) {
-            // URLs will be consumed tail-first
-            for (int i = urls.length - 1; i >= 0; --i) {
-                loaderPath.addLast(urls[i]);
-            }
+            // Adding in reversed order since URLs are consumed tail-first
+            loaderPath.addAll(Arrays.asList(urls).reversed());
         }
     }
 
