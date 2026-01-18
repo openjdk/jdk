@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,7 @@ class outputStream : public CHeapObjBase {
    virtual void write(const char* str, size_t len) = 0;
    virtual void rotate_log(bool force, outputStream* out = nullptr) {} // GC log rotation
    virtual ~outputStream() {}   // close properly on deletion
-   // Return true if this stream buffers/accumulates output in memory (e.g., stringStream)
-   virtual bool is_buffered() const { return false; }
+
    // Caller may specify their own scratch buffer to use for printing; otherwise,
    // an automatic buffer on the stack (with O_BUFLEN len) is used.
    void set_scratch_buffer(char* p, size_t len) { _scratch = p; _scratch_len = len; }
@@ -286,7 +285,6 @@ class stringStream : public outputStream {
   // Copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
   char* as_string(Arena* arena) const;
-  bool is_buffered() const { return true; }
 };
 
 class fileStream : public outputStream {
