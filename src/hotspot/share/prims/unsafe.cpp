@@ -423,6 +423,7 @@ UNSAFE_ENTRY_SCOPED(jlong, Unsafe_GetPrimitiveBitsMO(JNIEnv *env, jobject unsafe
 
   default:
     // MO_VOLATILE is a conservative approximation for acquire & release
+    assert((offset & (bt_size((BasicType)basic_type) - 1)) == 0, "non-plain access must be aligned");
     result = ma.get_volatile();
   }
   return result;
@@ -452,6 +453,7 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_PutPrimitiveBitsMO(JNIEnv *env, jobject unsafe,
 
   default:
     // MO_VOLATILE is a conservative approximation for acquire & release
+    assert((offset & (bt_size((BasicType)basic_type) - 1)) == 0, "non-plain access must be aligned");
     ma.put_volatile(x);
     break;
   }

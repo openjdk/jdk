@@ -667,7 +667,7 @@ public final class Unsafe {
      */
     @ForceInline
     public void putInt(Object o, long offset, int x) {
-        putIntMO(MO_PLAIN, o, offset, x);
+        putPrimitiveBitsMONative(MO_PLAIN, BT_INT, o, offset, x);
     }
 
     /** Special-access version of {@link #putInt(Object, long, int)}  */

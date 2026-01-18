@@ -3722,8 +3722,29 @@ bool GraphBuilder::try_inline_polymorphic_intrinsic(ciMethod* callee, bool ignor
   }
   // after skipping prefix, remember the number of skipped items
   const int prefix_size = prefix_end - args_base - 1;  //do not count receiver
-  // if MO is unknown, fall down to MO_VOLATILE
-  if (!vmIntrinsics::is_valid_memory_order(mo))  mo = vmIntrinsics::UNSAFE_MO_VOLATILE;
+  // if MO is unknown, fall down to MO_VOLATILE, for atomics & refs only
+  if (!vmIntrinsics::is_valid_memory_order(mo)) {
+    switch (id) {
+    case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+    case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+    case vmIntrinsics::_compareAndSetReferenceMO:
+    case vmIntrinsics::_compareAndExchangeReferenceMO:
+    case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+    case vmIntrinsics::_getAndSetReferenceMO:
+    case vmIntrinsics::_getReferenceMO:
+    case vmIntrinsics::_putReferenceMO:
+      // every atomic, even a "plain" one, must be fully aligned
+      // also references are always aligned
+      mo = vmIntrinsics::UNSAFE_MO_VOLATILE;
+      break;
+    case vmIntrinsics::_getPrimitiveBitsMO:
+    case vmIntrinsics::_putPrimitiveBitsMO:
+    default:
+      // Plain bitwise accesses are sometimes unaligned, but in that
+      // case we cannot assume that a MO_VOLATILE instruction is safe.
+      return false;
+    }
+  }
   BasicType t = (BasicType)bt;
   assert(bt >= 0 && is_java_type(t), "");
   if (op < 0)  op = vmIntrinsics::OP_NONE;

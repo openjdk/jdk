@@ -273,8 +273,33 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     default:
       ShouldNotReachHere();
     }
-    if (!vmIntrinsics::is_valid_memory_order(moc & ~vmIntrinsics::UNSAFE_MO_EXTRA_BITS_MASK))
-      moc = vmIntrinsics::UNSAFE_MO_VOLATILE;
+    if (!vmIntrinsics::is_valid_memory_order(moc & ~vmIntrinsics::UNSAFE_MO_EXTRA_BITS_MASK)) {
+      // for atomics it is OK to downgrade to MO_VOLATILE
+      switch (id) {
+      case vmIntrinsics::_getReferenceMO:
+      case vmIntrinsics::_putReferenceMO:
+      case vmIntrinsics::_compareAndSetPrimitiveBitsMO:
+      case vmIntrinsics::_compareAndExchangePrimitiveBitsMO:
+      case vmIntrinsics::_compareAndSetReferenceMO:
+      case vmIntrinsics::_compareAndExchangeReferenceMO:
+      case vmIntrinsics::_getAndOperatePrimitiveBitsMO:
+      case vmIntrinsics::_getAndSetReferenceMO:
+        // every atomic, even a "plain" one, must be fully aligned
+        // also references are always aligned
+        moc = vmIntrinsics::UNSAFE_MO_VOLATILE;
+        break;
+      case vmIntrinsics::_getPrimitiveBitsMO:
+      case vmIntrinsics::_putPrimitiveBitsMO:
+      default:
+        // There is no safe fallback MO for simple get or set primitive,
+        // because if it is unaligned, the volatile load/store might fault
+        // on an unaligned address, even if the plain version works fine.
+        // We might also consider emitting a tiny if/then/else, following
+        // the logic in unsafe.cpp:
+        //   if (mo!=MO_PLAIN||(addr&sz-1)!=0) vol_acc(); else plain_acc();
+        return false;
+      }
+    }
     mo = (vmIntrinsics::MemoryOrder)moc;
     prefix_size = next_arg - prefix_base;
   }
