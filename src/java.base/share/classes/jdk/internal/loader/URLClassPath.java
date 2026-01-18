@@ -98,17 +98,17 @@ public class URLClassPath {
     }
 
     /* The original search path of URLs
-     * Access is guared by a monitor on 'path' itself
+     * Access is guarded by a monitor on 'path' itself
      */
     private final ArrayList<URL> path;
 
     /* Index of URL in the search path to process next
-     * Access is guared by a monitor on 'path'
+     * Access is guarded by a monitor on 'path'
      */
     private int pathCursor = 0;
 
     /* A list of loader-discovered URLs, if any.
-     * Access is guared by a monitor on 'path'
+     * Access is guarded by a monitor on 'path'
      */
     private final ArrayList<URL> loaderPath = new ArrayList<>();
 
