@@ -1091,6 +1091,10 @@ public final class TKit {
             value = other.value;
         }
 
+        public TextStreamVerifier copy() {
+            return new TextStreamVerifier(this);
+        }
+
         public TextStreamVerifier label(String v) {
             label = v;
             return this;
@@ -1116,7 +1120,12 @@ public final class TKit {
             return this;
         }
 
-        private String findMatch(Iterator<String> lineIt) {
+        public TextStreamVerifier mutate(Consumer<TextStreamVerifier> mutator) {
+            mutator.accept(this);
+            return this;
+        }
+
+        private String find(Iterator<String> lineIt) {
             while (lineIt.hasNext()) {
                 final var line = lineIt.next();
                 if (predicate.test(line, value)) {
@@ -1131,7 +1140,7 @@ public final class TKit {
         }
 
         public void apply(Iterator<String> lineIt) {
-            final String matchedStr = findMatch(lineIt);
+            final String matchedStr = find(lineIt);
             final String labelStr = Optional.ofNullable(label).orElse("output");
             if (negate) {
                 String msg = String.format(
@@ -1180,6 +1189,11 @@ public final class TKit {
                 return this;
             }
 
+            public Group mutate(Consumer<Group> mutator) {
+                mutator.accept(this);
+                return this;
+            }
+
             public boolean isEmpty() {
                 return verifiers.isEmpty();
             }
@@ -1224,6 +1238,14 @@ public final class TKit {
 
     public static TextStreamVerifier assertTextStream(String what) {
         return new TextStreamVerifier(what);
+    }
+
+    public static Consumer<Iterator<String>> assertEndOfTextStream() {
+        return it -> {
+            var tail = new ArrayList<String>();
+            it.forEachRemaining(tail::add);
+            assertStringListEquals(List.of(), tail, "Check the end of the output");
+        };
     }
 
     public record PathSnapshot(List<String> contentHashes) {
