@@ -341,6 +341,7 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
 
 bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old) {
   if (unprocessed_old_collection_candidates() == 0) {
+    add_regions_to_old = 0;
     return false;
   } else {
     ShenandoahYoungGeneration* young_generation = _heap->young_generation();
