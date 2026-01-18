@@ -97,13 +97,19 @@ public class URLClassPath {
         DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
-    /* The original search path of URLs. */
+    /* The original search path of URLs
+     * Access is guared by a monitor on 'path' itself
+     */
     private final ArrayList<URL> path;
 
-    /* Index of URL in the search path to process next */
+    /* Index of URL in the search path to process next
+     * Access is guared by a monitor on 'path'
+     */
     private int pathCursor = 0;
 
-    /* A list of loader-discovered URLs, if any */
+    /* A list of loader-discovered URLs, if any.
+     * Access is guared by a monitor on 'path'
+     */
     private ArrayList<URL> loaderPath;
 
     /* The resulting search path of Loaders */
@@ -367,6 +373,7 @@ public class URLClassPath {
 
     /*
      * Returns the next URL to process or null if finished
+     * This method may only be called while holding a lock on 'path'
      */
     private URL nextURL() {
         // Check any loader-discovered class path first
