@@ -76,6 +76,7 @@ import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import jdk.jpackage.test.MacSign.CertificateHash;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSign.ResolvedKeychain;
@@ -776,6 +777,14 @@ public final class MacHelper {
                     MacSign.CertificateType.INSTALLER, Name.KEY_IDENTITY_INSTALLER)),
 
             /**
+             * "--mac-installer-sign-identity" or "--mac-app-image-sign-identity" option
+             * with the SHA1 of a signing certificate
+             */
+            SIGN_KEY_IDENTITY_SHA1(Map.of(
+                    MacSign.CertificateType.CODE_SIGN, Name.KEY_IDENTITY_APP_IMAGE,
+                    MacSign.CertificateType.INSTALLER, Name.KEY_IDENTITY_INSTALLER)),
+
+            /**
              * "--mac-app-image-sign-identity" regardless of the type of signing identity
              * (for signing app image or .pkg installer).
              */
@@ -815,11 +824,23 @@ public final class MacHelper {
                 return optionNameMapper.apply(Objects.requireNonNull(certType));
             }
 
+            public boolean passThrough() {
+                return Stream.of(MacSign.CertificateType.values())
+                        .map(this::mapOptionName)
+                        .flatMap(Optional::stream)
+                        .map(Name::passThrough)
+                        .distinct()
+                        .reduce((_, _) -> {
+                            throw new IllegalStateException();
+                        }).orElse(false);
+            }
+
             public static Type[] defaultValues() {
                 return new Type[] {
                         SIGN_KEY_USER_SHORT_NAME,
                         SIGN_KEY_USER_FULL_NAME,
                         SIGN_KEY_IDENTITY,
+                        SIGN_KEY_IDENTITY_SHA1,
                         SIGN_KEY_IMPLICIT
                 };
             }
@@ -831,25 +852,26 @@ public final class MacHelper {
         public String toString() {
             var sb = new StringBuilder();
             sb.append('{');
-            if (type != Type.SIGN_KEY_IMPLICIT) {
-                applyTo((optionName, _) -> {
-                    sb.append(optionName);
-                    switch (type) {
-                        case SIGN_KEY_USER_FULL_NAME -> {
-                            sb.append("/full");
-                        }
-                        case SIGN_KEY_USER_NAME -> {
-                            customOptionValue.ifPresent(optionValue -> {
-                                sb.append("=").append(ENQUOTER.applyTo(optionValue));
-                            });
-                        }
-                        default -> {
-                            // NOP
-                        }
+            type.mapOptionName(certRequest.type()).ifPresent(optionName -> {
+                sb.append(optionName);
+                switch (type) {
+                    case SIGN_KEY_USER_FULL_NAME -> {
+                        sb.append("/full");
                     }
-                    sb.append(": ");
-                });
-            }
+                    case SIGN_KEY_USER_NAME -> {
+                        customOptionValue.ifPresent(optionValue -> {
+                            sb.append("=").append(ENQUOTER.applyTo(optionValue));
+                        });
+                    }
+                    case SIGN_KEY_IDENTITY_SHA1 -> {
+                        sb.append("/sha1");
+                    }
+                    default -> {
+                        // NOP
+                    }
+                }
+                sb.append(": ");
+            });
             sb.append(certRequest).append('}');
             return sb.toString();
         }
@@ -902,6 +924,9 @@ public final class MacHelper {
                     }
                     case SIGN_KEY_USER_SHORT_NAME -> {
                         return certRequest.shortName();
+                    }
+                    case SIGN_KEY_IDENTITY_SHA1 -> {
+                        return CertificateHash.of(certRequest.cert()).toString();
                     }
                     default -> {
                         throw new IllegalStateException();
