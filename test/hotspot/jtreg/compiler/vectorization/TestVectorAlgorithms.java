@@ -28,7 +28,7 @@
  *          algorithms. Related benchmark: VectorAlgorithms.java
  * @library /test/lib /
  * @modules jdk.incubator.vector
- * @run driver ${test.main.class} vanilla
+ * @run driver ${test.main.class}
  */
 
 /*
@@ -36,7 +36,7 @@
  * @bug 8373026
  * @library /test/lib /
  * @modules jdk.incubator.vector
- * @run driver ${test.main.class} noSuperWord
+ * @run driver ${test.main.class} -XX:-UseSuperWord
  */
 
 /*
@@ -44,7 +44,7 @@
  * @bug 8373026
  * @library /test/lib /
  * @modules jdk.incubator.vector
- * @run driver ${test.main.class} noOptimizeFill
+ * @run driver ${test.main.class} -XX:-OptimizeFill
  */
 
 package compiler.vectorization;
@@ -96,12 +96,7 @@ public class TestVectorAlgorithms {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector",
                            "-XX:CompileCommand=inline,*VectorAlgorithmsImpl*::*");
-        switch (args[0]) {
-            case "vanilla"        -> { /* no extra flags */ }
-            case "noSuperWord"    -> { framework.addFlags("-XX:-UseSuperWord"); }
-            case "noOptimizeFill" -> { framework.addFlags("-XX:-OptimizeFill"); }
-            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
-        }
+        framework.addFlags(args);
         framework.start();
     }
 
