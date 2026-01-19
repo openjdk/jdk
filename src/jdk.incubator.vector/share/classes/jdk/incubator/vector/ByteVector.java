@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2873,9 +2873,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (byte) Math.max(a, b)));
             case VECTOR_OP_UMIN: return (v, m) ->
-                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (byte) VectorMath.minUnsigned(a, b)));
+                    toBits(v.rOp(UMAX_VALUE, m, (i, a, b) -> (byte) VectorMath.minUnsigned(a, b)));
             case VECTOR_OP_UMAX: return (v, m) ->
-                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (byte) VectorMath.maxUnsigned(a, b)));
+                    toBits(v.rOp(UMIN_VALUE, m, (i, a, b) -> (byte) VectorMath.maxUnsigned(a, b)));
             case VECTOR_OP_SUADD: return (v, m) ->
                     toBits(v.rOp((byte)0, m, (i, a, b) -> (byte) VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
@@ -2890,6 +2890,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     private static final byte MIN_OR_INF = Byte.MIN_VALUE;
     private static final byte MAX_OR_INF = Byte.MAX_VALUE;
+    private static final byte UMIN_VALUE = (byte)0;   // Minimum unsigned value
+    private static final byte UMAX_VALUE = (byte)-1;  // Maximum unsigned value
 
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op);
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op,

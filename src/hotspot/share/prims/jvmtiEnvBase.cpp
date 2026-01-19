@@ -51,6 +51,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
@@ -697,7 +698,7 @@ JvmtiEnvBase::check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFram
 
 javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf) {
-  jvf = check_and_skip_hidden_frames(jt->is_in_VTMS_transition(), jvf);
+  jvf = check_and_skip_hidden_frames(jt->is_in_vthread_transition(), jvf);
   return jvf;
 }
 
@@ -719,7 +720,7 @@ JvmtiEnvBase::get_vthread_jvf(oop vthread) {
       return nullptr;
     }
     vframeStream vfs(java_thread);
-    assert(!java_thread->is_in_VTMS_transition(), "invariant");
+    assert(!java_thread->is_in_vthread_transition(), "invariant");
     jvf = vfs.at_end() ? nullptr : vfs.asJavaVFrame();
     jvf = check_and_skip_hidden_frames(false, jvf);
   } else {
@@ -1693,8 +1694,7 @@ private:
   // jt->jvmti_vthread() for VTMS transition protocol.
   void correct_jvmti_thread_states() {
     for (JavaThread* jt : ThreadsListHandle()) {
-      if (jt->is_in_VTMS_transition()) {
-        jt->set_VTMS_transition_mark(true);
+      if (jt->is_in_vthread_transition()) {
         continue; // no need in JvmtiThreadState correction below if in transition
       }
       correct_jvmti_thread_state(jt);
@@ -1711,7 +1711,7 @@ public:
     if (_enable) {
       correct_jvmti_thread_states();
     }
-    JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
+    MountUnmountDisabler::set_notify_jvmti_events(_enable);
   }
 };
 
@@ -1722,7 +1722,7 @@ JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
   if (!Continuations::enabled()) {
     return false;
   }
-  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+  if (MountUnmountDisabler::notify_jvmti_events()) {
     return false; // already enabled
   }
   VM_SetNotifyJvmtiEventsMode op(true);
@@ -1738,10 +1738,10 @@ JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
   if (!Continuations::enabled()) {
     return false;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+  if (!MountUnmountDisabler::notify_jvmti_events()) {
     return false; // already disabled
   }
-  JvmtiVTMSTransitionDisabler disabler(true); // ensure there are no other disablers
+  MountUnmountDisabler disabler(true); // ensure there are no other disablers
   VM_SetNotifyJvmtiEventsMode op(false);
   VMThread::execute(&op);
   return true;
@@ -1769,7 +1769,6 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
   // Platform thread or mounted vthread cases.
 
   assert(java_thread != nullptr, "sanity check");
-  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
 
   // Don't allow hidden thread suspend request.
   if (java_thread->is_hidden_from_external_view()) {
@@ -1828,7 +1827,6 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
   // Platform thread or mounted vthread cases.
 
   assert(java_thread != nullptr, "sanity check");
-  assert(!java_thread->is_in_VTMS_transition(), "sanity check");
 
   // Don't allow hidden thread resume request.
   if (java_thread->is_hidden_from_external_view()) {
@@ -2008,12 +2006,12 @@ class AdapterClosure : public HandshakeClosure {
 };
 
 // Supports platform and virtual threads.
-// JvmtiVTMSTransitionDisabler is always set by this function.
+// MountUnmountDisabler is always set by this function.
 void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
-  JvmtiVTMSTransitionDisabler disabler(target);
+  MountUnmountDisabler disabler(target);
   ThreadsListHandle tlh(current);
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
@@ -2030,7 +2028,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
 // Supports platform and virtual threads.
 // A virtual thread is always identified by the target_h oop handle.
 // The target_jt is always nullptr for an unmounted virtual thread.
-// JvmtiVTMSTransitionDisabler has to be set before call to this function.
+// MountUnmountDisabler has to be set before call to this function.
 void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* tlh,
                         JavaThread* target_jt, Handle target_h) {
@@ -2038,7 +2036,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
   bool is_virtual = java_lang_VirtualThread::is_instance(target_h());
   bool self = target_jt == current;
 
-  assert(!Continuations::enabled() || self || !is_virtual || current->is_VTMS_transition_disabler(), "sanity check");
+  assert(!Continuations::enabled() || self || !is_virtual || current->is_vthread_transition_disabler(), "sanity check");
 
   hs_cl->set_target_jt(target_jt);   // can be needed in the virtual thread case
   hs_cl->set_is_virtual(is_virtual); // can be needed in the virtual thread case
@@ -2211,7 +2209,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
-  JvmtiVTMSTransitionDisabler disabler(thread);
+  MountUnmountDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = nullptr;
@@ -2612,7 +2610,7 @@ PrintStackTraceClosure::do_thread_impl(Thread *target) {
                    "is_VTMS_transition_disabler: %d, is_in_VTMS_transition = %d\n",
                    tname, java_thread->name(), java_thread->is_exiting(),
                    java_thread->is_suspended(), java_thread->is_carrier_thread_suspended(), is_vt_suspended,
-                   java_thread->is_VTMS_transition_disabler(), java_thread->is_in_VTMS_transition());
+                   java_thread->is_vthread_transition_disabler(), java_thread->is_in_vthread_transition());
 
   if (java_thread->has_last_Java_frame()) {
     RegisterMap reg_map(java_thread,

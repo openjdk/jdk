@@ -44,13 +44,13 @@ public:
   void post_initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     CollectedHeap* heap = Universe::heap();
     return cast(heap);
   }
 
   static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     return checked_cast<ShenandoahGenerationalHeap*>(heap);
   }
 
@@ -87,7 +87,9 @@ public:
   void update_region_ages(ShenandoahMarkingContext* ctx);
 
   oop evacuate_object(oop p, Thread* thread) override;
-  oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+
+  template<ShenandoahAffiliation FROM_REGION, ShenandoahAffiliation TO_REGION>
+  oop try_evacuate_object(oop p, Thread* thread, uint from_region_age);
 
   // In the generational mode, we will use these two functions for young, mixed, and global collections.
   // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
@@ -130,23 +132,11 @@ public:
 
   bool requires_barriers(stackChunkOop obj) const override;
 
-  // Used for logging the result of a region transfer outside the heap lock
-  struct TransferResult {
-    bool success;
-    size_t region_count;
-    const char* region_destination;
-
-    void print_on(const char* when, outputStream* ss) const;
-  };
-
   // Zeros out the evacuation and promotion reserves
   void reset_generation_reserves();
 
   // Computes the optimal size for the old generation, represented as a surplus or deficit of old regions
   void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions);
-
-  // Transfers surplus old regions to young, or takes regions from young to satisfy old region deficit
-  TransferResult balance_generations();
 
   // Balances generations, coalesces and fills old regions if necessary
   void complete_degenerated_cycle();

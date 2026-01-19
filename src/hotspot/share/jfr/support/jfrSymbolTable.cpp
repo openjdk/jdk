@@ -24,131 +24,32 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
-#include "jfr/support/jfrSymbolTable.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
+#include "jfr/support/jfrSymbolTable.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
-// incremented on each rotation
-static u8 checkpoint_id = 1;
+JfrSymbolTable::Impl* JfrSymbolTable::_epoch_0 = nullptr;
+JfrSymbolTable::Impl* JfrSymbolTable::_epoch_1 = nullptr;
+JfrSymbolTable::StringEntry* JfrSymbolTable::_bootstrap = nullptr;
 
-// creates a unique id by combining a checkpoint relative symbol id (2^24)
-// with the current checkpoint id (2^40)
-#define CREATE_SYMBOL_ID(sym_id) (((u8)((checkpoint_id << 24) | sym_id)))
-
-static traceid create_symbol_id(traceid artifact_id) {
-  return artifact_id != 0 ? CREATE_SYMBOL_ID(artifact_id) : 0;
-}
-
-static uintptr_t string_hash(const char* str) {
-  return java_lang_String::hash_code(reinterpret_cast<const jbyte*>(str), static_cast<int>(strlen(str)));
-}
-
-static JfrSymbolTable::StringEntry* bootstrap = nullptr;
-
-static JfrSymbolTable* _instance = nullptr;
-
-static JfrSymbolTable& instance() {
-  assert(_instance != nullptr, "invariant");
-  return *_instance;
-}
-
-JfrSymbolTable* JfrSymbolTable::create() {
-  assert(_instance == nullptr, "invariant");
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  _instance = new JfrSymbolTable();
-  return _instance;
-}
-
-void JfrSymbolTable::destroy() {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  if (_instance != nullptr) {
-    delete _instance;
-    _instance = nullptr;
-  }
-  assert(_instance == nullptr, "invariant");
-}
-
-JfrSymbolTable::JfrSymbolTable() :
-  _symbols(new Symbols(this)),
-  _strings(new Strings(this)),
-  _symbol_list(nullptr),
-  _string_list(nullptr),
-  _symbol_query(nullptr),
-  _string_query(nullptr),
-  _id_counter(1),
-  _class_unload(false) {
-  assert(_symbols != nullptr, "invariant");
-  assert(_strings != nullptr, "invariant");
-  bootstrap = new StringEntry(0, (const char*)&BOOTSTRAP_LOADER_NAME);
-  assert(bootstrap != nullptr, "invariant");
-  bootstrap->set_id(create_symbol_id(1));
-  _string_list = bootstrap;
-}
-
-JfrSymbolTable::~JfrSymbolTable() {
-  clear();
-  delete _symbols;
-  delete _strings;
-  delete bootstrap;
-}
-
-void JfrSymbolTable::clear() {
-  assert(_symbols != nullptr, "invariant");
-  if (_symbols->has_entries()) {
-    _symbols->clear_entries();
-  }
-  assert(!_symbols->has_entries(), "invariant");
-
-  assert(_strings != nullptr, "invariant");
-  if (_strings->has_entries()) {
-    _strings->clear_entries();
-  }
-  assert(!_strings->has_entries(), "invariant");
-
-  _symbol_list = nullptr;
-  _id_counter = 1;
-
-  _symbol_query = nullptr;
-  _string_query = nullptr;
-
-  assert(bootstrap != nullptr, "invariant");
-  bootstrap->reset();
-  _string_list = bootstrap;
-}
-
-void JfrSymbolTable::set_class_unload(bool class_unload) {
-  _class_unload = class_unload;
-}
-
-void JfrSymbolTable::increment_checkpoint_id() {
-  assert_lock_strong(ClassLoaderDataGraph_lock);
-  clear();
-  ++checkpoint_id;
-}
+JfrSymbolCallback::JfrSymbolCallback() : _id_counter(2) {} // 1 is reserved for "bootstrap" entry
 
 template <typename T>
-inline void JfrSymbolTable::assign_id(T* entry) {
+inline void JfrSymbolCallback::assign_id(const T* entry) {
   assert(entry != nullptr, "invariant");
   assert(entry->id() == 0, "invariant");
-  entry->set_id(create_symbol_id(++_id_counter));
+  entry->set_id(AtomicAccess::fetch_then_add(&_id_counter, (traceid)1));
 }
 
-void JfrSymbolTable::on_link(const SymbolEntry* entry) {
+void JfrSymbolCallback::on_link(const JfrSymbolTable::SymbolEntry* entry) {
   assign_id(entry);
   const_cast<Symbol*>(entry->literal())->increment_refcount();
-  entry->set_list_next(_symbol_list);
-  _symbol_list = entry;
 }
 
-bool JfrSymbolTable::on_equals(uintptr_t hash, const SymbolEntry* entry) {
-  assert(entry != nullptr, "invariant");
-  assert(entry->hash() == hash, "invariant");
-  assert(_symbol_query != nullptr, "invariant");
-  return _symbol_query == entry->literal();
-}
-
-void JfrSymbolTable::on_unlink(const SymbolEntry* entry) {
+void JfrSymbolCallback::on_unlink(const JfrSymbolTable::SymbolEntry* entry) {
   assert(entry != nullptr, "invariant");
   const_cast<Symbol*>(entry->literal())->decrement_refcount();
 }
@@ -162,75 +63,241 @@ static const char* resource_to_c_heap_string(const char* resource_str) {
   return c_string;
 }
 
-void JfrSymbolTable::on_link(const StringEntry* entry) {
+void JfrSymbolCallback::on_link(const JfrSymbolTable::StringEntry* entry) {
   assign_id(entry);
-  const_cast<StringEntry*>(entry)->set_literal(resource_to_c_heap_string(entry->literal()));
-  entry->set_list_next(_string_list);
-  _string_list = entry;
+  const_cast<JfrSymbolTable::StringEntry*>(entry)->set_literal(resource_to_c_heap_string(entry->literal()));
 }
 
-static bool string_compare(const char* query, const char* candidate) {
-  assert(query != nullptr, "invariant");
-  assert(candidate != nullptr, "invariant");
-  const size_t length = strlen(query);
-  return strncmp(query, candidate, length) == 0;
-}
-
-bool JfrSymbolTable::on_equals(uintptr_t hash, const StringEntry* entry) {
+void JfrSymbolCallback::on_unlink(const JfrSymbolTable::StringEntry* entry) {
   assert(entry != nullptr, "invariant");
-  assert(entry->hash() == hash, "invariant");
-  assert(_string_query != nullptr, "invariant");
-  return string_compare(_string_query, entry->literal());
+  JfrCHeapObj::free(const_cast<char*>(entry->literal()), strlen(entry->literal()) + 1);
 }
 
-void JfrSymbolTable::on_unlink(const StringEntry* entry) {
-  assert(entry != nullptr, "invariant");
-  JfrCHeapObj::free(const_cast<char*>(entry->literal()), strlen(entry->literal() + 1));
+static JfrSymbolCallback* _callback = nullptr;
+
+template <typename T, typename IdType>
+JfrSymbolTableEntry<T, IdType>::JfrSymbolTableEntry(unsigned hash, const T& data) :
+  JfrConcurrentHashtableEntry<T, IdType>(hash, data), _serialized(false), _unloading(false), _leakp(false) {}
+
+template <typename T, typename IdType>
+bool JfrSymbolTableEntry<T, IdType>::on_equals(const char* str) {
+  assert(str != nullptr, "invariant");
+  return strcmp((const char*)this->literal(), str) == 0;
+}
+
+static const constexpr unsigned max_capacity = 1 << 30;
+
+static inline unsigned calculate_capacity(unsigned size, unsigned capacity) {
+  assert(is_power_of_2(capacity), "invariant");
+  assert(capacity <= max_capacity, "invariant");
+  double load_factor = (double)size / (double)capacity;
+  if (load_factor < 0.75) {
+    return capacity;
+  }
+  do {
+    capacity <<= 1;
+    assert(is_power_of_2(capacity), "invariant");
+    guarantee(capacity <= max_capacity, "overflow");
+    load_factor = (double)size / (double)capacity;
+  } while (load_factor >= 0.75);
+  return capacity;
+}
+
+bool JfrSymbolTable::create() {
+  assert(_callback == nullptr, "invariant");
+  // Allocate callback instance before tables.
+  _callback = new JfrSymbolCallback();
+  if (_callback == nullptr) {
+    return false;
+  }
+  assert(_bootstrap == nullptr, "invariant");
+  _bootstrap = new StringEntry(0, (const char*)&BOOTSTRAP_LOADER_NAME);
+  if (_bootstrap == nullptr) {
+    return false;
+  }
+  _bootstrap->set_id(1);
+  assert(this_epoch_table() == nullptr, "invariant");
+  Impl* table = new JfrSymbolTable::Impl();
+  if (table == nullptr) {
+    return false;
+  }
+  set_this_epoch(table);
+  assert(previous_epoch_table() == nullptr, "invariant");
+  return true;
+}
+
+void JfrSymbolTable::destroy() {
+  if (_callback != nullptr) {
+    delete _callback;
+    _callback = nullptr;
+  }
+  if (_bootstrap != nullptr) {
+    delete _bootstrap;
+    _bootstrap = nullptr;
+  }
+  if (_epoch_0 != nullptr) {
+    delete _epoch_0;
+    _epoch_0 = nullptr;
+  }
+  if (_epoch_1 != nullptr) {
+    delete _epoch_1;
+    _epoch_1 = nullptr;
+  }
+}
+
+void JfrSymbolTable::allocate_next_epoch() {
+  assert(nullptr == previous_epoch_table(), "invariant");
+  const Impl* const current = this_epoch_table();
+  assert(current != nullptr, "invariant");
+  const unsigned next_symbols_capacity = calculate_capacity(current->symbols_size(), current->symbols_capacity());
+  const unsigned next_strings_capacity = calculate_capacity(current->strings_size(), current->strings_capacity());
+  assert(_callback != nullptr, "invariant");
+  // previous epoch to become the next epoch.
+  set_previous_epoch(new JfrSymbolTable::Impl(next_symbols_capacity, next_strings_capacity));
+  assert(this_epoch_table() != nullptr, "invariant");
+  assert(previous_epoch_table() != nullptr, "invariant");
+}
+
+void JfrSymbolTable::clear_previous_epoch() {
+  Impl* const table = previous_epoch_table();
+  assert(table != nullptr, "invariant");
+  set_previous_epoch(nullptr);
+  delete table;
+  assert(_bootstrap != nullptr, "invariant");
+  _bootstrap->reset();
+  assert(!_bootstrap->is_serialized(), "invariant");
+}
+
+void JfrSymbolTable::set_this_epoch(JfrSymbolTable::Impl* table) {
+  assert(table != nullptr, "invariant");
+  const u1 epoch = JfrTraceIdEpoch::current();
+  if (epoch == 0) {
+    _epoch_0 = table;
+  } else {
+    _epoch_1 = table;
+  }
+}
+
+void JfrSymbolTable::set_previous_epoch(JfrSymbolTable::Impl* table) {
+  const u1 epoch = JfrTraceIdEpoch::previous();
+  if (epoch == 0) {
+    _epoch_0 = table;
+  } else {
+    _epoch_1 = table;
+  }
+}
+
+inline bool JfrSymbolTable::Impl::has_symbol_entries() const {
+  return _symbols->is_nonempty();
+}
+
+inline bool JfrSymbolTable::Impl::has_string_entries() const {
+  return _strings->is_nonempty();
+}
+
+inline bool JfrSymbolTable::Impl::has_entries() const {
+  return has_symbol_entries() || has_string_entries();
+}
+
+inline unsigned JfrSymbolTable::Impl::symbols_capacity() const {
+  return _symbols->capacity();
+}
+
+inline unsigned JfrSymbolTable::Impl::symbols_size() const {
+  return _symbols->size();
+}
+
+inline unsigned JfrSymbolTable::Impl::strings_capacity() const {
+  return _strings->capacity();
+}
+
+inline unsigned JfrSymbolTable::Impl::strings_size() const {
+  return _strings->size();
+}
+
+bool JfrSymbolTable::has_entries(bool previous_epoch /* false */) {
+  const Impl* table = previous_epoch ? previous_epoch_table() : this_epoch_table();
+  assert(table != nullptr, "invariant");
+  return table->has_entries();
+}
+
+bool JfrSymbolTable::has_symbol_entries(bool previous_epoch /* false */) {
+  const Impl* table = previous_epoch ? previous_epoch_table() : this_epoch_table();
+  assert(table != nullptr, "invariant");
+  return table->has_symbol_entries();
+}
+
+bool JfrSymbolTable::has_string_entries(bool previous_epoch /* false */) {
+  const Impl* table = previous_epoch ? previous_epoch_table() : this_epoch_table();
+  assert(table != nullptr, "invariant");
+  return table->has_string_entries();
 }
 
 traceid JfrSymbolTable::bootstrap_name(bool leakp) {
-  assert(bootstrap != nullptr, "invariant");
+  assert(_bootstrap != nullptr, "invariant");
   if (leakp) {
-    bootstrap->set_leakp();
+    _bootstrap->set_leakp();
   }
-  return bootstrap->id();
+  return _bootstrap->id();
 }
 
-traceid JfrSymbolTable::mark(const Symbol* sym, bool leakp /* false */) {
+JfrSymbolTable::Impl::Impl(unsigned symbols_capacity /* 0*/, unsigned strings_capacity /* 0 */) :
+  _symbols(new Symbols(_callback, symbols_capacity)), _strings(new Strings(_callback, strings_capacity)) {}
+
+JfrSymbolTable::Impl::~Impl() {
+  delete _symbols;
+  delete _strings;
+}
+
+traceid JfrSymbolTable::Impl::mark(const Symbol* sym, bool leakp /* false */, bool class_unload /* false */) {
   assert(sym != nullptr, "invariant");
-  return mark(sym->identity_hash(), sym, leakp);
+  return mark(sym->identity_hash(), sym, leakp, class_unload);
 }
 
-traceid JfrSymbolTable::mark(uintptr_t hash, const Symbol* sym, bool leakp) {
+traceid JfrSymbolTable::Impl::mark(unsigned hash, const Symbol* sym, bool leakp, bool class_unload /* false */) {
   assert(sym != nullptr, "invariant");
   assert(_symbols != nullptr, "invariant");
-  _symbol_query = sym;
-  const SymbolEntry& entry = _symbols->lookup_put(hash, sym);
-  if (_class_unload) {
-    entry.set_unloading();
-  }
+  const SymbolEntry* entry = _symbols->lookup_put(hash, sym);
+  assert(entry != nullptr, "invariant");
   if (leakp) {
-    entry.set_leakp();
+    entry->set_leakp();
+  } else if (class_unload) {
+    entry->set_unloading();
   }
-  return entry.id();
+  return entry->id();
 }
 
-traceid JfrSymbolTable::mark(const char* str, bool leakp /* false*/) {
-  return mark(string_hash(str), str, leakp);
+traceid JfrSymbolTable::mark(const Symbol* sym, bool leakp /* false */, bool class_unload /* false */, bool previous_epoch /* false */) {
+  Impl* const table = previous_epoch ? previous_epoch_table() : this_epoch_table();
+  assert(table != nullptr, "invariant");
+  return table->mark(sym->identity_hash(), sym, leakp, class_unload);
 }
 
-traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
+static inline unsigned string_hash(const char* str) {
+  return java_lang_String::hash_code(reinterpret_cast<const jbyte*>(str), static_cast<int>(strlen(str)));
+}
+
+traceid JfrSymbolTable::Impl::mark(const char* str, bool leakp /* false*/, bool class_unload /* false */) {
+  return mark(string_hash(str), str, leakp, class_unload);
+}
+
+traceid JfrSymbolTable::Impl::mark(unsigned hash, const char* str, bool leakp, bool class_unload /* false */) {
   assert(str != nullptr, "invariant");
   assert(_strings != nullptr, "invariant");
-  _string_query = str;
-  const StringEntry& entry = _strings->lookup_put(hash, str);
-  if (_class_unload) {
-    entry.set_unloading();
-  }
+  const StringEntry* entry = _strings->lookup_put(hash, str);
+  assert(entry != nullptr, "invariant");
   if (leakp) {
-    entry.set_leakp();
+    entry->set_leakp();
+  } else if (class_unload) {
+    entry->set_unloading();
   }
-  return entry.id();
+  return entry->id();
+}
+
+traceid JfrSymbolTable::mark(unsigned hash, const char* str, bool leakp, bool class_unload /* false */, bool previous_epoch /* false */) {
+  Impl* const table = previous_epoch ? previous_epoch_table() : this_epoch_table();
+  assert(table != nullptr, "invariant");
+  return table->mark(hash, str, leakp, class_unload);
 }
 
 /*
@@ -241,40 +308,47 @@ traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
  *
  * Caller needs ResourceMark.
  */
-traceid JfrSymbolTable::mark_hidden_klass_name(const Klass* k, bool leakp) {
+inline traceid JfrSymbolTable::Impl::mark_hidden_klass_name(const Klass* k, bool leakp, bool class_unload /* false */) {
   assert(k != nullptr, "invariant");
   assert(k->is_hidden(), "invariant");
-  const uintptr_t hash = k->name()->identity_hash();
-  return mark(hash, k->external_name(), leakp);
+  return mark(k->name()->identity_hash(), k->external_name(), leakp, class_unload);
 }
 
-traceid JfrSymbolTable::mark(const Klass* k, bool leakp) {
+traceid JfrSymbolTable::Impl::mark(const Klass* k, bool leakp, bool class_unload /* false */) {
   assert(k != nullptr, "invariant");
   traceid symbol_id = 0;
   if (k->is_hidden()) {
-    symbol_id = mark_hidden_klass_name(k, leakp);
+    symbol_id = mark_hidden_klass_name(k, leakp, class_unload);
   } else {
     Symbol* const sym = k->name();
     if (sym != nullptr) {
-      symbol_id = mark(sym, leakp);
+      symbol_id = mark(sym, leakp, class_unload);
     }
   }
   assert(symbol_id > 0, "a symbol handler must mark the symbol for writing");
   return symbol_id;
 }
 
-template <typename T>
-traceid JfrSymbolTable::add_impl(const T* sym) {
-  assert(sym != nullptr, "invariant");
-  assert(_instance != nullptr, "invariant");
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  return instance().mark(sym);
+traceid JfrSymbolTable::mark(const Klass* k, bool leakp, bool class_unload /* false */, bool previous_epoch /* false */) {
+  Impl* const table = previous_epoch ? previous_epoch_table() : this_epoch_table();
+  assert(table != nullptr, "invariant");
+  return table->mark(k, leakp, class_unload);
 }
 
-traceid JfrSymbolTable::add(const Symbol* sym) {
-  return add_impl(sym);
+inline traceid JfrSymbolTable::Impl::add(const Symbol* sym) {
+  assert(sym != nullptr, "invariant");
+  return _symbols->lookup_put(sym->identity_hash(), sym)->id();
+}
+
+traceid JfrSymbolTable::Impl::add(const char* str) {
+  assert(str != nullptr, "invariant");
+  return _strings->lookup_put(string_hash(str), str)->id();
+}
+
+inline traceid JfrSymbolTable::add(const Symbol* sym) {
+  return this_epoch_table()->add(sym);
 }
 
 traceid JfrSymbolTable::add(const char* str) {
-  return add_impl(str);
+  return this_epoch_table()->add(str);
 }
