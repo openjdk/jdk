@@ -235,15 +235,15 @@ public class VectorAlgorithms {
         // Every invocation should have a different value for e, so that
         // we don't get branch-prediction that is too good. And also so
         // That the length of the resulting data is more evenly distributed.
-        idx = (idx + 1) & 0xffff;
-        int e = eI[idx];
+        d.eI_idx = (d.eI_idx + 1) & 0xffff;
+        int e = d.eI[d.eI_idx];
         return VectorAlgorithmsImpl.filterI_loop(d.aI, d.rI1, e);
     }
 
     @Benchmark
     public Object filterI_VectorAPI() {
-        idx = (idx + 1) & 0xffff;
-        int e = eI[idx];
+        d.eI_idx = (d.eI_idx + 1) & 0xffff;
+        int e = d.eI[d.eI_idx];
         return VectorAlgorithmsImpl.filterI_VectorAPI(d.aI, d.rI1, e);
     }
 
