@@ -31,6 +31,7 @@ import com.sun.tools.attach.spi.AttachProvider;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,6 +43,7 @@ import java.util.regex.Pattern;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import sun.jvmstat.monitor.MonitoredHost;
+import sun.jvmstat.monitor.MonitorException;
 
 /*
  * Linux implementation of HotSpotVirtualMachine
@@ -251,7 +253,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         return f;
     }
 
-    private String findTargetProcessTmpDirectory(long pid) throws AttachNotSupportedException {
+    private String findTargetProcessTmpDirectory(long pid) throws AttachNotSupportedException, IOException {
         final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
         /* We need to handle at least 4 different cases:
@@ -290,15 +292,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     // even if we cannot access /proc/<PID>/root.
                     // The process with capsh/setcap would fall this pattern.
                     return TMPDIR.toString();
-                } else {
-                    throw new AttachNotSupportedException("Unable to access the filesystem of the target process", ioe);
                 }
-            } catch (AttachNotSupportedException e) {
-                // AttachNotSupportedException happened in above should go through
-                throw e;
-            } catch (Exception e) {
-                // Other exceptions would be wrapped with AttachNotSupportedException
-                throw new AttachNotSupportedException("Unable to access the filesystem of the target process", e);
+                // Throw original IOE if target process not found on localhost.
+                throw ioe;
+            } catch (MonitorException | URISyntaxException e) {
+                // Other exceptions (happened at MonitoredHost) would be wrapped with AttachNotSupportedException
+                throw new AttachNotSupportedException("Unable to find target proces", e);
             }
         }
     }
