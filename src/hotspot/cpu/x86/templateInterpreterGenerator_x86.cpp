@@ -1556,6 +1556,16 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ jcc(Assembler::zero, L_done);
 
     __ movptr(Address(rbx, 0), rax);
+
+    // If member name is not null and is restored, it has to be reflected, as if no
+    // MemberName was popped out of the stack when going through the methods handle
+    __ decrement(rbcp, wordSize);
+
+    // Because we changed bcp, the method has to be re-run.
+    if (ProfileInterpreter) {
+      __ set_method_data_pointer_for_bcp();
+    }
+
     __ bind(L_done);
   }
 #endif // INCLUDE_JVMTI

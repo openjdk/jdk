@@ -61,6 +61,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
   address   fp = (address)_fp;
   address   unextended_sp = (address)_unextended_sp;
 
+  guarantee(sp <= unextended_sp, "Should be");
+
   // consider stack guards when trying to determine "safe" stack pointers
   // sp must be within the usable part of the stack (not in guards)
   if (!thread->is_in_usable_stack(sp)) {
@@ -130,6 +132,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_sp = (intptr_t*) addr_at(sender_sp_offset);
       sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
       saved_fp = (intptr_t*) this->fp()[link_offset];
+
+      guarantee(sender_sp <= sender_unextended_sp, "Should be");
 
     } else {
       // must be some sort of compiled/runtime frame
@@ -452,6 +456,8 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   // This is the sp before any possible extension (adapter/locals).
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
   intptr_t* sender_fp = link();
+
+  guarantee(sender_sp <= unextended_sp, "Should be");
 
 #if COMPILER2_OR_JVMCI
   if (map->update_map()) {
