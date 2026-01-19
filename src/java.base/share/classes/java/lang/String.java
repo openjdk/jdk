@@ -1073,28 +1073,6 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    // This follows the implementation of encodeASCII
-    private static int encodedLengthASCII(byte coder, byte[] val) {
-        if (coder == LATIN1) {
-            return val.length;
-        }
-        int len = val.length >> 1;
-        int dp = 0;
-        for (int i = 0; i < len; i++) {
-            char c = StringUTF16.getChar(val, i);
-            if (c < 0x80) {
-                dp++;
-                continue;
-            }
-            if (Character.isHighSurrogate(c) && i + 1 < len &&
-                    Character.isLowSurrogate(StringUTF16.getChar(val, i + 1))) {
-                i++;
-            }
-            dp++;
-        }
-        return dp;
-    }
-
     private static void replaceNegatives(byte[] val, int fromIndex) {
         for (int i = fromIndex; i < val.length; i++) {
             if (val[i] < 0) {
@@ -1155,8 +1133,8 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    // This follows the implementation of encode8859_1
-    private static int encodedLength8859_1(byte coder, byte[] val) {
+    // This follows the implementation of encodeASCII and encode8859_1
+    private static int encodedLengthASCIIor8859_1(byte coder, byte[] val) {
         if (coder == LATIN1) {
             return val.length;
         }
@@ -1165,12 +1143,18 @@ public final class String
         int sp = 0;
         int sl = len;
         while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= Character.MIN_HIGH_SURROGATE) {
+                break;
+            }
+            dp++;
+            sp++;
+        }
+        while (sp < sl) {
             char c = StringUTF16.getChar(val, sp++);
-            if (c > 0x80) {
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                        Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
-                    sp++;
-                }
+            if (Character.isHighSurrogate(c) && sp < sl &&
+                    Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
+                sp++;
             }
             dp++;
         }
@@ -2134,10 +2118,8 @@ public final class String
         Objects.requireNonNull(cs);
         if (cs == UTF_8.INSTANCE) {
             return encodedLengthUTF8(coder, value);
-        } else if (cs == ISO_8859_1.INSTANCE) {
-            return encodedLength8859_1(coder, value);
-        } else if (cs == US_ASCII.INSTANCE) {
-            return encodedLengthASCII(coder, value);
+        } else if (cs == ISO_8859_1.INSTANCE || cs == US_ASCII.INSTANCE) {
+            return encodedLengthASCIIor8859_1(coder, value);
         }
         return getBytes(cs).length;
     }
