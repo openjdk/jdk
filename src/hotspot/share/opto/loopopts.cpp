@@ -1955,8 +1955,8 @@ bool PhaseIdealLoop::would_sink_below_pre_loop_exit(IdealLoopTree* n_loop, Node*
 
 bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl) {
   if (n->is_Load()) {
-    // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure calls to
-    // get_late_ctrl_with_anti_dep() use their own tag
+    // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure each call to
+    // get_late_ctrl_with_anti_dep() uses its own tag
     _dom_lca_tags_round++;
     assert(_dom_lca_tags_round != 0, "shouldn't wrap around");
 

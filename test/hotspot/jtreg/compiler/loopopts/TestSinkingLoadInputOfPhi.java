@@ -37,8 +37,7 @@ public class TestSinkingLoadInputOfPhi {
   static int iFld = 55;
   static int iFld2 = 10;
   static void test() {
-    long l1;
-    int iArr[] = new int[iFld2];
+      int iArr[] = new int[iFld2];
 
     for (int i13 : iArr)
       switch (iFld) {
