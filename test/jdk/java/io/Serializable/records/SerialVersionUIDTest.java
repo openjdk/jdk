@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,18 +45,18 @@ import static java.lang.System.out;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SerialVersionUIDTest {
 
     record R1 () implements Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
     }
 
     record R2 (int x, int y) implements Serializable {
+        @Serial
         private static final long serialVersionUID = 0L;
     }
 
@@ -64,10 +65,11 @@ public class SerialVersionUIDTest {
     record R4 (String s) implements Serializable { }
 
     record R5 (long l) implements Serializable {
+        @Serial
         private static final long serialVersionUID = 5678L;
     }
 
-    public Object[][] recordObjects() {
+    public static Object[][] recordObjects() {
         return new Object[][] {
             new Object[] { new R1(),        1L    },
             new Object[] { new R2(1, 2),    0L    },
@@ -103,7 +105,7 @@ public class SerialVersionUIDTest {
         assertEquals(expectedUID, dis.readLong());
     }
 
-    public Object[][] recordClasses() {
+    public static Object[][] recordClasses() {
         List<Object[]> list = new ArrayList<>();
         List<Class<?>> recordClasses = List.of(R1.class, R2.class, R3.class, R4.class, R5.class);
         LongStream.of(0L, 1L, 100L, 10_000L, 1_000_000L).forEach(suid ->

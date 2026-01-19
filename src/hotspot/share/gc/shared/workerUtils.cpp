@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "gc/shared/workerUtils.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
 // *** WorkerThreadsBarrierSync
@@ -80,21 +81,21 @@ void WorkerThreadsBarrierSync::abort() {
 
 SubTasksDone::SubTasksDone(uint n) :
   _tasks(nullptr), _n_tasks(n) {
-  _tasks = NEW_C_HEAP_ARRAY(bool, n, mtInternal);
+  _tasks = NEW_C_HEAP_ARRAY(Atomic<bool>, n, mtInternal);
   for (uint i = 0; i < _n_tasks; i++) {
-    _tasks[i] = false;
+    ::new (&_tasks[i]) Atomic<bool>(false);
   }
 }
 
 #ifdef ASSERT
 void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
-  if (AtomicAccess::cmpxchg(&_verification_done, false, true)) {
+  if (!_verification_done.compare_set(false, true)) {
     // another thread has done the verification
     return;
   }
   // all non-skipped tasks are claimed
   for (uint i = 0; i < _n_tasks; ++i) {
-    if (!_tasks[i]) {
+    if (!_tasks[i].load_relaxed()) {
       auto is_skipped = false;
       for (size_t j = 0; j < skipped_size; ++j) {
         if (i == skipped[j]) {
@@ -109,27 +110,27 @@ void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
   for (size_t i = 0; i < skipped_size; ++i) {
     auto task_index = skipped[i];
     assert(task_index < _n_tasks, "Array in range.");
-    assert(!_tasks[task_index], "%d is both claimed and skipped.", task_index);
+    assert(!_tasks[task_index].load_relaxed(), "%d is both claimed and skipped.", task_index);
   }
 }
 #endif
 
 bool SubTasksDone::try_claim_task(uint t) {
   assert(t < _n_tasks, "bad task id.");
-  return !_tasks[t] && !AtomicAccess::cmpxchg(&_tasks[t], false, true);
+  return !_tasks[t].load_relaxed() && _tasks[t].compare_set(false, true);
 }
 
 SubTasksDone::~SubTasksDone() {
-  assert(_verification_done, "all_tasks_claimed must have been called.");
-  FREE_C_HEAP_ARRAY(bool, _tasks);
+  assert(_verification_done.load_relaxed(), "all_tasks_claimed must have been called.");
+  FREE_C_HEAP_ARRAY(Atomic<bool>, _tasks);
 }
 
 // *** SequentialSubTasksDone
 
 bool SequentialSubTasksDone::try_claim_task(uint& t) {
-  t = _num_claimed;
+  t = _num_claimed.load_relaxed();
   if (t < _num_tasks) {
-    t = AtomicAccess::add(&_num_claimed, 1u) - 1;
+    t = _num_claimed.fetch_then_add(1u);
   }
   return t < _num_tasks;
 }

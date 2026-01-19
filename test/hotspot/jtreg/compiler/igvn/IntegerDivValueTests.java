@@ -204,7 +204,11 @@ public class IntegerDivValueTests {
 
     @Run(test = {"testIntConstantFolding", "testIntConstantFoldingSpecialCase"})
     public void checkIntConstants(RunInfo info) {
-        Asserts.assertEquals(INT_CONST_1 / INT_CONST_2, testIntConstantFolding());
+        if (INT_CONST_2 == 0) {
+            Asserts.assertThrows(ArithmeticException.class, () -> testIntConstantFolding());
+        } else {
+            Asserts.assertEquals(INT_CONST_1 / INT_CONST_2, testIntConstantFolding());
+        }
         Asserts.assertEquals(Integer.MIN_VALUE, testIntConstantFoldingSpecialCase());
     }
 
@@ -441,7 +445,11 @@ public class IntegerDivValueTests {
 
     @Run(test = {"testLongConstantFolding", "testLongConstantFoldingSpecialCase"})
     public void checkLongConstants(RunInfo infoLong) {
-        Asserts.assertEquals(LONG_CONST_1 / LONG_CONST_2, testLongConstantFolding());
+        if (LONG_CONST_2 == 0L) {
+            Asserts.assertThrows(ArithmeticException.class, () -> testLongConstantFolding());
+        } else {
+            Asserts.assertEquals(LONG_CONST_1 / LONG_CONST_2, testLongConstantFolding());
+        }
         Asserts.assertEquals(Long.MIN_VALUE, testLongConstantFoldingSpecialCase());
     }
 
