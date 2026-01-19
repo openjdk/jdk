@@ -373,14 +373,14 @@ public class URLClassPath {
 
     /*
      * Returns the next URL to process or null if finished
-     * This method may only be called while holding a lock on 'path'
+     * This method may only be called while holding a lock on 'searchPath'
      */
     private URL nextURL() {
-        // Check any loader-discovered class path first
+        // Check paths discovered during 'Class-Path' expansion first
         if (!expandedPath.isEmpty())  {
             return expandedPath.removeLast();
         }
-        // Check the original search path
+        // Check the regular search path
         if (nextURL < searchPath.size()) {
             return searchPath.get(nextURL++);
         }
