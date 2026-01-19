@@ -1866,7 +1866,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   //   while (!timeout && !interrupted && node.TState == TS_WAIT) park()
 
   int ret = OS_OK;
-  bool was_notified = false;
+  bool was_notified = true;
 
   // Need to check interrupt state whilst still _thread_in_vm
   bool interrupted = interruptible && current->is_interrupted(false);
@@ -1880,7 +1880,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     {
       ThreadBlockInVM tbivm(current, false /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
-        // Intentionally empty
+        was_notified = false;
       } else if (node.TState == ObjectWaiter::TS_WAIT) {
         if (millis <= 0) {
           current->_ParkEvent->park();
@@ -1905,7 +1905,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // then we'll acquire the lock and then re-fetch a fresh TState value.
     // That is, we fail toward safety.
 
-    was_notified = true;
     if (node.TState == ObjectWaiter::TS_WAIT) {
       SpinCriticalSection scs(&_wait_set_lock);
       if (node.TState == ObjectWaiter::TS_WAIT) {
@@ -1914,7 +1913,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         was_notified = false;
       }
     }
-
     // The thread is now either on off-list (TS_RUN),
     // or on the entry_list (TS_ENTER).
     // The Node's TState variable is stable from the perspective of this thread.
@@ -1930,7 +1928,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // although the raw address of the object may have changed.
     // (Don't cache naked oops over safepoints, of course).
 
-    // post monitor waited event. Note that this is past-tense, we are done waiting.
+    // Post monitor waited event. Note that this is past-tense, we are done waiting.
     if (JvmtiExport::should_post_monitor_waited() && node.TState != ObjectWaiter::TS_ENTER) {
 
       // Process suspend requests now if any, before posting the event.
@@ -1972,7 +1970,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         // and set the OM as pending, the thread will not be reported as
         // having "-locked" the monitor.
       }
-      // Done waiting, post the corresponding event
       if (eos.exited()) {
         // ExitOnSuspend exit the OM
         assert(!has_owner(current), "invariant");
@@ -2053,6 +2050,9 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
       // Adding to _entry_list uses Atomic::cmpxchg() which already provides
       // a fence that prevents reordering of the stores.
       if (!JvmtiExport::should_post_monitor_waited()) {
+        // This is is now conditional as if the monitor_waited even
+        // is allowed, then a thread, even virtual, should not be moved to
+        // the entry_list, but rather unparked and let run. See the comment below.
         inc_unmounted_vthreads();
       }
     }
@@ -2061,14 +2061,27 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
     did_notify = true;
 
     if (!JvmtiExport::should_post_monitor_waited()) {
+      // If the monitor_waited JVMTI event is not allowed, a thread is
+      // transferred to the entry_list, and it will eventually be unparked
+      // only when it is chosen to become a successor.
       add_to_entry_list(current, iterator);
     } else {
+      // However, if the monitor_waited event is allowed, then
+      // a thread is unpraked immediately and let run. It is not
+      // on the entry_list, and thus cannot become a successor.
+      // Its state should be TS_RUN, as it is neither on wait_list
+      // nor on the entry_list.
+      // By not allowing a thread to become a successor we
+      // avoid a problem of having a suspension point when posting
+      // the monitor_waited JVMTI event, as suspending such a thread
+      // is no harm.
+
       iterator->TState = ObjectWaiter::TS_RUN;
 
       OrderAccess::fence();
 
       oop vthread = nullptr;
-      ParkEvent* Trigger;
+      ParkEvent* evt;
       if (!iterator->is_vthread()) {
         iterator->wait_reenter_begin(this);
         if (has_unmounted_vthreads()) {
@@ -2076,22 +2089,21 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
         }
         JavaThread* t = iterator->thread();
         assert(t != nullptr, "");
-        Trigger = t->_ParkEvent;
+        evt = t->_ParkEvent;
       } else {
         vthread = iterator->vthread();
         assert(vthread != nullptr, "");
-        Trigger = ObjectMonitor::vthread_unparker_ParkEvent();
+        evt = ObjectMonitor::vthread_unparker_ParkEvent();
       }
 
       if (vthread == nullptr) {
         // Platform thread case.
-        Trigger->unpark();
+        evt->unpark();
       }
       else if (java_lang_VirtualThread::set_onWaitingList(vthread, vthread_list_head())) {
         // Virtual thread case.
-        Trigger->unpark();
+        evt->unpark();
       }
-
       return did_notify;
     }
 
@@ -2276,6 +2288,10 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   // Mark that we are at reenter so that we don't call this method again.
   node->_at_reenter = true;
 
+  // We check against the state, rather than if was_notified,
+  // because, if monitor_waited JVMTI event is allowed, there can be a vthead which
+  // is not on the entry_list, but has been notified in the sense that it has been
+  // unparked directly in notify_internal(). Its state is then TS_RUN.
   if (state == ObjectWaiter::TS_RUN) {
     bool acquired = vthread_monitor_enter(current, node);
     if (acquired) {

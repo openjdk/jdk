@@ -218,13 +218,13 @@ public class SuspendWithObjectMonitorWaitBase {
         SuspendWithObjectMonitorWaitBase test = null;
         switch (testCase) {
             case 1:
-                test = new SuspendWithObjectMonitorWait1();
+                test = new SuspendWithObjectMonitorWaitDefault();
                 break;
             case 2:
-                test = new SuspendWithObjectMonitorWait2();
+                test = new SuspendWithObjectMonitorWaitReentryPartFirst();
                 break;
             case 3:
-                test = new SuspendWithObjectMonitorWait3();
+                test = new SuspendWithObjectMonitorWaitReentryPartSecond();
                 break;
             default:
                 // Impossible

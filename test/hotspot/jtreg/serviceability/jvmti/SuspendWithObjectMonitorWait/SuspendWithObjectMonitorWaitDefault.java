@@ -27,14 +27,15 @@
  * @summary Test SuspendThread with ObjectMonitor wait.
  * @requires vm.jvmti
  * @library /test/lib
- * @compile SuspendWithObjectMonitorWait1.java
- * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait1 1
+ * @compile SuspendWithObjectMonitorWaitDefault.java
+ * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWaitDefault 1
  */
 
 import java.io.PrintStream;
 
 //
-// doWork1 algorithm:
+// SuspendWithObjectMonitorWaitDefault algorithm:
+//
 // main               waiter              resumer
 // =================  ==================  ===================
 // launch waiter
@@ -58,7 +59,7 @@ import java.io.PrintStream;
 // <join returns>     waiter exits
 //
 
-public class SuspendWithObjectMonitorWait1 extends SuspendWithObjectMonitorWaitBase {
+public class SuspendWithObjectMonitorWaitDefault extends SuspendWithObjectMonitorWaitBase {
 
     @Override
     public int run(int timeMax, PrintStream out) {
@@ -68,7 +69,7 @@ public class SuspendWithObjectMonitorWait1 extends SuspendWithObjectMonitorWaitB
     // Default scenario, the resumer thread is always able to grab the threadLock once notified by the main thread.
     public int doWork1(int timeMax, PrintStream out) {
         SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
-        SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
+        SuspendWithObjectMonitorWaitWorker resumer;   // resumer thread
 
         System.out.println("Test 1: About to execute for " + timeMax + " seconds.");
 
