@@ -77,7 +77,13 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       fi
     ],
     DESC: [set the native debug symbol level (GCC and Clang only)],
-    DEFAULT_DESC: [toolchain default])
+    DEFAULT_DESC: [toolchain default],
+    IF_GIVEN: [
+      NATIVE_DEBUG_SYMBOLS_LEVEL="-g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
+    ],
+    IF_NOT_GIVEN: [
+      NATIVE_DEBUG_SYMBOLS_LEVEL=""
+    ])
 
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -104,7 +110,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     fi
 
     # Debug info level should follow the debug format to be effective.
-    CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4 -g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
+    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 ${NATIVE_DEBUG_SYMBOLS_LEVEL}"
     ASFLAGS_DEBUG_SYMBOLS="${DEBUG_SYMBOLS_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
@@ -125,7 +131,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
         IF_FALSE: [GDWARF_FLAGS=""])
 
     # Debug info level should follow the debug format to be effective.
-    CFLAGS_DEBUG_SYMBOLS="-g ${GDWARF_FLAGS} -g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
+    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} ${NATIVE_DEBUG_SYMBOLS_LEVEL}"
     ASFLAGS_DEBUG_SYMBOLS="${DEBUG_SYMBOLS_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
