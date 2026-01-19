@@ -261,7 +261,6 @@ public class VectorAlgorithmsImpl {
         int result = 1; // initialValue
         var vresult = IntVector.zero(SPECIES_I256);
         int next = REVERSE_POWERS_OF_31[0]; // 31^L
-        var vnext = IntVector.broadcast(SPECIES_I256, next);
         var vcoef = IntVector.fromArray(SPECIES_I256, REVERSE_POWERS_OF_31, 1); // powers of 2 in reverse
         int i;
         for (i = 0; i < SPECIES_B64.loopBound(a.length); i += SPECIES_B64.length()) {
@@ -270,7 +269,7 @@ public class VectorAlgorithmsImpl {
             // vector part: element-wise apply the next factor and add in the new values.
             var vb = ByteVector.fromArray(SPECIES_B64, a, i);
             var vi = vb.castShape(SPECIES_I256, 0);
-            vresult = vresult.mul(vnext).add(vi);
+            vresult = vresult.mul(next).add(vi);
         }
         // reduce the partial hashes in the elements, using the reverse list of powers of 2.
         result += vresult.mul(vcoef).reduceLanes(VectorOperators.ADD);
@@ -337,55 +336,59 @@ public class VectorAlgorithmsImpl {
     // into one int, applying a multiplication with 31^2 to one of the
     // two shorts. This multiplication cannot overflow in an int.
     //
-    private static int power(int base, int exp) {
-        int r = 1;
-        for (int i = 0; i < exp; i++) { r *= base; }
-        return r;
-    }
-    private static int PL = power(31, ByteVector.SPECIES_PREFERRED.length());
-    private static int[] REVERSE_POWERS_OF_31_STEP_4 = new int[IntVector.SPECIES_PREFERRED.length()];
-    static {
-        int p = 1;
-        int step = 31 * 31 * 31 * 31; // step by 4
-        for (int i = REVERSE_POWERS_OF_31_STEP_4.length - 1; i >= 0; i--) {
-            REVERSE_POWERS_OF_31_STEP_4[i] = p;
-            p *= step;
-        }
-        if (p != PL) { throw new RuntimeException("mismatch"); }
-    }
     public static int hashCodeB_VectorAPI_v2(byte[] a) {
-        // TODO: fix species, in case preferred diverges!
-        int result = 1; // initialValue
-        int p2 = 31 * 31;
-        int sub_value = -128 * (31*31*31 + 31*31 + 31 + 1);
-        var vresult = IntVector.zero(IntVector.SPECIES_PREFERRED);
-        int i;
-        for (i = 0; i < ByteVector.SPECIES_PREFERRED.loopBound(a.length); i += ByteVector.SPECIES_PREFERRED.length()) {
-            var vb = ByteVector.fromArray(ByteVector.SPECIES_PREFERRED, a, i);
-            // Add 128 to each byte.
-            var vs = vb.lanewise(VectorOperators.XOR, (byte)0x80)
-                       .reinterpretAsShorts();
-            // Each short lane contains 2 bytes, crunch them.
-            var vi = vs.and((short)0xff) // lower byte
-                       .mul((short)31)
-                       .add(vs.lanewise(VectorOperators.LSHR, 8)) // upper byte
-                       .reinterpretAsInts();
-            // Each int contains 2 shorts, crunch them.
-            var v  = vi.and(0xffff) // lower short
-                       .mul(p2)
-                       .add(vi.lanewise(VectorOperators.LSHR, 16)); // upper short
-            // Add the correction for the 128 additions above.
-            v = v.add(sub_value);
-            // Every element of v now contains a crunched int-package of 4 bytes.
-            result *= PL;
-            vresult = vresult.mul(PL).add(v);
+        return HashCodeB_VectorAPI_V2.compute(a);
+    }
+
+    private static class HashCodeB_VectorAPI_V2 {
+        private static final int L = Math.min(ByteVector.SPECIES_PREFERRED.length(),
+                                              IntVector.SPECIES_PREFERRED.length() * 4);
+        private static final VectorShape SHAPE = VectorShape.forBitSize(8 * L);
+        private static final VectorSpecies<Byte>    SPECIES_B = SHAPE.withLanes(byte.class);
+        private static final VectorSpecies<Integer> SPECIES_I = SHAPE.withLanes(int.class);
+
+        private static int[] REVERSE_POWERS_OF_31_STEP_4 = new int[L / 4 + 1];
+        static {
+            int p = 1;
+            int step = 31 * 31 * 31 * 31; // step by 4
+            for (int i = REVERSE_POWERS_OF_31_STEP_4.length - 1; i >= 0; i--) {
+                REVERSE_POWERS_OF_31_STEP_4[i] = p;
+                p *= step;
+            }
         }
-        var vcoef = IntVector.fromArray(IntVector.SPECIES_PREFERRED, REVERSE_POWERS_OF_31_STEP_4, 0); // W
-        result += vresult.mul(vcoef).reduceLanes(VectorOperators.ADD);
-        for (; i < a.length; i++) {
-            result = 31 * result + a[i];
+
+        public static int compute(byte[] a) {
+            int result = 1; // initialValue
+            int next = REVERSE_POWERS_OF_31_STEP_4[0]; // 31^L
+            var vcoef = IntVector.fromArray(SPECIES_I, REVERSE_POWERS_OF_31_STEP_4, 1); // W
+            var vresult = IntVector.zero(SPECIES_I);
+            int i;
+            for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+                var vb = ByteVector.fromArray(SPECIES_B, a, i);
+                // Add 128 to each byte.
+                var vs = vb.lanewise(VectorOperators.XOR, (byte)0x80)
+                           .reinterpretAsShorts();
+                // Each short lane contains 2 bytes, crunch them.
+                var vi = vs.and((short)0xff) // lower byte
+                           .mul((short)31)
+                           .add(vs.lanewise(VectorOperators.LSHR, 8)) // upper byte
+                           .reinterpretAsInts();
+                // Each int contains 2 shorts, crunch them.
+                var v  = vi.and(0xffff) // lower short
+                           .mul(31 * 31)
+                           .add(vi.lanewise(VectorOperators.LSHR, 16)); // upper short
+                // Add the correction for the 128 additions above.
+                v = v.add(-128 * (31*31*31 + 31*31 + 31 + 1));
+                // Every element of v now contains a crunched int-package of 4 bytes.
+                result *= next;
+                vresult = vresult.mul(next).add(v);
+            }
+            result += vresult.mul(vcoef).reduceLanes(VectorOperators.ADD);
+            for (; i < a.length; i++) {
+                result = 31 * result + a[i];
+            }
+            return result;
         }
-        return result;
     }
 
     public static Object scanAddI_loop(int[] a, int[] r) {

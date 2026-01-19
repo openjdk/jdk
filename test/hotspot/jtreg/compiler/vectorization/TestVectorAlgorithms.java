@@ -94,7 +94,8 @@ public class TestVectorAlgorithms {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
-        framework.addFlags("--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl::*");
+        framework.addFlags("--add-modules=jdk.incubator.vector",
+                           "-XX:CompileCommand=inline,*VectorAlgorithmsImpl*::*");
         switch (args[0]) {
             case "vanilla"        -> { /* no extra flags */ }
             case "noSuperWord"    -> { framework.addFlags("-XX:-UseSuperWord"); }
