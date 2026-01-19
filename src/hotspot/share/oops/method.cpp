@@ -1898,15 +1898,15 @@ void Method::print_name(outputStream* st) const {
 #endif // !PRODUCT || INCLUDE_JVMTI
 
 
-void Method::print_codes_on(outputStream* st, int flags, bool coherent_output) const {
-  print_codes_on(0, code_size(), st, flags, coherent_output);
+void Method::print_codes_on(outputStream* st, int flags, bool buffered) const {
+  print_codes_on(0, code_size(), st, flags, buffered);
 }
 
-void Method::print_codes_on(int from, int to, outputStream* st, int flags, bool coherent_output) const {
+void Method::print_codes_on(int from, int to, outputStream* st, int flags, bool buffered) const {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
   methodHandle mh (thread, (Method*)this);
-  BytecodeTracer::print_method_codes(mh, from, to, st, flags, coherent_output);
+  BytecodeTracer::print_method_codes(mh, from, to, st, flags, buffered);
 }
 
 CompressedLineNumberReadStream::CompressedLineNumberReadStream(u_char* buffer) : CompressedReadStream(buffer) {

@@ -192,18 +192,18 @@ void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, 
 }
 #endif
 
-void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool coherent_output) {
+void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered) {
   BytecodePrinter method_printer(flags);
   BytecodeStream s(method);
   s.set_interval(from, to);
 
   ResourceMark rm;
   stringStream ss;
-  outputStream* out = coherent_output ? &ss : st;
+  outputStream* out = buffered ? &ss : st;
   while (s.next() >= 0) {
     method_printer.trace(method, s.bcp(), out);
   }
-  if (coherent_output) {
+  if (buffered) {
     st->print("%s", ss.as_string());
   }
 }

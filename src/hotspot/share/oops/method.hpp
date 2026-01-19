@@ -466,8 +466,8 @@ public:
 
   // prints byte codes
   void print_codes(int flags = 0) const { print_codes_on(tty, flags); }
-  void print_codes_on(outputStream* st, int flags = 0, bool coherent_output = true) const;
-  void print_codes_on(int from, int to, outputStream* st, int flags = 0, bool coherent_output = true) const;
+  void print_codes_on(outputStream* st, int flags = 0, bool buffered = true) const;
+  void print_codes_on(int from, int to, outputStream* st, int flags = 0, bool buffered = true) const;
 
   // method parameters
   bool has_method_parameters() const
