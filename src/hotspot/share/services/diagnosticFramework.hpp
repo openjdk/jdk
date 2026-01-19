@@ -285,7 +285,6 @@ public:
 
   // helper class to invoke the framework
   class Executor : public StackObj {
-
     DCmdSource _source;
     outputStream* _out;
   public:

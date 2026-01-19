@@ -380,32 +380,18 @@ DCmdFactory* DCmdFactory::_DCmdFactoryList = nullptr;
 bool DCmdFactory::_has_pending_jmx_notification = false;
 
 
-// struct JcmdOptions {
-//   enum class TimeStamp {
-//     Default,
-//     Yes,
-//     No
-//   };
-
-//   TimeStamp timestamp;
-// };
-
-
-// removes globals from the cmdline.
 /**
- * function to parse common option, preceeding the command.
+ * parse jcmd common option
  * @param line - a command line with leading common options "[options] <cmd>"
  * @param updated_line - return value with "<cmd>"
  */
-static JcmdOptions parse_global_options(const CmdLine& line, stringStream *updated_line) {
+static JcmdOptions parse_common_options(const CmdLine& line, stringStream *updated_line) {
   JcmdOptions options = {};
 
   // there is only TIMESTAMP option so far
   const char TIMESTAMP[] = "-T";
 
   const char* line_str = line.cmd_addr();
-
-  // TODO: loop until unknown thing.
 
   stringStream cmd;
   cmd.print("%s", line.cmd_addr());
@@ -452,7 +438,7 @@ void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
 
     // parse options
     stringStream ss_line_naked;
-    const JcmdOptions options = parse_global_options(line_optioned, &ss_line_naked);
+    const JcmdOptions options = parse_common_options(line_optioned, &ss_line_naked);
 
     // > jcmd [options] <command> [args]
     //                  ^^^^^^^^^^^^^^^^
