@@ -595,9 +595,14 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
         enter_internal(current);
         current->set_current_pending_monitor(nullptr);
-        // We can go to a safepoint at the end of this block. 
-        // If there is a suspend request, ExitOnSuspend will
-        // exit the OM before hitting the safepoint and set the OM as pending.
+        // We can go to a safepoint at the end of this block. If we
+        // do a thread dump during that safepoint, then this thread will show
+        // as having "-locked" the monitor, but the OS and java.lang.Thread
+        // states will still report that the thread is blocked trying to
+        // acquire it.
+        // If there is a suspend request, ExitOnSuspend will exit the OM
+        // and set the OM as pending, the thread will not be reported as
+        // having "-locked" the monitor.
       }
       if (!eos.exited()) {
         // ExitOnSuspend did not exit the OM
@@ -1958,9 +1963,14 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
         reenter_internal(current, &node);
-        // We can go to a safepoint at the end of this block. 
-        // If there is a suspend request, ExitOnSuspend will
-        // exit the OM before hitting the safepoint and set the OM as pending.
+        // We can go to a safepoint at the end of this block. If we
+        // do a thread dump during that safepoint, then this thread will show
+        // as having "-locked" the monitor, but the OS and java.lang.Thread
+        // states will still report that the thread is blocked trying to
+        // acquire it.
+        // If there is a suspend request, ExitOnSuspend will exit the OM
+        // and set the OM as pending, the thread will not be reported as
+        // having "-locked" the monitor.
       }
       // Done waiting, post the corresponding event
       if (eos.exited()) {
