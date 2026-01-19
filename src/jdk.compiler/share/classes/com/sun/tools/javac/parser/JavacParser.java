@@ -1434,12 +1434,6 @@ public class JavacParser implements Parser {
         int startMode = mode;
         List<JCExpression> typeArgs = typeArgumentsOpt(EXPR);
         switch (token.kind) {
-        case QUES:
-            if (isMode(TYPE)) {
-                selectTypeMode();
-                return typeArgument();
-            } else
-                return illegal();
         case PLUSPLUS: case SUBSUB: case BANG: case TILDE: case PLUS: case SUB:
             if (typeArgs == null && isMode(EXPR)) {
                 TokenKind tk = token.kind;
