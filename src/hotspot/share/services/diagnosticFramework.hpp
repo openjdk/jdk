@@ -168,8 +168,7 @@ public:
 struct JcmdOptions {
   enum class TimeStamp {
     Default,
-    Yes,
-    No
+    Yes
   };
 
   TimeStamp timestamp;
@@ -316,13 +315,13 @@ public:
   DCmdWithParser (outputStream *output, bool heap=false) : DCmd(output, heap) { }
   static const char* disabled_message() { return "Diagnostic command currently disabled"; }
   static const char* impact()         { return "Low: No impact"; }
-  virtual void parse(CmdLine *line, char delim, TRAPS);
+  void parse(CmdLine *line, char delim, TRAPS) override;
   void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override { }
-  virtual void reset(TRAPS);
-  virtual void cleanup();
-  virtual void print_help(const char* name) const;
-  virtual GrowableArray<const char*>* argument_name_array() const;
-  virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
+  void reset(TRAPS) override;
+  void cleanup() override;
+  void print_help(const char* name) const override;
+  GrowableArray<const char*>* argument_name_array() const override;
+  GrowableArray<DCmdArgumentInfo*>* argument_info_array() const override;
   DCmdParser* dcmdparser() {
     return &_dcmdparser;
   }
