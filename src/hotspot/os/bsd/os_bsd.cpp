@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,15 @@ bool os::available_memory(physical_memory_size_type& value) {
   return Bsd::available_memory(value);
 }
 
+bool os::Machine::available_memory(physical_memory_size_type& value) {
+  return Bsd::available_memory(value);
+}
+
 bool os::free_memory(physical_memory_size_type& value) {
+  return Bsd::available_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return Bsd::available_memory(value);
 }
 
@@ -181,6 +189,10 @@ void os::Bsd::print_uptime_info(outputStream* st) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
@@ -195,6 +207,10 @@ bool os::total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::free_swap_space(physical_memory_size_type& value) {
+  return Machine::free_swap_space(value);
+}
+
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
@@ -209,6 +225,10 @@ bool os::free_swap_space(physical_memory_size_type& value) {
 }
 
 physical_memory_size_type os::physical_memory() {
+  return Bsd::physical_memory();
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
   return Bsd::physical_memory();
 }
 
@@ -2189,6 +2209,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
   return _processor_count;
 }
 

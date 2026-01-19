@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,8 +328,8 @@ CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
     _pids(pids) {
   CgroupUtil::adjust_controller(memory);
   CgroupUtil::adjust_controller(cpu);
-  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
-  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController, physical_memory_size_type>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController, double>(cpu);
 }
 
 bool CgroupV1Subsystem::is_containerized() {
