@@ -725,11 +725,10 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
   assert(VM_Version::supports_fast_class_init_checks(), "sanity");
   Label L_skip_barrier;
 
-  { // Bypass the barrier for non-static methods
-    __ ldrh(rscratch1, Address(rmethod, Method::access_flags_offset()));
-    __ andsw(zr, rscratch1, JVM_ACC_STATIC);
-    __ br(Assembler::EQ, L_skip_barrier); // non-static
-  }
+  // Bypass the barrier for non-static methods
+  __ ldrh(rscratch1, Address(rmethod, Method::access_flags_offset()));
+  __ andsw(zr, rscratch1, JVM_ACC_STATIC);
+  __ br(Assembler::EQ, L_skip_barrier); // non-static
 
   __ load_method_holder(rscratch2, rmethod);
   __ clinit_barrier(rscratch2, rscratch1, &L_skip_barrier);

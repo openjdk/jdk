@@ -1047,12 +1047,11 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
   Label L_skip_barrier;
   Register method = rbx;
 
-  { // Bypass the barrier for non-static methods
-    Register flags = rscratch1;
-    __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
-    __ testl(flags, JVM_ACC_STATIC);
-    __ jcc(Assembler::zero, L_skip_barrier); // non-static
-  }
+  // Bypass the barrier for non-static methods
+  Register flags = rscratch1;
+  __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
+  __ testl(flags, JVM_ACC_STATIC);
+  __ jcc(Assembler::zero, L_skip_barrier); // non-static
 
   Register klass = rscratch1;
   __ load_method_holder(klass, method);
