@@ -82,15 +82,6 @@ final class ProcessImpl extends Process {
         }
     }
 
-    // Open the file specified by r, and set its handle in stdHandles[i]
-    private static FileOutputStream setFileOutput(Redirect r, long[] stdHandles, int i)
-        throws IOException
-    {
-        FileOutputStream f = newFileOutputStream(r.file(), r.append());
-        stdHandles[i] = fdAccess.getHandle(f.getFD());
-        return f;
-    }
-
     // System-dependent portion of ProcessBuilder.start()
     static Process start(String cmdarray[],
                          java.util.Map<String,String> environment,
@@ -130,7 +121,9 @@ final class ProcessImpl extends Process {
                     stdHandles[1] = fdAccess.getHandle(FileDescriptor.out);
                     if (stdHandles[1] == -1L) {
                         // FileDescriptor.out has been closed.
-                        f1 = setFileOutput(Redirect.DISCARD, stdHandles, 1);
+                        f1 = newFileOutputStream(Redirect.DISCARD.file(),
+                                                 Redirect.DISCARD.append());
+                        stdHandles[1] = fdAccess.getHandle(f1.getFD());
                     }
                 } else if (redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[1] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd());
@@ -138,7 +131,9 @@ final class ProcessImpl extends Process {
                     // the handle is directly assigned to the next process.
                     forceNullOutputStream = true;
                 } else {
-                    f1 = setFileOutput(redirects[1], stdHandles, 1);
+                    f1 = newFileOutputStream(redirects[1].file(),
+                                             redirects[1].append());
+                    stdHandles[1] = fdAccess.getHandle(f1.getFD());
                 }
 
                 if (redirects[2] == Redirect.PIPE) {
@@ -147,12 +142,16 @@ final class ProcessImpl extends Process {
                     stdHandles[2] = fdAccess.getHandle(FileDescriptor.err);
                     if (stdHandles[2] == -1L) {
                         // FileDescriptor.err has been closed.
-                        f2 = setFileOutput(Redirect.DISCARD, stdHandles, 2);
+                        f2 = newFileOutputStream(Redirect.DISCARD,
+                                                 Redirect.DISCARD.append());
+                        stdHandles[2] = fdAccess.getHandle(f2.getFD());
                     }
                 } else if (redirects[2] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[2] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[2]).getFd());
                 } else {
-                    f2 = setFileOutput(redirects[2], stdHandles, 2);
+                    f2 = newFileOutputStream(redirects[2].file(),
+                                             redirects[2].append());
+                    stdHandles[2] = fdAccess.getHandle(f2.getFD());
                 }
             }
 
