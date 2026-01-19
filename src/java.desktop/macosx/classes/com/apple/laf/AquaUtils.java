@@ -35,8 +35,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-import sun.awt.AppContext;
-
 import sun.lwawt.macosx.CPlatformWindow;
 import sun.swing.SwingUtilities2;
 
@@ -150,13 +148,34 @@ final class AquaUtils {
         protected abstract T create();
     }
 
-    abstract static class RecyclableSingleton<T> {
-        final T get() {
-            return AppContext.getSoftReferenceValue(this, () -> getInstance());
-        }
+    abstract static class LazySingleton<T> {
+        T instance;
 
-        void reset() {
-            AppContext.getAppContext().remove(this);
+         final T get() {
+            if (instance == null) {
+                instance = getInstance();
+            }
+            return instance;
+         }
+
+        abstract T getInstance();
+    }
+
+    abstract static class RecyclableSingleton<T> {
+
+        SoftReference<T> ref;
+
+        final T get() {
+            T instance;
+            if (ref != null) {
+                instance = ref.get();
+                if (instance != null) {
+                    return instance;
+                }
+            }
+            instance = getInstance();
+            ref = new SoftReference<>(instance);
+            return instance;
         }
 
         abstract T getInstance();
@@ -197,11 +216,11 @@ final class AquaUtils {
         protected abstract V getInstance(K key);
     }
 
-    private static final RecyclableSingleton<Boolean> enableAnimations = new RecyclableSingleton<Boolean>() {
+    private static final LazySingleton<Boolean> enableAnimations = new LazySingleton<Boolean>() {
         @Override
         protected Boolean getInstance() {
-            final String sizeProperty = System.getProperty(ANIMATIONS_PROPERTY);
-            return !"false".equals(sizeProperty); // should be true by default
+            final String animationsProperty = System.getProperty(ANIMATIONS_PROPERTY);
+            return !"false".equals(animationsProperty); // should be true by default
         }
     };
     private static boolean animationsEnabled() {
