@@ -72,25 +72,12 @@ public class TestVectorAlgorithms {
     private static final RestrictableGenerator<Integer> INT_GEN = Generators.G.ints();
 
     interface TestFunction {
-        Object run();
+        Object run(int i);
     }
 
     Map<String, Map<String, TestFunction>> testGroups = new HashMap<String, Map<String, TestFunction>>();
 
-    int[] aI;
-    int[] rI1;
-    int[] rI2;
-    int[] rI3;
-    int[] rI4;
-    int eI;
-
-    float[] aF;
-    float[] bF;
-
-    byte[] aB;
-
-    int[] oopsX4;
-    int[] memX4;
+    VectorAlgorithmsImpl.Data d;
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -101,74 +88,65 @@ public class TestVectorAlgorithms {
     }
 
     public TestVectorAlgorithms () {
-        // IMPORTANT:
-        //   If you want to use some array but do NOT modify it: just use it.
-        //   If you want to use it and DO want to modify it: clone it. This
-        //   ensures that each test gets a separate copy, and that when we
-        //   capture the modified arrays they are different for every method
-        //   and run.
-        //   An alternative to cloning is to use different return arrays for
-        //   different implementations of the same group, e.g. rI1, rI2, ...
-
         testGroups.put("fillI", new HashMap<String,TestFunction>());
-        testGroups.get("fillI").put("fillI_loop",      () -> { return fillI_loop(rI1); });
-        testGroups.get("fillI").put("fillI_VectorAPI", () -> { return fillI_VectorAPI(rI1); });
-        testGroups.get("fillI").put("fillI_Arrays",    () -> { return fillI_Arrays(rI1); });
+        testGroups.get("fillI").put("fillI_loop",      i -> { return fillI_loop(d.rI1); });
+        testGroups.get("fillI").put("fillI_VectorAPI", i -> { return fillI_VectorAPI(d.rI1); });
+        testGroups.get("fillI").put("fillI_Arrays",    i -> { return fillI_Arrays(d.rI1); });
 
         testGroups.put("iotaI", new HashMap<String,TestFunction>());
-        testGroups.get("iotaI").put("iotaI_loop",      () -> { return iotaI_loop(rI1); });
-        testGroups.get("iotaI").put("iotaI_VectorAPI", () -> { return iotaI_VectorAPI(rI1); });
+        testGroups.get("iotaI").put("iotaI_loop",      i -> { return iotaI_loop(d.rI1); });
+        testGroups.get("iotaI").put("iotaI_VectorAPI", i -> { return iotaI_VectorAPI(d.rI1); });
 
         testGroups.put("copyI", new HashMap<String,TestFunction>());
-        testGroups.get("copyI").put("copyI_loop",             () -> { return copyI_loop(aI, rI1); });
-        testGroups.get("copyI").put("copyI_VectorAPI",        () -> { return copyI_VectorAPI(aI, rI1); });
-        testGroups.get("copyI").put("copyI_System_arraycopy", () -> { return copyI_System_arraycopy(aI, rI1); });
+        testGroups.get("copyI").put("copyI_loop",             i -> { return copyI_loop(d.aI, d.rI1); });
+        testGroups.get("copyI").put("copyI_VectorAPI",        i -> { return copyI_VectorAPI(d.aI, d.rI1); });
+        testGroups.get("copyI").put("copyI_System_arraycopy", i -> { return copyI_System_arraycopy(d.aI, d.rI1); });
 
         testGroups.put("mapI", new HashMap<String,TestFunction>());
-        testGroups.get("mapI").put("mapI_loop",      () -> { return mapI_loop(aI, rI1); });
-        testGroups.get("mapI").put("mapI_VectorAPI", () -> { return mapI_VectorAPI(aI, rI1); });
+        testGroups.get("mapI").put("mapI_loop",      i -> { return mapI_loop(d.aI, d.rI1); });
+        testGroups.get("mapI").put("mapI_VectorAPI", i -> { return mapI_VectorAPI(d.aI, d.rI1); });
 
         testGroups.put("reduceAddI", new HashMap<String,TestFunction>());
-        testGroups.get("reduceAddI").put("reduceAddI_loop",                           () -> { return reduceAddI_loop(aI); });
-        testGroups.get("reduceAddI").put("reduceAddI_reassociate",                    () -> { return reduceAddI_reassociate(aI); });
-        testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_naive",                () -> { return reduceAddI_VectorAPI_naive(aI); });
-        testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_reduction_after_loop", () -> { return reduceAddI_VectorAPI_reduction_after_loop(aI); });
+        testGroups.get("reduceAddI").put("reduceAddI_loop",                           i -> { return reduceAddI_loop(d.aI); });
+        testGroups.get("reduceAddI").put("reduceAddI_reassociate",                    i -> { return reduceAddI_reassociate(d.aI); });
+        testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_naive",                i -> { return reduceAddI_VectorAPI_naive(d.aI); });
+        testGroups.get("reduceAddI").put("reduceAddI_VectorAPI_reduction_after_loop", i -> { return reduceAddI_VectorAPI_reduction_after_loop(d.aI); });
 
         testGroups.put("dotProductF", new HashMap<String,TestFunction>());
-        testGroups.get("dotProductF").put("dotProductF_loop",                           () -> { return dotProductF_loop(aF, bF); });
-        testGroups.get("dotProductF").put("dotProductF_VectorAPI_naive",                () -> { return dotProductF_VectorAPI_naive(aF, bF); });
-        testGroups.get("dotProductF").put("dotProductF_VectorAPI_reduction_after_loop", () -> { return dotProductF_VectorAPI_reduction_after_loop(aF, bF); });
+        testGroups.get("dotProductF").put("dotProductF_loop",                           i -> { return dotProductF_loop(d.aF, d.bF); });
+        testGroups.get("dotProductF").put("dotProductF_VectorAPI_naive",                i -> { return dotProductF_VectorAPI_naive(d.aF, d.bF); });
+        testGroups.get("dotProductF").put("dotProductF_VectorAPI_reduction_after_loop", i -> { return dotProductF_VectorAPI_reduction_after_loop(d.aF, d.bF); });
 
         testGroups.put("hashCodeB", new HashMap<String,TestFunction>());
-        testGroups.get("hashCodeB").put("hashCodeB_loop",         () -> { return hashCodeB_loop(aB); });
-        testGroups.get("hashCodeB").put("hashCodeB_Arrays",       () -> { return hashCodeB_Arrays(aB); });
-        testGroups.get("hashCodeB").put("hashCodeB_VectorAPI_v1", () -> { return hashCodeB_VectorAPI_v1(aB); });
-        testGroups.get("hashCodeB").put("hashCodeB_VectorAPI_v2", () -> { return hashCodeB_VectorAPI_v2(aB); });
+        testGroups.get("hashCodeB").put("hashCodeB_loop",         i -> { return hashCodeB_loop(d.aB); });
+        testGroups.get("hashCodeB").put("hashCodeB_Arrays",       i -> { return hashCodeB_Arrays(d.aB); });
+        testGroups.get("hashCodeB").put("hashCodeB_VectorAPI_v1", i -> { return hashCodeB_VectorAPI_v1(d.aB); });
+        testGroups.get("hashCodeB").put("hashCodeB_VectorAPI_v2", i -> { return hashCodeB_VectorAPI_v2(d.aB); });
 
         testGroups.put("scanAddI", new HashMap<String,TestFunction>());
-        testGroups.get("scanAddI").put("scanAddI_loop",                      () -> { return scanAddI_loop(aI, rI1); });
-        testGroups.get("scanAddI").put("scanAddI_loop_reassociate",          () -> { return scanAddI_loop_reassociate(aI, rI2); });
-        testGroups.get("scanAddI").put("scanAddI_VectorAPI_permute_add",     () -> { return scanAddI_VectorAPI_permute_add(aI, rI4); });
+        testGroups.get("scanAddI").put("scanAddI_loop",                      i -> { return scanAddI_loop(d.aI, d.rI1); });
+        testGroups.get("scanAddI").put("scanAddI_loop_reassociate",          i -> { return scanAddI_loop_reassociate(d.aI, d.rI2); });
+        testGroups.get("scanAddI").put("scanAddI_VectorAPI_permute_add",     i -> { return scanAddI_VectorAPI_permute_add(d.aI, d.rI4); });
 
         testGroups.put("findMinIndexI", new HashMap<String,TestFunction>());
-        testGroups.get("findMinIndexI").put("findMinIndexI_loop",      () -> { return findMinIndexI_loop(aI); });
-        testGroups.get("findMinIndexI").put("findMinIndexI_VectorAPI", () -> { return findMinIndexI_VectorAPI(aI); });
+        testGroups.get("findMinIndexI").put("findMinIndexI_loop",      i -> { return findMinIndexI_loop(d.aI); });
+        testGroups.get("findMinIndexI").put("findMinIndexI_VectorAPI", i -> { return findMinIndexI_VectorAPI(d.aI); });
 
         testGroups.put("findI", new HashMap<String,TestFunction>());
-        testGroups.get("findI").put("findI_loop",      () -> { return findI_loop(aI, eI); });
-        testGroups.get("findI").put("findI_VectorAPI", () -> { return findI_VectorAPI(aI, eI); });
+        testGroups.get("findI").put("findI_loop",      i -> { return findI_loop(d.aI, d.eI[i]); });
+        testGroups.get("findI").put("findI_VectorAPI", i -> { return findI_VectorAPI(d.aI, d.eI[i]); });
 
         testGroups.put("reverseI", new HashMap<String,TestFunction>());
-        testGroups.get("reverseI").put("reverseI_loop",      () -> { return reverseI_loop(aI, rI1); });
-        testGroups.get("reverseI").put("reverseI_VectorAPI", () -> { return reverseI_VectorAPI(aI, rI2); });
+        testGroups.get("reverseI").put("reverseI_loop",      i -> { return reverseI_loop(d.aI, d.rI1); });
+        testGroups.get("reverseI").put("reverseI_VectorAPI", i -> { return reverseI_VectorAPI(d.aI, d.rI2); });
 
         testGroups.put("filterI", new HashMap<String,TestFunction>());
-        testGroups.get("filterI").put("filterI_loop",      () -> { return filterI_loop(aI, rI1, eI); });
-        testGroups.get("filterI").put("filterI_VectorAPI", () -> { return filterI_VectorAPI(aI, rI2, eI); });
+        testGroups.get("filterI").put("filterI_loop",      i -> { return filterI_loop(d.aI, d.rI1, d.eI[i]); });
+        testGroups.get("filterI").put("filterI_VectorAPI", i -> { return filterI_VectorAPI(d.aI, d.rI2, d.eI[i]); });
 
         testGroups.put("reduceAddIFieldsX4", new HashMap<String,TestFunction>());
-        testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_loop",      () -> { return reduceAddIFieldsX4_loop(oopsX4, memX4); });
-        testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_VectorAPI", () -> { return reduceAddIFieldsX4_VectorAPI(oopsX4, memX4); });
+        testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_loop",      i -> { return reduceAddIFieldsX4_loop(d.oopsX4, d.memX4); });
+        testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_VectorAPI", i -> { return reduceAddIFieldsX4_VectorAPI(d.oopsX4, d.memX4); });
     }
 
     @Warmup(100)
@@ -212,40 +190,9 @@ public class TestVectorAlgorithms {
         for (int iter = 0; iter < iters; iter++) {
             // Set up random inputs, random size is important to stress tails.
             int size = 100_000 + RANDOM.nextInt(10_000);
-            aI = new int[size];
-            G.fill(INT_GEN, aI);
-            // Pick some random element. Most of the time it is in aI, sometimes not.
-            eI = (RANDOM.nextInt(10) == 0) ? RANDOM.nextInt() : aI[RANDOM.nextInt(size)];
-            //for (int i = 0; i < aI.length; i++) { aI[i] = i; }
-            rI1 = new int[size];
-            rI2 = new int[size];
-            rI3 = new int[size];
-            rI4 = new int[size];
-
-            // X4 oop setup.
-            oopsX4 = new int[size];
-            int numX4 = 10_000;
-            for (int i = 0; i < size; i++) {
-                // assign either a zero=null, or assign a random oop.
-                oopsX4[i] = (RANDOM.nextInt(10) == 0) ? 0 : RANDOM.nextInt(numX4) * 4;
-            }
-            // Just fill the whole array with random values.
-            // The relevant field is only at every "4 * i + 3" though.
-            memX4 = new int[4 * numX4];
-            for (int i = 0; i < 4 * numX4; i++) {
-                memX4[i] = RANDOM.nextInt();
-            }
-
-            // float inputs. To avoid rounding issues, only use small integers.
-            aF = new float[size];
-            bF = new float[size];
-            for (int i = 0; i < size; i++) {
-                aF[i] = RANDOM.nextInt(32) - 16;
-                bF[i] = RANDOM.nextInt(32) - 16;
-            }
-
-            aB = new byte[size];
-            RANDOM.nextBytes(aB);
+            int seed = RANDOM.nextInt();
+            int numXObjects = 10_000;
+            d = new VectorAlgorithmsImpl.Data(size, seed, numXObjects);
 
             // Run all tests
             for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
@@ -256,7 +203,7 @@ public class TestVectorAlgorithms {
                 for (Map.Entry<String,TestFunction> entry : group.entrySet()) {
                     String name = entry.getKey();
                     TestFunction test = entry.getValue();
-                    Object result = test.run();
+                    Object result = test.run(iter);
                     if (gold == null) {
                         gold = result;
                         gold_name = name;
@@ -386,7 +333,7 @@ public class TestVectorAlgorithms {
                   IRNode.ADD_REDUCTION_VI, "> 0"}, // reduceLanes inside loop
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public int reduceAddI_VectorAPI_naive(int[] a) {
-        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_naive(aI);
+        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_naive(a);
     }
 
     @Test
@@ -457,7 +404,7 @@ public class TestVectorAlgorithms {
                   IRNode.ADD_VI,           "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
-        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(aI);
+        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(a);
     }
 
     @Test
