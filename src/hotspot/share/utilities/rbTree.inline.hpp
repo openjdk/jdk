@@ -39,14 +39,28 @@
 inline IntrusiveRBNode::IntrusiveRBNode()
   : _parent(0), _left(nullptr), _right(nullptr) DEBUG_ONLY(COMMA _visited(false)) {}
 
-inline bool IntrusiveRBNode::is_black() const { return (_parent & 0x1) != 0; }
-inline bool IntrusiveRBNode::is_red()   const { return (_parent & 0x1) == 0; }
+inline bool IntrusiveRBNode::is_black() const {
+  return (_parent & 0x1) != 0;
+}
 
-inline void IntrusiveRBNode::set_black() { _parent |= 0x1; }
-inline void IntrusiveRBNode::set_red()   { _parent &= ~0x1; }
+inline bool IntrusiveRBNode::is_red() const {
+  return (_parent & 0x1) == 0;
+}
 
-inline IntrusiveRBNode* IntrusiveRBNode::parent() const { return reinterpret_cast<IntrusiveRBNode*>(_parent & ~0x1); }
-inline void IntrusiveRBNode::set_parent(IntrusiveRBNode* new_parent) { _parent = (_parent & 0x1) | reinterpret_cast<uintptr_t>(new_parent); }
+inline void IntrusiveRBNode::set_black() {
+  _parent |= 0x1;
+}
+inline void IntrusiveRBNode::set_red() {
+  _parent &= ~0x1;
+}
+
+inline IntrusiveRBNode* IntrusiveRBNode::parent() const {
+  return reinterpret_cast<IntrusiveRBNode*>(_parent & ~0x1);
+}
+
+inline void IntrusiveRBNode::set_parent(IntrusiveRBNode* new_parent) {
+  _parent = (_parent & 0x1) | reinterpret_cast<uintptr_t>(new_parent);
+}
 
 inline bool IntrusiveRBNode::is_right_child() const {
   return parent() != nullptr && parent()->_right == this;
@@ -209,16 +223,24 @@ inline void IntrusiveRBNode::verify(
 }
 
 template <typename K, typename V>
-inline const K& RBNode<K, V>::key() const { return _key; }
+inline const K& RBNode<K, V>::key() const {
+  return _key;
+}
 
 template <typename K, typename V>
-inline V& RBNode<K, V>::val() { return _value; }
+inline V& RBNode<K, V>::val() {
+  return _value;
+}
 
 template <typename K, typename V>
-inline const V& RBNode<K, V>::val() const { return _value; }
+inline const V& RBNode<K, V>::val() const {
+  return _value;
+}
 
 template <typename K, typename V>
-inline void RBNode<K, V>::set_val(const V& v) { _value = v; }
+inline void RBNode<K, V>::set_val(const V& v) {
+  _value = v;
+}
 
 template <typename K, typename V>
 inline RBNode<K, V>::RBNode() {}
@@ -230,16 +252,24 @@ template <typename K, typename V>
 inline RBNode<K, V>::RBNode(const K& key, const V& val) : IntrusiveRBNode(), _key(key), _value(val) {}
 
 template <typename K, typename V>
-inline const RBNode<K, V>* RBNode<K, V>::prev() const { return static_cast<const RBNode<K, V>*>(IntrusiveRBNode::prev()); }
+inline const RBNode<K, V>* RBNode<K, V>::prev() const {
+  return static_cast<const RBNode<K, V>*>(IntrusiveRBNode::prev());
+}
 
 template <typename K, typename V>
-inline const RBNode<K, V>* RBNode<K, V>::next() const { return static_cast<const RBNode<K, V>*>(IntrusiveRBNode::next()); }
+inline const RBNode<K, V>* RBNode<K, V>::next() const {
+  return static_cast<const RBNode<K, V>*>(IntrusiveRBNode::next());
+}
 
 template <typename K, typename V>
-inline RBNode<K, V>* RBNode<K, V>::prev() { return static_cast<RBNode<K, V>*>(IntrusiveRBNode::prev()); }
+inline RBNode<K, V>* RBNode<K, V>::prev() {
+  return static_cast<RBNode<K, V>*>(IntrusiveRBNode::prev());
+}
 
 template <typename K, typename V>
-inline RBNode<K, V>* RBNode<K, V>::next() { return static_cast<RBNode<K, V>*>(IntrusiveRBNode::next()); }
+inline RBNode<K, V>* RBNode<K, V>::next() {
+  return static_cast<RBNode<K, V>*>(IntrusiveRBNode::next());
+}
 
 template <typename K, typename NodeType, typename COMPARATOR>
 inline AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::Cursor()
@@ -254,16 +284,24 @@ inline AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::Cursor(NodeType* const* 
   : _insert_location(const_cast<NodeType**>(insert_location)), _parent(parent) {}
 
 template <typename K, typename NodeType, typename COMPARATOR>
-inline bool AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::valid() const { return _insert_location != nullptr; }
+inline bool AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::valid() const {
+  return _insert_location != nullptr;
+}
 
 template <typename K, typename NodeType, typename COMPARATOR>
-inline bool AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::found() const { return *_insert_location != nullptr; }
+inline bool AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::found() const {
+  return *_insert_location != nullptr;
+}
 
 template <typename K, typename NodeType, typename COMPARATOR>
-inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::node() { return _insert_location == nullptr ? nullptr : *_insert_location; }
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::node() {
+  return _insert_location == nullptr ? nullptr : *_insert_location;
+}
 
 template <typename K, typename NodeType, typename COMPARATOR>
-inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::node() const { return _insert_location == nullptr ? nullptr : *_insert_location; }
+inline NodeType* AbstractRBTree<K, NodeType, COMPARATOR>::Cursor::node() const {
+  return _insert_location == nullptr ? nullptr : *_insert_location;
+}
 
 template <typename K, typename NodeType, typename COMPARATOR>
 inline RBTreeOrdering AbstractRBTree<K, NodeType, COMPARATOR>::cmp(const K& a, const NodeType* b) const {
@@ -1156,7 +1194,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_all() {
 
 template <MemTag mem_tag, AllocFailType strategy>
 inline void* RBTreeCHeapAllocator<mem_tag, strategy>::allocate(size_t sz) {
-  return static_cast<void*>(AllocateHeap(sz, mem_tag, strategy));
+  return AllocateHeap(sz, mem_tag, strategy);
 }
 
 template <MemTag mem_tag, AllocFailType strategy>
@@ -1174,7 +1212,6 @@ inline void* RBTreeArenaAllocator<strategy>::allocate(size_t sz) {
 
 template <AllocFailType strategy>
 inline void RBTreeArenaAllocator<strategy>::free(void* ptr) { /* NOP */ }
-
 
 template <AllocFailType strategy>
 inline RBTreeResourceAreaAllocator<strategy>::RBTreeResourceAreaAllocator(ResourceArea* rarea) : _rarea(rarea) {}
