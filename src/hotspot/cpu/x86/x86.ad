@@ -25229,7 +25229,7 @@ instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_slice_const_origin_LT16B_reg(vec dst, vec src1, vec src2, immI origin)
+instruct vector_slice_const_origin_16B_reg(vec dst, vec src1, vec src2, immI origin)
 %{
   predicate(Matcher::vector_length_in_bytes(n) == 16);
   match(Set dst (VectorSlice (Binary src1 src2) origin));

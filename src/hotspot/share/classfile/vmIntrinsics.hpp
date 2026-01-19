@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1175,8 +1175,8 @@ class methodHandle;
                                    "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                             \
                                    "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                             \
                                    "Ljdk/internal/vm/vector/VectorSupport$VectorSliceOp;)"                                                     \
-                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                     \
-   do_name(vector_slice_name, "sliceOp")                                                                                                         \
+                                   "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                            \
+   do_name(vector_slice_name, "sliceOp")                                                                                                       \
                                                                                                                                                \
                                                                                                                                                \
   do_intrinsic(_VectorBlend, jdk_internal_vm_vector_VectorSupport, vector_blend_name, vector_blend_sig, F_S)                                   \

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,27 @@ public class VectorSliceBenchmark {
     long [] lsrc2;
     long [] ldst;
 
+    float [] fsrc1;
+    float [] fsrc2;
+    float [] fdst;
+
+    double [] dsrc1;
+    double [] dsrc2;
+    double [] ddst;
+
     static final VectorSpecies<Byte> bspecies    = ByteVector.SPECIES_PREFERRED;
     static final VectorSpecies<Short> sspecies   = ShortVector.SPECIES_PREFERRED;
     static final VectorSpecies<Integer> ispecies = IntVector.SPECIES_PREFERRED;
     static final VectorSpecies<Long> lspecies    = LongVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Float> fspecies = FloatVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Double> dspecies    = DoubleVector.SPECIES_PREFERRED;
+
+    static final VectorMask<Byte> bmask = VectorMask.fromLong(bspecies, 0xF);
+    static final VectorMask<Short> smask = VectorMask.fromLong(sspecies, 0xF);
+    static final VectorMask<Integer> imask = VectorMask.fromLong(ispecies, 0xF);
+    static final VectorMask<Long> lmask = VectorMask.fromLong(lspecies, 0xF);
+    static final VectorMask<Float> fmask = VectorMask.fromLong(fspecies, 0xF);
+    static final VectorMask<Double> dmask = VectorMask.fromLong(dspecies, 0xF);
 
     static final int B_SLICE_IDX1 = bspecies.length() / 2;
     static final int B_SLICE_IDX2 = bspecies.length() / 4;
@@ -69,6 +86,12 @@ public class VectorSliceBenchmark {
 
     static final int L_SLICE_IDX1 = lspecies.length() / 2;
     static final int L_SLICE_IDX2 = lspecies.length() / 4;
+
+    static final int F_SLICE_IDX1 = ispecies.length() / 2;
+    static final int F_SLICE_IDX2 = ispecies.length() / 4;
+
+    static final int D_SLICE_IDX1 = lspecies.length() / 2;
+    static final int D_SLICE_IDX2 = lspecies.length() / 4;
 
     @Setup(Level.Trial)
     public void BmSetup() {
@@ -90,6 +113,14 @@ public class VectorSliceBenchmark {
         lsrc2 = new long[size];
         ldst  = new long[size];
 
+        fsrc1 = new float[size];
+        fsrc2 = new float[size];
+        fdst  = new float[size];
+
+        dsrc1 = new double[size];
+        dsrc2 = new double[size];
+        ddst  = new double[size];
+
         for (int i = 0; i < size; i++) {
             bsrc1[i] = (byte)r.nextInt(size);
             bsrc2[i] = (byte)r.nextInt(size);
@@ -102,6 +133,12 @@ public class VectorSliceBenchmark {
 
             lsrc1[i] = r.nextLong(size);
             lsrc2[i] = r.nextLong(size);
+
+            fsrc1[i] = r.nextFloat(size);
+            fsrc2[i] = r.nextFloat(size);
+
+            dsrc1[i] = r.nextDouble(size);
+            dsrc2[i] = r.nextDouble(size);
         }
     }
 
@@ -115,10 +152,10 @@ public class VectorSliceBenchmark {
     }
 
     @Benchmark
-    public void byteVectorSliceWithConstantIndex2() {
+    public void byteVectorSliceWithConstantIndex2Masked() {
         for (int i = 0; i < bspecies.loopBound(bdst.length); i += bspecies.length()) {
             ByteVector.fromArray(bspecies, bsrc1, i)
-                      .slice(B_SLICE_IDX2, ByteVector.fromArray(bspecies, bsrc2, i))
+                      .slice(B_SLICE_IDX2, ByteVector.fromArray(bspecies, bsrc2, i), bmask)
                       .intoArray(bdst, i);
         }
     }
@@ -134,7 +171,7 @@ public class VectorSliceBenchmark {
 
     @Benchmark
     public void shortVectorSliceWithConstantIndex1() {
-        for (int i = 0; i < sspecies.loopBound(sdst.length); i += bspecies.length()) {
+        for (int i = 0; i < sspecies.loopBound(sdst.length); i += sspecies.length()) {
             ShortVector.fromArray(sspecies, ssrc1, i)
                       .slice(S_SLICE_IDX1, ShortVector.fromArray(sspecies, ssrc2, i))
                       .intoArray(sdst, i);
@@ -142,17 +179,17 @@ public class VectorSliceBenchmark {
     }
 
     @Benchmark
-    public void shortVectorSliceWithConstantIndex2() {
-        for (int i = 0; i < sspecies.loopBound(sdst.length); i += bspecies.length()) {
+    public void shortVectorSliceWithConstantIndex2Masked() {
+        for (int i = 0; i < sspecies.loopBound(sdst.length); i += sspecies.length()) {
             ShortVector.fromArray(sspecies, ssrc1, i)
-                      .slice(S_SLICE_IDX2, ShortVector.fromArray(sspecies, ssrc2, i))
+                      .slice(S_SLICE_IDX2, ShortVector.fromArray(sspecies, ssrc2, i), smask)
                       .intoArray(sdst, i);
         }
     }
 
     @Benchmark
     public void shortVectorSliceWithVariableIndex() {
-        for (int i = 0; i < sspecies.loopBound(sdst.length); i += bspecies.length()) {
+        for (int i = 0; i < sspecies.loopBound(sdst.length); i += sspecies.length()) {
             ShortVector.fromArray(sspecies, ssrc1, i)
                       .slice(i & (sspecies.length() - 1), ShortVector.fromArray(sspecies, ssrc2, i))
                       .intoArray(sdst, i);
@@ -169,10 +206,10 @@ public class VectorSliceBenchmark {
     }
 
     @Benchmark
-    public void intVectorSliceWithConstantIndex2() {
+    public void intVectorSliceWithConstantIndex2Masked() {
         for (int i = 0; i < ispecies.loopBound(idst.length); i += ispecies.length()) {
             IntVector.fromArray(ispecies, isrc1, i)
-                     .slice(I_SLICE_IDX2, IntVector.fromArray(ispecies, isrc2, i))
+                     .slice(I_SLICE_IDX2, IntVector.fromArray(ispecies, isrc2, i), imask)
                      .intoArray(idst, i);
         }
     }
@@ -187,6 +224,33 @@ public class VectorSliceBenchmark {
     }
 
     @Benchmark
+    public void floatVectorSliceWithConstantIndex1() {
+        for (int i = 0; i < fspecies.loopBound(fdst.length); i += fspecies.length()) {
+            FloatVector.fromArray(fspecies, fsrc1, i)
+                       .slice(F_SLICE_IDX1, FloatVector.fromArray(fspecies, fsrc2, i))
+                       .intoArray(fdst, i);
+        }
+    }
+
+    @Benchmark
+    public void floatVectorSliceWithConstantIndex2Masked() {
+        for (int i = 0; i < fspecies.loopBound(fdst.length); i += fspecies.length()) {
+            FloatVector.fromArray(fspecies, fsrc1, i)
+                      .slice(F_SLICE_IDX2, FloatVector.fromArray(fspecies, fsrc2, i), fmask)
+                      .intoArray(fdst, i);
+        }
+    }
+
+    @Benchmark
+    public void floatVectorSliceWithVariableIndex() {
+        for (int i = 0; i < fspecies.loopBound(fdst.length); i += fspecies.length()) {
+            FloatVector.fromArray(fspecies, fsrc1, i)
+                       .slice(i & (fspecies.length() - 1), FloatVector.fromArray(fspecies, fsrc2, i))
+                       .intoArray(fdst, i);
+        }
+    }
+
+    @Benchmark
     public void longVectorSliceWithConstantIndex1() {
         for (int i = 0; i < lspecies.loopBound(ldst.length); i += lspecies.length()) {
             LongVector.fromArray(lspecies, lsrc1, i)
@@ -196,10 +260,10 @@ public class VectorSliceBenchmark {
     }
 
     @Benchmark
-    public void longVectorSliceWithConstantIndex2() {
+    public void longVectorSliceWithConstantIndex2Masked() {
         for (int i = 0; i < lspecies.loopBound(ldst.length); i += lspecies.length()) {
             LongVector.fromArray(lspecies, lsrc1, i)
-                      .slice(L_SLICE_IDX2, LongVector.fromArray(lspecies, lsrc2, i))
+                      .slice(L_SLICE_IDX2, LongVector.fromArray(lspecies, lsrc2, i), lmask)
                       .intoArray(ldst, i);
         }
     }
@@ -210,6 +274,33 @@ public class VectorSliceBenchmark {
             LongVector.fromArray(lspecies, lsrc1, i)
                       .slice(i & (lspecies.length() - 1), LongVector.fromArray(lspecies, lsrc2, i))
                       .intoArray(ldst, i);
+        }
+    }
+
+    @Benchmark
+    public void doubleVectorSliceWithConstantIndex1() {
+        for (int i = 0; i < dspecies.loopBound(ddst.length); i += dspecies.length()) {
+            DoubleVector.fromArray(dspecies, dsrc1, i)
+                        .slice(D_SLICE_IDX1, DoubleVector.fromArray(dspecies, dsrc2, i))
+                        .intoArray(ddst, i);
+        }
+    }
+
+    @Benchmark
+    public void doubleVectorSliceWithConstantIndex2Masked() {
+        for (int i = 0; i < dspecies.loopBound(ddst.length); i += dspecies.length()) {
+            DoubleVector.fromArray(dspecies, dsrc1, i)
+                        .slice(D_SLICE_IDX2, DoubleVector.fromArray(dspecies, dsrc2, i), dmask)
+                        .intoArray(ddst, i);
+        }
+    }
+
+    @Benchmark
+    public void doubleVectorSliceWithVariableIndex() {
+        for (int i = 0; i < dspecies.loopBound(ddst.length); i += dspecies.length()) {
+            DoubleVector.fromArray(dspecies, dsrc1, i)
+                        .slice(i & (dspecies.length() - 1), DoubleVector.fromArray(dspecies, dsrc2, i))
+                        .intoArray(ddst, i);
         }
     }
 }

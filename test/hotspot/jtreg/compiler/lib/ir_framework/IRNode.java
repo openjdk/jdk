@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2356,9 +2356,19 @@ public class IRNode {
         vectorNode(VECTOR_SLICE_I, "VectorSlice", TYPE_INT);
     }
 
+    public static final String VECTOR_SLICE_F = VECTOR_PREFIX + "VECTOR_SLICE_F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_F, "VectorSlice", TYPE_FLOAT);
+    }
+
     public static final String VECTOR_SLICE_L = VECTOR_PREFIX + "VECTOR_SLICE_L" + POSTFIX;
     static {
         vectorNode(VECTOR_SLICE_L, "VectorSlice", TYPE_LONG);
+    }
+
+    public static final String VECTOR_SLICE_D = VECTOR_PREFIX + "VECTOR_SLICE_D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_SLICE_D, "VectorSlice", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
