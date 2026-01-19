@@ -93,7 +93,7 @@ void WorkerThreads::initialize_workers() {
   }
 }
 
-bool WorkerThreads::allow_creation_failure() const {
+bool WorkerThreads::allow_inject_creation_failure() const {
   if (!is_init_completed()) {
     // Never allow creation failures during VM init
     return false;
@@ -108,7 +108,7 @@ bool WorkerThreads::allow_creation_failure() const {
 }
 
 WorkerThread* WorkerThreads::create_worker(uint name_suffix) {
-  if (InjectGCWorkerCreationFailure && allow_creation_failure()) {
+  if (InjectGCWorkerCreationFailure && allow_inject_creation_failure()) {
     return nullptr;
   }
 
