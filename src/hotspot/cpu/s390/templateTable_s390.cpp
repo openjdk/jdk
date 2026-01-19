@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2377,7 +2377,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   __ z_cli(Address(Rcache, bc_offset), code);
 
   // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register method = Z_R1_scratch;
     const Register klass  = Z_R1_scratch;
     __ z_brne(L_clinit_barrier_slow);
@@ -2427,8 +2428,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ z_cli(Address(cache, code_offset), code);
 
   // Class initialization barrier for static fields
-  if (VM_Version::supports_fast_class_init_checks() &&
-      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register field_holder = index;
 
     __ z_brne(L_clinit_barrier_slow);
