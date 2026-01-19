@@ -2619,7 +2619,6 @@ public class JavacParser implements Parser {
 
         int prevmode = mode;
         selectTypeMode();
-        boolean diamondFound = false;
         int lastTypeargsPos = -1;
         if (token.kind == LT) {
             lastTypeargsPos = token.pos;
