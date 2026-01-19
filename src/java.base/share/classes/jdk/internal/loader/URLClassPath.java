@@ -97,20 +97,20 @@ public class URLClassPath {
         DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
-    /* The original search path of URLs
-     * Access is guarded by a monitor on 'path' itself
+    /* Search path of URLs passed to the constructor or by calls to addURL
+     * Access is guarded by a monitor on 'searchPath' itself
      */
-    private final ArrayList<URL> path;
+    private final ArrayList<URL> searchPath;
 
-    /* Index of URL in the search path to process next
-     * Access is guarded by a monitor on 'path'
+    /* Index of the next URL in the search path to process
+     * Access is guarded by a monitor on 'searchPath'
      */
-    private int pathCursor = 0;
+    private int nextURL = 0;
 
-    /* A list of loader-discovered URLs, if any.
-     * Access is guarded by a monitor on 'path'
+    /* Queue of URLs found during expansion of JAR 'Class-Path' attributes
+     * Access is guarded by a monitor on 'searchPath'
      */
-    private final ArrayList<URL> loaderPath = new ArrayList<>();
+    private final ArrayList<URL> expandedPath = new ArrayList<>();
 
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
@@ -136,8 +136,8 @@ public class URLClassPath {
      */
     public URLClassPath(URL[] urls,
                         URLStreamHandlerFactory factory) {
-        //  Reject null URLs
-        this.path = new ArrayList<>(List.of(urls));
+        // Reject null URLs
+        this.searchPath = new ArrayList<>(List.of(urls));
 
         if (factory != null) {
             jarHandler = factory.createURLStreamHandler("jar");
@@ -176,7 +176,7 @@ public class URLClassPath {
                 off = next + 1;
             } while (next != -1);
         }
-        this.path = path;
+        this.searchPath = path;
         // the application class loader uses the built-in protocol handler to avoid protocol
         // handler lookup when opening JAR files on the class path.
         this.jarHandler = new sun.net.www.protocol.jar.Handler();
@@ -208,9 +208,9 @@ public class URLClassPath {
     public synchronized void addURL(URL url) {
         if (closed || url == null)
             return;
-        synchronized (path) {
-            if (! path.contains(url)) {
-                path.add(url);
+        synchronized (searchPath) {
+            if (! searchPath.contains(url)) {
+                searchPath.add(url);
             }
         }
     }
@@ -241,8 +241,8 @@ public class URLClassPath {
      * Returns the original search path of URLs.
      */
     public URL[] getURLs() {
-        synchronized (path) {
-            return path.toArray(new URL[0]);
+        synchronized (searchPath) {
+            return searchPath.toArray(new URL[0]);
         }
     }
 
@@ -377,12 +377,12 @@ public class URLClassPath {
      */
     private URL nextURL() {
         // Check any loader-discovered class path first
-        if (!loaderPath.isEmpty())  {
-            return loaderPath.removeLast();
+        if (!expandedPath.isEmpty())  {
+            return expandedPath.removeLast();
         }
         // Check the original search path
-        if (pathCursor < path.size()) {
-            return path.get(pathCursor++);
+        if (nextURL < searchPath.size()) {
+            return searchPath.get(nextURL++);
         }
         // All paths exhausted
         return null;
@@ -400,7 +400,7 @@ public class URLClassPath {
         // or unopenedUrls is exhausted.
         while (loaders.size() < index + 1) {
             final URL url;
-            synchronized (path) {
+            synchronized (searchPath) {
                 url = nextURL();
                 if (url == null)
                     return null;
@@ -430,7 +430,7 @@ public class URLClassPath {
                 continue;
             }
             if (loaderClassPathURLs != null) {
-                push(loaderClassPathURLs);
+                addExpandedPaths(loaderClassPathURLs);
             }
             // Finally, add the Loader to the search path.
             loaders.add(loader);
@@ -483,12 +483,12 @@ public class URLClassPath {
     }
 
     /*
-     * Pushes the specified URLs onto the list of loader-discovered URLs
+     * Adds the specified URLs to the queue of 'Class-Path' expanded URLs
      */
-    private void push(URL[] urls) {
-        synchronized (path) {
+    private void addExpandedPaths(URL[] urls) {
+        synchronized (searchPath) {
             // Adding in reversed order since URLs are consumed tail-first
-            loaderPath.addAll(Arrays.asList(urls).reversed());
+            expandedPath.addAll(Arrays.asList(urls).reversed());
         }
     }
 
