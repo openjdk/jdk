@@ -142,7 +142,7 @@ final class ProcessImpl extends Process {
                     stdHandles[2] = fdAccess.getHandle(FileDescriptor.err);
                     if (stdHandles[2] == -1L) {
                         // FileDescriptor.err has been closed.
-                        f2 = newFileOutputStream(Redirect.DISCARD,
+                        f2 = newFileOutputStream(Redirect.DISCARD.file(),
                                                  Redirect.DISCARD.append());
                         stdHandles[2] = fdAccess.getHandle(f2.getFD());
                     }
