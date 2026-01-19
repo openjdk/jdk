@@ -373,19 +373,20 @@ public class URLClassPath {
 
     /*
      * Returns the next URL to process or null if finished
-     * This method may only be called while holding a lock on 'searchPath'
      */
     private URL nextURL() {
-        // Check paths discovered during 'Class-Path' expansion first
-        if (!expandedPath.isEmpty())  {
-            return expandedPath.removeLast();
+        synchronized (searchPath) {
+            // Check paths discovered during 'Class-Path' expansion first
+            if (!expandedPath.isEmpty()) {
+                return expandedPath.removeLast();
+            }
+            // Check the regular search path
+            if (nextURL < searchPath.size()) {
+                return searchPath.get(nextURL++);
+            }
+            // All paths exhausted
+            return null;
         }
-        // Check the regular search path
-        if (nextURL < searchPath.size()) {
-            return searchPath.get(nextURL++);
-        }
-        // All paths exhausted
-        return null;
     }
     /*
      * Returns the Loader at the specified position in the URL search
@@ -397,14 +398,13 @@ public class URLClassPath {
             return null;
         }
         // Expand URL search path until the request can be satisfied
-        // or unopenedUrls is exhausted.
+        // or all paths are exhausted.
         while (loaders.size() < index + 1) {
-            final URL url;
-            synchronized (searchPath) {
-                url = nextURL();
-                if (url == null)
-                    return null;
+            final URL url = nextURL();
+            if (url == null) {
+                return null;
             }
+
             // Skip this URL if it already has a Loader.
             String urlNoFragString = URLUtil.urlNoFragString(url);
             if (lmap.containsKey(urlNoFragString)) {
