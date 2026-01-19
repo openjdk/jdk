@@ -2227,20 +2227,17 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     cmp(rscratch2, recv);
     br(Assembler::EQ, L_found_recv);
   add(offset, offset, receiver_step);
-  mov(rscratch2, end_receiver_offset);
-  cmp(offset, rscratch2);
-  br(Assembler::NE, L_loop_search_receiver);
+  sub(rscratch2, offset, end_receiver_offset);
+  cbnz(rscratch2, L_loop_search_receiver);
 
   // Fast: no receiver, but profile is full
   mov(offset, base_receiver_offset);
   bind(L_loop_search_empty);
     ldr(rscratch2, Address(mdp, offset));
-    cmp(rscratch2, (u1)NULL_WORD);
-    br(Assembler::EQ, L_found_empty);
+    cbz(rscratch2, L_found_empty);
   add(offset, offset, receiver_step);
-  mov(rscratch2, end_receiver_offset);
-  cmp(offset, rscratch2);
-  br(Assembler::NE, L_loop_search_empty);
+  sub(rscratch2, offset, end_receiver_offset);
+  cbnz(rscratch2, L_loop_search_empty);
   b(L_polymorphic);
 
   // Slow: try to install receiver
@@ -2253,7 +2250,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   lea(rscratch2, Address(mdp, offset));
   cmpxchg(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword,
-          /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
+          /*acquire*/ false, /*release*/ false, /*weak*/ false, noreg);
 
   // CAS success means the slot now has the receiver we want. CAS failure means
   // something had claimed the slot concurrently: it can be the same receiver we want,
