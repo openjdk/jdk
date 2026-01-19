@@ -183,6 +183,7 @@ public interface SegmentAllocator {
      *           {@code this.allocate(B)}, where {@code B} is the size, in bytes, of
      *           the string encoded using the provided charset
      *           (e.g. {@code str.getBytes(charset).length});
+     * @since 27
      */
     @ForceInline
     default MemorySegment allocateFrom(String str, Charset charset, int srcIndex, int numChars) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
     public MotifDesktopPaneUI() {
     }
 
+    @Override
     protected void installDesktopManager() {
         desktopManager = desktop.getDesktopManager();
         if(desktopManager == null) {
@@ -75,6 +76,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
 ////////////////////////////////////////////////////////////////////////////////////
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class DragPane extends JComponent {
+        @Override
         public void paint(Graphics g) {
             g.setColor(Color.darkGray);
             g.drawRect(0, 0, getWidth()-1, getHeight()-1);
@@ -92,6 +94,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
         int iconWidth, iconHeight;
 
     // PENDING(klobad) this should be optimized
+    @Override
     public void setBoundsForFrame(JComponent f, int newX, int newY,
                         int newWidth, int newHeight) {
         if(!usingDragPane) {
@@ -112,6 +115,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
         }
     }
 
+    @Override
     public void beginDraggingFrame(JComponent f) {
         usingDragPane = false;
         if(f.getParent() instanceof JLayeredPane) {
@@ -125,10 +129,12 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
         }
     }
 
+    @Override
     public void dragFrame(JComponent f, int newX, int newY) {
         setBoundsForFrame(f, newX, newY, f.getWidth(), f.getHeight());
     }
 
+    @Override
     public void endDraggingFrame(JComponent f) {
         if(usingDragPane) {
             layeredPaneForDragPane.remove(dragPane);
@@ -143,6 +149,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
         }
     }
 
+    @Override
     public void beginResizingFrame(JComponent f, int direction) {
         usingDragPane = false;
         if(f.getParent() instanceof JLayeredPane) {
@@ -157,11 +164,13 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
         }
     }
 
+    @Override
     public void resizeFrame(JComponent f, int newX, int newY,
                                 int newWidth, int newHeight) {
         setBoundsForFrame(f, newX, newY, newWidth, newHeight);
     }
 
+    @Override
     public void endResizingFrame(JComponent f) {
         if(usingDragPane) {
             JLayeredPane p = (JLayeredPane)f.getParent();
@@ -172,6 +181,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
         }
     }
 
+        @Override
         public void iconifyFrame(JInternalFrame f) {
             JInternalFrame.JDesktopIcon icon = f.getDesktopIcon();
             Point p = icon.getLocation();
