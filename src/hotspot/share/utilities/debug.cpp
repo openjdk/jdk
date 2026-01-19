@@ -422,24 +422,8 @@ extern "C" DEBUGEXPORT void pp(void* p) {
     tty->print_cr("null");
     return;
   }
-  if (Universe::heap()->is_in(p)) {
-    oop obj = cast_to_oop(p);
-    obj->print();
-  } else {
-    // Compressed oop needs to be decoded first.
-#ifdef _LP64
-    if (UseCompressedOops && ((uintptr_t)p &~ (uintptr_t)max_juint) == 0) {
-      narrowOop narrow_oop = CompressedOops::narrow_oop_cast((uintptr_t)p);
-      oop o = CompressedOops::decode_raw(narrow_oop);
-      if (Universe::heap()->is_in(o)) {
-        tty->print(UINT32_FORMAT " is a compressed pointer to object: ",
-                   CompressedOops::narrow_oop_value(narrow_oop));
-        o->print();
-        return;
-      }
-    }
-#endif
 
+  if (!Universe::heap()->print_location(tty, p)) {
     // Ask NMT about this pointer.
     // GDB note: We will be using SafeFetch to access the supposed malloc header. If the address is
     // not readable, this will generate a signal. That signal will trip up the debugger: gdb will
