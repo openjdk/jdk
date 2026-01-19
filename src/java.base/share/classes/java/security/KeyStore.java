@@ -1206,13 +1206,13 @@ public class KeyStore {
 
 
     /**
-     * Returns the creation {@code Instant} value
-     * of the entry identified by the given alias.
+     * Returns the instant that the entry identified
+     * by the given alias was created.
      *
      * @param alias the alias name
      *
-     * @return the creation instant of this entry, or {@code null} if the given
-     * alias does not exist
+     * @return the instant that the entry identified by the given alias
+     * was created, or {@code null} if the given alias does not exist.
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
