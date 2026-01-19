@@ -314,4 +314,22 @@ public class Float16OperationsBenchmark {
         }
         return distRes;
     }
+
+    @Benchmark
+    public short reductionMinFP16() {
+        short minRes = float16ToRawShortBits(Float16.POSITIVE_INFINITY);
+        for (int i = 0; i < vectorDim; i++) {
+            minRes = float16ToRawShortBits(min(shortBitsToFloat16(vector1[i]), shortBitsToFloat16(minRes)));
+        }
+        return minRes;
+    }
+
+    @Benchmark
+    public short reductionMaxFP16() {
+        short maxRes = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
+        for (int i = 0; i < vectorDim; i++) {
+            maxRes = float16ToRawShortBits(max(shortBitsToFloat16(vector1[i]), shortBitsToFloat16(maxRes)));
+        }
+        return maxRes;
+    }
 }

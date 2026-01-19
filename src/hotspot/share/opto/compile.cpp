@@ -3191,8 +3191,8 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
     // Check for commutative opcode
     switch( nop ) {
     case Op_AddI:  case Op_AddF:  case Op_AddD:  case Op_AddL:
-    case Op_MaxI:  case Op_MaxL:  case Op_MaxF:  case Op_MaxD:
-    case Op_MinI:  case Op_MinL:  case Op_MinF:  case Op_MinD:
+    case Op_MaxI:  case Op_MaxL:  case Op_MaxF:  case Op_MaxD:  case Op_MaxHF:
+    case Op_MinI:  case Op_MinL:  case Op_MinF:  case Op_MinD:  case Op_MinHF:
     case Op_MulI:  case Op_MulF:  case Op_MulD:  case Op_MulL:
     case Op_AndL:  case Op_XorL:  case Op_OrL:
     case Op_AndI:  case Op_XorI:  case Op_OrI: {
@@ -3786,7 +3786,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_MulReductionVF:
   case Op_MulReductionVD:
   case Op_MinReductionV:
+  case Op_MinReductionVHF:
   case Op_MaxReductionV:
+  case Op_MaxReductionVHF:
   case Op_AndReductionV:
   case Op_OrReductionV:
   case Op_XorReductionV:

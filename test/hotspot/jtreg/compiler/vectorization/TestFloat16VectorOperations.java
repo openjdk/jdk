@@ -34,6 +34,7 @@
 
 package compiler.vectorization;
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.Verify;
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
 import static java.lang.Float.*;
@@ -434,5 +435,115 @@ public class TestFloat16VectorOperations {
             short expected = floatToFloat16(Math.min(FP16_CONST.floatValue(), float16ToFloat(input2[i])));
             assertResults(2, float16ToRawShortBits(FP16_CONST), input2[i], expected, output[i]);
         }
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.MIN_REDUCTION_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public short vectorMinReductionFloat16() {
+        short acc = float16ToRawShortBits(Float16.POSITIVE_INFINITY);
+        for (int i = 0; i < LEN; ++i) {
+            acc = float16ToRawShortBits(min(shortBitsToFloat16(input1[i]), shortBitsToFloat16(acc)));
+        }
+        return acc;
+    }
+
+    @Check(test="vectorMinReductionFloat16")
+    public void checkResultMinReductionFloat16() {
+        short acc = float16ToRawShortBits(Float16.POSITIVE_INFINITY);
+        for (int i = 0; i < LEN; ++i) {
+            acc = floatToFloat16(Math.min(float16ToFloat(input1[i]), float16ToFloat(acc)));
+        }
+        short expected = acc;
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMinReductionFloat16()));
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.MAX_REDUCTION_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public short vectorMaxReductionFloat16() {
+        short acc = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
+        for (int i = 0; i < LEN; ++i) {
+            acc = float16ToRawShortBits(max(shortBitsToFloat16(input1[i]), shortBitsToFloat16(acc)));
+        }
+        return acc;
+    }
+
+    @Check(test="vectorMaxReductionFloat16")
+    public void checkResultMaxReductionFloat16() {
+        short acc = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
+        for (int i = 0; i < LEN; ++i) {
+            acc = floatToFloat16(Math.max(float16ToFloat(input1[i]), float16ToFloat(acc)));
+        }
+        short expected = acc;
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMaxReductionFloat16()));
+    }
+
+    // When SVE is present, it should pick the SVE masked implementation
+    @Test
+    @Warmup(500)
+    @IR(counts = {IRNode.REDUCE_MIN_HF_MASKED, " >0 "},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
+    @IR(counts = {IRNode.MIN_REDUCTION_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true", "sve", "false"})
+    public short vectorMinReductionFloat16Partial() {
+        short acc = float16ToRawShortBits(Float16.POSITIVE_INFINITY);
+        for (int i = 0; i < LEN; i += 8) {
+            acc = float16ToRawShortBits(min(shortBitsToFloat16(input1[i]), shortBitsToFloat16(acc)));
+            acc = float16ToRawShortBits(min(shortBitsToFloat16(input1[i+1]), shortBitsToFloat16(acc)));
+            acc = float16ToRawShortBits(min(shortBitsToFloat16(input1[i+2]), shortBitsToFloat16(acc)));
+            acc = float16ToRawShortBits(min(shortBitsToFloat16(input1[i+3]), shortBitsToFloat16(acc)));
+        }
+        return acc;
+    }
+
+    @Check(test="vectorMinReductionFloat16Partial")
+    public void checkResultMinReductionFloat16Partial() {
+        short acc = float16ToRawShortBits(Float16.POSITIVE_INFINITY);
+        for (int i = 0; i < LEN; i += 8) {
+            acc = floatToFloat16(Math.min(float16ToFloat(input1[i]), float16ToFloat(acc)));
+            acc = floatToFloat16(Math.min(float16ToFloat(input1[i+1]), float16ToFloat(acc)));
+            acc = floatToFloat16(Math.min(float16ToFloat(input1[i+2]), float16ToFloat(acc)));
+            acc = floatToFloat16(Math.min(float16ToFloat(input1[i+3]), float16ToFloat(acc)));
+        }
+        short expected = acc;
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMinReductionFloat16Partial()));
+    }
+
+    // When SVE is present, it should pick the SVE masked implementation
+    @Test
+    @Warmup(500)
+    @IR(counts = {IRNode.REDUCE_MAX_HF_MASKED, " >0 "},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
+    @IR(counts = {IRNode.MAX_REDUCTION_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true", "sve", "false"})
+    public short vectorMaxReductionFloat16Partial() {
+        short acc = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
+        for (int i = 0; i < LEN; i += 8) {
+            acc = float16ToRawShortBits(max(shortBitsToFloat16(input1[i]), shortBitsToFloat16(acc)));
+            acc = float16ToRawShortBits(max(shortBitsToFloat16(input1[i+1]), shortBitsToFloat16(acc)));
+            acc = float16ToRawShortBits(max(shortBitsToFloat16(input1[i+2]), shortBitsToFloat16(acc)));
+            acc = float16ToRawShortBits(max(shortBitsToFloat16(input1[i+3]), shortBitsToFloat16(acc)));
+        }
+        return acc;
+    }
+
+    @Check(test="vectorMaxReductionFloat16Partial")
+    public void checkResultMaxReductionFloat16Partial() {
+        short acc = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
+        for (int i = 0; i < LEN; i += 8) {
+            acc = floatToFloat16(Math.max(float16ToFloat(input1[i]), float16ToFloat(acc)));
+            acc = floatToFloat16(Math.max(float16ToFloat(input1[i+1]), float16ToFloat(acc)));
+            acc = floatToFloat16(Math.max(float16ToFloat(input1[i+2]), float16ToFloat(acc)));
+            acc = floatToFloat16(Math.max(float16ToFloat(input1[i+3]), float16ToFloat(acc)));
+        }
+        short expected = acc;
+        Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMaxReductionFloat16Partial()));
     }
 }

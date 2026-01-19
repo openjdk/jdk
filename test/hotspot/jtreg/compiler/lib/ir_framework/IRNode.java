@@ -1574,6 +1574,26 @@ public class IRNode {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
+    public static final String MIN_REDUCTION_VHF = PREFIX + "MIN_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(MIN_REDUCTION_VHF, "MinReductionVHF");
+    }
+
+    public static final String REDUCE_MIN_HF_MASKED = PREFIX + "REDUCE_MIN_HF_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(REDUCE_MIN_HF_MASKED, "reduce_minHF_masked");
+    }
+
+    public static final String MAX_REDUCTION_VHF = PREFIX + "MAX_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(MAX_REDUCTION_VHF, "MaxReductionVHF");
+    }
+
+    public static final String REDUCE_MAX_HF_MASKED = PREFIX + "REDUCE_MAX_HF_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(REDUCE_MAX_HF_MASKED, "reduce_maxHF_masked");
+    }
+
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
         vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
