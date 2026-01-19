@@ -258,6 +258,10 @@ protected:
       ASSERT_EQ(a->at(i), i + 1);
     }
 
+    // Remove another empty range from the non-empty list, should not modify
+    a->remove_range(1, 1);
+    ASSERT_EQ(a->length(), 8);
+
     // Remove some elements from the middle, should result in [1 2 7 8]
     a->remove_range(2, 6);
     ASSERT_EQ(a->length(), 4);
