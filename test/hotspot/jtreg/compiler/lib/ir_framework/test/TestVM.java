@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 import static compiler.lib.ir_framework.shared.TestFrameworkSocket.PRINT_TIMES_TAG;
 
 /**
- * This class' main method is called from {@link TestFramework} and represents the so-called "test VM". The class is
+ * This class' main method is called from {@link TestFramework} and represents the so-called "Test VM". The class is
  * the heart of the framework and is responsible for executing all the specified tests in the test class. It uses the
  * Whitebox API and reflection to achieve this task.
  */
@@ -58,7 +58,7 @@ public class TestVM {
                                   TestFramework in main() of your test? Make sure to
                                   only call setup/run methods and no checks or
                                   assertions from main() of your test!
-                                - Are you rerunning the test VM (TestVM class)
+                                - Are you rerunning the Test VM (TestVM class)
                                   directly after a JTreg run? Make sure to start it
                                   from within JTwork/scratch and with the flag
                                   -DReproduce=true!
@@ -100,7 +100,7 @@ public class TestVM {
     private static final boolean DUMP_REPLAY = Boolean.getBoolean("DumpReplay");
     private static final boolean GC_AFTER = Boolean.getBoolean("GCAfter");
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));
-    // Use separate flag as VERIFY_IR could have been set by user but due to other flags it was disabled by flag VM.
+    // Use separate flag as VERIFY_IR could have been set by user but due to other flags it was disabled by Flag VM.
     private static final boolean PRINT_VALID_IR_RULES = Boolean.getBoolean("ShouldDoIRVerification");
     protected static final long PER_METHOD_TRAP_LIMIT = (Long)WHITE_BOX.getVMFlag("PerMethodTrapLimit");
     protected static final boolean PROFILE_INTERPRETER = (Boolean)WHITE_BOX.getVMFlag("ProfileInterpreter");
@@ -114,7 +114,7 @@ public class TestVM {
     private final List<String> excludeList;
     private final List<String> testList;
     private Set<Class<?>> helperClasses = null; // Helper classes that contain framework annotations to be processed.
-    private final IREncodingPrinter irMatchRulePrinter;
+    private final ApplicableIRRulesPrinter irMatchRulePrinter;
     private final Class<?> testClass;
     private final Map<Executable, CompLevel> forceCompileMap = new HashMap<>();
 
@@ -125,7 +125,7 @@ public class TestVM {
         this.excludeList = createTestFilterList(EXCLUDELIST, testClass);
 
         if (PRINT_VALID_IR_RULES) {
-            irMatchRulePrinter = new IREncodingPrinter();
+            irMatchRulePrinter = new ApplicableIRRulesPrinter();
         } else {
             irMatchRulePrinter = null;
         }
@@ -155,7 +155,7 @@ public class TestVM {
     }
 
     /**
-     * Main entry point of the test VM.
+     * Main entry point of the Test VM.
      */
     public static void main(String[] args) {
         try {
@@ -293,7 +293,7 @@ public class TestVM {
                     BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m.getName()));
                     allTests.add(baseTest);
                     if (PRINT_VALID_IR_RULES) {
-                        irMatchRulePrinter.emitRuleEncoding(m, baseTest.isSkipped());
+                        irMatchRulePrinter.emitApplicableIRRules(m, baseTest.isSkipped());
                     }
                 } catch (TestFormatException e) {
                     // Failure logged. Continue and report later.
@@ -687,7 +687,7 @@ public class TestVM {
         allTests.add(checkedTest);
         if (PRINT_VALID_IR_RULES) {
             // Only need to emit IR verification information if IR verification is actually performed.
-            irMatchRulePrinter.emitRuleEncoding(testMethod, checkedTest.isSkipped());
+            irMatchRulePrinter.emitApplicableIRRules(testMethod, checkedTest.isSkipped());
         }
     }
 
@@ -755,7 +755,7 @@ public class TestVM {
         CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests, shouldExcludeTest);
         allTests.add(customRunTest);
         if (PRINT_VALID_IR_RULES) {
-            tests.forEach(test -> irMatchRulePrinter.emitRuleEncoding(test.getTestMethod(), customRunTest.isSkipped()));
+            tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod(), customRunTest.isSkipped()));
         }
     }
 
