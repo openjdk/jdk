@@ -6081,7 +6081,7 @@ class StubGenerator: public StubCodeGenerator {
   // static int implKyber12To16(
   //         byte[] condensed, int index, short[] parsed, int parsedLength) {}
   //
-  // it is assumed that parsed and condensed are allocated such that for
+  // we assume that parsed and condensed are allocated such that for
   // n = (parsedLength + 63) / 64
   // n blocks of 96 bytes of input can be processed, i.e.
   // index + n * 96 <= condensed.length and
