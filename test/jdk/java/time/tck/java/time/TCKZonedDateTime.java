@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Override
     protected List<TemporalAccessor> samples() {
-        TemporalAccessor[] array = {TEST_DATE_TIME, };
+        TemporalAccessor[] array = {ZonedDateTime.of(LocalDateTime.of(2008, 6, 30, 11, 30, 59, 500), ZONE_0100), };
         return Arrays.asList(array);
     }
 
