@@ -161,7 +161,7 @@ public class TestReductionReassociation {
                 public void #check(Object[] results) {
                     Verify.checkEQ(#expected[0], results[0]);
                     Verify.checkEQ(#expected[1], results[1]);
-                    // Verify.checkEQ(results[0], results[1]);
+                    Verify.checkEQ(results[0], results[1]);
                 }
                 """
             ));

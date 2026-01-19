@@ -5033,15 +5033,32 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
   }
 
   Node* reassoc = build_min_max(add_opcode, left, right, phase);
+  // tty->print("[avoid-cmov] reassociate_chain: new node:");
+  // reassoc->dump();
+
   phase->register_new_node(reassoc, loop_head);
   return reassoc;
 }
 
 static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLoop* phase) {
   Node* chain_head = nullptr;
-  Node* current = phi;
-  int chain_length = 0;
+  Node* current = nullptr;
   int opcode = 0;
+  for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
+    Node* n = phi->fast_out(i);
+    if (is_associative(n)) {
+      if (current == nullptr) {
+        current = n;
+        opcode = current->Opcode();
+      } else {
+        // Reassociation only supported when the Phi has a single
+        // associative operation as output that it can search the chain through
+        return;
+      }
+    }
+  }
+
+  int chain_length = 1;
   while (current != nullptr) {
     if (current->outcnt() != 1) {
       break;
@@ -5052,7 +5069,6 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
       Node* n = current->fast_out(i);
       if (is_associative(n)) {
         use = n;
-        opcode = use->Opcode();
         break;
       }
     }
