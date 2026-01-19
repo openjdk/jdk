@@ -479,28 +479,20 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
 }
 
 
-/**
- * @desc funtion transorm "<cmd> [args] {-h,-help,--help}" to a help command "help <cmd> ..."
- * @param line - original line
- * @param updated_line - an updated line (return value)
- * @return true if @p line contained {-h,-help,--help}, false otherwise.
- */
-bool DCmd::reorder_help_cmd(const CmdLine& line, stringStream &updated_line) {
+bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
   stringStream args;
   args.print("%s", line.args_addr());
-  char* rest = args.as_string(); // as_string() allocates a new string, a copy of `args`
-
-  for (char* token = strtok_r(rest, " ", &rest);
-      token != nullptr;
-      token = strtok_r(rest, " ", &rest)) {
-    if (strcmp(token, "-h") == 0
-        || strcmp(token, "--help") == 0
-        || strcmp(token, "-help") == 0) {
+  char* rest = args.as_string();
+  char* token = strtok_r(rest, " ", &rest);
+  while (token != nullptr) {
+    if (strcmp(token, "-h") == 0 || strcmp(token, "--help") == 0 ||
+        strcmp(token, "-help") == 0) {
       updated_line.print("%s", "help ");
       updated_line.write(line.cmd_addr(), line.cmd_len());
       updated_line.write("\0", 1);
       return true;
     }
+    token = strtok_r(rest, " ", &rest);
   }
 
   return false;

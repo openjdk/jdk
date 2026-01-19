@@ -306,7 +306,7 @@ public:
 
   // Helper method to substitute help options "<cmd> -h|-help|--help"
   // for "help <cmd>".
-  static bool reorder_help_cmd(const CmdLine& line, stringStream& updated_line);
+  static bool reorder_help_cmd(CmdLine line, stringStream& updated_line);
 };
 
 class DCmdWithParser : public DCmd {
