@@ -216,13 +216,13 @@ TEST_VM(opto, canonicalize_constraints) {
 
 // Implementations of TypeIntMirror methods for testing purposes
 template <class S, class U>
-const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
-  return this;
+TypeIntMirror<S, U> TypeIntMirror<S, U>::make(const TypeIntMirror<S, U>& t, int widen) {
+  return t;
 }
 
 template <class S, class U>
-TypeIntMirror<S, U> TypeIntMirror<S, U>::meet(const TypeIntMirror& o) const {
-  return TypeIntHelper::int_type_union(*this, o);
+const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
+  return this;
 }
 
 template <class S, class U>
