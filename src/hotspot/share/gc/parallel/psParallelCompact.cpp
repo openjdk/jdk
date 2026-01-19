@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "gc/parallel/psStringDedup.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -1027,6 +1028,17 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
 
     heap->print_heap_change(pre_gc_values);
 
+    {
+      GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
+      // The heap is compacted, all objects are iterable. However there may be
+      // filler objects in the heap which we should ignore.
+      class SkipFillerObjectClosure : public BoolObjectClosure {
+      public:
+        bool do_object_b(oop obj) override { return !CollectedHeap::is_filler_object(obj); }
+      } cl;
+      _gc_tracer.report_object_count_after_gc(&cl, &ParallelScavengeHeap::heap()->workers());
+    }
+
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
@@ -1274,10 +1286,6 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     }
   }
 
-  {
-    GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
-    _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
-  }
 #if TASKQUEUE_STATS
   ParCompactionManager::print_and_reset_taskqueue_stats();
 #endif
@@ -1835,8 +1843,7 @@ void PSParallelCompact::verify_filler_in_dense_prefix() {
       oop obj = cast_to_oop(cur_addr);
       oopDesc::verify(obj);
       if (!mark_bitmap()->is_marked(cur_addr)) {
-        Klass* k = cast_to_oop(cur_addr)->klass();
-        assert(k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass(), "inv");
+        assert(CollectedHeap::is_filler_object(cast_to_oop(cur_addr)), "inv");
       }
       cur_addr += obj->size();
     }
