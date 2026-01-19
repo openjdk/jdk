@@ -47,7 +47,7 @@ public class TestJTableColWidth {
 
                 String[] cols = {"ID", "Name", "Description", "Status"};
                 Object[][] data = {{1, "Mimi", "Testing Java 25 Regression", "Pending"}};
-            
+
                 DefaultTableModel model = new DefaultTableModel(data, cols);
                 final JTable tab = new JTable(model);
 
@@ -72,8 +72,8 @@ public class TestJTableColWidth {
                     System.out.println("Column " + i + ": " +
                                         columnModel.getColumn(i).getWidth() + "px");
                 }
-                if (columnModel.getColumn(0).getWidth() 
-                        == columnModel.getColumn(1).getWidth()) {
+                if (columnModel.getColumn(0).getWidth()
+                    == columnModel.getColumn(1).getWidth()) {
                     throw new RuntimeException("JTable ignores setPreferredWidth during" +
                                   " initial layout when AUTO_RESIZE_LAST_COLUMN is enabled");
                 }
@@ -84,4 +84,4 @@ public class TestJTableColWidth {
             }
         });
     }
-} 
+}
