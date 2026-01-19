@@ -271,7 +271,6 @@ public class JavacParser implements Parser {
     /** When terms are parsed, the mode determines which is expected:
      *     mode = EXPR        : an expression
      *     mode = TYPE        : a type
-     *     mode = DIAMOND     : diamond instance creation expression not allowed
      *     mode = NOLAMBDA    : lambdas are not allowed
      */
     protected static final int EXPR          = 1 << 0;
