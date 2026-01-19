@@ -38,6 +38,85 @@ public class VectorAlgorithmsImpl {
     private static final VectorSpecies<Byte> SPECIES_B64     = ByteVector.SPECIES_64;
     private static final VectorSpecies<Float> SPECIES_F      = FloatVector.SPECIES_PREFERRED;
 
+    // This class stores the input and output arrays.
+    // The constructor sets up all the data.
+    //
+    // IMPORTANT:
+    //   If you want to use some array but do NOT modify it: just use it.
+    //   If you want to use it and DO want to modify it: clone it. This
+    //   ensures that each test gets a separate copy, and that when we
+    //   capture the modified arrays they are different for every method
+    //   and run.
+    //   An alternative to cloning is to use different return arrays for
+    //   different implementations of the same group, e.g. rI1, rI2, ...
+    //
+    public static class Data {
+        public int[] aI;
+        public int[] rI1;
+        public int[] rI2;
+        public int[] rI3;
+        public int[] rI4;
+        public int[] eI;
+        // The test has to use the same index into eI for all implementations. But in the
+        // benchmark, we'd like to use random indices, so we use the index to advance through
+        // the array.
+        public int eI_idx = 0;
+
+        public float[] aF;
+        public float[] bF;
+
+        public byte[] aB;
+
+        public int[] oopsX4;
+        public int[] memX4;
+
+        public Data(int size, int seed, int numX4Objects) {
+            Random random = new Random(seed);
+
+            // int: one input array and multiple output arrays so different implementations can
+            // store their results to different arrays.
+            aI = new int[size];
+            rI1 = new int[size];
+            rI2 = new int[size];
+            rI3 = new int[size];
+            rI4 = new int[size];
+            Arrays.setAll(aI, i -> random.nextInt());
+
+            // Populate with some random values from aI, and some totally random values.
+            eI = new int[0x10000];
+            for (int i = 0; i < eI.length; i++) {
+                eI[i] = (random.nextInt(10) == 0) ? random.nextInt() : aI[random.nextInt(size)];
+            }
+
+            // X4 oop setup.
+            // oopsX4 holds "addresses" (i.e. indices), that point to the 16-byte objects in memX4.
+            oopsX4 = new int[size];
+            memX4 = new int[numX4Objects * 4];
+            for (int i = 0; i < size; i++) {
+                // assign either a zero=null, or assign a random oop.
+                oopsX4[i] = (random.nextInt(10) == 0) ? 0 : random.nextInt(numX4Objects) * 4;
+            }
+            // Just fill the whole array with random values.
+            // The relevant field is only at every "4 * i + 3" though.
+            memX4 = new int[4 * numX4Objects];
+            for (int i = 0; i < memX4.length; i++) {
+                memX4[i] = random.nextInt();
+            }
+
+            // float inputs. To avoid rounding issues, only use small integers.
+            aF = new float[size];
+            bF = new float[size];
+            for (int i = 0; i < size; i++) {
+                aF[i] = random.nextInt(32) - 16;
+                bF[i] = random.nextInt(32) - 16;
+            }
+
+            // byte: just random data.
+            aB = new byte[size];
+            random.nextBytes(aB);
+        }
+    }
+
     public static Object fillI_loop(int[] r) {
         for (int i = 0; i < r.length; i++) {
             r[i] = 42;
@@ -233,12 +312,11 @@ public class VectorAlgorithmsImpl {
     // Simplified intrinsic code from C2_MacroAssembler::arrays_hashcode in c2_MacroAssembler_x86.cpp
     //
     // Ideas that may help understand the code:
-    //
-    // h(i) = 31 * h(i-1) + a[i]
+    //   h(i) = 31 * h(i-1) + a[i]
     // "unroll" by factor of L=8:
-    // h(i+8) = h(i) * 31^8 + a[i+1] * 31^7 + a[i+2] * 31^6 + ... + a[i+8] * 1
-    //          -----------   ------------------------------------------------
-    //          scalar        vector: notice the powers of 31 in reverse
+    //   h(i+8) = h(i) * 31^8 + a[i+1] * 31^7 + a[i+2] * 31^6 + ... + a[i+8] * 1
+    //            -----------   ------------------------------------------------
+    //            scalar        vector: notice the powers of 31 in reverse
     //
     // We notice that we can load a[i+1 .. i+8], then element-wise multiply with
     // the vector of reversed powers-of-31, and then do reduceLanes(ADD).
@@ -262,7 +340,6 @@ public class VectorAlgorithmsImpl {
         int result = 1; // initialValue
         var vresult = IntVector.zero(SPECIES_I256);
         int next = REVERSE_POWERS_OF_31[0]; // 31^L
-        var vnext = IntVector.broadcast(SPECIES_I256, next);
         var vcoef = IntVector.fromArray(SPECIES_I256, REVERSE_POWERS_OF_31, 1); // powers of 2 in reverse
         int i;
         for (i = 0; i < SPECIES_B64.loopBound(a.length); i += SPECIES_B64.length()) {
@@ -271,7 +348,7 @@ public class VectorAlgorithmsImpl {
             // vector part: element-wise apply the next factor and add in the new values.
             var vb = ByteVector.fromArray(SPECIES_B64, a, i);
             var vi = vb.castShape(SPECIES_I256, 0);
-            vresult = vresult.mul(vnext).add(vi);
+            vresult = vresult.mul(next).add(vi);
         }
         // reduce the partial hashes in the elements, using the reverse list of powers of 2.
         result += vresult.mul(vcoef).reduceLanes(VectorOperators.ADD);

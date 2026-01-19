@@ -50,9 +50,9 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 20, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 50, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl::*"})
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 3, time = 1)
+@Fork(value = 5, jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,*VectorAlgorithmsImpl*::*"})
 public class VectorAlgorithms {
     @Param({"640000"})
     public int SIZE;
@@ -63,63 +63,11 @@ public class VectorAlgorithms {
     @Param({"0"})
     public int SEED;
 
-    public static Random RANDOM;
-    public static int[] aI;
-    public static int[] rI;
-
-    public static int[] eI;
-    public static int idx = 0;
-
-    public static int[] oopsX4;
-    public static int[] memX4;
-
-    public static float[] aF;
-    public static float[] bF;
-
-    byte[] aB;
+    VectorAlgorithmsImpl.Data d;
 
     @Setup
     public void init() {
-        RANDOM = new Random(SEED);
-
-        aI = new int[SIZE];
-        rI = new int[SIZE];
-
-        eI = new int[0x10000];
-
-        oopsX4 = new int[SIZE];
-        memX4 = new int[NUM_X_OBJECTS * 4];
-
-        aF = new float[SIZE];
-        bF = new float[SIZE];
-
-        aB = new byte[SIZE];
-        RANDOM.nextBytes(aB);
-    }
-
-    @Setup(Level.Iteration)
-    public void resetInputs() {
-        Arrays.setAll(aI, i -> RANDOM.nextInt());
-
-        // Populate with some random values from aI, and some totally random values.
-        for (int i = 0; i < eI.length; i++) {
-            eI[i] = (RANDOM.nextInt(10) == 0) ? RANDOM.nextInt() : aI[RANDOM.nextInt(SIZE)];
-        }
-
-        for (int i = 0; i < oopsX4.length; i++) {
-            // assign either a zero=null, or assign a random oop.
-            oopsX4[i] = (RANDOM.nextInt(10) == 0) ? 0 : RANDOM.nextInt(NUM_X_OBJECTS) * 4;
-        }
-        // Just fill the whole array with random values.
-        // The relevant field is only at every "4 * i + 3" though.
-        for (int i = 0; i < memX4.length; i++) {
-            memX4[i] = RANDOM.nextInt();
-        }
-
-        for (int i = 0; i < aF.length; i++) {
-            aF[i] = RANDOM.nextFloat();
-            bF[i] = RANDOM.nextFloat();
-        }
+        d = new VectorAlgorithmsImpl.Data(SIZE, SEED, NUM_X_OBJECTS);
     }
 
     // ------------------------------------------------------------------------------------------
@@ -128,132 +76,132 @@ public class VectorAlgorithms {
 
     @Benchmark
     public Object fillI_loop() {
-        return VectorAlgorithmsImpl.fillI_loop(rI);
+        return VectorAlgorithmsImpl.fillI_loop(d.rI);
     }
 
     @Benchmark
     public Object fillI_VectorAPI() {
-        return VectorAlgorithmsImpl.fillI_VectorAPI(rI);
+        return VectorAlgorithmsImpl.fillI_VectorAPI(d.rI);
     }
 
     @Benchmark
     public Object fillI_Arrays() {
-        return VectorAlgorithmsImpl.fillI_Arrays(rI);
+        return VectorAlgorithmsImpl.fillI_Arrays(d.rI);
     }
 
     @Benchmark
     public Object iotaI_loop() {
-        return VectorAlgorithmsImpl.iotaI_loop(rI);
+        return VectorAlgorithmsImpl.iotaI_loop(d.rI);
     }
 
     @Benchmark
     public Object iotaI_VectorAPI() {
-        return VectorAlgorithmsImpl.iotaI_VectorAPI(rI);
+        return VectorAlgorithmsImpl.iotaI_VectorAPI(d.rI);
     }
 
     @Benchmark
     public Object copyI_loop() {
-        return VectorAlgorithmsImpl.copyI_loop(aI, rI);
+        return VectorAlgorithmsImpl.copyI_loop(d.aI, d.rI);
     }
 
     @Benchmark
     public Object copyI_VectorAPI() {
-        return VectorAlgorithmsImpl.copyI_VectorAPI(aI, rI);
+        return VectorAlgorithmsImpl.copyI_VectorAPI(d.aI, d.rI);
     }
 
     @Benchmark
     public Object copyI_System_arraycopy() {
-        return VectorAlgorithmsImpl.copyI_System_arraycopy(aI, rI);
+        return VectorAlgorithmsImpl.copyI_System_arraycopy(d.aI, d.rI);
     }
 
     @Benchmark
     public Object mapI_loop() {
-        return VectorAlgorithmsImpl.mapI_loop(aI, rI);
+        return VectorAlgorithmsImpl.mapI_loop(d.aI, d.rI);
     }
 
     @Benchmark
     public Object mapI_VectorAPI() {
-        return VectorAlgorithmsImpl.mapI_VectorAPI(aI, rI);
+        return VectorAlgorithmsImpl.mapI_VectorAPI(d.aI, d.rI);
     }
 
     @Benchmark
     public int reduceAddI_loop() {
-        return VectorAlgorithmsImpl.reduceAddI_loop(aI);
+        return VectorAlgorithmsImpl.reduceAddI_loop(d.aI);
     }
 
     @Benchmark
     public int reduceAddI_reassociate() {
-        return VectorAlgorithmsImpl.reduceAddI_reassociate(aI);
+        return VectorAlgorithmsImpl.reduceAddI_reassociate(d.aI);
     }
 
     @Benchmark
     public int reduceAddI_VectorAPI_naive() {
-        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_naive(aI);
+        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_naive(d.aI);
     }
 
     @Benchmark
     public int reduceAddI_VectorAPI_reduction_after_loop() {
-        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(aI);
+        return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(d.aI);
     }
 
     @Benchmark
     public float dotProductF_loop() {
-        return VectorAlgorithmsImpl.dotProductF_loop(aF, bF);
+        return VectorAlgorithmsImpl.dotProductF_loop(d.aF, d.bF);
     }
 
     @Benchmark
     public float dotProductF_VectorAPI_naive() {
-        return VectorAlgorithmsImpl.dotProductF_VectorAPI_naive(aF, bF);
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_naive(d.aF, d.bF);
     }
 
     @Benchmark
     public float dotProductF_VectorAPI_reduction_after_loop() {
-        return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(aF, bF);
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(d.aF, d.bF);
     }
 
     @Benchmark
     public int hashCodeB_loop() {
-        return VectorAlgorithmsImpl.hashCodeB_loop(aB);
+        return VectorAlgorithmsImpl.hashCodeB_loop(d.aB);
     }
 
     @Benchmark
     public int hashCodeB_Arrays() {
-        return VectorAlgorithmsImpl.hashCodeB_Arrays(aB);
+        return VectorAlgorithmsImpl.hashCodeB_Arrays(d.aB);
     }
 
     @Benchmark
     public int hashCodeB_VectorAPI_v1() {
-        return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v1(aB);
+        return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v1(d.aB);
     }
 
     @Benchmark
     public int hashCodeB_VectorAPI_v2() {
-        return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v2(aB);
+        return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v2(d.aB);
     }
 
     @Benchmark
     public Object scanAddI_loop() {
-        return VectorAlgorithmsImpl.scanAddI_loop(aI, rI);
+        return VectorAlgorithmsImpl.scanAddI_loop(d.aI, d.rI);
     }
 
     @Benchmark
     public Object scanAddI_loop_reassociate() {
-        return VectorAlgorithmsImpl.scanAddI_loop_reassociate(aI, rI);
+        return VectorAlgorithmsImpl.scanAddI_loop_reassociate(d.aI, d.rI);
     }
 
     @Benchmark
     public Object scanAddI_VectorAPI_permute_add() {
-        return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(aI, rI);
+        return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(d.aI, d.rI);
     }
 
     @Benchmark
     public int findMinIndexI_loop() {
-        return VectorAlgorithmsImpl.findMinIndexI_loop(aI);
+        return VectorAlgorithmsImpl.findMinIndexI_loop(d.aI);
     }
 
     @Benchmark
     public int findMinIndexI_VectorAPI() {
-        return VectorAlgorithmsImpl.findMinIndexI_VectorAPI(aI);
+        return VectorAlgorithmsImpl.findMinIndexI_VectorAPI(d.aI);
     }
 
     @Benchmark
@@ -261,26 +209,26 @@ public class VectorAlgorithms {
         // Every invocation should have a different value for e, so that
         // we don't get branch-prediction that is too good. And also so
         // that the position where we exit is more evenly distributed.
-        idx = (idx + 1) & 0xffff;
-        int e = eI[idx];
-        return VectorAlgorithmsImpl.findI_loop(aI, e);
+        d.eI_idx = (d.eI_idx + 1) & 0xffff;
+        int e = d.eI[d.eI_idx];
+        return VectorAlgorithmsImpl.findI_loop(d.aI, e);
     }
 
     @Benchmark
     public int findI_VectorAPI() {
-        idx = (idx + 1) & 0xffff;
-        int e = eI[idx];
-        return VectorAlgorithmsImpl.findI_VectorAPI(aI, e);
+        d.eI_idx = (d.eI_idx + 1) & 0xffff;
+        int e = d.eI[d.eI_idx];
+        return VectorAlgorithmsImpl.findI_VectorAPI(d.aI, e);
     }
 
     @Benchmark
     public Object reverseI_loop() {
-        return VectorAlgorithmsImpl.reverseI_loop(aI, rI);
+        return VectorAlgorithmsImpl.reverseI_loop(d.aI, d.rI);
     }
 
     @Benchmark
     public Object reverseI_VectorAPI() {
-        return VectorAlgorithmsImpl.reverseI_VectorAPI(aI, rI);
+        return VectorAlgorithmsImpl.reverseI_VectorAPI(d.aI, d.rI);
     }
 
     @Benchmark
@@ -290,23 +238,23 @@ public class VectorAlgorithms {
         // That the length of the resulting data is more evenly distributed.
         idx = (idx + 1) & 0xffff;
         int e = eI[idx];
-        return VectorAlgorithmsImpl.filterI_loop(aI, rI, e);
+        return VectorAlgorithmsImpl.filterI_loop(d.aI, d.rI, e);
     }
 
     @Benchmark
     public Object filterI_VectorAPI() {
         idx = (idx + 1) & 0xffff;
         int e = eI[idx];
-        return VectorAlgorithmsImpl.filterI_VectorAPI(aI, rI, e);
+        return VectorAlgorithmsImpl.filterI_VectorAPI(d.aI, d.rI, e);
     }
 
     @Benchmark
     public int reduceAddIFieldsX4_loop() {
-        return VectorAlgorithmsImpl.reduceAddIFieldsX4_loop(oopsX4, memX4);
+        return VectorAlgorithmsImpl.reduceAddIFieldsX4_loop(d.oopsX4, d.memX4);
     }
 
     @Benchmark
     public int reduceAddIFieldsX4_VectorAPI() {
-        return VectorAlgorithmsImpl.reduceAddIFieldsX4_VectorAPI(oopsX4, memX4);
+        return VectorAlgorithmsImpl.reduceAddIFieldsX4_VectorAPI(d.oopsX4, d.memX4);
     }
 }
