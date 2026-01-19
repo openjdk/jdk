@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6007,6 +6007,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
         surrendersFocusOnKeystroke = f.get("surrendersFocusOnKeystroke", false);
         editorRemover = (PropertyChangeListener) f.get("editorRemover", null);
+        editingColumn = -1;
+        editingRow = -1;
         columnSelectionAdjusting = f.get("columnSelectionAdjusting", false);
         rowSelectionAdjusting = f.get("rowSelectionAdjusting", false);
         printError = (Throwable) f.get("printError", null);
@@ -6039,6 +6041,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * do any Swing-specific pre-serialization configuration.
      */
     void compWriteObjectNotify() {
+        if (isEditing() && !getCellEditor().stopCellEditing()) {
+            getCellEditor().cancelCellEditing();
+        }
         super.compWriteObjectNotify();
         // If ToolTipText != null, then the tooltip has already been
         // unregistered by JComponent.compWriteObjectNotify()
