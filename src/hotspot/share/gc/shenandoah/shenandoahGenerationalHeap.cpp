@@ -104,17 +104,6 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   // Initialize global generation and heuristics even in generational mode.
   ShenandoahHeap::initialize_heuristics();
 
-  // Max capacity is the maximum _allowed_ capacity. That is, the maximum allowed capacity
-  // for old would be total heap - minimum capacity of young. This means the sum of the maximum
-  // allowed for old and young could exceed the total heap size. It remains the case that the
-  // _actual_ capacity of young + old = total.
-  size_t region_count = num_regions();
-  size_t max_young_regions = MAX2((region_count * ShenandoahMaxYoungPercentage) / 100, (size_t) 1U);
-  size_t initial_capacity_young = max_young_regions * ShenandoahHeapRegion::region_size_bytes();
-  size_t max_capacity_young = initial_capacity_young;
-  size_t initial_capacity_old = max_capacity() - max_capacity_young;
-  size_t max_capacity_old = max_capacity() - initial_capacity_young;
-
   _young_generation = new ShenandoahYoungGeneration(max_workers());
   _old_generation = new ShenandoahOldGeneration(max_workers());
   _young_generation->initialize_heuristics(mode());
