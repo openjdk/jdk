@@ -43,9 +43,9 @@
 class ZTLABUsage {
 private:
   // Accounting TLAB used until the next GC cycle
-  Atomic<size_t>  _used;
+  Atomic<size_t> _used;
   // Sequence of historic used values
-  TruncatedSeq    _used_history;
+  TruncatedSeq   _used_history;
 
 public:
   ZTLABUsage();
