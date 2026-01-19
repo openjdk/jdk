@@ -122,10 +122,7 @@ public class SnippetHighlightTest extends KullaTesting {
                          """);
     }
 
-    /**
-     * 8374293: The returned Highlights should not overlap
-     */
-    @Test
+    @Test // 8374293: The returned Highlights should not overlap
     public void testHighlightsOverlap() {
         assertHighlights("public void E test()", "Highlight[start=0, end=6, attributes=[KEYWORD]]",
                 "Highlight[start=7, end=11, attributes=[KEYWORD]]",
@@ -144,7 +141,6 @@ public class SnippetHighlightTest extends KullaTesting {
                 getAnalysis().highlights(code);
         return highlights.stream()
                           .map(h -> h.toString())
-                          .distinct()
                           .collect(Collectors.toList());
     }
 }
