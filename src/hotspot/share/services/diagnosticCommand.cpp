@@ -232,6 +232,10 @@ void HelpDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAP
 }
 
 void VersionDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+  if (commonOptions.timestamp == JcmdOptions::TimeStamp::Yes) {
+    print_local_time(output());
+  }
+
   output()->print_cr("%s version %s", VM_Version::vm_name(),
           VM_Version::vm_release());
   JDK_Version jdk_version = JDK_Version::current();
