@@ -193,12 +193,10 @@ public:
 protected:
   ShenandoahAllocationRate _allocation_rate;
 
-  // Invocations of should_start_gc() happen approximately once per ms.  Approximately every third invocation  of should_start_gc()
-  // queries the allocation rate.
+  // Invocations of should_start_gc() happen approximately once per ms.  Queries of allocation rate only happen if a
+  // a certain amount of time has passed since the previous query.
   size_t _allocated_at_previous_query;
-
   double _time_of_previous_allocation_query;
-
 
   // The margin of error expressed in standard deviations to add to our
   // average cycle time and allocation rate. As this value increases we
