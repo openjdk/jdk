@@ -63,9 +63,15 @@ public class SerializableObjectMethodReferencesOnInterfaces {
             R apply(T t);
         }
 
+        enum E {
+            ONE
+        }
+
         void f() throws Exception {
             F<I1, Integer> f1 = I1::hashCode;
             F<I2, Integer> f2 = I2::hashCode;
+            F<E, Integer> f3 = E::hashCode;
+            F<Object, Integer> f4 = Object::hashCode;
         }
     }
 
@@ -84,6 +90,18 @@ public class SerializableObjectMethodReferencesOnInterfaces {
                 getFunctionalInterfaceMethodName apply
                 getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
                 getImplClass java/lang/Object
+                getImplMethodSignature ()I
+                getImplMethodKind 5
+                getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
+                getFunctionalInterfaceMethodName apply
+                getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
+                getImplClass java/lang/Object
+                getImplMethodSignature ()I
+                getImplMethodKind 5
+                getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
+                getFunctionalInterfaceMethodName apply
+                getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
+                getImplClass java/lang/Enum
                 getImplMethodSignature ()I
                 getImplMethodKind 5
                 getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
