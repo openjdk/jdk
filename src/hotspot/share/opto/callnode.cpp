@@ -1031,6 +1031,15 @@ bool CallNode::is_call_to_arraycopystub() const {
   return false;
 }
 
+bool CallNode::is_call_to_multianewarray_stub() const {
+  if (_name != nullptr &&
+      strstr(_name, "multianewarray") != nullptr &&
+      strstr(_name, "C2 runtime") != nullptr) {
+    return true;
+  }
+  return false;
+}
+
 //=============================================================================
 uint CallJavaNode::size_of() const { return sizeof(*this); }
 bool CallJavaNode::cmp( const Node &n ) const {
@@ -1145,7 +1154,6 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         assert(callee->has_member_arg(), "wrong type of call?");
         if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
           register_for_late_inline();
-          phase->C->inc_number_of_mh_late_inlines();
         }
       }
     } else {

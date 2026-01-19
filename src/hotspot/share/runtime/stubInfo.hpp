@@ -164,7 +164,6 @@ enum class StubGroup : int {
 
 #define SHARED_DECLARE_TAG(name, type) JOIN3(shared, name, id) ,
 #define C1_DECLARE_TAG(name) JOIN3(c1, name, id) ,
-#define C2_DECLARE_TAG1(name) JOIN3(c2, name, id) ,
 #define C2_DECLARE_TAG2(name, _1) JOIN3(c2, name, id) ,
 #define C2_DECLARE_TAG4(name, _1, _2, _3) JOIN3(c2, name, id) ,
 #define STUBGEN_DECLARE_TAG(name) JOIN3(stubgen, name, id) ,
@@ -177,8 +176,7 @@ enum class BlobId : int {
   C1_STUBS_DO(C1_DECLARE_TAG)
   // declare an enum tag for each opto runtime blob or stub
   C2_STUBS_DO(C2_DECLARE_TAG2,
-              C2_DECLARE_TAG4,
-              C2_DECLARE_TAG1)
+              C2_DECLARE_TAG4)
   // declare an enum tag for each stubgen blob
   STUBGEN_BLOBS_DO(STUBGEN_DECLARE_TAG)
   NUM_BLOBIDS
@@ -214,7 +212,6 @@ enum class BlobId : int {
 
 #define SHARED_DECLARE_TAG(name, type) JOIN3(shared, name, id) ,
 #define C1_DECLARE_TAG(name) JOIN3(c1, name, id) ,
-#define C2_DECLARE_TAG1(name) JOIN3(c2, name, id) ,
 #define C2_DECLARE_TAG2(name, _1) JOIN3(c2, name, id) ,
 #define C2_DECLARE_TAG4(name, _1, _2, _3) JOIN3(c2, name, id) ,
 #define STUBGEN_DECLARE_TAG(blob, name) JOIN3(stubgen, name, id) ,
@@ -227,8 +224,7 @@ enum class StubId : int {
   C1_STUBS_DO(C1_DECLARE_TAG)
   // declare an enum tag for each opto runtime blob or stub
   C2_STUBS_DO(C2_DECLARE_TAG2,
-              C2_DECLARE_TAG4,
-              C2_DECLARE_TAG1)
+              C2_DECLARE_TAG4)
   // declare an enum tag for each stubgen runtime stub
   STUBGEN_STUBS_DO(STUBGEN_DECLARE_TAG)
   NUM_STUBIDS
@@ -307,7 +303,7 @@ enum class StubId : int {
     type ::ENTRY_COUNT - 1,                                             \
 
 // macros to declare a tag for a C1 generated blob or a C2 generated
-// blob, stub or JVMTI stub all of which have a single unique entry
+// blob, stub all of which have a single unique entry
 
 #define C1_DECLARE_TAG(name)           \
   JOIN3(c1, name, id),                 \
@@ -316,9 +312,6 @@ enum class StubId : int {
   JOIN3(c2, name, id),                                                \
 
 #define C2_DECLARE_STUB_TAG(name, fancy_jump, pass_tls, return_pc)    \
-  JOIN3(c2, name, id),                                                \
-
-#define C2_DECLARE_JVMTI_STUB_TAG(name)                               \
   JOIN3(c2, name, id),                                                \
 
 // macros to declare a tag for a StubGen normal entry or initialized
@@ -366,8 +359,7 @@ enum class EntryId : int {
   C1_STUBS_DO(C1_DECLARE_TAG)
   // declare an enum tag for each opto runtime blob or stub
   C2_STUBS_DO(C2_DECLARE_BLOB_TAG,
-              C2_DECLARE_STUB_TAG,
-              C2_DECLARE_JVMTI_STUB_TAG)
+              C2_DECLARE_STUB_TAG)
   // declare an enum tag for each stubgen entry or, in the case of an
   // array of entries for the first and last entries.
   STUBGEN_ALL_ENTRIES_DO(STUBGEN_DECLARE_TAG,
@@ -382,7 +374,6 @@ enum class EntryId : int {
 #undef C1_DECLARE_TAG
 #undef C2_DECLARE_BLOB_TAG
 #undef C2_DECLARE_STUB_TAG
-#undef C2_DECLARE_JVMTI_STUB_TAG
 #undef STUBGEN_DECLARE_TAG
 #undef STUBGEN_DECLARE_INIT_TAG
 #undef STUBGEN_DECLARE_ARRAY_TAG
@@ -402,7 +393,7 @@ enum class EntryId : int {
   0 C1_STUBS_DO(COUNT1)
 
 #define C2_STUB_COUNT_INITIALIZER               \
-  0 C2_STUBS_DO(COUNT2, COUNT4, COUNT1)
+  0 C2_STUBS_DO(COUNT2, COUNT4)
 
 #define STUBGEN_BLOB_COUNT_INITIALIZER          \
   0 STUBGEN_BLOBS_DO(COUNT1)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -59,15 +59,29 @@
           "fail, resulting in stop-the-world full GCs.")                    \
           range(0,100)                                                      \
                                                                             \
-  product(double, ShenandoahMinOldGenGrowthPercent, 12.5, EXPERIMENTAL,     \
+  product(double, ShenandoahMinOldGenGrowthPercent, 50, EXPERIMENTAL,       \
           "(Generational mode only) If the usage within old generation "    \
           "has grown by at least this percent of its live memory size "     \
-          "at completion of the most recent old-generation marking "        \
-          "effort, heuristics may trigger the start of a new old-gen "      \
-          "collection.")                                                    \
+          "at the start of the previous old-generation marking effort, "    \
+          "heuristics may trigger the start of a new old-gen collection.")  \
           range(0.0,100.0)                                                  \
                                                                             \
-  product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage,10, EXPERIMENTAL, \
+  product(double, ShenandoahMinOldGenGrowthRemainingHeapPercent,            \
+          35, EXPERIMENTAL,                                                 \
+          "(Generational mode only) If the usage within old generation "    \
+          "has grown to exceed this percent of the remaining heap that "    \
+          "was not marked live within the old generation at the time "      \
+          "of the last old-generation marking effort, heuristics may "      \
+          "trigger the start of a new old-gen collection.  Setting "        \
+          "this value to a smaller value may cause back-to-back old "       \
+          "generation marking triggers, since the typical memory used "     \
+          "by the old generation is about 30% larger than the live "        \
+          "memory contained within the old generation (because default "    \
+          "value of ShenandoahOldGarbageThreshold is 25.")                  \
+          range(0.0,100.0)                                                  \
+                                                                            \
+  product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage,                  \
+          40, EXPERIMENTAL,                                                 \
           "(Generational mode only) If the total usage of the old "         \
           "generation is smaller than this percent, we do not trigger "     \
           "old gen collections even if old has grown, except when "         \
@@ -77,12 +91,13 @@
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahDoNotIgnoreGrowthAfterYoungCycles,               \
-          50, EXPERIMENTAL,                                                 \
-          "(Generational mode only) Even if the usage of old generation "   \
-          "is below ShenandoahIgnoreOldGrowthBelowPercentage, "             \
-          "trigger an old-generation mark if old has grown and this "       \
-          "many consecutive young-gen collections have been "               \
-          "completed following the preceding old-gen collection.")          \
+          100, EXPERIMENTAL,                                                \
+          "(Generational mode only) Trigger an old-generation mark "        \
+          "if old has grown and this many consecutive young-gen "           \
+          "collections have been completed following the preceding "        \
+          "old-gen collection.  We perform this old-generation mark "       \
+          "evvort even if the usage of old generation is below "            \
+          "ShenandoahIgnoreOldGrowthBelowPercentage.")                      \
                                                                             \
   product(bool, ShenandoahGenerationalAdaptiveTenuring, true, EXPERIMENTAL, \
           "(Generational mode only) Dynamically adapt tenuring age.")       \
@@ -414,18 +429,6 @@
           "how many were abandoned. The information will be categorized "   \
           "by thread type (worker or mutator) and evacuation type (young, " \
           "old, or promotion.")                                             \
-                                                                            \
-  product(uintx, ShenandoahMinYoungPercentage, 20, EXPERIMENTAL,            \
-          "The minimum percentage of the heap to use for the young "        \
-          "generation. Heuristics will not adjust the young generation "    \
-          "to be less than this.")                                          \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uintx, ShenandoahMaxYoungPercentage, 100, EXPERIMENTAL,           \
-          "The maximum percentage of the heap to use for the young "        \
-          "generation. Heuristics will not adjust the young generation "    \
-          "to be more than this.")                                          \
-          range(0, 100)                                                     \
                                                                             \
   product(uintx, ShenandoahCriticalFreeThreshold, 1, EXPERIMENTAL,          \
           "How much of the heap needs to be free after recovery cycles, "   \

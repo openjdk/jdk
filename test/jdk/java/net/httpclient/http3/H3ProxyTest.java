@@ -65,11 +65,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 public class H3ProxyTest implements HttpServerAdapters {
 
     static {
-        try {
-            SSLContext.setDefault(new SimpleSSLContext().get());
-        } catch (IOException ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
+        SSLContext.setDefault(SimpleSSLContext.findSSLContext());
     }
 
     static final String RESPONSE = "<html><body><p>Hello World!</body></html>";
@@ -157,7 +153,7 @@ public class H3ProxyTest implements HttpServerAdapters {
                     InetSocketAddress.createUnresolved("localhost", proxy.getAddress().getPort()));
             HttpClient client = HttpServerAdapters.createClientBuilderForH3()
                     .version(Version.HTTP_3)
-                    .sslContext(new SimpleSSLContext().get())
+                    .sslContext(SimpleSSLContext.findSSLContext())
                     .proxy(ps)
                     .build();
             try (client) {
