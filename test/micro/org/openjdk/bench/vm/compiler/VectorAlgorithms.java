@@ -227,6 +227,11 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
+    public int hashCodeB_VectorAPI_v2() {
+        return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v2(aB);
+    }
+
+    @Benchmark
     public Object scanAddI_loop() {
         return VectorAlgorithmsImpl.scanAddI_loop(aI, rI);
     }

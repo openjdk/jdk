@@ -281,6 +281,118 @@ public class VectorAlgorithmsImpl {
         return result;
     }
 
+    // This second approach follows the idea from this blog post by Otmar Ertl:
+    // https://www.dynatrace.com/news/blog/java-arrays-hashcode-byte-efficiency-techniques/
+    //
+    // I simplified the algorithm a little, so that it is a bit closer
+    // to the solution "v1" above.
+    //
+    // The major issue with "v1" is that we cannot load a full vector of bytes,
+    // because of the cast to ints. So we can only fill 1/4 of the maximal
+    // vector size. The trick here is to do an unrolling of factor 4, from:
+    //   h(i) = 31 * h(i-1) + a[i]
+    // to:
+    //   h(i+4) = h(i) * 31^4 + a[i + 1] * 31^3
+    //                        + a[i + 2] * 31^2
+    //                        + a[i + 3] * 31^1
+    //                        + a[i + 4] * 31^0
+    // The goal is now to compute this value for 4 bytes within a 4 byte
+    // lane of the vector. One concern is that we start with byte values,
+    // but need to do int-multiplication with powers of 31. If we instead
+    // did a byte-multiplication, we could get overflows that we would not
+    // have had in the int-multiplication.
+    // One trick that helps with chaning the size of the lanes from byte
+    // to short to int is doing all operations with unsigned integers. That
+    // way, we can zero-extend instead of sign-bit extend. The first step
+    // is thus to convert the bytes into unsigned values. Since byte is in
+    // range [-128..128), doing "a[i+j] + 128" makes it a positive value,
+    // allowing for unsigned multiplication.
+    // h(i+4) = h(i) * 31^4 +   a[i + 1]              * 31^3
+    //                      +   a[i + 2]              * 31^2
+    //                      +   a[i + 3]              * 31^1
+    //                      +   a[i + 4]              * 31^0
+    //        = h(i) * 31^4 +  (a[i + 1] + 128 - 128) * 31^3
+    //                      +  (a[i + 2] + 128 - 128) * 31^2
+    //                      +  (a[i + 3] + 128 - 128) * 31^1
+    //                      +  (a[i + 4] + 128 - 128) * 31^0
+    //        = h(i) * 31^4 +  (a[i + 1] + 128      ) * 31^3
+    //                      +  (a[i + 2] + 128      ) * 31^2
+    //                      +  (a[i + 3] + 128      ) * 31^1
+    //                      +  (a[i + 4] + 128      ) * 31^0
+    //                      +  -128 * (31^3 + 31^2 + 31^1 + 1)
+    //        = h(i) * 31^4 + ((a[i + 1] + 128) * 31
+    //                      +  (a[i + 2] + 128      ) * 31^2
+    //                      + ((a[i + 3] + 128) * 31
+    //                      +  (a[i + 4] + 128      )
+    //                      +  -128 * (31^3 + 31^2 + 31^1 + 1)
+    //
+    // Getting from the signed a[i] value to unsigned with +128, we can
+    // just xor with 0x80=128. Any numbers there in range [-128..0) are
+    // now in range [0..128). And any numbers that were in range [0..128)
+    // are now in unsigned range [128..255). What a neat trick!
+    //
+    // We then apply a byte->short transition where we crunch 2 bytes
+    // into one short, applying a multiplication with 31 to one of the
+    // two bytes. This multiplication cannot overflow in a short.
+    // then we apply a short->int transition where we crunch 2 shorts
+    // into one int, applying a multiplication with 31^2 to one of the
+    // two shorts. This multiplication cannot overflow in an int.
+    //
+    public static int hashCodeB_VectorAPI_v2(byte[] a) {
+        return HashCodeB_VectorAPI_V2.compute(a);
+    }
+
+    private static class HashCodeB_VectorAPI_V2 {
+        private static final int L = Math.min(ByteVector.SPECIES_PREFERRED.length(),
+                                              IntVector.SPECIES_PREFERRED.length() * 4);
+        private static final VectorShape SHAPE = VectorShape.forBitSize(8 * L);
+        private static final VectorSpecies<Byte>    SPECIES_B = SHAPE.withLanes(byte.class);
+        private static final VectorSpecies<Integer> SPECIES_I = SHAPE.withLanes(int.class);
+
+        private static int[] REVERSE_POWERS_OF_31_STEP_4 = new int[L / 4 + 1];
+        static {
+            int p = 1;
+            int step = 31 * 31 * 31 * 31; // step by 4
+            for (int i = REVERSE_POWERS_OF_31_STEP_4.length - 1; i >= 0; i--) {
+                REVERSE_POWERS_OF_31_STEP_4[i] = p;
+                p *= step;
+            }
+        }
+
+        public static int compute(byte[] a) {
+            int result = 1; // initialValue
+            int next = REVERSE_POWERS_OF_31_STEP_4[0]; // 31^L
+            var vcoef = IntVector.fromArray(SPECIES_I, REVERSE_POWERS_OF_31_STEP_4, 1); // W
+            var vresult = IntVector.zero(SPECIES_I);
+            int i;
+            for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+                var vb = ByteVector.fromArray(SPECIES_B, a, i);
+                // Add 128 to each byte.
+                var vs = vb.lanewise(VectorOperators.XOR, (byte)0x80)
+                           .reinterpretAsShorts();
+                // Each short lane contains 2 bytes, crunch them.
+                var vi = vs.and((short)0xff) // lower byte
+                           .mul((short)31)
+                           .add(vs.lanewise(VectorOperators.LSHR, 8)) // upper byte
+                           .reinterpretAsInts();
+                // Each int contains 2 shorts, crunch them.
+                var v  = vi.and(0xffff) // lower short
+                           .mul(31 * 31)
+                           .add(vi.lanewise(VectorOperators.LSHR, 16)); // upper short
+                // Add the correction for the 128 additions above.
+                v = v.add(-128 * (31*31*31 + 31*31 + 31 + 1));
+                // Every element of v now contains a crunched int-package of 4 bytes.
+                result *= next;
+                vresult = vresult.mul(next).add(v);
+            }
+            result += vresult.mul(vcoef).reduceLanes(VectorOperators.ADD);
+            for (; i < a.length; i++) {
+                result = 31 * result + a[i];
+            }
+            return result;
+        }
+    }
+
     public static Object scanAddI_loop(int[] a, int[] r) {
         int sum = 0;
         for (int i = 0; i < a.length; i++) {
