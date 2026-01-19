@@ -419,6 +419,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_select_from_two_vectors();
 
   Node* gen_call_to_vector_math(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
+  Node* gen_vector_gather_load(Node* addr, Node* indexes, Node* indexes1, Node* indexes2, Node* indexes3, Node* mask, const TypeVect* vt);
+  Node* gen_mask_for_subword_gather(Node* mask, const TypeVect* vt, uint part);
 
   enum VectorMaskUseType {
     VecMaskUseLoad  = 1 << 0,

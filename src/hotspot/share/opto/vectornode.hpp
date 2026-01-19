@@ -1116,16 +1116,29 @@ class LoadVectorNode : public LoadNode {
 };
 
 //------------------------------LoadVectorGatherNode------------------------------
-// Load Vector from memory via index map
+// Load Vector from memory via index map. The index map is usually a vector of indices
+// that has the same vector type as the node's bottom type. For non-subword types, it must
+// be. However, for subword types, the basic type of index is int. Hence, the index map
+// can be either a vector with int elements or an address which saves the int indices.
 class LoadVectorGatherNode : public LoadVectorNode {
+ private:
+  // The basic type of memory, which might be different with the vector element type
+  // when it is a subword type loading.
+  //
+  // For example, when it is a byte type loading, the memory basic type is T_BYTE while
+  // the vector element type of this node is T_INT, if the indices input has a vector
+  // type.
+  BasicType _mem_bt;
+
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, BasicType mem_bt = T_ILLEGAL)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
     DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
     assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
+    _mem_bt = mem_bt != T_ILLEGAL ? mem_bt : vt->element_basic_type();
   }
 
   virtual int Opcode() const;
@@ -1136,6 +1149,8 @@ class LoadVectorGatherNode : public LoadVectorNode {
     // Ensure it is different from any store opcode to avoid folding when indices are used
     return -1;
   }
+  virtual uint size_of() const { return sizeof(*this); }
+  BasicType mem_bt() const { return _mem_bt; }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -1181,8 +1196,8 @@ class StoreVectorNode : public StoreNode {
 };
 
 //------------------------------StoreVectorScatterNode------------------------------
-// Store Vector into memory via index map
-
+// Store Vector into memory via index map. The index map is usually a vector of indices
+// that has the same vector type as the node's bottom type.
  class StoreVectorScatterNode : public StoreVectorNode {
   public:
    enum { Indices = 4 };
@@ -1247,15 +1262,29 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
 // Load Vector from memory via index map under the influence of a predicate register(mask).
+// The index map is usually a vector of indices that has the same vector type as the node's
+// bottom type. For non-subword types, it must be. However, for subword types, the basic type
+// of index is int. Hence, the index map can be either a vector with int elements or an address
+// which saves the int indices.
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
+ private:
+  // The basic type of memory, which might be different with the vector element type when it
+  // is a subword type loading.
+  //
+  // For example, when it is a byte type loading, the memory basic type is T_BYTE while
+  // the vector element type of this node is T_INT, if the indices input has a vector type.
+  BasicType _mem_bt;
+
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt,
+                             Node* indices, Node* mask, BasicType mem_bt = T_ILLEGAL)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
     assert(is_subword_type(vt->element_basic_type()) || indices->bottom_type()->is_vect(), "indices must be in vector");
+    _mem_bt = mem_bt != T_ILLEGAL ? mem_bt : vt->element_basic_type();
   }
 
   virtual int Opcode() const;
@@ -1266,6 +1295,8 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
     // Ensure it is different from any store opcode to avoid folding when indices and mask are used
     return -1;
   }
+  virtual uint size_of() const { return sizeof(*this); }
+  BasicType mem_bt() const { return _mem_bt; }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------
@@ -1744,6 +1775,26 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
+// Concatenate elements from two source vectors by narrowing the elements to half size. Put
+// the narrowed elements from the first source vector to the lower half of the destination
+// vector, and the narrowed elements from the second source vector to the upper half.
+//
+// e.g. vec1 = [0d 0c 0b 0a], vec2 = [0h 0g 0f 0e]
+//      dst = [h g f e d c b a]
+//
+class VectorConcatenateAndNarrowNode : public VectorNode {
+ public:
+  VectorConcatenateAndNarrowNode(Node* vec1, Node* vec2, const TypeVect* vt)
+    : VectorNode(vec1, vec2, vt) {
+    assert(Type::equals(vec1->bottom_type(), vec2->bottom_type()), "must be same vector type");
+    assert(vec1->bottom_type()->is_vect()->length_in_bytes() ==
+           vt->length_in_bytes(), "vector length mismatch");
+    assert(type2aelembytes(vec1->bottom_type()->is_vect()->element_basic_type()) ==
+           type2aelembytes(vt->element_basic_type()) * 2, "must be half size");
+  }
+
+  virtual int Opcode() const;
+};
 
 // Select elements from two source vectors based on the wrapped indexes held in
 // the first vector.
@@ -1803,6 +1854,36 @@ class VectorMaskCastNode : public VectorNode {
   }
   Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
+};
+
+// Unpack the elements to twice size.
+class VectorMaskWidenNode : public VectorNode {
+ private:
+  // "_is_hi" is used to denote whether the upper or lower half of the elements
+  // are widened. Widen the upper half part if it is true, otherwise widen the
+  // lower half part.
+  //
+  // E.g. src = [1111 0101]
+  //      _is_hi = false, dst = [0001 0001]
+  //      _is_hi = true, dst = [0101 0101]
+  bool _is_hi;
+
+ public:
+  VectorMaskWidenNode(Node* in, const TypeVect* vt, bool is_hi)
+    : VectorNode(in, vt), _is_hi(is_hi) {
+    init_class_id(Class_VectorMaskWiden);
+    const TypeVect* in_vt = in->bottom_type()->is_vect();
+    assert(type2aelembytes(in_vt->element_basic_type()) ==
+           type2aelembytes(vt->element_basic_type()) / 2, "must be half size");
+  }
+
+  bool is_hi() const { return _is_hi; }
+  virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual uint hash() const { return Node::hash() + _is_hi; }
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _is_hi == ((VectorMaskWidenNode&)n).is_hi();
+  }
 };
 
 // This is intended for use as a simple reinterpret node that has no cast.

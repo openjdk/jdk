@@ -195,6 +195,7 @@ class StoreVectorScatterNode;
 class StoreVectorScatterMaskedNode;
 class VerifyVectorAlignmentNode;
 class VectorMaskCmpNode;
+class VectorMaskWidenNode;
 class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
@@ -759,6 +760,7 @@ public:
         DEFINE_CLASS_ID(NegV, Vector, 8)
         DEFINE_CLASS_ID(SaturatingVector, Vector, 9)
         DEFINE_CLASS_ID(MulVL, Vector, 10)
+        DEFINE_CLASS_ID(VectorMaskWiden, Vector, 11)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
@@ -1025,6 +1027,7 @@ public:
   DEFINE_CLASS_QUERY(Type)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
+  DEFINE_CLASS_QUERY(VectorMaskWiden)
   DEFINE_CLASS_QUERY(VectorUnbox)
   DEFINE_CLASS_QUERY(VectorReinterpret)
   DEFINE_CLASS_QUERY(CompressV)
