@@ -30,7 +30,6 @@
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/bitMap.hpp"
