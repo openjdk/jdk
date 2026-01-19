@@ -487,7 +487,7 @@ public class URLClassPath {
      */
     private void addExpandedPaths(URL[] urls) {
         synchronized (searchPath) {
-            // Adding in reversed order since URLs are consumed tail-first
+            // Adding in reversed order since expandedPath is consumed tail-first
             expandedPath.addAll(Arrays.asList(urls).reversed());
         }
     }
