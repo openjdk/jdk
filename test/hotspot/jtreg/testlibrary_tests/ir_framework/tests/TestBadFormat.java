@@ -124,6 +124,8 @@ public class TestBadFormat {
     }
 
     private static void expectTestFormatException(Class<?> clazz, Class<?>... helpers) {
+        // Single test
+        boolean exceptionCaught = false;
         try {
             if (helpers == null) {
                 TestFramework.run(clazz);
@@ -132,9 +134,25 @@ public class TestBadFormat {
             }
         } catch (Exception e) {
             checkException(clazz, e, helpers);
-            return;
+            exceptionCaught = true;
         }
-        throw new RuntimeException("Should catch an exception");
+        Asserts.assertTrue(exceptionCaught, "Should catch an exception");
+
+        // Parallel scenarios
+        exceptionCaught = false;
+        try {
+            if (helpers == null) {
+                new TestFramework(clazz).addScenarios(new Scenario(1), new Scenario(2), new Scenario(3))
+                                        .startParallel();
+            } else {
+                new TestFramework(clazz).addScenarios(new Scenario(1), new Scenario(2), new Scenario(3))
+                                        .addHelperClasses(helpers).startParallel();
+            }
+        } catch (Exception e) {
+            checkException(clazz, e, helpers);
+            exceptionCaught = true;
+        }
+        Asserts.assertTrue(exceptionCaught, "Should catch an exception");
     }
 
     private static void checkException(Class<?> clazz, Exception e, Class<?>[] helpers) {

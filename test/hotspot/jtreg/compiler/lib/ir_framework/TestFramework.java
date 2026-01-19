@@ -38,6 +38,8 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -46,7 +48,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -159,6 +163,7 @@ public class TestFramework {
     public static final boolean PRINT_RULE_MATCHING_TIME = Boolean.getBoolean("PrintRuleMatchingTime");
     public static final boolean TESTLIST = !System.getProperty("Test", "").isEmpty();
     public static final boolean EXCLUDELIST = !System.getProperty("Exclude", "").isEmpty();
+    private static final boolean FORCE_SEQUENTIAL_SCENARIOS = Boolean.getBoolean("ForceSequentialScenarios");
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     // Only used for internal testing and should not be used for normal user testing.
 
@@ -416,9 +421,22 @@ public class TestFramework {
 
     /**
      * Start the testing of the implicitly (by {@link #TestFramework()}) or explicitly (by {@link #TestFramework(Class)})
-     * set test class.
+     * set test class. Scenarios are run sequentially.
      */
     public void start() {
+        start(false);
+    }
+
+    /**
+     * Start the testing of the implicitly (by {@link #TestFramework()}) or explicitly (by {@link #TestFramework(Class)})
+     * set test class. Scenarios are run in parallel. Note: scenarios could still be run sequentially if flag
+     *  {@code -DForceSequentialScenarios=true} is used.
+     */
+    public void startParallel() {
+        start(!FORCE_SEQUENTIAL_SCENARIOS);
+    }
+
+    private void start(boolean parallel) {
         if (shouldInstallWhiteBox()) {
             installWhiteBox();
         }
@@ -428,7 +446,7 @@ public class TestFramework {
 
         if (scenarios == null) {
             try {
-                start(null);
+                start(null, System.out);
             } catch (TestVMException e) {
                 System.err.println(System.lineSeparator() + e.getExceptionInfo() + RERUN_HINT);
                 throw e;
@@ -438,7 +456,7 @@ public class TestFramework {
                 throw e;
             }
         } else {
-            startWithScenarios();
+            startWithScenarios(parallel);
         }
     }
 
@@ -728,18 +746,40 @@ public class TestFramework {
      * For scenarios: Run the tests with the scenario settings and collect all exceptions to be able to run all
      * scenarios without prematurely throwing an exception. Format violations, however, are wrong for all scenarios
      * and thus is reported immediately on the first scenario execution.
+     *
+     * @param parallel Run tests concurrently
      */
-    private void startWithScenarios() {
-        Map<Scenario, Exception> exceptionMap = new TreeMap<>(Comparator.comparingInt(Scenario::getIndex));
-        for (Scenario scenario : scenarios) {
+    private void startWithScenarios(boolean parallel) {
+        Map<Scenario, Exception> exceptionMap = new ConcurrentSkipListMap<>(Comparator.comparingInt(Scenario::getIndex));
+        final Object printLock = new Object();
+        AtomicReference<TestFormatException> testFormatException = new AtomicReference<>();
+        Stream<Scenario> stream = parallel ? scenarios.parallelStream() : scenarios.stream();
+        stream.forEach(scenario -> {
+            if (testFormatException.get() != null) {
+                return;
+            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(baos);
             try {
-                start(scenario);
+                start(scenario, ps);
             } catch (TestFormatException e) {
-                // Test format violation is wrong for all the scenarios. Only report once.
-                throw e;
+                testFormatException.compareAndSet(null, e);
             } catch (Exception e) {
                 exceptionMap.put(scenario, e);
+            } finally {
+                // Print the output to stdout in one go
+                synchronized (printLock) {
+                    String output = baos.toString();
+                    if (!output.isEmpty()) {
+                        System.out.println(output);
+                    }
+                }
             }
+        });
+        // Rethrow TestFormatException if it occurred
+        TestFormatException tfe = testFormatException.get();
+        if (tfe != null) {
+            throw tfe;
         }
         if (!exceptionMap.isEmpty()) {
             reportScenarioFailures(exceptionMap);
@@ -800,13 +840,14 @@ public class TestFramework {
      * all required flags for the test VM to the driver VM over a socket. Once the flag VM exits, this driver VM parses the
      * test VM flags, which also determine if IR matching should be done, and then starts the test VM to execute all tests.
      */
-    private void start(Scenario scenario) {
+    private void start(Scenario scenario, PrintStream printStream) {
         if (scenario != null && !scenario.isEnabled()) {
-            System.out.println("Disabled scenario #" + scenario.getIndex() + "! This scenario is not present in set flag " +
+            printStream.println("Disabled scenario #" + scenario.getIndex() + "! This scenario is not present in set flag " +
                                "-DScenarios and is therefore not executed.");
             return;
         }
         shouldVerifyIR = irVerificationPossible;
+        TestVMProcess testVMProcess = null;
         try {
             // Use TestFramework flags and scenario flags for new VMs.
             List<String> additionalFlags = new ArrayList<>();
@@ -816,7 +857,7 @@ public class TestFramework {
             if (scenario != null) {
                 List<String> scenarioFlags = scenario.getFlags();
                 String scenarioFlagsString = scenarioFlags.isEmpty() ? "" : " - [" + String.join(", ", scenarioFlags) + "]";
-                System.out.println("Scenario #" + scenario.getIndex() + scenarioFlagsString + ":");
+                printStream.println("Scenario #" + scenario.getIndex() + scenarioFlagsString + ":");
                 additionalFlags.addAll(scenarioFlags);
             }
             String frameworkAndScenarioFlags = additionalFlags.isEmpty() ?
@@ -824,7 +865,7 @@ public class TestFramework {
 
             if (shouldVerifyIR) {
                 // Only need to use flag VM if an IR verification is possibly done.
-                System.out.println("Run Flag VM:");
+                printStream.println("Run Flag VM:");
                 FlagVMProcess flagVMProcess = new FlagVMProcess(testClass, additionalFlags);
                 shouldVerifyIR = flagVMProcess.shouldVerifyIR();
                 if (shouldVerifyIR) {
@@ -832,16 +873,17 @@ public class TestFramework {
                     additionalFlags.addAll(flagVMProcess.getTestVMFlags());
                 } // else: Flag VM found a reason to not do IR verification.
             } else {
-                System.out.println("Skip Flag VM due to not performing IR verification.");
+                printStream.println("Skip Flag VM due to not performing IR verification.");
             }
 
-            System.out.println("Run Test VM" + frameworkAndScenarioFlags + ":");
-            runTestVM(additionalFlags);
+            printStream.println("Run Test VM" + frameworkAndScenarioFlags + ":");
+            testVMProcess = new TestVMProcess();
+            runTestVM(testVMProcess, additionalFlags, printStream);
         } finally {
-            if (scenario != null) {
-                scenario.setTestVMOutput(TestVMProcess.getLastTestVMOutput());
+            if (scenario != null && testVMProcess != null) {
+                scenario.setTestVMOutput(testVMProcess.getTestVMOutput());
             }
-            System.out.println();
+            printStream.println();
         }
     }
 
@@ -875,9 +917,10 @@ public class TestFramework {
         return nonWhiteListedFlags;
     }
 
-    private void runTestVM(List<String> additionalFlags) {
-        TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
-                                                        isAllowNotCompilable, testClassesOnBootClassPath);
+    private void runTestVM(TestVMProcess testVMProcess, List<String> additionalFlags, PrintStream printStream) {
+        TestFramework.check(testVMProcess != null, "TestVMProcess is null");
+        testVMProcess.runProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
+                                 isAllowNotCompilable, testClassesOnBootClassPath, printStream);
         if (shouldVerifyIR) {
             try {
                 TestClassParser testClassParser = new TestClassParser(testClass, isAllowNotCompilable);
@@ -890,7 +933,7 @@ public class TestFramework {
                 throw e;
             }
         } else {
-            System.out.println("IR verification disabled either due to no @IR annotations, through explicitly setting " +
+            printStream.println("IR verification disabled either due to no @IR annotations, through explicitly setting " +
                                "-DVerify=false, due to not running a debug build, using a non-whitelisted JTreg VM or " +
                                "Javaopts flag like -Xint, or running the test VM with other VM flags added by user code " +
                                "that make the IR verification impossible (e.g. -XX:-UseCompile, " +
