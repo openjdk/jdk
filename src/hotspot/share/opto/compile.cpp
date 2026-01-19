@@ -2141,11 +2141,8 @@ bool Compile::inline_incrementally_one() {
     }
   }
   // Remove processed elements.
-  if (_late_inlines_pos > 0) {
-    _late_inlines.remove_range(0, _late_inlines_pos);
-    _late_inlines_pos = 0;
-  }
-  assert(_late_inlines_pos == 0, "sanity");
+  _late_inlines.remove_till(_late_inlines_pos);
+  _late_inlines_pos = 0;
 
   assert(inlining_progress() || _late_inlines.length() == 0, "no progress");
 

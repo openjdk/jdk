@@ -240,6 +240,10 @@ protected:
     }
     ASSERT_EQ(a->length(), 10);
 
+    // Remove empty range from the non-empty list, should not modify the list.
+    a->remove_range(0, 0);
+    ASSERT_EQ(a->length(), 10);
+
     // Remove one element from head, should result in [1 ... 9]
     a->remove_range(0, 1);
     ASSERT_EQ(a->length(), 9);
@@ -280,6 +284,45 @@ protected:
 
     a->remove_range(0, 1);
     ASSERT_EQ(a->length(), 0);
+
+    // Remove elements from empty list with empty range, should be accepted
+    a->remove_range(0, 0);
+    ASSERT_EQ(a->length(), 0);
+  }
+
+  template <typename ArrayClass>
+  static void test_remove_till(ArrayClass* a) {
+    // Seed initial
+    for (int i = 0; i < 10; i++) {
+      a->append(i);
+    }
+    ASSERT_EQ(a->length(), 10);
+
+    // Remove empty range from non-empty list, should work
+    a->remove_till(0);
+    ASSERT_EQ(a->length(), 10);
+
+    // Remove one element from head, should result in [1 ... 9]
+    a->remove_till(1);
+    ASSERT_EQ(a->length(), 9);
+    for (int i = 0; i < a->length(); i++) {
+      ASSERT_EQ(a->at(i), i + 1);
+    }
+
+    // Remove two elements from head, should result in [3 ... 9]
+    a->remove_till(2);
+    ASSERT_EQ(a->length(), 7);
+    for (int i = 0; i < a->length(); i++) {
+      ASSERT_EQ(a->at(i), i + 3);
+    }
+
+    // Remove remaining elements, should result in []
+    a->remove_till(a->length());
+    ASSERT_EQ(a->length(), 0);
+
+    // Remove empty range from empty list, should work
+    a->remove_till(0);
+    ASSERT_EQ(a->length(), 0);
   }
 
   // Supported by all GrowableArrays
@@ -288,7 +331,8 @@ protected:
     Clear,
     Capacity,
     Iterator,
-    RemoveRange
+    RemoveRange,
+    RemoveTill
   };
 
   template <typename ArrayClass>
@@ -312,6 +356,10 @@ protected:
 
       case RemoveRange:
         test_remove_range(a);
+        break;
+
+      case RemoveTill:
+        test_remove_till(a);
         break;
 
       default:
@@ -508,6 +556,10 @@ TEST_VM_F(GrowableArrayTest, iterator) {
 
 TEST_VM_F(GrowableArrayTest, remove_range) {
   with_all_types_all_0(RemoveRange);
+}
+
+TEST_VM_F(GrowableArrayTest, remove_till) {
+  with_all_types_all_0(RemoveTill);
 }
 
 TEST_VM_F(GrowableArrayTest, copy) {

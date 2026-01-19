@@ -158,7 +158,7 @@ void G1CSetCandidateGroupList::prepare_for_scan() {
 }
 
 void G1CSetCandidateGroupList::remove_selected(uint count, uint num_regions) {
-  _groups.remove_range(0, count);
+  _groups.remove_till(count);
   _num_regions -= num_regions;
 }
 
