@@ -25,7 +25,6 @@
 package org.openjdk.bench.vm.compiler;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
@@ -76,52 +75,52 @@ public class VectorAlgorithms {
 
     @Benchmark
     public Object fillI_loop() {
-        return VectorAlgorithmsImpl.fillI_loop(d.rI);
+        return VectorAlgorithmsImpl.fillI_loop(d.rI1);
     }
 
     @Benchmark
     public Object fillI_VectorAPI() {
-        return VectorAlgorithmsImpl.fillI_VectorAPI(d.rI);
+        return VectorAlgorithmsImpl.fillI_VectorAPI(d.rI1);
     }
 
     @Benchmark
     public Object fillI_Arrays() {
-        return VectorAlgorithmsImpl.fillI_Arrays(d.rI);
+        return VectorAlgorithmsImpl.fillI_Arrays(d.rI1);
     }
 
     @Benchmark
     public Object iotaI_loop() {
-        return VectorAlgorithmsImpl.iotaI_loop(d.rI);
+        return VectorAlgorithmsImpl.iotaI_loop(d.rI1);
     }
 
     @Benchmark
     public Object iotaI_VectorAPI() {
-        return VectorAlgorithmsImpl.iotaI_VectorAPI(d.rI);
+        return VectorAlgorithmsImpl.iotaI_VectorAPI(d.rI1);
     }
 
     @Benchmark
     public Object copyI_loop() {
-        return VectorAlgorithmsImpl.copyI_loop(d.aI, d.rI);
+        return VectorAlgorithmsImpl.copyI_loop(d.aI, d.rI1);
     }
 
     @Benchmark
     public Object copyI_VectorAPI() {
-        return VectorAlgorithmsImpl.copyI_VectorAPI(d.aI, d.rI);
+        return VectorAlgorithmsImpl.copyI_VectorAPI(d.aI, d.rI1);
     }
 
     @Benchmark
     public Object copyI_System_arraycopy() {
-        return VectorAlgorithmsImpl.copyI_System_arraycopy(d.aI, d.rI);
+        return VectorAlgorithmsImpl.copyI_System_arraycopy(d.aI, d.rI1);
     }
 
     @Benchmark
     public Object mapI_loop() {
-        return VectorAlgorithmsImpl.mapI_loop(d.aI, d.rI);
+        return VectorAlgorithmsImpl.mapI_loop(d.aI, d.rI1);
     }
 
     @Benchmark
     public Object mapI_VectorAPI() {
-        return VectorAlgorithmsImpl.mapI_VectorAPI(d.aI, d.rI);
+        return VectorAlgorithmsImpl.mapI_VectorAPI(d.aI, d.rI1);
     }
 
     @Benchmark
@@ -181,17 +180,17 @@ public class VectorAlgorithms {
 
     @Benchmark
     public Object scanAddI_loop() {
-        return VectorAlgorithmsImpl.scanAddI_loop(d.aI, d.rI);
+        return VectorAlgorithmsImpl.scanAddI_loop(d.aI, d.rI1);
     }
 
     @Benchmark
     public Object scanAddI_loop_reassociate() {
-        return VectorAlgorithmsImpl.scanAddI_loop_reassociate(d.aI, d.rI);
+        return VectorAlgorithmsImpl.scanAddI_loop_reassociate(d.aI, d.rI1);
     }
 
     @Benchmark
     public Object scanAddI_VectorAPI_permute_add() {
-        return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(d.aI, d.rI);
+        return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(d.aI, d.rI1);
     }
 
     @Benchmark
@@ -223,12 +222,12 @@ public class VectorAlgorithms {
 
     @Benchmark
     public Object reverseI_loop() {
-        return VectorAlgorithmsImpl.reverseI_loop(d.aI, d.rI);
+        return VectorAlgorithmsImpl.reverseI_loop(d.aI, d.rI1);
     }
 
     @Benchmark
     public Object reverseI_VectorAPI() {
-        return VectorAlgorithmsImpl.reverseI_VectorAPI(d.aI, d.rI);
+        return VectorAlgorithmsImpl.reverseI_VectorAPI(d.aI, d.rI1);
     }
 
     @Benchmark
@@ -238,14 +237,14 @@ public class VectorAlgorithms {
         // That the length of the resulting data is more evenly distributed.
         idx = (idx + 1) & 0xffff;
         int e = eI[idx];
-        return VectorAlgorithmsImpl.filterI_loop(d.aI, d.rI, e);
+        return VectorAlgorithmsImpl.filterI_loop(d.aI, d.rI1, e);
     }
 
     @Benchmark
     public Object filterI_VectorAPI() {
         idx = (idx + 1) & 0xffff;
         int e = eI[idx];
-        return VectorAlgorithmsImpl.filterI_VectorAPI(d.aI, d.rI, e);
+        return VectorAlgorithmsImpl.filterI_VectorAPI(d.aI, d.rI1, e);
     }
 
     @Benchmark

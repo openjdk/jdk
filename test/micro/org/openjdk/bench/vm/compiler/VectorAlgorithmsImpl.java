@@ -25,6 +25,7 @@
 package org.openjdk.bench.vm.compiler;
 
 import java.util.Arrays;
+import java.util.Random;
 import jdk.incubator.vector.*;
 
 /**
