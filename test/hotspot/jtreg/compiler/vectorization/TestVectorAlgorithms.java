@@ -147,6 +147,7 @@ public class TestVectorAlgorithms {
         testGroups.get("hashCodeB").put("hashCodeB_loop",         () -> { return hashCodeB_loop(aB); });
         testGroups.get("hashCodeB").put("hashCodeB_Arrays",       () -> { return hashCodeB_Arrays(aB); });
         testGroups.get("hashCodeB").put("hashCodeB_VectorAPI_v1", () -> { return hashCodeB_VectorAPI_v1(aB); });
+        testGroups.get("hashCodeB").put("hashCodeB_VectorAPI_v2", () -> { return hashCodeB_VectorAPI_v2(aB); });
 
         testGroups.put("scanAddI", new HashMap<String,TestFunction>());
         testGroups.get("scanAddI").put("scanAddI_loop",                      () -> { return scanAddI_loop(aI, rI1); });
@@ -195,6 +196,7 @@ public class TestVectorAlgorithms {
                  "hashCodeB_loop",
                  "hashCodeB_Arrays",
                  "hashCodeB_VectorAPI_v1",
+                 "hashCodeB_VectorAPI_v2",
                  "scanAddI_loop",
                  "scanAddI_loop_reassociate",
                  "scanAddI_VectorAPI_permute_add",
@@ -434,13 +436,23 @@ public class TestVectorAlgorithms {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B,    IRNode.VECTOR_SIZE_8, "> 0",
-                  IRNode.MUL_VI,           IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.VECTOR_CAST_B2I,  IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.MUL_VI,           IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.ADD_VI,           IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.ADD_REDUCTION_VI,                       "> 0"},
         applyIfCPUFeature = {"avx2", "true"})
     public int hashCodeB_VectorAPI_v1(byte[] a) {
         return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v1(a);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B,    "> 0",
+                  IRNode.MUL_VI,           "> 0",
+                  IRNode.ADD_VI,           "> 0",
+                  IRNode.ADD_REDUCTION_VI, "> 0"},
+        applyIfCPUFeature = {"avx2", "true"})
+    public int hashCodeB_VectorAPI_v2(byte[] a) {
+        return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v2(a);
     }
 
     @Test

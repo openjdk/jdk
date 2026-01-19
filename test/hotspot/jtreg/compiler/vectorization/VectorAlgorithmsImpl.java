@@ -233,12 +233,11 @@ public class VectorAlgorithmsImpl {
     // Simplified intrinsic code from C2_MacroAssembler::arrays_hashcode in c2_MacroAssembler_x86.cpp
     //
     // Ideas that may help understand the code:
-    //
-    // h(i) = 31 * h(i-1) + a[i]
+    //   h(i) = 31 * h(i-1) + a[i]
     // "unroll" by factor of L=8:
-    // h(i+8) = h(i) * 31^8 + a[i+1] * 31^7 + a[i+2] * 31^6 + ... + a[i+8] * 1
-    //          -----------   ------------------------------------------------
-    //          scalar        vector: notice the powers of 31 in reverse
+    //   h(i+8) = h(i) * 31^8 + a[i+1] * 31^7 + a[i+2] * 31^6 + ... + a[i+8] * 1
+    //            -----------   ------------------------------------------------
+    //            scalar        vector: notice the powers of 31 in reverse
     //
     // We notice that we can load a[i+1 .. i+8], then element-wise multiply with
     // the vector of reversed powers-of-31, and then do reduceLanes(ADD).
@@ -274,6 +273,114 @@ public class VectorAlgorithmsImpl {
             vresult = vresult.mul(vnext).add(vi);
         }
         // reduce the partial hashes in the elements, using the reverse list of powers of 2.
+        result += vresult.mul(vcoef).reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            result = 31 * result + a[i];
+        }
+        return result;
+    }
+
+    // This second approach follows the idea from this blog post by Otmar Ertl:
+    // https://www.dynatrace.com/news/blog/java-arrays-hashcode-byte-efficiency-techniques/
+    //
+    // I simplified the algorithm a little, so that it is a bit closer
+    // to the solution "v1" above.
+    //
+    // The major issue with "v1" is that we cannot load a full vector of bytes,
+    // because of the cast to ints. So we can only fill 1/4 of the maximal
+    // vector size. The trick here is to do an unrolling of factor 4, from:
+    //   h(i) = 31 * h(i-1) + a[i]
+    // to:
+    //   h(i+4) = h(i) * 31^4 + a[i + 1] * 31^3
+    //                        + a[i + 2] * 31^2
+    //                        + a[i + 3] * 31^1
+    //                        + a[i + 4] * 31^0
+    // The goal is now to compute this value for 4 bytes within a 4 byte
+    // lane of the vector. One concern is that we start with byte values,
+    // but need to do int-multiplication with powers of 31. If we instead
+    // did a byte-multiplication, we could get overflows that we would not
+    // have had in the int-multiplication.
+    // One trick that helps with chaning the size of the lanes from byte
+    // to short to int is doing all operations with unsigned integers. That
+    // way, we can zero-extend instead of sign-bit extend. The first step
+    // is thus to convert the bytes into unsigned values. Since byte is in
+    // range [-128..128), doing "a[i+j] + 128" makes it a positive value,
+    // allowing for unsigned multiplication.
+    // h(i+4) = h(i) * 31^4 +   a[i + 1]              * 31^3
+    //                      +   a[i + 2]              * 31^2
+    //                      +   a[i + 3]              * 31^1
+    //                      +   a[i + 4]              * 31^0
+    //        = h(i) * 31^4 +  (a[i + 1] + 128 - 128) * 31^3
+    //                      +  (a[i + 2] + 128 - 128) * 31^2
+    //                      +  (a[i + 3] + 128 - 128) * 31^1
+    //                      +  (a[i + 4] + 128 - 128) * 31^0
+    //        = h(i) * 31^4 +  (a[i + 1] + 128      ) * 31^3
+    //                      +  (a[i + 2] + 128      ) * 31^2
+    //                      +  (a[i + 3] + 128      ) * 31^1
+    //                      +  (a[i + 4] + 128      ) * 31^0
+    //                      +  -128 * (31^3 + 31^2 + 31^1 + 1)
+    //        = h(i) * 31^4 + ((a[i + 1] + 128) * 31
+    //                      +  (a[i + 2] + 128      ) * 31^2
+    //                      + ((a[i + 3] + 128) * 31
+    //                      +  (a[i + 4] + 128      )
+    //                      +  -128 * (31^3 + 31^2 + 31^1 + 1)
+    //
+    // Getting from the signed a[i] value to unsigned with +128, we can
+    // just xor with 0x80=128. Any numbers there in range [-128..0) are
+    // now in range [0..128). And any numbers that were in range [0..128)
+    // are now in unsigned range [128..255). What a neat trick!
+    //
+    // We then apply a byte->short transition where we crunch 2 bytes
+    // into one short, applying a multiplication with 31 to one of the
+    // two bytes. This multiplication cannot overflow in a short.
+    // then we apply a short->int transition where we crunch 2 shorts
+    // into one int, applying a multiplication with 31^2 to one of the
+    // two shorts. This multiplication cannot overflow in an int.
+    //
+    private static int power(int base, int exp) {
+        int r = 1;
+        for (int i = 0; i < exp; i++) { r *= base; }
+        return r;
+    }
+    private static int PL = power(31, ByteVector.SPECIES_PREFERRED.length());
+    private static int[] REVERSE_POWERS_OF_31_STEP_4 = new int[IntVector.SPECIES_PREFERRED.length()];
+    static {
+        int p = 1;
+        int step = 31 * 31 * 31 * 31; // step by 4
+        for (int i = REVERSE_POWERS_OF_31_STEP_4.length - 1; i >= 0; i--) {
+            REVERSE_POWERS_OF_31_STEP_4[i] = p;
+            p *= step;
+        }
+        if (p != PL) { throw new RuntimeException("mismatch"); }
+    }
+    public static int hashCodeB_VectorAPI_v2(byte[] a) {
+        // TODO: fix species, in case preferred diverges!
+        int result = 1; // initialValue
+        int p2 = 31 * 31;
+        int sub_value = -128 * (31*31*31 + 31*31 + 31 + 1);
+        var vresult = IntVector.zero(IntVector.SPECIES_PREFERRED);
+        int i;
+        for (i = 0; i < ByteVector.SPECIES_PREFERRED.loopBound(a.length); i += ByteVector.SPECIES_PREFERRED.length()) {
+            var vb = ByteVector.fromArray(ByteVector.SPECIES_PREFERRED, a, i);
+            // Add 128 to each byte.
+            var vs = vb.lanewise(VectorOperators.XOR, (byte)0x80)
+                       .reinterpretAsShorts();
+            // Each short lane contains 2 bytes, crunch them.
+            var vi = vs.and((short)0xff) // lower byte
+                       .mul((short)31)
+                       .add(vs.lanewise(VectorOperators.LSHR, 8)) // upper byte
+                       .reinterpretAsInts();
+            // Each int contains 2 shorts, crunch them.
+            var v  = vi.and(0xffff) // lower short
+                       .mul(p2)
+                       .add(vi.lanewise(VectorOperators.LSHR, 16)); // upper short
+            // Add the correction for the 128 additions above.
+            v = v.add(sub_value);
+            // Every element of v now contains a crunched int-package of 4 bytes.
+            result *= PL;
+            vresult = vresult.mul(PL).add(v);
+        }
+        var vcoef = IntVector.fromArray(IntVector.SPECIES_PREFERRED, REVERSE_POWERS_OF_31_STEP_4, 0); // W
         result += vresult.mul(vcoef).reduceLanes(VectorOperators.ADD);
         for (; i < a.length; i++) {
             result = 31 * result + a[i];
