@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1816,6 +1816,11 @@ bool TypeInt::contains(const TypeInt* t) const {
   return TypeIntHelper::int_type_is_subset(this, t);
 }
 
+bool TypeInt::properly_contains(const TypeInt* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_is_subset(this, t) && !TypeIntHelper::int_type_is_equal(this, t);
+}
+
 const Type* TypeInt::xmeet(const Type* t) const {
   return TypeIntHelper::int_type_xmeet(this, t);
 }
@@ -1942,6 +1947,11 @@ bool TypeLong::contains(jlong i) const {
 bool TypeLong::contains(const TypeLong* t) const {
   assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
   return TypeIntHelper::int_type_is_subset(this, t);
+}
+
+bool TypeLong::properly_contains(const TypeLong* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_is_subset(this, t) && !TypeIntHelper::int_type_is_equal(this, t);
 }
 
 const Type* TypeLong::xmeet(const Type* t) const {
