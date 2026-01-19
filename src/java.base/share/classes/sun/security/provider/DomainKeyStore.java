@@ -220,8 +220,8 @@ abstract class DomainKeyStore extends KeyStoreSpi {
     }
 
     /**
-     * Returns the creation {@code Instant} value
-     * of the entry identified by the given alias.
+     * Returns the instant that the entry identified
+     * by the given alias was created.
      *
      * @param alias the alias name
      *
