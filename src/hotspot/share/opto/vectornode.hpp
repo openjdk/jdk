@@ -52,9 +52,10 @@
 //
 // NVectMask and PVectMask encode element data type and vector length information.
 // They are the primary mask representations used in most mask and masked vector
-// operations. While BVectMask primarily represents mask values loaded from or
-// stored to Java boolean memory, and is currently used in certain mask operations
-// (i.e. VectorMaskOpNode).
+// operations. BVectMask primarily represents mask values loaded from or stored to
+// Java boolean memory (mask backing storage). VectorLoadMask/VectorStoreMask nodes
+// are needed to transform it to/from P/NVectMask. It is also used in certain mask
+// operations (e.g. VectorMaskOpNode).
 //
 //=========================Notes-for-Masked-Vector-Nodes===========================
 //
@@ -1907,11 +1908,12 @@ class VectorCastF2HFNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
-// Unsigned vector cast operations can only be used in Vector API unsigned
-// extensions between integral types so far. E.g., extending byte to float
-// is not supported now.
+// Unsigned vector cast operations can only be used in unsigned (zero)
+// extensions between integral types so far. E.g., extending byte to
+// float is not supported now.
 
-// Unsigned cast a byte vector to the given vector type.
+// Unsigned cast a byte vector to the given vector type with short, int,
+// or long element type.
 class VectorUCastB2XNode : public VectorCastNode {
  public:
   VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1923,7 +1925,8 @@ class VectorUCastB2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
-// Unsigned cast a short vector to the given vector type.
+// Unsigned cast a short vector to the given vector type with int or long
+// element type.
 class VectorUCastS2XNode : public VectorCastNode {
  public:
   VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1934,7 +1937,7 @@ class VectorUCastS2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
-// Unsigned cast an int vector to the given vector type.
+// Unsigned cast an int vector to the given vector type with long element type.
 class VectorUCastI2XNode : public VectorCastNode {
  public:
   VectorUCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
