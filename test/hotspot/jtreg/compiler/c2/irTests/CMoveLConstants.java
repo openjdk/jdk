@@ -57,11 +57,11 @@ public class CMoveLConstants {
     @Test
     @IR(counts = {IRNode.X86_CMOVEL_IMM01UCF, "1"},
         applyIfPlatform = {"x64", "true"},
-        applyIfCPUFeature = {"apx_f", "false"},
+        applyIfCPUFeatureOr = {"apx_f", "false", "avx10_2", "false"},
         phase = CompilePhase.FINAL_CODE)
     @IR(counts = {IRNode.X86_CMOVEL_IMM01UCFE, "1"},
         applyIfPlatform = {"x64", "true"},
-        applyIfCPUFeature = {"apx_f", "true"},
+        applyIfCPUFeatureAnd = {"apx_f", "true", "avx10_2", "true"},
         phase = CompilePhase.FINAL_CODE)
     public static long testFloat(float a, float b) {
         return a > b ? 1L : 0L;

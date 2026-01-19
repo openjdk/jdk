@@ -1051,7 +1051,7 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
   // If other floating point comparison instructions used, ZF=1 for equal and unordered cases
   if (opcode == Op_SignumF) {
     if (VM_Version::supports_avx10_2()) {
-      ucomxss(dst, zero);
+      vucomxss(dst, zero);
       jcc(Assembler::negative, DONE_LABEL);
     } else {
       ucomiss(dst, zero);
@@ -1062,7 +1062,7 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
     xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), noreg);
   } else if (opcode == Op_SignumD) {
     if (VM_Version::supports_avx10_2()) {
-      ucomxsd(dst, zero);
+      vucomxsd(dst, zero);
       jcc(Assembler::negative, DONE_LABEL);
     } else {
       ucomisd(dst, zero);

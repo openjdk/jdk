@@ -1700,7 +1700,7 @@ static void emit_cmpfp_fixup(MacroAssembler* masm) {
 
 static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
   // If any floating point comparison instruction is used, unordered case always triggers jump
-  // For below condition, CF=1 is true when at least one input is NaN
+  // for below condition, CF=1 is true when at least one input is NaN
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::below, done);
@@ -14351,9 +14351,9 @@ instruct cmpF_cc_regCFE(rFlagsRegUCFE cr, regF src1, regF src2) %{
   match(Set cr (CmpF src1 src2));
 
   ins_cost(100);
-  format %{ "ucomxss $src1, $src2" %}
+  format %{ "vucomxss $src1, $src2" %}
   ins_encode %{
-    __ ucomxss($src1$$XMMRegister, $src2$$XMMRegister);
+    __ vucomxss($src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14373,9 +14373,9 @@ instruct cmpF_cc_memCFE(rFlagsRegUCFE cr, regF src1, memory src2) %{
   match(Set cr (CmpF src1 (LoadF src2)));
 
   ins_cost(100);
-  format %{ "ucomxss $src1, $src2" %}
+  format %{ "vucomxss $src1, $src2" %}
   ins_encode %{
-    __ ucomxss($src1$$XMMRegister, $src2$$Address);
+    __ vucomxss($src1$$XMMRegister, $src2$$Address);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14395,9 +14395,9 @@ instruct cmpF_cc_immCFE(rFlagsRegUCFE cr, regF src, immF con) %{
   match(Set cr (CmpF src con));
 
   ins_cost(100);
-  format %{ "ucomxss $src, [$constantaddress]\t# load from constant table: float=$con" %}
+  format %{ "vucomxss $src, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_encode %{
-    __ ucomxss($src$$XMMRegister, $constantaddress($con));
+    __ vucomxss($src$$XMMRegister, $constantaddress($con));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14436,9 +14436,9 @@ instruct cmpD_cc_regCFE(rFlagsRegUCFE cr, regD src1, regD src2) %{
   match(Set cr (CmpD src1 src2));
 
   ins_cost(100);
-  format %{ "ucomxsd $src1, $src2 test" %}
+  format %{ "vucomxsd $src1, $src2 test" %}
   ins_encode %{
-    __ ucomxsd($src1$$XMMRegister, $src2$$XMMRegister);
+    __ vucomxsd($src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14458,9 +14458,9 @@ instruct cmpD_cc_memCFE(rFlagsRegUCFE cr, regD src1, memory src2) %{
   match(Set cr (CmpD src1 (LoadD src2)));
 
   ins_cost(100);
-  format %{ "ucomxsd $src1, $src2" %}
+  format %{ "vucomxsd $src1, $src2" %}
   ins_encode %{
-    __ ucomxsd($src1$$XMMRegister, $src2$$Address);
+    __ vucomxsd($src1$$XMMRegister, $src2$$Address);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14479,9 +14479,9 @@ instruct cmpD_cc_immCFE(rFlagsRegUCFE cr, regD src, immD con) %{
   match(Set cr (CmpD src con));
 
   ins_cost(100);
-  format %{ "ucomxsd $src, [$constantaddress]\t# load from constant table: double=$con" %}
+  format %{ "vucomxsd $src, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_encode %{
-    __ ucomxsd($src$$XMMRegister, $constantaddress($con));
+    __ vucomxsd($src$$XMMRegister, $constantaddress($con));
   %}
   ins_pipe(pipe_slow);
 %}

@@ -2656,14 +2656,14 @@ void MacroAssembler::ucomisd(XMMRegister dst, AddressLiteral src, Register rscra
   }
 }
 
-void MacroAssembler::ucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+void MacroAssembler::vucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
   if (reachable(src)) {
-    Assembler::ucomxsd(dst, as_Address(src));
+    Assembler::vucomxsd(dst, as_Address(src));
   } else {
     lea(rscratch, src);
-    Assembler::ucomxsd(dst, Address(rscratch, 0));
+    Assembler::vucomxsd(dst, Address(rscratch, 0));
   }
 }
 
@@ -2678,14 +2678,14 @@ void MacroAssembler::ucomiss(XMMRegister dst, AddressLiteral src, Register rscra
   }
 }
 
-void MacroAssembler::ucomxss(XMMRegister dst, AddressLiteral src, Register rscratch) {
+void MacroAssembler::vucomxss(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
   if (reachable(src)) {
-    Assembler::ucomxss(dst, as_Address(src));
+    Assembler::vucomxss(dst, as_Address(src));
   } else {
     lea(rscratch, src);
-    Assembler::ucomxss(dst, Address(rscratch, 0));
+    Assembler::vucomxss(dst, Address(rscratch, 0));
   }
 }
 
