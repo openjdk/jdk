@@ -96,7 +96,7 @@ public class FlagVM {
     }
 
     /**
-     * Emit Test VM flags to the dedicated Test VM flags file to parse them from the TestFramework "driver" VM again
+     * Emit Test VM flags to the dedicated Test VM flags file to parse them from the TestFramework Driver VM again
      * which adds them to the Test VM.
      */
     private static void emitTestVMFlags(ArrayList<String> flags) {
