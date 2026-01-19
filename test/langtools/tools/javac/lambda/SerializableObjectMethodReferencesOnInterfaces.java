@@ -63,9 +63,15 @@ public class SerializableObjectMethodReferencesOnInterfaces {
             R apply(T t);
         }
 
+        enum E {
+            ONE
+        }
+
         void f() throws Exception {
             F<I1, Integer> f1 = I1::hashCode;
             F<I2, Integer> f2 = I2::hashCode;
+            F<E, Integer> f3 = E::hashCode;
+            F<Object, Integer> f4 = Object::hashCode;
         }
     }
 
@@ -93,6 +99,20 @@ public class SerializableObjectMethodReferencesOnInterfaces {
                 getImplClass java/lang/Object
                 getImplMethodSignature ()I
                 getInstantiatedMethodType (LSerializableObjectMethodReferencesOnInterfaces$Test$I2;)Ljava/lang/Integer;
+                getImplMethodKind 5
+                getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
+                getFunctionalInterfaceMethodName apply
+                getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
+                getImplClass java/lang/Enum
+                getImplMethodSignature ()I
+                getInstantiatedMethodType (LSerializableObjectMethodReferencesOnInterfaces$Test$E;)Ljava/lang/Integer;
+                getImplMethodKind 5
+                getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
+                getFunctionalInterfaceMethodName apply
+                getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
+                getImplClass java/lang/Object
+                getImplMethodSignature ()I
+                getInstantiatedMethodType (Ljava/lang/Object;)Ljava/lang/Integer;
                 """;
         if (!actual.equals(expected)) {
             throw new AssertionError(
