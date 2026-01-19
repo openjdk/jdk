@@ -255,6 +255,8 @@ import java.util.Arrays;
  * the resulting expansions and contractions are handled explicitly
  * with
  * <a href="Vector.html#expansion">special conventions</a>.
+ * These special conventions also apply to <em>shape-changing</em>
+ * methods, which may also change {@code VLENGTH}.
  *
  * <p> Vector operations can be grouped into various categories and
  * their behavior can be generally specified in terms of underlying
@@ -818,76 +820,100 @@ import java.util.Arrays;
  *
  * <p> Tension between these principles arises when an operation
  * produces a <em>logical result</em> that is too large for the
- * required output {@code VSHAPE}.  In other cases, when a logical
+ * required output {@code VSHAPE}, so part of it must be truncated.
+ * In other cases, when a logical
  * result is smaller than the capacity of the output {@code VSHAPE},
  * the positioning of the logical result is open to question, since
  * the physical output vector must contain a mix of logical result and
  * padding.
  *
  * <p> In the first case, of a too-large logical result being crammed
- * into a too-small output {@code VSHAPE}, we say that data has
- * <em>expanded</em>.  In other words, an <em>expansion operation</em>
- * has caused the output shape to overflow.  Symmetrically, in the
- * second case of a small logical result fitting into a roomy output
- * {@code VSHAPE}, the data has <em>contracted</em>, and the
- * <em>contraction operation</em> has required the output shape to pad
+ * into a too-small output {@code VSHAPE}, we say that logical data has
+ * <em>expanded</em>, or the physical output shape has <em>contracted</em>.
+ * Either or both may happen in one operation, as when a vector of floats
+ * may be logically expanded to a vector of doubles, and then may be
+ * stored into a shape with room for only half the original number
+ * of lanes.
+ *
+ * <p> In such cases, a <em>logical expansion</em> of lane values
+ * and/or a shape-changing <em>physical contraction</em> has caused
+ * the output shape to overflow.  When this happens, only a part of
+ * the logical result can be delivered to the physical output shape,
+ * and the rest must be discarded.  The effect is a truncation.
+ * If the user needs all the output data, the operation must be
+ * repeated systematically, with distinct result parts selected
+ * each time.
+ *
+ * <p> Symmetrically, in the case of a small logical result fitting
+ * into a roomy output {@code VSHAPE}, the logical data has
+ * <em>contracted</em>, or the physical output shape has
+ * <em>expanded</em>.  In either case (or both cases at once) the
+ * output shape is required to pad
  * itself with extra zero lanes.
  *
- * <p> In both cases we can speak of a parameter {@code M} which
- * measures the <em>expansion ratio</em> or <em>contraction ratio</em>
- * between the logical result size (in bits) and the bit-size of the
- * actual output shape.  When vector shapes are changed, and lane
- * sizes are not, {@code M} is just the integral ratio of the output
- * shape to the logical result.  (With the possible exception of
+ * <p> If the user needs a fully populated shape, the operation may
+ * be repeated systematically on additional inputs, with distinct
+ * placements of compacted partial results in the roomy output shape.
+ * The partial results can then be combined using a bitwise-OR
+ * operation to overwrite the zero padding.
+ *
+ * <p> It is also possible to combine logical expansion with
+ * shape expansion, or logical contraction with shape contraction,
+ * with opposing effects on truncation or padding.  If the
+ * opposing effects are balanced, then truncation and padding
+ * can be avoided completely.  For example, a 64-bit vector
+ * of floats could be converted to a 128-bit vector of doubles,
+ * where the expanded logical size is exactly matched by a
+ * physical expansion of output size.
+ *
+ * <p> In all cases we can speak of a parameter {@code ML} which
+ * measures, as a small integer, the <em>logical expansion ratio</em>
+ * between the logical result size (in bits) divided by the bit-size
+ * of the physical input shape.  In the case of a logical contraction,
+ * {@code ML} is an integer reciprocal.  When {@code VLENGTH} is
+ * invariant, this ratio also measures the exapnsion (or contraction)
+ * of individual lane sizes.
+ *
+ * <p> A second parameter {@code MP} measures the <em>physical expansion
+ * ratio</em>, also an integer or integer reciprocal, for the size
+ * difference (if any) between input shape and output shape.
+ *
+ * <p> When vector shapes are changed, and lane
+ * sizes are not, then {@code ML=1}, and {@code M=1/MP} is just the
+ * integral ratio of the output shape to input shape.
+ * In the more common case where vector shapes are invariant, then
+ * {@code MP=1} and so {@code M=ML}.
+ * In the most general case (also least common), both shapes and lane
+ * sizes change.
+ *
+ * <p> In all cases, the combined ratio {@code M=ML/MP} determines
+ * whether the operation will require truncation or padding.
+ * This is true regardless of any and all separate changes to lane
+ * size, lane count, or container size.
+ * 
+ * <p> Truncation is required if and only if {@code M>1} ({@code ML>MP}).
+ * We broadly characterize such operations as <em>expanding</em>, even
+ * if {@code ML=1}, since all but {@code 1/M} of the output data must
+ * be removed to fit the result into the required physical output
+ * shape.
+ *
+ * <p> Likewise, the output ({@code 1-M} of it) must be padded if and
+ * only if {@code M<1} ({@code MP>ML}).  We also broadly characterize
+ * such operations as <em>contracting</em>, even if {@code ML=1},
+ * since some padding must added to fill up an oversized output shape.
+ *
+ * <p> (With the possible exception of
  * the {@linkplain VectorShape#S_Max_BIT maximum shape}, all vector
- * sizes are powers of two, and so the ratio {@code M} is always
- * an integer.  In the hypothetical case of a non-integral ratio,
- * the value {@code M} would be rounded up to the next integer,
+ * sizes are powers of two, and so the ratio {@code MP} is always
+ * an integer.  In the hypothetical case of a non-integral ratio, the
+ * value {@code MP} might be rounded to a nearby power of two,
  * and then the same general considerations would apply.)
  *
- * <p> If the logical result is larger than the physical output shape,
- * such a shape change must inevitably drop result lanes (all but
- * {@code 1/M} of the logical result).  If the logical size is smaller
- * than the output, the shape change must introduce zero-filled lanes
- * of padding (all but {@code 1/M} of the physical output).  The first
- * case, with dropped lanes, is an expansion, while the second, with
- * padding lanes added, is a contraction.
- *
- * <p> Similarly, consider a lane-wise conversion operation which
- * leaves the shape invariant but changes the lane size by a ratio of
- * {@code M}.  If the logical result is larger than the output (or
- * input), this conversion must reduce the {@code VLENGTH} lanes of the
- * output by {@code M}, dropping all but {@code 1/M} of the logical
- * result lanes.  As before, the dropping of lanes is the hallmark of
- * an expansion.  A lane-wise operation which contracts lane size by a
- * ratio of {@code M} must increase the {@code VLENGTH} by the same
- * factor {@code M}, filling the extra lanes with a zero padding
- * value; because padding must be added this is a contraction.
- *
- * <p> It is also possible (though somewhat confusing) to change both
- * lane size and container size in one operation which performs both
- * lane conversion <em>and</em> reshaping.  If this is done, the same
- * rules apply, but the logical result size is the product of the
- * input size times any expansion or contraction ratio from the lane
- * change size.
- *
  * <p> For completeness, we can also speak of <em>in-place
- * operations</em> for the frequent case when resizing does not occur.
+ * operations</em> when the ratio parameter {@code M} is unity,
+ * including the very frequent case where {@code ML=MP=1}.
  * With an in-place operation, the data is simply copied from logical
  * output to its physical container with no truncation or padding.
- * The ratio parameter {@code M} in this case is unity.
- *
- * <p> Note that the classification of contraction vs. expansion
- * depends on the relative sizes of the logical result and the
- * physical output container.  The size of the input container may be
- * larger or smaller than either of the other two values, without
- * changing the classification.  For example, a conversion from a
- * 128-bit shape to a 256-bit shape will be a contraction in many
- * cases, but it would be an expansion if it were combined with a
- * conversion from {@code byte} to {@code long}, since in that case
- * the logical result would be 1024 bits in size.  This example also
- * illustrates that a logical result does not need to correspond to
- * any particular platform-supported vector shape.
  *
  * <p> Although lane-wise masked operations can be viewed as producing
  * partial operations, they are not classified (in this API) as
@@ -895,18 +921,11 @@ import java.util.Arrays;
  * produces a partial vector, but there is no meaningful "logical
  * output vector" that this partial result was contracted from.
  *
- * <p> Some care is required with these terms, because it is the
- * <em>data</em>, not the <em>container size</em>, that is expanding
- * or contracting, relative to the size of its output container.
- * Thus, resizing a 128-bit input into 512-bit vector has the effect
- * of a <em>contraction</em>.  Though the 128 bits of payload hasn't
- * changed in size, we can say it "looks smaller" in its new 512-bit
- * home, and this will capture the practical details of the situation.
- *
- * <p> If a vector method might expand its data, it accepts an extra
+ * <p> When a vector method can require truncation ({@code M>1},
+ * {@code ML>MP}), it accepts an extra
  * {@code int} parameter called {@code part}, or the "part number".
  * The part number must be in the range {@code [0..M-1]}, where
- * {@code M} is the expansion ratio.  The part number selects one
+ * {@code M} is the overall expansion ratio.  The part number selects one
  * of {@code M} contiguous disjoint equally-sized blocks of lanes
  * from the logical result and fills the physical output vector
  * with this block of lanes.
@@ -917,9 +936,10 @@ import java.util.Arrays;
  * the origin of the block, {@code R}, is {@code part*L}.
  *
  * <p> A similar convention applies to any vector method that might
- * contract its data.  Such a method also accepts an extra part number
- * parameter (again called {@code part}) which steers the contracted
- * data lanes one of {@code M} contiguous disjoint equally-sized
+ * require padding ({@code M<1}, {@code ML<MP}).
+ * Such a method also accepts an extra part number
+ * parameter (again called {@code part}) which steers the logical
+ * output lanes into one of {@code 1/M} contiguous disjoint equally-sized
  * blocks of lanes in the physical output vector.  The remaining lanes
  * are filled with zero, or as specified by the method.
  *
@@ -930,14 +950,16 @@ import java.util.Arrays;
  * specifically {@code |part|*L}.
  *
  * <p> In the case of a contraction, the part number must be in the
- * non-positive range {@code [-M+1..0]}.  This convention is adopted
+ * non-positive range {@code [1-1/M..0]}.  This convention is adopted
  * because some methods can perform both expansions and contractions,
  * in a data-dependent manner, and the extra sign on the part number
- * serves as an error check.  If vector method takes a part number and
+ * serves as an error check.  If a vector method takes a part number and
  * is invoked to perform an in-place operation (neither contracting
  * nor expanding), the {@code part} parameter must be exactly zero.
+ * <p>
  * Part numbers outside the allowed ranges will elicit an indexing
- * exception.  Note that in all cases a zero part number is valid, and
+ * exception, with a message reporting which part numbers were legal.
+ * Note that in all cases a zero part number is valid, and
  * corresponds to an operation which preserves as many lanes as
  * possible from the beginning of the logical result, and places them
  * into the beginning of the physical output container.  This is
@@ -956,6 +978,7 @@ import java.util.Arrays;
  * larger (respectively, smaller) by a factor of {@code M}.
  * If the element sizes of input and output are the same,
  * then {@code convert()} is an in-place operation.
+ * Since there is no shape change, {@code M=ML} and {@code MP=1}.
  *
  * <li>
  * {@link Vector#convertShape(VectorOperators.Conversion,VectorSpecies,int) Vector.convertShape()}
@@ -963,19 +986,19 @@ import java.util.Arrays;
  * {@code M} if the bit-size of its logical result is
  * larger (respectively, smaller) than the bit-size of its
  * output shape.
- * The size of the logical result is defined as the
+ * The bit-size of the logical result is defined as the
  * {@linkplain #elementSize() element size} of the output,
  * times the {@code VLENGTH} of its input.
  *
- * Depending on the ratio of the changed lane sizes, the logical size
- * may be (in various cases) either larger or smaller than the input
- * vector, independently of whether the operation is an expansion
- * or contraction.
+ * Depending on the ratio {@code ML} of input and output lane sizes
+ * and also the ratio {@code MP} of input and output shapes,
+ * the operation may require truncation, padding, or neither,
+ * as {@code M} is greater than, less than, or equal to unity.
  *
  * <li>
  * Since {@link Vector#castShape(VectorSpecies,int) Vector.castShape()}
- * is a convenience method for {@code convertShape()}, its classification
- * as an expansion or contraction is the same as for {@code convertShape()}.
+ * is a convenience method for {@code convertShape()}, its requirement
+ * for truncation or padding is similar to {@code convertShape()}.
  *
  * <li>
  * {@link Vector#reinterpretShape(VectorSpecies,int) Vector.reinterpretShape()}
@@ -985,7 +1008,8 @@ import java.util.Arrays;
  * output container by a factor of {@code M}.
  * Otherwise, it is an in-place operation.
  *
- * Since this method is a reinterpretation cast that can erase and
+ * When there is no logical data change, {@code M=1/MP} and {@code ML=1}.
+ * In any case, since this method is a reinterpretation cast that can erase and
  * redraw lane boundaries as well as modify shape, the input vector's
  * lane size and lane count are irrelevant to its classification as
  * expanding or contracting.
@@ -1011,11 +1035,11 @@ import java.util.Arrays;
  * or contraction.  The value returned from {@code partLimit()} is
  * positive for expansions, negative for contractions, and zero for
  * in-place operations.  Its absolute value is the parameter {@code
- * M}, and so it serves as an exclusive limit on valid part number
+ * max(M,1/M)}, and so it serves as an exclusive limit on valid part number
  * arguments for the relevant methods.  Thus, for expansions, the
  * {@code partLimit()} value {@code M} is the exclusive upper limit
  * for part numbers, while for contractions the {@code partLimit()}
- * value {@code -M} is the exclusive <em>lower</em> limit.
+ * value {@code -1/M} is the exclusive <em>lower</em> limit.
  *
  * <h2><a id="cross-lane"></a>Moving data across lane boundaries</h2>
  * The cross-lane methods which do not redraw lanes or change species
