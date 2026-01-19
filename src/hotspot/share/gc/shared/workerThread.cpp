@@ -93,12 +93,7 @@ void WorkerThreads::initialize_workers() {
   }
 }
 
-bool WorkerThreads::should_inject_gc_worker_creation_failure() const {
-  if (!InjectGCWorkerCreationFailure) {
-    // Never inject worker creation failure if not explicitly asked to do so
-    return false;
-  }
-
+bool WorkerThreads::allow_creation_failure() const {
   if (!is_init_completed()) {
     // Never allow creation failures during VM init
     return false;
@@ -110,16 +105,10 @@ bool WorkerThreads::should_inject_gc_worker_creation_failure() const {
   }
 
   return true;
-
-  // Inject worker creation failure iff all three below conditions hold:
-  // 1) explicitly asked to do so (InjectGCWorkerCreationFailure);
-  // 2) outside VM init (before init, the code will kill the process and the uncommon path can not be tested);
-  // 3) not the first worker (for the same reason as point number 2 if in the future we will implement lazy init of concurrent mark in g1).
-  return InjectGCWorkerCreationFailure && is_init_completed() && (_created_workers != 0);
 }
 
 WorkerThread* WorkerThreads::create_worker(uint name_suffix) {
-  if (should_inject_gc_worker_creation_failure()) {
+  if (InjectGCWorkerCreationFailure && allow_creation_failure()) {
     return nullptr;
   }
 
