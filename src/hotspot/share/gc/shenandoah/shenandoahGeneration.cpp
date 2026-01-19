@@ -417,11 +417,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
 
   size_t total_young_available = young_generation->available_with_reserve() - add_regions_to_old * region_size_bytes;;
-#define KELVIN_DEBUGGING
-#ifdef KELVIN_DEBUGGING
-  log_info(gc)("total_young_available (%zu) is young_available_reserve (%zu) - added to old (%zu)",
-               total_young_available, young_generation->available_with_reserve(), add_regions_to_old * region_size_bytes);
-#endif
   assert(young_evacuated_reserve_used <= total_young_available, "Cannot evacuate (%zu) more than is available in young (%zu)",
          young_evacuated_reserve_used, total_young_available);
   young_generation->set_evacuation_reserve(young_evacuated_reserve_used);
