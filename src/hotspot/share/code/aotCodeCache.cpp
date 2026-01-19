@@ -1829,9 +1829,6 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, os::breakpoint);
 #endif
 
-#if INCLUDE_JVMTI
-  SET_ADDRESS(_extrs, &JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events);
-#endif /* INCLUDE_JVMTI */
   SET_ADDRESS(_extrs, StubRoutines::crc_table_addr());
 #ifndef PRODUCT
   SET_ADDRESS(_extrs, &SharedRuntime::_partial_subtype_ctr);
