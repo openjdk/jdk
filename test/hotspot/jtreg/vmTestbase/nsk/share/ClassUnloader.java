@@ -254,6 +254,12 @@ public class ClassUnloader {
         while (count++ < MAX_UNLOAD_ATTEMPS && !isClassLoaderReclaimed()) {
             System.out.println("ClassUnloader: waiting for class loader reclaiming... " + count);
             WhiteBox.getWhiteBox().fullGC();
+            try {
+                // small delay to give more changes to process objects
+                // inside VM like jvmti deferred queue
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
         }
 
         // force GC to unload marked class loader and its classes

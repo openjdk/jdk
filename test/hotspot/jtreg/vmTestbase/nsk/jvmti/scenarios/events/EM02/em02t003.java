@@ -108,6 +108,11 @@ public class em02t003 extends DebugeeClass {
             while (thrd.isAlive()) {
                 logger.display("Thread state: " + thrd.getState()
                     + " - waiting for completion.");
+                try {
+                    // small delay to avoid produce huge amount of output
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
             }
             try {
                 // give some time wait thread to exit completely
