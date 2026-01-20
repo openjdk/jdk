@@ -30,7 +30,9 @@ import java.io.ByteArrayOutputStream;
 import java.util.AbstractMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.zip.Adler32;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
@@ -38,21 +40,26 @@ import java.util.zip.Inflater;
  * Enum for TLS certificate compression algorithms.
  */
 enum CompressionAlgorithm {
-    ZLIB(1, "zlib"),
-    BROTLI(2, "brotli"),
-    ZSTD(3, "zstd");
+    ZLIB(1, "zlib", new ConcurrentHashMap<>(2)),
+    // Placeholders, we currently support only ZLIB internally.
+    BROTLI(2, "brotli", null),
+    ZSTD(3, "zstd", null);
 
     final int id;
     final String name;
+    // We compress only local certificates, so it's ok to store the
+    // deflated cert data in a memory cache permanently, i.e. such
+    // cache is going to be of a manageable size.
+    final Map<Integer, byte[]> cache;     // Checksum -> deflated data map.
 
-    CompressionAlgorithm(int id, String name) {
+    CompressionAlgorithm(int id, String name, Map<Integer, byte[]> cache) {
         this.id = id;
         this.name = name;
+        this.cache = cache;
     }
 
     static CompressionAlgorithm nameOf(String name) {
-        for (CompressionAlgorithm cca :
-                CompressionAlgorithm.values()) {
+        for (CompressionAlgorithm cca : CompressionAlgorithm.values()) {
             if (cca.name.equals(name)) {
                 return cca;
             }
@@ -62,8 +69,7 @@ enum CompressionAlgorithm {
     }
 
     static String nameOf(int id) {
-        for (CompressionAlgorithm cca :
-                CompressionAlgorithm.values()) {
+        for (CompressionAlgorithm cca : CompressionAlgorithm.values()) {
             if (cca.id == id) {
                 return cca.name;
             }
@@ -133,32 +139,38 @@ enum CompressionAlgorithm {
     }
 
     // Default Deflaters and Inflaters.
-    // We currently support only ZLIB internally.
 
     static Map<String, Function<byte[], byte[]>> getDefaultDeflaters() {
-        return Map.of(ZLIB.name, (input) -> {
-            try (Deflater deflater = new Deflater();
-                    ByteArrayOutputStream outputStream =
-                            new ByteArrayOutputStream(input.length)) {
+        return Map.of(ZLIB.name, (input) ->
+                ZLIB.cache.computeIfAbsent(getChecksum(input), key -> {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.info("Deflating new " + ZLIB.name
+                                + " certificate data with checksum: " + key);
+                    }
 
-                deflater.setInput(input);
-                deflater.finish();
-                byte[] buffer = new byte[1024];
+                    try (Deflater deflater = new Deflater();
+                            ByteArrayOutputStream outputStream =
+                                    new ByteArrayOutputStream(input.length)) {
 
-                while (!deflater.finished()) {
-                    int compressedSize = deflater.deflate(buffer);
-                    outputStream.write(buffer, 0, compressedSize);
-                }
+                        deflater.setInput(input);
+                        deflater.finish();
+                        byte[] buffer = new byte[1024];
 
-                return outputStream.toByteArray();
-            } catch (Exception e) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.warning(
-                            "Exception during certificate compression: ", e);
-                }
-                return null;
-            }
-        });
+                        while (!deflater.finished()) {
+                            int compressedSize = deflater.deflate(buffer);
+                            outputStream.write(buffer, 0, compressedSize);
+                        }
+
+                        return outputStream.toByteArray();
+                    } catch (Exception e) {
+                        if (SSLLogger.isOn()
+                                && SSLLogger.isOn("ssl,handshake")) {
+                            SSLLogger.warning("Exception during certificate "
+                                    + "compression: ", e);
+                        }
+                        return null;
+                    }
+                }));
     }
 
     static Map<String, Function<byte[], byte[]>> getDefaultInflaters() {
@@ -184,5 +196,12 @@ enum CompressionAlgorithm {
                 return null;
             }
         });
+    }
+
+    // Fast checksum.
+    private static int getChecksum(byte[] input) {
+        Adler32 adler32 = new Adler32();
+        adler32.update(input);
+        return (int) adler32.getValue();
     }
 }
