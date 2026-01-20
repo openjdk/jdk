@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -172,9 +173,9 @@ private:
     size_t _capacity;
     size_t _num_buckets;
     bool _should_grow;
-    TaskQueueEntryChunk* volatile* _buckets;
+    Atomic<TaskQueueEntryChunk*>* _buckets;
     char _pad0[DEFAULT_PADDING_SIZE];
-    volatile size_t _size;
+    Atomic<size_t> _size;
     char _pad4[DEFAULT_PADDING_SIZE - sizeof(size_t)];
 
     size_t bucket_size(size_t bucket) {
@@ -212,7 +213,7 @@ private:
     bool initialize(size_t initial_capacity, size_t max_capacity);
 
     void reset() {
-      _size = 0;
+      _size.store_relaxed(0);
       _should_grow = false;
     }
 
