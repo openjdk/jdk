@@ -89,6 +89,17 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     return false;
   }
 
+  // Between consecutive mixed-evacuation cycles, the live data within each candidate region may change due to
+  // promotions and old-gen evacuations.  Re-sort the candidate regions in order to first evacuate regions that have
+  // the smallest amount of live data.  These are easiest to evacuate with least effort.  Doing these first allows
+  // us to more quickly replenish free memory with empty regions.
+  for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
+    ShenandoahHeapRegion* r = _region_data[i].get_region();
+    _region_data[i].update_livedata(r->get_mixed_candidate_live_data_bytes());
+  }
+  QuickSort::sort<RegionData>(_region_data + _next_old_collection_candidate, unprocessed_old_collection_candidates(),
+                              compare_by_live);
+
   _first_pinned_candidate = NOT_FOUND;
 
   uint included_old_regions = 0;
@@ -335,7 +346,13 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
-    live_data += live_bytes;
+    if (!region->was_promoted_in_place()) {
+      // As currently implemented, region->get_live_data_bytes() represents bytes concurrently marked.
+      // Expansion of the region by promotion during concurrent marking is above TAMS, and is not included
+      // as live-data at [start of] old marking.
+      live_data += live_bytes;
+    }
+    // else, regions that were promoted in place had 0 old live data at mark start
 
     if (region->is_regular() || region->is_regular_pinned()) {
         // Only place regular or pinned regions with live data into the candidate set.
@@ -374,7 +391,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     }
   }
 
-  // TODO: subtract from live_data bytes promoted during concurrent GC.
   _old_generation->set_live_bytes_at_last_mark(live_data);
 
   // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first.  We sort by live-data.
@@ -409,6 +425,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     ShenandoahHeapRegion* r = candidates[i].get_region();
     size_t region_garbage = r->garbage();
     size_t region_free = r->free();
+
+    r->capture_mixed_candidate_garbage();
     candidates_garbage += region_garbage;
     unfragmented += region_free;
   }
@@ -451,6 +469,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
              r->index(), ShenandoahHeapRegion::region_state_to_string(r->state()));
       const size_t region_garbage = r->garbage();
       const size_t region_free = r->free();
+
+      r->capture_mixed_candidate_garbage();
       candidates_garbage += region_garbage;
       unfragmented += region_free;
       defrag_count++;
@@ -761,10 +781,10 @@ void ShenandoahOldHeuristics::record_success_concurrent() {
   this->ShenandoahHeuristics::record_success_concurrent();
 }
 
-void ShenandoahOldHeuristics::record_success_degenerated() {
+void ShenandoahOldHeuristics::record_degenerated() {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_success_degenerated();
+  this->ShenandoahHeuristics::record_degenerated();
 }
 
 void ShenandoahOldHeuristics::record_success_full() {

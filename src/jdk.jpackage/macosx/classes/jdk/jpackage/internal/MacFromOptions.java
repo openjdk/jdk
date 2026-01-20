@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
-import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
+import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_CATEGORY;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_STORE;
@@ -49,14 +49,17 @@ import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 import jdk.jpackage.internal.SigningIdentityBuilder.ExpiredCertificateException;
 import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
+import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
@@ -71,7 +74,9 @@ import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.Result;
+import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
@@ -89,7 +94,14 @@ final class MacFromOptions {
 
         final var pkgBuilder = new MacDmgPackageBuilder(superPkgBuilder);
 
-        MAC_DMG_CONTENT.ifPresentIn(options, pkgBuilder::dmgContent);
+        MAC_DMG_CONTENT.findIn(options).map((List<Collection<RootedPath>> v) -> {
+            // Reverse the order of content sources.
+            // If there are multiple source files for the same
+            // destination file, only the first will be used.
+            // Reversing the order of content sources makes it use the last file
+            // from the original list of source files for the given destination file.
+            return v.reversed().stream().flatMap(Collection::stream).toList();
+        }).ifPresent(pkgBuilder::dmgRootDirSources);
 
         return pkgBuilder.create();
     }
@@ -106,7 +118,7 @@ final class MacFromOptions {
         final boolean sign = MAC_SIGN.findIn(options).orElse(false);
         final boolean appStore = MAC_APP_STORE.findIn(options).orElse(false);
 
-        final var appResult = Result.create(() -> createMacApplicationInternal(options));
+        final var appResult = Result.of(() -> createMacApplicationInternal(options));
 
         final Optional<MacPkgPackageBuilder> pkgBuilder;
         if (appResult.hasValue()) {
@@ -146,18 +158,18 @@ final class MacFromOptions {
 
                 final var expiredAppCertException = appResult.firstError().orElseThrow();
 
-                final var pkgSignConfigResult = Result.create(signingIdentityBuilder::create);
+                final var pkgSignConfigResult = Result.of(signingIdentityBuilder::create);
                 try {
                     rethrowIfNotExpiredCertificateException(pkgSignConfigResult);
                     // The certificate for the package signing config is also expired!
                 } catch (RuntimeException ex) {
                     // Some error occurred trying to configure the signing config for the package.
                     // Ignore it, bail out with the first error.
-                    rethrowUnchecked(expiredAppCertException);
+                    throw toUnchecked(expiredAppCertException);
                 }
 
                 Log.error(pkgSignConfigResult.firstError().orElseThrow().getMessage());
-                rethrowUnchecked(expiredAppCertException);
+                throw toUnchecked(expiredAppCertException);
             }
         }
 
@@ -276,16 +288,12 @@ final class MacFromOptions {
 
         final var builder = new MacPackageBuilder(createPackageBuilder(options, app.app(), type));
 
-        app.externalApp()
-                .map(ExternalApplication::extra)
-                .flatMap(MAC_SIGN::findIn)
-                .ifPresent(builder::predefinedAppImageSigned);
-
-        PREDEFINED_RUNTIME_IMAGE.findIn(options)
-                .map(MacBundle::new)
-                .filter(MacBundle::isValid)
-                .map(MacBundle::isSigned)
-                .ifPresent(builder::predefinedAppImageSigned);
+        for (OptionValue<Path> ov : List.of(PREDEFINED_APP_IMAGE, PREDEFINED_RUNTIME_IMAGE)) {
+            ov.findIn(options)
+                    .flatMap(MacBundle::fromPath)
+                    .map(MacPackagingPipeline::isSigned)
+                    .ifPresent(builder::predefinedAppImageSigned);
+        }
 
         return builder;
     }
@@ -303,7 +311,7 @@ final class MacFromOptions {
             }
         }
 
-        rethrowUnchecked(ex);
+        throw toUnchecked(ex);
     }
 
     private static SigningIdentityBuilder createSigningIdentityBuilder(Options options) {

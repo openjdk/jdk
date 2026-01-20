@@ -246,6 +246,13 @@ public:
 
   // Do not match base-ptr edge
   virtual uint match_edge(uint idx) const;
+
+#ifdef ASSERT
+  bool address_input_has_same_base() const {
+    Node *addp = in(Address);
+    return !addp->is_AddP() || addp->in(Base)->is_top() || addp->in(Base) == in(Base);
+  }
+#endif
 };
 
 //------------------------------OrINode----------------------------------------
@@ -317,14 +324,16 @@ public:
 //------------------------------MaxNode----------------------------------------
 // Max (or min) of 2 values.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
-class MaxNode : public AddNode {
+class MinMaxNode : public AddNode {
 private:
   static Node* build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn);
   static Node* build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn);
   Node* extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands);
 
 public:
-  MaxNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  MinMaxNode(Node* in1, Node* in2) : AddNode(in1, in2) {
+    init_class_id(Class_MinMax);
+  }
   virtual int Opcode() const = 0;
   virtual int max_opcode() const = 0;
   virtual int min_opcode() const = 0;
@@ -366,9 +375,9 @@ public:
 //------------------------------MaxINode---------------------------------------
 // Maximum of 2 integers.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
-class MaxINode : public MaxNode {
+class MaxINode : public MinMaxNode {
 public:
-  MaxINode( Node *in1, Node *in2 ) : MaxNode(in1,in2) {}
+  MaxINode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::make(min_jint); }
@@ -383,9 +392,9 @@ public:
 //------------------------------MinINode---------------------------------------
 // MINimum of 2 integers.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
-class MinINode : public MaxNode {
+class MinINode : public MinMaxNode {
 public:
-  MinINode( Node *in1, Node *in2 ) : MaxNode(in1,in2) {}
+  MinINode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::make(max_jint); }
@@ -399,9 +408,9 @@ public:
 
 //------------------------------MaxLNode---------------------------------------
 // MAXimum of 2 longs.
-class MaxLNode : public MaxNode {
+class MaxLNode : public MinMaxNode {
 public:
-  MaxLNode(Compile* C, Node* in1, Node* in2) : MaxNode(in1, in2) {
+  MaxLNode(Compile* C, Node* in1, Node* in2) : MinMaxNode(in1, in2) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
@@ -418,9 +427,9 @@ public:
 
 //------------------------------MinLNode---------------------------------------
 // MINimum of 2 longs.
-class MinLNode : public MaxNode {
+class MinLNode : public MinMaxNode {
 public:
-  MinLNode(Compile* C, Node* in1, Node* in2) : MaxNode(in1, in2) {
+  MinLNode(Compile* C, Node* in1, Node* in2) : MinMaxNode(in1, in2) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
@@ -437,9 +446,9 @@ public:
 
 //------------------------------MaxFNode---------------------------------------
 // Maximum of 2 floats.
-class MaxFNode : public MaxNode {
+class MaxFNode : public MinMaxNode {
 public:
-  MaxFNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  MaxFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeF::NEG_INF; }
@@ -451,9 +460,9 @@ public:
 
 //------------------------------MinFNode---------------------------------------
 // Minimum of 2 floats.
-class MinFNode : public MaxNode {
+class MinFNode : public MinMaxNode {
 public:
-  MinFNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  MinFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeF::POS_INF; }
@@ -465,9 +474,9 @@ public:
 
 //------------------------------MaxHFNode--------------------------------------
 // Maximum of 2 half floats.
-class MaxHFNode : public MaxNode {
+class MaxHFNode : public MinMaxNode {
 public:
-  MaxHFNode(Node* in1, Node* in2) : MaxNode(in1, in2) {}
+  MaxHFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type* add_ring(const Type*, const Type*) const;
   virtual const Type* add_id() const { return TypeH::NEG_INF; }
@@ -479,9 +488,9 @@ public:
 
 //------------------------------MinHFNode---------------------------------------
 // Minimum of 2 half floats.
-class MinHFNode : public MaxNode {
+class MinHFNode : public MinMaxNode {
 public:
-  MinHFNode(Node* in1, Node* in2) : MaxNode(in1, in2) {}
+  MinHFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type* add_ring(const Type*, const Type*) const;
   virtual const Type* add_id() const { return TypeH::POS_INF; }
@@ -493,9 +502,9 @@ public:
 
 //------------------------------MaxDNode---------------------------------------
 // Maximum of 2 doubles.
-class MaxDNode : public MaxNode {
+class MaxDNode : public MinMaxNode {
 public:
-  MaxDNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  MaxDNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeD::NEG_INF; }
@@ -507,9 +516,9 @@ public:
 
 //------------------------------MinDNode---------------------------------------
 // Minimum of 2 doubles.
-class MinDNode : public MaxNode {
+class MinDNode : public MinMaxNode {
 public:
-  MinDNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  MinDNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
   virtual int Opcode() const;
   virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeD::POS_INF; }
