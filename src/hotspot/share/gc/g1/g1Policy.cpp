@@ -739,9 +739,6 @@ double G1Policy::constant_other_time_ms(double pause_time_ms) const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  if (!_g1h->concurrent_mark()->is_fully_initialized()) {
-    return false;
-  }
   return _g1h->concurrent_mark()->in_progress() || collector_state()->in_young_gc_before_mixed();
 }
 
