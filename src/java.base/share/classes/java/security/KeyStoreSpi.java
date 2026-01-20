@@ -129,8 +129,8 @@ public abstract class KeyStoreSpi {
     public abstract Date engineGetCreationDate(String alias);
 
     /**
-     * Returns the instant that the entry identified
-     * by the given alias was created.
+     * Returns the instant that the entry identified by the given alias was
+     * created.
      * <p>
      * Subclasses should override this method to directly return an instant.
      *
@@ -140,8 +140,8 @@ public abstract class KeyStoreSpi {
      *
      * @param alias the alias name
      *
-     * @return the creation instant of this entry, or {@code null}
-     * if the given alias does not exist
+     * @return the instant that the entry identified by the given alias
+     * was created, or {@code null} if the given alias does not exist
      *
      * @since 27
      */

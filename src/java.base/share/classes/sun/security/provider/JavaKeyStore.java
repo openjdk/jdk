@@ -245,13 +245,13 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
 
 
     /**
-     * Returns the instant that the entry identified
-     * by the given alias was created.
+     * Returns the instant that the entry identified by the given alias was
+     * created.
      *
      * @param alias the alias name
      *
-     * @return the creation instant of this entry, or null if the given alias does
-     * not exist
+     * @return the instant that the entry identified by the given alias
+     * was created, or {@code null} if the given alias does not exist
      *
      * @since 27
      */
