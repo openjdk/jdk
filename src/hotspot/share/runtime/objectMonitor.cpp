@@ -2047,7 +2047,7 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
           old_state == java_lang_VirtualThread::TIMED_WAIT) {
         java_lang_VirtualThread::cmpxchg_state(vthread, old_state, java_lang_VirtualThread::BLOCKED);
       }
-      // If we will add the vthread to the entry list below then we need to 
+      // If we will add the vthread to the entry list below then we need to
       // increment the counter *before* doing so.
       // Adding to _entry_list uses Atomic::cmpxchg() which already provides
       // a fence that prevents reordering of the stores.
