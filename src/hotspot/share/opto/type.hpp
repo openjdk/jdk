@@ -1018,7 +1018,7 @@ public:
 };
 
 //------------------------------TypeVect---------------------------------------
-// Class of Vector Types
+// Basic class of vector (mask) types.
 class TypeVect : public Type {
   const BasicType _elem_bt;  // Vector's element type
   const uint _length;  // Elements in vector (power of 2)
@@ -1058,6 +1058,16 @@ public:
 #endif
 };
 
+// TypeVect subclasses representing vectors or vector masks with "BVectMask" or "NVectMask"
+// layout (see vectornode.hpp for detailed notes on vector mask representations), mapped
+// to vector registers and distinguished by vector register size:
+//
+// - TypeVectA: Scalable vector type (variable size, e.g., AArch64 SVE, RISC-V RVV)
+// - TypeVectS: 32-bit vector type
+// - TypeVectD: 64-bit vector type
+// - TypeVectX: 128-bit vector type
+// - TypeVectY: 256-bit vector type
+// - TypeVectZ: 512-bit vector type
 class TypeVectA : public TypeVect {
   friend class TypeVect;
   TypeVectA(BasicType elem_bt, uint length) : TypeVect(VectorA, elem_bt, length) {}
@@ -1088,6 +1098,9 @@ class TypeVectZ : public TypeVect {
   TypeVectZ(BasicType elem_bt, uint length) : TypeVect(VectorZ, elem_bt, length) {}
 };
 
+// Class of TypeVectMask, representing vector masks with "PVectMask" layout (see
+// vectornode.hpp for detailed notes on vector mask representations), mapped to
+// dedicated hardware predicate/mask registers.
 class TypeVectMask : public TypeVect {
 public:
   friend class TypeVect;
