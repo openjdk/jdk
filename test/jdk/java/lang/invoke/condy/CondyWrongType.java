@@ -112,9 +112,7 @@ public class CondyWrongType {
             assertDoesNotThrow(() -> mh.invoke());
         } else {
             Throwable caught = assertThrows(BootstrapMethodError.class, () -> mh.invoke());
-            caught = caught.getCause();
-            assertNotNull(caught);
-            assertTrue(ClassCastException.class.isAssignableFrom(caught.getClass()));
+            assertInstanceOf(ClassCastException.class, caught.getCause());
         }
     }
 

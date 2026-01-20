@@ -238,8 +238,7 @@ public class CondyBSMInvocation {
             );
 
             var e = assertThrows(BootstrapMethodError.class, mh::invoke);
-            Throwable t = e.getCause();
-            assertTrue(WrongMethodTypeException.class.isAssignableFrom(t.getClass()));
+            assertInstanceOf(WrongMethodTypeException.class, e.getCause());
         }
     }
 }

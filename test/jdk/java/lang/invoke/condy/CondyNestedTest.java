@@ -246,11 +246,9 @@ public class CondyNestedTest {
     static void test(Method m, Class<? extends Throwable>... ts) {
         Throwable caught = assertThrows(Throwable.class, () -> m.invoke(null));
 
-        String actualMessage = null;
         for (int i = 0; i < ts.length; i++) {
-            actualMessage = caught.getMessage();
-            assertNotNull(caught);
-            assertTrue(ts[i].isAssignableFrom(caught.getClass()));
+            int level = i;
+            assertInstanceOf(ts[i], caught, () -> "Level %d".formatted(level));
             caught = caught.getCause();
         }
     }

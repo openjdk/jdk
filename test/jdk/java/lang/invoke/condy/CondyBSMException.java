@@ -76,9 +76,9 @@ public class CondyBSMException {
 
         String actualMessage = null;
         for (int i = 0; i < ts.length; i++) {
+            int level = i;
+            assertInstanceOf(ts[i], caught, () -> "Level %d".formatted(level));
             actualMessage = caught.getMessage();
-            assertNotNull(caught);
-            assertTrue(ts[i].isAssignableFrom(caught.getClass()));
             caught = caught.getCause();
         }
 
