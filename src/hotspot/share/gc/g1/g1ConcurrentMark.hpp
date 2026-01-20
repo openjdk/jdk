@@ -902,7 +902,7 @@ public:
   inline bool deal_with_reference(T* p);
 
   // Scans an object and visits its children.
-  inline void scan_task_entry(G1TaskQueueEntry task_entry, bool stolen);
+  inline void process_entry(G1TaskQueueEntry task_entry, bool stolen);
 
   // Pushes an object on the local queue.
   inline void push(G1TaskQueueEntry task_entry);

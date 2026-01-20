@@ -103,7 +103,7 @@ bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
   // We move that task's local finger along.
   _task->move_finger_to(addr);
 
-  _task->scan_task_entry(G1TaskQueueEntry(cast_to_oop(addr)), false /* stolen */);
+  _task->process_entry(G1TaskQueueEntry(cast_to_oop(addr)), false /* stolen */);
   // we only partially drain the local queue and global stack
   _task->drain_local_queue(true);
   _task->drain_global_stack(true);
@@ -2270,7 +2270,7 @@ void G1CMTask::drain_local_queue(bool partially) {
     G1TaskQueueEntry entry;
     bool ret = _task_queue->pop_local(entry);
     while (ret) {
-      scan_task_entry(entry, false /* stolen */);
+      process_entry(entry, false /* stolen */);
       if (_task_queue->size() <= target_size || has_aborted()) {
         ret = false;
       } else {
@@ -2515,7 +2515,7 @@ void G1CMTask::attempt_stealing() {
   while (!has_aborted()) {
     G1TaskQueueEntry entry;
     if (_cm->try_stealing(_worker_id, entry)) {
-      scan_task_entry(entry, true /* stolen */);
+      process_entry(entry, true /* stolen */);
 
       // And since we're towards the end, let's totally drain the
       // local queue and global stack.

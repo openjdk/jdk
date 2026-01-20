@@ -107,7 +107,9 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
 #endif
 
 // It scans an object and visits its children.
-inline void G1CMTask::scan_task_entry(G1TaskQueueEntry task_entry, bool stolen) { process_grey_task_entry<true>(task_entry, stolen); }
+inline void G1CMTask::process_entry(G1TaskQueueEntry task_entry, bool stolen) {
+  process_grey_task_entry<true>(task_entry, stolen);
+}
 
 inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
   assert(task_entry.is_partial_array_state() || _g1h->is_in_reserved(task_entry.to_oop()), "invariant");
