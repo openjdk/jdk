@@ -224,23 +224,28 @@ public class LoopCombinatorTest {
     }
 
     @ParameterizedTest
-    @MethodSource("whileLoopTestData")
+    @MethodSource("whileLoopPassData")
     public void testWhileLoop(MethodHandle MH_zero,
-                                     MethodHandle MH_pred,
-                                     MethodHandle MH_step,
-                                     String messageOrNull) throws Throwable {
+                              MethodHandle MH_pred,
+                              MethodHandle MH_step) throws Throwable {
         // int i = 0; while (i < limit) { ++i; } return i; => limit
-        if (messageOrNull != null) {
-            var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.whileLoop(MH_zero, MH_pred, MH_step));
-            assertEqualsFIXME(messageOrNull, iae.getMessage());
-            return;
-        }
         MethodHandle loop = MethodHandles.whileLoop(MH_zero, MH_pred, MH_step);
         if (MH_step.type().equals(While.MH_step.type()))
             assertEquals(While.MT_while, loop.type());
         assertEquals(MH_step.type().dropParameterTypes(0, 1), loop.type());
         while (loop.type().parameterCount() > 1)  loop = snip(loop);
         assertEquals(23, loop.invoke(23));
+    }
+
+    @ParameterizedTest
+    @MethodSource("whileLoopFailData")
+    public void testWhileLoopFail(MethodHandle MH_zero,
+                                  MethodHandle MH_pred,
+                                  MethodHandle MH_step,
+                                  String message) throws Throwable {
+        // int i = 0; while (i < limit) { ++i; } return i; => limit
+        var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.whileLoop(MH_zero, MH_pred, MH_step));
+        assertEqualsFIXME(message, iae.getMessage());
     }
 
     static void assertEqualsFIXME(String expect, String actual) {
@@ -250,7 +255,7 @@ public class LoopCombinatorTest {
         }
     }
 
-    static Object[][] whileLoopTestData() {
+    static Object[][] whileLoopPassData() {
         MethodHandle
             zeroI = While.MH_zero,
             zeroX = snip(zeroI),
@@ -264,28 +269,44 @@ public class LoopCombinatorTest {
             ;
         return new Object[][] {
             // normal while loop clauses, perhaps with effectively-identical reductions
-            {zeroI, predII, stepII, null},
-            {zeroX, predII, stepII, null},
-            {null, predII, stepII, null},
+            {zeroI, predII, stepII},
+            {zeroX, predII, stepII},
+            {null, predII, stepII},
             // expanded while loop clauses
-            {zeroIB, predIIB, stepIIB, null},
-            {zeroI, predIIB, stepIIB, null},
-            {null, predIIB, stepIIB, null},
-            {zeroIB, predII, stepIIB, null},
-            {zeroX, predII, stepIIB, null},
-            {null, predII, stepIIB, null},
-            // short step clauses cause errors
-            {zeroI, predII, stepIX, "loop predicate must match: (int,int)boolean != (int)boolean"},
-            {zeroIB, predIX, stepIX, "loop initializer must match: (int,byte)int != ()int"},
-            // bad body type
-            {zeroI, predII, tweak(stepII, -1, char.class), "body function must match: (int,int)char != (char,int,int)char"},
-            {zeroI, predII, tweak(stepII,  0, char.class), "body function must match: (char,int)int != (int,char,int)int"},
-            // bad pred type
-            {zeroI, tweak(predII, -1, char.class), stepII, "loop predicate must match: (int,int)char != (int,int)boolean"},
-            {zeroI, tweak(predII,  0, char.class), stepII, "loop predicate must match: (char,int)boolean != (int,int)boolean"},
-            // bad init type
-            {tweak(zeroI, -1, char.class), predII, stepII, "loop initializer must match: (int)char != (int)int"},
-            {tweak(zeroI,  0, char.class), predII, stepII, "loop initializer must match: (char)int != (int)int"},
+            {zeroIB, predIIB, stepIIB},
+            {zeroI, predIIB, stepIIB},
+            {null, predIIB, stepIIB},
+            {zeroIB, predII, stepIIB},
+            {zeroX, predII, stepIIB},
+            {null, predII, stepIIB},
+        };
+    }
+
+    static Object[][] whileLoopFailData() {
+        MethodHandle
+                zeroI = While.MH_zero,
+                zeroX = snip(zeroI),
+                zeroIB = slap(zeroI, byte.class),
+                predII = While.MH_pred,
+                predIX = snip(predII),
+                predIIB = slap(predII, byte.class),
+                stepII = While.MH_step,
+                stepIX = snip(stepII),
+                stepIIB = slap(stepII, byte.class)
+                        ;
+        return new Object[][] {
+                // short step clauses cause errors
+                {zeroI, predII, stepIX, "loop predicate must match: (int,int)boolean != (int)boolean"},
+                {zeroIB, predIX, stepIX, "loop initializer must match: (int,byte)int != ()int"},
+                // bad body type
+                {zeroI, predII, tweak(stepII, -1, char.class), "body function must match: (int,int)char != (char,int,int)char"},
+                {zeroI, predII, tweak(stepII,  0, char.class), "body function must match: (char,int)int != (int,char,int)int"},
+                // bad pred type
+                {zeroI, tweak(predII, -1, char.class), stepII, "loop predicate must match: (int,int)char != (int,int)boolean"},
+                {zeroI, tweak(predII,  0, char.class), stepII, "loop predicate must match: (char,int)boolean != (int,int)boolean"},
+                // bad init type
+                {tweak(zeroI, -1, char.class), predII, stepII, "loop initializer must match: (int)char != (int)int"},
+                {tweak(zeroI,  0, char.class), predII, stepII, "loop initializer must match: (char)int != (int)int"},
         };
     }
 
@@ -327,23 +348,28 @@ public class LoopCombinatorTest {
     }
 
     @ParameterizedTest
-    @MethodSource("whileLoopTestData")
-    public void testDoWhileLoop(MethodHandle MH_zero,
-                                       MethodHandle MH_pred,
-                                       MethodHandle MH_step,
-                                       String messageOrNull) throws Throwable {
+    @MethodSource("whileLoopPassData")
+    public void testDoWhileLoopPass(MethodHandle MH_zero,
+                                    MethodHandle MH_pred,
+                                    MethodHandle MH_step) throws Throwable {
         // int i = 0; do { ++i; } while (i < limit); return i; => limit
-        if (messageOrNull != null) {
-            var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.doWhileLoop(MH_zero, MH_step, MH_pred));
-            assertEqualsFIXME(messageOrNull, iae.getMessage());
-            return;
-        }
         MethodHandle loop = MethodHandles.doWhileLoop(MH_zero, MH_step, MH_pred);
         if (MH_step.type().equals(While.MH_step.type()))
             assertEquals(While.MT_while, loop.type());
         assertEquals(MH_step.type().dropParameterTypes(0, 1), loop.type());
         while (loop.type().parameterCount() > 1)  loop = snip(loop);
         assertEquals(23, loop.invoke(23));
+    }
+
+    @ParameterizedTest
+    @MethodSource("whileLoopFailData")
+    public void testDoWhileLoopFail(MethodHandle MH_zero,
+                                    MethodHandle MH_pred,
+                                    MethodHandle MH_step,
+                                    String message) throws Throwable {
+        // int i = 0; do { ++i; } while (i < limit); return i; => limit
+        var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.doWhileLoop(MH_zero, MH_step, MH_pred));
+        assertEqualsFIXME(message, iae.getMessage());
     }
 
     @Test

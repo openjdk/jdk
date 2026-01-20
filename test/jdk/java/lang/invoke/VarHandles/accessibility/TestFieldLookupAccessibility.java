@@ -46,11 +46,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestFieldLookupAccessibility {
     static boolean writeAccess;
 
@@ -190,7 +188,7 @@ public class TestFieldLookupAccessibility {
         }
     }
 
-    public Object[][] lookupProvider() throws Exception {
+    public static Object[][] lookupProvider() throws Exception {
         Stream<List<Object>> baseCases = Stream.of(
                 // Look up from same package
                 List.of(pkg.A.class, pkg.A.lookup(), pkg.A.inaccessibleFields()),

@@ -38,7 +38,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -48,7 +47,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  * @author jrose
  */
 @SuppressWarnings("cast")  // various casts help emphasize arguments to invokeExact
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class InvokeGenericTest {
     // How much output?
     static int verbosity = 0;
