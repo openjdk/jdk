@@ -5004,13 +5004,15 @@ static AddNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phas
       return new MinLNode(phase->C, a, b);
     case Op_MaxL:
       return new MaxLNode(phase->C, a, b);
+    case Op_OrL:
+      return new OrLNode(a, b);
     default:
       ShouldNotReachHere();
   }
 }
 
 static bool is_associative(Node* node) {
-  return node->is_MinMax() || node->Opcode() == Op_AddI || node->Opcode() == Op_AddL;
+  return node->is_MinMax() || node->Opcode() == Op_AddI || node->Opcode() == Op_AddL || node->Opcode() == Op_OrL;
 }
 
 static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* loop_head, PhaseIdealLoop* phase) {

@@ -108,7 +108,8 @@ public class TestReductionReassociation {
         MIN_I(CodeGenerationDataNameType.ints()),
         MAX_I(CodeGenerationDataNameType.ints()),
         MIN_L(CodeGenerationDataNameType.longs()),
-        MAX_L(CodeGenerationDataNameType.longs());
+        MAX_L(CodeGenerationDataNameType.longs()),
+        OR_L(CodeGenerationDataNameType.longs());
 
         final CodeGenerationDataNameType type;
 
@@ -284,6 +285,7 @@ public class TestReductionReassociation {
                     case MAX_I -> "Integer.max(#a, #b)";
                     case MIN_L -> "Long.min(#a, #b)";
                     case MAX_L -> "Long.max(#a, #b)";
+                    case OR_L -> "#a | #b";
                 }
             ));
             return template.asToken();
@@ -294,10 +296,11 @@ public class TestReductionReassociation {
                 let("resultName", resultName),
                 let("boxedType", getBoxedTypeName()),
                 let("type", add.type.name()),
-                "#type ", resultName, " = #boxedType.",
+                "#type ", resultName, " = ",
                 switch (add) {
-                    case MIN_D, MIN_F, MIN_I, MIN_L -> "MAX_VALUE";
-                    case ADD_I, ADD_L, MAX_D, MAX_F, MAX_I, MAX_L -> "MIN_VALUE";
+                    case MIN_D, MIN_F, MIN_I, MIN_L -> "#boxedType.MAX_VALUE";
+                    case ADD_I, ADD_L, MAX_D, MAX_F, MAX_I, MAX_L -> "#boxedType.MIN_VALUE";
+                    case OR_L -> "0";
                 },
                 ";\n"
             ));
