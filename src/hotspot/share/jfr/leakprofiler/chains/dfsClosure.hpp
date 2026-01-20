@@ -61,9 +61,11 @@ class DFSClosure : public BasicOopIterateClosure {
   };
   Stack<ProbeStackItem, mtTracing> _probe_stack;
 
-  const ProbeStackItem* _current_item;
-  oop current_pointee() const     { return _current_item->r.dereference(); }
-  size_t current_depth() const    { return _current_item == nullptr ? 0 : _current_item->depth; }
+  // Walkstate
+  UnifiedOopRef _current_ref;
+  oop _current_pointee;
+  size_t _current_depth;
+  int _current_chunkindex;
 
   bool pointee_was_visited(const oop pointee) const { return _mark_bits->is_marked(pointee); }
   void mark_pointee_as_visited(const oop pointee)   { _mark_bits->mark_obj(pointee); }
@@ -73,7 +75,9 @@ class DFSClosure : public BasicOopIterateClosure {
   void handle_oop();
   void handle_objarrayoop();
 
-  void push_to_probe_stack(UnifiedOopRef ref, oop pointee, size_t depth, int chunkindex);
+  void probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee, size_t depth, int chunkindex);
+  void probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth);
+  bool probe_stack_pop();
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
