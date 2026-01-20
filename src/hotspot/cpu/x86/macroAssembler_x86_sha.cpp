@@ -1353,7 +1353,7 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
 
     vmovdqu(BYTE_FLIP_MASK, ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512())); // PSHUFFLE_BYTE_FLIP_MASK wrt rip
     vmovdqu(YMM_MASK_LO,    ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_ymm_lo_addr_sha512())); // MASK_YMM_LO wrt rip
- 
+
     movq(g, Address(CTX, 8 * 6));
 
     bind(loop0);
