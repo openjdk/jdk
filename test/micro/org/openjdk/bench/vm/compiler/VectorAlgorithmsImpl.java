@@ -594,8 +594,7 @@ public class VectorAlgorithmsImpl {
             IntVector v = IntVector.fromArray(SPECIES_I, a, i);
             var mask = v.compare(VectorOperators.EQ, es);
             if (mask.anyTrue()) {
-                var ml = mask.toLong();
-                return i + Long.numberOfTrailingZeros(ml);
+                return i + mask.firstTrue();
             }
         }
         for (; i < a.length; i++) {
