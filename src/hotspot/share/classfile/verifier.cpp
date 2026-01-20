@@ -181,18 +181,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   HandleMark hm(THREAD);
   ResourceMark rm(THREAD);
 
-  // Eagerly allocate the identity hash code for a klass. This is a fallout
-  // from 6320749 and 8059924: hash code generator is not supposed to be called
-  // during the safepoint, but it allows to sneak the hashcode in during
-  // verification. Without this eager hashcode generation, we may end up
-  // installing the hashcode during some other operation, which may be at
-  // safepoint -- blowing up the checks. It was previously done as the side
-  // effect (sic!) for external_name(), but instead of doing that, we opt to
-  // explicitly push the hashcode in here. This is signify the following block
-  // is IMPORTANT:
-  if (klass->java_mirror() != nullptr) {
-    klass->java_mirror()->identity_hash();
-  }
+  assert(klass->java_mirror() != nullptr, "must be");
 
   if (!is_eligible_for_verification(klass, should_verify_class)) {
     return true;
