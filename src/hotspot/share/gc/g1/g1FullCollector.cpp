@@ -287,8 +287,8 @@ public:
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1FullKeepAliveClosure keep_alive(_collector.marker(index));
     BarrierEnqueueDiscoveredFieldClosure enqueue;
-    G1FollowStackClosure* complete_gc = _collector.marker(index)->stack_closure();
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_gc);
+    G1MarkStackClosure* complete_marking = _collector.marker(index)->stack_closure();
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_marking);
   }
 };
 

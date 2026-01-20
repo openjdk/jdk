@@ -82,7 +82,7 @@ inline bool G1FullGCMarker::is_task_queue_empty() {
   return _task_queue.is_empty();
 }
 
-inline void G1FullGCMarker::follow_array(objArrayOop obj, size_t start, size_t end) {
+inline void G1FullGCMarker::process_array_chunk(objArrayOop obj, size_t start, size_t end) {
   obj->oop_iterate_elements_range(mark_closure(),
                                   checked_cast<int>(start),
                                   checked_cast<int>(end));
@@ -91,14 +91,14 @@ inline void G1FullGCMarker::follow_array(objArrayOop obj, size_t start, size_t e
 inline void G1FullGCMarker::dispatch_task(const ScannerTask& task, bool stolen) {
   if (task.is_partial_array_state()) {
     assert(_bitmap->is_marked(task.to_partial_array_state()->source()), "should be marked");
-    follow_partial_objArray(task.to_partial_array_state(), stolen);
+    process_partial_array(task.to_partial_array_state(), stolen);
   } else {
     oop obj = task.to_oop();
     assert(_bitmap->is_marked(obj), "should be marked");
     if (obj->is_objArray()) {
       // Handle object arrays explicitly to allow them to
       // be split into chunks if needed.
-      start_partial_objArray((objArrayOop)obj);
+      start_partial_array_processing((objArrayOop)obj);
     } else {
       obj->oop_iterate(mark_closure());
     }
@@ -117,7 +117,7 @@ inline void G1FullGCMarker::publish_and_drain_oop_tasks() {
   }
 }
 
-void G1FullGCMarker::follow_marking_stacks() {
+void G1FullGCMarker::process_marking_stacks() {
   do {
     publish_and_drain_oop_tasks();
   } while (!is_task_queue_empty());

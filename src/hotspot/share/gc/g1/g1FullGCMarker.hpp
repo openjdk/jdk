@@ -62,7 +62,7 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
 
   // Marking closures
   G1MarkAndPushClosure  _mark_closure;
-  G1FollowStackClosure  _stack_closure;
+  G1MarkStackClosure    _stack_closure;
   CLDToOopClosure       _cld_closure;
   StringDedup::Requests _string_dedup_requests;
 
@@ -73,13 +73,13 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   inline bool mark_object(oop obj);
 
   // Marking helpers
-  inline void follow_array(objArrayOop obj, size_t start, size_t end);
+  inline void process_array_chunk(objArrayOop obj, size_t start, size_t end);
   inline void dispatch_task(const ScannerTask& task, bool stolen);
   // Start processing the given objArrayOop by first pushing its continuations and
   // then scanning the first chunk.
-  void start_partial_objArray(objArrayOop obj);
+  void start_partial_array_processing(objArrayOop obj);
   // Process the given continuation.
-  void follow_partial_objArray(PartialArrayState* state, bool stolen);
+  void process_partial_array(PartialArrayState* state, bool stolen);
 
   inline void publish_and_drain_oop_tasks();
 public:
@@ -88,19 +88,19 @@ public:
                  G1RegionMarkStats* mark_stats);
   ~G1FullGCMarker();
 
-  G1MarkTasksQueue* task_queue()       { return &_task_queue; }
+  G1MarkTasksQueue* task_queue() { return &_task_queue; }
 
   // Marking entry points
   template <class T> inline void mark_and_push(T* p);
 
-  inline void follow_marking_stacks();
+  inline void process_marking_stacks();
   void complete_marking(G1MarkTasksQueueSet* task_queues,
                         TaskTerminator* terminator);
 
   // Closure getters
   CLDToOopClosure*      cld_closure()   { return &_cld_closure; }
   G1MarkAndPushClosure* mark_closure()  { return &_mark_closure; }
-  G1FollowStackClosure* stack_closure() { return &_stack_closure; }
+  G1MarkStackClosure*   stack_closure() { return &_stack_closure; }
 
   // Flush live bytes to regions
   void flush_mark_stats_cache();

@@ -52,28 +52,28 @@ G1FullGCMarker::~G1FullGCMarker() {
   assert(is_task_queue_empty(), "Must be empty at this point");
 }
 
-void G1FullGCMarker::follow_partial_objArray(PartialArrayState* state, bool stolen) {
+void G1FullGCMarker::process_partial_array(PartialArrayState* state, bool stolen) {
   // Access state before release by claim().
   objArrayOop obj_array = objArrayOop(state->source());
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, task_queue(), stolen);
-  follow_array(obj_array, claim._start, claim._end);
+  process_array_chunk(obj_array, claim._start, claim._end);
 }
 
-void G1FullGCMarker::start_partial_objArray(objArrayOop obj) {
+void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {
   mark_closure()->do_klass(obj->klass());
   // Don't push empty arrays to avoid unnecessary work.
   size_t array_length = obj->length();
   if (array_length > 0) {
     size_t initial_chunk_size = _partial_array_splitter.start(task_queue(), obj, nullptr, array_length);
-    follow_array(obj, 0, initial_chunk_size);
+    process_array_chunk(obj, 0, initial_chunk_size);
   }
 }
 
 void G1FullGCMarker::complete_marking(G1ScannerTasksQueueSet* task_queues,
                                       TaskTerminator* terminator) {
   do {
-    follow_marking_stacks();
+    process_marking_stacks();
     ScannerTask stolen_task;
     if (task_queues->steal(_worker_id, stolen_task)) {
       dispatch_task(stolen_task, true);
