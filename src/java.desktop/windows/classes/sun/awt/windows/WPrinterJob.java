@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1733,6 +1733,9 @@ public final class WPrinterJob extends RasterPrinterJob
             if (isRangeSet) {
                 attributes.add(new PageRanges(from, to));
                 setPageRange(from, to);
+            } else {
+                attributes.add(new PageRanges(1, 9999));
+                setPageRange(1, 9999);
             }
             defaultCopies = false;
             attributes.add(new Copies(copies));

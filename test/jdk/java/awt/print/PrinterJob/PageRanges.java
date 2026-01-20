@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6575331
+ * @bug 6575331 8373239
  * @key printer
  * @summary The specified pages should be printed.
  * @library /java/awt/regtesthelpers
