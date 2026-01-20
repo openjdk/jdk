@@ -97,7 +97,7 @@ public class TestReductionReassociation {
     }
 
     enum AssociativeAdd {
-//        ADD_I(CodeGenerationDataNameType.ints()),
+        ADD_I(CodeGenerationDataNameType.ints()),
         ADD_L(CodeGenerationDataNameType.longs()),
         MIN_D(CodeGenerationDataNameType.doubles()),
         MAX_D(CodeGenerationDataNameType.doubles()),
@@ -275,7 +275,7 @@ public class TestReductionReassociation {
                 let("a", a),
                 let("b", b),
                 switch (add) {
-                    case ADD_L -> "#a + #b";
+                    case ADD_I, ADD_L -> "#a + #b";
                     case MIN_D -> "Double.min(#a, #b)";
                     case MAX_D -> "Double.max(#a, #b)";
                     case MIN_F -> "Float.min(#a, #b)";
@@ -297,7 +297,7 @@ public class TestReductionReassociation {
                 "#type ", resultName, " = #boxedType.",
                 switch (add) {
                     case MIN_D, MIN_F, MIN_I, MIN_L -> "MAX_VALUE";
-                    case ADD_L, MAX_D, MAX_F, MAX_I, MAX_L -> "MIN_VALUE";
+                    case ADD_I, ADD_L, MAX_D, MAX_F, MAX_I, MAX_L -> "MIN_VALUE";
                 },
                 ";\n"
             ));
