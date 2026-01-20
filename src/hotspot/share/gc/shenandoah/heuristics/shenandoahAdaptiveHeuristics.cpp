@@ -413,7 +413,7 @@ static double saturate(double value, double min, double max) {
   return MAX2(MIN2(value, max), min);
 }
 
-#define KELVIN_START_GC
+#undef KELVIN_START_GC
 #ifdef KELVIN_START_GC
 const size_t MaxRejectedTriggers = 256;
 typedef struct gc_start_info {
@@ -436,6 +436,7 @@ typedef struct gc_start_info {
   double future_planned_gc_time;
   double avg_time_to_deplete_available;
   bool is_spiking;
+  double rate;
   double spike_rate;
   double spike_time_to_deplete_available;
 } TriggerInfo;
@@ -455,21 +456,21 @@ static void dumpTriggerInfo(size_t first_trigger, size_t rejected_triggers, Trig
     "Acceleration (MB/s/s), Predicted Future GC Time (seconds), "
     "Future Planned GC Time (seconds), "
     "Average Time to Deplete Available (seconds), "
-    "Is Spiking, Spike Rate (MB/s), "
+    "Is Spiking, Rate (MB/s), Spike Rate (MB/s), "
     "Spike Time to Deplete Available (s)",
-    "                                                Min         Learned      Allocatable        Predicted                     Current                              Planned                   Spike",
-    "TimeStamp Capacity     Available    Allocated   Threshold   Steps        (bytes)            Accelerated                   Rate by                              GC     Avg                Time",
-    "|         (Bytes)      (Bytes)      (Bytes)     (Bytes)     |  Avg       |           Avg    GC     Allocated              Accel      Accelerated               Time   Time               to",
-    "|         |            |            |           |           |  Alloc     |           Cycle  Time   Since                  (MB/s)     Consumption               (s)    to                 Deplete",
-    "|         |            |            |           |           |  Rate      |           Time   (s)    Last                   |          (bytes)                   |      Deplete            Available",
-    "|         |            |            |           |           |  (MB/s)    |           (s)    |      Sample                 |          |           Accel         |      Avail   Is         (s)",
-    "|         |            |            |           |           |  |         |           |      |      (bytes)                |          |           MB/s^2)       |      (s)     Spiking    |",
-    "|         |            |            |           |           |  |         |           |      |      |           Spike      |          |           |      Future |      |       |   Spike  |",
-    "|         |            |            |           |           |  |         |           |      |      |           Alloc      |          |           |      GC     |      |       |   Rate   |",
-    "|         |            |            |           |           |  |         |           |      |      |           Rate       |          |           |      Time   |      |       |   (MB/s) |",
-    "|         |            |            |           |           |  |         |           |      |      |           (MB/s)     |          |           |      (s)    |      |       |   |      |",
-    "|         |            |            |           |           |  |         |           |      |      |           |          |          |           |      |      |      |       |   |      |",
-    "v         v            v            v           v           v  v         v           v      v      v           v          v          v           v      v      v      v       v   v      v"
+    "                                                Min         Learned      Allocatable        Predicted                     Current                              Planned                          Spike",
+    "TimeStamp Capacity     Available    Allocated   Threshold   Steps        (bytes)            Accelerated                   Rate by                              GC     Avg                       Time",
+    "|         (Bytes)      (Bytes)      (Bytes)     (Bytes)     |  Avg       |           Avg    GC     Allocated              Accel      Accelerated               Time   Time                      to",
+    "|         |            |            |           |           |  Alloc     |           Cycle  Time   Since                  (MB/s)     Consumption               (s)    to                        Deplete",
+    "|         |            |            |           |           |  Rate      |           Time   (s)    Last                   |          (bytes)                   |      Deplete                   Available",
+    "|         |            |            |           |           |  (MB/s)    |           (s)    |      Sample                 |          |           Accel         |      Avail   Is                (s)",
+    "|         |            |            |           |           |  |         |           |      |      (bytes)                |          |           MB/s^2)       |      (s)     Spiking           |",
+    "|         |            |            |           |           |  |         |           |      |      |           Spike      |          |           |      Future |      |       |   Rate   Spike  |",
+    "|         |            |            |           |           |  |         |           |      |      |           Alloc      |          |           |      GC     |      |       |   (MB/s) Rate   |",
+    "|         |            |            |           |           |  |         |           |      |      |           Rate       |          |           |      Time   |      |       |   |      (MB/s) |",
+    "|         |            |            |           |           |  |         |           |      |      |           (MB/s)     |          |           |      (s)    |      |       |   |      |      |",
+    "|         |            |            |           |           |  |         |           |      |      |           |          |          |           |      |      |      |       |   |      |      |",
+    "v         v            v            v           v           v  v         v           v      v      v           v          v          v           v      v      v      v       v   v      v      v"
   };
   for (unsigned int i = 0; i < sizeof(header) / sizeof(void*); i++) {
     log_info(gc)("%s", header[i]);
@@ -478,7 +479,7 @@ static void dumpTriggerInfo(size_t first_trigger, size_t rejected_triggers, Trig
     size_t __index = (first_trigger + i) % MaxRejectedTriggers;
     log_info(gc)("%.6f, %zu, %zu, %zu, %zu, %zu, "
                  "%.3f, %zu, %.3f, %.3f, %zu, %.3f, %.3f, %zu, %.3f, %.3f, %.3f, %.3f, "
-                 "%s, %.3f, %.3f",
+                 "%s, %.3f, %.3f, %.3f",
                  trigger_log[__index].time_stamp,
                  trigger_log[__index].capacity,
                  trigger_log[__index].available,
@@ -498,6 +499,7 @@ static void dumpTriggerInfo(size_t first_trigger, size_t rejected_triggers, Trig
                  trigger_log[__index].future_planned_gc_time,
                  trigger_log[__index].avg_time_to_deplete_available,
                  trigger_log[__index].is_spiking? "yes": "no",
+                 trigger_log[__index].rate / (1024*1024),
                  trigger_log[__index].spike_rate / (1024*1024),
                  trigger_log[__index].spike_time_to_deplete_available);
   }
@@ -540,8 +542,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   static size_t rejected_trigger_count = 0;
   static size_t first_rejected_trigger = 0;
 
+  //  log_info(gc)("AppendTrigger(first_rejected: %zu, rejected_count: %zu) @%.6f",
+  //               first_rejected_trigger, rejected_trigger_count, ts);
+
+
+
 #define AppendTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,      \
-                          irwps, crba, ca, accel, pfgt, fpgt, attda, is, sr, sttda)         \
+                          irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda)      \
   if (rejected_trigger_count >= MaxRejectedTriggers) {                                      \
     first_rejected_trigger++;                                                               \
     if (first_rejected_trigger >= MaxRejectedTriggers)  {                                   \
@@ -550,8 +557,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   } else {                                                                                  \
     rejected_trigger_count++;                                                               \
   }                                                                                         \
-  log_info(gc)("AppendTrigger(first_rejected: %zu, rejected_count: %zu) @%.6f",             \
-               first_rejected_trigger, rejected_trigger_count, ts);                         \
   {                                                                                         \
     size_t __j;                                                                             \
     __j = (first_rejected_trigger + rejected_trigger_count - 1) % MaxRejectedTriggers;      \
@@ -574,25 +579,26 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     rejected_trigger_log[__j].future_planned_gc_time = fpgt;                                \
     rejected_trigger_log[__j].avg_time_to_deplete_available = attda;                        \
     rejected_trigger_log[__j].is_spiking = is;                                              \
+    rejected_trigger_log[__j].rate = r;                                                     \
     rejected_trigger_log[__j].spike_rate = sr;                                              \
     rejected_trigger_log[__j].spike_time_to_deplete_available = sttda;                      \
   }
 
 #define DumpTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,        \
-                        irwps, crba, ca, accel, pfgt, fpgt, attda, is, sr, sttda)           \
+                        irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda)        \
   AppendTriggerInfo(ts, cap, avail, alloced, mt, ls,                                        \
                     aar, aw, act, pfagt, absls, irwps, crba, ca, accel,                     \
-                    pfgt, fpgt, attda, is, sr, sttda);                                      \
+                    pfgt, fpgt, attda, is, r, sr, sttda);	                            \
   dumpTriggerInfo(first_rejected_trigger, rejected_trigger_count, rejected_trigger_log);    \
   rejected_trigger_count = 0;                                                               \
   first_rejected_trigger = 0;
 
 #else
 #define AppendTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,      \
-                          irwps, crba, ca, accel, pfgt, fpgt, attda, is, sr, sttda) ;
+                          irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda) ;
 
 #define DumpTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,        \
-                        irwps, crba, ca, accel, pfgt, fpgt, attda, is, sr, sttda) ;
+                        irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda) ;
 #endif
 
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
@@ -636,7 +642,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                     avg_cycle_time, predicted_future_accelerated_gc_time, allocated_bytes_since_last_sample,
                     instantaneous_rate_words_per_second, current_rate_by_acceleration, consumption_accelerated,
                     acceleration, predicted_future_gc_time,
-                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, spike_rate,
+                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, rate, spike_rate,
                     spike_time_to_deplete_available);
     return true;
   }
@@ -644,7 +650,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   // Track allocation rate even if we decide to start a cycle for other reasons.  With default value of 10 for
   // ShenandoahDaptiveSampleSizeSeconds, the allocation rate is only updated if 100 ms have accumulated since the
   // last update.  Otherwise, allocated is ignored and spike_rate is reported as 0.
-  spike_rate = _allocation_rate.sample(allocated);
+
+  spike_rate = rate;
   _last_trigger = OTHER;
 
   if (available < min_threshold) {
@@ -655,7 +662,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                     avg_cycle_time, predicted_future_accelerated_gc_time, allocated_bytes_since_last_sample,
                     instantaneous_rate_words_per_second, current_rate_by_acceleration, consumption_accelerated,
                     acceleration, predicted_future_gc_time,
-                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, spike_rate,
+                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, rate, spike_rate,
                     spike_time_to_deplete_available);
     return true;
   }
@@ -674,7 +681,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                       avg_cycle_time, predicted_future_accelerated_gc_time, allocated_bytes_since_last_sample,
                       instantaneous_rate_words_per_second, current_rate_by_acceleration, consumption_accelerated,
                       acceleration, predicted_future_gc_time,
-                      future_planned_gc_time, avg_time_to_deplete_available, is_spiking, spike_rate,
+                      future_planned_gc_time, avg_time_to_deplete_available, is_spiking, rate, spike_rate,
                       spike_time_to_deplete_available);
       return true;
     }
@@ -682,7 +689,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
   avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
-
   if ((now - _previous_allocation_timestamp) >= ShenandoahAccelerationSamplePeriod) {
     predicted_future_accelerated_gc_time =
       predict_gc_time(now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod));
@@ -822,7 +828,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                       avg_cycle_time, predicted_future_accelerated_gc_time, allocated_bytes_since_last_sample,
                       instantaneous_rate_words_per_second, current_rate_by_acceleration, consumption_accelerated,
                       acceleration, predicted_future_gc_time,
-                      future_planned_gc_time, avg_time_to_deplete_available, is_spiking, spike_rate,
+                      future_planned_gc_time, avg_time_to_deplete_available, is_spiking, rate, spike_rate,
                       spike_time_to_deplete_available);
       return true;
     }
@@ -867,7 +873,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                     avg_cycle_time, predicted_future_accelerated_gc_time, allocated_bytes_since_last_sample,
                     instantaneous_rate_words_per_second, current_rate_by_acceleration, consumption_accelerated,
                     acceleration, predicted_future_gc_time,
-                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, spike_rate,
+                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, rate, spike_rate,
                     spike_time_to_deplete_available);
     return true;
   }
@@ -886,7 +892,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                     avg_cycle_time, predicted_future_accelerated_gc_time, allocated_bytes_since_last_sample,
                     instantaneous_rate_words_per_second, current_rate_by_acceleration, consumption_accelerated,
                     acceleration, predicted_future_gc_time,
-                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, spike_rate,
+                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, rate, spike_rate,
                     spike_time_to_deplete_available);
     return true;
   }
@@ -898,7 +904,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                     avg_cycle_time, predicted_future_accelerated_gc_time, allocated_bytes_since_last_sample,
                     instantaneous_rate_words_per_second, current_rate_by_acceleration, consumption_accelerated,
                     acceleration, predicted_future_gc_time,
-                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, spike_rate,
+                    future_planned_gc_time, avg_time_to_deplete_available, is_spiking, rate, spike_rate,
                     spike_time_to_deplete_available);
     return true;
   } else {
@@ -906,7 +912,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                       avg_cycle_time, predicted_future_accelerated_gc_time, allocated_bytes_since_last_sample,
                       instantaneous_rate_words_per_second, current_rate_by_acceleration, consumption_accelerated,
                       acceleration, predicted_future_gc_time,
-                      future_planned_gc_time, avg_time_to_deplete_available, is_spiking, spike_rate,
+                      future_planned_gc_time, avg_time_to_deplete_available, is_spiking, rate, spike_rate,
                       spike_time_to_deplete_available);
     return false;
   }
