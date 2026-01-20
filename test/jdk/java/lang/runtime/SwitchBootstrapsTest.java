@@ -35,11 +35,13 @@ import java.lang.runtime.SwitchBootstraps;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.classfile.ClassFile;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
 
 /**
  * @test
@@ -155,48 +157,27 @@ public class SwitchBootstrapsTest {
         testEnum(E1.A, 0, 2, "B", "C", "A", E1.class);
         testEnum(E1.B, 0, 0, "B", "C", "A", E1.class);
         testEnum(E1.B, 1, 3, "B", "C", "A", E1.class);
-        try {
-            testEnum(E1.B, 0, -1, E2.class);
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
-        try {
-            testEnum(E1.B, 0, -1, String.class);
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
-        try {
-            testEnum(E1.B, 0, -1, 10);
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
-        try {
-            testEnum(E1.B, 0, -1, new Object());
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
-        try {
-            testEnum(E1.B, 0, -1, new Object[] { null });
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
-        try {
-            testEnum(E1.B, 0, -1, "");
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
-        try {
-            testEnum(E1.B, 0, -1, (Object[]) null);
-            fail("Didn't get the expected exception.");
-        } catch (NullPointerException ex) {
-            //OK
-        }
+        assertThrows(IllegalArgumentException.class, () ->
+            testEnum(E1.B, 0, -1, E2.class)
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+            testEnum(E1.B, 0, -1, String.class)
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+            testEnum(E1.B, 0, -1, 10)
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+            testEnum(E1.B, 0, -1, new Object())
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+            testEnum(E1.B, 0, -1, new Object[] { null })
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+            testEnum(E1.B, 0, -1, "")
+        );
+        assertThrows(NullPointerException.class, () ->
+            testEnum(E1.B, 0, -1, (Object[]) null)
+        );
         testEnum(E1.B, 0, 0, "B", "A");
         testEnum(E1.A, 0, 1, "B", "A");
         testEnum(E1.A, 0, 0, "A", "A", "B");
@@ -248,12 +229,9 @@ public class SwitchBootstrapsTest {
             MethodType.methodType(int.class, Object.class, Integer.class)
         };
         for (MethodType switchType : switchTypes) {
-            try {
-                BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType);
-                fail("Didn't get the expected exception.");
-            } catch (IllegalArgumentException ex) {
-                //OK, expected
-            }
+            assertThrows(IllegalArgumentException.class, () ->
+                BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType)
+            );
         }
         MethodType[] enumSwitchTypes = new MethodType[] {
             MethodType.methodType(int.class, Enum.class),
@@ -262,24 +240,18 @@ public class SwitchBootstrapsTest {
             MethodType.methodType(int.class, Enum.class, Integer.class)
         };
         for (MethodType enumSwitchType : enumSwitchTypes) {
-            try {
-                BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType);
-                fail("Didn't get the expected exception.");
-            } catch (IllegalArgumentException ex) {
-                //OK, expected
-            }
+            assertThrows(IllegalArgumentException.class, () ->
+                BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType)
+            );
         }
     }
 
     @Test
     public void testSwitchLabelTypes() throws Throwable {
         enum E {A}
-        try {
-            testType(E.A, 0, -1, E.A);
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK, expected
-        }
+        assertThrows(IllegalArgumentException.class, () ->
+            testType(E.A, 0, -1, E.A)
+        );
     }
 
     @Test
@@ -298,33 +270,21 @@ public class SwitchBootstrapsTest {
     @Test
     public void testNullLabels() throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
-        try {
-            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, (Object[]) null);
-            fail("Didn't get the expected exception.");
-        } catch (NullPointerException ex) {
-            //OK
-        }
-        try {
+        assertThrows(NullPointerException.class, () ->
+            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, (Object[]) null)
+        );
+        assertThrows(IllegalArgumentException.class, () ->
             BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType,
-                                   new Object[] {1, null, String.class});
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
+                    new Object[] {1, null, String.class})
+        );
         MethodType enumSwitchType = MethodType.methodType(int.class, E1.class, int.class);
-        try {
-            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType, (Object[]) null);
-            fail("Didn't get the expected exception.");
-        } catch (NullPointerException ex) {
-            //OK
-        }
-        try {
+        assertThrows(NullPointerException.class, () ->
+            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType, (Object[]) null)
+        );
+        assertThrows(IllegalArgumentException.class, () ->
             BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType,
-                                   new Object[] {1, null, String.class});
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
+                    new Object[] {1, null, String.class})
+        );
         //null invocationName is OK:
         BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), null, switchType,
                                new Object[] {Object.class});
@@ -384,50 +344,32 @@ public class SwitchBootstrapsTest {
 
     @Test
     public void testIncorrectEnumLabels() throws Throwable {
-        try {
-            testEnum(E1.B, 0, -1, "B", 1);
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
-        try {
-            testEnum(E1.B, 0, -1, "B", null);
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
+        assertThrows(IllegalArgumentException.class, () ->
+            testEnum(E1.B, 0, -1, "B", 1)
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+            testEnum(E1.B, 0, -1, "B", null)
+        );
     }
 
     @Test
     public void testIncorrectEnumStartIndex() throws Throwable {
-        try {
-            testEnum(E1.B, -1, -1, "B");
-            fail("Didn't get the expected exception.");
-        } catch (IndexOutOfBoundsException ex) {
-            //OK
-        }
-        try {
-            testEnum(E1.B, 2, -1, "B");
-            fail("Didn't get the expected exception.");
-        } catch (IndexOutOfBoundsException ex) {
-            //OK
-        }
+        assertThrows(IndexOutOfBoundsException.class, () ->
+            testEnum(E1.B, -1, -1, "B")
+        ); //OK
+        assertThrows(IndexOutOfBoundsException.class, () ->
+            testEnum(E1.B, 2, -1, "B")
+        );
     }
 
     @Test
     public void testIncorrectTypeStartIndex() throws Throwable {
-        try {
-            testType("", -1, -1, "");
-            fail("Didn't get the expected exception.");
-        } catch (IndexOutOfBoundsException ex) {
-            //OK
-        }
-        try {
-            testType("", 2, -1, "");
-            fail("Didn't get the expected exception.");
-        } catch (IndexOutOfBoundsException ex) {
-            //OK
-        }
+        assertThrows(IndexOutOfBoundsException.class, () ->
+            testType("", -1, -1, "")
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+            testType("", 2, -1, "")
+        );
     }
 
     @Test
@@ -462,29 +404,20 @@ public class SwitchBootstrapsTest {
 
     @Test
     public void testNullLookup() throws Throwable {
-        try {
+        Assertions.assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
             BSM_TYPE_SWITCH.invoke(null, "", switchType, Object.class);
-            fail("Didn't get the expected exception.");
-        } catch (NullPointerException ex) {
-            //OK
-        }
+        });
         enum E {}
-        try {
+        Assertions.assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
             BSM_ENUM_SWITCH.invoke(null, "", switchType,
-                                   new Object[] {});
-            fail("Didn't get the expected exception.");
-        } catch (NullPointerException ex) {
-            //OK
-        }
-        try {
+                    new Object[] {});
+        });
+        Assertions.assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
             BSM_ENUM_SWITCH.invoke(null, "", switchType,
-                                   new Object[] {"A"});
-            fail("Didn't get the expected exception.");
-        } catch (NullPointerException ex) {
-            //OK
-        }
+                    new Object[] {"A"});
+        });
     }
 }
