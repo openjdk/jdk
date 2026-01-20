@@ -82,6 +82,7 @@
 
 #include "mlib_image.h"
 #include "mlib_ImageConv.h"
+#include "safe_math.h"
 
 /***************************************************************/
 static void mlib_ImageConvMxNMulAdd_S32(mlib_d64       *dst,
@@ -228,6 +229,13 @@ mlib_status mlib_convMxNext_s32(mlib_image       *dst,
   mlib_s32 i, j, j1, k, mn;
 
   /* internal buffer */
+
+  if (!SAFE_TO_ADD(wid_e, m) ||
+      !SAFE_TO_MULT(3, wid_e + m) ||
+      !SAFE_TO_MULT((3 * wid_e + m),
+      (mlib_d64)sizeof(mlib_d64))) {
+    return MLIB_FAILURE;
+  }
 
   if (3 * wid_e + m > 1024) {
     dsa = mlib_malloc((3 * wid_e + m) * sizeof(mlib_d64));
