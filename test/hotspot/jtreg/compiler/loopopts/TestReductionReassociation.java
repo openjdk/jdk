@@ -138,7 +138,7 @@ public class TestReductionReassociation {
                     generateExpectedField(test, expected),
                     generateTest(input, setup, test),
                     generateCheck(test, check, expected),
-                    add == AssociativeAdd.ADD_L ? generateArrayLoad(input) : "",
+                    generateAuxMethods(input),
                     """
 
                     // --- $test end ---
@@ -164,7 +164,7 @@ public class TestReductionReassociation {
                     generateExpectedField(test, expected),
                     generateUseIntermediateTest(input, setup, test),
                     generateCheck(test, check, expected),
-                    add == AssociativeAdd.ADD_L ? generateArrayLoad(input) : "",
+                    generateAuxMethods(input),
                     """
 
                     // --- $test end ---
@@ -188,15 +188,16 @@ public class TestReductionReassociation {
                 public Object[] #test() {
                     long result = Long.MIN_VALUE;
                     long result2 = Long.MIN_VALUE;
-                    for (int i = 0; i < #input.length; i += 8) {
-                        var v0 = #input[i + 0];
-                        var v1 = #input[i + 1];
-                        var v2 = #input[i + 2];
-                        var v3 = #input[i + 3];
-                        var v4 = #input[i + 4];
-                        var v5 = #input[i + 5];
-                        var v6 = #input[i + 6];
-                        var v7 = #input[i + 7];
+                    int i = 0;
+                    while (i < #input.length) {
+                        var v0 = getArray_dontinline_#input(0, i);
+                        var v1 = getArray_dontinline_#input(1, i);
+                        var v2 = getArray_dontinline_#input(2, i);
+                        var v3 = getArray_dontinline_#input(3, i);
+                        var v4 = getArray_dontinline_#input(4, i);
+                        var v5 = getArray_dontinline_#input(5, i);
+                        var v6 = getArray_dontinline_#input(6, i);
+                        var v7 = getArray_dontinline_#input(7, i);
                         var u0 = Math.max(v0, result);
                         var u1 = Math.max(v1, u0);
                         var u2 = Math.max(v2, u1);
@@ -222,21 +223,30 @@ public class TestReductionReassociation {
                         long t7 = Long.max(v7, t6);
                         result = u7;
                         result2 = t7;
+                        i = sum_dontinline_#input(i, 8);
                     }
-                    return new Object[]{result, result2};
+                    return asArray_dontinline_#input(result, result2);
                 }
                 """
             ));
             return template.asToken();
         }
 
-        private TemplateToken generateArrayLoad(String input) {
+        private TemplateToken generateAuxMethods(String input) {
             var template = Template.make(() -> scope(
                 let("input", input),
                 let("type", add.type.name()),
                 """
-                static #type getArray_dontinline_#input(int i) {
-                     return #input[i];
+                static #type getArray_dontinline_#input(int pos, int base) {
+                     return #input[pos + base];
+                }
+
+                static Object[] asArray_dontinline_#input(#type result, #type result2) {
+                    return new Object[]{result, result2};
+                }
+
+                static int sum_dontinline_#input(int a, int b) {
+                    return a + b;
                 }
                 """
             ));
@@ -318,35 +328,32 @@ public class TestReductionReassociation {
                 """,
                 generateResultInit("result"),
                 generateResultInit("result2"),
-                "for (int i = 0; i < #input.length; i += ", batchSize, ") {\n",
-                IntStream.range(0, batchSize).mapToObj(this::callArrayLoad).toList(),
-                "#type u0 = ", generateOp("v0", "result"), ";\n",
-                IntStream.range(1, batchSize).mapToObj(i ->
-                    List.of("#type u", i, " = ", generateOp("v" + i, "u" + (i - 1)), ";\n")
-                ).toList(),
-                "#type t0 = ", generateOp("v0", "v1"), ";\n",
-                IntStream.range(1, batchSize - 1).mapToObj(i ->
-                    List.of("#type t", i, " = ", generateOp("v" + (i + 1), "t" + (i - 1)), ";\n")
-                ).toList(),
-                "#type t", batchSize - 1, " = ", generateOp("result", "t" + (batchSize - 2)), ";\n",
-                "result = u", batchSize - 1,";\n",
-                "result2 = t", batchSize - 1,";\n",
                 """
-                    }
-                    return new Object[]{result, result2};
+                int i = 0;
+                while (i < #input.length) {
+                """,
+                    IntStream.range(0, batchSize).mapToObj(i ->
+                        List.of("#type v", i, " = getArray_dontinline_#input(", i, ", i);\n")).toList(),
+                    "#type u0 = ", generateOp("v0", "result"), ";\n",
+                    IntStream.range(1, batchSize).mapToObj(i ->
+                        List.of("#type u", i, " = ", generateOp("v" + i, "u" + (i - 1)), ";\n")
+                    ).toList(),
+                    "#type t0 = ", generateOp("v0", "v1"), ";\n",
+                    IntStream.range(1, batchSize - 1).mapToObj(i ->
+                        List.of("#type t", i, " = ", generateOp("v" + (i + 1), "t" + (i - 1)), ";\n")
+                    ).toList(),
+                    "#type t", batchSize - 1, " = ", generateOp("result", "t" + (batchSize - 2)), ";\n",
+                    "result = u", batchSize - 1,";\n",
+                    "result2 = t", batchSize - 1,";\n",
+                    "",
+                    """
+                    i = sum_dontinline_#input(i, #countsIR);
+                }
+                return asArray_dontinline_#input(result, result2);
                 }
                 """
             ));
             return template.asToken();
-        }
-
-        private Object callArrayLoad(int i) {
-            final List<Object> result = new ArrayList<>(List.of("#type v", i));
-            switch (add) {
-                case ADD_L -> result.addAll(List.of(" = getArray_dontinline_#input(i + ", i, ");\n"));
-                default -> result.addAll(List.of(" = #input[i + ", i, "];\n"));
-            };
-            return result;
         }
 
         private TemplateToken generateExpectedField(String test, String expected) {
