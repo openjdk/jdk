@@ -2107,9 +2107,8 @@ public final class String
      * {@return the length in bytes of the given String encoded with the given {@link Charset}}
      *
      * <p>The returned length accounts for the replacement of malformed-input and unmappable-character
-     * sequences with the charset's default replacement byte array.
-     *
-     * <p>The result will be the same value as {@link #getBytes(Charset) getBytes(cs).length}.
+     * sequences with the charset's default replacement byte array. The result will be the same value
+     * as {@link #getBytes(Charset) getBytes(cs).length}.
      *
      * @apiNote This method provides equivalent or better performance than {@link #getBytes(Charset)
      *          getBytes(cs).length}. It may allocate memory to compute the length for some charsets.
