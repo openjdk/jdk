@@ -28,8 +28,8 @@
  *          read the request body and sends back a reply with no content, or when
  *          the client closes its outputstream while the server tries to drains
  *          its content.
- * @run testng/othervm InputNotRead
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputNotRead
+ * @run junit/othervm InputNotRead
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true InputNotRead
  */
 
 import java.io.BufferedReader;
@@ -51,10 +51,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import org.testng.annotations.Test;
 
 import static java.nio.charset.StandardCharsets.*;
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
+
+import org.junit.jupiter.api.Test;
 
 public class InputNotRead {
 

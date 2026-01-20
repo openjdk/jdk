@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ class os::Linux {
   static bool manually_expand_stack(JavaThread * t, address addr);
   static void expand_stack_to(address bottom);
 
-  static jlong total_thread_cpu_time(clockid_t clockid);
+  static jlong thread_cpu_time(clockid_t clockid);
 
   static jlong sendfile(int out_fd, int in_fd, jlong* offset, jlong count);
 

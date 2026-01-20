@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.Test;
-import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
@@ -53,7 +52,7 @@ class IRMethodBuilder {
     }
 
     /**
-     * Create IR methods for all test methods identified by {@link IREncodingParser} by combining them with the parsed
+     * Create IR methods for all test methods identified by {@link ApplicableIRRulesParser} by combining them with the parsed
      * compilation output from {@link HotSpotPidFileParser}.
      */
     public SortedSet<IRMethodMatchable> build(VMInfo vmInfo) {

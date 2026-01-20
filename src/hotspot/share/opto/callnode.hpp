@@ -730,9 +730,10 @@ public:
   // for some macro nodes whose expansion does not have a safepoint on the fast path.
   virtual bool        guaranteed_safepoint()  { return true; }
   // For macro nodes, the JVMState gets modified during expansion. If calls
-  // use MachConstantBase, it gets modified during matching. So when cloning
-  // the node the JVMState must be deep cloned. Default is to shallow clone.
-  virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
+  // use MachConstantBase, it gets modified during matching. If the call is
+  // late inlined, it also needs the full JVMState. So when cloning the
+  // node the JVMState must be deep cloned. Default is to shallow clone.
+  virtual bool needs_deep_clone_jvms(Compile* C) { return _generator != nullptr || C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
   virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
@@ -757,6 +758,7 @@ public:
   virtual uint match_edge(uint idx) const;
 
   bool is_call_to_arraycopystub() const;
+  bool is_call_to_multianewarray_stub() const;
 
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
@@ -942,9 +944,8 @@ protected:
   TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
 
 public:
-  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name,
-                   const TypePtr* adr_type)
-      : CallLeafNode(tf, addr, name, adr_type) {
+  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name)
+      : CallLeafNode(tf, addr, name, nullptr) {
     init_class_id(Class_CallLeafPure);
   }
   int Opcode() const override;

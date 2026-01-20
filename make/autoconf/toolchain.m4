@@ -516,7 +516,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     if [ [[ "$LINKER_VERSION_STRING" == *gold* ]] ]; then
       [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
           $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*) .*/\1/'` ]
-      LINKER_TYPE=gold
+      $1_TYPE=gold
     else
       [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
           $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]

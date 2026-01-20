@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "utilities/align.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -534,13 +533,11 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
   { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
@@ -550,35 +547,12 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-#ifdef LINUX
-  { "UseOprofile",                  JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-#endif
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "G1UpdateBufferSize",           JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "ShenandoahPacing",             JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #if defined(AARCH64)
   { "NearCpool",                    JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 #endif
 
-  { "AdaptiveSizeMajorGCDecayTimeScale",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "AdaptiveSizePolicyInitializingSteps",              JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "AdaptiveSizePolicyOutputInterval",                 JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "AdaptiveSizeThroughPutPolicy",                     JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "AdaptiveTimeWeight",                               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "PausePadding",                                     JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "SurvivorPadding",                                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "TenuredGenerationSizeIncrement",                   JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "TenuredGenerationSizeSupplement",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "TenuredGenerationSizeSupplementDecay",             JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "UseAdaptiveGenerationSizePolicyAtMajorCollection", JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "UseAdaptiveGenerationSizePolicyAtMinorCollection", JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "UseAdaptiveSizeDecayMajorGCCost",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "UseAdaptiveSizePolicyFootprintGoal",               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "UseAdaptiveSizePolicyWithSystemGC",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "UsePSAdaptiveSurvivorSizePolicy",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-
-  { "PretenureSizeThreshold",       JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-  { "HeapMaximumCompactionInterval",JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1117,6 +1091,13 @@ void Arguments::print_summary_on(outputStream* st) {
   st->cr();
 }
 
+void Arguments::set_jvm_flags_file(const char *value) {
+  if (_jvm_flags_file != nullptr) {
+    os::free(_jvm_flags_file);
+  }
+  _jvm_flags_file = os::strdup_check_oom(value);
+}
+
 void Arguments::print_jvm_flags_on(outputStream* st) {
   if (_num_jvm_flags > 0) {
     for (int i=0; i < _num_jvm_flags; i++) {
@@ -1225,16 +1206,22 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   }
 
   char token[1024];
-  int  pos = 0;
+  size_t pos = 0;
 
   bool in_white_space = true;
   bool in_comment     = false;
   bool in_quote       = false;
-  int  quote_c        = 0;
+  char quote_c        = 0;
   bool result         = true;
 
-  int c = getc(stream);
-  while(c != EOF && pos < (int)(sizeof(token)-1)) {
+  int c_or_eof = getc(stream);
+  while (c_or_eof != EOF && pos < (sizeof(token) - 1)) {
+    // We have checked the c_or_eof for EOF. getc should only ever return the
+    // EOF or an unsigned char converted to an int. We cast down to a char to
+    // avoid the char to int promotions we would otherwise do in the comparisons
+    // below (which would be incorrect if we ever compared to a non-ascii char),
+    // and the int to char conversions we would otherwise do in the assignments.
+    const char c = static_cast<char>(c_or_eof);
     if (in_white_space) {
       if (in_comment) {
         if (c == '\n') in_comment = false;
@@ -1242,7 +1229,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         if (c == '#') in_comment = true;
         else if (!isspace((unsigned char) c)) {
           in_white_space = false;
-          token[pos++] = checked_cast<char>(c);
+          token[pos++] = c;
         }
       }
     } else {
@@ -1262,10 +1249,10 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
       } else if (in_quote && (c == quote_c)) {
         in_quote = false;
       } else {
-        token[pos++] = checked_cast<char>(c);
+        token[pos++] = c;
       }
     }
-    c = getc(stream);
+    c_or_eof = getc(stream);
   }
   if (pos > 0) {
     token[pos] = '\0';
@@ -1589,8 +1576,8 @@ void Arguments::set_heap_size() {
     }
 
     if (UseCompressedOops) {
-      size_t heap_end = HeapBaseMinAddress + MaxHeapSize;
-      size_t max_coop_heap = max_heap_for_compressed_oops();
+      uintptr_t heap_end = HeapBaseMinAddress + MaxHeapSize;
+      uintptr_t max_coop_heap = max_heap_for_compressed_oops();
 
       // Limit the heap size to the maximum possible when using compressed oops
       if (heap_end < max_coop_heap) {
@@ -1604,10 +1591,10 @@ void Arguments::set_heap_size() {
       // and UseCompressedOops was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && has_ram_limit) {
-          aot_log_info(aot)("UseCompressedOops disabled due to "
-                            "max heap %zu > compressed oop heap %zu. "
-                            "Please check the setting of MaxRAMPercentage %5.2f.",
-                            reasonable_max, max_coop_heap, MaxRAMPercentage);
+          log_debug(gc, heap, coops)("UseCompressedOops disabled due to "
+                                     "max heap %zu > compressed oop heap %zu. "
+                                     "Please check the setting of MaxRAMPercentage %5.2f.",
+                                     reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
         } else {
           reasonable_max = max_coop_heap;
@@ -2867,6 +2854,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
   fix_appclasspath();
 
   return JNI_OK;
+}
+
+void Arguments::set_ext_dirs(char *value) {
+  _ext_dirs = os::strdup_check_oom(value);
 }
 
 void Arguments::add_patch_mod_prefix(const char* module_name, const char* path) {

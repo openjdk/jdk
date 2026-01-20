@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -82,7 +83,7 @@ Thread::Thread(MemTag mem_tag) {
   _threads_hazard_ptr = nullptr;
   _threads_list_ptr = nullptr;
   _nested_threads_hazard_ptr_cnt = 0;
-  _rcu_counter = 0;
+  _rcu_counter.store_relaxed(0);
 
   // the handle mark links itself to last_handle_mark
   new HandleMark(this);
@@ -565,50 +566,4 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
   // NOTE: this must be called from Threads::create_vm().
   DEBUG_ONLY(_starting_thread = jt;)
   return os::create_main_thread(jt);
-}
-
-// Ad-hoc mutual exclusion primitive: spin lock
-//
-// We employ a spin lock _only for low-contention, fixed-length
-// short-duration critical sections where we're concerned
-// about native mutex_t or HotSpot Mutex:: latency.
-
-void Thread::SpinAcquire(volatile int * adr) {
-  if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) {
-    return;   // normal fast-path return
-  }
-
-  // Slow-path : We've encountered contention -- Spin/Yield/Block strategy.
-  int ctr = 0;
-  int Yields = 0;
-  for (;;) {
-    while (*adr != 0) {
-      ++ctr;
-      if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
-        if (Yields > 5) {
-          os::naked_short_sleep(1);
-        } else {
-          os::naked_yield();
-          ++Yields;
-        }
-      } else {
-        SpinPause();
-      }
-    }
-    if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) return;
-  }
-}
-
-void Thread::SpinRelease(volatile int * adr) {
-  assert(*adr != 0, "invariant");
-  // Roach-motel semantics.
-  // It's safe if subsequent LDs and STs float "up" into the critical section,
-  // but prior LDs and STs within the critical section can't be allowed
-  // to reorder or float past the ST that releases the lock.
-  // Loads and stores in the critical section - which appear in program
-  // order before the store that releases the lock - must also appear
-  // before the store that releases the lock in memory visibility order.
-  // So we need a #loadstore|#storestore "release" memory barrier before
-  // the ST of 0 into the lock-word which releases the lock.
-  AtomicAccess::release_store(adr, 0);
 }
