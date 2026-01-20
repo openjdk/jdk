@@ -834,11 +834,11 @@ private:
   static bool should_be_sliced(oop obj);
   // Start processing the given objArrayOop by first pushing its continuations and
   // then scanning the first chunk including the header.
-  size_t start_partial_objArray(oop obj);
+  size_t start_partial_array_processing(oop obj);
   // Process the given continuation. Returns the number of words scanned.
-  size_t do_partial_objArray(const G1TaskQueueEntry& task, bool stolen);
+  size_t process_partial_array(const G1TaskQueueEntry& task, bool stolen);
   // Apply the closure to the given range of elements in the objArray.
-  inline void scan_objArray(objArrayOop obj, size_t start, size_t end);
+  inline void process_array_chunk(objArrayOop obj, size_t start, size_t end);
 public:
   // Resets the task; should be called right at the beginning of a marking phase.
   void reset(G1CMBitMap* mark_bitmap);

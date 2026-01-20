@@ -166,11 +166,11 @@ inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry, bool 
 
   if (scan) {
     if (task_entry.is_partial_array_state()) {
-      _words_scanned += do_partial_objArray(task_entry, stolen);
+      _words_scanned += process_partial_array(task_entry, stolen);
     } else {
       oop obj = task_entry.to_oop();
       if (should_be_sliced(obj)) {
-        _words_scanned += start_partial_objArray(obj);
+        _words_scanned += start_partial_array_processing(obj);
       } else {
         _words_scanned += obj->oop_iterate_size(_cm_oop_closure);
       }
@@ -183,7 +183,7 @@ inline bool G1CMTask::should_be_sliced(oop obj) {
   return obj->is_objArray() && ((objArrayOop)obj)->length() >= (int)ObjArrayMarkingStride;
 }
 
-inline void G1CMTask::scan_objArray(objArrayOop obj, size_t start, size_t end) {
+inline void G1CMTask::process_array_chunk(objArrayOop obj, size_t start, size_t end) {
   obj->oop_iterate_elements_range(_cm_oop_closure,
                                   checked_cast<int>(start),
                                   checked_cast<int>(end));
