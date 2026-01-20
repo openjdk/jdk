@@ -5040,23 +5040,10 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
   return reassoc;
 }
 
-static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLoop* phase) {
+static void try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLoop* phase) {
   Node* chain_head = nullptr;
-  Node* current = nullptr;
-  int opcode = 0;
-  for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
-    Node* n = phi->fast_out(i);
-    if (is_associative(n)) {
-      if (current == nullptr) {
-        current = n;
-        opcode = current->Opcode();
-      } else {
-        // Reassociation only supported when the Phi has a single
-        // associative operation as output that it can search the chain through
-        return;
-      }
-    }
-  }
+  Node* current = n;
+  int opcode = current->Opcode();
 
   int chain_length = 1;
   while (current != nullptr) {
@@ -5096,12 +5083,12 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
     return;
   }
 
-  tty->print("[avoid-cmov] try reassociate; chain length: %d\n", chain_length);
-  tty->print("[avoid-cmov] try reassociate:\n");
-  tty->print("[avoid-cmov] phi: ");
-  phi->dump();
-  tty->print("[avoid-cmov] try reassociate; chain head:\n");
-  chain_head->dump();
+  // tty->print("[avoid-cmov] try reassociate; chain length: %d\n", chain_length);
+  // tty->print("[avoid-cmov] try reassociate:\n");
+  // tty->print("[avoid-cmov] phi: ");
+  // phi->dump();
+  // tty->print("[avoid-cmov] try reassociate; chain head:\n");
+  // chain_head->dump();
 
   Node* loop_head = lpt->head();
   Node* reassociated = reassociate_chain(opcode, chain_head, phi, loop_head, phase);
@@ -5110,8 +5097,8 @@ static void try_reassociate_chain(PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLo
   phase->register_new_node(new_chain_head, loop_head);
   phase->igvn().replace_node(chain_head, new_chain_head);
 
-  tty->print("[avoid-cmov] after reassociate; new chain head:\n");
-  new_chain_head->dump();
+  // tty->print("[avoid-cmov] after reassociate; new chain head:\n");
+  // new_chain_head->dump();
 }
 
 //=============================================================================
@@ -5500,7 +5487,19 @@ void PhaseIdealLoop::build_and_optimize() {
         for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
           Node* loop_head_use = loop_head->fast_out(i);
           if (loop_head_use->is_Phi()) {
-            try_reassociate_chain(loop_head_use->as_Phi(), lpt, this);
+            PhiNode* phi = loop_head_use->as_Phi();
+            Unique_Node_List wq;
+            for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
+              Node* n = phi->fast_out(j);
+              if (is_associative(n)) {
+                wq.push(n);
+              }
+            }
+            // Reassociating changes Phi nodes, so iteration and reassociation have to be separated
+            for (uint next = 0; next < wq.size(); ++next) {
+              Node* m = wq.at(next);
+              try_reassociate_chain(m, phi, lpt, this);
+            }
           }
         }
       }

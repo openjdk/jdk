@@ -61,6 +61,7 @@ public class TestReductionReassociation {
 
         String[] flags = new String[] {
             "-XX:-UseSuperWord", "-XX:LoopMaxUnroll=0", "-XX:VerifyIterativeGVN=1000",
+            "-XX:CompileCommand=dontinline,*::*dontinline*",
             "--add-modules=jdk.incubator.vector", "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
         };
         comp.invoke("compiler.loopopts.templated.ReductionReassociation", "main", new Object[] {flags});
@@ -73,13 +74,13 @@ public class TestReductionReassociation {
         final int batchSize = 4;
 
         Stream.of(AssociativeAdd.values())
-            .map(op -> new TestGenerator(op, batchSize, false, size).generate())
+            .map(op -> new TestGenerator(op, batchSize, size).generate())
             .forEach(testTemplateTokens::add);
 
         // A single test to test a non-power-of-2 value
-        testTemplateTokens.add(new TestGenerator(AssociativeAdd.MAX_L, 5, false, size).generate());
+        testTemplateTokens.add(new TestGenerator(AssociativeAdd.MAX_L, 5, size).generate());
         // A single test where an intermediate value is used some other way
-        testTemplateTokens.add(new TestGenerator(AssociativeAdd.MAX_L, batchSize, true, size).generate());
+        testTemplateTokens.add(new TestGenerator(AssociativeAdd.MAX_L, batchSize, size).generateUseIntermediate());
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
@@ -120,11 +121,7 @@ public class TestReductionReassociation {
 //        }
     }
 
-    record TestGenerator(int countsIR, AssociativeAdd add, int batchSize, boolean useIntermediate, int size) {
-        TestGenerator(AssociativeAdd add, int batchSize, boolean useIntermediate, int size) {
-            this(useIntermediate ? batchSize * 2 : batchSize, add, batchSize, useIntermediate, size);
-        }
-
+    record TestGenerator(AssociativeAdd add, int batchSize, int size) {
         public TemplateToken generate() {
             var testTemplate = Template.make(() -> {
                 String test = $("test");
@@ -139,9 +136,9 @@ public class TestReductionReassociation {
                     """,
                     generateArrayField(input),
                     generateExpectedField(test, expected),
-                    // generateSetup(setup, input),
                     generateTest(input, setup, test),
                     generateCheck(test, check, expected),
+                    add == AssociativeAdd.ADD_L ? generateArrayLoad(input) : "",
                     """
 
                     // --- $test end ---
@@ -149,6 +146,101 @@ public class TestReductionReassociation {
                 );
             });
             return testTemplate.asToken();
+        }
+
+        public TemplateToken generateUseIntermediate() {
+            var testTemplate = Template.make(() -> {
+                String test = $("test");
+                String input = $("input");
+                String expected = $("expected");
+                String setup = $("setup");
+                String check = $("check");
+                return scope(
+                    """
+                    // --- $test start ---
+
+                    """,
+                    generateArrayField(input),
+                    generateExpectedField(test, expected),
+                    generateUseIntermediateTest(input, setup, test),
+                    generateCheck(test, check, expected),
+                    add == AssociativeAdd.ADD_L ? generateArrayLoad(input) : "",
+                    """
+
+                    // --- $test end ---
+                    """
+                );
+            });
+            return testTemplate.asToken();
+        }
+
+        private TemplateToken generateUseIntermediateTest(String input, String setup, String test) {
+            var template = Template.make(() -> scope(
+                let("irNodeName", add.name()),
+                let("input", input),
+                let("setup", setup),
+                let("test", test),
+                let("type", add.type.name()),
+                """
+                @Test
+                @IR(counts = {IRNode.#irNodeName, "= 8"},
+                    phase = CompilePhase.AFTER_LOOP_OPTS)
+                public Object[] #test() {
+                    long result = Long.MIN_VALUE;
+                    long result2 = Long.MIN_VALUE;
+                    for (int i = 0; i < #input.length; i += 8) {
+                        var v0 = #input[i + 0];
+                        var v1 = #input[i + 1];
+                        var v2 = #input[i + 2];
+                        var v3 = #input[i + 3];
+                        var v4 = #input[i + 4];
+                        var v5 = #input[i + 5];
+                        var v6 = #input[i + 6];
+                        var v7 = #input[i + 7];
+                        var u0 = Math.max(v0, result);
+                        var u1 = Math.max(v1, u0);
+                        var u2 = Math.max(v2, u1);
+                        var u3 = Math.max(v3, u2);
+                        if (u3 == #input.hashCode()) {
+                          System.out.print("");
+                        }
+                        var u4 = Math.max(v4, u3);
+                        var u5 = Math.max(v5, u4);
+                        var u6 = Math.max(v6, u5);
+                        var u7 = Math.max(v7, u6);
+
+                        long t0 = Long.max(v0, v1);
+                        long t1 = Long.max(v2, t0);
+                        long t2 = Long.max(v3, t1);
+                        long t3 = Long.max(result, t2);
+                        if (t3 == #input.hashCode()) {
+                          System.out.print("");
+                        }
+                        long t4 = Long.max(v4, t3);
+                        long t5 = Long.max(v5, t4);
+                        long t6 = Long.max(v6, t5);
+                        long t7 = Long.max(v7, t6);
+                        result = u7;
+                        result2 = t7;
+                    }
+                    return new Object[]{result, result2};
+                }
+                """
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateArrayLoad(String input) {
+            var template = Template.make(() -> scope(
+                let("input", input),
+                let("type", add.type.name()),
+                """
+                static #type getArray_dontinline_#input(int i) {
+                     return #input[i];
+                }
+                """
+            ));
+            return template.asToken();
         }
 
         private TemplateToken generateCheck(String test, String check, String expected) {
@@ -212,7 +304,7 @@ public class TestReductionReassociation {
 
         private TemplateToken generateTest(String input, String setup, String test) {
             var template = Template.make(() -> scope(
-                let("countsIR", countsIR),
+                let("countsIR", batchSize),
                 let("irNodeName", add.name()),
                 let("input", input),
                 let("setup", setup),
@@ -227,20 +319,17 @@ public class TestReductionReassociation {
                 generateResultInit("result"),
                 generateResultInit("result2"),
                 "for (int i = 0; i < #input.length; i += ", batchSize, ") {\n",
-                IntStream.range(0, batchSize).mapToObj(i ->
-                    List.of("#type v", i, " = #input[i + ", i, "];\n")
-                ).toList(),
-                useIntermediate ? List.of("if (v", batchSize - 1," == #input.hashCode()) { System.out.print(\"\"); }\n") : "",
+                IntStream.range(0, batchSize).mapToObj(this::callArrayLoad).toList(),
                 "#type u0 = ", generateOp("v0", "result"), ";\n",
                 IntStream.range(1, batchSize).mapToObj(i ->
                     List.of("#type u", i, " = ", generateOp("v" + i, "u" + (i - 1)), ";\n")
                 ).toList(),
-                "result = u", batchSize - 1,";\n",
                 "#type t0 = ", generateOp("v0", "v1"), ";\n",
                 IntStream.range(1, batchSize - 1).mapToObj(i ->
                     List.of("#type t", i, " = ", generateOp("v" + (i + 1), "t" + (i - 1)), ";\n")
                 ).toList(),
                 "#type t", batchSize - 1, " = ", generateOp("result", "t" + (batchSize - 2)), ";\n",
+                "result = u", batchSize - 1,";\n",
                 "result2 = t", batchSize - 1,";\n",
                 """
                     }
@@ -249,6 +338,15 @@ public class TestReductionReassociation {
                 """
             ));
             return template.asToken();
+        }
+
+        private Object callArrayLoad(int i) {
+            final List<Object> result = new ArrayList<>(List.of("#type v", i));
+            switch (add) {
+                case ADD_L -> result.addAll(List.of(" = getArray_dontinline_#input(i + ", i, ");\n"));
+                default -> result.addAll(List.of(" = #input[i + ", i, "];\n"));
+            };
+            return result;
         }
 
         private TemplateToken generateExpectedField(String test, String expected) {
