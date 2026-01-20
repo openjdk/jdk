@@ -155,7 +155,7 @@ public:
 
 private:
   // Indices are "from" indices.
-  Atomic<size_t>_coarsen_from[NumCoarsenCategories];
+  Atomic<size_t> _coarsen_from[NumCoarsenCategories];
   Atomic<size_t> _coarsen_collision[NumCoarsenCategories];
 
 public:
