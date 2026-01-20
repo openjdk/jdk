@@ -1047,7 +1047,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
           k = ek->array_klass(CHECK);
           if (k->is_objArray_klass()) {
             // Return specialized array klass type.
-            k = ObjArrayKlass::cast(k)->next_refined_array_klass(CHECK);
+            k = ObjArrayKlass::cast(k)->klass_with_properties(CHECK);
           }
         }
         break;
