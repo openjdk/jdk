@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  * @build java.base/java.lang.Helper
  * @run main compiler.intrinsics.string.TestHasNegatives
  */
-
 /*
  * @test
  * @bug 8054307 8318509
@@ -51,6 +50,7 @@ package compiler.intrinsics.string;
 
 import java.lang.Helper;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import jdk.test.lib.Utils;
 

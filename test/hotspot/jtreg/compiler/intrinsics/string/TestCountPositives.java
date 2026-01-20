@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
  * @build java.base/java.lang.Helper
  * @run main compiler.intrinsics.string.TestCountPositives
  */
-
 /*
  * @test
  * @bug 8281146 8318509
@@ -47,17 +46,17 @@
  * @run main/othervm/timeout=1200 -XX:UseAVX=3 compiler.intrinsics.string.TestCountPositives
  * @run main/othervm/timeout=1200 -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 compiler.intrinsics.string.TestCountPositives
  */
-
+/**
+ * This test was derived from compiler.intrinsics.string.TestHasNegatives
+ */
 package compiler.intrinsics.string;
 
 import java.lang.Helper;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import jdk.test.lib.Utils;
 
-/**
- * This test was derived from {@link TestHasNegatives}.
- */
 public class TestCountPositives {
 
     private static byte[] bytes = new byte[4096 + 32];
