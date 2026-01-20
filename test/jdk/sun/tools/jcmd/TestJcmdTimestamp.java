@@ -26,23 +26,25 @@ import java.time.format.DateTimeFormatter;
 import java.time.Duration;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.dcmd.FileJcmdExecutor;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
+import jdk.test.lib.dcmd.JcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
  * @summary test jcmd generic flag "-T" to make sure dignostic coommand is timestamped
- *
  * @library /test/lib
- *
  * @run main/othervm TestJcmdTimestamp
  */
 public class TestJcmdTimestamp {
 
     public static void main(String[] args) throws Exception {
-        TestJcmdTimestamp("VM.version", true /* -T */, true /* expectTimestamp */);
-        TestJcmdTimestamp("VM.version", false /* -T */, false /* expectTimestamp */);
+        TestJcmdTimestamp(new PidJcmdExecutor(), "-T VM.version", true /* expectTimestamp */);
+        TestJcmdTimestamp(new PidJcmdExecutor(), "VM.version", false /* expectTimestamp */);
+        TestJcmdTimestamp(new FileJcmdExecutor(), "-T VM.version", true /* expectTimestamp */);
+        TestJcmdTimestamp(new FileJcmdExecutor(), "VM.version", false /* expectTimestamp */);
     }
-
 
     // timestamp should be there and it should be recent
     public static void assertTimestamp(final String line) throws java.time.format.DateTimeParseException {
@@ -55,11 +57,11 @@ public class TestJcmdTimestamp {
     }
 
 
-    private static void TestJcmdTimestamp(final String command, boolean flaged, boolean expectTimestamp) throws Exception {
-        final OutputAnalyzer output = flaged
-                ? JcmdBase.jcmd(new String[] {"-T", command})
-                : JcmdBase.jcmd(new String[] {command});
+    private static void TestJcmdTimestamp(final JcmdExecutor executor,
+            final String command,
+            final boolean expectTimestamp) throws Exception {
 
+        OutputAnalyzer output = executor.execute(command);
         output.shouldHaveExitValue(0);
 
         final String secondLine = output.getOutput().split("\\r?\\n")[1];
