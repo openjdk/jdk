@@ -279,6 +279,8 @@ bool Runtime1::initialize(BufferBlob* blob) {
       return false;
     }
   }
+  // disallow any further c1 stub generation
+  AOTCodeCache::set_c1_stubs_complete();
   // printing
 #ifndef PRODUCT
   if (PrintSimpleStubs) {

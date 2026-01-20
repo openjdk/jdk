@@ -1736,15 +1736,6 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
     assert(type##_length <= type##_max, "increase size"); \
   }
 
-// setter for stub entry addresses inserts them using the stub entry
-// id as an index
-
-#define SET_ENTRY_ADDRESS(type, addr, entry_id)           \
-  {                                                       \
-    int idx = static_cast<int>(entry);                    \
-    _stub_addr[idx] = (address) (addr);                   \
-  }
-
 static bool initializing_extrs = false;
 
 void AOTCodeAddressTable::init_extrs() {
@@ -1971,7 +1962,8 @@ void AOTCodeAddressTable::add_external_addresses(GrowableArray<address>& address
   for (int i = 0; i < addresses.length(); i++) {
     SET_ADDRESS(_extrs, addresses.at(i));
   }
-  log_debug(aot, codecache, init)("External addresses recorded");
+  log_debug(aot, codecache, init)("Recorded %d additional external addresses",
+                                  addresses.length());
 }
 
 void AOTCodeAddressTable::add_stub_entry(EntryId entry_id, address a) {
@@ -1994,7 +1986,7 @@ void AOTCodeAddressTable::set_shared_stubs_complete() {
 
 void AOTCodeAddressTable::set_c1_stubs_complete() {
   assert(!_c1_stubs_complete, "repeated close for c1 stubs!");
-  _c2_stubs_complete = true;
+  _c1_stubs_complete = true;
   log_debug(aot, codecache, init)("C1 stubs closed");
 }
 

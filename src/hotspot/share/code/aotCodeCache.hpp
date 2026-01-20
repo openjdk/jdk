@@ -242,7 +242,7 @@ public:
 
   ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);}) NOT_CDS({})
 
-    bool is_open()  CDS_ONLY({ return (_flags & OPEN) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_open()    CDS_ONLY({ return (_flags & OPEN) != 0; }) NOT_CDS_RETURN_(false);
   bool is_using()   CDS_ONLY({ return (_flags & USING) != 0; }) NOT_CDS_RETURN_(false);
   bool is_dumping() CDS_ONLY({ return (_flags & DUMPING) != 0; }) NOT_CDS_RETURN_(false);
   bool is_aot()     CDS_ONLY({ return is_using() || is_dumping(); }) NOT_CDS_RETURN_(false);

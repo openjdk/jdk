@@ -2179,10 +2179,9 @@ class StubGenerator: public StubCodeGenerator {
       ShouldNotReachHere();
     }
 
-    // the normal stub provides a 2nd entry which omits the frame push
-    // for use when bailing out from a disjoint copy
-    // We need to protect memory accesses in certain cases
-    // only some conjoint stubs generate a 2nd entry
+    // The normal stub provides a 2nd entry which omits the frame push
+    // for use when bailing out from a disjoint copy.
+    // Only some conjoint stubs generate a 2nd entry
     int entry_count = StubInfo::entry_count(stub_id);
     int expected_entry_count = (nopush_entry == nullptr ? 1 : 2);
     GrowableArray<address> entries;
@@ -2449,7 +2448,7 @@ class StubGenerator: public StubCodeGenerator {
     __ lsr(count, count, LogBytesPerLong);   // size => long_count
     __ b(RuntimeAddress(long_copy_entry));
 
-    // record the stub entry and end plus any no_push entry
+    // record the stub entry and end
     store_archive_data(stub_id, start, __ pc());
 
     return start;
@@ -2736,7 +2735,7 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();   // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
-    // record the stub entry and end plus any no_push entry
+    // record the stub entry and end
     store_archive_data(stub_id, start, __ pc());
 
     return start;

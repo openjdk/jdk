@@ -24,6 +24,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
@@ -154,7 +155,8 @@ static bool check_compiled_frame(JavaThread* thread) {
 bool OptoRuntime::generate(ciEnv* env) {
 
   C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB)
-
+  // disallow any further c1 stub generation
+  AOTCodeCache::set_c2_stubs_complete();
   return true;
 }
 
