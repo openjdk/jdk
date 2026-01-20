@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import compiler.lib.ir_framework.*;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
+import java.util.function.BinaryOperator;
+
 /**
  * @test
  * @bug 8372980
@@ -40,14 +42,30 @@ import jdk.test.lib.Asserts;
  */
 
 public class VectorUMinMaxReductionTest {
-    static final int LENGTH = 256;
-    static final Generators RD = Generators.G;
+    private static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX;
+    private static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_MAX;
+    private static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_MAX;
+    private static final VectorSpecies<Float> F_SPECIES = FloatVector.SPECIES_MAX;
+    private static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX;
+    private static final VectorSpecies<Double> D_SPECIES = DoubleVector.SPECIES_MAX;
+    private static final int LENGTH = 256;
+    private static final Generators RD = Generators.G;
 
-    static byte[] ba;
-    static short[] sa;
-    static int[] ia;
-    static long[] la;
-    static boolean[] ma;
+    // Identity values for unsigned min/max operations
+    private static final byte BYTE_UMIN_IDENTITY = (byte) -1;
+    private static final byte BYTE_UMAX_IDENTITY = (byte) 0;
+    private static final short SHORT_UMIN_IDENTITY = (short) -1;
+    private static final short SHORT_UMAX_IDENTITY = (short) 0;
+    private static final int INT_UMIN_IDENTITY = -1;
+    private static final int INT_UMAX_IDENTITY = 0;
+    private static final long LONG_UMIN_IDENTITY = -1L;
+    private static final long LONG_UMAX_IDENTITY = 0L;
+
+    private static byte[] ba;
+    private static short[] sa;
+    private static int[] ia;
+    private static long[] la;
+    private static boolean[] ma;
 
     static {
         ba = new byte[LENGTH];
@@ -68,372 +86,206 @@ public class VectorUMinMaxReductionTest {
         RD.fill(lGen, la);
     }
 
+    // ==================== Helper Functions ====================
+
+    @DontInline
+    private static void verifyByte(VectorSpecies<Byte> species, byte got, byte init,
+                                   BinaryOperator<Byte> op, boolean isMasked) {
+        byte expected = init;
+        for (int i = 0; i < species.length(); i++) {
+            if (!isMasked || ma[i]) {
+                expected = op.apply(expected, ba[i]);
+            }
+        }
+        Asserts.assertEquals(expected, got);
+    }
+
+    @DontInline
+    private static void verifyShort(VectorSpecies<Short> species, short got, short init,
+                                    BinaryOperator<Short> op, boolean isMasked) {
+        short expected = init;
+        for (int i = 0; i < species.length(); i++) {
+            if (!isMasked || ma[i]) {
+                expected = op.apply(expected, sa[i]);
+            }
+        }
+        Asserts.assertEquals(expected, got);
+    }
+
+    @DontInline
+    private static void verifyInt(VectorSpecies<Integer> species, int got, int init,
+                                  BinaryOperator<Integer> op, boolean isMasked) {
+        int expected = init;
+        for (int i = 0; i < species.length(); i++) {
+            if (!isMasked || ma[i]) {
+                expected = op.apply(expected, ia[i]);
+            }
+        }
+        Asserts.assertEquals(expected, got);
+    }
+
+    @DontInline
+    private static void verifyLong(VectorSpecies<Long> species, long got, long init,
+                                   BinaryOperator<Long> op, boolean isMasked) {
+        long expected = init;
+        for (int i = 0; i < species.length(); i++) {
+            if (!isMasked || ma[i]) {
+                expected = op.apply(expected, la[i]);
+            }
+        }
+        Asserts.assertEquals(expected, got);
+    }
+
     // ==================== Byte Tests ====================
 
-    @DontInline
-    public static void verifyByteUMin(VectorSpecies<Byte> species, byte result) {
-        byte expected = (byte) -1;
-        for (int i = 0; i < species.length(); i++) {
-            expected = VectorMath.minUnsigned(expected, ba[i]);
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyByteUMax(VectorSpecies<Byte> species, byte result) {
-        byte expected = 0;
-        for (int i = 0; i < species.length(); i++) {
-            expected = VectorMath.maxUnsigned(expected, ba[i]);
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyByteUMinMasked(VectorSpecies<Byte> species, byte result) {
-        byte expected = (byte) -1;
-        for (int i = 0; i < species.length(); i++) {
-            if (ma[i]) {
-                expected = VectorMath.minUnsigned(expected, ba[i]);
-            }
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyByteUMaxMasked(VectorSpecies<Byte> species, byte result) {
-        byte expected = 0;
-        for (int i = 0; i < species.length(); i++) {
-            if (ma[i]) {
-                expected = VectorMath.maxUnsigned(expected, ba[i]);
-            }
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @ForceInline
-    public static byte byteUMinKernel(VectorSpecies<Byte> species) {
-        return ByteVector.fromArray(species, ba, 0).reduceLanes(VectorOperators.UMIN);
-    }
-
-    @ForceInline
-    public static byte byteUMaxKernel(VectorSpecies<Byte> species) {
-        return ByteVector.fromArray(species, ba, 0).reduceLanes(VectorOperators.UMAX);
-    }
-
-    @ForceInline
-    public static byte byteUMinMaskedKernel(VectorSpecies<Byte> species) {
-        return ByteVector.fromArray(species, ba, 0)
-                         .reduceLanes(VectorOperators.UMIN, VectorMask.fromArray(species, ma, 0));
-    }
-
-    @ForceInline
-    public static byte byteUMaxMaskedKernel(VectorSpecies<Byte> species) {
-        return ByteVector.fromArray(species, ba, 0)
-                         .reduceLanes(VectorOperators.UMAX, VectorMask.fromArray(species, ma, 0));
-    }
-
     @Test
     @IR(counts = {IRNode.UMIN_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testByteUMin_Max() {
-        verifyByteUMin(ByteVector.SPECIES_MAX, byteUMinKernel(ByteVector.SPECIES_MAX));
+    public static void testByteUMin() {
+        byte got = ByteVector.fromArray(B_SPECIES, ba, 0).reduceLanes(VectorOperators.UMIN);
+        verifyByte(B_SPECIES, got, BYTE_UMIN_IDENTITY, VectorMath::minUnsigned, false);
     }
 
     @Test
     @IR(counts = {IRNode.UMAX_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testByteUMax_Max() {
-        verifyByteUMax(ByteVector.SPECIES_MAX, byteUMaxKernel(ByteVector.SPECIES_MAX));
+    public static void testByteUMax() {
+        byte got = ByteVector.fromArray(B_SPECIES, ba, 0).reduceLanes(VectorOperators.UMAX);
+        verifyByte(B_SPECIES, got, BYTE_UMAX_IDENTITY, VectorMath::maxUnsigned, false);
     }
 
     @Test
     @IR(counts = {IRNode.UMIN_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testByteUMinMasked_Max() {
-        verifyByteUMinMasked(ByteVector.SPECIES_MAX, byteUMinMaskedKernel(ByteVector.SPECIES_MAX));
+    public static void testByteUMinMasked() {
+        byte got = ByteVector.fromArray(B_SPECIES, ba, 0)
+                             .reduceLanes(VectorOperators.UMIN,
+                                          VectorMask.fromArray(B_SPECIES, ma, 0));
+        verifyByte(B_SPECIES, got, BYTE_UMIN_IDENTITY, VectorMath::minUnsigned, true);
     }
 
     @Test
     @IR(counts = {IRNode.UMAX_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testByteUMaxMasked_Max() {
-        verifyByteUMaxMasked(ByteVector.SPECIES_MAX, byteUMaxMaskedKernel(ByteVector.SPECIES_MAX));
+    public static void testByteUMaxMasked() {
+        byte got = ByteVector.fromArray(B_SPECIES, ba, 0)
+                             .reduceLanes(VectorOperators.UMAX,
+                                          VectorMask.fromArray(B_SPECIES, ma, 0));
+        verifyByte(B_SPECIES, got, BYTE_UMAX_IDENTITY, VectorMath::maxUnsigned, true);
     }
 
     // ==================== Short Tests ====================
 
-    @DontInline
-    public static void verifyShortUMin(VectorSpecies<Short> species, short result) {
-        short expected = (short) -1;
-        for (int i = 0; i < species.length(); i++) {
-            expected = VectorMath.minUnsigned(expected, sa[i]);
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyShortUMax(VectorSpecies<Short> species, short result) {
-        short expected = 0;
-        for (int i = 0; i < species.length(); i++) {
-            expected = VectorMath.maxUnsigned(expected, sa[i]);
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyShortUMinMasked(VectorSpecies<Short> species, short result) {
-        short expected = (short) -1;
-        for (int i = 0; i < species.length(); i++) {
-            if (ma[i]) {
-                expected = VectorMath.minUnsigned(expected, sa[i]);
-            }
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyShortUMaxMasked(VectorSpecies<Short> species, short result) {
-        short expected = 0;
-        for (int i = 0; i < species.length(); i++) {
-            if (ma[i]) {
-                expected = VectorMath.maxUnsigned(expected, sa[i]);
-            }
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @ForceInline
-    public static short shortUMinKernel(VectorSpecies<Short> species) {
-        return ShortVector.fromArray(species, sa, 0).reduceLanes(VectorOperators.UMIN);
-    }
-
-    @ForceInline
-    public static short shortUMaxKernel(VectorSpecies<Short> species) {
-        return ShortVector.fromArray(species, sa, 0).reduceLanes(VectorOperators.UMAX);
-    }
-
-    @ForceInline
-    public static short shortUMinMaskedKernel(VectorSpecies<Short> species) {
-        return ShortVector.fromArray(species, sa, 0)
-                          .reduceLanes(VectorOperators.UMIN, VectorMask.fromArray(species, ma, 0));
-    }
-
-    @ForceInline
-    public static short shortUMaxMaskedKernel(VectorSpecies<Short> species) {
-        return ShortVector.fromArray(species, sa, 0)
-                          .reduceLanes(VectorOperators.UMAX, VectorMask.fromArray(species, ma, 0));
-    }
-
     @Test
     @IR(counts = {IRNode.UMIN_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testShortUMin_Max() {
-        verifyShortUMin(ShortVector.SPECIES_MAX, shortUMinKernel(ShortVector.SPECIES_MAX));
+    public static void testShortUMin() {
+        short got = ShortVector.fromArray(S_SPECIES, sa, 0).reduceLanes(VectorOperators.UMIN);
+        verifyShort(S_SPECIES, got, SHORT_UMIN_IDENTITY, VectorMath::minUnsigned, false);
     }
 
     @Test
     @IR(counts = {IRNode.UMAX_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testShortUMax_Max() {
-        verifyShortUMax(ShortVector.SPECIES_MAX, shortUMaxKernel(ShortVector.SPECIES_MAX));
+    public static void testShortUMax() {
+        short got = ShortVector.fromArray(S_SPECIES, sa, 0).reduceLanes(VectorOperators.UMAX);
+        verifyShort(S_SPECIES, got, SHORT_UMAX_IDENTITY, VectorMath::maxUnsigned, false);
     }
 
     @Test
     @IR(counts = {IRNode.UMIN_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testShortUMinMasked_Max() {
-        verifyShortUMinMasked(ShortVector.SPECIES_MAX, shortUMinMaskedKernel(ShortVector.SPECIES_MAX));
+    public static void testShortUMinMasked() {
+        short got = ShortVector.fromArray(S_SPECIES, sa, 0)
+                               .reduceLanes(VectorOperators.UMIN,
+                                            VectorMask.fromArray(S_SPECIES, ma, 0));
+        verifyShort(S_SPECIES, got, SHORT_UMIN_IDENTITY, VectorMath::minUnsigned, true);
     }
 
     @Test
     @IR(counts = {IRNode.UMAX_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testShortUMaxMasked_Max() {
-        verifyShortUMaxMasked(ShortVector.SPECIES_MAX, shortUMaxMaskedKernel(ShortVector.SPECIES_MAX));
+    public static void testShortUMaxMasked() {
+        short got = ShortVector.fromArray(S_SPECIES, sa, 0)
+                               .reduceLanes(VectorOperators.UMAX,
+                                            VectorMask.fromArray(S_SPECIES, ma, 0));
+        verifyShort(S_SPECIES, got, SHORT_UMAX_IDENTITY, VectorMath::maxUnsigned, true);
     }
 
     // ==================== Int Tests ====================
 
-    @DontInline
-    public static void verifyIntUMin(VectorSpecies<Integer> species, int result) {
-        int expected = -1;
-        for (int i = 0; i < species.length(); i++) {
-            expected = VectorMath.minUnsigned(expected, ia[i]);
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyIntUMax(VectorSpecies<Integer> species, int result) {
-        int expected = 0;
-        for (int i = 0; i < species.length(); i++) {
-            expected = VectorMath.maxUnsigned(expected, ia[i]);
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyIntUMinMasked(VectorSpecies<Integer> species, int result) {
-        int expected = -1;
-        for (int i = 0; i < species.length(); i++) {
-            if (ma[i]) {
-                expected = VectorMath.minUnsigned(expected, ia[i]);
-            }
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyIntUMaxMasked(VectorSpecies<Integer> species, int result) {
-        int expected = 0;
-        for (int i = 0; i < species.length(); i++) {
-            if (ma[i]) {
-                expected = VectorMath.maxUnsigned(expected, ia[i]);
-            }
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @ForceInline
-    public static int intUMinKernel(VectorSpecies<Integer> species) {
-        return IntVector.fromArray(species, ia, 0).reduceLanes(VectorOperators.UMIN);
-    }
-
-    @ForceInline
-    public static int intUMaxKernel(VectorSpecies<Integer> species) {
-        return IntVector.fromArray(species, ia, 0).reduceLanes(VectorOperators.UMAX);
-    }
-
-    @ForceInline
-    public static int intUMinMaskedKernel(VectorSpecies<Integer> species) {
-        return IntVector.fromArray(species, ia, 0)
-                        .reduceLanes(VectorOperators.UMIN, VectorMask.fromArray(species, ma, 0));
-    }
-
-    @ForceInline
-    public static int intUMaxMaskedKernel(VectorSpecies<Integer> species) {
-        return IntVector.fromArray(species, ia, 0)
-                        .reduceLanes(VectorOperators.UMAX, VectorMask.fromArray(species, ma, 0));
-    }
-
     @Test
     @IR(counts = {IRNode.UMIN_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testIntUMin_Max() {
-        verifyIntUMin(IntVector.SPECIES_MAX, intUMinKernel(IntVector.SPECIES_MAX));
+    public static void testIntUMin() {
+        int got = IntVector.fromArray(I_SPECIES, ia, 0).reduceLanes(VectorOperators.UMIN);
+        verifyInt(I_SPECIES, got, INT_UMIN_IDENTITY, VectorMath::minUnsigned, false);
     }
 
     @Test
     @IR(counts = {IRNode.UMAX_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testIntUMax_Max() {
-        verifyIntUMax(IntVector.SPECIES_MAX, intUMaxKernel(IntVector.SPECIES_MAX));
+    public static void testIntUMax() {
+        int got = IntVector.fromArray(I_SPECIES, ia, 0).reduceLanes(VectorOperators.UMAX);
+        verifyInt(I_SPECIES, got, INT_UMAX_IDENTITY, VectorMath::maxUnsigned, false);
     }
 
     @Test
     @IR(counts = {IRNode.UMIN_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testIntUMinMasked_Max() {
-        verifyIntUMinMasked(IntVector.SPECIES_MAX, intUMinMaskedKernel(IntVector.SPECIES_MAX));
+    public static void testIntUMinMasked() {
+        int got = IntVector.fromArray(I_SPECIES, ia, 0)
+                           .reduceLanes(VectorOperators.UMIN,
+                                        VectorMask.fromArray(I_SPECIES, ma, 0));
+        verifyInt(I_SPECIES, got, INT_UMIN_IDENTITY, VectorMath::minUnsigned, true);
     }
 
     @Test
     @IR(counts = {IRNode.UMAX_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testIntUMaxMasked_Max() {
-        verifyIntUMaxMasked(IntVector.SPECIES_MAX, intUMaxMaskedKernel(IntVector.SPECIES_MAX));
+    public static void testIntUMaxMasked() {
+        int got = IntVector.fromArray(I_SPECIES, ia, 0)
+                           .reduceLanes(VectorOperators.UMAX,
+                                        VectorMask.fromArray(I_SPECIES, ma, 0));
+        verifyInt(I_SPECIES, got, INT_UMAX_IDENTITY, VectorMath::maxUnsigned, true);
     }
 
     // ==================== Long Tests ====================
 
-    @DontInline
-    public static void verifyLongUMin(VectorSpecies<Long> species, long result) {
-        long expected = -1L;
-        for (int i = 0; i < species.length(); i++) {
-            expected = VectorMath.minUnsigned(expected, la[i]);
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyLongUMax(VectorSpecies<Long> species, long result) {
-        long expected = 0L;
-        for (int i = 0; i < species.length(); i++) {
-            expected = VectorMath.maxUnsigned(expected, la[i]);
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyLongUMinMasked(VectorSpecies<Long> species, long result) {
-        long expected = -1L;
-        for (int i = 0; i < species.length(); i++) {
-            if (ma[i]) {
-                expected = VectorMath.minUnsigned(expected, la[i]);
-            }
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @DontInline
-    public static void verifyLongUMaxMasked(VectorSpecies<Long> species, long result) {
-        long expected = 0L;
-        for (int i = 0; i < species.length(); i++) {
-            if (ma[i]) {
-                expected = VectorMath.maxUnsigned(expected, la[i]);
-            }
-        }
-        Asserts.assertEquals(expected, result);
-    }
-
-    @ForceInline
-    public static long longUMinKernel(VectorSpecies<Long> species) {
-        return LongVector.fromArray(species, la, 0).reduceLanes(VectorOperators.UMIN);
-    }
-
-    @ForceInline
-    public static long longUMaxKernel(VectorSpecies<Long> species) {
-        return LongVector.fromArray(species, la, 0).reduceLanes(VectorOperators.UMAX);
-    }
-
-    @ForceInline
-    public static long longUMinMaskedKernel(VectorSpecies<Long> species) {
-        return LongVector.fromArray(species, la, 0)
-                         .reduceLanes(VectorOperators.UMIN, VectorMask.fromArray(species, ma, 0));
-    }
-
-    @ForceInline
-    public static long longUMaxMaskedKernel(VectorSpecies<Long> species) {
-        return LongVector.fromArray(species, la, 0)
-                         .reduceLanes(VectorOperators.UMAX, VectorMask.fromArray(species, ma, 0));
-    }
-
     @Test
     @IR(counts = {IRNode.UMIN_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testLongUMin_Max() {
-        verifyLongUMin(LongVector.SPECIES_MAX, longUMinKernel(LongVector.SPECIES_MAX));
+    public static void testLongUMin() {
+        long got = LongVector.fromArray(L_SPECIES, la, 0).reduceLanes(VectorOperators.UMIN);
+        verifyLong(L_SPECIES, got, LONG_UMIN_IDENTITY, VectorMath::minUnsigned, false);
     }
 
     @Test
     @IR(counts = {IRNode.UMAX_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testLongUMax_Max() {
-        verifyLongUMax(LongVector.SPECIES_MAX, longUMaxKernel(LongVector.SPECIES_MAX));
+    public static void testLongUMax() {
+        long got = LongVector.fromArray(L_SPECIES, la, 0).reduceLanes(VectorOperators.UMAX);
+        verifyLong(L_SPECIES, got, LONG_UMAX_IDENTITY, VectorMath::maxUnsigned, false);
     }
 
     @Test
     @IR(counts = {IRNode.UMIN_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testLongUMinMasked_Max() {
-        verifyLongUMinMasked(LongVector.SPECIES_MAX, longUMinMaskedKernel(LongVector.SPECIES_MAX));
+    public static void testLongUMinMasked() {
+        long got = LongVector.fromArray(L_SPECIES, la, 0)
+                             .reduceLanes(VectorOperators.UMIN,
+                                          VectorMask.fromArray(L_SPECIES, ma, 0));
+        verifyLong(L_SPECIES, got, LONG_UMIN_IDENTITY, VectorMath::minUnsigned, true);
     }
 
     @Test
     @IR(counts = {IRNode.UMAX_REDUCTION_V, "= 1"},
         applyIfCPUFeature = {"asimd", "true"})
-    public static void testLongUMaxMasked_Max() {
-        verifyLongUMaxMasked(LongVector.SPECIES_MAX, longUMaxMaskedKernel(LongVector.SPECIES_MAX));
+    public static void testLongUMaxMasked() {
+        long got = LongVector.fromArray(L_SPECIES, la, 0)
+                             .reduceLanes(VectorOperators.UMAX,
+                                          VectorMask.fromArray(L_SPECIES, ma, 0));
+        verifyLong(L_SPECIES, got, LONG_UMAX_IDENTITY, VectorMath::maxUnsigned, true);
     }
 
     public static void main(String[] args) {
