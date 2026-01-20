@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -271,6 +273,26 @@ final class Validator {
                     if (!"META-INF/".equals(firstName)) {
                         errorAndInvalid(formatMsg("error.validator.metainf.wrong.position", firstName));
                     }
+                }
+                // Check for a valid and consistent automatic module name
+                try (InputStream jis = zf.getInputStream(zf.getEntry(entryName))) {
+                    Manifest manifest = new Manifest(jis);
+                    Attributes global = manifest.getMainAttributes();
+                    String name = global.getValue("Automatic-Module-Name");
+                    if (name != null) {
+                        try {
+                            ModuleDescriptor.newAutomaticModule(name);
+                        } catch (IllegalArgumentException e) {
+                            errorAndInvalid(formatMsg("error.validator.manifest.invalid.automatic.module.name", name));
+                        }
+                        if (md != null) {
+                            if (!name.equals(md.name())) {
+                                errorAndInvalid(formatMsg("error.validator.manifest.inconsistent.automatic.module.name", name, md.name()));
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    errorAndInvalid(e.getMessage());
                 }
             }
         }
