@@ -28,6 +28,7 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 
