@@ -89,6 +89,17 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     return false;
   }
 
+  // Between consecutive mixed-evacuation cycles, the live data within each candidate region may change due to
+  // promotions and old-gen evacuations.  Re-sort the candidate regions in order to first evacuate regions that have
+  // the smallest amount of live data.  These are easiest to evacuate with least effort.  Doing these first allows
+  // us to more quickly replenish free memory with empty regions.
+  for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
+    ShenandoahHeapRegion* r = _region_data[i].get_region();
+    _region_data[i].update_livedata(r->get_mixed_candidate_live_data_bytes());
+  }
+  QuickSort::sort<RegionData>(_region_data + _next_old_collection_candidate, unprocessed_old_collection_candidates(),
+                              compare_by_live);
+
   _first_pinned_candidate = NOT_FOUND;
 
   uint included_old_regions = 0;
@@ -414,6 +425,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     ShenandoahHeapRegion* r = candidates[i].get_region();
     size_t region_garbage = r->garbage();
     size_t region_free = r->free();
+
+    r->capture_mixed_candidate_garbage();
     candidates_garbage += region_garbage;
     unfragmented += region_free;
   }
@@ -456,6 +469,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
              r->index(), ShenandoahHeapRegion::region_state_to_string(r->state()));
       const size_t region_garbage = r->garbage();
       const size_t region_free = r->free();
+
+      r->capture_mixed_candidate_garbage();
       candidates_garbage += region_garbage;
       unfragmented += region_free;
       defrag_count++;
