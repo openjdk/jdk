@@ -972,7 +972,7 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
                 arrayToMH = new SubIntExample[length];
             else
                 return;  // can't make an ArrayStoreException test
-            assertInstanceOf(arrayType, arrayToMH, () -> Arrays.asList(arrayType, arrayToMH.getClass(), testSetter, negTest).toString());
+            assertInstanceOf(arrayType, arrayToMH, () -> Arrays.asList(testSetter, negTest).toString());
             break;
         }
         countTest(positive);

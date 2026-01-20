@@ -72,7 +72,7 @@ public class TestFindClass {
 
     @Test
     public void classNotFoundExceptionTest() throws IllegalAccessException, ClassNotFoundException {
-        assertThrows(ClassNotFoundException.class, () -> lookup().findClass(PACKAGE_PREFIX + "TestFindClass$NonExistent"))
+        assertThrows(ClassNotFoundException.class, () -> lookup().findClass(PACKAGE_PREFIX + "TestFindClass$NonExistent"));
     }
 
     static Object[][] illegalAccessFind() {
