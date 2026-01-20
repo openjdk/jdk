@@ -35,6 +35,8 @@
 
 import java.time.Instant;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class NotifiedThenTimedOutWait {
     public static void main(String[] args) throws Exception {
@@ -74,7 +76,10 @@ public class NotifiedThenTimedOutWait {
                 e.printStackTrace();
             }
         });
-        var pthread = Thread.ofPlatform().start(() -> {
+
+        ThreadFactory factory = ThreadLocalRandom.current().nextBoolean()
+                    ? Thread.ofPlatform().factory() : Thread.ofVirtual().factory();
+        var notifier = factory.newThread(() -> {
             for (int j = 0; j < iterations; j++) {
                 start.arriveAndAwaitAdvance();
                 synchronized (lock) {
@@ -83,9 +88,10 @@ public class NotifiedThenTimedOutWait {
                 end.arriveAndAwaitAdvance();
             }
         });
+        notifier.start();
 
         vthread.join();
-        pthread.join();
+        notifier.join();
     }
 
     /**
@@ -96,7 +102,7 @@ public class NotifiedThenTimedOutWait {
         var lock = new Object();
         var start = new Phaser(2);
 
-        Thread vthread1 = Thread.startVirtualThread(() -> {
+        var vthread = Thread.startVirtualThread(() -> {
             try {
                 for (int i = 0; i < iterations; i++) {
                     start.arriveAndAwaitAdvance();
@@ -110,9 +116,9 @@ public class NotifiedThenTimedOutWait {
             }
         });
 
-        // We tested with a platform thread in race1. Here we
-        // use a vthread to exercise different timing behavior.
-        Thread vthread2 = Thread.startVirtualThread(() -> {
+        ThreadFactory factory = ThreadLocalRandom.current().nextBoolean()
+                    ? Thread.ofPlatform().factory() : Thread.ofVirtual().factory();
+        var notifier = factory.newThread(() -> {
             for (int i = 0; i < iterations; i++) {
                 start.arriveAndAwaitAdvance();
                 synchronized (lock) {
@@ -120,8 +126,9 @@ public class NotifiedThenTimedOutWait {
                 }
             }
         });
+        notifier.start();
 
-        vthread1.join();
-        vthread2.join();
+        vthread.join();
+        notifier.join();
     }
 }
