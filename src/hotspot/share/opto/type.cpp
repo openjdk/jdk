@@ -28,9 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif // INCLUDE_SHENANDOAHGC
 #include "libadt/dict.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -50,6 +47,10 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#endif // INCLUDE_SHENANDOAHGC
 
 // Portions of code courtesy of Clifford Click
 
