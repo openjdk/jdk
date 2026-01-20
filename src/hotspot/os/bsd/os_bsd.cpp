@@ -1467,6 +1467,8 @@ void os::print_os_info(outputStream* st) {
 
   os::Posix::print_rlimit_info(st);
 
+  os::print_open_file_descriptors(st);
+
   os::Posix::print_load_average(st);
 
   VM_Version::print_platform_virtualization_info(st);
@@ -2592,24 +2594,24 @@ void os::print_open_file_descriptors(outputStream* st) {
 
   kres = pid_for_task(mach_task_self(), &my_pid);
   if (kres != KERN_SUCCESS) {
-    st->print_cr("OpenFileDescriptorCount = unknown");
+    st->print_cr("Open File Descriptors: unknown");
     return;
   }
 
   res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, MAX_SAFE_FDS * sizeof(struct proc_fdinfo));
   if (res <= 0) {
-    st->print_cr("OpenFileDescriptorCount = unknown");
+    st->print_cr("Open File Descriptors: unknown");
     return;
   }
 
   nfiles = res / sizeof(struct proc_fdinfo);
   if (nfiles >= MAX_SAFE_FDS) {
-    st->print_cr("OpenFileDescriptorCount = unknown");
+    st->print_cr("Open File Descriptors > 1024");
     return;
   }
 
-  st->print_cr("OpenFileDescriptorCount = %d", nfiles);
+  st->print_cr("Open File Descriptors: %d", nfiles);
 #else
-    st->print_cr("OpenFileDescriptorCount = unknown");
+    st->print_cr("Open File Descriptors: unknown");
 #endif
 }
