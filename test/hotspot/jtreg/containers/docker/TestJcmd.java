@@ -143,6 +143,7 @@ public class TestJcmd {
         sb.append(String.format("FROM %s:%s\n", DockerfileConfig.getBaseImageName(),
                                 DockerfileConfig.getBaseImageVersion()));
         sb.append("COPY /jdk /jdk\n");
+        sb.append("ENV LANG=C.UTF-8\n");
         sb.append("ENV JAVA_HOME=/jdk\n");
 
         if (!IS_PODMAN) { // only needed for docker

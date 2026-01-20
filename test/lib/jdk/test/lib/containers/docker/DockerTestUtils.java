@@ -380,6 +380,7 @@ public class DockerTestUtils {
         }
         template = template + "COPY /jdk /jdk\n" +
             "ENV JAVA_HOME=/jdk\n" +
+            "ENV LANG=C.UTF-8\n" +
             "CMD [\"/bin/bash\"]\n";
         String dockerFileStr = String.format(template, baseImage, baseImageVersion);
         Files.writeString(dockerfile, dockerFileStr);
