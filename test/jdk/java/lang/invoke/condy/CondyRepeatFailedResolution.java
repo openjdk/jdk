@@ -37,9 +37,10 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CondyRepeatFailedResolution {
     // Counter used to determine if a given BSM is invoked more than once
@@ -318,29 +319,21 @@ public class CondyRepeatFailedResolution {
         Method m = gc.getDeclaredMethod(name);
 
         bsm_called = 0;
-        try {
+        InvocationTargetException e1 = assertThrows(InvocationTargetException.class, () -> {
             Object r1 = m.invoke(null);
-            Assertions.fail("InvocationTargetException expected to be thrown after first invocation");
-        } catch (InvocationTargetException e1) {
-            // bsm_called should have been incremented prior to the exception
-            Assertions.assertEquals(1, bsm_called);
-            Assertions.assertTrue(e1.getCause() instanceof BootstrapMethodError);
-            // Try invoking method again to ensure that the bootstrap
-            // method is not invoked twice and a resolution failure
-            // results.
-            try {
-                Object r2 = m.invoke(null);
-                Assertions.fail("InvocationTargetException expected to be thrown after second invocation");
-            } catch (InvocationTargetException e2) {
-                // bsm_called should remain at 1 since the bootstrap
-                // method should not have been invoked.
-                Assertions.assertEquals(1, bsm_called);
-                Assertions.assertTrue(e2.getCause() instanceof BootstrapMethodError);
-            } catch (Throwable t2) {
-                Assertions.fail("InvocationTargetException expected to be thrown");
-            }
-        } catch (Throwable t1) {
-                Assertions.fail("InvocationTargetException expected to be thrown");
-        }
+        });
+        // bsm_called should have been incremented prior to the exception
+        assertEquals(1, bsm_called);
+        assertInstanceOf(BootstrapMethodError.class, e1.getCause());
+        // Try invoking method again to ensure that the bootstrap
+        // method is not invoked twice and a resolution failure
+        // results.
+        InvocationTargetException e2 = assertThrows(InvocationTargetException.class, () -> {
+            Object r2 = m.invoke(null);
+        });
+        // bsm_called should remain at 1 since the bootstrap
+        // method should not have been invoked.
+        assertEquals(1, bsm_called);
+        assertInstanceOf(BootstrapMethodError.class, e2.getCause());
     }
 }

@@ -28,14 +28,13 @@
 package test.java.lang.invoke;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.List;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class VarArgsTest {
 
@@ -43,17 +42,17 @@ public class VarArgsTest {
     public void testWithVarargs() throws Throwable {
         MethodHandle deepToString = publicLookup()
             .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
-        Assertions.assertFalse(deepToString.isVarargsCollector());
+        assertFalse(deepToString.isVarargsCollector());
         MethodHandle ts = deepToString.withVarargs(false);
-        Assertions.assertFalse(ts.isVarargsCollector());
+        assertFalse(ts.isVarargsCollector());
         MethodHandle ts1 = deepToString.withVarargs(true);
-        Assertions.assertTrue(ts1.isVarargsCollector());
-        Assertions.assertEquals("[won]", (String) ts1.invokeExact(new Object[]{"won"}));
-        Assertions.assertEquals("[won]", (String) ts1.invoke(new Object[]{"won"}));
-        Assertions.assertEquals("[won]", (String) ts1.invoke("won"));
-        Assertions.assertEquals("[won, won]", (String) ts1.invoke("won", "won"));
-        Assertions.assertEquals("[won, won]", (String) ts1.invoke(new Object[]{"won", "won"}));
-        Assertions.assertEquals("[[won]]", (String) ts1.invoke((Object) new Object[]{"won"}));
+        assertTrue(ts1.isVarargsCollector());
+        assertEquals("[won]", (String) ts1.invokeExact(new Object[]{"won"}));
+        assertEquals("[won]", (String) ts1.invoke(new Object[]{"won"}));
+        assertEquals("[won]", (String) ts1.invoke("won"));
+        assertEquals("[won, won]", (String) ts1.invoke("won", "won"));
+        assertEquals("[won, won]", (String) ts1.invoke(new Object[]{"won", "won"}));
+        assertEquals("[[won]]", (String) ts1.invoke((Object) new Object[]{"won"}));
     }
 
     @Test
@@ -61,17 +60,17 @@ public class VarArgsTest {
         MethodHandle asList = publicLookup()
             .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class));
         MethodHandle asListWithVarargs = asList.withVarargs(asList.isVarargsCollector());
-        Assertions.assertTrue(asListWithVarargs.isVarargsCollector());
-        Assertions.assertEquals("[]", asListWithVarargs.invoke().toString());
-        Assertions.assertEquals("[1]", asListWithVarargs.invoke(1).toString());
-        Assertions.assertEquals("[two, too]", asListWithVarargs.invoke("two", "too").toString());
+        assertTrue(asListWithVarargs.isVarargsCollector());
+        assertEquals("[]", asListWithVarargs.invoke().toString());
+        assertEquals("[1]", asListWithVarargs.invoke(1).toString());
+        assertEquals("[two, too]", asListWithVarargs.invoke("two", "too").toString());
     }
 
     @Test
     public void testWithVarargsIAE() throws Throwable {
         MethodHandle lenMH = publicLookup()
                 .findVirtual(String.class, "length", methodType(int.class));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> lenMH.withVarargs(true));
+        assertThrows(IllegalArgumentException.class, () -> lenMH.withVarargs(true));
     }
 
 }

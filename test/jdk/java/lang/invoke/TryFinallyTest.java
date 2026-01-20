@@ -35,10 +35,12 @@ import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for the tryFinally method handle combinator introduced in JEP 274.
@@ -50,8 +52,8 @@ public class TryFinallyTest {
     @Test
     public void testTryFinally() throws Throwable {
         MethodHandle hello = MethodHandles.tryFinally(TryFinally.MH_greet, TryFinally.MH_exclaim);
-        Assertions.assertEquals(TryFinally.MT_hello, hello.type());
-        Assertions.assertEquals("Hello, world!", hello.invoke("world"));
+        assertEquals(TryFinally.MT_hello, hello.type());
+        assertEquals("Hello, world!", hello.invoke("world"));
     }
 
     static Object[][] tryFinallyArgs() {
@@ -75,8 +77,8 @@ public class TryFinallyTest {
         MethodHandle tryFinally = MethodHandles.tryFinally(
                 identity,
                 MethodHandles.dropArguments(identity, 0, Throwable.class));
-        Assertions.assertEquals(methodType(argType, argType), tryFinally.type());
-        Assertions.assertEquals(arg, tryFinally.invoke(arg));
+        assertEquals(methodType(argType, argType), tryFinally.type());
+        assertEquals(arg, tryFinally.invoke(arg));
     }
 
     @ParameterizedTest
@@ -86,22 +88,22 @@ public class TryFinallyTest {
         MethodHandle tryFinally = MethodHandles.tryFinally(
                 identity,
                 MethodHandles.dropArguments(identity, 0, TryFinally.T1.class));
-        Assertions.assertEquals(methodType(argType, argType), tryFinally.type());
-        Assertions.assertThrows(TryFinally.T1.class, () -> tryFinally.invoke(arg));
+        assertEquals(methodType(argType, argType), tryFinally.type());
+        assertThrows(TryFinally.T1.class, () -> tryFinally.invoke(arg));
     }
 
     @Test
     public void testTryFinallyVoid() throws Throwable {
         MethodHandle tfVoid = MethodHandles.tryFinally(TryFinally.MH_print, TryFinally.MH_printMore);
-        Assertions.assertEquals(TryFinally.MT_printHello, tfVoid.type());
+        assertEquals(TryFinally.MT_printHello, tfVoid.type());
         tfVoid.invoke("world");
     }
 
     @Test
     public void testTryFinallySublist() throws Throwable {
         MethodHandle helloMore = MethodHandles.tryFinally(TryFinally.MH_greetMore, TryFinally.MH_exclaimMore);
-        Assertions.assertEquals(TryFinally.MT_moreHello, helloMore.type());
-        Assertions.assertEquals("Hello, world and universe (but world first)!", helloMore.invoke("world", "universe"));
+        assertEquals(TryFinally.MT_moreHello, helloMore.type());
+        assertEquals("Hello, world and universe (but world first)!", helloMore.invoke("world", "universe"));
     }
 
     static Object[][] omitTrailingArguments() {
@@ -149,15 +151,15 @@ public class TryFinallyTest {
     @ParameterizedTest
     @MethodSource("negativeTestData")
     public void testTryFinallyNegative(MethodHandle target, MethodHandle cleanup, String expectedMessage) {
-        var iae = Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.tryFinally(target, cleanup));
-        Assertions.assertEquals(expectedMessage, iae.getMessage());
+        var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.tryFinally(target, cleanup));
+        assertEquals(expectedMessage, iae.getMessage());
     }
 
     @Test
     public void testTryFinallyThrowableCheck() {
         MethodHandle mh = MethodHandles.tryFinally(TryFinally.MH_throwingTarget,
                                                    TryFinally.MH_catchingCleanup);
-        Assertions.assertThrows(ClassCastException.class, mh::invoke);
+        assertThrows(ClassCastException.class, mh::invoke);
     }
 
     static class TryFinally {

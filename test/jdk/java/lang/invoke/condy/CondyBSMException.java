@@ -39,10 +39,9 @@ import java.lang.reflect.Constructor;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CondyBSMException {
 
@@ -78,12 +77,12 @@ public class CondyBSMException {
         String actualMessage = null;
         for (int i = 0; i < ts.length; i++) {
             actualMessage = caught.getMessage();
-            Assertions.assertNotNull(caught);
-            Assertions.assertTrue(ts[i].isAssignableFrom(caught.getClass()));
+            assertNotNull(caught);
+            assertTrue(ts[i].isAssignableFrom(caught.getClass()));
             caught = caught.getCause();
         }
 
-        Assertions.assertEquals(message, actualMessage);
+        assertEquals(message, actualMessage);
     }
 
     static Throwable throwingBsm(MethodHandles.Lookup l, String name, Class<Throwable> type) throws Throwable {

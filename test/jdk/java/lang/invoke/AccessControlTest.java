@@ -39,7 +39,6 @@ import static java.lang.invoke.MethodHandles.Lookup.*;
 import static java.lang.invoke.MethodType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import test.java.lang.invoke.AccessControlTest_subpkg.Acquaintance_remote;
@@ -213,8 +212,8 @@ public class AccessControlTest {
                                    c1.getPackageName().equals(c2.getPackageName()));
             boolean sameTopLevel = (topLevelClass(c1) == topLevelClass(c2));
             boolean sameClass = (c1 == c2);
-            Assertions.assertTrue(samePackage  || !sameTopLevel);
-            Assertions.assertTrue(sameTopLevel || !sameClass);
+            assertTrue(samePackage  || !sameTopLevel);
+            assertTrue(sameTopLevel || !sameClass);
             boolean accessible = sameClass;
 
             if ((modes1 & PACKAGE) != 0)  accessible |= samePackage;
@@ -263,7 +262,7 @@ public class AccessControlTest {
             LookupCase l2 = new LookupCase(c2, plc, modes2);
             assertSame(l2.lookupClass(), c2);         // [A1]
             assertEquals(modes1, modes1 | modes2);    // [A1-a] (no elevation of access)
-            Assertions.assertTrue(l2.prevLookupClass() == null || (modes2 & MODULE) == 0);
+            assertTrue(l2.prevLookupClass() == null || (modes2 & MODULE) == 0);
             return l2;
         }
 
@@ -283,7 +282,7 @@ public class AccessControlTest {
             if (newModes == oldModes) return this;  // return self if no change
             LookupCase l2 = new LookupCase(lookupClass(), prevLookupClass(), newModes);
             assertEquals(oldModes, oldModes | newModes);    // [A2] (no elevation of access)
-            Assertions.assertTrue(l2.prevLookupClass() == null || (newModes & MODULE) == 0);
+            assertTrue(l2.prevLookupClass() == null || (newModes & MODULE) == 0);
             return l2;
         }
 
@@ -412,7 +411,7 @@ public class AccessControlTest {
         for (Class<?> ec; (ec = c.getEnclosingClass()) != null; )
             c = ec;
         assertNull(c.getEnclosingClass());
-        Assertions.assertTrue(c == cls || cls.getEnclosingClass() != null);
+        assertTrue(c == cls || cls.getEnclosingClass() != null);
         return c;
     }
 
@@ -583,7 +582,7 @@ public class AccessControlTest {
             Method method = targetClass.getDeclaredMethod(methodName, methodType.parameterArray());
             assertEquals(methodType.returnType(), method.getReturnType());
             int haveMods = method.getModifiers();
-            Assertions.assertTrue(Modifier.isStatic(haveMods));
+            assertTrue(Modifier.isStatic(haveMods));
             assertEquals(targetAccess, fixMods(haveMods));
             return method;
         } catch (NoSuchMethodException ex) {
@@ -606,7 +605,7 @@ public class AccessControlTest {
         case PACKAGE:    return "pkg_in_";
         case PRIVATE:    return "pri_in_";
         }
-        Assertions.fail();
+        fail();
         return "?";
     }
     private static final int[] ACCESS_CASES = {

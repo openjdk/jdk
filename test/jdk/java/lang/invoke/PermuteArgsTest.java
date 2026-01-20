@@ -35,7 +35,6 @@
 
 package test.java.lang.invoke;
 
-import org.junit.jupiter.api.Assertions;
 import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
 
 import java.lang.invoke.MethodHandle;
@@ -53,6 +52,9 @@ import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodHandles.permuteArguments;
 import static java.lang.invoke.MethodType.methodType;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PermuteArgsTest {
     private static final Class<?> CLASS = PermuteArgsTest.class;
@@ -260,11 +262,11 @@ public class PermuteArgsTest {
             reverse(perm, 0, perm.length);
         }
         switch (perm.length) {
-            case 2 -> Assertions.assertEquals(2, testCases - testCases0);
-            case 3 -> Assertions.assertEquals(6, testCases - testCases0);
-            case 4 -> Assertions.assertEquals(24, testCases - testCases0);
-            case 5 -> Assertions.assertEquals(120, testCases - testCases0);
-            case 6 -> Assertions.assertTrue(testCases - testCases0 > 720/3);
+            case 2 -> assertEquals(2, testCases - testCases0);
+            case 3 -> assertEquals(6, testCases - testCases0);
+            case 4 -> assertEquals(24, testCases - testCases0);
+            case 5 -> assertEquals(120, testCases - testCases0);
+            case 6 -> assertTrue(testCases - testCases0 > 720/3);
         }
     }
 

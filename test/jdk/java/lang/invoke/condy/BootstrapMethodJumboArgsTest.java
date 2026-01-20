@@ -41,8 +41,9 @@ import java.util.stream.IntStream;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class BootstrapMethodJumboArgsTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -94,7 +95,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assertions.assertArrayEquals(expected, actual);
+            assertArrayEquals(expected, actual);
         }
 
         {
@@ -104,7 +105,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assertions.assertArrayEquals(expected, actual);
+            assertArrayEquals(expected, actual);
         }
 
         {
@@ -114,7 +115,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assertions.assertArrayEquals(expected, actual);
+            assertArrayEquals(expected, actual);
         }
     }
 
@@ -129,7 +130,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assertions.assertArrayEquals(expected, actual);
+            assertArrayEquals(expected, actual);
         }
 
         {
@@ -139,7 +140,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assertions.assertArrayEquals(expected, actual);
+            assertArrayEquals(expected, actual);
         }
 
         {
@@ -149,7 +150,7 @@ public class BootstrapMethodJumboArgsTest {
                             Object.class, Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
-            Assertions.assertArrayEquals(expected, actual);
+            assertArrayEquals(expected, actual);
         }
     }
 }

@@ -58,7 +58,6 @@ import java.util.stream.Stream;
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -107,19 +106,19 @@ public class ClassDataTest {
         int lookupModes = lookup.lookupModes();
         assertEquals(0, lookupModes & ORIGINAL);
         assertEquals(access, lookupModes);
-        Assertions.assertThrows(IllegalAccessException.class, () -> MethodHandles.classData(lookup, "_", int.class));
+        assertThrows(IllegalAccessException.class, () -> MethodHandles.classData(lookup, "_", int.class));
     }
 
     @Test
     public void incorrectType() throws IllegalAccessException {
         Lookup lookup = hiddenClass(20);
-        Assertions.assertThrows(ClassCastException.class, () -> MethodHandles.classData(lookup, "_", Long.class));
+        assertThrows(ClassCastException.class, () -> MethodHandles.classData(lookup, "_", Long.class));
     }
 
     @Test
     public void invalidIndex() throws IllegalAccessException {
         Lookup lookup = hiddenClass(List.of());
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> MethodHandles.classDataAt(lookup, "_", Object.class, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> MethodHandles.classDataAt(lookup, "_", Object.class, 0));
     }
 
     @Test
@@ -127,7 +126,7 @@ public class ClassDataTest {
         List<Integer> list = new ArrayList<>();
         list.add(null);
         Lookup lookup = hiddenClass(list);
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.classDataAt(lookup, "_", int.class, 0));
+        assertThrows(NullPointerException.class, () -> MethodHandles.classDataAt(lookup, "_", int.class, 0));
     }
 
     @Test
@@ -336,7 +335,7 @@ public class ClassDataTest {
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, ClassDataTest.class, true);
         assertClassData(lookup, ClassDataTest.class);
         // throw IAE
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.classData(lookup, "non_default_name", Class.class));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.classData(lookup, "non_default_name", Class.class));
     }
 
     static class ClassByteBuilder {

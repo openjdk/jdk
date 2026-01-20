@@ -36,8 +36,9 @@ import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodHandles.dropArguments;
 import static java.lang.invoke.MethodHandles.identity;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PermuteArgsReturnVoidTest {
 
@@ -64,8 +65,8 @@ public class PermuteArgsReturnVoidTest {
         MethodHandle p = MethodHandles.permuteArguments(f, MethodType.methodType(String.class, String.class, int.class, int.class), 0, 2, 1);
 
         String s = (String) p.invoke("IN", 0, 0);
-        Assertions.assertEquals(String.class, s.getClass());
-        Assertions.assertEquals("IN", s);
+        assertEquals(String.class, s.getClass());
+        assertEquals("IN", s);
     }
 
     @Test
@@ -83,7 +84,7 @@ public class PermuteArgsReturnVoidTest {
         MethodHandle p = MethodHandles.permuteArguments(f, MethodType.methodType(String.class, String.class, int.class, int.class), 0, 2, 1);
 
         String s = (String) p.invoke("IN", 0, 0);
-        Assertions.assertEquals(String.class, s.getClass());
-        Assertions.assertEquals("IN", s);
+        assertEquals(String.class, s.getClass());
+        assertEquals("IN", s);
     }
 }

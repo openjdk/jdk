@@ -31,7 +31,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -70,7 +69,7 @@ public class MethodHandlesCollectArgsTest {
     @ParameterizedTest
     @MethodSource("illegalPos")
     public void illegalPosition(MethodHandle target, int position, MethodHandle filter) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.collectArguments(target, position, filter));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.collectArguments(target, position, filter));
     }
 
     @ParameterizedTest

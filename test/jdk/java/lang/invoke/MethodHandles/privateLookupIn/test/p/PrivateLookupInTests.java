@@ -29,7 +29,6 @@ import java.lang.reflect.Modifier;
 
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -90,7 +89,7 @@ public class PrivateLookupInTests {
         assertEquals(0, caller.lookupModes() & PACKAGE);
         assertNotEquals(0, caller.lookupModes() & MODULE);
         assertEquals(0, caller.lookupModes() & ORIGINAL);
-        Assertions.assertThrows(IllegalAccessException.class, () ->
+        assertThrows(IllegalAccessException.class, () ->
                 MethodHandles.privateLookupIn(nonPublicType, caller));
     }
 
@@ -98,7 +97,7 @@ public class PrivateLookupInTests {
     @Test
     public void testPublicLookupSameModule() throws Exception {
         Lookup caller = MethodHandles.publicLookup();
-        Assertions.assertThrows(IllegalAccessException.class, () ->
+        assertThrows(IllegalAccessException.class, () ->
                 MethodHandles.privateLookupIn(publicType, caller));
     }
 
@@ -155,7 +154,7 @@ public class PrivateLookupInTests {
         Module m2 = clazz.getModule();
         assertFalse(thisModule.canRead(m2));
         assertTrue(m2.isOpen("p2", thisModule));
-        Assertions.assertThrows(IllegalAccessException.class, () ->
+        assertThrows(IllegalAccessException.class, () ->
                 MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()));
     }
 
@@ -169,37 +168,37 @@ public class PrivateLookupInTests {
         Module m3 = clazz.getModule();
         thisModule.addReads(clazz.getModule());
         assertFalse(m3.isOpen("p3", thisModule));
-        Assertions.assertThrows(IllegalAccessException.class, () ->
+        assertThrows(IllegalAccessException.class, () ->
                 MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()));
     }
 
     // Invoke MethodHandles.privateLookupIn with a primitive class
     @Test
     public void testPrimitiveClassAsTargetClass() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.privateLookupIn(int.class, MethodHandles.lookup()));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.privateLookupIn(int.class, MethodHandles.lookup()));
     }
 
     // Invoke MethodHandles.privateLookupIn with an array class
     @Test
     public void testArrayClassAsTargetClass() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.privateLookupIn(PrivateLookupInTests[].class, MethodHandles.lookup()));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.privateLookupIn(PrivateLookupInTests[].class, MethodHandles.lookup()));
     }
 
     // Invoke MethodHandles.privateLookupIn with a primitive array class
     @Test
     public void testPrimitiveArrayClassAsTargetClass() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.privateLookupIn(int[].class, MethodHandles.lookup()));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.privateLookupIn(int[].class, MethodHandles.lookup()));
     }
 
     // Invoke MethodHandles.privateLookupIn with null
     @Test
     public void testNullTargetClass() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.privateLookupIn(null, MethodHandles.lookup()));
+        assertThrows(NullPointerException.class, () -> MethodHandles.privateLookupIn(null, MethodHandles.lookup()));
     }
 
     // Invoke MethodHandles.privateLookupIn with null
     @Test
     public void testNullCaller() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.privateLookupIn(getClass(), null));
+        assertThrows(NullPointerException.class, () -> MethodHandles.privateLookupIn(getClass(), null));
     }
 }

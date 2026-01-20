@@ -31,7 +31,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -156,7 +155,7 @@ public class DropLookupModeTest {
             Integer.MIN_VALUE,
     })
     public void testBadInput(int modeToDrop) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.lookup().dropLookupMode(modeToDrop));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.lookup().dropLookupMode(modeToDrop));
     }
 
 }

@@ -35,8 +35,9 @@ import java.lang.invoke.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ThrowExceptionsTest {
     private static final Class<?> CLASS = ThrowExceptionsTest.class;
@@ -51,7 +52,7 @@ public class ThrowExceptionsTest {
         // mostly call testWMTCallee, but sometimes call its void-returning variant
         MethodHandle mh = testWMTCallee();
         MethodHandle mh1 = mh.asType(mh.type().changeReturnType(void.class));
-        Assertions.assertNotSame(mh, mh1);
+        assertNotSame(mh, mh1);
         testWMT(mh, mh1, 1000);
     }
 
@@ -108,7 +109,7 @@ public class ThrowExceptionsTest {
         MethodHandle[] cell = { null };  // recursion point
         MethodHandle getCell = insertArguments(arrayElementGetter(cell.getClass()), 0, cell, 0);
         MethodHandle invokeCell = foldArguments(exactInvoker(cellType), getCell);
-        Assertions.assertSame(cellType, invokeCell.type());
+        assertSame(cellType, invokeCell.type());
         cell[0] = invokeCell;
         // make it conformable to any type:
         invokeCell = dropArguments(invokeCell, 0, Object[].class).asVarargsCollector(Object[].class);
@@ -199,7 +200,7 @@ public class ThrowExceptionsTest {
                 catches++;
                 continue;
             }
-            Assertions.assertEquals(i - catches, n);
+            assertEquals(i - catches, n);
         }
         //VERBOSE: System.out.println("reps="+reps+" catches="+catches);
         return savedEx;

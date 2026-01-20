@@ -40,9 +40,11 @@ import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CondyNameValidationTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -62,11 +64,11 @@ public class CondyNameValidationTest {
     @ParameterizedTest
     @MethodSource("invalidNamesProvider")
     public void testInvalidNames(String name, String errMessContent) throws Exception {
-        var e = Assertions.assertThrows(IllegalArgumentException.class, () -> InstructionHelper.ldcDynamicConstant(
+        var e = assertThrows(IllegalArgumentException.class, () -> InstructionHelper.ldcDynamicConstant(
                 L, name, Object.class,
                 "bsm", BSM_TYPE
         ));
-        Assertions.assertTrue(e.getMessage().contains(errMessContent));
+        assertTrue(e.getMessage().contains(errMessContent));
     }
 
     public static Object[][] validNamesProvider() throws Exception {

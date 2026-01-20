@@ -29,10 +29,12 @@ package test.java.lang.invoke;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ArrayLengthTest {
 
@@ -55,33 +57,33 @@ public class ArrayLengthTest {
     @MethodSource("arrayClasses")
     public void testArrayLength(Class<?> arrayClass) throws Throwable {
         MethodHandle arrayLength = MethodHandles.arrayLength(arrayClass);
-        Assertions.assertEquals(int.class, arrayLength.type().returnType());
-        Assertions.assertEquals(arrayClass, arrayLength.type().parameterType(0));
+        assertEquals(int.class, arrayLength.type().returnType());
+        assertEquals(arrayClass, arrayLength.type().parameterType(0));
         Object array = MethodHandles.arrayConstructor(arrayClass).invoke(10);
-        Assertions.assertEquals(10, arrayLength.invoke(array));
+        assertEquals(10, arrayLength.invoke(array));
     }
 
     @ParameterizedTest
     @MethodSource("arrayClasses")
     public void testArrayLengthInvokeNPE(Class<?> arrayClass) throws Throwable {
         MethodHandle arrayLength = MethodHandles.arrayLength(arrayClass);
-        Assertions.assertThrows(NullPointerException.class, () -> arrayLength.invoke(null));
+        assertThrows(NullPointerException.class, () -> arrayLength.invoke(null));
     }
 
     @Test
     public void testArrayLengthNoArray() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.arrayLength(String.class));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.arrayLength(String.class));
     }
 
     @Test
     public void testArrayLengthNPE() {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.arrayLength(null));
+        assertThrows(NullPointerException.class, () -> MethodHandles.arrayLength(null));
     }
 
     @Test
     public void testNullReference() throws Throwable {
         MethodHandle arrayLength = MethodHandles.arrayLength(String[].class);
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             int len = (int)arrayLength.invokeExact((String[])null);
         });
     }

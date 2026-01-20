@@ -38,9 +38,11 @@ import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CondyBSMValidationTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -59,10 +61,10 @@ public class CondyBSMValidationTest {
     @ParameterizedTest
     @MethodSource("invalidSignaturesProvider")
     public void testInvalidBSMSignature(String sig) throws Exception {
-        var e = Assertions.assertThrows(IllegalArgumentException.class, () -> InstructionHelper.ldcDynamicConstant(
+        var e = assertThrows(IllegalArgumentException.class, () -> InstructionHelper.ldcDynamicConstant(
                 L, "name", "Ljava/lang/Object;",
                 "bsm", sig
         ));
-        Assertions.assertTrue(e.getMessage().contains("Bad method descriptor"));
+        assertTrue(e.getMessage().contains("Bad method descriptor"));
     }
 }

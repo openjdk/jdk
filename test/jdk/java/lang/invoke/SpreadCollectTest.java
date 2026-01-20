@@ -39,10 +39,11 @@ import java.util.*;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the new asSpreader/asCollector API added in JEP 274.
@@ -54,8 +55,8 @@ public class SpreadCollectTest {
     @Test
     public void testAsSpreader() throws Throwable {
         MethodHandle spreader = SpreadCollect.MH_forSpreading.asSpreader(1, int[].class, 3);
-        Assertions.assertEquals(SpreadCollect.MT_spreader, spreader.type());
-        Assertions.assertEquals("A456B", (String) spreader.invoke("A", new int[]{4, 5, 6}, "B"));
+        assertEquals(SpreadCollect.MT_spreader, spreader.type());
+        assertEquals("A456B", (String) spreader.invoke("A", new int[]{4, 5, 6}, "B"));
     }
 
     @Test
@@ -65,9 +66,9 @@ public class SpreadCollectTest {
         MethodHandle compare2FromArray = compare.asSpreader(0, Object[].class, 2);
         Object[] ints = new Object[]{3, 9, 7, 7};
         Comparator<Integer> cmp = (a, b) -> a - b;
-        Assertions.assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 0, 2), cmp) < 0);
-        Assertions.assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 1, 3), cmp) > 0);
-        Assertions.assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 2, 4), cmp) == 0);
+        assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 0, 2), cmp) < 0);
+        assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 1, 3), cmp) > 0);
+        assertEquals(0, (int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 2, 4), cmp));
     }
 
     static Object[][] asSpreaderIllegalPositions() {
@@ -77,88 +78,88 @@ public class SpreadCollectTest {
     @ParameterizedTest
     @MethodSource("asSpreaderIllegalPositions")
     public void testAsSpreaderIllegalPos(int p) throws Throwable {
-        var iae = Assertions.assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(p, Object[].class, 3));
-        Assertions.assertEquals("bad spread position", iae.getMessage());
+        var iae = assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(p, Object[].class, 3));
+        assertEquals("bad spread position", iae.getMessage());
     }
 
     @Test
     public void testAsSpreaderIllegalMethodType() {
         MethodHandle h = MethodHandles.dropArguments(MethodHandles.constant(String.class, ""), 0, int.class, int.class);
-        Assertions.assertThrows(WrongMethodTypeException.class, () -> h.asSpreader(String[].class, 1));
+        assertThrows(WrongMethodTypeException.class, () -> h.asSpreader(String[].class, 1));
     }
 
     @Test
     public void testAsSpreaderNullArrayType() {
-        Assertions.assertThrows(NullPointerException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(null, 0));
+        assertThrows(NullPointerException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(null, 0));
     }
 
     @Test
     public void testAsSpreaderNullArrayNonZeroLength() {
-        Assertions.assertThrows(NullPointerException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(null, 1));
+        assertThrows(NullPointerException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(null, 1));
     }
 
     @Test
     public void testAsSpreaderTooManyParams() throws Throwable {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(1, int[].class, 6));
+        assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forSpreading.asSpreader(1, int[].class, 6));
     }
 
     @Test
     public void testAsCollector() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 1);
-        Assertions.assertEquals(SpreadCollect.MT_collector1, collector.type());
-        Assertions.assertEquals("A4B", (String) collector.invoke("A", 4, "B"));
+        assertEquals(SpreadCollect.MT_collector1, collector.type());
+        assertEquals("A4B", (String) collector.invoke("A", 4, "B"));
         collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 2);
-        Assertions.assertEquals(SpreadCollect.MT_collector2, collector.type());
-        Assertions.assertEquals("A45B", (String) collector.invoke("A", 4, 5, "B"));
+        assertEquals(SpreadCollect.MT_collector2, collector.type());
+        assertEquals("A45B", (String) collector.invoke("A", 4, 5, "B"));
         collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 3);
-        Assertions.assertEquals(SpreadCollect.MT_collector3, collector.type());
-        Assertions.assertEquals("A456B", (String) collector.invoke("A", 4, 5, 6, "B"));
+        assertEquals(SpreadCollect.MT_collector3, collector.type());
+        assertEquals("A456B", (String) collector.invoke("A", 4, 5, 6, "B"));
     }
 
     @Test
     public void testAsCollectorInvokeWithArguments() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 1);
-        Assertions.assertEquals(SpreadCollect.MT_collector1, collector.type());
-        Assertions.assertEquals("A4B", (String) collector.invokeWithArguments("A", 4, "B"));
+        assertEquals(SpreadCollect.MT_collector1, collector.type());
+        assertEquals("A4B", (String) collector.invokeWithArguments("A", 4, "B"));
         collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 2);
-        Assertions.assertEquals(SpreadCollect.MT_collector2, collector.type());
-        Assertions.assertEquals("A45B", (String) collector.invokeWithArguments("A", 4, 5, "B"));
+        assertEquals(SpreadCollect.MT_collector2, collector.type());
+        assertEquals("A45B", (String) collector.invokeWithArguments("A", 4, 5, "B"));
         collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 3);
-        Assertions.assertEquals(SpreadCollect.MT_collector3, collector.type());
-        Assertions.assertEquals("A456B", (String) collector.invokeWithArguments("A", 4, 5, 6, "B"));
+        assertEquals(SpreadCollect.MT_collector3, collector.type());
+        assertEquals("A456B", (String) collector.invokeWithArguments("A", 4, 5, 6, "B"));
     }
 
     @Test
     public void testAsCollectorLeading() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 1);
-        Assertions.assertEquals(SpreadCollect.MT_collectorLeading1, collector.type());
-        Assertions.assertEquals("7Q", (String) collector.invoke(7, "Q"));
+        assertEquals(SpreadCollect.MT_collectorLeading1, collector.type());
+        assertEquals("7Q", (String) collector.invoke(7, "Q"));
         collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 2);
-        Assertions.assertEquals(SpreadCollect.MT_collectorLeading2, collector.type());
-        Assertions.assertEquals("78Q", (String) collector.invoke(7, 8, "Q"));
+        assertEquals(SpreadCollect.MT_collectorLeading2, collector.type());
+        assertEquals("78Q", (String) collector.invoke(7, 8, "Q"));
         collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 3);
-        Assertions.assertEquals(SpreadCollect.MT_collectorLeading3, collector.type());
-        Assertions.assertEquals("789Q", (String) collector.invoke(7, 8, 9, "Q"));
+        assertEquals(SpreadCollect.MT_collectorLeading3, collector.type());
+        assertEquals("789Q", (String) collector.invoke(7, 8, 9, "Q"));
     }
 
     @Test
     public void testAsCollectorLeadingInvokeWithArguments() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 1);
-        Assertions.assertEquals(SpreadCollect.MT_collectorLeading1, collector.type());
-        Assertions.assertEquals("7Q", (String) collector.invokeWithArguments(7, "Q"));
+        assertEquals(SpreadCollect.MT_collectorLeading1, collector.type());
+        assertEquals("7Q", (String) collector.invokeWithArguments(7, "Q"));
         collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 2);
-        Assertions.assertEquals(SpreadCollect.MT_collectorLeading2, collector.type());
-        Assertions.assertEquals("78Q", (String) collector.invokeWithArguments(7, 8, "Q"));
+        assertEquals(SpreadCollect.MT_collectorLeading2, collector.type());
+        assertEquals("78Q", (String) collector.invokeWithArguments(7, 8, "Q"));
         collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 3);
-        Assertions.assertEquals(SpreadCollect.MT_collectorLeading3, collector.type());
-        Assertions.assertEquals("789Q", (String) collector.invokeWithArguments(7, 8, 9, "Q"));
+        assertEquals(SpreadCollect.MT_collectorLeading3, collector.type());
+        assertEquals("789Q", (String) collector.invokeWithArguments(7, 8, 9, "Q"));
     }
 
     @Test
     public void testAsCollectorNone() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 0);
-        Assertions.assertEquals(SpreadCollect.MT_collector0, collector.type());
-        Assertions.assertEquals("AB", (String) collector.invoke("A", "B"));
+        assertEquals(SpreadCollect.MT_collector0, collector.type());
+        assertEquals("AB", (String) collector.invoke("A", "B"));
     }
 
     static Object[][] asCollectorIllegalPositions() {
@@ -168,8 +169,8 @@ public class SpreadCollectTest {
     @ParameterizedTest
     @MethodSource("asCollectorIllegalPositions")
     public void testAsCollectorIllegalPos(int p) {
-        var iae = Assertions.assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forCollecting.asCollector(p, int[].class, 0));
-        Assertions.assertEquals("bad collect position", iae.getMessage());
+        var iae = assertThrows(IllegalArgumentException.class, () -> SpreadCollect.MH_forCollecting.asCollector(p, int[].class, 0));
+        assertEquals("bad collect position", iae.getMessage());
     }
 
     @Test
@@ -181,11 +182,11 @@ public class SpreadCollectTest {
                 bindTo(swr);
         MethodHandle swWrite4 = swWrite.asCollector(0, char[].class, 4);
         swWrite4.invoke('A', 'B', 'C', 'D', 1, 2);
-        Assertions.assertEquals("BC", swr.toString());
+        assertEquals("BC", swr.toString());
         swWrite4.invoke('P', 'Q', 'R', 'S', 0, 4);
-        Assertions.assertEquals("BCPQRS", swr.toString());
+        assertEquals("BCPQRS", swr.toString());
         swWrite4.invoke('W', 'X', 'Y', 'Z', 3, 1);
-        Assertions.assertEquals("BCPQRSZ", swr.toString());
+        assertEquals("BCPQRSZ", swr.toString());
     }
 
     static class SpreadCollect {

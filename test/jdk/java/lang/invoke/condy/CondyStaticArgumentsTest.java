@@ -42,8 +42,9 @@ import java.util.StringJoiner;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CondyStaticArgumentsTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -109,7 +110,7 @@ public class CondyStaticArgumentsTest {
                         mhi.getName(), MethodTypeDesc.ofDescriptor(mhi.getMethodType().descriptorString()))
         );
 
-        Assertions.assertEquals("constant-name-String-1-2-3.0-4.0-Number-something-(int,long,float,double)void-11", mh.invoke());
+        assertEquals("constant-name-String-1-2-3.0-4.0-Number-something-(int,long,float,double)void-11", mh.invoke());
     }
 
     static MathContext mathContext(MethodHandles.Lookup l, String value, Class<?> type) {
@@ -161,7 +162,7 @@ public class CondyStaticArgumentsTest {
                         )
                 )
         );
-        Assertions.assertEquals("big-decimal-math-context-String-3.141593-7", mh.invoke());
+        assertEquals("big-decimal-math-context-String-3.141593-7", mh.invoke());
     }
 
 
@@ -194,7 +195,7 @@ public class CondyStaticArgumentsTest {
                                 InstructionHelper.classDesc(MathContext.class)
                         )
                 ));
-        Assertions.assertEquals("big-decimal-math-context-()Ljava/lang/String;-3.141593-7", mh.invoke());
+        assertEquals("big-decimal-math-context-()Ljava/lang/String;-3.141593-7", mh.invoke());
     }
 
     private static DirectMethodHandleDesc directMhDesc(String methodName) {

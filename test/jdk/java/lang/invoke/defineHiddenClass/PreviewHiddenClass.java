@@ -46,7 +46,6 @@ import java.nio.file.Paths;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -69,6 +68,6 @@ public class PreviewHiddenClass {
         var dis = new DataInputStream(new ByteArrayInputStream(bytes));
         dis.skipBytes(4); // 0xCAFEBABE
         assertEquals(65535, dis.readUnsignedShort()); // Minor version
-        Assertions.assertThrows(UnsupportedClassVersionError.class, () -> MethodHandles.lookup().defineHiddenClass(bytes, false));
+        assertThrows(UnsupportedClassVersionError.class, () -> MethodHandles.lookup().defineHiddenClass(bytes, false));
     }
 }

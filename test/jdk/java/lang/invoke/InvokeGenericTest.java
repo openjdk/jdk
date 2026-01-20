@@ -36,10 +36,12 @@ import java.lang.reflect.*;
 import java.util.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  *
@@ -131,7 +133,7 @@ public class InvokeGenericTest {
         System.out.println("actual:     "+actual);
         System.out.println("ex. types:  "+getClasses(expected));
         System.out.println("act. types: "+getClasses(actual));
-        Assertions.assertEquals(expected, actual, "previous method call");
+        assertEquals(expected, actual, "previous method call");
     }
     static void printCalled(MethodHandle target, String name, Object... args) {
         if (verbosity >= 3)
@@ -341,7 +343,7 @@ public class InvokeGenericTest {
         Object res; List<?> resl;
         res = resl = (List<?>) mh.invoke((String)args[0], (Object)args[1]);
         //System.out.println(res);
-        Assertions.assertEquals(Arrays.asList(args), res);
+        assertEquals(Arrays.asList(args), res);
     }
 
     @Test
@@ -353,7 +355,7 @@ public class InvokeGenericTest {
         Object res; List<?> resl;
         res = resl = (List<?>) mh.invoke(args[0], args[1]);
         //System.out.println(res);
-        Assertions.assertEquals(Arrays.toString(args), res.toString());
+        assertEquals(Arrays.toString(args), res.toString());
     }
 
     @Test
@@ -365,7 +367,7 @@ public class InvokeGenericTest {
         Object res; List<?> resl;
         res = resl = (List<?>) mh.invoke((String)args[0], (Object)args[1]);
         //System.out.println(res);
-        Assertions.assertEquals(Arrays.asList(args), res);
+        assertEquals(Arrays.asList(args), res);
     }
 
     @Test
@@ -393,7 +395,7 @@ public class InvokeGenericTest {
     }
     public void testWrongArgumentCount(List<Class<?>> expect, List<Class<?>> observe) throws Throwable {
         countTest(false);
-        Assertions.assertNotEquals(expect, observe);
+        assertNotEquals(expect, observe);
         MethodHandle target = callable(expect);
         Object[] args = zeroArgs(observe);
         Object junk;
@@ -476,25 +478,25 @@ public class InvokeGenericTest {
         mh = MethodHandles.filterReturnValue(mh, toString_MH);
         mh = mh.asType(type);
         Object res = null;
-        Assertions.assertEquals(2, nargs);
+        assertEquals(2, nargs);
         res = mh.invoke((Object)args[0], (Object)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         res = mh.invoke((String)args[0], (Object)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         res = mh.invoke((Object)args[0], (String)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         res = mh.invoke((String)args[0], (String)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         res = mh.invoke((String)args[0], (CharSequence)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         res = mh.invoke((CharSequence)args[0], (Object)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         res = (String) mh.invoke((Object)args[0], (Object)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         res = (String) mh.invoke((String)args[0], (Object)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         res = (CharSequence) mh.invoke((String)args[0], (Object)args[1]);
-        Assertions.assertEquals(expectString, res);
+        assertEquals(expectString, res);
         //System.out.println(res);
     }
 
@@ -508,13 +510,13 @@ public class InvokeGenericTest {
         Object res; List<?> resl; int resi;
         res = resl = (List<?>) mh.invoke((int)args[0], (Object)args[1]);
         //System.out.println(res);
-        Assertions.assertEquals(Arrays.asList(args), res);
+        assertEquals(Arrays.asList(args), res);
         mh = MethodHandles.identity(int.class);
         mh = MethodHandles.dropArguments(mh, 1, int.class);
         res = resi = (int) mh.invoke((Object) args[0], (Object) args[1]);
-        Assertions.assertEquals(args[0], res);
+        assertEquals(args[0], res);
         res = resi = (int) mh.invoke((int) args[0], (Object) args[1]);
-        Assertions.assertEquals(args[0], res);
+        assertEquals(args[0], res);
     }
 
 }

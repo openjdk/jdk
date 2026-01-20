@@ -36,8 +36,9 @@ import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for the new fold method handle combinator added in JEP 274.
@@ -50,33 +51,33 @@ public class FoldTest {
     public void testFold0a() throws Throwable {
         // equivalence to foldArguments(MethodHandle,MethodHandle)
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, 0, Fold.MH_adder);
-        Assertions.assertEquals(Fold.MT_folded1, fold.type());
-        Assertions.assertEquals(720, (int) fold.invoke(3, 4, 5));
+        assertEquals(Fold.MT_folded1, fold.type());
+        assertEquals(720, (int) fold.invoke(3, 4, 5));
     }
 
     @Test
     public void testFold1a() throws Throwable {
         // test foldArguments for folding position 1
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, 1, Fold.MH_adder1);
-        Assertions.assertEquals(Fold.MT_folded1, fold.type());
-        Assertions.assertEquals(540, (int) fold.invoke(3, 4, 5));
+        assertEquals(Fold.MT_folded1, fold.type());
+        assertEquals(540, (int) fold.invoke(3, 4, 5));
     }
 
     @Test
     public void testFold0b() throws Throwable {
         // test foldArguments equivalence with multiple types
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_str, 0, Fold.MH_comb);
-        Assertions.assertEquals(Fold.MT_folded2, fold.type());
-        Assertions.assertEquals(23, (int) fold.invoke("true", true, 23));
+        assertEquals(Fold.MT_folded2, fold.type());
+        assertEquals(23, (int) fold.invoke("true", true, 23));
     }
 
     @Test
     public void testFold1b() throws Throwable {
         // test folgArguments for folding position 1, with multiple types
         MethodHandle fold = MethodHandles.foldArguments(Fold.MH_str, 1, Fold.MH_comb2);
-        Assertions.assertEquals(Fold.MT_folded3, fold.type());
-        Assertions.assertEquals(1, (int) fold.invoke(true, true, 1));
-        Assertions.assertEquals(-1, (int) fold.invoke(true, false, -1));
+        assertEquals(Fold.MT_folded3, fold.type());
+        assertEquals(1, (int) fold.invoke(true, true, 1));
+        assertEquals(-1, (int) fold.invoke(true, false, -1));
     }
 
     @Test
@@ -85,10 +86,10 @@ public class FoldTest {
         StringWriter swr = new StringWriter();
         MethodHandle trace = LOOKUP.findVirtual(StringWriter.class, "write", methodType(void.class, String.class)).bindTo(swr);
         MethodHandle cat = LOOKUP.findVirtual(String.class, "concat", methodType(String.class, String.class));
-        Assertions.assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
+        assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
         MethodHandle catTrace = MethodHandles.foldArguments(cat, 1, trace);
-        Assertions.assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
-        Assertions.assertEquals("jum", swr.toString());
+        assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
+        assertEquals("jum", swr.toString());
     }
 
     static class Fold {

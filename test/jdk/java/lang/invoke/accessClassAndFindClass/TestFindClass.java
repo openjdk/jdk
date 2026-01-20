@@ -34,10 +34,11 @@ import q.Bar;
 
 import static java.lang.invoke.MethodHandles.*;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestFindClass {
 
@@ -54,24 +55,24 @@ public class TestFindClass {
     @Test
     public void initializerNotRun() throws IllegalAccessException, ClassNotFoundException {
         lookup().findClass(PACKAGE_PREFIX + "TestFindClass$Class1");
-        Assertions.assertFalse(initializedClass1);
+        assertFalse(initializedClass1);
     }
 
     @Test
     public void returnsRequestedClassInSamePackage() throws IllegalAccessException, ClassNotFoundException {
         Class<?> aClass = lookup().findClass(PACKAGE_PREFIX + "TestFindClass$Class1");
-        Assertions.assertEquals(Class1.class, aClass);
+        assertEquals(Class1.class, aClass);
     }
 
     @Test
     public void returnsRequestedArrayClassInSamePackage() throws IllegalAccessException, ClassNotFoundException {
         Class<?> aClass = lookup().findClass("[L" + PACKAGE_PREFIX + "TestFindClass$Class1;");
-        Assertions.assertEquals(Class1[].class, aClass);
+        assertEquals(Class1[].class, aClass);
     }
 
     @Test
     public void classNotFoundExceptionTest() throws IllegalAccessException, ClassNotFoundException {
-        Assertions.assertThrows(ClassNotFoundException.class, () -> lookup().findClass(PACKAGE_PREFIX + "TestFindClass$NonExistent"));
+        assertThrows(ClassNotFoundException.class, () -> lookup().findClass(PACKAGE_PREFIX + "TestFindClass$NonExistent"))
     }
 
     static Object[][] illegalAccessFind() {
@@ -87,7 +88,7 @@ public class TestFindClass {
     @ParameterizedTest
     @MethodSource("illegalAccessFind")
     public void illegalAccessExceptionTest(Lookup lookup, String className) throws IllegalAccessException, ClassNotFoundException {
-        Assertions.assertThrows(ClassNotFoundException.class, () -> lookup.findClass(className));
+        assertThrows(ClassNotFoundException.class, () -> lookup.findClass(className));
     }
 
     @Test
@@ -107,6 +108,6 @@ public class TestFindClass {
 
     @Test
     public void illegalArgument() throws IllegalAccessException, ClassNotFoundException {
-        Assertions.assertThrows(NullPointerException.class, () -> lookup().findClass(null));
+        assertThrows(NullPointerException.class, () -> lookup().findClass(null));
     }
 }

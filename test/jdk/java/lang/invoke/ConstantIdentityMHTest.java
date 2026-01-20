@@ -31,7 +31,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -62,7 +61,7 @@ public class ConstantIdentityMHTest {
 
     @Test
     public void testZeroNPE() {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.zero(null));
+        assertThrows(NullPointerException.class, () -> MethodHandles.zero(null));
     }
 
     @Test
@@ -75,6 +74,6 @@ public class ConstantIdentityMHTest {
 
     @Test
     void testEmptyNPE() {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.empty(null));
+        assertThrows(NullPointerException.class, () -> MethodHandles.empty(null));
     }
 }

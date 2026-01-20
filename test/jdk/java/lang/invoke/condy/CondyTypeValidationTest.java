@@ -40,9 +40,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CondyTypeValidationTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -68,14 +70,13 @@ public class CondyTypeValidationTest {
     @ParameterizedTest
     @MethodSource("invalidTypesProvider")
     public void testInvalidTypes(String type, String errMessContent) throws Exception {
-        try {
+        var e = assertThrows(IllegalArgumentException.class, () -> {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", type,
                     "bsm", BSM_TYPE
             );
-        } catch (IllegalArgumentException e) {
-            Assertions.assertTrue(e.getMessage().contains(errMessContent));
-        }
+        });
+        assertTrue(e.getMessage().contains(errMessContent));
     }
 
     public static Object[][] validTypesProvider() {

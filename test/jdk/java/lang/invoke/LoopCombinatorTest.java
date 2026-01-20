@@ -45,11 +45,12 @@ import java.util.*;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the loop combinators introduced in JEP 274.
@@ -63,8 +64,8 @@ public class LoopCombinatorTest {
         MethodHandle[] counterClause = new MethodHandle[]{Fac.MH_zero, Fac.MH_inc};
         MethodHandle[] accumulatorClause = new MethodHandle[]{Fac.MH_one, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin};
         MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
-        Assertions.assertEquals(Fac.MT_fac, loop.type());
-        Assertions.assertEquals(120, loop.invoke(5));
+        assertEquals(Fac.MT_fac, loop.type());
+        assertEquals(120, loop.invoke(5));
     }
 
     @Test
@@ -73,8 +74,8 @@ public class LoopCombinatorTest {
         MethodHandle[] counterClause = new MethodHandle[]{null, Fac.MH_inc};
         MethodHandle[] accumulatorClause = new MethodHandle[]{Fac.MH_one, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin};
         MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
-        Assertions.assertEquals(Fac.MT_fac, loop.type());
-        Assertions.assertEquals(120, loop.invoke(5));
+        assertEquals(Fac.MT_fac, loop.type());
+        assertEquals(120, loop.invoke(5));
     }
 
     @Test
@@ -82,15 +83,15 @@ public class LoopCombinatorTest {
         // null initializer for counter, should initialize to 0, one-clause loop
         MethodHandle[] counterClause = new MethodHandle[]{null, Loop.MH_inc, Loop.MH_pred, Loop.MH_fin};
         MethodHandle loop = MethodHandles.loop(counterClause);
-        Assertions.assertEquals(Loop.MT_loop, loop.type());
-        Assertions.assertEquals(10, loop.invoke(10));
+        assertEquals(Loop.MT_loop, loop.type());
+        assertEquals(10, loop.invoke(10));
     }
 
     @Test
     public void testLoopVoid1() throws Throwable {
         // construct a post-checked loop that only does one iteration and has a void body and void local state
         MethodHandle loop = MethodHandles.loop(new MethodHandle[]{Empty.MH_f, Empty.MH_f, Empty.MH_pred, null});
-        Assertions.assertEquals(MethodType.methodType(void.class), loop.type());
+        assertEquals(MethodType.methodType(void.class), loop.type());
         loop.invoke();
     }
 
@@ -99,7 +100,7 @@ public class LoopCombinatorTest {
         // construct a post-checked loop that only does one iteration and has a void body and void local state,
         // initialized implicitly from the step type
         MethodHandle loop = MethodHandles.loop(new MethodHandle[]{null, Empty.MH_f, Empty.MH_pred, null});
-        Assertions.assertEquals(MethodType.methodType(void.class), loop.type());
+        assertEquals(MethodType.methodType(void.class), loop.type());
         loop.invoke();
     }
 
@@ -108,7 +109,7 @@ public class LoopCombinatorTest {
         // construct a post-checked loop that only does one iteration and has a void body and void local state,
         // and that has a void finalizer
         MethodHandle loop = MethodHandles.loop(new MethodHandle[]{null, Empty.MH_f, Empty.MH_pred, Empty.MH_f});
-        Assertions.assertEquals(MethodType.methodType(void.class), loop.type());
+        assertEquals(MethodType.methodType(void.class), loop.type());
         loop.invoke();
     }
 
@@ -119,8 +120,8 @@ public class LoopCombinatorTest {
         MethodHandle[] accumulatorClause = new MethodHandle[]{Fac.MH_one, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin};
         MethodHandle[] dotClause = new MethodHandle[]{null, Fac.MH_dot};
         MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause, dotClause);
-        Assertions.assertEquals(Fac.MT_fac, loop.type());
-        Assertions.assertEquals(120, loop.invoke(5));
+        assertEquals(Fac.MT_fac, loop.type());
+        assertEquals(120, loop.invoke(5));
     }
 
     @Test
@@ -128,8 +129,8 @@ public class LoopCombinatorTest {
         // construct a post-checked loop that only does one iteration and has a void body and void local state,
         // and that returns a constant
         MethodHandle loop = MethodHandles.loop(new MethodHandle[]{null, Empty.MH_f, Empty.MH_pred, Empty.MH_c});
-        Assertions.assertEquals(MethodType.methodType(int.class), loop.type());
-        Assertions.assertEquals(23, loop.invoke());
+        assertEquals(MethodType.methodType(int.class), loop.type());
+        assertEquals(23, loop.invoke());
     }
 
     @Test
@@ -144,8 +145,8 @@ public class LoopCombinatorTest {
                 LoopWithVirtuals.permute(LoopWithVirtuals.MH_fin)
         };
         MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
-        Assertions.assertEquals(LoopWithVirtuals.MT_loop, loop.type());
-        Assertions.assertEquals(120, loop.invoke(new LoopWithVirtuals(), 5));
+        assertEquals(LoopWithVirtuals.MT_loop, loop.type());
+        assertEquals(120, loop.invoke(new LoopWithVirtuals(), 5));
     }
 
     @Test
@@ -154,8 +155,8 @@ public class LoopCombinatorTest {
         MethodHandle[] counterClause = new MethodHandle[]{null, Fac.MH_inc, null, Fac.MH_fin};
         MethodHandle[] accumulatorClause = new MethodHandle[]{Fac.MH_one, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin};
         MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
-        Assertions.assertEquals(Fac.MT_fac, loop.type());
-        Assertions.assertEquals(120, loop.invoke(5));
+        assertEquals(Fac.MT_fac, loop.type());
+        assertEquals(120, loop.invoke(5));
     }
 
     static Object[][] negativeTestData() {
@@ -218,8 +219,8 @@ public class LoopCombinatorTest {
     @ParameterizedTest
     @MethodSource("negativeTestData")
     public void testLoopNegative(MethodHandle[][] clauses, String expectedMessage) throws Throwable {
-        var iae = Assertions.assertThrows(IllegalArgumentException.class, () -> MH_loop.invokeWithArguments((Object[]) clauses));
-        Assertions.assertEquals(expectedMessage, iae.getMessage());
+        var iae = assertThrows(IllegalArgumentException.class, () -> MH_loop.invokeWithArguments((Object[]) clauses));
+        assertEquals(expectedMessage, iae.getMessage());
     }
 
     @ParameterizedTest
@@ -230,16 +231,16 @@ public class LoopCombinatorTest {
                                      String messageOrNull) throws Throwable {
         // int i = 0; while (i < limit) { ++i; } return i; => limit
         if (messageOrNull != null) {
-            var iae = Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.whileLoop(MH_zero, MH_pred, MH_step));
+            var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.whileLoop(MH_zero, MH_pred, MH_step));
             assertEqualsFIXME(messageOrNull, iae.getMessage());
             return;
         }
         MethodHandle loop = MethodHandles.whileLoop(MH_zero, MH_pred, MH_step);
         if (MH_step.type().equals(While.MH_step.type()))
-            Assertions.assertEquals(While.MT_while, loop.type());
-        Assertions.assertEquals(MH_step.type().dropParameterTypes(0, 1), loop.type());
+            assertEquals(While.MT_while, loop.type());
+        assertEquals(MH_step.type().dropParameterTypes(0, 1), loop.type());
         while (loop.type().parameterCount() > 1)  loop = snip(loop);
-        Assertions.assertEquals(23, loop.invoke(23));
+        assertEquals(23, loop.invoke(23));
     }
 
     static void assertEqualsFIXME(String expect, String actual) {
@@ -321,8 +322,8 @@ public class LoopCombinatorTest {
     public void testWhileLoopNoIteration() throws Throwable {
         // a while loop that never executes its body because the predicate evaluates to false immediately
         MethodHandle loop = MethodHandles.whileLoop(While.MH_initString, While.MH_predString, While.MH_stepString);
-        Assertions.assertEquals(While.MT_string, loop.type());
-        Assertions.assertEquals("a", loop.invoke());
+        assertEquals(While.MT_string, loop.type());
+        assertEquals("a", loop.invoke());
     }
 
     @ParameterizedTest
@@ -333,46 +334,46 @@ public class LoopCombinatorTest {
                                        String messageOrNull) throws Throwable {
         // int i = 0; do { ++i; } while (i < limit); return i; => limit
         if (messageOrNull != null) {
-            var iae = Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.doWhileLoop(MH_zero, MH_step, MH_pred));
+            var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.doWhileLoop(MH_zero, MH_step, MH_pred));
             assertEqualsFIXME(messageOrNull, iae.getMessage());
             return;
         }
         MethodHandle loop = MethodHandles.doWhileLoop(MH_zero, MH_step, MH_pred);
         if (MH_step.type().equals(While.MH_step.type()))
-            Assertions.assertEquals(While.MT_while, loop.type());
-        Assertions.assertEquals(MH_step.type().dropParameterTypes(0, 1), loop.type());
+            assertEquals(While.MT_while, loop.type());
+        assertEquals(MH_step.type().dropParameterTypes(0, 1), loop.type());
         while (loop.type().parameterCount() > 1)  loop = snip(loop);
-        Assertions.assertEquals(23, loop.invoke(23));
+        assertEquals(23, loop.invoke(23));
     }
 
     @Test
     public void testDoWhileBadInit() throws Throwable {
         While w = new While();
-        var iae = Assertions.assertThrows(IllegalArgumentException.class, () ->
+        var iae = assertThrows(IllegalArgumentException.class, () ->
                 MethodHandles.doWhileLoop(MethodHandles.empty(methodType(char.class)),
                                           While.MH_voidBody.bindTo(w),
                                           While.MH_voidPred.bindTo(w)));
-        Assertions.assertEquals("loop initializer must match: ()char != (int)void", iae.getMessage());
+        assertEquals("loop initializer must match: ()char != (int)void", iae.getMessage());
     }
 
     @Test
     public void testWhileZip() throws Throwable {
         MethodHandle loop = MethodHandles.doWhileLoop(While.MH_zipInitZip, While.MH_zipStep, While.MH_zipPred);
-        Assertions.assertEquals(While.MT_zip, loop.type());
+        assertEquals(While.MT_zip, loop.type());
         List<String> a = Arrays.asList("a", "b", "c", "d");
         List<String> b = Arrays.asList("e", "f", "g", "h");
         List<String> zipped = Arrays.asList("a", "e", "b", "f", "c", "g", "d", "h");
-        Assertions.assertEquals(zipped, (List<String>) loop.invoke(a.iterator(), b.iterator()));
+        assertEquals(zipped, (List<String>) loop.invoke(a.iterator(), b.iterator()));
     }
 
     @Test
     public void testWhileBadInit() throws Throwable {
         While w = new While();
-        var iae = Assertions.assertThrows(IllegalArgumentException.class, () ->
+        var iae = assertThrows(IllegalArgumentException.class, () ->
                 MethodHandles.whileLoop(MethodHandles.empty(methodType(void.class, char.class)),
                                         While.MH_voidPred.bindTo(w),
                                         While.MH_voidBody.bindTo(w)));
-        Assertions.assertEquals("loop initializer must match: (char)void != (int)void", iae.getMessage());
+        assertEquals("loop initializer must match: (char)void != (int)void", iae.getMessage());
     }
 
     @Test
@@ -381,9 +382,9 @@ public class LoopCombinatorTest {
         int v = 5;
         MethodHandle loop = MethodHandles.whileLoop(While.MH_voidInit.bindTo(w), While.MH_voidPred.bindTo(w),
                 While.MH_voidBody.bindTo(w));
-        Assertions.assertEquals(While.MT_void, loop.type());
+        assertEquals(While.MT_void, loop.type());
         loop.invoke(v);
-        Assertions.assertEquals(v, w.i);
+        assertEquals(v, w.i);
     }
 
     @Test
@@ -392,9 +393,9 @@ public class LoopCombinatorTest {
         int v = 5;
         MethodHandle loop = MethodHandles.doWhileLoop(While.MH_voidInit.bindTo(w), While.MH_voidBody.bindTo(w),
                 While.MH_voidPred.bindTo(w));
-        Assertions.assertEquals(While.MT_void, loop.type());
+        assertEquals(While.MT_void, loop.type());
         loop.invoke(v);
-        Assertions.assertEquals(v, w.i);
+        assertEquals(v, w.i);
     }
 
     static Object[][] nullArgs() {
@@ -405,13 +406,13 @@ public class LoopCombinatorTest {
     @ParameterizedTest
     @MethodSource("nullArgs")
     public void testWhileNullArgs(MethodHandle pred, MethodHandle body) {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.whileLoop(null, pred, body));
+        assertThrows(NullPointerException.class, () -> MethodHandles.whileLoop(null, pred, body));
     }
 
     @ParameterizedTest
     @MethodSource("nullArgs")
     public void testDoWhileNullArgs(MethodHandle body, MethodHandle pred) {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.whileLoop(null, body, pred));
+        assertThrows(NullPointerException.class, () -> MethodHandles.whileLoop(null, body, pred));
     }
 
     @Test
@@ -419,8 +420,8 @@ public class LoopCombinatorTest {
         // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s; => a variation on a well known theme
         MethodHandle fit13 = MethodHandles.dropArguments(MethodHandles.constant(int.class, 13), 0, String.class);
         MethodHandle loop = MethodHandles.countedLoop(fit13, Counted.MH_start, Counted.MH_step);
-        Assertions.assertEquals(Counted.MT_counted, loop.type());
-        Assertions.assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
+        assertEquals(Counted.MT_counted, loop.type());
+        assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
     }
 
     @Test
@@ -439,7 +440,7 @@ public class LoopCombinatorTest {
             MethodType expectedType = Counted.MT_countedPrinting;
             if (addInitArg || addBodyArg)
                 expectedType = expectedType.insertParameterTypes(0, int.class);
-            Assertions.assertEquals(expectedType, loop.type());
+            assertEquals(expectedType, loop.type());
             if (addInitArg || addBodyArg)
                 loop.invoke(99);
             else
@@ -452,17 +453,17 @@ public class LoopCombinatorTest {
         // int[] a = new int[]{0}; for (int i = 0; i < 13; ++i) { ++a[0]; } => a[0] == 13
         MethodHandle fit13 = MethodHandles.dropArguments(MethodHandles.constant(int.class, 13), 0, int[].class);
         MethodHandle loop = MethodHandles.countedLoop(fit13, null, Counted.MH_stepUpdateArray);
-        Assertions.assertEquals(Counted.MT_arrayCounted, loop.type());
+        assertEquals(Counted.MT_arrayCounted, loop.type());
         int[] a = new int[]{0};
         loop.invoke(a);
-        Assertions.assertEquals(13, a[0]);
+        assertEquals(13, a[0]);
     }
 
     @Test
     public void testCountedPrintingLoop() throws Throwable {
         MethodHandle fit5 = MethodHandles.constant(int.class, 5);
         MethodHandle loop = MethodHandles.countedLoop(fit5, null, Counted.MH_printHello);
-        Assertions.assertEquals(Counted.MT_countedPrinting, loop.type());
+        assertEquals(Counted.MT_countedPrinting, loop.type());
         loop.invoke();
     }
 
@@ -470,17 +471,17 @@ public class LoopCombinatorTest {
     public void testCountedLoopNullBody() throws Throwable {
         MethodHandle h5 = MethodHandles.constant(int.class, 5);
         MethodHandle h13 = MethodHandles.constant(int.class, 13);
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.countedLoop(h5, h13, null));
+        assertThrows(NullPointerException.class, () -> MethodHandles.countedLoop(h5, h13, null));
     }
 
     @Test
     public void testCountedLoopNullIterations() throws Throwable {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.countedLoop(null, null, null));
+        assertThrows(NullPointerException.class, () -> MethodHandles.countedLoop(null, null, null));
     }
 
     @Test
     public void testCountedLoopNullInitAndBody() throws Throwable {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null, null));
+        assertThrows(NullPointerException.class, () -> MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null, null));
     }
 
     static Object[][] countedLoopBodyParameters() {
@@ -520,7 +521,7 @@ public class LoopCombinatorTest {
         MethodType expectType = bodyType.dropParameterTypes(0, innerParams);
         if (expectType.parameterCount() == 0)
             expectType = expectType.insertParameterTypes(0, countType.parameterList());
-        Assertions.assertEquals(expectType, loop.type());
+        assertEquals(expectType, loop.type());
     }
 
     @ParameterizedTest
@@ -533,8 +534,8 @@ public class LoopCombinatorTest {
     public void testCountedLoopStateInitializedToNull() throws Throwable {
         MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5),
                 MethodHandles.empty(methodType(String.class)), Counted.MH_stateBody);
-        Assertions.assertEquals(Counted.MT_bodyDeterminesState, loop.type());
-        Assertions.assertEquals("sssssnull01234", loop.invoke());
+        assertEquals(Counted.MT_bodyDeterminesState, loop.type());
+        assertEquals("sssssnull01234", loop.invoke());
     }
 
     @Test
@@ -543,8 +544,8 @@ public class LoopCombinatorTest {
                 MethodHandles.dropArguments(MethodHandles.constant(int.class, 3), 0, String.class);
         MethodHandle loop = MethodHandles.countedLoop(iterations,
                 MethodHandles.empty(iterations.type().changeReturnType(String.class)), Counted.MH_append);
-        Assertions.assertEquals(Counted.MT_iterationsDefineArgs, loop.type());
-        Assertions.assertEquals("hello012", loop.invoke("hello"));
+        assertEquals(Counted.MT_iterationsDefineArgs, loop.type());
+        assertEquals("hello012", loop.invoke("hello"));
     }
 
     @Test
@@ -553,8 +554,8 @@ public class LoopCombinatorTest {
         MethodHandle fitm5 = MethodHandles.dropArguments(Counted.MH_m5, 0, String.class);
         MethodHandle fit8 = MethodHandles.dropArguments(Counted.MH_8, 0, String.class);
         MethodHandle loop = MethodHandles.countedLoop(fitm5, fit8, Counted.MH_start, Counted.MH_step);
-        Assertions.assertEquals(Counted.MT_counted, loop.type());
-        Assertions.assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
+        assertEquals(Counted.MT_counted, loop.type());
+        assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
     }
 
     @Test
@@ -565,8 +566,8 @@ public class LoopCombinatorTest {
         MethodHandle init = MethodHandles.constant(int.class, 0);
         MethodHandle body = Counted.MH_addCounter;
         MethodHandle loop = MethodHandles.countedLoop(iter, init, body);
-        Assertions.assertEquals(Counted.MT_counterInit, loop.type());
-        Assertions.assertEquals(10, loop.invoke());
+        assertEquals(Counted.MT_counterInit, loop.type());
+        assertEquals(10, loop.invoke());
     }
 
     @Test
@@ -574,7 +575,7 @@ public class LoopCombinatorTest {
         // for (int i = 0; i < 5; ++i) { /* empty */ }
         MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null,
                 MethodHandles.empty(methodType(void.class, int.class)));
-        Assertions.assertEquals(methodType(void.class), loop.type());
+        assertEquals(methodType(void.class), loop.type());
         loop.invoke();
     }
 
@@ -583,7 +584,7 @@ public class LoopCombinatorTest {
         // for (int i = -5; i < 5; ++i) { /* empty */ }
         MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, -5),
                 MethodHandles.constant(int.class, 5), null, MethodHandles.empty(methodType(void.class, int.class)));
-        Assertions.assertEquals(methodType(void.class), loop.type());
+        assertEquals(methodType(void.class), loop.type());
         loop.invoke();
     }
 
@@ -611,16 +612,16 @@ public class LoopCombinatorTest {
     @Disabled //%%%FIXME%%%%
     public void testCountedLoopNegative(MethodHandle start, MethodHandle end, MethodHandle init,
                                                MethodHandle body, String msg) {
-        var iae = Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.countedLoop(start, end, init, body));
-        Assertions.assertEquals(msg, iae.getMessage());
+        var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.countedLoop(start, end, init, body));
+        assertEquals(msg, iae.getMessage());
     }
 
     @Test
     public void testIterateSum() throws Throwable {
         // Integer[] a = new Integer[]{1,2,3,4,5,6}; int sum = 0; for (int e : a) { sum += e; } return sum; => 21
         MethodHandle loop = MethodHandles.iteratedLoop(Iterate.MH_sumIterator, Iterate.MH_sumInit, Iterate.MH_sumStep);
-        Assertions.assertEquals(Iterate.MT_sum, loop.type());
-        Assertions.assertEquals(21, loop.invoke(new Integer[]{1, 2, 3, 4, 5, 6}));
+        assertEquals(Iterate.MT_sum, loop.type());
+        assertEquals(21, loop.invoke(new Integer[]{1, 2, 3, 4, 5, 6}));
     }
 
     static Object[][] iteratorInits() {
@@ -650,10 +651,10 @@ public class LoopCombinatorTest {
             MethodType expectedType = Iterate.MT_reverse;
             if (iterator == null && i >= 2)
                 expectedType = expectedType.changeParameterType(0, Iterable.class);
-            Assertions.assertEquals(expectedType, loop.type());
+            assertEquals(expectedType, loop.type());
             List<String> list = Arrays.asList("a", "b", "c", "d", "e");
             List<String> reversedList = Arrays.asList("e", "d", "c", "b", "a");
-            Assertions.assertEquals(reversedList, (List<String>) loop.invoke(list));
+            assertEquals(reversedList, (List<String>) loop.invoke(list));
         }
     }
 
@@ -674,9 +675,9 @@ public class LoopCombinatorTest {
         for (;; init = snip(init)) {
             System.out.println("testIterateLength.init = "+init);
             MethodHandle loop = MethodHandles.iteratedLoop(iterator, init, body);
-            Assertions.assertEquals(expectedType, loop.type());
+            assertEquals(expectedType, loop.type());
             List<Double> list = Arrays.asList(23.0, 148.0, 42.0);
-            Assertions.assertEquals(list.size(), (int) loop.invoke(list));
+            assertEquals(list.size(), (int) loop.invoke(list));
             if (init == null)  break;
         }
     }
@@ -698,10 +699,10 @@ public class LoopCombinatorTest {
         for (; init != null; init = snip(init)) {
             System.out.println("testIterateMap.init = "+init);
             MethodHandle loop = MethodHandles.iteratedLoop(iterator, init, body);
-            Assertions.assertEquals(expectedType, loop.type());
+            assertEquals(expectedType, loop.type());
             List<String> list = Arrays.asList("Hello", "world", "!");
             List<String> upList = Arrays.asList("HELLO", "WORLD", "!");
-            Assertions.assertEquals(upList, (List<String>) loop.invoke(list));
+            assertEquals(upList, (List<String>) loop.invoke(list));
         }
     }
 
@@ -718,13 +719,13 @@ public class LoopCombinatorTest {
             expectedType = expectedType.changeParameterType(0, iteratorSource);
         }
         MethodHandle loop = MethodHandles.iteratedLoop(iterator, null, body);
-        Assertions.assertEquals(expectedType, loop.type());
+        assertEquals(expectedType, loop.type());
         loop.invoke(Arrays.asList("hello", "world"));
     }
 
     @Test
     public void testIterateNullBody() {
-        Assertions.assertThrows(NullPointerException.class, () ->
+        assertThrows(NullPointerException.class, () ->
                 MethodHandles.iteratedLoop(MethodHandles.empty(methodType(Iterator.class, int.class)),
                                            MethodHandles.identity(int.class), null));
     }
@@ -737,7 +738,7 @@ public class LoopCombinatorTest {
     @MethodSource("wrongIteratorTypes")
     public void testIterateVoidIterator(Class<?> it) {
         MethodType v = methodType(it);
-        var iae = Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.iteratedLoop(MethodHandles.empty(v), null, MethodHandles.empty(v)));
+        var iae = assertThrows(IllegalArgumentException.class, () -> MethodHandles.iteratedLoop(MethodHandles.empty(v), null, MethodHandles.empty(v)));
         assertEqualsFIXME("iteratedLoop first argument must have Iterator return type", iae.getMessage());
     }
 
@@ -748,7 +749,7 @@ public class LoopCombinatorTest {
         if (iterator != null)
             iterator = iterator.asType(iterator.type().changeParameterType(0, List.class));
         MethodHandle loop = MethodHandles.iteratedLoop(iterator, Iterate.MH_voidInit, Iterate.MH_printStep);
-        Assertions.assertEquals(Iterate.MT_print, loop.type());
+        assertEquals(Iterate.MT_print, loop.type());
         loop.invoke(Arrays.asList("hello", "world"));
     }
 
@@ -799,28 +800,28 @@ public class LoopCombinatorTest {
             caught = true;
         }
         if (negative) {
-            Assertions.assertTrue(caught);
+            assertTrue(caught);
         } else {
             MethodType lt = loop.type();
             if (it == null && in == null) {
-                Assertions.assertEquals(bo.dropParameterTypes(0, 1), lt);
+                assertEquals(bo.dropParameterTypes(0, 1), lt);
             } else if (it == null) {
                 if (in.parameterCount() == 0) {
-                    Assertions.assertEquals(bo.dropParameterTypes(0, in.returnType() == void.class ? 1 : 2), lt);
+                    assertEquals(bo.dropParameterTypes(0, in.returnType() == void.class ? 1 : 2), lt);
                 } else {
-                    Assertions.assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
+                    assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
                 }
             } else if (in == null) {
-                Assertions.assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
+                assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
             } else if (it.parameterCount() > in.parameterCount()) {
-                Assertions.assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
+                assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
             } else if (it.parameterCount() < in.parameterCount()) {
-                Assertions.assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
+                assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
             } else {
                 // both it, in present; with equal parameter list lengths
-                Assertions.assertEquals(it.parameterList(), lt.parameterList());
-                Assertions.assertEquals(in.parameterList(), lt.parameterList());
-                Assertions.assertEquals(bo.returnType(), lt.returnType());
+                assertEquals(it.parameterList(), lt.parameterList());
+                assertEquals(in.parameterList(), lt.parameterList());
+                assertEquals(bo.returnType(), lt.returnType());
             }
         }
     }
@@ -829,7 +830,7 @@ public class LoopCombinatorTest {
     public void testIteratorSubclass() throws Throwable {
         MethodHandle loop = MethodHandles.iteratedLoop(MethodHandles.empty(methodType(BogusIterator.class, List.class)),
                 null, MethodHandles.empty(methodType(void.class, String.class, List.class)));
-        Assertions.assertEquals(methodType(void.class, List.class), loop.type());
+        assertEquals(methodType(void.class, List.class), loop.type());
     }
 
     static class BogusIterator implements Iterator {

@@ -45,8 +45,9 @@ import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CondyBSMInvocation {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -59,7 +60,7 @@ public class CondyBSMInvocation {
                 "bsm", methodType(Object.class)
         );
 
-        Assertions.assertThrows(NoSuchMethodError.class, mh::invoke);
+        assertThrows(NoSuchMethodError.class, mh::invoke);
     }
 
     static MethodHandle[] bsms(String bsmName) {
@@ -110,7 +111,7 @@ public class CondyBSMInvocation {
                     "shape_bsm", bsm.type()
             );
 
-            Assertions.assertThrows(BootstrapMethodError.class, mh::invoke);
+            assertThrows(BootstrapMethodError.class, mh::invoke);
         }
     }
 
@@ -131,7 +132,7 @@ public class CondyBSMInvocation {
                     "sig_bsm", bsm.type()
             );
 
-            Assertions.assertThrows(BootstrapMethodError.class, mh::invoke);
+            assertThrows(BootstrapMethodError.class, mh::invoke);
         }
     }
 
@@ -190,7 +191,7 @@ public class CondyBSMInvocation {
 
     static void assertAll(Object... as) {
         for (int i = 0; i < as.length; i++) {
-            Assertions.assertEquals(i, as[i]);
+            assertEquals(i, as[i]);
         }
     }
 
@@ -207,7 +208,7 @@ public class CondyBSMInvocation {
             );
 
             Object r = mh.invoke();
-            Assertions.assertEquals(Integer.toString(n), r);
+            assertEquals(Integer.toString(n), r);
         }
 
         {
@@ -219,7 +220,7 @@ public class CondyBSMInvocation {
             );
 
             Object r = mh.invoke();
-            Assertions.assertEquals(Integer.toString(9), r);
+            assertEquals(Integer.toString(9), r);
 
         }
     }
@@ -236,9 +237,9 @@ public class CondyBSMInvocation {
                     IntStream.range(0, n - 1).boxed().toArray(ConstantDesc[]::new)
             );
 
-            var e = Assertions.assertThrows(BootstrapMethodError.class, mh::invoke);
+            var e = assertThrows(BootstrapMethodError.class, mh::invoke);
             Throwable t = e.getCause();
-            Assertions.assertTrue(WrongMethodTypeException.class.isAssignableFrom(t.getClass()));
+            assertTrue(WrongMethodTypeException.class.isAssignableFrom(t.getClass()));
         }
     }
 }

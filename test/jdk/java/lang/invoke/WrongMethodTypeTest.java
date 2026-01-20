@@ -34,8 +34,10 @@ import java.lang.invoke.WrongMethodTypeException;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class WrongMethodTypeTest {
     static final Lookup LOOKUP = MethodHandles.lookup();
@@ -44,10 +46,10 @@ public class WrongMethodTypeTest {
     public void checkExactType() throws Throwable {
         String expectedMessage = "handle's method type (int)int but found ()boolean";
         MethodHandle mh = LOOKUP.findStatic(WrongMethodTypeTest.class, "m", methodType(int.class, int.class));
-        var ex = Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+        var ex = assertThrows(WrongMethodTypeException.class, () -> {
             boolean b = (boolean)mh.invokeExact();
         });
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
+        assertEquals(expectedMessage, ex.getMessage());
     }
 
     @Test
@@ -55,10 +57,10 @@ public class WrongMethodTypeTest {
         String expectedMessage = "handle's method type ()int but found ()Void";
         VarHandle vh = LOOKUP.findStaticVarHandle(WrongMethodTypeTest.class, "x", int.class)
                              .withInvokeExactBehavior();
-        var ex = Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+        var ex = assertThrows(WrongMethodTypeException.class, () -> {
             Void o = (Void) vh.get();
         });
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
+        assertEquals(expectedMessage, ex.getMessage());
     }
 
     @Test
@@ -66,10 +68,10 @@ public class WrongMethodTypeTest {
         String expectedMessage = "handle's method type (WrongMethodTypeTest)boolean but found (WrongMethodTypeTest)int";
         VarHandle vh = LOOKUP.findVarHandle(WrongMethodTypeTest.class, "y", boolean.class)
                              .withInvokeExactBehavior();
-        var ex = Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+        var ex = assertThrows(WrongMethodTypeException.class, () -> {
             int o = (int) vh.get(new WrongMethodTypeTest());
         });
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
+        assertEquals(expectedMessage, ex.getMessage());
     }
 
     static int m(int x) {

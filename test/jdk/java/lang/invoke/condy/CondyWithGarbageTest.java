@@ -38,8 +38,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
 import static java.lang.invoke.MethodType.methodType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static test.java.lang.invoke.lib.InstructionHelper.classDesc;
 
 public class CondyWithGarbageTest {
@@ -52,7 +53,7 @@ public class CondyWithGarbageTest {
         for (int i = 0; i < 100000; i++) {
             l += +((String) mh.invoke()).length();
         }
-        Assertions.assertTrue(l > 0);
+        assertTrue(l > 0);
     }
 
     public static Object bsmString(MethodHandles.Lookup l,
@@ -131,7 +132,7 @@ public class CondyWithGarbageTest {
         for (int i = 0; i < 100000; i++) {
             l += +((String) mh.invoke()).length();
         }
-        Assertions.assertTrue(l > 0);
+        assertTrue(l > 0);
     }
 
     public static Object bsmStringArray(MethodHandles.Lookup l,

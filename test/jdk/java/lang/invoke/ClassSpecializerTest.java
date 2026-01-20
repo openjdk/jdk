@@ -38,8 +38,10 @@ import java.util.List;
 
 import static java.lang.invoke.ClassSpecializerHelper.*;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 
 public class ClassSpecializerTest {
@@ -59,12 +61,12 @@ public class ClassSpecializerTest {
             }
             args.set(0, key * 1000 + 42);
             Frob f = (Frob) mh.invokeWithArguments(args.toArray());
-            Assertions.assertSame(k, f.kind());
+            assertSame(k, f.kind());
             System.out.println("k.f(...) = " + f.toString());
             List<Object> l = f.asList();
             System.out.println("f.l = " + l);
             args.subList(0,1).clear();  // drop label
-            Assertions.assertEquals(args, l);
+            assertEquals(args, l);
         }
     }
     private static Object coughUpA(Class<?> pt) throws Throwable {

@@ -50,7 +50,6 @@ import java.util.stream.Stream;
 
 import jdk.internal.reflect.CallerSensitive;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -79,7 +78,7 @@ public class CallerSensitiveAccess {
         Class<?> refc = method.getDeclaringClass();
         String name = method.getName();
         MethodType mt = MethodType.methodType(method.getReturnType(), method.getParameterTypes());
-        Assertions.assertThrows(IllegalAccessException.class, () -> {
+        assertThrows(IllegalAccessException.class, () -> {
             if (Modifier.isStatic(method.getModifiers())) {
                 lookup.findStatic(refc, name, mt);
             } else {
@@ -95,7 +94,7 @@ public class CallerSensitiveAccess {
     @ParameterizedTest
     @MethodSource("callerSensitiveMethods")
     public void testPublicLookupUnreflect(Method method, String desc) throws Exception {
-        Assertions.assertThrows(IllegalAccessException.class, () -> MethodHandles.publicLookup().unreflect(method));
+        assertThrows(IllegalAccessException.class, () -> MethodHandles.publicLookup().unreflect(method));
     }
 
     /**
@@ -118,7 +117,7 @@ public class CallerSensitiveAccess {
     @ParameterizedTest
     @MethodSource("accessibleCallerSensitiveMethods")
     public void testLookupUnreflect(Method method, String desc) throws Exception {
-        Assertions.assertThrows(IllegalAccessException.class, () -> MethodHandles.publicLookup().unreflect(method));
+        assertThrows(IllegalAccessException.class, () -> MethodHandles.publicLookup().unreflect(method));
     }
 
     /**
@@ -133,7 +132,7 @@ public class CallerSensitiveAccess {
         Class<?> refc = method.getDeclaringClass();
         String name = method.getName();
         MethodType mt = MethodType.methodType(method.getReturnType(), method.getParameterTypes());
-        Assertions.assertThrows(IllegalAccessException.class, () -> {
+        assertThrows(IllegalAccessException.class, () -> {
             if (Modifier.isStatic(method.getModifiers())) {
                 lookup.findStatic(refc, name, mt);
             } else {
@@ -151,7 +150,7 @@ public class CallerSensitiveAccess {
     public void testLookupNoOriginalAccessUnreflect(Method method, String desc) throws Exception {
         Lookup lookup = MethodHandles.lookup().dropLookupMode(Lookup.ORIGINAL);
         assertTrue(lookup.hasFullPrivilegeAccess());
-        Assertions.assertThrows(IllegalAccessException.class, () -> lookup.unreflect(method));
+        assertThrows(IllegalAccessException.class, () -> lookup.unreflect(method));
     }
 
     // -- Test method handles to setAccessible --
@@ -211,21 +210,21 @@ public class CallerSensitiveAccess {
      */
     @Test
     public void testSetAccessible5() throws Throwable {
-        Assertions.assertThrows(InaccessibleObjectException.class, () -> findAndInvokeSetAccessible(AccessibleObject.class, inaccessibleField()));
+        assertThrows(InaccessibleObjectException.class, () -> findAndInvokeSetAccessible(AccessibleObject.class, inaccessibleField()));
     }
     @Test
     public void testSetAccessible6() throws Throwable {
-        Assertions.assertThrows(InaccessibleObjectException.class, () -> findAndInvokeSetAccessible(Field.class, inaccessibleField()));
+        assertThrows(InaccessibleObjectException.class, () -> findAndInvokeSetAccessible(Field.class, inaccessibleField()));
     }
     @Test
     public void testSetAccessible7() throws Throwable {
         Method m = AccessibleObject.class.getMethod("setAccessible", boolean.class);
-        Assertions.assertThrows(InaccessibleObjectException.class, () -> unreflectAndInvokeSetAccessible(m, inaccessibleField()));
+        assertThrows(InaccessibleObjectException.class, () -> unreflectAndInvokeSetAccessible(m, inaccessibleField()));
     }
     @Test
     public void testSetAccessible8() throws Throwable {
         Method m = Field.class.getMethod("setAccessible", boolean.class);
-        Assertions.assertThrows(InaccessibleObjectException.class, () -> unreflectAndInvokeSetAccessible(m, inaccessibleField()));
+        assertThrows(InaccessibleObjectException.class, () -> unreflectAndInvokeSetAccessible(m, inaccessibleField()));
     }
 
 
@@ -267,7 +266,7 @@ public class CallerSensitiveAccess {
     @Test
     public void testPublicLookupSubclass1() throws Throwable {
         // S1 does not override setAccessible
-        Assertions.assertThrows(IllegalAccessException.class, () -> findAndInvokeSetAccessible(MethodHandles.publicLookup(), new S1()));
+        assertThrows(IllegalAccessException.class, () -> findAndInvokeSetAccessible(MethodHandles.publicLookup(), new S1()));
     }
     @Test
     public void testPublicLookupSubclass2() throws Throwable {
@@ -277,7 +276,7 @@ public class CallerSensitiveAccess {
     @Test
     public void testPublicLookupSubclass3() throws Throwable {
         // S1 does not override setAccessible
-        Assertions.assertThrows(IllegalAccessException.class, () -> unreflectAndInvokeSetAccessible(MethodHandles.publicLookup(), new S1()));
+        assertThrows(IllegalAccessException.class, () -> unreflectAndInvokeSetAccessible(MethodHandles.publicLookup(), new S1()));
     }
     @Test
     public void testPublicLookupSubclass4() throws Throwable {
@@ -310,7 +309,7 @@ public class CallerSensitiveAccess {
         MethodType mt = MethodType.methodType(void.class, boolean.class);
         Lookup lookup = MethodHandles.lookup();
         MethodHandle mh = lookup.findVirtual(obj.getClass(), "setAccessible", mt);
-        Assertions.assertThrows(ClassCastException.class, () -> mh.invoke(accessibleField(), true));
+        assertThrows(ClassCastException.class, () -> mh.invoke(accessibleField(), true));
     }
 
     /**
@@ -334,7 +333,7 @@ public class CallerSensitiveAccess {
         Method m = S1.class.getMethod("setAccessible", boolean.class);
         assertTrue(m.getDeclaringClass() == AccessibleObject.class);
         MethodHandle mh = MethodHandles.lookup().unreflect(m);
-        Assertions.assertThrows(InaccessibleObjectException.class, () -> mh.invoke(inaccessibleField(), true));
+        assertThrows(InaccessibleObjectException.class, () -> mh.invoke(inaccessibleField(), true));
     }
     @Test
     public void testLookupSubclass6() throws Throwable {
@@ -342,7 +341,7 @@ public class CallerSensitiveAccess {
         Method m = S2.class.getMethod("setAccessible", boolean.class);
         assertTrue(m.getDeclaringClass() == S2.class);
         MethodHandle mh = MethodHandles.lookup().unreflect(m);
-        Assertions.assertThrows(ClassCastException.class, () -> mh.invoke(accessibleField(), true));
+        assertThrows(ClassCastException.class, () -> mh.invoke(accessibleField(), true));
     }
     @Test
     public void testLookupSubclass7() throws Throwable {
@@ -350,7 +349,7 @@ public class CallerSensitiveAccess {
         Method m = S2.class.getMethod("setAccessible", boolean.class);
         assertTrue(m.getDeclaringClass() == S2.class);
         MethodHandle mh = MethodHandles.lookup().unreflect(m);
-        Assertions.assertThrows(ClassCastException.class, () -> mh.invoke(inaccessibleField(), true));
+        assertThrows(ClassCastException.class, () -> mh.invoke(inaccessibleField(), true));
     }
 
     /**

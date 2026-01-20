@@ -29,23 +29,24 @@ package test.java.lang.invoke;
 
 import static java.lang.invoke.MethodHandles.*;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestLookup {
 
     @Test
     public void testClassLoaderChange() {
         Lookup lookup = lookup();
-        Assertions.assertNotNull(lookup.lookupClass().getClassLoader());
+        assertNotNull(lookup.lookupClass().getClassLoader());
         Lookup lookup2 = lookup.in(Object.class);
-        Assertions.assertNull(lookup2.lookupClass().getClassLoader());
+        assertNull(lookup2.lookupClass().getClassLoader());
     }
 
     @Test
     public void testPublicCannotLoadUserClass() throws IllegalAccessException, ClassNotFoundException {
         Lookup lookup = publicLookup();
-        Assertions.assertThrows(ClassNotFoundException.class, () -> lookup.findClass("test.java.lang.invoke.TestCls"));
+        assertThrows(ClassNotFoundException.class, () -> lookup.findClass("test.java.lang.invoke.TestCls"));
     }
 
     @Test
@@ -61,7 +62,7 @@ public class TestLookup {
         // "publicLookup changed so that the lookup class is in an unnamed module"
         //assertNull(lookup.lookupClass().getClassLoader());
         Lookup lookup2 = lookup.in(TestCls.class);
-        Assertions.assertNotNull(lookup2.lookupClass().getClassLoader());
+        assertNotNull(lookup2.lookupClass().getClassLoader());
     }
 
 }

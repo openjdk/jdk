@@ -36,9 +36,11 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CondyReturnPrimitiveTest {
     // Counter for number of BSM calls
@@ -292,7 +294,7 @@ public class CondyReturnPrimitiveTest {
         // Ensure when run a second time that the bootstrap method is not
         // invoked and the constants are cached
         testConstants();
-        Assertions.assertEquals(expectedCallCount, callCount.get());
+        assertEquals(expectedCallCount, callCount.get());
     }
 
     @Test
@@ -322,11 +324,11 @@ public class CondyReturnPrimitiveTest {
 
     void testConstant(String name, Object expected) throws Exception {
         Method m = gc.getDeclaredMethod(name);
-        Assertions.assertEquals(expected, m.invoke(null));
+        assertEquals(expected, m.invoke(null));
     }
 
     void testConstant(String name, Object[] expected) throws Exception {
         Method m = gc.getDeclaredMethod(name);
-        Assertions.assertArrayEquals(expected, (Object[]) m.invoke(null));
+        assertArrayEquals(expected, (Object[]) m.invoke(null));
     }
 }

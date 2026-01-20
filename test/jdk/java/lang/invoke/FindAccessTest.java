@@ -33,8 +33,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for Lookup.findClass/accessClass extensions added in JEP 274.
@@ -46,25 +48,25 @@ public class FindAccessTest {
     @Test
     public void testFindSpecial() throws Throwable {
         FindSpecial.C c = new FindSpecial.C();
-        Assertions.assertEquals("I1.m", c.m());
+        assertEquals("I1.m", c.m());
         MethodType t = MethodType.methodType(String.class);
         MethodHandle ci1m = LOOKUP.findSpecial(FindSpecial.I1.class, "m", t, FindSpecial.C.class);
-        Assertions.assertEquals("I1.m", (String) ci1m.invoke(c));
+        assertEquals("I1.m", (String) ci1m.invoke(c));
     }
 
     @Test
     public void testFindSpecialAbstract() throws Throwable {
         FindSpecial.C c = new FindSpecial.C();
-        Assertions.assertEquals("q", c.q());
+        assertEquals("q", c.q());
         MethodType t = MethodType.methodType(String.class);
-        var thrown = Assertions.assertThrows(IllegalAccessException.class,
+        var thrown = assertThrows(IllegalAccessException.class,
                 () -> LOOKUP.findSpecial(FindSpecial.I3.class, "q", t, FindSpecial.C.class));
-        Assertions.assertEquals(FindSpecial.ABSTRACT_ERROR, thrown.getMessage());
+        assertEquals(FindSpecial.ABSTRACT_ERROR, thrown.getMessage());
     }
 
     @Test
     public void testFindClassCNFE() throws ClassNotFoundException, IllegalAccessException {
-        Assertions.assertThrows(ClassNotFoundException.class, () -> LOOKUP.findClass("does.not.Exist"));
+        assertThrows(ClassNotFoundException.class, () -> LOOKUP.findClass("does.not.Exist"));
     }
 
     static class FindSpecial {

@@ -31,18 +31,14 @@
 package test.java.lang.invoke;
 
 import java.lang.invoke.MethodHandles;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class CompileThresholdBootstrapTest {
 
     @Test
     public void testBootstrap() throws Throwable {
-        Assertions.assertEquals(0, (int)MethodHandles.constant(int.class, (int)0).invokeExact());
-    }
-
-    public static void main(String ... args) throws Throwable {
-        CompileThresholdBootstrapTest test = new CompileThresholdBootstrapTest();
-        test.testBootstrap();
+        assertEquals(0, (int)MethodHandles.constant(int.class, (int)0).invokeExact());
     }
 }

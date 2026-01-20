@@ -36,10 +36,12 @@ import java.util.Collections;
 import java.util.List;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DropArgumentsTest {
 
@@ -48,11 +50,11 @@ public class DropArgumentsTest {
         MethodHandle cat = lookup().findVirtual(String.class, "concat", methodType(String.class, String.class));
         MethodType bigType = cat.type().insertParameterTypes(0, String.class, String.class, int.class);
         MethodHandle d0 = MethodHandles.dropArgumentsToMatch(cat, 0, bigType.parameterList(), 3);
-        Assertions.assertEquals("xy",(String)d0.invokeExact("m", "n", 1, "x", "y"));
+        assertEquals("xy",(String)d0.invokeExact("m", "n", 1, "x", "y"));
         MethodHandle d1 = MethodHandles.dropArgumentsToMatch(cat, 0, bigType.parameterList(), 0);
-        Assertions.assertEquals("mn",(String)d1.invokeExact("m", "n", 1, "x", "y"));
+        assertEquals("mn",(String)d1.invokeExact("m", "n", 1, "x", "y"));
         MethodHandle d2 = MethodHandles.dropArgumentsToMatch(cat, 1, bigType.parameterList(), 4);
-        Assertions.assertEquals("xy",(String)d2.invokeExact("x", "b", "c", 1, "a", "y"));
+        assertEquals("xy",(String)d2.invokeExact("x", "b", "c", 1, "a", "y"));
 
     }
 
@@ -68,7 +70,7 @@ public class DropArgumentsTest {
     @ParameterizedTest
     @MethodSource("dropArgumentsToMatchNPEData")
     public void dropArgumentsToMatchNPE(MethodHandle target, int pos, List<Class<?>> valueType, int skip) {
-        Assertions.assertThrows(NullPointerException.class, () -> MethodHandles.dropArgumentsToMatch(target, pos, valueType, skip));
+        assertThrows(NullPointerException.class, () -> MethodHandles.dropArgumentsToMatch(target, pos, valueType, skip));
     }
 
     private static Object[][] dropArgumentsToMatchIAEData()
@@ -87,7 +89,7 @@ public class DropArgumentsTest {
     @ParameterizedTest
     @MethodSource("dropArgumentsToMatchIAEData")
     public void dropArgumentsToMatchIAE(MethodHandle target, int pos, List<Class<?>> valueType, int skip) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodHandles.dropArgumentsToMatch(target, pos, valueType, skip));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.dropArgumentsToMatch(target, pos, valueType, skip));
     }
 
     @Test
@@ -96,7 +98,7 @@ public class DropArgumentsTest {
                 MethodType.methodType(String.class, String.class));
         List<Class<?>> bigTypewithVoid = new ArrayList<>(cat.type().parameterList());
         bigTypewithVoid.addAll(0, List.of(void.class, String.class, int.class));
-        Assertions.assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 MethodHandles.dropArgumentsToMatch(cat, 0, bigTypewithVoid, 1));
     }
 
@@ -117,12 +119,12 @@ public class DropArgumentsTest {
         MethodHandle mh1 = MethodHandles.lookup().findStatic(MethodSet.class, "mVoid",
                                                              MethodType.methodType(void.class));
         MethodHandle handle1 = dropArgumentsToMatch(mh1, 0, Collections.singletonList(int.class), 1);
-        Assertions.assertEquals(1, handle1.type().parameterList().size());
+        assertEquals(1, handle1.type().parameterList().size());
 
         // newTypes.size() == 1, pos == 0   &&   target.paramSize() == 1, skip == 1
         MethodHandle mh2 = MethodHandles.lookup().findStatic(MethodSet.class, "mVoid",
                                                              MethodType.methodType(void.class, int.class));
         MethodHandle handle2 = dropArgumentsToMatch(mh2, 1, Collections.singletonList(int.class), 0);
-        Assertions.assertEquals(2, handle2.type().parameterList().size());
+        assertEquals(2, handle2.type().parameterList().size());
     }
 }

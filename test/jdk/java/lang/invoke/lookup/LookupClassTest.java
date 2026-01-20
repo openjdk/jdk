@@ -31,7 +31,6 @@
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -52,18 +51,18 @@ public class LookupClassTest {
     @Test
     public void arrayLookupClass() {
         Lookup lookup = MethodHandles.lookup();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> lookup.in(ARRAY.getClass()));
+        assertThrows(IllegalArgumentException.class, () -> lookup.in(ARRAY.getClass()));
     }
 
     @Test
     public void primitiveLookupClass() {
         Lookup lookup = MethodHandles.publicLookup();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> lookup.in(int.class));
+        assertThrows(IllegalArgumentException.class, () -> lookup.in(int.class));
     }
 
     @Test
     public void voidLookupClass() {
         Lookup lookup = MethodHandles.publicLookup();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> lookup.in(void.class));
+        assertThrows(IllegalArgumentException.class, () -> lookup.in(void.class));
     }
 }

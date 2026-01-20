@@ -38,8 +38,9 @@ import java.lang.invoke.VarHandle;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests invocation of MethodHandle with invalid leading argument such as
@@ -51,14 +52,14 @@ public class InvokeMethodHandleWithBadArgument {
     @Test
     public void testAsSpreaderPosInvokeWithNull() throws Throwable {
         MethodHandle spreader = MH_spread.asSpreader(1, int[].class, 3);
-        Assertions.assertThrows(NullPointerException.class, () -> spreader.invoke("A", null, "B"));
+        assertThrows(NullPointerException.class, () -> spreader.invoke("A", null, "B"));
     }
 
     @Test
     public void testAsSpreaderInvokeWithNull() throws Throwable {
         MethodHandle spreader = MH_String_equals.asSpreader(String[].class, 2);
-        Assertions.assertTrue((boolean) spreader.invokeExact(new String[]{"me", "me"}));
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertTrue((boolean) spreader.invokeExact(new String[]{"me", "me"}));
+        assertThrows(NullPointerException.class, () -> {
             boolean eq = (boolean) spreader.invokeExact((String[]) null);
         });
     }
@@ -67,14 +68,14 @@ public class InvokeMethodHandleWithBadArgument {
     @Test
     public void testAsSpreaderPosInvokeWithBadElementCount() throws Throwable {
         MethodHandle spreader = MH_spread.asSpreader(1, int[].class, 3);
-        Assertions.assertThrows(IllegalArgumentException.class, () -> spreader.invoke("A", new int[]{1, 2}, "B"));
+        assertThrows(IllegalArgumentException.class, () -> spreader.invoke("A", new int[]{1, 2}, "B"));
     }
 
     @Test
     public void testAsSpreaderInvokeWithBadElementCount() throws Throwable {
         MethodHandle spreader = MH_String_equals.asSpreader(String[].class, 2);
-        Assertions.assertFalse((boolean) spreader.invokeExact(new String[]{"me", "thee"}));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertFalse((boolean) spreader.invokeExact(new String[]{"me", "thee"}));
+        assertThrows(IllegalArgumentException.class, () -> {
             boolean eq = (boolean) spreader.invokeExact(new String[0]);
         });
     }
@@ -83,13 +84,13 @@ public class InvokeMethodHandleWithBadArgument {
     @Test
     public void testAsSpreaderPosInvokeWithZeroLength() throws Throwable {
         MethodHandle spreader = MH_spread.asSpreader(1, int[].class, 0);
-        Assertions.assertEquals("A123B", spreader.invoke("A", (int[]) null, 1, 2, 3, "B"));
+        assertEquals("A123B", spreader.invoke("A", (int[]) null, 1, 2, 3, "B"));
     }
 
     @Test
     public void testAsSpreaderInvokeWithZeroLength() throws Throwable {
         MethodHandle spreader = MH_String_equals.asSpreader(String[].class, 0);
-        Assertions.assertTrue((boolean) spreader.invokeExact("me", (Object)"me", new String[0]));
+        assertTrue((boolean) spreader.invokeExact("me", (Object)"me", new String[0]));
         boolean eq = (boolean) spreader.invokeExact("me", (Object)"me", (String[]) null);
     }
 
@@ -98,8 +99,8 @@ public class InvokeMethodHandleWithBadArgument {
     public void testInvokerWithNull() throws Throwable {
         MethodType type = methodType(int.class, int.class, int.class);
         MethodHandle invoker = MethodHandles.invoker(type);
-        Assertions.assertEquals(3, (int) invoker.invoke(MH_add, 1, 2));
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertEquals(3, (int) invoker.invoke(MH_add, 1, 2));
+        assertThrows(NullPointerException.class, () -> {
             int sum = (int)invoker.invoke((MethodHandle)null, 1, 2);
         });
     }
@@ -108,8 +109,8 @@ public class InvokeMethodHandleWithBadArgument {
     public void testExactInvokerWithNull() throws Throwable {
         MethodType type = methodType(int.class, int.class, int.class);
         MethodHandle invoker = MethodHandles.exactInvoker(type);
-        Assertions.assertEquals(3, (int) invoker.invoke(MH_add, 1, 2));
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertEquals(3, (int) invoker.invoke(MH_add, 1, 2));
+        assertThrows(NullPointerException.class, () -> {
             int sum = (int)invoker.invokeExact((MethodHandle)null, 1, 2);
         });
     }
@@ -118,8 +119,8 @@ public class InvokeMethodHandleWithBadArgument {
     public void testSpreadInvokerWithNull() throws Throwable {
         MethodType type = methodType(boolean.class, String.class, String.class);
         MethodHandle invoker = MethodHandles.spreadInvoker(type, 0);
-        Assertions.assertTrue((boolean) invoker.invoke(MH_String_equals, new String[]{"me", "me"}));
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertTrue((boolean) invoker.invoke(MH_String_equals, new String[]{"me", "me"}));
+        assertThrows(NullPointerException.class, () -> {
             boolean eq = (boolean) invoker.invoke((MethodHandle)null, new String[]{"me", "me"});
         });
     }
@@ -128,8 +129,8 @@ public class InvokeMethodHandleWithBadArgument {
     public void testVarHandleInvokerWithNull() throws Throwable {
         VarHandle.AccessMode am = VarHandle.AccessMode.GET;
         MethodHandle invoker = MethodHandles.varHandleInvoker(am, VH_array.accessModeType(am));
-        Assertions.assertEquals(3, (int) invoker.invoke(VH_array, array, 3));
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertEquals(3, (int) invoker.invoke(VH_array, array, 3));
+        assertThrows(NullPointerException.class, () -> {
             int value = (int)invoker.invoke((VarHandle)null, array, 3);
         });
     }
@@ -138,8 +139,8 @@ public class InvokeMethodHandleWithBadArgument {
     public void testVarHandleExactInvokerWithNull() throws Throwable {
         VarHandle.AccessMode am = VarHandle.AccessMode.GET;
         MethodHandle invoker = MethodHandles.varHandleExactInvoker(am, VH_array.accessModeType(am));
-        Assertions.assertEquals(3, (int) invoker.invoke(VH_array, array, 3));
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertEquals(3, (int) invoker.invoke(VH_array, array, 3));
+        assertThrows(NullPointerException.class, () -> {
             int value = (int)invoker.invokeExact((VarHandle)null, array, 3);
         });
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ import java.lang.invoke.MethodHandles;
 
 import static java.lang.invoke.MethodType.methodType;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Test8147078 {
@@ -69,7 +69,7 @@ public class Test8147078 {
         var cce = assertThrows(ClassCastException.class, () -> {
             MethodHandle eek = (MethodHandle) MH_catchException.invoke(MH_target, String.class, MH_handler);
         });
-        Assertions.assertEquals("java.lang.String", cce.getMessage());
+        assertEquals("java.lang.String", cce.getMessage());
     }
 
 }

@@ -36,10 +36,11 @@ import q.Bar;
 
 import static java.lang.invoke.MethodHandles.*;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestAccessClass {
 
@@ -54,19 +55,19 @@ public class TestAccessClass {
     @Test
     public void initializerNotRun() throws IllegalAccessException {
         lookup().accessClass(Class1.class);
-        Assertions.assertFalse(initializedClass1);
+        assertFalse(initializedClass1);
     }
 
     @Test
     public void returnsSameClassInSamePackage() throws IllegalAccessException {
         Class<?> aClass = lookup().accessClass(Class1.class);
-        Assertions.assertEquals(Class1.class, aClass);
+        assertEquals(Class1.class, aClass);
     }
 
     @Test
     public void returnsSameArrayClassInSamePackage() throws IllegalAccessException {
         Class<?> aClass = lookup().accessClass(Class1[].class);
-        Assertions.assertEquals(Class1[].class, aClass);
+        assertEquals(Class1[].class, aClass);
     }
 
     static Object[][] illegalAccessAccess() {
@@ -79,7 +80,7 @@ public class TestAccessClass {
     @ParameterizedTest
     @MethodSource("illegalAccessAccess")
     public void illegalAccessExceptionTest(Lookup lookup, Class<?> klass) throws IllegalAccessException {
-        Assertions.assertThrows(IllegalAccessException.class, () -> {
+        assertThrows(IllegalAccessException.class, () -> {
             lookup.accessClass(klass);
         });
     }
@@ -103,6 +104,6 @@ public class TestAccessClass {
 
     @Test
     public void illegalArgument() throws IllegalAccessException {
-        Assertions.assertThrows(NullPointerException.class, () -> lookup().accessClass(null));
+        assertThrows(NullPointerException.class, () -> lookup().accessClass(null));
     }
 }
