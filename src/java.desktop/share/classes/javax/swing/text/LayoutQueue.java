@@ -35,8 +35,6 @@ import java.util.Vector;
  */
 public class LayoutQueue {
 
-    private static final Object DEFAULT_QUEUE = new Object();
-
     private Vector<Runnable> tasks;
     private Thread worker;
 
