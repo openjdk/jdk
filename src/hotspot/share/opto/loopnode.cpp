@@ -5008,6 +5008,10 @@ static AddNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phas
       return new OrINode(a, b);
     case Op_OrL:
       return new OrLNode(a, b);
+    case Op_XorI:
+      return new XorINode(a, b);
+    case Op_XorL:
+      return new XorLNode(a, b);
     default:
       ShouldNotReachHere();
   }
@@ -5016,7 +5020,8 @@ static AddNode* build_min_max(int opcode, Node* a, Node* b, PhaseIdealLoop* phas
 static bool is_associative(Node* node) {
   return node->is_MinMax() ||
     node->Opcode() == Op_AddI || node->Opcode() == Op_AddL ||
-    node->Opcode() == Op_OrI || node->Opcode() == Op_OrL;
+    node->Opcode() == Op_OrI || node->Opcode() == Op_OrL ||
+    node->Opcode() == Op_XorI || node->Opcode() == Op_XorL;
 }
 
 static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* loop_head, PhaseIdealLoop* phase) {
