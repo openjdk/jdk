@@ -214,6 +214,39 @@ enum NamedGroup {
             ProtocolVersion.PROTOCOLS_TO_13,
             PredefinedDHParameterSpecs.ffdheParams.get(8192)),
 
+    ML_KEM_512(0x0200, "MLKEM512",
+            NamedGroupSpec.NAMED_GROUP_KEM,
+            ProtocolVersion.PROTOCOLS_OF_13,
+            null),
+
+    ML_KEM_768(0x0201, "MLKEM768",
+            NamedGroupSpec.NAMED_GROUP_KEM,
+            ProtocolVersion.PROTOCOLS_OF_13,
+            null),
+
+    ML_KEM_1024(0x0202, "MLKEM1024",
+            NamedGroupSpec.NAMED_GROUP_KEM,
+            ProtocolVersion.PROTOCOLS_OF_13,
+            null),
+
+    X25519MLKEM768(0x11ec, "X25519MLKEM768",
+            NamedGroupSpec.NAMED_GROUP_KEM,
+            ProtocolVersion.PROTOCOLS_OF_13,
+            Hybrid.X25519_MLKEM768,
+            HybridProvider.PROVIDER),
+
+    SECP256R1MLKEM768(0x11eb, "SecP256r1MLKEM768",
+            NamedGroupSpec.NAMED_GROUP_KEM,
+            ProtocolVersion.PROTOCOLS_OF_13,
+            Hybrid.SECP256R1_MLKEM768,
+            HybridProvider.PROVIDER),
+
+    SECP384R1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
+            NamedGroupSpec.NAMED_GROUP_KEM,
+            ProtocolVersion.PROTOCOLS_OF_13,
+            Hybrid.SECP384R1_MLKEM1024,
+            HybridProvider.PROVIDER),
+
     // Elliptic Curves (RFC 4492)
     //
     // arbitrary prime and characteristic-2 curves
@@ -234,22 +267,33 @@ enum NamedGroup {
     final AlgorithmParameterSpec keAlgParamSpec;
     final AlgorithmParameters keAlgParams;
     final boolean isAvailable;
+    final Provider defaultProvider;
 
     // performance optimization
     private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
-    // Constructor used for all NamedGroup types
     NamedGroup(int id, String name,
             NamedGroupSpec namedGroupSpec,
             ProtocolVersion[] supportedProtocols,
             AlgorithmParameterSpec keAlgParamSpec) {
+        this(id, name, namedGroupSpec, supportedProtocols, keAlgParamSpec,
+                null);
+    }
+
+    // Constructor used for all NamedGroup types
+    NamedGroup(int id, String name,
+            NamedGroupSpec namedGroupSpec,
+            ProtocolVersion[] supportedProtocols,
+            AlgorithmParameterSpec keAlgParamSpec,
+            Provider defaultProvider) {
         this.id = id;
         this.name = name;
         this.spec = namedGroupSpec;
         this.algorithm = namedGroupSpec.algorithm;
         this.supportedProtocols = supportedProtocols;
         this.keAlgParamSpec = keAlgParamSpec;
+        this.defaultProvider = defaultProvider;
 
         // Check if it is a supported named group.
         AlgorithmParameters algParams = null;
@@ -266,16 +310,28 @@ enum NamedGroup {
         // Check the specific algorithm parameters.
         if (mediator) {
             try {
-                algParams =
-                    AlgorithmParameters.getInstance(namedGroupSpec.algorithm);
-                algParams.init(keAlgParamSpec);
+                // Skip AlgorithmParameters for KEMs (not supported)
+                // Check KEM's availability via KeyFactory
+                if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
+                    if (defaultProvider == null) {
+                        KeyFactory.getInstance(name);
+                    } else {
+                        KeyFactory.getInstance(name, defaultProvider);
+                    }
+                } else {
+                    // ECDHE or others: use AlgorithmParameters as before
+                    algParams = AlgorithmParameters.getInstance(
+                            namedGroupSpec.algorithm);
+                    algParams.init(keAlgParamSpec);
+                }
             } catch (InvalidParameterSpecException
                     | NoSuchAlgorithmException exp) {
                 if (namedGroupSpec != NamedGroupSpec.NAMED_GROUP_XDH) {
                     mediator = false;
                     if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(
-                            "No AlgorithmParameters for " + name, exp);
+                            "No AlgorithmParameters or KeyFactory for " + name,
+                                exp);
                     }
                 } else {
                     // Please remove the following code if the XDH/X25519/X448
@@ -305,6 +361,10 @@ enum NamedGroup {
 
         this.isAvailable = mediator;
         this.keAlgParams = mediator ? algParams : null;
+    }
+
+    Provider getProvider() {
+        return defaultProvider;
     }
 
     //
@@ -545,6 +605,10 @@ enum NamedGroup {
         return spec.decodeCredentials(this, encoded);
     }
 
+    SSLPossession createPossession(boolean isClient, SecureRandom random) {
+        return spec.createPossession(this, isClient, random);
+    }
+
     SSLPossession createPossession(SecureRandom random) {
         return spec.createPossession(this, random);
     }
@@ -566,6 +630,11 @@ enum NamedGroup {
 
         SSLKeyDerivation createKeyDerivation(
                 HandshakeContext hc) throws IOException;
+
+        default SSLPossession createPossession(NamedGroup ng, boolean isClient,
+                SecureRandom random) {
+            return createPossession(ng, random);
+        }
     }
 
     enum NamedGroupSpec implements NamedGroupScheme {
@@ -577,6 +646,10 @@ enum NamedGroup {
 
         // Finite Field Groups (XDH)
         NAMED_GROUP_XDH("XDH", XDHScheme.instance),
+
+        // Post-Quantum Cryptography (PQC) KEM groups
+        // Currently used for hybrid named groups
+        NAMED_GROUP_KEM("KEM", KEMScheme.instance),
 
         // arbitrary prime and curves (ECDHE)
         NAMED_GROUP_ARBITRARY("EC", null),
@@ -629,6 +702,15 @@ enum NamedGroup {
                 byte[] encoded) throws IOException, GeneralSecurityException {
             if (scheme != null) {
                 return scheme.decodeCredentials(ng, encoded);
+            }
+
+            return null;
+        }
+
+        public SSLPossession createPossession(
+                NamedGroup ng, boolean isClient, SecureRandom random) {
+            if (scheme != null) {
+                return scheme.createPossession(ng, isClient, random);
             }
 
             return null;
@@ -739,6 +821,42 @@ enum NamedGroup {
         }
     }
 
+    private static class KEMScheme implements NamedGroupScheme {
+        private static final KEMScheme instance = new KEMScheme();
+
+        @Override
+        public byte[] encodePossessionPublicKey(NamedGroupPossession poss) {
+            return poss.encode();
+        }
+
+        @Override
+        public SSLCredentials decodeCredentials(NamedGroup ng,
+                byte[] encoded) throws IOException, GeneralSecurityException {
+            return KEMKeyExchange.KEMCredentials.valueOf(ng, encoded);
+        }
+
+        @Override
+        public SSLPossession createPossession(NamedGroup ng,
+                SecureRandom random) {
+            // Must call createPossession with isClient
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SSLPossession createPossession(
+                NamedGroup ng, boolean isClient, SecureRandom random) {
+            return isClient
+                    ? new KEMKeyExchange.KEMReceiverPossession(ng, random)
+                    : new KEMKeyExchange.KEMSenderPossession(ng, random);
+        }
+
+        @Override
+        public SSLKeyDerivation createKeyDerivation(
+                HandshakeContext hc) throws IOException {
+            return KEMKeyExchange.kemKAGenerator.createKeyDerivation(hc);
+        }
+    }
+
     static final class SupportedGroups {
         // the supported named groups, non-null immutable list
         static final String[] namedGroups;
@@ -783,6 +901,9 @@ enum NamedGroup {
                 }
             } else {        // default groups
                 NamedGroup[] groups = new NamedGroup[] {
+
+                        // Hybrid key agreement
+                        X25519MLKEM768,
 
                         // Primary XDH (RFC 7748) curves
                         X25519,
