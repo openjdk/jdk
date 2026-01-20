@@ -35,21 +35,19 @@ import java.lang.runtime.SwitchBootstraps;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.classfile.ClassFile;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 /**
  * @test
  * @bug 8318144
  * @enablePreview
  * @compile SwitchBootstrapsTest.java
- * @run testng/othervm SwitchBootstrapsTest
+ * @run junit/othervm SwitchBootstrapsTest
  */
-@Test
 public class SwitchBootstrapsTest {
 
     public static final MethodHandle BSM_TYPE_SWITCH;
@@ -70,14 +68,14 @@ public class SwitchBootstrapsTest {
     private void testType(Object target, int start, int result, Object... labels) throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
         MethodHandle indy = ((CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
-        assertEquals((int) indy.invoke(target, start), result);
+        assertEquals(result, (int) indy.invoke(target, start));
         assertEquals(-1, (int) indy.invoke(null, start));
     }
 
     private void testPrimitiveType(Object target, Class<?> targetType, int start, int result, Object... labels) throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, targetType, int.class);
         MethodHandle indy = ((CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
-        assertEquals((int) indy.invoke(target, start), result);
+        assertEquals(result, (int) indy.invoke(target, start));
     }
 
     private void testEnum(Enum<?> target, int start, int result, Object... labels) throws Throwable {
@@ -87,7 +85,7 @@ public class SwitchBootstrapsTest {
     private void testEnum(Class<?> targetClass, Enum<?> target, int start, int result, Object... labels) throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, targetClass, int.class);
         MethodHandle indy = ((CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
-        assertEquals((int) indy.invoke(target, start), result);
+        assertEquals(result, (int) indy.invoke(target, start));
         assertEquals(-1, (int) indy.invoke(null, start));
     }
 
@@ -100,6 +98,7 @@ public class SwitchBootstrapsTest {
         C;
     }
 
+    @Test
     public void testTypes() throws Throwable {
         testType("", 0, 0, String.class, Object.class);
         testType("", 0, 0, Object.class);
@@ -138,6 +137,7 @@ public class SwitchBootstrapsTest {
         }, 0, 1, 1L);
     }
 
+    @Test
     public void testPrimitiveTypes() throws Throwable {
         testPrimitiveType((short) 1, short.class, 0, 1, String.class);
         testPrimitiveType((byte) 1, byte.class,0, 1, String.class, byte.class);
@@ -150,6 +150,7 @@ public class SwitchBootstrapsTest {
         testPrimitiveType(true, boolean.class,0, 1, String.class, boolean.class);
     }
 
+    @Test
     public void testEnums() throws Throwable {
         testEnum(E1.A, 0, 2, "B", "C", "A", E1.class);
         testEnum(E1.B, 0, 0, "B", "C", "A", E1.class);
@@ -208,9 +209,10 @@ public class SwitchBootstrapsTest {
         //null invocation name:
         MethodType switchType = MethodType.methodType(int.class, E1.class, int.class);
         MethodHandle indy = ((CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), null, switchType)).dynamicInvoker();
-        assertEquals((int) indy.invoke(E1.A, 0), 0);
+        assertEquals(0, (int) indy.invoke(E1.A, 0));
     }
 
+    @Test
     public void testEnumsWithConstants() throws Throwable {
         enum E {
             A {},
@@ -239,6 +241,7 @@ public class SwitchBootstrapsTest {
         testEnum(E.class, E.C, 2, 2, "A", "B");
     }
 
+    @Test
     public void testWrongSwitchTypes() throws Throwable {
         MethodType[] switchTypes = new MethodType[] {
             MethodType.methodType(int.class, Object.class),
@@ -268,6 +271,7 @@ public class SwitchBootstrapsTest {
         }
     }
 
+    @Test
     public void testSwitchLabelTypes() throws Throwable {
         enum E {A}
         try {
@@ -278,6 +282,7 @@ public class SwitchBootstrapsTest {
         }
     }
 
+    @Test
     public void testSwitchQualifiedEnum() throws Throwable {
         enum E {A, B, C}
         Object[] labels = new Object[] {
@@ -290,6 +295,7 @@ public class SwitchBootstrapsTest {
         testType(E.C, 0, 2, labels);
     }
 
+    @Test
     public void testNullLabels() throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
         try {
@@ -325,6 +331,7 @@ public class SwitchBootstrapsTest {
     }
 
     private static AtomicBoolean enumInitialized = new AtomicBoolean();
+    @Test
     public void testEnumInitialization1() throws Throwable {
         enumInitialized.set(false);
 
@@ -340,13 +347,14 @@ public class SwitchBootstrapsTest {
 
         CallSite invocation = (CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType, new Object[] {"A"});
         assertFalse(enumInitialized.get());
-        assertEquals(invocation.dynamicInvoker().invoke(null, 0), -1);
+        assertEquals(-1, invocation.dynamicInvoker().invoke(null, 0));
         assertFalse(enumInitialized.get());
         E e = E.A;
         assertTrue(enumInitialized.get());
-        assertEquals(invocation.dynamicInvoker().invoke(e, 0), 0);
+        assertEquals(0, invocation.dynamicInvoker().invoke(e, 0));
     }
 
+    @Test
     public void testEnumInitialization2() throws Throwable {
         enumInitialized.set(false);
 
@@ -365,15 +373,16 @@ public class SwitchBootstrapsTest {
         };
         CallSite invocation = (CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels);
         assertFalse(enumInitialized.get());
-        assertEquals(invocation.dynamicInvoker().invoke(null, 0), -1);
+        assertEquals(-1, invocation.dynamicInvoker().invoke(null, 0));
         assertFalse(enumInitialized.get());
-        assertEquals(invocation.dynamicInvoker().invoke("test", 0), 1);
+        assertEquals(1, invocation.dynamicInvoker().invoke("test", 0));
         assertFalse(enumInitialized.get());
         E e = E.A;
         assertTrue(enumInitialized.get());
-        assertEquals(invocation.dynamicInvoker().invoke(e, 0), 0);
+        assertEquals(0, invocation.dynamicInvoker().invoke(e, 0));
     }
 
+    @Test
     public void testIncorrectEnumLabels() throws Throwable {
         try {
             testEnum(E1.B, 0, -1, "B", 1);
@@ -389,6 +398,7 @@ public class SwitchBootstrapsTest {
         }
     }
 
+    @Test
     public void testIncorrectEnumStartIndex() throws Throwable {
         try {
             testEnum(E1.B, -1, -1, "B");
@@ -404,6 +414,7 @@ public class SwitchBootstrapsTest {
         }
     }
 
+    @Test
     public void testIncorrectTypeStartIndex() throws Throwable {
         try {
             testType("", -1, -1, "");
@@ -419,6 +430,7 @@ public class SwitchBootstrapsTest {
         }
     }
 
+    @Test
     public void testHiddenClassAsCaseLabel() throws Throwable {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         byte[] classBytes = createClass();
@@ -448,6 +460,7 @@ public class SwitchBootstrapsTest {
                     });
     }
 
+    @Test
     public void testNullLookup() throws Throwable {
         try {
             MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
