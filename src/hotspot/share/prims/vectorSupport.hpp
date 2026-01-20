@@ -143,7 +143,7 @@ class VectorSupport : AllStatic {
   };
 
   static const char* lanetype2name(int lane_type);
-  static int vop2ideal(jint vop, int lane_type);
+  static int vop2ideal(jint vop, BasicType lane_type);
   static bool has_scalar_op(jint id);
   static bool is_unsigned_op(jint id);
 

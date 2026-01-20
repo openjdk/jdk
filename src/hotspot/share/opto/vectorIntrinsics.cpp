@@ -377,7 +377,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   bool is_unsigned = VectorSupport::is_unsigned_op(opr->get_con());
 
   int num_elem = vlen->get_con();
-  int opc = VectorSupport::vop2ideal(opr->get_con(), laneType->get_con());
+  int opc = VectorSupport::vop2ideal(opr->get_con(), (BasicType)laneType->get_con());
   BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
 
   int sopc = has_scalar_op ? VectorNode::opcode(opc, elem_bt) : opc;
@@ -471,7 +471,6 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     default: fatal("unsupported arity: %d", n);
   }
 
-  VectorNode::trace_new_vector(operation, "VectorAPI");
   if (is_masked_op && mask != nullptr) {
     if (use_predicate) {
       operation->add_req(mask);
@@ -2892,7 +2891,6 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     Node* wrap_mask_vec = gvn().transform(VectorNode::scalar2vector(wrap_mask, num_elem, index_elem_bt, false));
     opd1 = gvn().transform(VectorNode::make(Op_AndV, opd1, wrap_mask_vec, opd1->bottom_type()->is_vect()));
     operation = gvn().transform(VectorNode::make(Op_SelectFromTwoVector, opd1, opd2, opd3, vt));
-    VectorNode::trace_new_vector(operation, "VectorAPI");
   }
 
   // Wrap it up in VectorBox to keep object type information.
@@ -2978,7 +2976,6 @@ bool LibraryCallKit::inline_vector_compress_expand() {
 
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem, opc == Op_CompressM);
   Node* operation = gvn().transform(VectorNode::make(opc, opd1, mask, vt));
-  VectorNode::trace_new_vector(operation, "VectorAPI");
 
   // Wrap it up in VectorBox to keep object type information.
   const TypeInstPtr* box_type = opc == Op_CompressM ? mbox_type : vbox_type;

@@ -716,7 +716,7 @@ inline bool is_java_type(BasicType t) {
 }
 
 inline bool is_java_primitive(BasicType t) {
-  return (t != T_FLOAT16 && T_BOOLEAN <= t && t <= T_LONG);
+  return (T_BOOLEAN <= t && t <= T_LONG);
 }
 
 inline bool is_subword_type(BasicType t) {

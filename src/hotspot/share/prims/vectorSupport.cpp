@@ -203,11 +203,11 @@ const char* VectorSupport::lanetype2name(int lane_type) {
   return type2name(static_cast<BasicType>(lane_type));
 }
 
-int VectorSupport::vop2ideal(jint id, int lane_type) {
+int VectorSupport::vop2ideal(jint id, BasicType bt) {
   VectorOperation vop = (VectorOperation)id;
   switch (vop) {
     case VECTOR_OP_ADD: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:     // fall-through
         case T_SHORT:    // fall-through
         case T_INT:      return Op_AddI;
@@ -215,12 +215,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16:  return Op_AddHF;
         case T_FLOAT:    return Op_AddF;
         case T_DOUBLE:   return Op_AddD;
-        default: fatal("ADD: %s", lanetype2name(lane_type));
+        default: fatal("ADD: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_SUB: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:    // fall-through
         case T_SHORT:   // fall-through
         case T_INT:     return Op_SubI;
@@ -228,25 +228,25 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: return Op_SubHF;
         case T_FLOAT:   return Op_SubF;
         case T_DOUBLE:  return Op_SubD;
-        default: fatal("SUB: %s", lanetype2name(lane_type));
+        default: fatal("SUB: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_MUL: {
-      switch (lane_type) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:    return Op_MulI;
-        case T_LONG:   return Op_MulL;
+      switch (bt) {
+        case T_BYTE:    // fall-through
+        case T_SHORT:   // fall-through
+        case T_INT:     return Op_MulI;
+        case T_LONG:    return Op_MulL;
         case T_FLOAT16: return Op_MulHF;
-        case T_FLOAT:  return Op_MulF;
-        case T_DOUBLE: return Op_MulD;
-        default: fatal("MUL: %s", lanetype2name(lane_type));
+        case T_FLOAT:   return Op_MulF;
+        case T_DOUBLE:  return Op_MulD;
+        default: fatal("MUL: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_DIV: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:    // fall-through
         case T_SHORT:   // fall-through
         case T_INT:     return Op_DivI;
@@ -254,12 +254,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: return Op_DivHF;
         case T_FLOAT:   return Op_DivF;
         case T_DOUBLE:  return Op_DivD;
-        default: fatal("DIV: %s", lanetype2name(lane_type));
+        default: fatal("DIV: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_MIN: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:    // fall-through
         case T_SHORT:   // fall-through
         case T_INT:     return Op_MinI;
@@ -267,12 +267,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: return Op_MinHF;
         case T_FLOAT:   return Op_MinF;
         case T_DOUBLE:  return Op_MinD;
-        default: fatal("MIN: %s", lanetype2name(lane_type));
+        default: fatal("MIN: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_MAX: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:    // fall-through
         case T_SHORT:   // fall-through
         case T_INT:     return Op_MaxI;
@@ -280,32 +280,32 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: return Op_MaxHF;
         case T_FLOAT:   return Op_MaxF;
         case T_DOUBLE:  return Op_MaxD;
-        default: fatal("MAX: %s", lanetype2name(lane_type));
+        default: fatal("MAX: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_UMIN: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    // fall-through
         case T_LONG:   return Op_UMinV;
-        default: fatal("MIN: %s", lanetype2name(lane_type));
+        default: fatal("MIN: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_UMAX: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    // fall-through
         case T_LONG:   return Op_UMaxV;
-        default: fatal("MAX: %s", lanetype2name(lane_type));
+        default: fatal("MAX: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_ABS: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:    // fall-through
         case T_SHORT:   // fall-through
         case T_INT:     return Op_AbsI;
@@ -313,12 +313,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: return 0;
         case T_FLOAT:   return Op_AbsF;
         case T_DOUBLE:  return Op_AbsD;
-        default: fatal("ABS: %s", lanetype2name(lane_type));
+        default: fatal("ABS: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_NEG: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:    // fall-through
         case T_SHORT:   // fall-through
         case T_INT:     return Op_NegI;
@@ -326,110 +326,110 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: return 0;
         case T_FLOAT:   return Op_NegF;
         case T_DOUBLE:  return Op_NegD;
-        default: fatal("NEG: %s", lanetype2name(lane_type));
+        default: fatal("NEG: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_AND: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    return Op_AndI;
         case T_LONG:   return Op_AndL;
-        default: fatal("AND: %s", lanetype2name(lane_type));
+        default: fatal("AND: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_OR: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    return Op_OrI;
         case T_LONG:   return Op_OrL;
-        default: fatal("OR: %s", lanetype2name(lane_type));
+        default: fatal("OR: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_XOR: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    return Op_XorI;
         case T_LONG:   return Op_XorL;
-        default: fatal("XOR: %s", lanetype2name(lane_type));
+        default: fatal("XOR: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_SQRT: {
-      switch (lane_type) {
+      switch (bt) {
         case T_FLOAT16:  return Op_SqrtHF;
         case T_FLOAT:    return Op_SqrtF;
         case T_DOUBLE:   return Op_SqrtD;
-        default: fatal("SQRT: %s", lanetype2name(lane_type));
+        default: fatal("SQRT: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_FMA: {
-      switch (lane_type) {
+      switch (bt) {
         case T_FLOAT16:  return Op_FmaHF;
         case T_FLOAT:    return Op_FmaF;
         case T_DOUBLE:   return Op_FmaD;
-        default: fatal("FMA: %s", lanetype2name(lane_type));
+        default: fatal("FMA: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_LSHIFT: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    return Op_LShiftI;
         case T_LONG:   return Op_LShiftL;
-        default: fatal("LSHIFT: %s", lanetype2name(lane_type));
+        default: fatal("LSHIFT: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_RSHIFT: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    return Op_RShiftI;
         case T_LONG:   return Op_RShiftL;
-        default: fatal("RSHIFT: %s", lanetype2name(lane_type));
+        default: fatal("RSHIFT: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_URSHIFT: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  return Op_URShiftB;
         case T_SHORT: return Op_URShiftS;
         case T_INT:   return Op_URShiftI;
         case T_LONG:  return Op_URShiftL;
-        default: fatal("URSHIFT: %s", lanetype2name(lane_type));
+        default: fatal("URSHIFT: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_LROTATE: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    // fall-through
         case T_LONG:   return Op_RotateLeft;
-        default: fatal("LROTATE: %s", lanetype2name(lane_type));
+        default: fatal("LROTATE: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_RROTATE: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    // fall-through
         case T_LONG:   return Op_RotateRight;
-        default: fatal("RROTATE: %s", lanetype2name(lane_type));
+        default: fatal("RROTATE: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_MASK_LASTTRUE: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   // fall-through
@@ -437,12 +437,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: // fall-through
         case T_FLOAT: // fall-through
         case T_DOUBLE: return Op_VectorMaskLastTrue;
-        default: fatal("MASK_LASTTRUE: %s", lanetype2name(lane_type));
+        default: fatal("MASK_LASTTRUE: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_MASK_FIRSTTRUE: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   // fall-through
@@ -450,12 +450,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: // fall-through
         case T_FLOAT: // fall-through
         case T_DOUBLE: return Op_VectorMaskFirstTrue;
-        default: fatal("MASK_FIRSTTRUE: %s", lanetype2name(lane_type));
+        default: fatal("MASK_FIRSTTRUE: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_MASK_TRUECOUNT: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   // fall-through
@@ -463,12 +463,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: // fall-through
         case T_FLOAT: // fall-through
         case T_DOUBLE: return Op_VectorMaskTrueCount;
-        default: fatal("MASK_TRUECOUNT: %s", lanetype2name(lane_type));
+        default: fatal("MASK_TRUECOUNT: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_MASK_TOLONG: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   // fall-through
@@ -476,12 +476,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: // fall-through
         case T_FLOAT: // fall-through
         case T_DOUBLE: return Op_VectorMaskToLong;
-        default: fatal("MASK_TOLONG: %s", lanetype2name(lane_type));
+        default: fatal("MASK_TOLONG: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_EXPAND: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   // fall-through
@@ -489,12 +489,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: // fall-through
         case T_FLOAT: // fall-through
         case T_DOUBLE: return Op_ExpandV;
-        default: fatal("EXPAND: %s", lanetype2name(lane_type));
+        default: fatal("EXPAND: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_COMPRESS: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   // fall-through
@@ -502,12 +502,12 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: // fall-through
         case T_FLOAT: // fall-through
         case T_DOUBLE: return Op_CompressV;
-        default: fatal("COMPRESS: %s", lanetype2name(lane_type));
+        default: fatal("COMPRESS: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_MASK_COMPRESS: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   // fall-through
@@ -515,52 +515,52 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_FLOAT16: // fall-through
         case T_FLOAT: // fall-through
         case T_DOUBLE: return Op_CompressM;
-        default: fatal("MASK_COMPRESS: %s", lanetype2name(lane_type));
+        default: fatal("MASK_COMPRESS: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_BIT_COUNT: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // Returning Op_PopCountI
         case T_SHORT: // for byte and short types temporarily
         case T_INT:   return Op_PopCountI;
         case T_LONG:  return Op_PopCountL;
-        default: fatal("BIT_COUNT: %s", lanetype2name(lane_type));
+        default: fatal("BIT_COUNT: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_TZ_COUNT: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   return Op_CountTrailingZerosI;
         case T_LONG:  return Op_CountTrailingZerosL;
-        default: fatal("TZ_COUNT: %s", lanetype2name(lane_type));
+        default: fatal("TZ_COUNT: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_LZ_COUNT: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // fall-through
         case T_SHORT: // fall-through
         case T_INT:   return Op_CountLeadingZerosI;
         case T_LONG:  return Op_CountLeadingZerosL;
-        default: fatal("LZ_COUNT: %s", lanetype2name(lane_type));
+        default: fatal("LZ_COUNT: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_REVERSE: {
-      switch (lane_type) {
+      switch (bt) {
         case T_BYTE:  // Temporarily returning
         case T_SHORT: // Op_ReverseI for byte and short
         case T_INT:   return Op_ReverseI;
         case T_LONG:  return Op_ReverseL;
-        default: fatal("REVERSE: %s", lanetype2name(lane_type));
+        default: fatal("REVERSE: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_REVERSE_BYTES: {
-      switch (lane_type) {
+      switch (bt) {
         case T_SHORT: return Op_ReverseBytesS;
         // Superword requires type consistency between the ReverseBytes*
         // node and the data. But there's no ReverseBytesB node because
@@ -570,45 +570,45 @@ int VectorSupport::vop2ideal(jint id, int lane_type) {
         case T_BYTE:  // Intentionally fall-through
         case T_INT:   return Op_ReverseBytesI;
         case T_LONG:  return Op_ReverseBytesL;
-        default: fatal("REVERSE_BYTES: %s", lanetype2name(lane_type));
+        default: fatal("REVERSE_BYTES: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_SADD:
     case VECTOR_OP_SUADD: {
-      switch(lane_type) {
+      switch(bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    // fall-through
         case T_LONG:   return Op_SaturatingAddV;
-        default: fatal("S[U]ADD: %s", lanetype2name(lane_type));
+        default: fatal("S[U]ADD: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_SSUB:
     case VECTOR_OP_SUSUB: {
-      switch(lane_type) {
+      switch(bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
         case T_INT:    // fall-through
         case T_LONG:   return Op_SaturatingSubV;
-        default: fatal("S[U}SUB: %s", lanetype2name(lane_type));
+        default: fatal("S[U}SUB: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_COMPRESS_BITS: {
-      switch (lane_type) {
+      switch (bt) {
         case T_INT:  // fall-thorugh
         case T_LONG: return Op_CompressBits;
-        default: fatal("COMPRESS_BITS: %s", lanetype2name(lane_type));
+        default: fatal("COMPRESS_BITS: %s", type2name(bt));
       }
       break;
     }
     case VECTOR_OP_EXPAND_BITS: {
-      switch (lane_type) {
+      switch (bt) {
         case T_INT:  // fall-through
         case T_LONG: return Op_ExpandBits;
-        default: fatal("EXPAND_BITS: %s", lanetype2name(lane_type));
+        default: fatal("EXPAND_BITS: %s", type2name(bt));
       }
       break;
     }
