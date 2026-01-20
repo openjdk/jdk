@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class Unnamed {
 
         // verify that the caller has no access to the proxy created on an
         // inaccessible interface
-        Method m = intf.getMethod("test", Object[].class);
-        assertFalse(m.canAccess(null));
+        Method m = intf.getMethod("test");
+        assertFalse(m.canAccess(t));
     }
 }
