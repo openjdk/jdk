@@ -61,24 +61,26 @@ final class AppImageSigningConfigBuilder {
         return this;
     }
 
-    Optional<AppImageSigningConfig> create() {
-        return signingIdentityBuilder.create().map(cfg -> {
-            final var validatedEntitlements = validatedEntitlements();
-            return new AppImageSigningConfig.Stub(
-                    Objects.requireNonNull(cfg.identity()),
-                    Objects.requireNonNull(signingIdentifierPrefix),
-                    validatedEntitlements,
-                    cfg.keychain().map(Keychain::name),
-                    Optional.ofNullable(entitlementsResourceName).orElse("entitlements.plist")
-            );
-        });
+    AppImageSigningConfig create() {
+
+        var cfg = signingIdentityBuilder.create();
+
+        var validatedEntitlements = validatedEntitlements();
+
+        return new AppImageSigningConfig.Stub(
+                Objects.requireNonNull(cfg.identity()),
+                Objects.requireNonNull(signingIdentifierPrefix),
+                validatedEntitlements,
+                cfg.keychain().map(Keychain::name),
+                Optional.ofNullable(entitlementsResourceName).orElse("entitlements.plist")
+        );
     }
 
     private Optional<Path> validatedEntitlements() {
         return Optional.ofNullable(entitlements);
     }
 
-    private SigningIdentityBuilder signingIdentityBuilder;
+    private final SigningIdentityBuilder signingIdentityBuilder;
     private Path entitlements;
     private String entitlementsResourceName;
     private String signingIdentifierPrefix;
