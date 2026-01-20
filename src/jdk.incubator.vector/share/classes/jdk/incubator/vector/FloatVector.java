@@ -3566,16 +3566,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final
     FloatVector maybeSwapOnConverted(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
-        if (bo == java.nio.ByteOrder.BIG_ENDIAN) {
-            int sBytes = srcSpecies.elementSize();
-            int tBytes = this.vspecies().elementSize();
-            if (sBytes == tBytes) return this;
-            if (sBytes % tBytes != 0) return this;
-            int subLanesPerSrc = sBytes / tBytes;
-            VectorShuffle<Float> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-            return this.rearrange(shuffle);
+        int subLanesPerSrc = subLanesPerSrcIfNeeded(bo, srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
         }
-        return this;
+        VectorShuffle<Float> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (FloatVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =

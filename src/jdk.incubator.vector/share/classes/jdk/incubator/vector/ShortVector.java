@@ -4078,16 +4078,12 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     final
     ShortVector maybeSwapOnConverted(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
-        if (bo == ByteOrder.BIG_ENDIAN) {
-            int sBytes = srcSpecies.elementSize();
-            int tBytes = this.vspecies().elementSize();
-            if (sBytes == tBytes) return this;
-            if (sBytes % tBytes != 0) return this;
-            int subLanesPerSrc = sBytes / tBytes;
-            VectorShuffle<Short> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-            return this.rearrange(shuffle);
+        int subLanesPerSrc = subLanesPerSrcIfNeeded(bo, srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
         }
-        return this;
+        VectorShuffle<Short> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return (ShortVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =

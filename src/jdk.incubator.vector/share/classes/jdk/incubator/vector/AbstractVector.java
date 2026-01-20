@@ -207,6 +207,20 @@ abstract class AbstractVector<E> extends Vector<E> {
         return VectorShuffle.fromArray(targetSpecies, map, 0);
     }
 
+    @ForceInline
+    final int subLanesPerSrcIfNeeded(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
+        if (bo != java.nio.ByteOrder.BIG_ENDIAN) {
+            return -1;
+        }
+        int sBytes = srcSpecies.elementSize();
+        int tBytes = vspecies().elementSize();
+        if (sBytes == tBytes || (sBytes % tBytes) != 0) {
+            return -1;
+        }
+        int subLanesPerSrc = sBytes / tBytes;
+        return subLanesPerSrc;
+    }
+
     /*package-private*/
     @ForceInline
     ByteVector asByteVectorRawTemplate() {
