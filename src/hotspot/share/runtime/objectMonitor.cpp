@@ -1929,7 +1929,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // (Don't cache naked oops over safepoints, of course).
 
     // Post monitor waited event. Note that this is past-tense, we are done waiting.
-    if (JvmtiExport::should_post_monitor_waited() && node.TState != ObjectWaiter::TS_ENTER) {
+    // A thread which should post monitor_waited event is never in TS_ENTER state.
+    if (JvmtiExport::should_post_monitor_waited()) {
 
       // Process suspend requests now if any, before posting the event.
       {
@@ -2046,11 +2047,12 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
           old_state == java_lang_VirtualThread::TIMED_WAIT) {
         java_lang_VirtualThread::cmpxchg_state(vthread, old_state, java_lang_VirtualThread::BLOCKED);
       }
-      // Increment counter *before* adding the vthread to the _entry_list.
+      // If we will add the vthread to the entry list below then we need to 
+      // increment the counter *before* doing so.
       // Adding to _entry_list uses Atomic::cmpxchg() which already provides
       // a fence that prevents reordering of the stores.
       if (!JvmtiExport::should_post_monitor_waited()) {
-        // This is is now conditional as if the monitor_waited even
+        // This is is now conditional as if the monitor_waited event
         // is allowed, then a thread, even virtual, should not be moved to
         // the entry_list, but rather unparked and let run. See the comment below.
         inc_unmounted_vthreads();
@@ -2063,18 +2065,14 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
     if (!JvmtiExport::should_post_monitor_waited()) {
       // If the monitor_waited JVMTI event is not allowed, a thread is
       // transferred to the entry_list, and it will eventually be unparked
-      // only when it is chosen to become a successor.
+      // only when it is chosen to become the successor.
       add_to_entry_list(current, iterator);
     } else {
       // However, if the monitor_waited event is allowed, then
-      // a thread is unpraked immediately and let run. It is not
-      // on the entry_list, and thus cannot become a successor.
-      // Its state should be TS_RUN, as it is neither on wait_list
-      // nor on the entry_list.
-      // By not allowing a thread to become a successor we
-      // avoid a problem of having a suspension point when posting
-      // the monitor_waited JVMTI event, as suspending such a thread
-      // is no harm.
+      // the thread is set to state TS_RUN and unparked. The thread
+      // will then contend directly to reacquire the monitor and
+      // avoids being flagged as the successor. This avoids the problem
+      // of having a thread suspend whilst it is the successor.
 
       iterator->TState = ObjectWaiter::TS_RUN;
 
@@ -2099,8 +2097,7 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
       if (vthread == nullptr) {
         // Platform thread case.
         evt->unpark();
-      }
-      else if (java_lang_VirtualThread::set_onWaitingList(vthread, vthread_list_head())) {
+      } else if (java_lang_VirtualThread::set_onWaitingList(vthread, vthread_list_head())) {
         // Virtual thread case.
         evt->unpark();
       }
