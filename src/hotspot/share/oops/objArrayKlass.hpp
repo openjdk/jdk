@@ -104,6 +104,10 @@ class ObjArrayKlass : public ArrayKlass {
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter) override;
 
+  void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+  virtual void remove_unshareable_info() override;
+  virtual void remove_java_mirror() override;
+
  public:
   static ObjArrayKlass* cast(Klass* k) {
     return const_cast<ObjArrayKlass*>(cast(const_cast<const Klass*>(k)));
