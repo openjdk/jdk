@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,6 +306,17 @@ void CodeCache::initialize_heaps() {
   profiled.size = align_up(profiled.size, min_size);
   non_profiled.size = align_up(non_profiled.size, min_size);
   cache_size = non_nmethod.size + profiled.size + non_profiled.size;
+#ifdef X86
+  const size_t max_reachable = (size_t)max_jint;
+  if (cache_size > max_reachable) {
+    err_msg message("Code cache size (%zuK) exceeds the maximum supported on x86 (%zuK) due to "
+                    "32-bit relative branch reach. "
+                    "Segments: NonNMethod=%zuK NonProfiled=%zuK Profiled=%zuK.",
+                    cache_size/K, max_reachable/K,
+                    non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
+    vm_exit_during_initialization("Invalid code cache sizes", message);
+  }
+#endif
 
   FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled.size);

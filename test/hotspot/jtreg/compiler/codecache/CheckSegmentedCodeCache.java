@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test CheckSegmentedCodeCache
- * @bug 8015774
+ * @bug 8015774 8375598
  * @summary Checks VM options related to the segmented code cache
  * @library /test/lib
  * @requires vm.flagless
@@ -247,5 +247,14 @@ public class CheckSegmentedCodeCache {
                                                               "-XX:+PrintFlagsFinal",
                                                               "-version");
         verifyCodeHeapSize(pb, "NonNMethodCodeHeapSize", 83886080);
+
+        // JDK-8375598: On x86/x64, a too large code cache may exceed the reach of 32-bit relative branches.
+        // The VM should fail fast during initialization.
+        if (Platform.isX86() || Platform.isX64()) {
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
+                                                                  "-XX:NonNMethodCodeHeapSize=3G",
+                                                                  "-version");
+            failsWith(pb, "Invalid code cache sizes");
+        }
     }
 }
