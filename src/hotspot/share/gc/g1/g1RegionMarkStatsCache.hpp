@@ -116,11 +116,15 @@ public:
   void add_live_words(oop obj);
   void add_live_words(uint region_idx, size_t live_words) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
+    // This method is only ever called single-threaded, so we do not need atomic
+    // update here.
     cur->_stats._live_words.store_relaxed(cur->_stats.live_words() + live_words);
   }
 
   void inc_incoming_refs(uint region_idx) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
+    // This method is only ever called single-threaded, so we do not need atomic
+    // update here.
     cur->_stats._incoming_refs.store_relaxed(cur->_stats.incoming_refs() + 1u);
   }
 
