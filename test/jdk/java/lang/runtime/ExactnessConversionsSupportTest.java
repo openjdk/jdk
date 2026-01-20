@@ -49,7 +49,6 @@ import org.junit.jupiter.api.Test;
  */
 public class ExactnessConversionsSupportTest {
 
-    @Test
     public void main(String[] args) {
         testByte();
         testShort();
