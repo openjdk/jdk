@@ -737,8 +737,7 @@ bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {
 
 bool G1HeapRegionClaimer::claim_region(uint region_index) {
   assert(region_index < _n_regions, "Invalid index.");
-  uint old_val = _claims[region_index].compare_exchange(Unclaimed, Claimed);
-  return old_val == Unclaimed;
+  return _claims[region_index].compare_set(Unclaimed, Claimed);
 }
 
 class G1RebuildFreeListTask : public WorkerTask {

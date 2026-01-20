@@ -187,20 +187,22 @@ inline void G1HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMar
 inline HeapWord* G1HeapRegion::par_allocate(size_t min_word_size,
                                             size_t desired_word_size,
                                             size_t* actual_word_size) {
+  HeapWord* obj = top();
   do {
-    HeapWord* obj = top();
     size_t available = pointer_delta(end(), obj);
     size_t want_to_allocate = MIN2(available, desired_word_size);
     if (want_to_allocate >= min_word_size) {
       HeapWord* new_top = obj + want_to_allocate;
       HeapWord* result = _top.compare_exchange(obj, new_top);
-      // result can be one of two:
-      // the old top value: the exchange succeeded
+      // Result can be one of two:
+      // the old top value: the exchange succeeded, return.
       // otherwise: the new value of the top is returned.
       if (result == obj) {
         assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
         *actual_word_size = want_to_allocate;
         return obj;
+      } else {
+        obj = result;
       }
     } else {
       return nullptr;
