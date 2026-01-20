@@ -2372,7 +2372,18 @@ void PrintClassClosure::do_klass(Klass* k)  {
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
     if (ik->has_been_redefined()) buf[i++] = 'R';
-    if (ik->in_aot_cache()) buf[i++] = 'S';
+    if (ik->in_aot_cache()) {
+      buf[i++] = 'S';
+
+      if (AOTMetaspace::in_aot_cache_static_region((void*)k)) {
+        _aot_statics++;
+        if (_location) buf[i++] = 's';
+      } else if (AOTMetaspace::in_aot_cache_dynamic_region((void*)k)) {
+        _aot_dynamics++;
+        if (_location) buf[i++] = 'd';
+      }
+    }
+
   }
   buf[i++] = '\0';
   _st->print("%-7s  ", buf);

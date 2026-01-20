@@ -800,16 +800,25 @@ The following commands are available:
     *options*:
 
     -   `-verbose`: (Optional) Dump the detailed content of a Java class.
-        Some classes are annotated with flags: `F` = has, or inherits, a non-empty finalize method,
-        `f` = has final method, `W` = methods rewritten, `C` = marked with `@Contended` annotation,
-        `R` = has been redefined, `S` = is shared class (BOOLEAN, false)
+        Some classes are annotated with flags:
+          - `F` = has, or inherits, a non-empty finalize method,
+          - `f` = has final method,
+          - `W` = methods rewritten,
+          - `C` = marked with `@Contended` annotation,
+          - `R` = has been redefined,
+          - `S` = is shared class (if -location 's' is static and 'd' is dynamic AOT cache location)
+        (BOOLEAN, false)
 
     -   `-location`: (Optional) Print the location of the class file from which the class is loaded (if available)
          If provided by its defining ClassLoader, this option will print a URL specifying the location of the 
-         class file (directory, jar or other URL location) from which this class was loaded.
+         class file (directory, jar or other URL location) from which this class was initially loaded.
 
          Note: JDK (and other classes) loaded by a ClassLoader that does not provide a location URL to the JVM will omit this field.
 
+         Note: if any classes are loaded from an AOT cache, their location reported is that of the original
+               url from which they were loaded at the time of the training run that created the AOT cache.
+
+               The total number of classes loaded from any AOT cache (and its name) are summarized. 
 `VM.classloader_stats`
 :   Print statistics about all ClassLoaders.
 

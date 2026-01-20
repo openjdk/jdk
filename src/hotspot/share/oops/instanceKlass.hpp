@@ -1211,6 +1211,9 @@ private:
   bool _verbose;
   bool _location;
 public:
+  unsigned int _aot_statics;
+  unsigned int _aot_dynamics;
+
   PrintClassClosure(outputStream* st, bool verbose, bool location);
 
   void do_klass(Klass* k);

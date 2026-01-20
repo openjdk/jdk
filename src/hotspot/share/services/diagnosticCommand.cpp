@@ -25,6 +25,7 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/filemap.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -957,9 +958,9 @@ ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
            "W = methods rewritten, "
            "C = marked with @Contended annotation, "
            "R = has been redefined, "
-           "S = is shared class",
+           "S = is shared class (if -location then 's' indicates static 'd' indicates dynamic AOT cache)",
            "BOOLEAN", false, "false"),
-  _location("-location", "Print class file location url (if available)", "BOOLEAN", false, "false") {
+  _location("-location", "Print class file (and AOT cache) location url (if available)", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_location);
 }
@@ -977,6 +978,13 @@ public:
   virtual void doit() {
     PrintClassClosure closure(_out, _verbose, _location);
     ClassLoaderDataGraph::classes_do(&closure);
+
+    if (_location) {
+      if (closure._aot_statics > 0)
+        _out->print_cr("\n%d classes shared from static cache: %s", closure._aot_statics, FileMapInfo::current_info()->full_path());
+      if (closure._aot_dynamics > 0)
+        _out->print_cr("\n%d classes shared from dynamic cache: %s", closure._aot_dynamics, FileMapInfo::dynamic_info()->full_path());
+    }
   }
 };
 
