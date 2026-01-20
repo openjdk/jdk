@@ -547,7 +547,7 @@ public:
 };
 
 // This command needs to be executed at a safepoint.
-void ClassLoaderHierarchyDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+void ClassLoaderHierarchyDCmd::execute(DCmdSource source, TRAPS) {
   ClassLoaderHierarchyVMOperation op(output(), _show_classes.value(), _verbose.value(), _fold.value());
   VMThread::execute(&op);
 }

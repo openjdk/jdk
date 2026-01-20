@@ -386,7 +386,7 @@ bool DCmdFactory::_has_pending_jmx_notification = false;
  * @param updated_line - return value with "<cmd>"
  */
 static JcmdOptions parse_common_options(const CmdLine& line, stringStream *updated_line) {
-  JcmdOptions options = {};
+  JcmdOptions options = {0};
 
   // there is only TIMESTAMP option so far
   const char TIMESTAMP[] = "-T";
@@ -402,7 +402,7 @@ static JcmdOptions parse_common_options(const CmdLine& line, stringStream *updat
 
     // there only one option for now.
     if (strcmp(token, TIMESTAMP) == 0) {
-      options.timestamp = JcmdOptions::TimeStamp::Yes;
+      options.timestamp = true;
 
       // save the remainder before
       line_str = strstr(line_str, rest);
@@ -416,6 +416,11 @@ static JcmdOptions parse_common_options(const CmdLine& line, stringStream *updat
   return options;
 }
 
+
+static void print_local_time(outputStream* output) {
+  char buf[32];
+  output->print_cr("%s", os::local_time_string(buf, sizeof(buf)));
+}
 
 void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
 
@@ -463,21 +468,25 @@ void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
       assert(command != nullptr, "command error must be handled before this line");
       DCmdMark mark(command);
       command->parse(&line, delim, CHECK);
-      execute(command, options, CHECK);
+
+      if (options.timestamp) {
+        print_local_time(_out);
+      }
+
+      execute(command, CHECK);
     }
     count++;
   }
 }
 
-void DCmd::Executor::execute(DCmd* command, const JcmdOptions& commonOptions, TRAPS) {
-  command->execute(_source, commonOptions, CHECK);
+void DCmd::Executor::execute(DCmd* command, TRAPS) {
+  command->execute(_source, CHECK);
 }
 
 void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
                              const char* cmdline, char delim, TRAPS) {
   Executor(source, out).parse_and_execute(cmdline, delim, CHECK);
 }
-
 
 bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
   stringStream args;

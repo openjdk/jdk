@@ -49,7 +49,7 @@ void LogDiagnosticCommand::registerCommand() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<LogDiagnosticCommand>(full_visibility));
 }
 
-void LogDiagnosticCommand::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+void LogDiagnosticCommand::execute(DCmdSource source, TRAPS) {
   bool any_command = false;
   if (_disable.has_value()) {
     LogConfiguration::disable_logging();

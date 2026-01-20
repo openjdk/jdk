@@ -32,7 +32,7 @@
 
 #include <malloc.h>
 
-void TrimCLibcHeapDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
   if (os::can_trim_native_heap()) {
     os::size_change_t sc;
     if (os::trim_native_heap(&sc)) {

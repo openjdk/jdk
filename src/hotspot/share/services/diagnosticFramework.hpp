@@ -166,12 +166,7 @@ public:
 
 
 struct JcmdOptions {
-  enum class TimeStamp {
-    Default,
-    Yes
-  };
-
-  TimeStamp timestamp;
+  bool timestamp;
 };
 
 // The DCmdParser class can be used to create an argument parser for a
@@ -268,7 +263,7 @@ public:
                 "The argument list of this diagnostic command should be empty.");
     }
   }
-  virtual void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) { }
+  virtual void execute(DCmdSource source, TRAPS) { }
   virtual void reset(TRAPS) { }
   virtual void cleanup() { }
 
@@ -292,7 +287,7 @@ public:
     void parse_and_execute(const char* cmdline, char delim, TRAPS);
 
   protected:
-    virtual void execute(DCmd* command, const JcmdOptions& commonOptions, TRAPS);
+    virtual void execute(DCmd* command, TRAPS);
   };
 
   // main method to invoke the framework
@@ -315,13 +310,13 @@ public:
   DCmdWithParser (outputStream *output, bool heap=false) : DCmd(output, heap) { }
   static const char* disabled_message() { return "Diagnostic command currently disabled"; }
   static const char* impact()         { return "Low: No impact"; }
-  void parse(CmdLine *line, char delim, TRAPS) override;
-  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override { }
-  void reset(TRAPS) override;
-  void cleanup() override;
-  void print_help(const char* name) const override;
-  GrowableArray<const char*>* argument_name_array() const override;
-  GrowableArray<DCmdArgumentInfo*>* argument_info_array() const override;
+  virtual void parse(CmdLine *line, char delim, TRAPS);
+  virtual void execute(DCmdSource source, TRAPS) { }
+  virtual void reset(TRAPS);
+  virtual void cleanup();
+  virtual void print_help(const char* name) const;
+  virtual GrowableArray<const char*>* argument_name_array() const;
+  virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
   DCmdParser* dcmdparser() {
     return &_dcmdparser;
   }

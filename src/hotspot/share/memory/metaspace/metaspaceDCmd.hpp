@@ -53,7 +53,7 @@ public:
       return "Medium: Depends on number of classes loaded.";
   }
   static int num_arguments() { return 8; }
-  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 } // namespace metaspace

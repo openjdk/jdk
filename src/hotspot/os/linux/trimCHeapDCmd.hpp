@@ -42,7 +42,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 #endif // OS_LINUX_TRIMCHEAPDCMD_HPP

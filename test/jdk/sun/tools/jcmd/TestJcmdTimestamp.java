@@ -41,10 +41,6 @@ public class TestJcmdTimestamp {
     public static void main(String[] args) throws Exception {
         TestJcmdTimestamp("VM.version", true /* -T */, true /* expectTimestamp */);
         TestJcmdTimestamp("VM.version", false /* -T */, false /* expectTimestamp */);
-
-        // "Thread.print" should be unconditionally timestamped
-        TestJcmdTimestamp("Thread.print", true /* -T */, true /* expectTimestamp */);
-        TestJcmdTimestamp("Thread.print", false /* -T */, true /* expectTimestamp */);
     }
 
 

@@ -925,7 +925,7 @@ StringtableDCmd::StringtableDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_verbose);
 }
 
-void StringtableDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+void StringtableDCmd::execute(DCmdSource source, TRAPS) {
   VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpStrings,
                          _verbose.value());
   VMThread::execute(&dumper);

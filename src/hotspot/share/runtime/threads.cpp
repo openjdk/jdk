@@ -1365,11 +1365,13 @@ public:
 void Threads::print_on(outputStream* st, bool print_stacks,
                        bool internal_format, bool print_concurrent_locks,
                        bool print_extended_info) {
+  char buf[32];
+  st->print_raw_cr(os::local_time_string(buf, sizeof(buf)));
+
   st->print_cr("Full thread dump %s (%s %s)",
                VM_Version::vm_name(),
                VM_Version::vm_release(),
                VM_Version::vm_info_string());
-  char buf[32];
   JDK_Version::current().to_string(buf, sizeof(buf));
   const char* runtime_name = JDK_Version::runtime_name() != nullptr ?
                              JDK_Version::runtime_name() : "";

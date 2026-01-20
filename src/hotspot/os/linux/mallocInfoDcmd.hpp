@@ -41,7 +41,7 @@ public:
   static const char* impact() {
     return "Low";
   }
-  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
+  void execute(DCmdSource source, TRAPS) override;
 };
 
 #endif // OS_LINUX_MALLOCINFODCMD_HPP

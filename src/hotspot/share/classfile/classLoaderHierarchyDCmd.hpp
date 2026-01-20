@@ -47,7 +47,7 @@ public:
       return "Medium: Depends on number of class loaders and classes loaded.";
   }
   static int num_arguments() { return 3; }
-  void execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) override;
+  virtual void execute(DCmdSource source, TRAPS);
 
 };
 

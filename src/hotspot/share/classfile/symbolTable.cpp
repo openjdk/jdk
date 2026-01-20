@@ -957,7 +957,7 @@ SymboltableDCmd::SymboltableDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_verbose);
 }
 
-void SymboltableDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
+void SymboltableDCmd::execute(DCmdSource source, TRAPS) {
   VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpSymbols,
                          _verbose.value());
   VMThread::execute(&dumper);
