@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,34 @@
  * questions.
  */
 
+package compiler.ccp;
+
 /*
  * @test
- * @bug 8280377
- * @build m1/* m2/* Unnamed
- * @run testng/othervm m1/p1.Main
- * @run main/othervm Unnamed
- * @summary Test MethodHandleProxies::asInterfaceInstance with a default
- *          method with varargs
+ * @bug 8374180
+ * @summary Test that _widen is set correctly in XorI::add_ring() to ensure monotonicity.
+ * @run main/othervm -XX:CompileCommand=compileonly,${test.main.class}::* -Xcomp ${test.main.class}
  */
+public class TestWrongXorIWiden {
+    static byte byFld;
+
+    public static void main(String[] strArr) {
+        test();
+    }
+
+    static void test() {
+        int k, i17 = 0;
+        long lArr[] = new long[400];
+        for (int i = 9; i < 54; ++i) {
+            for (int j = 7; j > 1; j--) {
+                for (k = 1; k < 2; k++) {
+                    i17 >>= i;
+                }
+                byFld += j ^ i17;
+                for (int a = 1; a < 2; a++) {
+                    i17 = k;
+                }
+            }
+        }
+    }
+}
