@@ -175,11 +175,11 @@
   do_stub(compiler, string_indexof_linear_ul)                           \
   do_stub(compiler, pshuffle_byte_flip_mask_sha512)                     \
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
-                pshuffle_byte_flip_mask_ymm_lo_addr_sha512,             \
-                pshuffle_byte_flip_mask_ymm_lo_addr_sha512)             \
-  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
                 pshuffle_byte_flip_mask_addr_sha512,                    \
                 pshuffle_byte_flip_mask_addr_sha512)                    \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
+                pshuffle_byte_flip_mask_ymm_lo_addr_sha512,             \
+                pshuffle_byte_flip_mask_ymm_lo_addr_sha512)             \
   do_stub(compiler, compress_perm_table32)                              \
   do_arch_entry(x86, compiler, compress_perm_table32,                   \
                 compress_perm_table32, compress_perm_table32)           \

@@ -1104,6 +1104,9 @@ void StubGenerator::init_AOTAddressTable_kyber(GrowableArray<address>& external_
   ADD(kyberAvx512InverseNttPermsAddr());
   ADD(kyberAvx512_nttMultPermsAddr());
   ADD(kyberAvx512_12To16PermsAddr());
+  ADD(kyberAvx512_12To16DupAddr());
+  ADD(kyberAvx512_12To16ShiftAddr());
+  ADD(kyberAvx512_12To16AndAddr());
   ADD(kyberAvx512ConstsAddr(qOffset));
   ADD(kyberAvx512ConstsAddr(qInvModROffset));
   ADD(kyberAvx512ConstsAddr(dimHalfInverseOffset));
