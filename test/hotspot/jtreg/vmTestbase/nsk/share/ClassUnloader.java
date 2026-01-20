@@ -265,7 +265,6 @@ public class ClassUnloader {
         // force GC to unload marked class loader and its classes
         if (isClassLoaderReclaimed()) {
             System.out.println("ClassUnloader: class loader has been reclaimed.");
-            Runtime.getRuntime().gc();
             return true;
         }
 
