@@ -27,6 +27,7 @@
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/shared/space.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/quickSort.hpp"
 
 // Determine collection set candidates (from marking): For all regions determine
