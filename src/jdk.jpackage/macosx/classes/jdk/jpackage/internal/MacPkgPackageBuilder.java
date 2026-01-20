@@ -48,7 +48,7 @@ final class MacPkgPackageBuilder {
     }
 
     private Optional<PkgSigningConfig> createSigningConfig() {
-        return Optional.ofNullable(signingBuilder).flatMap(SigningIdentityBuilder::create).map(cfg -> {
+        return Optional.ofNullable(signingBuilder).map(SigningIdentityBuilder::create).map(cfg -> {
             return new PkgSigningConfig.Stub(cfg.identity(), cfg.keychain().map(Keychain::name));
         });
     }

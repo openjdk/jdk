@@ -191,7 +191,7 @@ final class MacApplicationBuilder {
     }
 
     private Optional<AppImageSigningConfig> createSigningConfig() {
-        return Optional.ofNullable(signingBuilder).flatMap(AppImageSigningConfigBuilder::create);
+        return Optional.ofNullable(signingBuilder).map(AppImageSigningConfigBuilder::create);
     }
 
     private String validatedBundleName() {
