@@ -2726,5 +2726,5 @@ void os::jfr_report_memory_info() {}
 #endif // INCLUDE_JFR
 
 void os::print_open_file_descriptors(outputStream* st) {
-  // File descriptor counting not supported on AIX
+  // File descriptor counting not implemented on AIX
 }

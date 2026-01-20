@@ -2606,7 +2606,7 @@ void os::print_open_file_descriptors(outputStream* st) {
 
   nfiles = res / sizeof(struct proc_fdinfo);
   if (nfiles >= MAX_SAFE_FDS) {
-    st->print_cr("Open File Descriptors > 1024");
+    st->print_cr("Open File Descriptors: > 1024");
     return;
   }
 
