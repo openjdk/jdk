@@ -1896,7 +1896,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 
 void LIR_Assembler::align_call(LIR_Code code) {
-  // Not needed
+  __ save_profile_rng();
 }
 
 
@@ -1904,6 +1904,7 @@ void LIR_Assembler::call(LIR_OpJavaCall *op, relocInfo::relocType rtype) {
   int ret_addr_offset = __ patchable_call(op->addr(), rtype);
   assert(ret_addr_offset == __ offset(), "embedded return address not allowed");
   add_call_info_here(op->info());
+  __ restore_profile_rng();
 }
 
 
@@ -1946,6 +1947,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall *op) {
     __ bind(call_return);
   }
   add_call_info(code_offset(), op->info());
+  __ restore_profile_rng();
 }
 
 void LIR_Assembler::emit_static_call_stub() {

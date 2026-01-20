@@ -54,6 +54,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   raw_push(FP, LR);
   sub_slow(SP, SP, frame_size_in_bytes);
 
+  restore_profile_rng();
+
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this);
@@ -62,6 +64,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
   add_slow(SP, SP, frame_size_in_bytes);
   raw_pop(FP, LR);
+  save_profile_rng();
 }
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
