@@ -129,8 +129,8 @@ public final class Operations {
             ops.add(Expression.make(type, "(", type, " + ", type, ")"));
             ops.add(Expression.make(type, "(", type, " - ", type, ")"));
             ops.add(Expression.make(type, "(", type, " * ", type, ")"));
-            ops.add(Expression.make(type, "(", type, " / ", type, ")"));
-            ops.add(Expression.make(type, "(", type, " % ", type, ")"));
+            ops.add(Expression.make(type, "(", type, " / ", type, ")", WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, "(", type, " % ", type, ")", WITH_ARITHMETIC_EXCEPTION));
 
             // Relational / Comparison Operators
             ops.add(Expression.make(BOOLEANS, "(", type, " == ", type, ")"));

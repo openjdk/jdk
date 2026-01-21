@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,22 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
 
     @Override
     public boolean isSubtypeOf(DataName.Type other) {
-        return (other instanceof PrimitiveType pt) && pt.kind == kind;
+        // Implement other >: this according to JLS §4.10.1.
+        if (other instanceof PrimitiveType pt) {
+            if (pt.kind == Kind.BOOLEAN || kind == Kind.BOOLEAN) {
+                // Boolean does not have a supertype and only itself as a subtype.
+                return pt.kind == kind;
+            }
+            if (pt.kind == Kind.CHAR || kind == Kind.CHAR) {
+                // Char does not have a subtype, but .
+                // The following is correct for the subtype relation to floats, since chars are 16 bits wide and floats 32 bits or more.
+                return pt.kind == kind || (pt.byteSize() > this.byteSize() && this.kind != Kind.BYTE);
+            }
+            return (pt.isFloating() && !this.isFloating()) ||  // Due to float >: long, all integers are subtypes of floating point types.
+                   (pt.isFloating() == this.isFloating() && pt.byteSize() >= this.byteSize()); // Generally, narrower types are subtypes of wider types.
+        }
+
+        return false;
     }
 
     @Override

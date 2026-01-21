@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.addDataName;
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
+import static compiler.lib.template_framework.DataName.Mutability.MUTABLE_OR_IMMUTABLE;
 
 import compiler.lib.template_framework.library.Hooks;
 import compiler.lib.template_framework.library.CodeGenerationDataNameType;
@@ -129,7 +130,8 @@ public class TestPrimitiveTypes {
         }
 
         // Finally, test the type by creating some DataNames (variables), and sampling
-        // from them. There should be no cross-over between the types.
+        // from them. Sampling exactly should not lead to any conversion and sampling
+        // subtypes should only lead to widening conversions.
         // IMPORTANT: since we are adding the DataName via an inserted Template, we
         //            must chose a "transparentScope", so that the DataName escapes. If we
         //            instead chose "scope", the test would fail, because it later
@@ -150,6 +152,14 @@ public class TestPrimitiveTypes {
             """
         ));
 
+        var assignmentTemplate = Template.make("lhsType", (PrimitiveType lhsType) -> scope(
+            dataNames(MUTABLE).exactOf(lhsType).sampleAndLetAs("lhs"),
+            dataNames(MUTABLE_OR_IMMUTABLE).subtypeOf(lhsType).sampleAndLetAs("rhs"),
+            """
+            #lhs = #rhs;
+            """
+        ));
+
         var namesTemplate = Template.make(() -> scope(
             """
             public static void test_names() {
@@ -161,10 +171,16 @@ public class TestPrimitiveTypes {
                     ).toList()
                 ),
                 """
-                // Now sample:
+                // Sample exactly:
                 """,
                 Collections.nCopies(10,
                     CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(sampleTemplate::asToken).toList()
+                ),
+                """
+                // Sample subtypes:
+                """,
+                Collections.nCopies(10,
+                    CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(assignmentTemplate::asToken).toList()
                 )
             )),
             """
