@@ -96,7 +96,7 @@ class G1FullCollector : StackObj {
 
   G1FullGCHeapRegionAttr _region_attr_table;
 
-  HeapWord* volatile* _compaction_tops;
+  Atomic<HeapWord*>* _compaction_tops;
 
 public:
   G1FullCollector(G1CollectedHeap* heap,
