@@ -142,4 +142,41 @@ public class TestReductionReassociation {
         Verify.checkEQ(results[0], results[1]);
     }
 
+    private Object[] expectedSumMax = testSumMax();
+
+    @Test
+    @IR(counts = {IRNode.MAX_L, "= 4", IRNode.ADD_L, "= 2"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public Object[] testSumMax() {
+        long result = Long.MIN_VALUE;
+        long result2 = Long.MIN_VALUE;
+        for (int i = 0; i < input.length; i += 4) {
+            long v0 = getArray_dontinline(i + 0);
+            long v1 = getArray_dontinline(i + 1);
+            long v2 = getArray_dontinline(i + 2);
+            long v3 = getArray_dontinline(i + 3);
+            long u0 = Long.max(v0, result);
+            long u1 = Long.max(v1, u0);
+            long u2 = Long.max(v2, u1);
+            long u3 = Long.max(v3, u2);
+            long t0 = Long.max(v0, v1);
+            long t1 = Long.max(v2, t0);
+            long t2 = Long.max(v3, t1);
+            long t3 = Long.max(result, t2);
+            result += u3;
+            result2 += t3;
+        }
+        return new Object[]{result, result2};
+    }
+
+    @Check(test = "testSumMax")
+    public void checkSumMax(Object[] results) {
+        Verify.checkEQ(expectedSumMax[1], results[1]);
+        Verify.checkEQ(expectedSumMax[0], results[0]);
+        Verify.checkEQ(results[0], results[1]);
+    }
+
+    static long getArray_dontinline(int i) {
+        return input[i];
+    }
 }

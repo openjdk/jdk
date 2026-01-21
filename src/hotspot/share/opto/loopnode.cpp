@@ -5035,6 +5035,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
 
   Node* left;
   Node* right;
+  // todo check == add_opcode as opposed to is_associative
   if (is_associative(node->in(1))) {
     left = reassociate_chain(add_opcode, node->in(1), phi, loop_head, phase);
     right = node->in(2);
@@ -5065,7 +5066,7 @@ static void try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
     Node* use = nullptr;
     for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
       Node* n = current->fast_out(i);
-      if (is_associative(n)) {
+      if (n->Opcode() == opcode) {
         use = n;
         break;
       }
