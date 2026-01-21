@@ -165,24 +165,20 @@ public class CheckFiles {
         }
 
         Path legalDir = mainDirToScan.resolve("legal");
-        ArrayList<String> allowedEndingsLegalDir = new ArrayList<>();
-        allowedEndingsLegalDir.add(".md");
-        allowedEndingsLegalDir.add("ADDITIONAL_LICENSE_INFO");
-        allowedEndingsLegalDir.add("ASSEMBLY_EXCEPTION");
-        allowedEndingsLegalDir.add("LICENSE");
-
-        // those MUST be in every subdir of the legal dir
-        ArrayList<String> requiredFilesInLegalSubdirs = new ArrayList<>();
-        requiredFilesInLegalSubdirs.add("LICENSE");
-
         Path javabaseLicenseFile = mainDirToScan.resolve("legal/java.base/LICENSE");
-        if (isGpl(javabaseLicenseFile)) {
+        if (isGpl(javabaseLicenseFile)) { // for now check only legal dir of GPL based images; other ones might have other content
             System.out.println("GPL info found in java.base LICENSE file");
+            ArrayList<String> allowedEndingsLegalDir = new ArrayList<>();
+            allowedEndingsLegalDir.add(".md");
+            allowedEndingsLegalDir.add("ADDITIONAL_LICENSE_INFO");
+            allowedEndingsLegalDir.add("ASSEMBLY_EXCEPTION");
+            allowedEndingsLegalDir.add("LICENSE");
+
+            ArrayList<String> requiredFilesInLegalSubdirs = new ArrayList<>();
+            requiredFilesInLegalSubdirs.add("LICENSE");
             requiredFilesInLegalSubdirs.add("ADDITIONAL_LICENSE_INFO");
             requiredFilesInLegalSubdirs.add("ASSEMBLY_EXCEPTION");
-        }
 
-        if (Files.isDirectory(legalDir)) {
             System.out.println("Legal directory to scan:" + legalDir);
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(legalDir)) {
                 for (Path subfolder : stream) {
