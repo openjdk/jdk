@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -905,10 +905,46 @@ public final class WindowsIconFactory implements Serializable
                         XPStyle xp = XPStyle.getXP();
                         if (xp != null) {
                             Skin skin = xp.getSkin(c, part);
-                            if (icon == null || icon.getIconHeight() <= 16) {
-                                skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
+                            if (WindowsGraphicsUtils.isLeftToRight(c)) {
+                                if (icon == null || icon.getIconHeight() <= 16) {
+                                    skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
+                                } else {
+                                    skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
+                                }
                             } else {
-                                skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
+                                if (icon == null) {
+                                    skin.paintSkin(g, x + 4 * OFFSET, y + OFFSET, state);
+                                } else {
+                                    int ycoord = (icon.getIconHeight() <= 16)
+                                                  ? y + OFFSET
+                                                  : (y + icon.getIconHeight() / 2);
+                                    if (icon.getIconWidth() <= 8) {
+                                        skin.paintSkin(g, x + OFFSET, ycoord, state);
+                                    } else if (icon.getIconWidth() <= 16) {
+                                        if (menuItem.getText().isEmpty()) {
+                                            skin.paintSkin(g,
+                                                (menuItem.getAccelerator() != null)
+                                                 ? (x + 2 * OFFSET) : (x + 3 * OFFSET),
+                                                ycoord, state);
+                                        } else {
+                                            skin.paintSkin(g,
+                                                (type == JRadioButtonMenuItem.class)
+                                                 ? (x + 4 * OFFSET) : (x + 3 * OFFSET),
+                                                ycoord, state);
+                                        }
+                                    } else {
+                                        if (menuItem.getText().isEmpty()
+                                            || menuItem.getAccelerator() != null) {
+                                            skin.paintSkin(g,
+                                                (type == JRadioButtonMenuItem.class)
+                                                 ? (x + 3 * OFFSET) : (x + 4 * OFFSET),
+                                                ycoord, state);
+                                        } else {
+                                            skin.paintSkin(g, x + 7 * OFFSET,
+                                                           ycoord, state);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
