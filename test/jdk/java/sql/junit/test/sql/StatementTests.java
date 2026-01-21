@@ -68,9 +68,7 @@ public class StatementTests extends BaseTest {
      */
     @Test
     public void test01() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            stmt.enquoteLiteral(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> stmt.enquoteLiteral(null));
     }
 
     /*
@@ -89,9 +87,7 @@ public class StatementTests extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidEnquotedIdentifierValues")
     public void test03(String s, boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(SQLException.class, () -> {
-            stmt.enquoteIdentifier(s, alwaysQuote);
-        });
+        Assertions.assertThrows(SQLException.class, () -> stmt.enquoteIdentifier(s, alwaysQuote));
     }
 
     /*
@@ -101,9 +97,7 @@ public class StatementTests extends BaseTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void test04(boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            stmt.enquoteIdentifier(null, alwaysQuote);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> stmt.enquoteIdentifier(null, alwaysQuote));
     }
 
     /*
@@ -121,9 +115,7 @@ public class StatementTests extends BaseTest {
      */
     @Test
     public void test06() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            stmt.isSimpleIdentifier(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> stmt.isSimpleIdentifier(null));
     }
 
     /*
@@ -142,8 +134,6 @@ public class StatementTests extends BaseTest {
      */
     @Test
     public void test08() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            stmt.enquoteNCharLiteral(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> stmt.enquoteNCharLiteral(null));
     }
 }

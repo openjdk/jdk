@@ -62,9 +62,7 @@ public class ConnectionTests extends BaseTest {
      */
     @Test
     public void test01() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            conn.enquoteLiteral(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> conn.enquoteLiteral(null));
     }
 
     /*
@@ -83,9 +81,7 @@ public class ConnectionTests extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidEnquotedIdentifierValues")
     public void test03(String s, boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(SQLException.class, () -> {
-            conn.enquoteIdentifier(s, alwaysQuote);
-        });
+        Assertions.assertThrows(SQLException.class, () -> conn.enquoteIdentifier(s, alwaysQuote));
     }
 
     /*
@@ -95,9 +91,7 @@ public class ConnectionTests extends BaseTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void test04(boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            conn.enquoteIdentifier(null, alwaysQuote);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> conn.enquoteIdentifier(null, alwaysQuote));
     }
 
     /*
@@ -115,9 +109,7 @@ public class ConnectionTests extends BaseTest {
      */
     @Test
     public void test06() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            conn.isSimpleIdentifier(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> conn.isSimpleIdentifier(null));
     }
 
     /*
@@ -136,8 +128,6 @@ public class ConnectionTests extends BaseTest {
      */
     @Test
     public void test08() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            conn.enquoteNCharLiteral(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> conn.enquoteNCharLiteral(null));
     }
 }

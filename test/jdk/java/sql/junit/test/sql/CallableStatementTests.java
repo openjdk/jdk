@@ -68,9 +68,7 @@ public class CallableStatementTests extends BaseTest {
      */
     @Test
     public void test01() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            cstmt.enquoteLiteral(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> cstmt.enquoteLiteral(null));
     }
 
     /*
@@ -89,9 +87,7 @@ public class CallableStatementTests extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidEnquotedIdentifierValues")
     public void test03(String s, boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(SQLException.class, () -> {
-            cstmt.enquoteIdentifier(s, alwaysQuote);
-        });
+        Assertions.assertThrows(SQLException.class, () -> cstmt.enquoteIdentifier(s, alwaysQuote));
     }
 
     /*
@@ -101,9 +97,7 @@ public class CallableStatementTests extends BaseTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void test04(boolean alwaysQuote) throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            cstmt.enquoteIdentifier(null, alwaysQuote);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> cstmt.enquoteIdentifier(null, alwaysQuote));
     }
 
     /*
@@ -121,9 +115,7 @@ public class CallableStatementTests extends BaseTest {
      */
     @Test
     public void test06() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            cstmt.isSimpleIdentifier(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> cstmt.isSimpleIdentifier(null));
     }
 
     /*
@@ -142,8 +134,6 @@ public class CallableStatementTests extends BaseTest {
      */
     @Test
     public void test08() throws SQLException {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            cstmt.enquoteNCharLiteral(null);
-        });
+        Assertions.assertThrows(NullPointerException.class, () -> cstmt.enquoteNCharLiteral(null));
     }
 }

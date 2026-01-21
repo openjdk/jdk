@@ -42,10 +42,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test01() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time t = Time.valueOf("08:30:59");
-            t.getYear();
-        });
+        Time t = Time.valueOf("08:30:59");
+        Assertions.assertThrows(IllegalArgumentException.class, t::getYear);
     }
 
     /*
@@ -53,10 +51,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test02() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time t = Time.valueOf("08:30:59");
-            t.getMonth();
-        });
+        Time t = Time.valueOf("08:30:59");
+        Assertions.assertThrows(IllegalArgumentException.class, t::getMonth);
     }
 
     /*
@@ -64,10 +60,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test03() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time t = Time.valueOf("08:30:59");
-            t.getDay();
-        });
+        Time t = Time.valueOf("08:30:59");
+        Assertions.assertThrows(IllegalArgumentException.class, t::getDay);
     }
 
     /**
@@ -75,10 +69,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test04() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time t = Time.valueOf("08:30:59");
-            t.getDate();
-        });
+        Time t = Time.valueOf("08:30:59");
+        Assertions.assertThrows(IllegalArgumentException.class, t::getDate);
     }
 
     /*
@@ -86,10 +78,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test05() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time t = Time.valueOf("08:30:59");
-            t.setYear(8);
-        });
+        Time t = Time.valueOf("08:30:59");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> t.setYear(8));
     }
 
     /*
@@ -97,10 +87,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test06() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time t = Time.valueOf("08:30:59");
-            t.setMonth(8);
-        });
+        Time t = Time.valueOf("08:30:59");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> t.setMonth(8));
     }
 
     /*
@@ -108,10 +96,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test07() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time t = Time.valueOf("08:30:59");
-            t.setDate(30);
-        });
+        Time t = Time.valueOf("08:30:59");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> t.setDate(30));
     }
 
     /*
@@ -119,10 +105,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test08() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time t = Time.valueOf("08:30:59");
-            t.getDate();
-        });
+        Time t = Time.valueOf("08:30:59");
+        Assertions.assertThrows(IllegalArgumentException.class, t::getDate);
     }
 
     /*
@@ -152,10 +136,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test11() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            LocalTime ld = null;
-            Time.valueOf(ld);
-        });
+        LocalTime ld = null;
+        Assertions.assertThrows(NullPointerException.class, () -> Time.valueOf(ld));
     }
 
     /*
@@ -164,10 +146,8 @@ public class TimeTests extends BaseTest {
      */
     @Test
     public void test12() throws Exception {
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            Time t = new Time(System.currentTimeMillis());
-            t.toInstant();
-        });
+        Time t = new Time(System.currentTimeMillis());
+        Assertions.assertThrows(UnsupportedOperationException.class, t::toInstant);
     }
 
     /*
@@ -212,9 +192,7 @@ public class TimeTests extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidTimeValues")
     public void test16(String time) throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Time.valueOf(time);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Time.valueOf(time));
     }
 
     /*

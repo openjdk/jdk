@@ -44,9 +44,7 @@ public class DateTests extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidDateValues")
     public void test(String d) throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Date.valueOf(d);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Date.valueOf(d));
     }
 
     /*
@@ -218,10 +216,8 @@ public class DateTests extends BaseTest {
      */
     @Test
     public void test15() throws Exception {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            LocalDate ld = null;
-            Date.valueOf(ld);
-        });
+        LocalDate ld = null;
+        Assertions.assertThrows(NullPointerException.class, () -> Date.valueOf(ld));
     }
 
     /*
@@ -230,10 +226,8 @@ public class DateTests extends BaseTest {
      */
     @Test
     public void test16() throws Exception {
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            Date d = Date.valueOf("1961-08-30");
-            Instant instant = d.toInstant();
-        });
+        Date d = Date.valueOf("1961-08-30");
+        Assertions.assertThrows(UnsupportedOperationException.class, d::toInstant);
     }
 
     /*
@@ -286,10 +280,8 @@ public class DateTests extends BaseTest {
      */
     @Test
     public void test21() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Date d = Date.valueOf("1961-08-30");
-            d.getHours();
-        });
+        Date d = Date.valueOf("1961-08-30");
+        Assertions.assertThrows(IllegalArgumentException.class, d::getHours);
     }
 
     /*
@@ -297,10 +289,8 @@ public class DateTests extends BaseTest {
      */
     @Test
     public void test22() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Date d = Date.valueOf("1961-08-30");
-            d.getMinutes();
-        });
+        Date d = Date.valueOf("1961-08-30");
+        Assertions.assertThrows(IllegalArgumentException.class, d::getMinutes);
     }
 
     /*
@@ -308,10 +298,8 @@ public class DateTests extends BaseTest {
      */
     @Test
     public void test23() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Date d = Date.valueOf("1961-08-30");
-            d.getSeconds();
-        });
+        Date d = Date.valueOf("1961-08-30");
+        Assertions.assertThrows(IllegalArgumentException.class, d::getSeconds);
     }
 
     /*
@@ -319,10 +307,8 @@ public class DateTests extends BaseTest {
      */
     @Test
     public void test24() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Date d = Date.valueOf("1961-08-30");
-            d.setHours(8);
-        });
+        Date d = Date.valueOf("1961-08-30");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> d.setHours(8));
     }
 
     /*
@@ -330,10 +316,8 @@ public class DateTests extends BaseTest {
      */
     @Test
     public void test25() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Date d = Date.valueOf("1961-08-30");
-            d.setMinutes(0);
-        });
+        Date d = Date.valueOf("1961-08-30");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> d.setMinutes(0));
     }
 
     /*
@@ -341,10 +325,8 @@ public class DateTests extends BaseTest {
      */
     @Test
     public void test26() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            Date d = Date.valueOf("1961-08-30");
-            d.setSeconds(0);
-        });
+        Date d = Date.valueOf("1961-08-30");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> d.setSeconds(0));
     }
 
     /*
