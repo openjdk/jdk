@@ -48,7 +48,8 @@ public class TestJcmdTimestamp {
 
     // timestamp should be there and it should be recent
     public static void assertTimestamp(final String line) throws java.time.format.DateTimeParseException {
-        final String timePattern = "yyyy-MM-dd HH:mm:ss";
+        // ISO 8601. Example "2026-01-21T16:58:49.518+0100"
+        final String timePattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
         final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(timePattern);
         final LocalDateTime parsedDateTime = LocalDateTime.parse(line, formatter);
 
