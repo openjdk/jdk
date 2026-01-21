@@ -1041,6 +1041,420 @@ import java.util.Arrays;
  * for part numbers, while for contractions the {@code partLimit()}
  * value {@code -1/M} is the exclusive <em>lower</em> limit.
  *
+ * <p>Here are some examples of expansions and contractions:
+ *
+ * <table id="expansion-examples" style="text-align:right;">
+ * <caption>expansion and contraction examples</caption>
+ * <colgroup>
+ * <col style="width: 17%" />
+ * <col style="width: 11%" />
+ * <col style="width: 17%" />
+ * <col style="width: 5%" />
+ * <col style="width: 5%" />
+ * <col style="width: 5%" />
+ * <col style="width: 5%" />
+ * <col style="width: 2%" />
+ * <col style="width: 26%" />
+ * </colgroup>
+ * <thead>
+ * <tr>
+ * <th>input</th>
+ * <th>op</th>
+ * <th>result</th>
+ * <th><code>ML</code></th>
+ * <th><code>MP</code></th>
+ * <th><code>M</code></th>
+ * <th>part</th>
+ * <th></th>
+ * <th style="text-align: left;">output</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>identity</td>
+ * <td><code>byte[8]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td>identity</td>
+ * <td><code>short[4]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A=B=C=D=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td><code>S2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCD____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td><code>S2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>____ABCD</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>B2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A=B=C=D=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>B2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>E=F=G=H=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>Z_E_B2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A_B_C_D_</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>Z_E_B2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>E_F_G_H_</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>Z_E_B2I</code></td>
+ * <td><code>int[2]</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A___B___</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>Z_E_B2I</code></td>
+ * <td><code>int[2]</code></td>
+ * <td>4</td>
+ * <td>1</td>
+ * <td>4</td>
+ * <td>3</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>G___H___</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>Z_E_B2L</code></td>
+ * <td><code>long[1]</code></td>
+ * <td>8</td>
+ * <td>1</td>
+ * <td>8</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A_______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>Z_E_B2L</code></td>
+ * <td><code>long[1]</code></td>
+ * <td>8</td>
+ * <td>1</td>
+ * <td>8</td>
+ * <td>7</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>H_______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td><code>L2I</code></td>
+ * <td><code>int[2]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A===____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td><code>L2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A=______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td><code>L2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A_______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td><code>L2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>_A______</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td><code>L2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>-6</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>______A_</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td><code>L2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/8</td>
+ * <td>1</td>
+ * <td>1/8</td>
+ * <td>-7</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>_______A</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td><code>L2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>1/4</td>
+ * <td>1</td>
+ * <td>1/4</td>
+ * <td>-3</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>______A=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>long[1]</code></td>
+ * <td><code>L2I</code></td>
+ * <td><code>int[2]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>____A===</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>int[2]</code></td>
+ * <td><code>I2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>A=B=____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>int[2]</code></td>
+ * <td><code>I2S</code></td>
+ * <td><code>short[4]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>____A=B=</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td><code>S2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCD____</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>short[4]</code></td>
+ * <td><code>S2B</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1/2</td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>____ABCD</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>reinterp</td>
+ * <td><code>short[4]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>(AB)(CD)(EF)(GH)</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>reinterp</td>
+ * <td><code>int[2]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>(ABCD)(EFGH)</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>reinterp</td>
+ * <td><code>long[1]</code></td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>1</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>(ABCDEFGH)</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>reinterp</td>
+ * <td><code>byte[16]</code></td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code>&#xA0;<code>________</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td>reinterp</td>
+ * <td><code>byte[16]</code></td>
+ * <td>1</td>
+ * <td>2</td>
+ * <td>1/2</td>
+ * <td>-1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>________</code>&#xA0;<code>ABCDEFGH</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[16]</code></td>
+ * <td>reinterp</td>
+ * <td><code>byte[8]</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>ABCDEFGH</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[16]</code></td>
+ * <td>reinterp</td>
+ * <td><code>byte[8]</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>IJKLMNOP</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>unslice(5,__)</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>_____ABC</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>unslice(5,__)</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>1</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>DEFGH___</code></td>
+ * </tr>
+ * <tr>
+ * <td><code>byte[8]</code></td>
+ * <td><code>x.unslice(5,x)</code></td>
+ * <td><code>byte[8]</code></td>
+ * <td>1</td>
+ * <td>1/2</td>
+ * <td>2</td>
+ * <td>0</td>
+ * <td></td>
+ * <td style="text-align: left;"><code>DEFGHABC</code></td>
+ * </tr>
+ * </tbody>
+ * </table>
+ *
+ * <p> Notes: Capital letters are bytes, always leading (low-order) bytes in
+ * multi-byte lanes. Underlines stand for zero bytes, supplied as output
+ * passing. Equals signs (to be read as double underlines) stand for
+ * higher-order bytes corresponding to the capital letter to the left.
+ * High bytes may be significant input bits; if missing from input they
+ * are output as sign bytes copied from the sign of the previous byte.
+ * Parentheses show where a regrouping of lane bytes has occurred.
+ *
  * <h2><a id="cross-lane"></a>Moving data across lane boundaries</h2>
  * The cross-lane methods which do not redraw lanes or change species
  * are more regularly structured and easier to reason about.
