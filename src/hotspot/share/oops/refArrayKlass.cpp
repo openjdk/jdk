@@ -46,8 +46,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-RefArrayKlass *RefArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n,
-                                       Klass* k, Symbol *name,
+RefArrayKlass* RefArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n,
+                                       Klass* k, Symbol* name,
                                        TRAPS) {
   assert(RefArrayKlass::header_size() <= InstanceKlass::header_size(),
          "array klasses must be same size as InstanceKlass");
@@ -58,8 +58,8 @@ RefArrayKlass *RefArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n
 }
 
 RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_data, int n,
-                                       Klass* element_klass,
-                                       TRAPS) {
+                                                      Klass* element_klass,
+                                                      TRAPS) {
 
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = nullptr;
@@ -75,7 +75,7 @@ RefArrayKlass* RefArrayKlass::allocate_refArray_klass(ClassLoaderData* loader_da
 
   // Initialize instance variables
   RefArrayKlass* oak = RefArrayKlass::allocate_klass(loader_data, n, element_klass,
-                                               name, CHECK_NULL);
+                                                     name, CHECK_NULL);
 
   ModuleEntry* module = oak->module();
   assert(module != nullptr, "No module entry for array");
