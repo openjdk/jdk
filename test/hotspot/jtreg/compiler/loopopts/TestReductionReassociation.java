@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8351409
- * @summary Test the IR effects of reduction reassociation
+ * @summary Test the IR effects of reduction reassociation for edge cases that apply to any of the associative adds
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
