@@ -2338,7 +2338,7 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
 }
 
 PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose, bool location)
-  :_st(st), _verbose(verbose), _location(location) {
+  :_st(st), _verbose(verbose), _location(location), _aot_statics(0), _aot_dynamics(0) {
   ResourceMark rm;
   _st->print("%-18s  ", "KlassAddr");
   _st->print("%-4s  ", "Size");
@@ -2383,7 +2383,6 @@ void PrintClassClosure::do_klass(Klass* k)  {
         if (_location) buf[i++] = 'd';
       }
     }
-
   }
   buf[i++] = '\0';
   _st->print("%-7s  ", buf);
