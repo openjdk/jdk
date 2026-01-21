@@ -267,6 +267,11 @@ public interface Tree {
         PRIMITIVE_TYPE(PrimitiveTypeTree.class),
 
         /**
+         * Used for instances of {@link VarTypeTree}.
+         */
+        VAR_TYPE(VarTypeTree.class),
+
+        /**
          * Used for instances of {@link ReturnTree}.
          */
         RETURN(ReturnTree.class),

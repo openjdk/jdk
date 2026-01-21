@@ -337,7 +337,7 @@ class Eval {
             Set<String> anonymousClasses = Collections.emptySet();
             StringBuilder sbBrackets = new StringBuilder();
             Tree baseType = vt.getType();
-            if (!vt.isImplicitlyTyped()) {
+            if (vt.getType().getKind() == Tree.Kind.VAR_TYPE) {
                 tds.scan(baseType); // Not dependent on initializer
                 fullTypeName = displayType = typeName = EvalPretty.prettyExpr((JCTree) vt.getType(), false);
                 while (baseType instanceof ArrayTypeTree) {

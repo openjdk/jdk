@@ -1071,10 +1071,8 @@ public class JavacParserTest extends TestCase {
         VariableTree stmt2 = (VariableTree) method.getBody().getStatements().get(1);
         Tree v1Type = stmt1.getType();
         Tree v2Type = stmt2.getType();
-        assertEquals("Implicit type for v1 is not correct: ", Kind.IDENTIFIER, v1Type.getKind());
-        assertEquals("Implicit type for v1 is not correct: ", "var", ((IdentifierTree) v1Type).getName().toString());
-        assertEquals("Implicit type for v2 is not correct: ", Kind.IDENTIFIER, v2Type.getKind());
-        assertEquals("Implicit type for v2 is not correct: ", "var", ((IdentifierTree) v2Type).getName().toString());
+        assertEquals("Implicit type for v1 is not correct: ", Kind.VAR_TYPE, v1Type.getKind());
+        assertEquals("Implicit type for v2 is not correct: ", Kind.VAR_TYPE, v2Type.getKind());
     }
 
     @Test

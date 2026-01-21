@@ -481,6 +481,12 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
 
     @DefinedBy(Api.COMPILER_TREE)
+    public JCTree visitVarType(VarTypeTree node, P p) {
+        JCVarType t = (JCVarType) node;
+        return M.at(t.pos).VarType();
+    }
+
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitTypeParameter(TypeParameterTree node, P p) {
         JCTypeParameter t = (JCTypeParameter) node;
         List<JCAnnotation> annos = copy(t.annotations, p);

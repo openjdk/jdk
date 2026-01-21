@@ -93,6 +93,7 @@ import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCTypeUnion;
 import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCUses;
+import com.sun.tools.javac.tree.JCTree.JCVarType;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
@@ -629,6 +630,11 @@ public class TreeDiffer extends TreeScanner {
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
         JCPrimitiveTypeTree that = (JCPrimitiveTypeTree) parameter;
         result = tree.typetag == that.typetag;
+    }
+
+    @Override
+    public void visitVarType(JCVarType tree) {
+        result = true;
     }
 
     @Override

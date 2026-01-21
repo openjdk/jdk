@@ -277,6 +277,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         TYPEIDENT,
 
+        /** 'var' type.
+         */
+        VARTYPE,
+
         /** Array types, of type TypeArray.
          */
         TYPEARRAY,
@@ -2809,6 +2813,24 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
     }
 
+    public static class JCVarType extends JCExpression implements VarTypeTree {
+        public JCVarType() {}
+        @Override
+        public void accept(Visitor v) { v.visitVarType(this); }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() { return Kind.VAR_TYPE; }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitVarType(this, d);
+        }
+        @Override
+        public Tag getTag() {
+            return VARTYPE;
+        }
+    }
+
     /**
      * An array type, A[]
      */
@@ -3586,6 +3608,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitIdent(JCIdent that)                 { visitTree(that); }
         public void visitLiteral(JCLiteral that)             { visitTree(that); }
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }
+        public void visitVarType(JCVarType that)             { visitTree(that); }
         public void visitTypeArray(JCArrayTypeTree that)     { visitTree(that); }
         public void visitTypeApply(JCTypeApply that)         { visitTree(that); }
         public void visitTypeUnion(JCTypeUnion that)         { visitTree(that); }

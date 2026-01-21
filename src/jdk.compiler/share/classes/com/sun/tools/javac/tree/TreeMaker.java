@@ -566,6 +566,12 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCVarType VarType() {
+        JCVarType tree = new JCVarType();
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCArrayTypeTree TypeArray(JCExpression elemtype) {
         JCArrayTypeTree tree = new JCArrayTypeTree(elemtype);
         tree.pos = pos;

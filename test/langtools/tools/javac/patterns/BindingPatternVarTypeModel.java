@@ -83,7 +83,7 @@ public class BindingPatternVarTypeModel {
         new TreeScanner<Void, Void>() {
             @Override
             public Void visitBindingPattern(BindingPatternTree node, Void p) {
-                if (node.getVariable().getType().getKind() != Tree.Kind.IDENTIFIER) { //TODO: maybe also check "var"
+                if (node.getVariable().getType().getKind() != Tree.Kind.VAR_TYPE) {
                     throw new AssertionError("Unexpected type for var: " +
                                              node.getVariable().getType().getKind() +
                                              ":" + node.getVariable().getType());

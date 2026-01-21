@@ -4244,7 +4244,7 @@ public class Attr extends JCTree.Visitor {
     public void visitRecordPattern(JCRecordPattern tree) {
         Type site;
 
-        if (tree.deconstructor instanceof JCIdent id && id.name == names.var) {
+        if (tree.deconstructor.hasTag(VARTYPE)) {
             log.error(tree.pos(), Errors.DeconstructionPatternVarNotAllowed);
             tree.record = syms.errSymbol;
             site = tree.type = types.createErrorType(tree.record.type);
@@ -5742,12 +5742,10 @@ public class Attr extends JCTree.Visitor {
             return ;
         }
 
-        Assert.check(tree.vartype.hasTag(IDENT));
+        Assert.check(tree.vartype.hasTag(VARTYPE));
 
-        JCIdent vartype = (JCIdent) tree.vartype;
+        JCVarType vartype = (JCVarType) tree.vartype;
 
-        //some symbol needs to be set of JCIdent:
-        vartype.sym = syms.noSymbol;
         vartype.type = type;
     }
 
@@ -6150,6 +6148,11 @@ public class Attr extends JCTree.Visitor {
                 that.sym = new MethodSymbol(0, names.empty, dummyMethodType(),
                         syms.noSymbol);
             }
+        }
+
+        @Override
+        public void visitVarType(JCVarType that) {
+            initTypeIfNeeded(that);
         }
     }
     // </editor-fold>
