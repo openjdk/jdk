@@ -218,7 +218,7 @@ public class VectorAlgorithmsImpl {
     public static int reduceAddI_reassociate(int[] a) {
         int sum = 0;
         int i;
-        for (i = 0; i < a.length - 3; i+=4) {
+        for (i = 0; i < a.length - 3; i += 4) {
             // Unroll 4x, reassociate inside.
             sum += a[i] + a[i + 1] + a[i + 2] + a[i + 3];
         }
@@ -483,7 +483,7 @@ public class VectorAlgorithmsImpl {
     public static Object scanAddI_loop_reassociate(int[] a, int[] r) {
         int sum = 0;
         int i = 0;
-        for (; i < a.length - 3; i+=4) {
+        for (; i < a.length - 3; i += 4) {
             // We cut the latency by a factor of 4, but increase the number of additions.
             int old_sum = sum;
             int v0 = a[i + 0];
@@ -687,12 +687,11 @@ public class VectorAlgorithmsImpl {
     }
 
     public static int reduceAddIFieldsX4_VectorAPI(int[] oops, int[] mem) {
-        var nulls = IntVector.broadcast(SPECIES_I, 0);
         var acc = IntVector.broadcast(SPECIES_I, 0);
         int i = 0;
         for (; i < SPECIES_I.loopBound(oops.length); i += SPECIES_I.length()) {
             var oopv = IntVector.fromArray(SPECIES_I, oops, i);
-            var mask = oopv.compare(VectorOperators.NE, nulls);
+            var mask = oopv.compare(VectorOperators.NE, /* null */0);
             // We are lucky today: we need to access mem[oop + 3]
             var fieldValues = IntVector.fromArray(SPECIES_I, mem, 3, oops, i, mask);
             acc = acc.add(fieldValues);
