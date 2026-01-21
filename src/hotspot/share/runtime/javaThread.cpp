@@ -1186,6 +1186,8 @@ void JavaThread::set_is_disabler_at_start(bool val) {
 bool JavaThread::java_suspend(bool register_vthread_SR) {
   // Suspending a vthread transition disabler can cause deadlocks.
   // The HandshakeState::has_operation does not allow such suspends.
+  // But the suspender thread is an exclusive transition disablers, so there can't be other disabers here.
+  JVMTI_ONLY(assert(!is_vthread_transition_disabler(), "suspender thread is an exclusive transition disabler");)
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
