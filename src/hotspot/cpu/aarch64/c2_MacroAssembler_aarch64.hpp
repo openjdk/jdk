@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,20 @@
 
   void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
+
+  // Helper functions for min/max reduction operations
+  void neon_minp(bool is_unsigned, FloatRegister dst, SIMD_Arrangement size,
+                 FloatRegister src1, FloatRegister src2);
+  void neon_maxp(bool is_unsigned, FloatRegister dst, SIMD_Arrangement size,
+                 FloatRegister src1, FloatRegister src2);
+  void neon_minv(bool is_unsigned, FloatRegister dst, SIMD_Arrangement size,
+                 FloatRegister src);
+  void neon_maxv(bool is_unsigned, FloatRegister dst, SIMD_Arrangement size,
+                 FloatRegister src);
+  void sve_minv(bool is_unsigned, FloatRegister dst, SIMD_RegVariant size,
+                PRegister pg, FloatRegister src);
+  void sve_maxv(bool is_unsigned, FloatRegister dst, SIMD_RegVariant size,
+                PRegister pg, FloatRegister src);
 
   void select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                     FloatRegister src2, FloatRegister index,

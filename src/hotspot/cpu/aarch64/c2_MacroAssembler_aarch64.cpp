@@ -1960,6 +1960,87 @@ void C2_MacroAssembler::neon_reduce_logical(int opc, Register dst, BasicType bt,
   BLOCK_COMMENT("} neon_reduce_logical");
 }
 
+// Helper function to decode min/max reduction operation properties
+static void decode_minmax_reduction_opc(int opc, bool& is_min, bool& is_unsigned,
+                                        Assembler::Condition& cond) {
+  switch(opc) {
+    case Op_MinReductionV:
+      is_min = true;  is_unsigned = false; cond = Assembler::LT; break;
+    case Op_MaxReductionV:
+      is_min = false; is_unsigned = false; cond = Assembler::GT; break;
+    case Op_UMinReductionV:
+      is_min = true;  is_unsigned = true;  cond = Assembler::LO; break;
+    case Op_UMaxReductionV:
+      is_min = false; is_unsigned = true;  cond = Assembler::HI; break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+// neon minp: pairwise minimum operation
+void C2_MacroAssembler::neon_minp(bool is_unsigned, FloatRegister dst,
+                                  SIMD_Arrangement size, FloatRegister src1,
+                                  FloatRegister src2) {
+  if (is_unsigned) {
+    uminp(dst, size, src1, src2);
+  } else {
+    sminp(dst, size, src1, src2);
+  }
+}
+
+// neon maxp: pairwise maximum operation
+void C2_MacroAssembler::neon_maxp(bool is_unsigned, FloatRegister dst,
+                                  SIMD_Arrangement size, FloatRegister src1,
+                                  FloatRegister src2) {
+  if (is_unsigned) {
+    umaxp(dst, size, src1, src2);
+  } else {
+    smaxp(dst, size, src1, src2);
+  }
+}
+
+// neon minv: reduction minimum operation
+void C2_MacroAssembler::neon_minv(bool is_unsigned, FloatRegister dst,
+                                  SIMD_Arrangement size, FloatRegister src) {
+  if (is_unsigned) {
+    uminv(dst, size, src);
+  } else {
+    sminv(dst, size, src);
+  }
+}
+
+// neon maxv: reduction maximum operation
+void C2_MacroAssembler::neon_maxv(bool is_unsigned, FloatRegister dst,
+                                  SIMD_Arrangement size, FloatRegister src) {
+  if (is_unsigned) {
+    umaxv(dst, size, src);
+  } else {
+    smaxv(dst, size, src);
+  }
+}
+
+// sve minv: reduction minimum operation
+void C2_MacroAssembler::sve_minv(bool is_unsigned, FloatRegister dst,
+                                 SIMD_RegVariant size, PRegister pg,
+                                 FloatRegister src) {
+  if (is_unsigned) {
+    sve_uminv(dst, size, pg, src);
+  } else {
+    sve_sminv(dst, size, pg, src);
+  }
+}
+
+// sve maxv: reduction maximum operation
+void C2_MacroAssembler::sve_maxv(bool is_unsigned, FloatRegister dst,
+                                 SIMD_RegVariant size, PRegister pg,
+                                 FloatRegister src) {
+  if (is_unsigned) {
+    sve_umaxv(dst, size, pg, src);
+  } else {
+    sve_smaxv(dst, size, pg, src);
+  }
+}
+
 // Vector reduction min/max/umin/umax for integral type with ASIMD instructions.
 // Note: vtmp is not used and expected to be fnoreg for T_LONG case.
 // Clobbers: rscratch1, rflags
@@ -1973,11 +2054,10 @@ void C2_MacroAssembler::neon_reduce_minmax_integral(int opc, Register dst, Basic
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported");
   assert_different_registers(dst, isrc);
   bool isQ = vector_length_in_bytes == 16;
-  bool is_min = (opc == Op_MinReductionV || opc == Op_UMinReductionV);
-  bool is_unsigned = (opc == Op_UMinReductionV || opc == Op_UMaxReductionV);
-  Assembler::Condition cond = is_min ? (is_unsigned ? Assembler::LO : Assembler::LT)
-                                     : (is_unsigned ? Assembler::HI : Assembler::GT);
-
+  bool is_min;
+  bool is_unsigned;
+  Condition cond;
+  decode_minmax_reduction_opc(opc, is_min, is_unsigned, cond);
   BLOCK_COMMENT("neon_reduce_minmax_integral {");
     if (bt == T_LONG) {
       assert(vtmp == fnoreg, "should be");
@@ -1993,18 +2073,12 @@ void C2_MacroAssembler::neon_reduce_minmax_integral(int opc, Register dst, Basic
       if (size == T2S) {
         // For T2S (2x32-bit elements), use pairwise instructions because
         // uminv/umaxv/sminv/smaxv don't support arrangement 2S.
-        if (is_unsigned) {
-          is_min ? uminp(vtmp, size, vsrc, vsrc) : umaxp(vtmp, size, vsrc, vsrc);
-        } else {
-          is_min ? sminp(vtmp, size, vsrc, vsrc) : smaxp(vtmp, size, vsrc, vsrc);
-        }
+        is_min ? neon_minp(is_unsigned, vtmp, size, vsrc, vsrc)
+               : neon_maxp(is_unsigned, vtmp, size, vsrc, vsrc);
       } else {
         // For other sizes, use reduction to scalar instructions.
-        if (is_unsigned) {
-          is_min ? uminv(vtmp, size, vsrc) : umaxv(vtmp, size, vsrc);
-        } else {
-          is_min ? sminv(vtmp, size, vsrc) : smaxv(vtmp, size, vsrc);
-        }
+        is_min ? neon_minv(is_unsigned, vtmp, size, vsrc)
+               : neon_maxv(is_unsigned, vtmp, size, vsrc);
       }
       if (bt == T_INT) {
         umov(dst, vtmp, S, 0);
@@ -2096,21 +2170,18 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
     case Op_MinReductionV:
     case Op_UMaxReductionV:
     case Op_UMinReductionV: {
-      bool is_unsigned = (opc == Op_UMaxReductionV || opc == Op_UMinReductionV);
-      bool is_min = (opc == Op_MinReductionV || opc == Op_UMinReductionV);
-      if (is_unsigned) {
-        is_min ? sve_uminv(tmp, size, pg, src2) : sve_umaxv(tmp, size, pg, src2);
-      } else {
-        is_min ? sve_sminv(tmp, size, pg, src2) : sve_smaxv(tmp, size, pg, src2);
-      }
+      bool is_min;
+      bool is_unsigned;
+      Condition cond;
+      decode_minmax_reduction_opc(opc, is_min, is_unsigned, cond);
+      is_min ? sve_minv(is_unsigned, tmp, size, pg, src2)
+             : sve_maxv(is_unsigned, tmp, size, pg, src2);
       // Move result from vector to general register
       if (is_unsigned || bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
       } else {
         smov(dst, tmp, size, 0);
       }
-      Assembler::Condition cond = is_min ? (is_unsigned ? Assembler::LO : Assembler::LT)
-                                         : (is_unsigned ? Assembler::HI : Assembler::GT);
       if (bt == T_LONG) {
         cmp(dst, src1);
         csel(dst, dst, src1, cond);
