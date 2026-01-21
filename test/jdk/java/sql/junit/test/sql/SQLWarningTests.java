@@ -27,11 +27,9 @@ import java.sql.SQLWarning;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import util.BaseTest;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SQLWarningTests extends BaseTest {
 
     private final String[] warnings = {"Warning 1", "cause 1", "Warning 2",
