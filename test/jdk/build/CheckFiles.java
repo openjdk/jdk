@@ -37,7 +37,7 @@ import jdk.test.lib.Platform;
 
 /*
  * @test
- * @summary Check for unwanted file (types/extensions) in the jdk image
+ * @summary Check for unwanted files (types/extensions) in the jdk image
  * @library /test/lib
  * @requires !vm.debug
  * @run main CheckFiles
@@ -47,6 +47,20 @@ public class CheckFiles {
     // Set this property on command line to scan an alternate dir or file:
     // JTREG=JAVA_OPTIONS=-Djdk.test.build.CheckFiles.dir=/path/to/dir
     public static final String DIR_PROPERTY = "jdk.test.build.CheckFiles.dir";
+
+    private static boolean isGpl(Path myFile) {
+        if (myFile == null || !Files.exists(myFile)) {
+            return false;
+        }
+
+        try {
+            String firstLine = Files.readAllLines(myFile).stream()
+                                    .findFirst().orElse("");
+            return firstLine.contains("The GNU General Public License (GPL)");
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         String jdkPathString = System.getProperty("test.jdk");
@@ -159,9 +173,14 @@ public class CheckFiles {
 
         // those MUST be in every subdir of the legal dir
         ArrayList<String> requiredFilesInLegalSubdirs = new ArrayList<>();
-        requiredFilesInLegalSubdirs.add("ADDITIONAL_LICENSE_INFO");
-        requiredFilesInLegalSubdirs.add("ASSEMBLY_EXCEPTION");
         requiredFilesInLegalSubdirs.add("LICENSE");
+
+        Path javabaseLicenseFile = mainDirToScan.resolve("legal/java.base/LICENSE");
+        if (isGpl(javabaseLicenseFile)) {
+            System.out.println("GPL info found in java.base LICENSE file");
+            requiredFilesInLegalSubdirs.add("ADDITIONAL_LICENSE_INFO");
+            requiredFilesInLegalSubdirs.add("ASSEMBLY_EXCEPTION");
+        }
 
         if (Files.isDirectory(legalDir)) {
             System.out.println("Legal directory to scan:" + legalDir);
