@@ -499,7 +499,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _suspend_resume_manager(this, &_handshake._lock),
 
   _is_in_vthread_transition(false),
-  _is_vthread_transition_disabler(false),
+  JVMTI_ONLY(_is_vthread_transition_disabler(false) COMMA)
   DEBUG_ONLY(_is_disabler_at_start(false) COMMA)
 
   _popframe_preserved_args(nullptr),
@@ -1165,9 +1165,11 @@ void JavaThread::set_is_in_vthread_transition(bool val) {
   AtomicAccess::store(&_is_in_vthread_transition, val);
 }
 
+#if INCLUDE_JVMTI
 void JavaThread::set_is_vthread_transition_disabler(bool val) {
   _is_vthread_transition_disabler = val;
 }
+#endif
 
 #ifdef ASSERT
 void JavaThread::set_is_disabler_at_start(bool val) {
