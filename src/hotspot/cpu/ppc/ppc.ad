@@ -7290,7 +7290,6 @@ instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -7310,7 +7309,6 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -8549,7 +8547,6 @@ instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -8608,7 +8605,6 @@ instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -10319,7 +10315,6 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovI   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10333,7 +10328,6 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovI   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10496,7 +10490,6 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovL   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10510,7 +10503,6 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovL   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -11137,7 +11129,6 @@ instruct cmov_bns_less(flagsReg crx) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmov    $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(12);
   ins_encode %{
     Label done;

@@ -664,6 +664,8 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   fn_scalar_op(opcode, dst, iSrc, R0);    // dst   <- op(iSrc, R0)
 }
 
+// Works for single and double precision floats.
+// dst = (op1 cmp(cc) op2) ? src1 : src2;
 void C2_MacroAssembler::cmovF(int cc, VectorSRegister dst, VectorSRegister op1, VectorSRegister op2,
                               VectorSRegister src1, VectorSRegister src2, VectorSRegister tmp) {
   VectorSRegister first  = src1;
@@ -689,7 +691,7 @@ void C2_MacroAssembler::cmovF(int cc, VectorSRegister dst, VectorSRegister op1, 
     xxsel(dst, first, second, tmp);
     break;
   default:
-    assert(false, "unsupported compare condition: %d", cmp);
+    assert(false, "unsupported compare condition: %d", cc);
     ShouldNotReachHere();
   }
 }

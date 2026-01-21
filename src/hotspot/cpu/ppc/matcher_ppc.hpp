@@ -67,7 +67,7 @@
   static constexpr int long_cmove_cost() { return 0; } // this only makes long cmoves more expensive than int cmoves
 
   // Suppress CMOVF for Power8 because there are no fast nodes.
-  static int float_cmove_cost() {return (PowerArchitecturePPC64 >= 9) ? 0 : ConditionalMoveLimit; }
+  static int float_cmove_cost() { return (PowerArchitecturePPC64 >= 9) ? 0 : ConditionalMoveLimit; }
 
   // This affects two different things:
   //  - how Decode nodes are matched
