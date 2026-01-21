@@ -239,6 +239,9 @@ public class ClassUnloader {
      *
      * @see WhiteBox.getWhiteBox().fullGC()
      */
+
+    public static final int MAX_UNLOAD_ATTEMPS = 10;
+
     public boolean unloadClass() {
 
         // free references to class and class loader to be able for collecting by GC
@@ -247,14 +250,26 @@ public class ClassUnloader {
 
         // force class unloading by triggering full GC
         WhiteBox.getWhiteBox().fullGC();
+        int count = 0;
+        while (count++ < MAX_UNLOAD_ATTEMPS && !isClassLoaderReclaimed()) {
+            System.out.println("ClassUnloader: waiting for class loader reclaiming... " + count);
+            WhiteBox.getWhiteBox().fullGC();
+            try {
+                // small delay to give more changes to process objects
+                // inside VM like jvmti deferred queue
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+        }
 
         // force GC to unload marked class loader and its classes
         if (isClassLoaderReclaimed()) {
-            Runtime.getRuntime().gc();
+            System.out.println("ClassUnloader: class loader has been reclaimed.");
             return true;
         }
 
         // class loader has not been reclaimed
+        System.out.println("ClassUnloader: class loader is still reachable.");
         return false;
     }
 }
