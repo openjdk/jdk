@@ -470,7 +470,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     } else {
       operation->add_flag(Node::Flag_is_predicated_using_blend);
       operation = gvn().transform(operation);
-      operation = new VectorBlendNode(opd1, operation, mask);
+      operation = trace_vector(new VectorBlendNode(opd1, operation, mask));
     }
   }
   operation = gvn().transform(operation);
@@ -1165,7 +1165,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       Node* zero = gvn().transform(gvn().zerocon(mem_elem_bt));
       zero = gvn().transform(VectorNode::scalar2vector(zero, mem_num_elem, mem_elem_bt));
       vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt)));
-      vload = gvn().transform(new VectorBlendNode(zero, vload, mask));
+      vload = gvn().transform(trace_vector(new VectorBlendNode(zero, vload, mask)));
     }
 
     if (mismatched_ms) {
