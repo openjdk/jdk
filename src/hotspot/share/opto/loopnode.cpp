@@ -5509,9 +5509,7 @@ void PhaseIdealLoop::build_and_optimize() {
             // Reassociating changes Phi nodes, so iteration and reassociation have to be separated
             for (uint next = 0; next < wq.size(); ++next) {
               Node* m = wq.at(next);
-              if (UseNewCode) {
-                try_reassociate_chain(m, phi, lpt, this);
-              }
+              try_reassociate_chain(m, phi, lpt, this);
             }
           }
         }

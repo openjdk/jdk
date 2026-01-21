@@ -47,7 +47,6 @@ public class TestReductionReassociation {
     public static void main(String[] args) {
         TestFramework.runWithFlags(
             "-XX:-UseSuperWord", "-XX:LoopMaxUnroll=0",
-            "-XX:+UseNewCode",
             "-XX:CompileCommand=dontinline,*::*dontinline*", "-XX:VerifyIterativeGVN=1000"
         );
     }

@@ -61,7 +61,6 @@ public class TestReductionReassociationForAssociativeAdds {
 
         String[] flags = new String[] {
             "-XX:-UseSuperWord", "-XX:LoopMaxUnroll=0", "-XX:VerifyIterativeGVN=1000",
-            "-XX:+UseNewCode",
             "-XX:CompileCommand=dontinline,*::*dontinline*",
             "--add-modules=jdk.incubator.vector", "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
         };
