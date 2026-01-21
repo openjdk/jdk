@@ -41,14 +41,36 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 /*
- * @test
+ * @test id=default
  * @bug 8272758
- * @summary Verifies that context paths are correctly mapped to request paths
+ * @summary Verifies path prefix matching using defaults
  * @build EchoHandler
  * @run junit ${test.main.class}
  */
 
-class ContextPathMappingTest {
+/*
+ * @test id=withProperty
+ * @bug 8272758
+ * @summary Verifies path prefix matching by providing a system property
+ * @build EchoHandler
+ * @run junit/othervm
+ *      -Dsun.net.httpserver.pathMatcher=pathPrefix
+ *      ${test.main.class}
+ */
+
+/*
+ * @test id=withInvalidProperty
+ * @bug 8272758
+ * @summary Verifies path prefix matching by providing a system property
+ *          containing an invalid value, and observing it fall back to the
+ *          default
+ * @build EchoHandler
+ * @run junit/othervm
+ *      -Dsun.net.httpserver.pathMatcher=noSuchMatcher
+ *      ${test.main.class}
+ */
+
+public class ContextPathMatcherPathPrefixTest {
 
     private static final HttpClient CLIENT =
             HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -81,7 +103,7 @@ class ContextPathMappingTest {
         }
     }
 
-    private static final class Infra implements AutoCloseable {
+    public static final class Infra implements AutoCloseable {
 
         private static final InetSocketAddress LO_SA_0 =
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
@@ -92,14 +114,14 @@ class ContextPathMappingTest {
 
         private final String contextPath;
 
-        private Infra(String contextPath) throws IOException {
+        public Infra(String contextPath) throws IOException {
             this.server = HttpServer.create(LO_SA_0, 10);
             server.createContext(contextPath, HANDLER);
             server.start();
             this.contextPath = contextPath;
         }
 
-        private void expect(int statusCode, String... requestPaths) throws Exception {
+        public void expect(int statusCode, String... requestPaths) throws Exception {
             for (String requestPath : requestPaths) {
                 var requestURI = URI.create("http://%s:%s%s".formatted(
                         server.getAddress().getHostString(),

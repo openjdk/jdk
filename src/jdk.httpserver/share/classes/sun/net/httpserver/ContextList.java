@@ -30,6 +30,8 @@ import java.util.function.BiPredicate;
 
 class ContextList {
 
+    private static final System.Logger LOGGER = System.getLogger(ContextList.class.getName());
+
     private final LinkedList<HttpContextImpl> list = new LinkedList<>();
 
     public synchronized void add(HttpContextImpl ctx) {
@@ -59,7 +61,8 @@ class ContextList {
     * @param path the request path
     */
     HttpContextImpl findContext(String protocol, String path) {
-        return findContext(protocol, path, ContextPathMatcher.PREFIX);
+        var matcher = ContextPathMatcher.ofConfiguredPrefixPathMatcher();
+        return findContext(protocol, path, matcher);
     }
 
     private synchronized HttpContextImpl findContext(String protocol, String path, ContextPathMatcher matcher) {
@@ -90,11 +93,60 @@ class ContextList {
         EXACT(String::equals),
 
         /**
-         * Tests path prefix matches such that file names must have an exact
-         * match. Consider the following examples:
+         * Tests <em>string prefix matches</em> where the request path string
+         * starts with the context path string.
+         *
+         * <h3>Examples</h3>
+         *
          * <table>
          * <thead>
-         *   <tr>
+         * <tr>
+         *   <th rowspan="2">Context path</th>
+         *   <th colspan="4">Request path</th>
+         * </tr>
+         * <tr>
+         *     <th>/foo</th>
+         *     <th>/foo/</th>
+         *     <th>/foo/bar</th>
+         *     <th>/foobar</th>
+         * </tr>
+         * </thead>
+         * <tbody>
+         * <tr>
+         *   <td>/</td>
+         *   <td>Y</td>
+         *   <td>Y</td>
+         *   <td>Y</td>
+         *   <td>Y</td>
+         * </tr>
+         * <tr>
+         *   <td>/foo</td>
+         *   <td>Y</td>
+         *   <td>Y</td>
+         *   <td>Y</td>
+         *   <td>Y</td>
+         * </tr>
+         * <tr>
+         *   <td>/foo/</td>
+         *   <td>N</td>
+         *   <td>Y</td>
+         *   <td>Y</td>
+         *   <td>N</td>
+         * </tr>
+         * </tbody>
+         * </table>
+         */
+        STRING_PREFIX((contextPath, requestPath) -> requestPath.startsWith(contextPath)),
+
+        /**
+         * Tests <em>path prefix matches</em> where path segments must have an
+         * exact match.
+         *
+         * <h3>Examples</h3>
+         *
+         * <table>
+         * <thead>
+         * <tr>
          *   <th rowspan="2">Context path</th>
          *   <th colspan="4">Request path</th>
          * </tr>
@@ -130,7 +182,7 @@ class ContextList {
          * </tbody>
          * </table>
          */
-        PREFIX((contextPath, requestPath) -> {
+        PATH_PREFIX((contextPath, requestPath) -> {
 
             // Fast-path for `/`
             if ("/".equals(contextPath)) {
@@ -167,6 +219,23 @@ class ContextList {
         @Override
         public boolean test(String contextPath, String requestPath) {
             return predicate.test(contextPath, requestPath);
+        }
+
+        private static ContextPathMatcher ofConfiguredPrefixPathMatcher() {
+            var propertyName = "sun.net.httpserver.pathMatcher";
+            var propertyValueDefault = "pathPrefix";
+            var propertyValue = System.getProperty(propertyName, propertyValueDefault);
+            return switch (propertyValue) {
+                case "pathPrefix" -> ContextPathMatcher.PATH_PREFIX;
+                case "stringPrefix" -> ContextPathMatcher.STRING_PREFIX;
+                default -> {
+                    LOGGER.log(
+                            System.Logger.Level.WARNING,
+                            "System property \"{}\" contains an invalid value: \"{}\". Falling back to the default: \"{}\"",
+                            propertyName, propertyValue, propertyValueDefault);
+                    yield ContextPathMatcher.PATH_PREFIX;
+                }
+            };
         }
 
     }
