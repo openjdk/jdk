@@ -937,7 +937,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     // When using byte array, we need to load as byte then reinterpret the value. Otherwise, do a simple vector load.
     Node* vload = nullptr;
     if (mismatched_ms) {
-      vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt));
+      vload = gvn().transform(trace_vector(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt)));
       const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem);
       vload = gvn().transform(new VectorReinterpretNode(vload, vload->bottom_type()->is_vect(), to_vect_type));
     } else {
@@ -2363,7 +2363,7 @@ bool LibraryCallKit::inline_vector_convert() {
         return false;
       }
 
-      op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_for_cast));
+      op = gvn().transform(trace_vector(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_for_cast)));
       // Now ensure that the destination gets properly resized to needed size.
       op = gvn().transform(new VectorReinterpretNode(op, op->bottom_type()->is_vect(), dst_type));
     } else if (num_elem_from > num_elem_to) {
@@ -2384,7 +2384,7 @@ bool LibraryCallKit::inline_vector_convert() {
 
       const TypeVect* resize_type = TypeVect::make(elem_bt_from, num_elem_for_resize);
       op = gvn().transform(new VectorReinterpretNode(op, src_type, resize_type));
-      op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to));
+      op = gvn().transform(trace_vector(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to)));
     } else { // num_elem_from == num_elem_to
       if (is_mask) {
         // Make sure that cast for vector mask is implemented to particular type/size combination.
@@ -2545,7 +2545,7 @@ bool LibraryCallKit::inline_vector_extract() {
       if (opd == nullptr) {
         return false;
       }
-      opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
+      opd = gvn().transform(trace_vector(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem)));
       opd = gvn().transform(new ExtractUBNode(opd, pos));
       opd = gvn().transform(new ConvI2LNode(opd));
     } else if (arch_supports_vector(Op_VectorMaskToLong, num_elem, elem_bt, VecMaskUseLoad)) {
@@ -2555,7 +2555,7 @@ bool LibraryCallKit::inline_vector_extract() {
       }
       // VectorMaskToLongNode requires the input is either a mask or a vector with BOOLEAN type.
       if (!Matcher::mask_op_prefers_predicate(Op_VectorMaskToLong, opd->bottom_type()->is_vect())) {
-        opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
+        opd = gvn().transform(trace_vector(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem)));
       }
       // ((toLong() >>> pos) & 1L
       opd = gvn().transform(new VectorMaskToLongNode(opd, TypeLong::LONG));
@@ -2585,7 +2585,7 @@ bool LibraryCallKit::inline_vector_extract() {
     }
     ConINode* idx_con = gvn().intcon(idx->get_con())->as_ConI();
 
-    opd = gvn().transform(trace_vector(ExtractNode::make(opd, idx_con, elem_bt)));
+    opd = gvn().transform(ExtractNode::make(opd, idx_con, elem_bt));
     switch (elem_bt) {
       case T_BYTE:
       case T_SHORT:
@@ -3010,12 +3010,12 @@ bool LibraryCallKit::inline_index_vector() {
       default: fatal("%s", type2name(elem_bt));
     }
     scale = gvn().transform(VectorNode::scalar2vector(scale, num_elem, elem_bt));
-    index = gvn().transform(VectorNode::make(vmul_op, index, scale, vt));
+    index = gvn().transform(trace_vector(VectorNode::make(vmul_op, index, scale, vt)));
   }
 
   // Add "opd" if addition is needed.
   if (needs_add) {
-    index = gvn().transform(VectorNode::make(vadd_op, opd, index, vt));
+    index = gvn().transform(trace_vector(VectorNode::make(vadd_op, opd, index, vt)));
   }
   Node* vbox = box_vector(index, vbox_type, elem_bt, num_elem);
   set_result(vbox);
@@ -3132,7 +3132,7 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
     // Compute the vector mask with "mask = iota < indexLimit".
     ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(BoolTest::lt));
     const TypeVect* vmask_type = TypeVect::makemask(elem_bt, num_elem);
-    mask = gvn().transform(new VectorMaskCmpNode(BoolTest::lt, iota, indexLimit, pred_node, vmask_type));
+    mask = gvn().transform(trace_vector(new VectorMaskCmpNode(BoolTest::lt, iota, indexLimit, pred_node, vmask_type)));
   }
   Node* vbox = box_vector(mask, box_type, elem_bt, num_elem);
   set_result(vbox);
