@@ -41,18 +41,18 @@ import java.util.zip.Inflater;
  */
 enum CompressionAlgorithm {
     ZLIB(1, "zlib", new ConcurrentHashMap<>(2)),
-    // Placeholders, we currently support only ZLIB internally.
+    // Placeholders, we currently support only ZLIB.
     BROTLI(2, "brotli", null),
     ZSTD(3, "zstd", null);
 
     final int id;
     final String name;
     // We compress only local certificates, so it's ok to store the
-    // deflated cert data in a memory cache permanently, i.e. such
+    // deflated certificate data in a memory cache permanently, i.e. such
     // cache is going to be of a manageable size.
-    final Map<Integer, byte[]> cache;     // Checksum -> deflated data map.
+    final Map<Long, byte[]> cache;          // Checksum -> deflated data.
 
-    CompressionAlgorithm(int id, String name, Map<Integer, byte[]> cache) {
+    CompressionAlgorithm(int id, String name, Map<Long, byte[]> cache) {
         this.id = id;
         this.name = name;
         this.cache = cache;
@@ -142,10 +142,11 @@ enum CompressionAlgorithm {
 
     static Map<String, Function<byte[], byte[]>> getDefaultDeflaters() {
         return Map.of(ZLIB.name, (input) ->
-                ZLIB.cache.computeIfAbsent(getChecksum(input), key -> {
+                ZLIB.cache.computeIfAbsent(getChecksum(input), _ -> {
                     if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.info("Deflating new " + ZLIB.name
-                                + " certificate data with checksum: " + key);
+                        SSLLogger.info("Deflating and caching new " + ZLIB.name
+                                + " certificate data of " + input.length
+                                + " bytes");
                     }
 
                     try (Deflater deflater = new Deflater();
@@ -199,9 +200,11 @@ enum CompressionAlgorithm {
     }
 
     // Fast checksum.
-    private static int getChecksum(byte[] input) {
+    private static long getChecksum(byte[] input) {
         Adler32 adler32 = new Adler32();
         adler32.update(input);
-        return (int) adler32.getValue();
+        // The upper 32 bits are not used in the long returned by Adler32,
+        // place input's length there to reduce the chance of collision.
+        return adler32.getValue() | (long) input.length << 32;
     }
 }
