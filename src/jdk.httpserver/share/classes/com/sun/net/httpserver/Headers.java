@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import sun.net.httpserver.UnmodifiableHeaders;
+import sun.net.httpserver.Utils;
 
 /**
  * HTTP request and response headers are represented by this class which
@@ -216,8 +217,13 @@ public class Headers implements Map<String,List<String>> {
 
     @Override
     public List<String> put(String key, List<String> value) {
+        // checkHeader is called in this class to fail fast
+        // It also must be called in sendResponseHeaders because
+        // Headers instances internal state can be modified
+        // external to these methods.
+        Utils.checkHeader(key, false);
         for (String v : value)
-            checkValue(v);
+            Utils.checkHeader(v, true);
         return map.put(normalize(key), value);
     }
 
@@ -229,7 +235,8 @@ public class Headers implements Map<String,List<String>> {
      * @param value the value to add to the header
      */
     public void add(String key, String value) {
-        checkValue(value);
+        Utils.checkHeader(key, false);
+        Utils.checkHeader(value, true);
         String k = normalize(key);
         List<String> l = map.get(k);
         if (l == null) {
@@ -237,30 +244,6 @@ public class Headers implements Map<String,List<String>> {
             map.put(k,l);
         }
         l.add(value);
-    }
-
-    private static void checkValue(String value) {
-        int len = value.length();
-        for (int i=0; i<len; i++) {
-            char c = value.charAt(i);
-            if (c == '\r') {
-                // is allowed if it is followed by \n and a whitespace char
-                if (i >= len - 2) {
-                    throw new IllegalArgumentException("Illegal CR found in header");
-                }
-                char c1 = value.charAt(i+1);
-                char c2 = value.charAt(i+2);
-                if (c1 != '\n') {
-                    throw new IllegalArgumentException("Illegal char found after CR in header");
-                }
-                if (c2 != ' ' && c2 != '\t') {
-                    throw new IllegalArgumentException("No whitespace found after CRLF in header");
-                }
-                i+=2;
-            } else if (c == '\n') {
-                throw new IllegalArgumentException("Illegal LF found in header");
-            }
-        }
     }
 
     /**
@@ -304,7 +287,7 @@ public class Headers implements Map<String,List<String>> {
     public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
         var f = function.andThen(values -> {
             Objects.requireNonNull(values);
-            values.forEach(Headers::checkValue);
+            values.forEach(value -> Utils.checkHeader(value, true));
             return values;
         });
         Map.super.replaceAll(f);
