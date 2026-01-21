@@ -107,7 +107,7 @@ public class URLClassPath {
      */
     private int nextURL = 0;
 
-    /* Queue of URLs found during expansion of JAR 'Class-Path' attributes
+    /* List of URLs found during expansion of JAR 'Class-Path' attributes
      * Access is guarded by a monitor on 'searchPath'
      */
     private final ArrayList<URL> expandedPath = new ArrayList<>();
@@ -483,7 +483,7 @@ public class URLClassPath {
     }
 
     /*
-     * Adds the specified URLs to the queue of 'Class-Path' expanded URLs
+     * Adds the specified URLs to the list of 'Class-Path' expanded URLs
      */
     private void addExpandedPaths(URL[] urls) {
         synchronized (searchPath) {
