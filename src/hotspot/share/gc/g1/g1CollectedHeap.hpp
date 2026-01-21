@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.hpp"
@@ -124,7 +125,7 @@ class G1JavaThreadsListClaimer : public StackObj {
   ThreadsListHandle _list;
   uint _claim_step;
 
-  volatile uint _cur_claim;
+  Atomic<uint> _cur_claim;
 
   // Attempts to claim _claim_step JavaThreads, returning an array of claimed
   // JavaThread* with count elements. Returns null (and a zero count) if there
@@ -917,6 +918,9 @@ public:
   // specified by the policy object.
   jint initialize() override;
 
+  // Returns whether concurrent mark threads (and the VM) are about to terminate.
+  bool concurrent_mark_is_terminating() const;
+
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
@@ -1032,17 +1036,15 @@ public:
   inline void old_set_add(G1HeapRegion* hr);
   inline void old_set_remove(G1HeapRegion* hr);
 
-  size_t non_young_capacity_bytes() {
-    return (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes;
-  }
+  // Returns how much memory there is assigned to non-young heap that can not be
+  // allocated into any more without garbage collection after a hypothetical
+  // allocation of allocation_word_size.
+  size_t non_young_occupancy_after_allocation(size_t allocation_word_size);
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.
   bool is_old_gc_alloc_region(G1HeapRegion* hr);
 
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
   void collect(GCCause::Cause cause) override;
 
   // Try to perform a collection of the heap with the given cause to allocate allocation_word_size
@@ -1228,6 +1230,10 @@ public:
   // Returns the number of regions the humongous object of the given word size
   // requires.
   static size_t humongous_obj_size_in_regions(size_t word_size);
+
+  // Returns how much space in bytes an allocation of word_size will use up in the
+  // heap.
+  static size_t allocation_used_bytes(size_t word_size);
 
   // Print the maximum heap capacity.
   size_t max_capacity() const override;

@@ -28,7 +28,12 @@
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "logging/logStream.hpp"
+
+typedef ShenandoahLock    ShenandoahRebuildLock;
+typedef ShenandoahLocker  ShenandoahRebuildLocker;
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -106,9 +111,6 @@ private:
   size_t _used[UIntNumPartitions];
   size_t _available[UIntNumPartitions];
 
-  // Measured in bytes.
-  size_t _allocated_since_gc_start[UIntNumPartitions];
-
   // Some notes:
   //  total_region_counts[p] is _capacity[p] / region_size_bytes
   //  retired_regions[p] is total_region_counts[p] - _region_counts[p]
@@ -140,8 +142,6 @@ private:
 public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions() {}
-
-  static const size_t FreeSetUnderConstruction = SIZE_MAX;
 
   inline idx_t max() const { return _max; }
 
@@ -354,28 +354,21 @@ public:
     return _available[int(which_partition)];
   }
 
+  // Return available_in assuming caller does not hold the heap lock but does hold the rebuild_lock.
+  // The returned value may be "slightly stale" because we do not assure that every fetch of this value
+  // sees the most recent update of this value.  Requiring the caller to hold the rebuild_lock assures
+  // that we don't see "bogus" values that are "worse than stale".  During rebuild of the freeset, the
+  // value of _available is not reliable.
+  inline size_t available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId which_partition) const {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    return _available[int(which_partition)];
+  }
+
   // Returns bytes of humongous waste
   inline size_t humongous_waste(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
     // This may be called with or without the global heap lock.  Changes to _humongous_waste[] are always made with heap lock.
     return _humongous_waste[int(which_partition)];
-  }
-
-  // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
-  // returned without acquiring the lock.  In debug builds, the global heap lock is acquired in order to
-  // enforce a consistency assert.
-  inline size_t available_in_not_locked(ShenandoahFreeSetPartitionId which_partition) const {
-    assert (which_partition < NumPartitions, "selected free set must be valid");
-    shenandoah_assert_not_heaplocked();
-#ifdef ASSERT
-    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
-    assert((_available[int(which_partition)] == FreeSetUnderConstruction) ||
-           (_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)]),
-           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
-           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
-           partition_membership_name(idx_t(which_partition)));
-#endif
-    return _available[int(which_partition)];
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value);
@@ -441,6 +434,15 @@ using idx_t = ShenandoahSimpleBitMap::idx_t;
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
+
+  // This locks the rebuild process (in combination with the global heap lock).  Whenever we rebuild the free set,
+  // we first acquire the global heap lock and then we acquire this _rebuild_lock in a nested context.  Threads that
+  // need to check available, acquire only the _rebuild_lock to make sure that they are not obtaining the value of
+  // available for a partially reconstructed free-set.
+  //
+  // Note that there is rank ordering of nested locks to prevent deadlock.  All threads that need to acquire both
+  // locks will acquire them in the same order: first the global heap lock and then the rebuild lock.
+  ShenandoahRebuildLock _rebuild_lock;
 
   size_t _total_humongous_waste;
 
@@ -632,13 +634,16 @@ private:
   void establish_old_collector_alloc_bias();
   size_t get_usable_free_words(size_t free_bytes) const;
 
+  void log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls);
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
 public:
-  static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
-
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
+
+  ShenandoahRebuildLock* rebuild_lock() {
+    return &_rebuild_lock;
+  }
 
   inline size_t max_regions() const { return _partitions.max(); }
   ShenandoahFreeSetPartitionId membership(size_t index) const { return _partitions.membership(index); }
@@ -777,9 +782,29 @@ public:
   // adjusts available with respect to lock holders.  However, sequential calls to these three functions may produce
   // inconsistent data: available may not equal capacity - used because the intermediate states of any "atomic"
   // locked action can be seen by these unlocked functions.
-  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
-  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
-  inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
+  inline size_t capacity_holding_lock() const {
+    shenandoah_assert_heaplocked();
+    return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
+  }
+  inline size_t capacity_not_holding_lock() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);
+  }
+  inline size_t used_holding_lock() const {
+    shenandoah_assert_heaplocked();
+    return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
+  }
+  inline size_t used_not_holding_lock() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);
+  }
+  inline size_t available() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahRebuildLocker locker(rebuild_lock());
+    return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
+  }
 
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
   inline size_t humongous_waste_in_mutator() const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator); }

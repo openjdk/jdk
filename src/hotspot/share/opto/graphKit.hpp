@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -708,6 +708,8 @@ class GraphKit : public Phase {
   // helper functions for statistics
   void increment_counter(address counter_addr);   // increment a debug counter
   void increment_counter(Node*   counter_addr);   // increment a debug counter
+
+  void halt(Node* ctrl, Node* frameptr, const char* reason, bool generate_code_in_product = true);
 
   // Bail out to the interpreter right now
   // The optional klass is the one causing the trap.

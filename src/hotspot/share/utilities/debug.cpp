@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -62,13 +63,17 @@
 #include "utilities/nativeStackPrinter.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
-#include <new>
 #include <stdarg.h>
 #include <stdio.h>
 
-// These functions needs to be exported on Windows only
-#define DEBUGEXPORT WINDOWS_ONLY(JNIEXPORT)
+// These functions needs to be exported on Windows
+// On Linux it is also beneficial to export them to avoid
+// losing them e.g. with linktime gc
+#define DEBUGEXPORT JNIEXPORT
 
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -261,6 +266,8 @@ void report_untested(const char* file, int line, const char* message) {
 
 void report_java_out_of_memory(const char* message) {
   static int out_of_memory_reported = 0;
+
+  JFR_ONLY(Jfr::on_report_java_out_of_memory();)
 
   // A number of threads may attempt to report OutOfMemoryError at around the
   // same time. To avoid dumping the heap or executing the data collection
@@ -648,13 +655,12 @@ extern "C" DEBUGEXPORT intptr_t u5p(intptr_t addr,
 void pp(intptr_t p)          { pp((void*)p); }
 void pp(oop p)               { pp((void*)p); }
 
-void help() {
+extern "C" DEBUGEXPORT void help() {
   Command c("help");
   tty->print_cr("basic");
   tty->print_cr("  pp(void* p)         - try to make sense of p");
   tty->print_cr("  ps()                - print current thread stack");
   tty->print_cr("  pss()               - print all thread stacks");
-  tty->print_cr("  pm(int pc)          - print Method* given compiled PC");
   tty->print_cr("  findnm(intptr_t pc) - find nmethod*");
   tty->print_cr("  findm(intptr_t pc)  - find Method*");
   tty->print_cr("  find(intptr_t x)    - find & print nmethod/stub/bytecode/oop based on pointer into it");

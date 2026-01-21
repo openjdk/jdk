@@ -69,6 +69,23 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   # Debug prefix mapping if supported by compiler
   DEBUG_PREFIX_CFLAGS=
 
+  UTIL_ARG_WITH(NAME: native-debug-symbols-level, TYPE: string,
+    DEFAULT: "",
+    RESULT: DEBUG_SYMBOLS_LEVEL,
+    DESC: [set the native debug symbol level (GCC and Clang only)],
+    DEFAULT_DESC: [toolchain default])
+  AC_SUBST(DEBUG_SYMBOLS_LEVEL)
+
+  if test "x${TOOLCHAIN_TYPE}" = xgcc || \
+     test "x${TOOLCHAIN_TYPE}" = xclang; then
+    DEBUG_SYMBOLS_LEVEL_FLAGS="-g"
+    if test "x${DEBUG_SYMBOLS_LEVEL}" != "x"; then
+      DEBUG_SYMBOLS_LEVEL_FLAGS="-g${DEBUG_SYMBOLS_LEVEL}"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_SYMBOLS_LEVEL_FLAGS}],
+          IF_FALSE: AC_MSG_ERROR("Debug info level ${DEBUG_SYMBOLS_LEVEL} is not supported"))
+    fi
+  fi
+
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
@@ -93,8 +110,9 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4"
-    ASFLAGS_DEBUG_SYMBOLS="-g"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 ${DEBUG_SYMBOLS_LEVEL_FLAGS}"
+    ASFLAGS_DEBUG_SYMBOLS="${DEBUG_SYMBOLS_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
       # Check if compiler supports -fdebug-prefix-map. If so, use that to make
@@ -113,8 +131,9 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
         IF_FALSE: [GDWARF_FLAGS=""])
 
-    CFLAGS_DEBUG_SYMBOLS="-g ${GDWARF_FLAGS}"
-    ASFLAGS_DEBUG_SYMBOLS="-g"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} ${DEBUG_SYMBOLS_LEVEL_FLAGS}"
+    ASFLAGS_DEBUG_SYMBOLS="${DEBUG_SYMBOLS_LEVEL_FLAGS}"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
   fi
@@ -282,10 +301,17 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_NONE="-O0"
 
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      C_O_FLAG_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects"
+    else
+      C_O_FLAG_LTO="-flto -fno-strict-aliasing"
+    fi
+
     if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
       C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} -finline-functions"
       C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} -finline-functions"
       C_O_FLAG_HI="${C_O_FLAG_HI} -finline-functions"
+      C_O_FLAG_LTO="${C_O_FLAG_LTO} -ffat-lto-objects"
     fi
 
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
@@ -317,6 +343,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-Od"
     C_O_FLAG_SIZE="-O1"
+    C_O_FLAG_LTO="-GL"
   fi
 
   # Now copy to C++ flags
@@ -328,6 +355,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
   CXX_O_FLAG_DEBUG_JVM="$C_O_FLAG_DEBUG_JVM"
   CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
   CXX_O_FLAG_SIZE="$C_O_FLAG_SIZE"
+  CXX_O_FLAG_LTO="$C_O_FLAG_LTO"
 
   # Adjust optimization flags according to debug level.
   case $DEBUG_LEVEL in
@@ -360,12 +388,15 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
   AC_SUBST(C_O_FLAG_NORM)
   AC_SUBST(C_O_FLAG_NONE)
   AC_SUBST(C_O_FLAG_SIZE)
+  AC_SUBST(C_O_FLAG_LTO)
+
   AC_SUBST(CXX_O_FLAG_HIGHEST_JVM)
   AC_SUBST(CXX_O_FLAG_HIGHEST)
   AC_SUBST(CXX_O_FLAG_HI)
   AC_SUBST(CXX_O_FLAG_NORM)
   AC_SUBST(CXX_O_FLAG_NONE)
   AC_SUBST(CXX_O_FLAG_SIZE)
+  AC_SUBST(CXX_O_FLAG_LTO)
 ])
 
 AC_DEFUN([FLAGS_SETUP_CFLAGS],

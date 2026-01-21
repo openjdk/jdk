@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.PackagerException;
 
 abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<PackagingPipeline.Builder> {
 
@@ -62,7 +61,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
 
     @Override
     public void accept(PackagingPipeline.Builder pipelineBuilder) {
-        pipelineBuilder.excludeDirFromCopying(outputDir)
+        pipelineBuilder
                 .task(PackageTaskID.CREATE_CONFIG_FILES)
                         .action(this::buildConfigFiles)
                         .add()
@@ -95,7 +94,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
 
     protected abstract void initLibProvidersLookup(LibProvidersLookup libProvidersLookup);
 
-    private void buildConfigFiles() throws PackagerException, IOException {
+    private void buildConfigFiles() throws IOException {
 
         final var data = createDefaultReplacementData();
 

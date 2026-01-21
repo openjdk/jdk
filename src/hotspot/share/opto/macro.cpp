@@ -2403,8 +2403,8 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
       continue;
     }
 
-    Node* iftrue = iff->as_If()->proj_out(1);
-    Node* iffalse = iff->as_If()->proj_out(0);
+    IfTrueNode* iftrue = iff->as_If()->true_proj();
+    IfFalseNode* iffalse = iff->as_If()->false_proj();
     Node* ctrl = iff->in(0);
 
     Node* subklass = nullptr;
@@ -2601,11 +2601,11 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
         // a CMoveL construct now. At least until here, the type could be computed
         // precisely. CMoveL is not so smart, but we can give it at least the best
         // type we know abouot n now.
-        Node* repl = MaxNode::signed_max(n->in(1), n->in(2), _igvn.type(n), _igvn);
+        Node* repl = MinMaxNode::signed_max(n->in(1), n->in(2), _igvn.type(n), _igvn);
         _igvn.replace_node(n, repl);
         success = true;
       } else if (n->Opcode() == Op_MinL) {
-        Node* repl = MaxNode::signed_min(n->in(1), n->in(2), _igvn.type(n), _igvn);
+        Node* repl = MinMaxNode::signed_min(n->in(1), n->in(2), _igvn.type(n), _igvn);
         _igvn.replace_node(n, repl);
         success = true;
       }
@@ -2682,8 +2682,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       case Op_ModD:
       case Op_ModF: {
         CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(),
-                                              mod_macro->_name, TypeRawPtr::BOTTOM);
+        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(), mod_macro->_name);
         call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
         call->init_req(TypeFunc::I_O, C->top());
         call->init_req(TypeFunc::Memory, C->top());

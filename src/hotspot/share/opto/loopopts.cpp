@@ -637,11 +637,11 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
       if (n->in(3)->Opcode() == Op_AddX) {
         Node* V = n->in(3)->in(1);
         Node* I = n->in(3)->in(2);
-        if (is_member(n_loop,get_ctrl(V))) {
+        if (ctrl_is_member(n_loop, V)) {
         } else {
           Node *tmp = V; V = I; I = tmp;
         }
-        if (!is_member(n_loop,get_ctrl(I))) {
+        if (!ctrl_is_member(n_loop, I)) {
           Node* add1 = new AddPNode(n->in(1), n->in(2), I);
           // Stuff new AddP in the loop preheader
           register_new_node(add1, n_loop->_head->as_Loop()->skip_strip_mined(1)->in(LoopNode::EntryControl));
@@ -937,8 +937,6 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
     Node* address = n->in(MemNode::Address);
     Node* value = n->in(MemNode::ValueIn);
     Node* mem = n->in(MemNode::Memory);
-    IdealLoopTree* address_loop = get_loop(get_ctrl(address));
-    IdealLoopTree* value_loop = get_loop(get_ctrl(value));
 
     // - address and value must be loop invariant
     // - memory must be a memory Phi for the loop
@@ -957,8 +955,8 @@ Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
     // memory Phi but sometimes is a bottom memory Phi that takes the
     // store as input).
 
-    if (!n_loop->is_member(address_loop) &&
-        !n_loop->is_member(value_loop) &&
+    if (!ctrl_is_member(n_loop, address) &&
+        !ctrl_is_member(n_loop, value) &&
         mem->is_Phi() && mem->in(0) == n_loop->_head &&
         mem->outcnt() == 1 &&
         mem->in(LoopNode::LoopBackControl) == n) {
@@ -1021,17 +1019,15 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
     if (n_loop != _ltree_root && !n_loop->_irreducible) {
       Node* address = n->in(MemNode::Address);
       Node* value = n->in(MemNode::ValueIn);
-      IdealLoopTree* address_loop = get_loop(get_ctrl(address));
       // address must be loop invariant
-      if (!n_loop->is_member(address_loop)) {
+      if (!ctrl_is_member(n_loop, address)) {
         // Store must be last on this memory slice in the loop and
         // nothing in the loop must observe it
         Node* phi = nullptr;
         for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
           Node* u = n->fast_out(i);
           if (has_ctrl(u)) { // control use?
-            IdealLoopTree *u_loop = get_loop(get_ctrl(u));
-            if (!n_loop->is_member(u_loop)) {
+            if (!ctrl_is_member(n_loop, u)) {
               continue;
             }
             if (u->is_Phi() && u->in(0) == n_loop->_head) {
@@ -1178,7 +1174,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     if ( nn ) return nn;
   }
 
-  if (n->is_ConstraintCast()) {
+  if (n->is_ConstraintCast() && n->as_ConstraintCast()->dependency().narrows_type()) {
     Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);
     // ConstraintCastNode::dominating_cast() uses node control input to determine domination.
     // Node control inputs don't necessarily agree with loop control info (due to
@@ -1325,8 +1321,8 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
     return false;
   }
   IfNode* dom_if = dom->as_If();
-  Node* proj_true = dom_if->proj_out(1);
-  Node* proj_false = dom_if->proj_out(0);
+  IfTrueNode* proj_true = dom_if->true_proj();
+  IfFalseNode* proj_false = dom_if->false_proj();
 
   for (uint i = 1; i < region->req(); i++) {
     if (is_dominator(proj_true, region->in(i))) {
@@ -1589,8 +1585,8 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
               dom_if->in(1)->in(1)->as_SubTypeCheck()->method() != nullptr), "only for subtype checks with profile data attached");
       _igvn.replace_input_of(n, 1, dom_if->in(1));
     }
-    ProjNode* dom_proj_true = dom_if->proj_out(1);
-    ProjNode* dom_proj_false = dom_if->proj_out(0);
+    IfTrueNode* dom_proj_true = dom_if->true_proj();
+    IfFalseNode* dom_proj_false = dom_if->false_proj();
 
     // Now split the IF
     RegionNode* new_false_region;
@@ -1634,10 +1630,10 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
     // unrelated control dependency.
     for (uint i = 1; i < new_false_region->req(); i++) {
       if (is_dominator(dom_proj_true, new_false_region->in(i))) {
-        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
+        dominated_by(dom_proj_true, new_false_region->in(i)->in(0)->as_If());
       } else {
         assert(is_dominator(dom_proj_false, new_false_region->in(i)), "bad if");
-        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
+        dominated_by(dom_proj_false, new_false_region->in(i)->in(0)->as_If());
       }
     }
     return true;
@@ -1712,6 +1708,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
       !is_raw_to_oop_cast && // don't extend live ranges of raw oops
+      n->Opcode() != Op_CreateEx &&
       (KillPathsReachableByDeadTypeNode || !n->is_Type())
       ) {
     Node *n_ctrl = get_ctrl(n);
@@ -1838,10 +1835,10 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             Node* cast = nullptr;
             for (uint k = 0; k < x->req(); k++) {
               Node* in = x->in(k);
-              if (in != nullptr && n_loop->is_member(get_loop(get_ctrl(in)))) {
+              if (in != nullptr && ctrl_is_member(n_loop, in)) {
                 const Type* in_t = _igvn.type(in);
                 cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t,
-                                                              ConstraintCastNode::UnconditionalDependency, nullptr);
+                                                              ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, nullptr);
               }
               if (cast != nullptr) {
                 Node* prev = _igvn.hash_find_insert(cast);
@@ -2366,11 +2363,9 @@ static void collect_nodes_in_outer_loop_not_reachable_from_sfpt(Node* n, const I
     Node* u = n->fast_out(j);
     assert(check_old_new || old_new[u->_idx] == nullptr, "shouldn't have been cloned");
     if (!u->is_CFG() && (!check_old_new || old_new[u->_idx] == nullptr)) {
-      Node* c = phase->get_ctrl(u);
-      IdealLoopTree* u_loop = phase->get_loop(c);
-      assert(!loop->is_member(u_loop) || !loop->_body.contains(u), "can be in outer loop or out of both loops only");
-      if (!loop->is_member(u_loop)) {
-        if (outer_loop->is_member(u_loop)) {
+      assert(!phase->ctrl_is_member(loop, u) || !loop->_body.contains(u), "can be in outer loop or out of both loops only");
+      if (!phase->ctrl_is_member(loop, u)) {
+        if (phase->ctrl_is_member(outer_loop, u)) {
           wq.push(u);
         } else {
           // nodes pinned with control in the outer loop but not referenced from the safepoint must be moved out of
@@ -2400,7 +2395,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     CountedLoopEndNode* cle = cl->loopexit();
     CountedLoopNode* new_cl = old_new[cl->_idx]->as_CountedLoop();
     CountedLoopEndNode* new_cle = new_cl->as_CountedLoop()->loopexit_or_null();
-    Node* cle_out = cle->proj_out(false);
+    IfFalseNode* cle_out = cle->false_proj();
 
     Node* new_sfpt = nullptr;
     Node* new_cle_out = cle_out->clone();
@@ -2697,7 +2692,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
           if (use->in(0) == cle) {
             IfFalseNode* cle_out = use->as_IfFalse();
             IfNode* le = cl->outer_loop_end();
-            use = le->proj_out(false);
+            use = le->false_proj();
             use_loop = get_loop(use);
             if (mode == CloneIncludesStripMined) {
               nnn = old_new[le->_idx];
@@ -2849,7 +2844,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     return 0;
   }
   // Must have an invariant operand
-  if (is_member(get_loop(iff), get_ctrl(cmp->in(2)))) {
+  if (ctrl_is_member(get_loop(iff), cmp->in(2))) {
     return 0;
   }
   Node* add2 = nullptr;
@@ -4186,6 +4181,33 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   return true;
 }
 
+#ifdef ASSERT
+
+// Moves Template Assertion Predicates to a target loop by cloning and killing the old ones. The target loop is the
+// original, not-cloned loop. This is currently only used with StressLoopBackedge which is a develop flag only and
+// false with product builds. We can therefore guard it with an ifdef. More details can be found at the use-site.
+class MoveAssertionPredicatesVisitor : public PredicateVisitor {
+  ClonePredicateToTargetLoop _clone_predicate_to_loop;
+  PhaseIdealLoop* const _phase;
+
+public:
+  MoveAssertionPredicatesVisitor(LoopNode* target_loop_head,
+                                 const NodeInSingleLoopBody &node_in_loop_body,
+                                 PhaseIdealLoop* phase)
+    : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
+      _phase(phase) {
+  }
+  NONCOPYABLE(MoveAssertionPredicatesVisitor);
+
+  using PredicateVisitor::visit;
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
+    _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
+    template_assertion_predicate.kill(_phase->igvn());
+  }
+};
+#endif // ASSERT
+
 // Transform:
 //
 // loop<-----------------+
@@ -4254,6 +4276,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   IfNode* exit_test = nullptr;
   uint inner;
   float f;
+#ifdef ASSERT
   if (StressDuplicateBackedge) {
     if (head->is_strip_mined()) {
       return false;
@@ -4272,7 +4295,9 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     }
 
     inner = 1;
-  } else {
+  } else
+#endif //ASSERT
+  {
     // Is the shape of the loop that of a counted loop...
     Node* back_control = loop_exit_control(head, loop);
     if (back_control == nullptr) {
@@ -4462,6 +4487,19 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       old_new[exit_test->_idx]->as_If()->_fcnt = cnt * (1 - f);
     }
   }
+
+#ifdef ASSERT
+  if (StressDuplicateBackedge && head->is_CountedLoop()) {
+    // The Template Assertion Predicates from the old counted loop are now at the new outer loop - clone them to
+    // the inner counted loop and kill the old ones. We only need to do this with debug builds because
+    // StressDuplicateBackedge is a devlop flag and false by default. Without StressDuplicateBackedge 'head' will be a
+    // non-counted loop, and thus we have no Template Assertion Predicates above the old loop to move down.
+    PredicateIterator predicate_iterator(outer_head->in(LoopNode::EntryControl));
+    NodeInSingleLoopBody node_in_body(this, loop);
+    MoveAssertionPredicatesVisitor move_assertion_predicates_visitor(head, node_in_body, this);
+    predicate_iterator.for_each(move_assertion_predicates_visitor);
+  }
+#endif // ASSERT
 
   C->set_major_progress();
 

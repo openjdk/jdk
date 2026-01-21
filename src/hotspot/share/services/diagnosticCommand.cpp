@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -90,84 +91,82 @@ static void loadAgentModule(TRAPS) {
                          THREAD);
 }
 
-void DCmd::register_dcmds(){
-  // Registration of the diagnostic commands
-  // First argument specifies which interfaces will export the command
-  // Second argument specifies if the command is enabled
-  // Third  argument specifies if the command is hidden
+void DCmd::register_dcmds() {
+  // Argument specifies on which interfaces a command is made available:
   uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI
                          | DCmd_Source_MBean;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMInfoDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMInfoDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export));
 #if INCLUDE_SERVICES
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDictionaryDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassesDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<metaspace::MetaspaceDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<EventLogDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDictionaryDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassesDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<metaspace::MetaspaceDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<EventLogDCmd>(full_export));
 #if INCLUDE_JVMTI // Both JVMTI and SERVICES have to be enabled to have this dcmd
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export));
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 #if INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export));
 #endif // INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export));
 #if INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export));
 #endif // INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export));
 #ifdef LINUX
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export));
 #endif // LINUX
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export));
 #endif // LINUX or WINDOWS or MacOS
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export));
 
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export));
 
   // Enhanced JMX Agent Support
   // These commands not currently exported via the DiagnosticCommandMBean
   uint32_t jmx_agent_export_flags = DCmd_Source_Internal | DCmd_Source_AttachAPI;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(jmx_agent_export_flags, true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags, true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(jmx_agent_export_flags, true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStatusDCmd>(jmx_agent_export_flags, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(jmx_agent_export_flags));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(jmx_agent_export_flags));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStatusDCmd>(jmx_agent_export_flags));
 
 #if INCLUDE_CDS
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<AOTEndRecordingDCmd>(full_export));
 #endif // INCLUDE_CDS
 
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export));
 }
 
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
@@ -190,8 +189,7 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
     for (int i = 0; i < cmd_list->length(); i++) {
       DCmdFactory* factory = DCmdFactory::factory(source, cmd_list->at(i),
                                                   strlen(cmd_list->at(i)));
-      output()->print_cr("%s%s", factory->name(),
-                         factory->is_enabled() ? "" : " [disabled]");
+      output()->print_cr("%s", factory->name());
       output()->print_cr("\t%s", factory->description());
       output()->cr();
       factory = factory->next();
@@ -201,8 +199,7 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
     DCmdFactory* factory = DCmdFactory::factory(source, _cmd.value(),
                                                 strlen(_cmd.value()));
     if (factory != nullptr) {
-      output()->print_cr("%s%s", factory->name(),
-                         factory->is_enabled() ? "" : " [disabled]");
+      output()->print_cr("%s", factory->name());
       output()->print_cr("%s", factory->description());
       output()->print_cr("\nImpact: %s", factory->impact());
       output()->cr();
@@ -221,8 +218,7 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
     for (int i = 0; i < cmd_list->length(); i++) {
       DCmdFactory* factory = DCmdFactory::factory(source, cmd_list->at(i),
                                                   strlen(cmd_list->at(i)));
-      output()->print_cr("%s%s", factory->name(),
-                         factory->is_enabled() ? "" : " [disabled]");
+      output()->print_cr("%s", factory->name());
       factory = factory->_next;
     }
     output()->print_cr("\nFor more information about a specific command use 'help <command>'.");
@@ -985,6 +981,28 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
   VM_PrintClasses vmop(output(), _verbose.value());
   VMThread::execute(&vmop);
 }
+
+#if INCLUDE_CDS
+void AOTEndRecordingDCmd::execute(DCmdSource source, TRAPS) {
+  if (!CDSConfig::is_dumping_preimage_static_archive()) {
+    output()->print_cr("AOT.end_recording is unsupported when VM flags -XX:AOTMode=record or -XX:AOTCacheOutput=<file> are missing.");
+    return;
+  }
+
+  if (AOTMetaspace::preimage_static_archive_dumped()) {
+    output()->print_cr("Recording has already ended.");
+    return;
+  }
+
+  AOTMetaspace::dump_static_archive(THREAD);
+  if (!AOTMetaspace::preimage_static_archive_dumped()) {
+    output()->print_cr("Error: Failed to end recording.");
+    return;
+  }
+
+  output()->print_cr("Recording ended successfully.");
+}
+#endif // INCLUDE_CDS
 
 #if INCLUDE_CDS
 #define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid%p_<subcmd>.jsa"

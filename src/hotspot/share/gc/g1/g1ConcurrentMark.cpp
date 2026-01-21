@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -148,25 +147,25 @@ bool G1CMMarkStack::initialize() {
 }
 
 G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_chunk() {
-  if (_size >= _max_capacity) {
+  if (_size.load_relaxed() >= _max_capacity) {
     return nullptr;
   }
 
-  size_t cur_idx = AtomicAccess::fetch_then_add(&_size, 1u);
+  size_t cur_idx = _size.fetch_then_add(1u);
 
   if (cur_idx >= _max_capacity) {
     return nullptr;
   }
 
   size_t bucket = get_bucket(cur_idx);
-  if (AtomicAccess::load_acquire(&_buckets[bucket]) == nullptr) {
+  if (_buckets[bucket].load_acquire() == nullptr) {
     if (!_should_grow) {
       // Prefer to restart the CM.
       return nullptr;
     }
 
     MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
-    if (AtomicAccess::load_acquire(&_buckets[bucket]) == nullptr) {
+    if (_buckets[bucket].load_acquire() == nullptr) {
       size_t desired_capacity = bucket_size(bucket) * 2;
       if (!try_expand_to(desired_capacity)) {
         return nullptr;
@@ -175,7 +174,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
   }
 
   size_t bucket_idx = get_bucket_index(cur_idx);
-  TaskQueueEntryChunk* result = ::new (&_buckets[bucket][bucket_idx]) TaskQueueEntryChunk;
+  TaskQueueEntryChunk* result = ::new (&_buckets[bucket].load_relaxed()[bucket_idx]) TaskQueueEntryChunk;
   result->next = nullptr;
   return result;
 }
@@ -197,10 +196,10 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
   _max_capacity = max_capacity;
   _num_buckets  = get_bucket(_max_capacity) + 1;
 
-  _buckets = NEW_C_HEAP_ARRAY(TaskQueueEntryChunk*, _num_buckets, mtGC);
+  _buckets = NEW_C_HEAP_ARRAY(Atomic<TaskQueueEntryChunk*>, _num_buckets, mtGC);
 
   for (size_t i = 0; i < _num_buckets; i++) {
-    _buckets[i] = nullptr;
+    _buckets[i].store_relaxed(nullptr);
   }
 
   size_t new_capacity = bucket_size(0);
@@ -240,9 +239,9 @@ G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
   }
 
   for (size_t i = 0; i < _num_buckets; i++) {
-    if (_buckets[i] != nullptr) {
-      MmapArrayAllocator<TaskQueueEntryChunk>::free(_buckets[i],  bucket_size(i));
-      _buckets[i] = nullptr;
+    if (_buckets[i].load_relaxed() != nullptr) {
+      MmapArrayAllocator<TaskQueueEntryChunk>::free(_buckets[i].load_relaxed(),  bucket_size(i));
+      _buckets[i].store_relaxed(nullptr);
     }
   }
 
@@ -259,7 +258,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
   // and the new capacity (new_capacity). This step ensures that there are no gaps in the
   // array and that the capacity accurately reflects the reserved memory.
   for (; i <= highest_bucket; i++) {
-    if (AtomicAccess::load_acquire(&_buckets[i]) != nullptr) {
+    if (_buckets[i].load_acquire() != nullptr) {
       continue; // Skip over already allocated buckets.
     }
 
@@ -279,7 +278,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
       return false;
     }
     _capacity += bucket_capacity;
-    AtomicAccess::release_store(&_buckets[i], bucket_base);
+    _buckets[i].release_store(bucket_base);
   }
   return true;
 }
@@ -1883,7 +1882,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // nothing, but this situation should be extremely rare (a full gc after shutdown
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
-  if (!cm_thread()->in_progress() && !_g1h->is_shutting_down()) {
+  if (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating()) {
     return false;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,6 @@
 #ifdef LINUX
 #include "cgroupSubsystem_linux.hpp"
 #include "os_linux.hpp"
-#include "osContainer_linux.hpp"
 #endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
@@ -197,6 +196,10 @@ WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))
   VMThread::execute(&force_safepoint_stuck_op);
   ShouldNotReachHere();
   return 0;
+WB_END
+
+WB_ENTRY(jlong, WB_GetMinimumJavaStackSize(JNIEnv* env, jobject o))
+  return os::get_minimum_java_stack_size();
 WB_END
 
 class WBIsKlassAliveClosure : public LockedClassesDo {
@@ -508,8 +511,16 @@ WB_ENTRY(jboolean, WB_ConcurrentGCRunTo(JNIEnv* env, jobject o, jobject at))
   return ConcurrentGCBreakpoints::run_to(c_name);
 WB_END
 
-WB_ENTRY(jboolean, WB_HasExternalSymbolsStripped(JNIEnv* env, jobject o))
-#if defined(HAS_STRIPPED_DEBUGINFO)
+WB_ENTRY(jboolean, WB_ShipDebugInfoFull(JNIEnv* env, jobject o))
+#if defined(SHIP_DEBUGINFO_FULL)
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
+WB_ENTRY(jboolean, WB_ShipDebugInfoPublic(JNIEnv* env, jobject o))
+#if defined(SHIP_DEBUGINFO_PUBLIC)
   return true;
 #else
   return false;
@@ -1678,7 +1689,7 @@ WB_ENTRY(void, WB_RelocateNMethodFromAddr(JNIEnv* env, jobject o, jlong addr, ji
   CodeBlob* blob = CodeCache::find_blob(address);
   if (blob != nullptr && blob->is_nmethod()) {
     nmethod* code = blob->as_nmethod();
-    if (code->is_in_use()) {
+    if (code->is_in_use() && !code->is_unloading()) {
       CompiledICLocker ic_locker(code);
       code->relocate(static_cast<CodeBlobType>(blob_type));
     }
@@ -2570,14 +2581,12 @@ WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstri
 WB_END
 
 WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
-  LINUX_ONLY(return OSContainer::is_containerized();)
-  return false;
+  return os::is_containerized();
 WB_END
 
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
-  LINUX_ONLY(return static_cast<jlong>(os::Linux::physical_memory());)
-  return static_cast<jlong>(os::physical_memory());
+  return static_cast<jlong>(os::Machine::physical_memory());
 WB_END
 
 // Available memory of the host machine (container-aware)
@@ -2590,7 +2599,13 @@ WB_END
 
 // Physical swap of the host machine (including containers), Linux only.
 WB_ENTRY(jlong, WB_HostPhysicalSwap(JNIEnv* env, jobject o))
-  LINUX_ONLY(return (jlong)os::Linux::host_swap();)
+#ifdef LINUX
+  physical_memory_size_type swap_val = 0;
+  if (!os::Linux::host_swap(swap_val)) {
+    return -1; // treat as unlimited
+  }
+  return static_cast<jlong>(swap_val);
+#endif
   return -1; // Not used/implemented on other platforms
 WB_END
 
@@ -2834,7 +2849,8 @@ static JNINativeMethod methods[] = {
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
   {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"getHeapAlignment",                 CC"()J",                   (void*)&WB_GetHeapAlignment},
-  {CC"hasExternalSymbolsStripped",       CC"()Z",                   (void*)&WB_HasExternalSymbolsStripped},
+  {CC"shipsFullDebugInfo",               CC"()Z",                   (void*)&WB_ShipDebugInfoFull},
+  {CC"shipsPublicDebugInfo",             CC"()Z",                   (void*)&WB_ShipDebugInfoPublic},
   {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
@@ -3118,7 +3134,8 @@ static JNINativeMethod methods[] = {
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
-  {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"lockAndStuckInSafepoint", CC"()V",              (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"getMinimumJavaStackSize", CC"()J",              (void*)&WB_GetMinimumJavaStackSize},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
   {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
   {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked},

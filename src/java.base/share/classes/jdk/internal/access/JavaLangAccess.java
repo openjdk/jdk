@@ -205,7 +205,7 @@ public interface JavaLangAccess {
      * Updates the readability so that module m1 reads m2. The new read edge
      * does not result in a strong reference to m2 (m2 can be GC'ed).
      *
-     * This method is the same as m1.addReads(m2) but without a permission check.
+     * This method is the same as m1.addReads(m2) but without a caller check.
      */
     void addReads(Module m1, Module m2);
 
@@ -259,11 +259,11 @@ public interface JavaLangAccess {
     /**
      * Updates module m to allow access to restricted methods.
      */
-    Module addEnableNativeAccess(Module m);
+    void addEnableNativeAccess(Module m);
 
     /**
-     * Updates module named {@code name} in layer {@code layer} to allow access to restricted methods.
-     * Returns true iff the given module exists in the given layer.
+     * Updates module named {@code name} in layer {@code layer} to allow access to
+     * restricted methods. Returns true iff the given module exists in the given layer.
      */
     boolean addEnableNativeAccess(ModuleLayer layer, String name);
 
@@ -273,7 +273,8 @@ public interface JavaLangAccess {
     void addEnableNativeAccessToAllUnnamed();
 
     /**
-     * Ensure that the given module has native access. If not, warn or throw exception depending on the configuration.
+     * Ensure that the given module has native access. If not, warn or throw exception
+     * depending on the configuration.
      * @param m the module in which native access occurred
      * @param owner the owner of the restricted method being called (or the JNI method being bound)
      * @param methodName the name of the restricted method being called (or the JNI method being bound)
@@ -281,6 +282,31 @@ public interface JavaLangAccess {
      * @param jni {@code true}, if this event is related to a JNI method being bound
      */
     void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni);
+
+    /**
+     * Enable code in all unnamed modules to mutate final instance fields.
+     */
+    void addEnableFinalMutationToAllUnnamed();
+
+    /**
+     * Enable code in a given module to mutate final instance fields.
+     */
+    boolean tryEnableFinalMutation(Module m);
+
+    /**
+     * Return true if code in a given module is allowed to mutate final instance fields.
+     */
+    boolean isFinalMutationEnabled(Module m);
+
+    /**
+     * Return true if a given module has statically exported the given package to a given other module.
+     */
+    boolean isStaticallyExported(Module module, String pn, Module other);
+
+    /**
+     * Return true if a given module has statically opened the given package to a given other module.
+     */
+    boolean isStaticallyOpened(Module module, String pn, Module other);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -422,19 +448,15 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes as many ASCII codepoints as possible from the source
-     * character array into the destination byte array, assuming that
-     * the encoding is ASCII compatible.
+     * Encodes as many ASCII codepoints as possible from the source array into
+     * the destination byte array, assuming that the encoding is ASCII
+     * compatible.
+     * <p>
+     * <b>WARNING: This method does not perform any bound checks.</b>
      *
-     * @param sa the source character array
-     * @param sp the index of the source array to start reading from
-     * @param da the target byte array
-     * @param dp the index of the target array to start writing to
-     * @param len the total number of characters to be encoded
-     * @return the total number of characters successfully encoded
-     * @throws NullPointerException if any of the provided arrays is null
+     * @return the number of bytes successfully encoded, or 0 if none
      */
-    int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
+    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
 
     /**
      * Set the cause of Throwable
@@ -612,10 +634,10 @@ public interface JavaLangAccess {
     /**
      * Copy the string bytes to an existing segment, avoiding intermediate copies.
      */
-    void copyToSegmentRaw(String string, MemorySegment segment, long offset);
+    void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength);
 
     /**
      * Are the string bytes compatible with the given charset?
      */
-    boolean bytesCompatible(String string, Charset charset);
+    boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars);
 }
