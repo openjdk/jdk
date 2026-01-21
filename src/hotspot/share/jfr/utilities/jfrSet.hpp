@@ -26,6 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRSET_HPP
 
 #include "cppstdlib/new.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
 
@@ -110,7 +111,14 @@ class JfrSetStorage : public AnyObj {
   }
 
   void clear() {
-    memset(_table, 0, _table_size * sizeof(K));
+    for (unsigned i = 0; i < _table_size; ++i) {
+      if constexpr (std::is_copy_assignable_v<K>) {
+        _table[i] = K{};
+      } else {
+        _table[i].~K();
+        ::new (&_table[i]) K{};
+      }
+    }
   }
 };
 
