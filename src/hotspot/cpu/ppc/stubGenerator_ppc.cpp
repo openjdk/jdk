@@ -2956,7 +2956,7 @@ class StubGenerator: public StubCodeGenerator {
   // Arguments for generated stub:
   //   R3_ARG1   - source byte array address
   //   R4_ARG2   - destination byte array address
-  //   R5_ARG3   - K (key) in little endian int array
+  //   R5_ARG3   - sessionKe (key) in little endian int array
   address generate_aescrypt_decryptBlock() {
     assert(UseAES, "need AES instructions and misaligned SSE support");
     StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
@@ -3271,11 +3271,18 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_arraycopy_stubs() {
-    // Note: the disjoint stubs must be generated first, some of
-    // the conjoint stubs use them.
+    // generate the common exit first so later stubs can rely on it if
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
 
-    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
+    // Note: the disjoint stubs must be generated first, some of the
+    //       conjoint stubs use them.
+
+    // Note: chaining of stubs does not rely on branching to an
+    //       auxiliary post-push entry because none of the stubs
+    //       push/pop a frame.
 
     // non-aligned disjoint versions
     StubRoutines::_jbyte_disjoint_arraycopy       = generate_disjoint_byte_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id);

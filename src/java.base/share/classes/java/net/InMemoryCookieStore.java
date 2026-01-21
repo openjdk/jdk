@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,6 @@
 
 package java.net;
 
-import java.net.URI;
-import java.net.CookieStore;
-import java.net.HttpCookie;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -72,6 +68,7 @@ class InMemoryCookieStore implements CookieStore {
     /**
      * Add one cookie into cookie store.
      */
+    @Override
     public void add(URI uri, HttpCookie cookie) {
         // pre-condition : argument can't be null
         if (cookie == null) {
@@ -109,6 +106,7 @@ class InMemoryCookieStore implements CookieStore {
      *  3) not expired.
      * See RFC 2965 sec. 3.3.4 for more detail.
      */
+    @Override
     public List<HttpCookie> get(URI uri) {
         // argument can't be null
         if (uri == null) {
@@ -127,12 +125,13 @@ class InMemoryCookieStore implements CookieStore {
             lock.unlock();
         }
 
-        return cookies;
+        return Collections.unmodifiableList(cookies);
     }
 
     /**
      * Get all cookies in cookie store, except those have expired
      */
+    @Override
     public List<HttpCookie> getCookies() {
         List<HttpCookie> rt;
 
@@ -156,6 +155,7 @@ class InMemoryCookieStore implements CookieStore {
      * Get all URIs, which are associated with at least one cookie
      * of this cookie store.
      */
+    @Override
     public List<URI> getURIs() {
         List<URI> uris = new ArrayList<>();
 
@@ -165,7 +165,7 @@ class InMemoryCookieStore implements CookieStore {
             while (it.hasNext()) {
                 URI uri = it.next();
                 List<HttpCookie> cookies = uriIndex.get(uri);
-                if (cookies == null || cookies.size() == 0) {
+                if (cookies == null || cookies.isEmpty()) {
                     // no cookies list or an empty list associated with
                     // this uri entry, delete it
                     it.remove();
@@ -176,13 +176,14 @@ class InMemoryCookieStore implements CookieStore {
             lock.unlock();
         }
 
-        return uris;
+        return Collections.unmodifiableList(uris);
     }
 
 
     /**
      * Remove a cookie from store
      */
+    @Override
     public boolean remove(URI uri, HttpCookie ck) {
         // argument can't be null
         if (ck == null) {
@@ -204,6 +205,7 @@ class InMemoryCookieStore implements CookieStore {
     /**
      * Remove all cookies in this cookie store.
      */
+    @Override
     public boolean removeAll() {
         lock.lock();
         try {

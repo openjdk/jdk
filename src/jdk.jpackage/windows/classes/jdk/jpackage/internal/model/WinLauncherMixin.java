@@ -24,30 +24,37 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Set;
+import java.util.Optional;
 
 public interface WinLauncherMixin {
 
     boolean isConsole();
 
-    enum WinShortcut {
-        WIN_SHORTCUT_DESKTOP("shortcut"),
-        WIN_SHORTCUT_START_MENU("menu"),
-        ;
+    /**
+     * Gets the start menu shortcut of this application launcher.
+     * <p>
+     * Returns a non-empty {@link Optional} instance if a request about the start
+     * menu shortcut for this application launcher was made and an empty
+     * {@link Optional} instance if there was no request about the start menu
+     * shortcut for this application launcher.
+     *
+     * @return the start menu shortcut of this application launcher
+     */
+    Optional<LauncherShortcut> startMenuShortcut();
 
-        WinShortcut(String name) {
-            this.name = name;
-        }
+    /**
+     * Gets the desktop shortcut of this application launcher.
+     * <p>
+     * Returns a non-empty {@link Optional} instance if a request about the desktop
+     * shortcut for this application launcher was made and an empty {@link Optional}
+     * instance if there was no request about the desktop shortcut for this
+     * application launcher.
+     *
+     * @return the start menu shortcut of this application launcher
+     */
+    Optional<LauncherShortcut> desktopShortcut();
 
-        public String getName() {
-            return name;
-        }
-
-        private final String name;
-    }
-
-    Set<WinShortcut> shortcuts();
-
-    record Stub(boolean isConsole, Set<WinShortcut> shortcuts) implements WinLauncherMixin {
+    record Stub(boolean isConsole, Optional<LauncherShortcut> startMenuShortcut,
+            Optional<LauncherShortcut> desktopShortcut) implements WinLauncherMixin {
     }
 }

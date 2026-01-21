@@ -52,7 +52,7 @@ public final class Synthetic extends Attribute {
     }
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
      * @param nameIndex Index in constant pool to CONSTANT_Utf8
      * @param length Content length in bytes

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,6 +56,7 @@
 import jdk.test.lib.os.linux.HugePageConfiguration;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -123,6 +124,9 @@ public class TestHugePageDecisionsAtVMStartup {
             out.shouldContain(warningNoTHP);
         } else if (useLP && !useTHP &&
                  configuration.supportsExplicitHugePages() && haveUsableExplicitHugePages) {
+            if (configuration.getExplicitAvailableHugePageNumber() == 0) {
+                throw new SkippedException("No usable explicit hugepages configured on the system, skipping test");
+            }
             out.shouldContain("[info][pagesize] Using the default large page size: " + buildSizeString(configuration.getExplicitDefaultHugePageSize()));
             out.shouldContain("[info][pagesize] UseLargePages=1, UseTransparentHugePages=0");
             out.shouldContain("[info][pagesize] Large page support enabled");

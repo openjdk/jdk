@@ -29,8 +29,8 @@
 #include "jvmci/vmSymbols_jvmci.hpp"
 #include "memory/iterator.hpp"
 #include "oops/symbol.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/enumIterator.hpp"
+#include "utilities/macros.hpp"
 
 class SerializeClosure;
 
@@ -220,6 +220,7 @@ class SerializeClosure;
   template(java_lang_Exception,                       "java/lang/Exception")                      \
   template(java_lang_RuntimeException,                "java/lang/RuntimeException")               \
   template(java_io_IOException,                       "java/io/IOException")                      \
+  template(jdk_internal_vm_PreemptedException,        "jdk/internal/vm/PreemptedException")       \
                                                                                                   \
   /* error klasses: at least all errors thrown by the VM have entries here */                     \
   template(java_lang_AbstractMethodError,             "java/lang/AbstractMethodError")            \
@@ -394,10 +395,10 @@ class SerializeClosure;
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
-  template(notifyJvmtiStart_name,                     "notifyJvmtiStart")                         \
-  template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
-  template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
-  template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
+  template(startTransition_name,                      "startTransition")                          \
+  template(endTransition_name,                        "endTransition")                            \
+  template(startFinalTransition_name,                 "startFinalTransition")                     \
+  template(endFirstTransition_name,                   "endFirstTransition")                       \
   template(notifyJvmtiDisableSuspend_name,            "notifyJvmtiDisableSuspend")                \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
@@ -496,8 +497,8 @@ class SerializeClosure;
   template(java_lang_Boolean_signature,               "Ljava/lang/Boolean;")                      \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(jvmti_thread_state_name,                   "jvmti_thread_state")                       \
-  template(jvmti_VTMS_transition_disable_count_name,  "jvmti_VTMS_transition_disable_count")      \
-  template(jvmti_is_in_VTMS_transition_name,          "jvmti_is_in_VTMS_transition")              \
+  template(vthread_transition_disable_count_name,     "vthread_transition_disable_count")         \
+  template(is_in_vthread_transition_name,             "is_in_vthread_transition")                 \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \
@@ -512,6 +513,8 @@ class SerializeClosure;
   template(maxThawingSize_name,                       "maxThawingSize")                           \
   template(lockStackSize_name,                        "lockStackSize")                            \
   template(objectWaiter_name,                         "objectWaiter")                             \
+  template(atKlassInit_name,                          "atKlassInit")                              \
+  template(hasArgsAtTop_name,                         "hasArgsAtTop")                             \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -732,8 +735,10 @@ class SerializeClosure;
   template(java_lang_invoke_DelegatingMethodHandle_Holder,  "java/lang/invoke/DelegatingMethodHandle$Holder")     \
   template(jdk_internal_loader_ClassLoaders,                "jdk/internal/loader/ClassLoaders")                   \
   template(jdk_internal_misc_CDS,                           "jdk/internal/misc/CDS")                              \
+  template(jdk_internal_vm_annotation_AOTSafeClassInitializer_signature, "Ljdk/internal/vm/annotation/AOTSafeClassInitializer;")\
   template(java_util_concurrent_ConcurrentHashMap,          "java/util/concurrent/ConcurrentHashMap")             \
   template(java_util_ArrayList,                             "java/util/ArrayList")                                \
+  template(jdk_internal_vm_annotation_AOTRuntimeSetup_signature, "Ljdk/internal/vm/annotation/AOTRuntimeSetup;")  \
   template(runtimeSetup,                                    "runtimeSetup")                                       \
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \

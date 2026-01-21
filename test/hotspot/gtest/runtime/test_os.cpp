@@ -935,7 +935,7 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
     LOG("shorten_paths=%d, demangle=%d, strip_arguments=%d, provide_scratch_buffer=%d",
         shorten_paths, demangle, strip_arguments, provide_scratch_buffer);
 
-    // Should show os::min_page_size in libjvm
+    // Should show Threads::create_vm in libjvm
     addr = CAST_FROM_FN_PTR(address, Threads::create_vm);
     st.reset();
     EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
@@ -943,8 +943,16 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
                                                     sizeof(tmp),
                                                     shorten_paths, demangle,
                                                     strip_arguments));
+
+#ifdef _WINDOWS
+    // On Windows, if no full .pdb file is available, the output can be something like "0x... in ..."
+    if (strncmp(output, "0x", 2) != 0) {
+#endif
     EXPECT_CONTAINS(output, "Threads");
     EXPECT_CONTAINS(output, "create_vm");
+#ifdef _WINDOWS
+    }
+#endif
     EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
     LOG("%s", output);
 

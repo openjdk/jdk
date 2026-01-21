@@ -33,24 +33,13 @@ import java.util.Objects;
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.Util;
 
+import static jdk.internal.classfile.impl.StackMapGenerator.*;
 import static jdk.internal.classfile.impl.verifier.VerifierImpl.*;
 
 /// From `verificationType.cpp`.
 class VerificationType {
 
     private static final int BitsPerByte = 8;
-
-    static final int
-            ITEM_Top = 0,
-            ITEM_Integer = 1,
-            ITEM_Float = 2,
-            ITEM_Double = 3,
-            ITEM_Long = 4,
-            ITEM_Null = 5,
-            ITEM_UninitializedThis = 6,
-            ITEM_Object = 7,
-            ITEM_Uninitialized = 8,
-            ITEM_Bogus = -1;
 
     VerificationType(String sym) {
         _data = 0x100;
@@ -92,9 +81,6 @@ class VerificationType {
     String name() {
         return _sym;
     }
-    private static final int
-            ITEM_Boolean = 9, ITEM_Byte = 10, ITEM_Short = 11, ITEM_Char = 12,
-            ITEM_Long_2nd = 13, ITEM_Double_2nd = 14;
 
     private static final int
                             TypeMask                     = 0x00000003,
@@ -116,17 +102,17 @@ class VerificationType {
                             Category2_2nd            = (Category2_2ndFlag << BitsPerByte) | Primitive,
                             // Primitive values (type discriminator stored in most-significant bytes)
                             // Bogus needs the " | Primitive".    Else, isReference(Bogus) returns TRUE.
-                            Bogus                            = (ITEM_Bogus            << 2 * BitsPerByte) | Primitive,
-                            Boolean                        = (ITEM_Boolean        << 2 * BitsPerByte) | Category1,
-                            Byte                             = (ITEM_Byte             << 2 * BitsPerByte) | Category1,
-                            Short                            = (ITEM_Short            << 2 * BitsPerByte) | Category1,
-                            Char                             = (ITEM_Char             << 2 * BitsPerByte) | Category1,
-                            Integer                        = (ITEM_Integer        << 2 * BitsPerByte) | Category1,
-                            Float                            = (ITEM_Float            << 2 * BitsPerByte) | Category1,
-                            Long                             = (ITEM_Long             << 2 * BitsPerByte) | Category2,
-                            Double                         = (ITEM_Double         << 2 * BitsPerByte) | Category2,
-                            Long_2nd                     = (ITEM_Long_2nd     << 2 * BitsPerByte) | Category2_2nd,
-                            Double_2nd                 = (ITEM_Double_2nd << 2 * BitsPerByte) | Category2_2nd,
+                            Bogus                            = (ITEM_BOGUS            << 2 * BitsPerByte) | Primitive,
+                            Boolean                        = (ITEM_BOOLEAN        << 2 * BitsPerByte) | Category1,
+                            Byte                             = (ITEM_BYTE             << 2 * BitsPerByte) | Category1,
+                            Short                            = (ITEM_SHORT            << 2 * BitsPerByte) | Category1,
+                            Char                             = (ITEM_CHAR             << 2 * BitsPerByte) | Category1,
+                            Integer                        = (ITEM_INTEGER        << 2 * BitsPerByte) | Category1,
+                            Float                            = (ITEM_FLOAT            << 2 * BitsPerByte) | Category1,
+                            Long                             = (ITEM_LONG             << 2 * BitsPerByte) | Category2,
+                            Double                         = (ITEM_DOUBLE         << 2 * BitsPerByte) | Category2,
+                            Long_2nd                     = (ITEM_LONG_2ND     << 2 * BitsPerByte) | Category2_2nd,
+                            Double_2nd                 = (ITEM_DOUBLE_2ND << 2 * BitsPerByte) | Category2_2nd,
                             // Used by Uninitialized (second and third bytes hold the bci)
                             BciMask                        = 0xffff << BitsPerByte,
                             // A bci of -1 is an Uninitialized-This
@@ -364,12 +350,12 @@ class VerificationType {
 
     static VerificationType from_tag(int tag, VerifierImpl context) {
         switch (tag) {
-            case ITEM_Top:         return bogus_type;
-            case ITEM_Integer: return integer_type;
-            case ITEM_Float:     return float_type;
-            case ITEM_Double:    return double_type;
-            case ITEM_Long:        return long_type;
-            case ITEM_Null:        return null_type;
+            case ITEM_TOP:         return bogus_type;
+            case ITEM_INTEGER: return integer_type;
+            case ITEM_FLOAT:     return float_type;
+            case ITEM_DOUBLE:    return double_type;
+            case ITEM_LONG:        return long_type;
+            case ITEM_NULL:        return null_type;
             default:
                 context.verifyError("Should not reach here");
                 return bogus_type;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177 8362171
+ * @bug 8350177 8362171 8369881
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -354,6 +354,57 @@ public class TestSubwordTruncation {
     @Test
     @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
     @Arguments(setup = "setupByteArray")
+    public Object[] testByteReverseBytesS(byte[] in) {
+        byte[] res = new byte[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte)Short.reverseBytes(in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Check(test = "testByteReverseBytesS")
+    public void checkTestByteReverseBytesS(Object[] vals) {
+        byte[] in = (byte[]) vals[0];
+        byte[] res = (byte[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)Short.reverseBytes(in[i]);
+            if (res[i] != val) {
+                throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testByteReverseBytesUS(byte[] in) {
+        byte[] res = new byte[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte)Character.reverseBytes((char)in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Check(test = "testByteReverseBytesUS")
+    public void checkTestByteReverseBytesUS(Object[] vals) {
+        byte[] in = (byte[]) vals[0];
+        byte[] res = (byte[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)Character.reverseBytes((char)in[i]);
+            if (res[i] != val) {
+                throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
+            }
+        }
+    }
+
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @Arguments(setup = "setupByteArray")
     public Object[] testByteBitCount(byte[] in) {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -387,6 +438,71 @@ public class TestSubwordTruncation {
                 shortField %= intField | 1;
             }
         }
+    }
+
+    @Test
+    @IR(counts = { IRNode.CMP_LT_MASK, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testCmpLTMask(byte[] in) {
+        char[] res = new char[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (char) (in[i] >= 0 ? in[i] : 256 + in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Test
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = { IRNode.ROUND_F, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testRoundF(byte[] in) {
+        short[] res = new short[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) Math.round(in[i] * 10.F);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Test
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"}, counts = { IRNode.ROUND_D, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testRoundD(byte[] in) {
+        short[] res = new short[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) Math.round(in[i] * 10.0);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.CAST_II, ">0" })
+    @Warmup(0)
+    public Object[] testCastII() {
+        byte[] bytes = new byte[400];
+        intField = 6;
+        int i = 0;
+        int j = 1;
+
+        do {
+            bytes[j] = (byte) i;
+            int k = 1;
+
+            do {
+                i <<= intField;
+                i += (k ^ i);
+                i -= j;
+
+                for (int u = 1; 1 > u; u++) {
+                }
+            } while (++k < 8);
+        } while (++j < 191);
+
+        return new Object[] { bytes };
     }
 
     public static void main(String[] args) {

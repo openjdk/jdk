@@ -25,7 +25,7 @@
 
 package sun.font;
 
-/* remember that the API requires a Font use a
+/* Remember that the API requires a Font use a
  * consistent glyph id. for a code point, and this is a
  * problem if a particular strike uses native scaler sometimes
  * and the JDK scaler others. That needs to be dealt with somewhere, but
@@ -36,9 +36,9 @@ package sun.font;
  * to the maximum surrogate pair code point.
  * This implementation will not cache as much, since the storage
  * requirements are not justifiable. Even so it still can use up
- * to 216*256*4 bytes of storage per composite font. If an app
+ * to 2*216*256*4 bytes of storage per composite font. If an app
  * calls canDisplay on this range for all 20 composite fonts that's
- * over 1Mb of cached data. May need to employ WeakReferences if
+ * over 2Mb of cached data. May need to employ WeakReferences if
  * this appears to cause problems.
  */
 
@@ -54,14 +54,20 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
     public static final int BLOCKSZ = 256;
     public static final int MAXUNICODE = NBLOCKS*BLOCKSZ;
 
-    CompositeFont font;
-    CharToGlyphMapper[] slotMappers;
-    int[][] glyphMaps;
-    private boolean hasExcludes;
+    private final CompositeFont font;
+    private final CharToGlyphMapper[] slotMappers;
+    private final int[][] glyphMapsRaw;
+    private final int[][] glyphMapsMod;
+    private final boolean hasExcludes;
 
     public CompositeGlyphMapper(CompositeFont compFont) {
         font = compFont;
-        initMapper();
+        glyphMapsRaw = new int[NBLOCKS][];
+        glyphMapsMod = new int[NBLOCKS][];
+        slotMappers = new CharToGlyphMapper[font.numSlots];
+        /* This requires that slot 0 is never empty. */
+        missingGlyph = font.getSlotFont(0).getMissingGlyphCode();
+        missingGlyph = compositeGlyphCode(0, missingGlyph);
         /* This is often false which saves the overhead of a
          * per-mapped char method call.
          */
@@ -73,34 +79,24 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
         return (slot << 24 | (glyphCode & GLYPHMASK));
     }
 
-    private void initMapper() {
-        if (missingGlyph == CharToGlyphMapper.UNINITIALIZED_GLYPH) {
-            if (glyphMaps == null) {
-                glyphMaps = new int[NBLOCKS][];
-            }
-            slotMappers = new CharToGlyphMapper[font.numSlots];
-            /* This requires that slot 0 is never empty. */
-            missingGlyph = font.getSlotFont(0).getMissingGlyphCode();
-            missingGlyph = compositeGlyphCode(0, missingGlyph);
-        }
-    }
-
-    private int getCachedGlyphCode(int unicode) {
+    private int getCachedGlyphCode(int unicode, boolean raw) {
         if (unicode >= MAXUNICODE) {
             return UNINITIALIZED_GLYPH; // don't cache surrogates
         }
         int[] gmap;
+        int[][] glyphMaps = raw ? glyphMapsRaw : glyphMapsMod;
         if ((gmap = glyphMaps[unicode >> 8]) == null) {
             return UNINITIALIZED_GLYPH;
         }
         return gmap[unicode & 0xff];
     }
 
-    private void setCachedGlyphCode(int unicode, int glyphCode) {
+    private void setCachedGlyphCode(int unicode, int glyphCode, boolean raw) {
         if (unicode >= MAXUNICODE) {
             return; // don't cache surrogates
         }
         int index0 = unicode >> 8;
+        int[][] glyphMaps = raw ? glyphMapsRaw : glyphMapsMod;
         if (glyphMaps[index0] == null) {
             glyphMaps[index0] = new int[BLOCKSZ];
             for (int i=0;i<BLOCKSZ;i++) {
@@ -120,11 +116,13 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
     }
 
     private int getGlyph(int unicode, boolean raw) {
-        if (isIgnorableWhitespace(unicode) || (isDefaultIgnorable(unicode) && !raw)) {
-            return INVISIBLE_GLYPH_ID;
-        }
-        int glyphCode = getCachedGlyphCode(unicode);
+        int glyphCode = getCachedGlyphCode(unicode, raw);
         if (glyphCode != UNINITIALIZED_GLYPH) {
+            return glyphCode;
+        }
+        if (isIgnorableWhitespace(unicode) || (isDefaultIgnorable(unicode) && !raw)) {
+            glyphCode = INVISIBLE_GLYPH_ID;
+            setCachedGlyphCode(unicode, glyphCode, raw);
             return glyphCode;
         }
         for (int slot = 0; slot < font.numSlots; slot++) {
@@ -133,7 +131,7 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
                 glyphCode = mapper.charToGlyphRaw(unicode);
                 if (glyphCode != mapper.getMissingGlyphCode()) {
                     glyphCode = compositeGlyphCode(slot, glyphCode);
-                    setCachedGlyphCode(unicode, glyphCode);
+                    setCachedGlyphCode(unicode, glyphCode, raw);
                     return glyphCode;
                 }
             }

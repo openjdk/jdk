@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class EdgeQueue;
 class DFSClosure : public BasicOopIterateClosure {
  private:
   // max dfs depth should not exceed size of stack
-  static const size_t max_dfs_depth = 4000;
+  static const size_t max_dfs_depth = 3200;
   static UnifiedOopRef _reference_stack[max_dfs_depth];
 
   EdgeStore* _edge_store;

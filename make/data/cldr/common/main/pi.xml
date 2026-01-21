@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="pi"/>
+	</identity>
+	<characters>
+		<exemplarCharacters>[aā b c dḍ e f g h iī j k lḷ mṁṃ nñṅṇ ŋ o p q r sśṣ tṭ uū v w x y z]</exemplarCharacters>
+	</characters>
+</ldml>

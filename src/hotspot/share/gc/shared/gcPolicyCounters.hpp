@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@
 // that track a generation
 
 class GCPolicyCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
   // Constant PerfData types don't need to retain a reference.
   // However, it's a good idea to document them here.
   // PerfStringConstant* _name;

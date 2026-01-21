@@ -23,6 +23,7 @@
 
 package jdk.jfr.event.profiling;
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -71,7 +72,7 @@ public class TestCPUTimeSampleThrottling {
     }
 
     /**
-     * Counting the events that are emitted for a given throttle in a given time.
+     * Counting the events that are emitted for a given throttle in a given (CPU) time.
      * <p>
      * The result is wall-clock independent; it only records the CPU-time and the number of
      * emitted events. The result, therefore, does not depend on the load of the machine.
@@ -83,15 +84,9 @@ public class TestCPUTimeSampleThrottling {
             recording.enable(EventNames.CPUTimeSample)
                     .with("throttle", throttle);
 
-            var bean = ManagementFactory.getThreadMXBean();
-
             recording.start();
 
-            long startThreadCpuTime = bean.getCurrentThreadCpuTime();
-
-            wasteCPU(timeMs);
-
-            long spendCPUTime = bean.getCurrentThreadCpuTime() - startThreadCpuTime;
+            long spendCPUTime = wasteCPU(timeMs);
 
             recording.stop();
 
@@ -99,19 +94,20 @@ public class TestCPUTimeSampleThrottling {
                     .filter(e -> e.getThread().getJavaName()
                                 .equals(Thread.currentThread().getName()))
                     .count();
-
             return new EventCount(eventCount, spendCPUTime / 1_000_000_000f);
         }
     }
 
-    private static void wasteCPU(int durationMs) {
-        long start = System.currentTimeMillis();
+    private static long wasteCPU(int durationMs) {
+        ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+        long start = bean.getCurrentThreadCpuTime();
         double i = 0;
-        while (System.currentTimeMillis() - start < durationMs) {
+        while (bean.getCurrentThreadCpuTime() - start < durationMs * 1_000_000) {
             for (int j = 0; j < 100000; j++) {
                 i = Math.sqrt(i * Math.pow(Math.sqrt(Math.random()), Math.random()));
             }
         }
+        return bean.getCurrentThreadCpuTime() - start;
     }
 
 }

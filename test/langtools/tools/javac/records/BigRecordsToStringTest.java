@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8261847
  * @summary test the output of the toString method of records with a large number of components
- * @run testng BigRecordsToStringTest
+ * @run junit BigRecordsToStringTest
  */
 
 import java.lang.reflect.Constructor;
@@ -36,10 +36,9 @@ import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.function.Supplier;
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class BigRecordsToStringTest {
     record BigInt(
             int i1,int i2,int i3,int i4,int i5,int i6,int i7,int i8,int i9,int i10,
@@ -164,6 +163,7 @@ public class BigRecordsToStringTest {
             "i111=111, i112=112, i113=113, i114=114, i115=115, i116=116, i117=117, i118=118, i119=119, i120=120, i121=121, i122=122, i123=123, " +
             "i124=124, i125=125, i126=126, i127=127]";
 
+    @Test
     public void testToStringOutput() {
         assertTrue(bigInt.toString().equals(BIG_INT_TO_STRING_OUTPUT));
         assertTrue(bigLong.toString().equals(BIG_LONG_TO_STRING_OUTPUT));

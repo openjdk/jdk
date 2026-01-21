@@ -27,7 +27,7 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/partialArraySplitter.inline.hpp"
@@ -84,15 +84,6 @@ void PSPromotionManager::initialize() {
   for (uint i = 0; i < promotion_manager_num; i += 1) {
     _manager_array[i].register_preserved_marks(_preserved_marks_set->get(i));
   }
-}
-
-// Helper functions to get around the circular dependency between
-// psScavenge.inline.hpp and psPromotionManager.inline.hpp.
-bool PSPromotionManager::should_scavenge(oop* p, bool check_to_space) {
-  return PSScavenge::should_scavenge(p, check_to_space);
-}
-bool PSPromotionManager::should_scavenge(narrowOop* p, bool check_to_space) {
-  return PSScavenge::should_scavenge(p, check_to_space);
 }
 
 PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(uint index) {
@@ -212,7 +203,7 @@ void PSPromotionManager::restore_preserved_marks() {
   _preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 }
 
-void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
+void PSPromotionManager::drain_stacks(bool totally_drain) {
   const uint threshold = totally_drain ? 0
                                        : _target_stack_size;
 

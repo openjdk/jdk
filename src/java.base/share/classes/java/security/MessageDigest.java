@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import sun.security.jca.GetInstance;
 import sun.security.util.Debug;
 import sun.security.util.MessageDigestSpi2;
+import sun.security.util.CryptoAlgorithmConstraints;
 
 import javax.crypto.SecretKey;
 
@@ -155,12 +156,22 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
+     * The JDK Reference Implementation additionally uses the following
+     * security properties:
+     * <ul>
+     * <li>the {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
      * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
+     * </li>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     * </li>
+     * </ul>
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -184,10 +195,14 @@ public abstract class MessageDigest extends MessageDigestSpi {
         throws NoSuchAlgorithmException
     {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        MessageDigest md;
+
+        if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
 
         GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
                 MessageDigestSpi.class, algorithm);
+        MessageDigest md;
         if (instance.impl instanceof MessageDigest messageDigest) {
             md = messageDigest;
             md.provider = instance.provider;
@@ -215,6 +230,14 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -246,12 +269,18 @@ public abstract class MessageDigest extends MessageDigestSpi {
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        if (provider == null || provider.isEmpty())
-            throw new IllegalArgumentException("missing provider");
 
-        MessageDigest md;
+        if (provider == null || provider.isEmpty()) {
+            throw new IllegalArgumentException("missing provider");
+        }
+
+        if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
+
         GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
                 MessageDigestSpi.class, algorithm, provider);
+        MessageDigest md;
         if (instance.impl instanceof MessageDigest messageDigest) {
             md = messageDigest;
             md.provider = instance.provider;
@@ -270,6 +299,14 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * {@code MessageDigestSpi} implementation from the specified provider
      * is returned.  Note that the specified provider does not
      * have to be registered in the provider list.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -301,8 +338,15 @@ public abstract class MessageDigest extends MessageDigestSpi {
         throws NoSuchAlgorithmException
     {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        if (provider == null)
+
+        if (provider == null) {
             throw new IllegalArgumentException("missing provider");
+        }
+
+        if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
+            throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
+
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
         if (objs[0] instanceof MessageDigest md) {
             md.provider = (Provider)objs[1];

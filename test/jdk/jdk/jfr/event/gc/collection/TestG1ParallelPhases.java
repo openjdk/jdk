@@ -87,8 +87,6 @@ public class TestG1ParallelPhases {
             .collect(toSet());
 
         Set<String> allPhases = of(
-            "RetireTLABsAndFlushLogs",
-            "NonJavaThreadFlushLogs",
             "ExtRootScan",
             "ThreadRoots",
             "VM Global",
@@ -100,31 +98,32 @@ public class TestG1ParallelPhases {
             "CMRefRoots",
             "MergeER",
             "MergeRS",
-            "MergeLB",
             "ScanHR",
             "CodeRoots",
             "ObjCopy",
             "Termination",
-            "RedirtyCards",
             "RecalculateUsed",
             "ResizeTLABs",
             "FreeCSet",
             "UpdateDerivedPointers",
             "EagerlyReclaimHumongousObjects",
             "ResetPartialArrayStateManager",
-            "ClearLoggedCards",
+            "ClearPendingCards",
             "MergePSS",
             "NonYoungFreeCSet",
             "YoungFreeCSet",
             "RebuildFreeList",
             "SampleCandidates",
             "ResetMarkingState",
-            "NoteStartOfMark"
+            "NoteStartOfMark",
+            "RetireTLABs"
         );
 
         // Some GC phases may or may not occur depending on environment. Filter them out
         // since we can not reliably guarantee that they occur (or not).
         Set<String> optPhases = of(
+            // Does not always occur
+            "SweepRT",
             // The following phases only occur on evacuation failure.
             "RestoreEvacuationFailedRegions",
             "RemoveSelfForwards",

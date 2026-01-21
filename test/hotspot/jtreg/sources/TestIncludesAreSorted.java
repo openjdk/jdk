@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 8343802
+ * @comment Only need to run this once, in tier1.
+ * @requires vm.flagless & vm.debug
  * @summary Tests that HotSpot C++ files have sorted includes
  * @build SortIncludes
  * @run main TestIncludesAreSorted
@@ -43,12 +45,9 @@ public class TestIncludesAreSorted {
      * can be checked).
      */
     private static final String[] HOTSPOT_SOURCES_TO_CHECK = {
-                    "share/c1",
-                    "share/ci",
-                    "share/compiler",
-                    "share/jvmci",
-                    "share/oops",
-                    "share/opto"
+                    "os/linux",
+                    "os/posix",
+                    "share"
     };
 
     /**

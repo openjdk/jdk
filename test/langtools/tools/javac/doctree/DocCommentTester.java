@@ -128,9 +128,9 @@ public class DocCommentTester {
 
     public final boolean useIdentityTransformer;
 
-    public DocCommentTester(boolean useBreakIterator, boolean useIdentityTtransformer) {
+    public DocCommentTester(boolean useBreakIterator, boolean useIdentityTransformer) {
         this.useBreakIterator = useBreakIterator;
-        this.useIdentityTransformer = useIdentityTtransformer;
+        this.useIdentityTransformer = useIdentityTransformer;
     }
 
     public void run(List<String> args) throws Exception {

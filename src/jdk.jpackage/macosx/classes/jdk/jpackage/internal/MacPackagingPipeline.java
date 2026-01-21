@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -49,10 +50,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
+import jdk.jpackage.internal.PackagingPipeline.AppImageTaskAction;
 import jdk.jpackage.internal.PackagingPipeline.ApplicationImageTaskAction;
 import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
 import jdk.jpackage.internal.PackagingPipeline.CopyAppImageTaskID;
@@ -72,8 +75,9 @@ import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.MacBundle;
+import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
@@ -98,21 +102,10 @@ final class MacPackagingPipeline {
         COPY_SIGN
     }
 
-    static AppImageLayout packagingLayout(Package pkg) {
-        return pkg.appImageLayout().resolveAt(pkg.relativeInstallDir().getFileName());
-    }
-
     static PackagingPipeline.Builder build(Optional<Package> pkg) {
         final var builder = PackagingPipeline.buildStandard()
-                .appContextMapper(appContext -> {
-                    return new TaskContextProxy(appContext, true, false);
-                })
-                .pkgContextMapper(appContext -> {
-                    final var isRuntimeInstaller = pkg.map(Package::isRuntimeInstaller).orElse(false);
-                    final var withPredefinedAppImage = pkg.flatMap(Package::predefinedAppImage).isPresent();
-                    return new TaskContextProxy(appContext, false, isRuntimeInstaller || withPredefinedAppImage);
-                })
-                .appImageLayoutForPackaging(MacPackagingPipeline::packagingLayout)
+                .contextMapper(pkg.map(MacPackagingPipeline::mapPackageTaskContext)
+                        .orElseGet(MacPackagingPipeline::mapAppTaskContext))
                 .task(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
                         .packageAction(MacPackagingPipeline::runPostAppImageUserScript).add()
                 .task(CopyAppImageTaskID.COPY)
@@ -141,7 +134,7 @@ final class MacPackagingPipeline {
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
-                        .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist)
+                        .noaction()
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
@@ -156,13 +149,13 @@ final class MacPackagingPipeline {
                         .addDependent(BuildApplicationTaskID.CONTENT).add();
 
         builder.task(MacBuildApplicationTaskID.SIGN)
-                .appImageAction(MacPackagingPipeline::sign)
+                .appImageAction(LayoutUtils.withBundleLayout(MacPackagingPipeline::sign))
                 .addDependencies(builder.taskGraphSnapshot().getAllTailsOf(PrimaryTaskID.BUILD_APPLICATION_IMAGE))
                 .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
                 .add();
 
         builder.task(MacCopyAppImageTaskID.COPY_SIGN)
-                .appImageAction(MacPackagingPipeline::sign)
+                .appImageAction(LayoutUtils.withBundleLayout(MacPackagingPipeline::sign))
                 .addDependencies(builder.taskGraphSnapshot().getAllTailsOf(PrimaryTaskID.COPY_APP_IMAGE))
                 .addDependent(PrimaryTaskID.COPY_APP_IMAGE)
                 .add();
@@ -182,27 +175,27 @@ final class MacPackagingPipeline {
                 disabledTasks.add(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT);
                 builder.task(MacCopyAppImageTaskID.REPLACE_APP_IMAGE_FILE)
                         .applicationAction(createWriteAppImageFileAction()).add();
-                builder.appImageLayoutForPackaging(Package::appImageLayout);
             } else if (p.isRuntimeInstaller()) {
 
                 builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
                         .appImageAction(MacPackagingPipeline::copyJliLib).add();
 
-                final var predefinedRuntimeBundle = Optional.of(
-                        new MacBundle(p.predefinedAppImage().orElseThrow())).filter(MacBundle::isValid);
-
                 // Don't create ".package" file.
                 disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
 
-                if (predefinedRuntimeBundle.isPresent()) {
-                    // The predefined app image is a macOS bundle.
+                if (MacBundle.fromPath(p.predefinedAppImage().orElseThrow()).isPresent()) {
+                    // The input runtime image is a macOS bundle.
                     // Disable all alterations of the input bundle, but keep the signing enabled.
                     disabledTasks.addAll(List.of(MacCopyAppImageTaskID.values()));
                     disabledTasks.remove(MacCopyAppImageTaskID.COPY_SIGN);
+                } else {
+                    // The input runtime is not a macOS bundle and doesn't have the plist file. Create one.
+                    builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
+                            .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist).add();
                 }
 
-                if (predefinedRuntimeBundle.map(MacBundle::isSigned).orElse(false) && !((MacPackage)p).app().sign()) {
-                    // The predefined app image is a signed bundle; explicit signing is not requested for the package.
+                if (((MacPackage)p).predefinedAppImageSigned().orElse(false) && !((MacPackage)p).app().sign()) {
+                    // The input runtime is a signed bundle; explicit signing is not requested for the package.
                     // Disable the signing, i.e. don't re-sign the input bundle.
                     disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
                 }
@@ -230,29 +223,115 @@ final class MacPackagingPipeline {
         if (!app.sign()) {
             throw new IllegalArgumentException();
         }
-        return toSupplier(() -> {
-            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppImage(
-                    Objects.requireNonNull(env.appImageDir())).installDir(Path.of("/foo")).create();
-        }).get();
+        return new PackageBuilder(
+                app,
+                SignAppImagePackageType.VALUE
+        ).predefinedAppImage(
+                Objects.requireNonNull(env.appImageDir())
+        ).installDir(Path.of("/foo")).create();
     }
 
-    private static void copyAppImage(MacPackage pkg, AppImageDesc srcAppImage,
-            AppImageDesc dstAppImage) throws IOException {
+    static final class LayoutUtils {
+        /**
+         * Returns unresolved app image layout for the specified package for use with
+         * the signing function defined in {@link MacPackagingPipeline} class and
+         * {@link MacPkgPackager} and {@link MacDmgPackager} packagers.
+         * <p>
+         * Paths of the result app image layout will start with the bundle name. E.g.:
+         * for a package with relative installation directory set to
+         * {@code "Applications/Acme/MyApp.app"} and the "launchers" directory of an
+         * application layout set to {@code "Contents/MacOS"}, the result application
+         * layout object will be such that the value of its "launchers" directory will
+         * be {@code "MyApp.app/Contents/MacOS"}. The root directory of the result app
+         * image layout will be an empty path ({@link Path.of("")}), i.e. the app image
+         * layout will be unresolved.
+         *
+         * @param pkg the package
+         * @return the unresolved app image layout for the specified package suitable
+         *         for the use with macosx packaging pipeline and packagers
+         */
+        static AppImageLayout packagerLayout(Package pkg) {
+            return pkg.appImageLayout().resolveAt(pkg.relativeInstallDir().getFileName()).resetRootDirectory();
+        }
+
+        static <T extends AppImageLayout> AppImageBuildEnv<MacApplication, T> fromPackagerLayout(AppImageBuildEnv<MacApplication, T> cfg) {
+
+            var bundleDirectoryName = cfg.envLayout().runtimeDirectory().getName(0);
+            var bundleLayout = cfg.envLayout().map(bundleDirectoryName::relativize).resetRootDirectory();
+            var bundleRoot = cfg.env().appImageDir().resolve(bundleDirectoryName);
+            var app = MacApplicationBuilder.overrideAppImageLayout(cfg.app(), bundleLayout);
+            var env = BuildEnv.withAppImageLayout(cfg.env(), bundleLayout.resolveAt(bundleRoot));
+
+            return new AppImageBuildEnv<>(env, app);
+        }
+
+        static <T extends AppImageLayout> AppImageTaskAction<MacApplication, T> withBundleLayout(AppImageTaskAction<MacApplication, T> action) {
+            return new AppImageTaskAction<>() {
+                @Override
+                public void execute(AppImageBuildEnv<MacApplication, T> env) throws IOException {
+                    if (!env.envLayout().runtimeDirectory().getName(0).equals(Path.of("Contents"))) {
+                        env = LayoutUtils.fromPackagerLayout(env);
+                    }
+                    action.execute(env);
+                }
+            };
+        }
+    }
+
+    static boolean isSigned(MacBundle bundle) {
+
+        var result = toSupplier(Executor.of(
+                "/usr/sbin/spctl",
+                "-vv",
+                "--raw",
+                "--assess",
+                "--type", "exec",
+                bundle.root().toString()).setQuiet(true).saveOutput(true).binaryOutput()::execute).get();
+
+        switch (result.getExitCode()) {
+            case 0, 3 -> {
+                // These exit codes are accompanied with valid plist xml.
+                return toSupplier(() -> {
+                    return new PListReader(result.byteStdout()).findValue("assessment:originator").isPresent();
+                }).get();
+            }
+            default -> {
+                // Likely to be an "a sealed resource is missing or invalid" error.
+                return false;
+            }
+        }
+    }
+
+    private static void copyAppImage(MacPackage pkg, AppImageLayout srcAppImage,
+            AppImageLayout dstAppImage) throws IOException {
 
         boolean predefinedAppImageSigned = pkg.predefinedAppImageSigned().orElse(false);
 
-        var inputRootDirectory = srcAppImage.resolvedAppImagelayout().rootDirectory();
+        final Optional<MacBundle> srcMacBundle;
+        if (pkg.isRuntimeInstaller()) {
+            srcMacBundle = macBundleFromAppImageLayout(srcAppImage);
+        } else {
+            srcMacBundle = Optional.empty();
+        }
 
-        if (pkg.isRuntimeInstaller() && MacBundle.isDirectoryMacBundle(inputRootDirectory)) {
+        srcMacBundle.ifPresentOrElse(inputBundle -> {
             // Building runtime package from the input runtime bundle.
             // Copy the input bundle verbatim.
-            FileUtils.copyRecursive(
-                    inputRootDirectory,
-                    dstAppImage.resolvedAppImagelayout().rootDirectory(),
-                    LinkOption.NOFOLLOW_LINKS);
-        } else {
-            PackagingPipeline.copyAppImage(srcAppImage, dstAppImage, !predefinedAppImageSigned);
-        }
+            try {
+                FileUtils.copyRecursive(
+                        inputBundle.root(),
+                        macBundleFromAppImageLayout(dstAppImage).orElseThrow().root(),
+                        LinkOption.NOFOLLOW_LINKS);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }, () -> {
+            try {
+                PackagingPipeline.copyAppImage(srcAppImage, dstAppImage, !predefinedAppImageSigned);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        });
     }
 
     private static void copyJliLib(
@@ -272,10 +351,23 @@ final class MacPackagingPipeline {
         }
     }
 
-    private static void runPostAppImageUserScript(PackageBuildEnv<Package, AppImageLayout> env) throws IOException {
-        PackagingPipeline.runPostAppImageUserScript(new PackageBuildEnv<>(
-                BuildEnv.withAppImageDir(env.env(), env.env().appImageDir().resolve(env.envLayout().rootDirectory())),
-                env.pkg(), env.pkg().appImageLayout(), env.outputDir()));
+    private static void runPostAppImageUserScript(PackageBuildEnv<Package, AppImageLayout> cfg) throws IOException {
+        var appCfg = LayoutUtils.fromPackagerLayout(
+                new AppImageBuildEnv<>(cfg.env(), (MacApplication)cfg.pkg().app()));
+
+        var pkg = cfg.pkg(); pkg = new Package.Stub(
+                appCfg.app(),
+                pkg.type(),
+                pkg.packageName(),
+                pkg.description(),
+                pkg.version(),
+                pkg.aboutURL(),
+                pkg.licenseFile(),
+                pkg.predefinedAppImage(),
+                pkg.installedPackageLayout(),
+                pkg.relativeInstallDir());
+
+        PackagingPipeline.runPostAppImageUserScript(new PackageBuildEnv<>(appCfg.env(), pkg, cfg.outputDir()));
     }
 
     private static void writePackageFile(PackageBuildEnv<Package, ApplicationLayout> env) throws IOException {
@@ -296,12 +388,21 @@ final class MacPackagingPipeline {
 
         final var app = env.app();
 
+        // If the embedded runtime contains executable(s) in the "bin"
+        // subdirectory, we should use the standalone runtime info plist
+        // template. Otherwise, the user may be unable to run the "java"
+        // or other executables in the "bin" subdirectory of the embedded
+        // runtime.
+        final var useRuntimeInfoPlist = app.isRuntime() ||
+                app.runtimeBuilder().orElseThrow().withNativeCommands() ||
+                Files.isDirectory(env.resolvedLayout().runtimeDirectory().resolve("bin"));
+
         Map<String, String> data = new HashMap<>();
         data.put("CF_BUNDLE_IDENTIFIER", app.bundleIdentifier());
         data.put("CF_BUNDLE_NAME", app.bundleName());
         data.put("CF_BUNDLE_VERSION", app.version());
         data.put("CF_BUNDLE_SHORT_VERSION_STRING", app.shortVersion().toString());
-        if (app.isRuntime()) {
+        if (useRuntimeInfoPlist) {
             data.put("CF_BUNDLE_VENDOR", app.vendor());
         }
 
@@ -309,12 +410,18 @@ final class MacPackagingPipeline {
         final String publicName;
         final String category;
 
-        if (app.isRuntime()) {
+        if (useRuntimeInfoPlist) {
             template = "Runtime-Info.plist.template";
+        } else {
+            template = "ApplicationRuntime-Info.plist.template";
+        }
+
+        // Public name and category should be based on standalone runtime vs
+        // embedded runtime.
+        if (app.isRuntime()) {
             publicName = "Info.plist";
             category = "resource.runtime-info-plist";
         } else {
-            template = "ApplicationRuntime-Info.plist.template";
             publicName = "Runtime-Info.plist";
             category = "resource.app-runtime-info-plist";
         }
@@ -331,7 +438,7 @@ final class MacPackagingPipeline {
 
         final var app = env.app();
 
-        final var infoPlistFile = MacBundle.fromAppImageLayout(env.resolvedLayout()).infoPlistFile();
+        final var infoPlistFile = macBundleFromAppImageLayout(env.resolvedLayout()).orElseThrow().infoPlistFile();
 
         Log.verbose(I18N.format("message.preparing-info-plist", PathUtils.normalizedAbsolutePathString(infoPlistFile)));
 
@@ -384,8 +491,7 @@ final class MacPackagingPipeline {
         }
 
         final Runnable signAction = () -> {
-            final var appImageDir = env.resolvedLayout().rootDirectory();
-            AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(appImageDir);
+            AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(macBundleFromAppImageLayout(env.resolvedLayout()).orElseThrow());
         };
 
         app.signingConfig().flatMap(AppImageSigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
@@ -467,7 +573,7 @@ final class MacPackagingPipeline {
 
     private static MacBundle runtimeBundle(AppImageBuildEnv<MacApplication, AppImageLayout> env) {
         if (env.app().isRuntime()) {
-            return new MacBundle(env.resolvedLayout().rootDirectory());
+            return macBundleFromAppImageLayout(env.resolvedLayout()).orElseThrow();
         } else {
             return new MacBundle(((MacApplicationLayout)env.resolvedLayout()).runtimeRootDirectory());
         }
@@ -498,6 +604,37 @@ final class MacPackagingPipeline {
         }
     }
 
+    private static UnaryOperator<PackagingPipeline.TaskContext> mapAppTaskContext() {
+        return ctx -> {
+            return new TaskContextProxy(ctx, true, false);
+        };
+    }
+
+    private static UnaryOperator<PackagingPipeline.TaskContext> mapPackageTaskContext(Package pkg) {
+        return ctx -> {
+            final var isRuntimeInstaller = pkg.isRuntimeInstaller();
+            final var withPredefinedAppImage = pkg.predefinedAppImage().isPresent();
+            return new TaskContextProxy(ctx, false, isRuntimeInstaller || withPredefinedAppImage);
+        };
+    }
+
+    private static Optional<MacBundle> macBundleFromAppImageLayout(AppImageLayout layout) {
+        final var root = layout.rootDirectory();
+        final var bundleSubdir = root.relativize(layout.runtimeDirectory());
+        final var contentsDirname = Path.of("Contents");
+        var bundleRoot = root;
+        for (int i = 0; i != bundleSubdir.getNameCount(); i++) {
+            var nameComponent = bundleSubdir.getName(i);
+            if (contentsDirname.equals(nameComponent)) {
+                return Optional.of(new MacBundle(bundleRoot));
+            } else {
+                bundleRoot = bundleRoot.resolve(nameComponent);
+            }
+        }
+        return Optional.empty();
+    }
+
+
     private record TaskContextProxy(TaskContext delegate, boolean forApp, boolean copyAppImage) implements TaskContext {
 
         @Override
@@ -513,11 +650,20 @@ final class MacPackagingPipeline {
         }
 
         @Override
-        public void execute(TaskAction taskAction) throws IOException, PackagerException {
+        public void execute(TaskAction taskAction) throws IOException {
             delegate.execute(taskAction);
         }
     }
 
+    private static final ApplicationLayout MAC_APPLICATION_LAYOUT = ApplicationLayout.build()
+            .launchersDirectory("Contents/MacOS")
+            .appDirectory("Contents/app")
+            .runtimeDirectory("Contents/runtime/Contents/Home")
+            .desktopIntegrationDirectory("Contents/Resources")
+            .appModsDirectory("Contents/app/mods")
+            .contentDirectory("Contents")
+            .create();
+
     static final MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(
-            ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
+            MAC_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
 }

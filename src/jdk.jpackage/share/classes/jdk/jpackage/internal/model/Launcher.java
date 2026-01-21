@@ -151,16 +151,18 @@ public interface Launcher {
     }
 
     /**
-     * Returns <code>true</code> if this launcher has a custom icon.
+     * Returns <code>true</code> if this launcher has non-default icon.
+     * <p>
+     * A custom icon can be sourced from an external file or from the resource directory.
      *
-     * @return <code>true</code> if this launcher has a custom icon
+     * @return <code>true</code> if this launcher has non-default icon
      * @see CustomLauncherIcon
      * @see #icon()
      * @see #hasDefaultIcon()
      * @see #hasIcon()
      */
     default boolean hasCustomIcon() {
-        return icon().flatMap(CustomLauncherIcon::fromLauncherIcon).isPresent();
+        return !hasDefaultIcon() && icon().isPresent();
     }
 
     /**
@@ -173,10 +175,10 @@ public interface Launcher {
 
     /**
      * Gets the additional properties for application launcher entries in the app
-     * image (".jpackage") file.
+     * image (".jpackage.xml") file.
      *
      * @return the additional properties for application launcher entries in
-     *         ".jpackage" file
+     *         ".jpackage.xml" file
      */
     Map<String, String> extraAppImageFileData();
 

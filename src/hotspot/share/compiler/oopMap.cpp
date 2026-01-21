@@ -34,7 +34,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
@@ -860,6 +860,12 @@ ImmutableOopMapSet* ImmutableOopMapSet::build_from(const OopMapSet* oopmap_set) 
   ResourceMark mark;
   ImmutableOopMapBuilder builder(oopmap_set);
   return builder.build();
+}
+
+ImmutableOopMapSet* ImmutableOopMapSet::clone() const {
+  address buffer = NEW_C_HEAP_ARRAY(unsigned char, _size, mtCode);
+  memcpy(buffer, (address)this, _size);
+  return (ImmutableOopMapSet*)buffer;
 }
 
 void ImmutableOopMapSet::operator delete(void* p) {

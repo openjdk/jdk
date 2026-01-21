@@ -116,8 +116,6 @@ public class JavacParser implements Parser {
     /** A map associating "other nearby documentation comments"
      *  with the preferred documentation comment for a declaration. */
     protected Map<Comment, List<Comment>> danglingComments = new HashMap<>();
-    /** Handler for deferred diagnostics. */
-    protected final DeferredLintHandler deferredLintHandler;
 
     // Because of javac's limited lookahead, some contexts are ambiguous in
     // the presence of type annotations even though they are not ambiguous
@@ -190,7 +188,6 @@ public class JavacParser implements Parser {
         this.names = fac.names;
         this.source = fac.source;
         this.preview = fac.preview;
-        this.deferredLintHandler = fac.deferredLintHandler;
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.keepDocComments = keepDocComments;
         this.parseModuleInfo = parseModuleInfo;
@@ -216,7 +213,6 @@ public class JavacParser implements Parser {
         this.names = parser.names;
         this.source = parser.source;
         this.preview = parser.preview;
-        this.deferredLintHandler = parser.deferredLintHandler;
         this.allowStringFolding = parser.allowStringFolding;
         this.keepDocComments = parser.keepDocComments;
         this.parseModuleInfo = false;
@@ -591,8 +587,7 @@ public class JavacParser implements Parser {
      *  4. When the tree node for the declaration is finally
      *     available, and the primary comment, if any,
      *     is "attached", (in {@link #attach}) any related
-     *     dangling comments are also attached to the tree node
-     *     by registering them using the {@link #deferredLintHandler}.
+     *     dangling comments are reported to the log as warnings.
      *  5. (Later) Warnings may be generated for the dangling
      *     comments, subject to the {@code -Xlint} and
      *     {@code @SuppressWarnings}.
@@ -653,32 +648,22 @@ public class JavacParser implements Parser {
     void reportDanglingComments(JCTree tree, Comment dc) {
         var list = danglingComments.remove(dc);
         if (list != null) {
-            deferredLintHandler.push(tree);
-            try {
-                list.forEach(this::reportDanglingDocComment);
-            } finally {
-                deferredLintHandler.pop();
-            }
+            list.forEach(c -> reportDanglingDocComment(tree, c));
         }
     }
 
     /**
-     * Reports an individual dangling comment using the {@link #deferredLintHandler}.
+     * Reports an individual dangling comment as a warning to the log.
      * The comment may or not may generate an actual diagnostic, depending on
      * the settings for {@code -Xlint} and/or {@code @SuppressWarnings}.
      *
      * @param c the comment
      */
-    void reportDanglingDocComment(Comment c) {
+    void reportDanglingDocComment(JCTree tree, Comment c) {
         var pos = c.getPos();
-        if (pos != null) {
-            deferredLintHandler.report(lint -> {
-                if (lint.isEnabled(Lint.LintCategory.DANGLING_DOC_COMMENTS) &&
-                        !shebang(c, pos)) {
-                    log.warning(
-                            pos, LintWarnings.DanglingDocComment);
-                }
-            });
+        if (pos != null && !shebang(c, pos)) {
+            pos = pos.withLintPosition(tree.getStartPosition());
+            S.lintWarning(pos, LintWarnings.DanglingDocComment);
         }
     }
 
@@ -1005,10 +990,12 @@ public class JavacParser implements Parser {
             pattern = toP(F.at(token.pos).AnyPattern());
         }
         else {
+            int varTypePos = Position.NOPOS;
             if (parsedType == null) {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
                 e = unannotatedType(allowVar, TYPE | NOLAMBDA);
                 if (var) {
+                    varTypePos = e.pos;
                     e = null;
                 }
             } else {
@@ -1046,9 +1033,10 @@ public class JavacParser implements Parser {
                 if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
                     name = names.empty;
                 }
-                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
+                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null,
+                  varTypePos != Position.NOPOS ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT,
+                  varTypePos));
                 if (e == null) {
-                    var.startPos = pos;
                     if (var.name == names.underscore && !allowVar) {
                         log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UseOfUnderscoreNotAllowed);
                     }
@@ -1114,6 +1102,11 @@ public class JavacParser implements Parser {
 
         if (restrictedTypeName != null && (!allowVar || restrictedTypeName != names.var)) {
             syntaxError(result.pos, Errors.RestrictedTypeNotAllowedHere(restrictedTypeName));
+        }
+
+        if ((lastmode & TYPE) == 0) {
+            //if the mode was switched to expression while expecting type, wrap with Erroneous:
+            result = F.Erroneous(List.of(result));
         }
 
         return result;
@@ -1443,6 +1436,7 @@ public class JavacParser implements Parser {
     protected JCExpression term3() {
         int pos = token.pos;
         JCExpression t;
+        int startMode = mode;
         List<JCExpression> typeArgs = typeArgumentsOpt(EXPR);
         switch (token.kind) {
         case QUES:
@@ -1548,7 +1542,17 @@ public class JavacParser implements Parser {
                 switch (expr.getTag()) {
                 case REFERENCE: {
                     JCMemberReference mref = (JCMemberReference) expr;
-                    mref.expr = toP(F.at(pos).AnnotatedType(typeAnnos, mref.expr));
+                    if (TreeInfo.isType(mref.expr, names)) {
+                        mref.expr = insertAnnotationsToMostInner(mref.expr, typeAnnos, false);
+                    } else {
+                        //the selector is not a type, error recovery:
+                        JCAnnotatedType annotatedType =
+                                toP(F.at(pos).AnnotatedType(typeAnnos, mref.expr));
+                        int termStart = getStartPos(mref.expr);
+                        mref.expr = syntaxError(termStart, List.of(annotatedType),
+                                                Errors.IllegalStartOfType);
+                    }
+                    mref.pos = getStartPos(mref.expr);
                     t = mref;
                     break;
                 }
@@ -1772,6 +1776,9 @@ public class JavacParser implements Parser {
             }
             // Not reachable.
         default:
+            if (typeArgs != null && (startMode & TYPE) != 0) {
+                return F.at(pos).TypeApply(F.Erroneous(), typeArgs);
+            }
             return illegal();
         }
         return term3Rest(t, typeArgs);
@@ -2190,7 +2197,8 @@ public class JavacParser implements Parser {
                 if (param.vartype != null
                         && restrictedTypeName(param.vartype, true) != null) {
                     checkSourceLevel(param.pos, Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS);
-                    param.startPos = TreeInfo.getStartPos(param.vartype);
+                    param.declKind = JCVariableDecl.DeclKind.VAR;
+                    param.typePos = TreeInfo.getStartPos(param.vartype);
                     param.vartype = null;
                 }
             }
@@ -3830,7 +3838,7 @@ public class JavacParser implements Parser {
             syntaxError(token.pos, Errors.Expected(EQ));
         }
 
-        int startPos = Position.NOPOS;
+        int varTypePos = Position.NOPOS;
         JCTree elemType = TreeInfo.innermostType(type, true);
         if (elemType.hasTag(IDENT)) {
             Name typeName = ((JCIdent) elemType).name;
@@ -3842,19 +3850,17 @@ public class JavacParser implements Parser {
                     reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
                     declaredUsingVar = true;
+                    varTypePos = elemType.pos;
                     if (compound)
                         //error - 'var' in compound local var decl
                         reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
-                    startPos = TreeInfo.getStartPos(mods);
-                    if (startPos == Position.NOPOS)
-                        startPos = TreeInfo.getStartPos(type);
                     //implicit type
                     type = null;
                 }
             }
         }
-        JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar));
-        result.startPos = startPos;
+        JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init,
+          declaredUsingVar ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT, varTypePos));
         return attach(result, dc);
     }
 
@@ -3968,8 +3974,11 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
-        return toP(F.at(pos).VarDef(mods, name, type, null,
-                type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var));
+        boolean declaredUsingVar = type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var;
+        JCVariableDecl.DeclKind declKind = declaredUsingVar ? JCVariableDecl.DeclKind.VAR :
+          type != null ? JCVariableDecl.DeclKind.EXPLICIT : JCVariableDecl.DeclKind.IMPLICIT;
+        int typePos = type != null ? type.pos : pos;
+        return toP(F.at(pos).VarDef(mods, name, type, null, declKind, typePos));
     }
 
     /** Resources = Resource { ";" Resources }
@@ -4934,7 +4943,8 @@ public class JavacParser implements Parser {
             }
 
             // Field
-            if (!isVoid && typarams.isEmpty() && (token.kind == EQ || token.kind == SEMI)) {
+            if (!isVoid && typarams.isEmpty() &&
+                (token.kind == EQ || token.kind == SEMI || token.kind == COMMA)) {
                 List<JCTree> defs =
                         variableDeclaratorsRest(pos, mods, type, name, false, dc,
                                 new ListBuffer<JCTree>(), false).toList();

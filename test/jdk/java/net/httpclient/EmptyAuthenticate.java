@@ -56,17 +56,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EmptyAuthenticate {
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     private static final String WWW_AUTH_HEADER_NAME = "WWW-Authenticate";
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
 
     @ParameterizedTest
     @MethodSource("args")
@@ -89,11 +81,13 @@ class EmptyAuthenticate {
     }
 
     static Stream<Arguments> args() {
-        return Stream
-                .of(Version.HTTP_1_1, Version.HTTP_2)
-                .flatMap(version -> Stream
-                        .of(true, false)
-                        .map(secure -> Arguments.of(version, secure)));
+        return Stream.concat(
+                Stream
+                        .of(Version.HTTP_1_1, Version.HTTP_2)
+                        .flatMap(version -> Stream
+                                .of(true, false)
+                                .map(secure -> Arguments.of(version, secure))),
+                Stream.of(Arguments.of(Version.HTTP_3, true)));
     }
 
     private static HttpTestServer createServer(Version version, boolean secure, String uriPath)
@@ -128,7 +122,7 @@ class EmptyAuthenticate {
     }
 
     private static HttpClient createClient(Version version, boolean secure) {
-        HttpClient.Builder clientBuilder = HttpClient.newBuilder().version(version).proxy(NO_PROXY);
+        HttpClient.Builder clientBuilder = HttpServerAdapters.createClientBuilderFor(version).proxy(NO_PROXY);
         if (secure) {
             clientBuilder.sslContext(SSL_CONTEXT);
         }

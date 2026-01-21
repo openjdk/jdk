@@ -162,6 +162,11 @@
           "a single expand attempt.")                                       \
           range(0, 100)                                                     \
                                                                             \
+  product(size_t, G1PerThreadPendingCardThreshold, 256, DIAGNOSTIC,         \
+          "Number of pending cards allowed on the card table per GC "       \
+          "worker thread before considering starting refinement.")          \
+          range(0, UINT_MAX)                                                \
+                                                                            \
   product(uint, G1ShrinkByPercentOfAvailable, 50, DIAGNOSTIC,               \
           "When shrinking, maximum % of free space to free for a single "   \
           "shrink attempt.")                                                \
@@ -187,10 +192,6 @@
           "is decremented when short-term GC CPU usage is below the lower " \
           "bound of acceptable deviation range.")                           \
           constraint(G1CPUUsageShrinkConstraintFunc, AfterErgo)             \
-                                                                            \
-  product(size_t, G1UpdateBufferSize, 256,                                  \
-          "Size of an update buffer")                                       \
-          constraint(G1UpdateBufferSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(uint, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
@@ -369,6 +370,12 @@
           "Threshold for the number of code roots when reporting code root "\
           "scan cost related prediction samples. A sample must involve "    \
           "the same or more than this number of code roots to be used.")    \
+                                                                            \
+  develop(bool, G1ForceOptionalEvacuation, false,                           \
+          "Force optional evacuation for all GCs where there are old gen "  \
+          "collection set candidates."                                      \
+          "Also schedule all available optional groups for evacuation "     \
+          "regardless of timing.")                                          \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \

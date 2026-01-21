@@ -27,7 +27,7 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/spinYield.hpp"
@@ -60,13 +60,13 @@ void ZLiveMap::reset(ZGenerationId id) {
 
   // Multiple threads can enter here, make sure only one of them
   // resets the marking information while the others busy wait.
-  for (uint32_t seqnum = Atomic::load_acquire(&_seqnum);
+  for (uint32_t seqnum = AtomicAccess::load_acquire(&_seqnum);
        seqnum != generation->seqnum();
-       seqnum = Atomic::load_acquire(&_seqnum)) {
+       seqnum = AtomicAccess::load_acquire(&_seqnum)) {
 
     if (seqnum != seqnum_initializing) {
       // No one has claimed initialization of the livemap yet
-      if (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum) {
+      if (AtomicAccess::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum) {
         // This thread claimed the initialization
 
         // Reset marking information
@@ -87,7 +87,7 @@ void ZLiveMap::reset(ZGenerationId id) {
         // before the update of the page seqnum, such that when the
         // up-to-date seqnum is load acquired, the bit maps will not
         // contain stale information.
-        Atomic::release_store(&_seqnum, generation->seqnum());
+        AtomicAccess::release_store(&_seqnum, generation->seqnum());
         break;
       }
     }

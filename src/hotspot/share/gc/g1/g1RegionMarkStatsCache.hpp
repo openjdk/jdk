@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,8 @@ public:
   // to have a very low cache miss rate.
   static const uint RegionMarkStatsCacheSize = 1024;
 
+  // Initialize cache. Does not reset the cache immediately to avoid the cost
+  // during startup.
   G1RegionMarkStatsCache(G1RegionMarkStats* target, uint num_cache_entries);
 
   ~G1RegionMarkStatsCache();

@@ -47,7 +47,7 @@ size_t DumpTimeClassInfo::runtime_info_bytesize() const {
                                      num_enum_klass_static_fields());
 }
 
-void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
+void DumpTimeClassInfo::add_verification_constraint(Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   if (_verifier_constraints == nullptr) {
     _verifier_constraints = new (mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
@@ -73,9 +73,14 @@ void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* na
 
   if (log_is_enabled(Trace, aot, verification)) {
     ResourceMark rm;
-    log_trace(aot, verification)("add_verification_constraint: %s: %s must be subclass of %s [0x%x] array len %d flags len %d",
-                                 k->external_name(), from_name->as_klass_external_name(),
-                                 name->as_klass_external_name(), c, vc_array->length(), vcflags_array->length());
+    if (from_name != nullptr) {
+      log_trace(aot, verification)("add verification constraint: %s: %s must be subclass of %s [0x%x]",
+                                   _klass->external_name(), from_name->as_klass_external_name(),
+                                   name->as_klass_external_name(), c);
+    } else {
+      log_trace(aot, verification)("added old verification constraint: %s: %s", _klass->external_name(),
+                                   name->as_klass_external_name());
+    }
   }
 }
 
@@ -142,7 +147,7 @@ bool DumpTimeClassInfo::is_builtin() {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
-  assert(CDSConfig::is_dumping_final_static_archive() || !k->is_shared(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || !k->in_aot_cache(), "Do not call with shared classes");
   bool created;
   DumpTimeClassInfo* p = put_if_absent(k, &created);
   assert(created, "must not exist in table");
@@ -151,7 +156,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
-  assert(CDSConfig::is_dumping_final_static_archive() || !k->is_shared(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || !k->in_aot_cache(), "Do not call with shared classes");
   DumpTimeClassInfo* p = get(k);
   assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
          "not stored with SystemDictionaryShared::init_dumptime_info");

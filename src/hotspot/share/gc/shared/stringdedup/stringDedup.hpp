@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,9 +103,9 @@
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class CollectedHeap;
 class Klass;
 class StringDedupThread;
 class ThreadClosure;
@@ -116,7 +116,7 @@ class ThreadClosure;
 // feature.  Other functions in the StringDedup class are called where
 // needed, without requiring GC-specific code.
 class StringDedup : public AllStatic {
-  friend class CollectedHeap;
+  friend class CPUTimeUsage::GC;
   friend class StringDedupThread;
 
   class Config;

@@ -101,7 +101,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
 #endif
   int                  _comp_level;
   int                  _num_inlined_bytecodes;
-  CompileTask*         _next, *_prev;
+  CompileTask*         _next;
+  CompileTask*         _prev;
   // Fields used for logging why the compilation was initiated:
   jlong                _time_queued;  // time when task was enqueued
   jlong                _time_started; // time when compilation started

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8349132
+ * @bug 8349132 8364987
  * @summary Check behavior of the diamond analyzer
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -130,6 +130,45 @@ public class Diamond extends TestRunner {
             "Test.java:4:28: compiler.err.cant.resolve.location: kindname.class, Param, , , (compiler.misc.location: kindname.class, test.Test, null)",
             "Test.java:6:29: compiler.err.cant.resolve: kindname.class, Param, , ",
             "2 errors"
+        );
+
+        if (!Objects.equals(expectedOut, out)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedOut +
+                                      ", actual: " + out);
+
+        }
+    }
+
+    @Test //JDK-8364987:
+    public void testNoCrashErroneousTypes(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          public class Test {
+                              void t() {
+                                  L<Object> l = new L<Test>();
+                              }
+                              static class L<T> { }
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        var out = new JavacTask(tb)
+            .options("-XDfind=diamond",
+                     "-XDshould-stop.at=FLOW",
+                     "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        var expectedOut = List.of(
+            "Test.java:3:23: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: Test.L<Test>, Test.L<java.lang.Object>)",
+            "1 error"
         );
 
         if (!Objects.equals(expectedOut, out)) {
