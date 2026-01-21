@@ -648,13 +648,17 @@ by default in popular Linux distributions. Without this library,
 the SCTP tests will be skipped. If you want to enable the SCTP tests,
 you should install the SCTP library before run the tests.
 
-For apt-based distributions (Debian, Ubuntu, etc), try this:
+For distributions using the .deb packaging format and the apt tool
+(such as Debian, Ubuntu, etc.), try this:
 
 ```
 sudo apt install libsctp1
+sudo modprobe sctp
+lsmod | grep sctp
 ```
 
-For rpm-based distributions (Fedora, Red Hat, etc), try this:
+For distributions using the .rpm packaging format and the dnf tool
+(such as Fedora, Red Hat, etc.), try this:
 
 ```
 sudo dnf install -y lksctp-tools
