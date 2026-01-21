@@ -131,8 +131,9 @@ public abstract class KeyStoreSpi {
     /**
      * Returns the instant that the entry identified by the given alias was
      * created.
-     * <p>
-     * Subclasses should override this method to directly return an instant.
+     *
+     * @apiNote Subclasses should override this method to directly return an
+     * instant.
      *
      * @implSpec
      * The default implementation calls {@code engineGetCreationDate(alias)}
