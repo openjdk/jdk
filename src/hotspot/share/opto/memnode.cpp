@@ -59,7 +59,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/tribool.hpp"
 #include "utilities/vmError.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -730,11 +729,10 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
   ResourceMark rm;
   bool is_known_instance = addr_t != nullptr && addr_t->is_known_instance_field();
   LocalEA local_ea(phase->is_IterGVN(), base);
-  TriBool has_not_escaped = is_known_instance ? TriBool(true)
-                                              : (is_Load() && local_ea.is_candidate() ? TriBool() : TriBool(false));
+  bool has_not_escaped = is_known_instance;
 
   int cnt = 50; // Cycle limiter
-  if (is_Load() && (has_not_escaped.is_default() || has_not_escaped)) {
+  if (is_Load() && (local_ea.is_candidate() || is_known_instance)) {
     // Get agressive for loads from freshly allocated objects
     cnt = 1000;
   }
@@ -866,22 +864,22 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       // We can walk past a call if we can prove that the call does not modify the memory we are
       // accessing, this is the case if the allocation has not escaped at this call
       CallNode* call = mem->in(0)->as_Call();
-      if (has_not_escaped && !is_known_instance) {
+      if (!has_not_escaped) {
+        if (!is_Load()) {
+          return nullptr;
+        }
+
+        LocalEA::EscapeStatus status = local_ea.check_escape_status(call);
+        switch (status) {
+          case LocalEA::ESCAPED:     return nullptr;
+          case LocalEA::NOT_ESCAPED: has_not_escaped = true; break;
+          case LocalEA::DEAD_PATH:   return phase->C->top();
+        }
+      } else if (!is_known_instance) {
         // Since we are walking from a node to its input, if alloc is found that it has not escaped
         // at an earlier iteration, it must also be found that it has not escaped at the current
         // iteration
         assert(local_ea.not_escaped_controls().member(call), "inconsistent");
-      }
-      if (has_not_escaped.is_default()) {
-        LocalEA::EscapeStatus status = local_ea.check_escape_status(call);
-        if (status == LocalEA::DEAD_PATH) {
-          return phase->C->top();
-        }
-
-        has_not_escaped = (status == LocalEA::NOT_ESCAPED);
-      }
-      if (!has_not_escaped) {
-        break;
       }
 
       // We are more aggressive with known instances. For example, if base is an argument of call
@@ -894,22 +892,23 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
     } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
       // We can walk past a memory barrier if we can prove that the allocation has not escaped at
       // this barrier, hence it is invisible to other threads
-      if (has_not_escaped && !is_known_instance) {
+      MemBarNode* membar = mem->in(0)->as_MemBar();
+      if (!has_not_escaped) {
+        if (!is_Load()) {
+          return nullptr;
+        }
+
+        LocalEA::EscapeStatus status = local_ea.check_escape_status(membar);
+        switch (status) {
+          case LocalEA::ESCAPED:     return nullptr;
+          case LocalEA::NOT_ESCAPED: has_not_escaped = true; break;
+          case LocalEA::DEAD_PATH:   return phase->C->top();
+        }
+      } else if (!is_known_instance) {
         // Since we are walking from a node to its input, if alloc is found that it has not escaped
         // at an earlier iteration, it must also be found that it has not escaped at the current
         // iteration
-        assert(local_ea.not_escaped_controls().member(mem->in(0)), "inconsistent");
-      }
-      if (has_not_escaped.is_default()) {
-        LocalEA::EscapeStatus status = local_ea.check_escape_status(mem->in(0));
-        if (status == LocalEA::DEAD_PATH) {
-          return phase->C->top();
-        }
-
-        has_not_escaped = (status == LocalEA::NOT_ESCAPED);
-      }
-      if (!has_not_escaped) {
-        break;
+        assert(local_ea.not_escaped_controls().member(membar), "inconsistent");
       }
 
       // We are more aggressive with known instances. For example, if base is an argument of call
@@ -917,7 +916,7 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       // while the local escape analyzer will be more conservative. This case is about the trailing
       // memory barrier of an ArrayCopyNode.
       ArrayCopyNode* ac = nullptr;
-      if (is_known_instance && ArrayCopyNode::may_modify(addr_t, mem->in(0)->as_MemBar(), phase, ac)) {
+      if (is_known_instance && ArrayCopyNode::may_modify(addr_t, membar, phase, ac)) {
         break;
       }
       mem = mem->in(0)->in(TypeFunc::Memory);
@@ -1447,7 +1446,9 @@ MemNode::LocalEA::LocalEA(PhaseIterGVN* phase, Node* base) : _phase(phase), _is_
 // In other word, p is determined that it has not escaped at ctl if all nodes that make p escape
 // have a control input that is neither nullptr, ctl, nor a transitive control input of ctl.
 MemNode::LocalEA::EscapeStatus MemNode::LocalEA::check_escape_status(Node* ctl) {
-  assert(is_candidate(), "must be a candidate for escape analysis");
+  if (!_is_candidate) {
+    return ESCAPED;
+  }
   if (_phase->type(ctl) == Type::TOP) {
     return DEAD_PATH;
   }
