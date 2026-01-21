@@ -71,13 +71,15 @@ class DFSClosure : public BasicOopIterateClosure {
   void mark_pointee_as_visited(const oop pointee)   { _mark_bits->mark_obj(pointee); }
   bool pointee_was_sampled(const oop pointee) const { return pointee->mark().is_marked(); }
 
+  void probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee, size_t depth, int chunkindex);
+  void probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth);
+  bool probe_stack_pop();
   void drain_probe_stack();
   void handle_oop();
   void handle_objarrayoop();
 
-  void probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee, size_t depth, int chunkindex);
-  void probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth);
-  bool probe_stack_pop();
+  void log(const char* msg) DEBUG_ONLY(;) NOT_DEBUG({})
+  void log(const char* msg, oop obj, size_t depth, int chunkindex) DEBUG_ONLY(;) NOT_DEBUG({})
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }

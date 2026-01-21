@@ -30,64 +30,40 @@
 #include "jfr/leakprofiler/utilities/granularTimer.hpp"
 #include "jfr/leakprofiler/utilities/rootType.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/stack.inline.hpp"
 
-#include <stdio.h>
-
-#define TRC(msg) { \
-  if (UseNewCode) { \
-    printf(msg); \
-    printf("\n"); \
-    fflush(stdout); \
-  } \
+#ifdef ASSERT
+void DFSClosure::log(const char* msg) {
+  log(msg, _current_pointee, _current_depth, _current_chunkindex);
 }
 
-#define TRCFMT(format, ...) { \
-  if (UseNewCode) { \
-    printf(format, __VA_ARGS__); \
-    printf("\n"); \
-    fflush(stdout); \
-  } \
+void DFSClosure::log(const char* msg, oop obj, size_t depth, int chunkindex) {
+  LogTarget(Trace, jfr, system, dfs) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_raw(msg);
+    if (obj != nullptr) {
+      ls.print(" " PTR_FORMAT " ", p2i(obj));
+      obj->klass()->name()->print_value_on(&ls); \
+      ls.print(" (edge depth %zu, probestack depth %zu)",
+          depth, _probe_stack.size());
+      if (chunkindex > 0) {
+        ls.print(" (follow-up %d)",
+            chunkindex);
+      }
+    }
+    ls.cr();
+  }
 }
-
-#define TRCOOP(prefix, o) { \
-  if (UseNewCode) { \
-    char txt[1024]; \
-    stringStream ss(txt, sizeof(txt)); \
-    o->klass()->name()->print_value_on(&ss); \
-    if (o->is_objArray()) { \
-      const objArrayOop pointee_oa = (objArrayOop) o; \
-      const int array_len = pointee_oa->length(); \
-      ss.print(" [%d]", array_len); \
-    } \
-    printf("%s: " PTR_FORMAT " %s ", prefix, p2i(o), txt); \
-    printf("\n"); \
-    fflush(stdout); \
-  } \
-}
-
-#define TRCOOPFMT(prefix, o, format, ...) { \
-  if (UseNewCode) { \
-    char txt[1024]; \
-    stringStream ss(txt, sizeof(txt)); \
-    o->klass()->name()->print_value_on(&ss); \
-    if (o->is_objArray()) { \
-      const objArrayOop pointee_oa = (objArrayOop) o; \
-      const int array_len = pointee_oa->length(); \
-      ss.print(" [%d]", array_len); \
-    } \
-    printf("%s: " PTR_FORMAT " %s ", prefix, p2i(o), txt); \
-    printf(format, __VA_ARGS__); \
-    printf("\n"); \
-    fflush(stdout); \
-  } \
-}
+#endif // ASSERT
 
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 
@@ -100,8 +76,10 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
 
   // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
+  dfs.log("scanning from edge for ", start_edge->pointee(), 0, 0);
   start_edge->pointee()->oop_iterate(&dfs);
   dfs.drain_probe_stack();
+  dfs.log("DFS: done.");
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
@@ -109,36 +87,51 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   assert(edge_store != nullptr, "invariant");
   assert(mark_bits != nullptr, "invariant");
 
-TRC("SCANNING ROOTS");
-
   // Mark root set, to avoid going sideways. The intent here is to prevent
   // long reference chains that would be caused by tracing through multiple root
   // objects.
   DFSClosure dfs(edge_store, mark_bits, nullptr);
   dfs._max_depth = 1;
   RootSetClosure<DFSClosure> rs(&dfs);
+  dfs.log("DFS: scanning roots...");
   rs.process();
   dfs.drain_probe_stack();
-
-
-TRC("DONE SCANNING ROOTS");
-TRC("SCANNING DEEP");
 
   // Depth-first search
   dfs._max_depth = max_dfs_depth;
   dfs._ignore_root_set = true;
+  dfs.log("DFS: scanning in depth ...");
   rs.process();
   dfs.drain_probe_stack();
-
-TRC("DONE SCANNING DEPP");
+  dfs.log("DFS: done.");
 
 }
 
-// A sanity limit to avoid runaway memory scenarios for pathological
-// corner cases (very deep hierarchies of broad object arrays) - even
-// with array chunking, we may bottom out the probe stack then. Here,
-// we just treat those cases as a "maxdepth reached" case.
-//static constexpr size_t max_probe_stack_elems = 64 * K; // 1 MB
+// Memory usage of DFS search is defined by the probe stack usage. Probe
+// stack usage will be (avg. of outgoing references per oop) * depth.
+//
+// We can disregard the special case of objArrayOop here, since deeply
+// nested hierarchies of broad object arrays are highly uncommon, and we
+// use array chunking anyway to not flood the probe stack.
+//
+// Therefore (avg. of outgoing references per oop) is really (avg.
+// InstanceKlass oopmap size), which is pretty low - statistics show that
+// the vast majority of instance objects do not have more than ~3-4 outgoing
+// references.
+//
+// In practice, a few "heavy hitter" classes will often dominate deep object
+// graphs, e.g. LinkedListNode. LinkedListNode has three outgoing references,
+// and only two of which will be pushed to the probe stack (next node ref and
+// payload ref).
+//
+// Assuming an avg oop map size of 3, and a max_dfs_depth of 3200, we get
+// a probe stack size at max. depth of 9600 -> 153KB - not that much.
+//
+// Still, to be very sure we also limit the probe stack size itself to
+// handle pathological object graphs (eg. many deeply nested object arrays).
+// We handle that case the same way we handle max_dfs_depth, by simply aborting
+// the scan for that particular graph branch.
+static constexpr size_t max_probe_stack_elems = 256 * K; // 4 MB
 
 // We use a much smaller array chunk size than GCs do, to avoid running out
 // of probe stack too early. Reason is that Leak Profiler is often used
@@ -148,8 +141,7 @@ static constexpr int array_chunk_size = 64;
 DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
   _max_depth(max_dfs_depth), _ignore_root_set(false),
-//  _probe_stack(1024, 4, max_probe_stack_elems),
-  _probe_stack(),
+  _probe_stack(1024, 4, max_probe_stack_elems),
   _current_ref(UnifiedOopRef::encode_null()),
   _current_pointee(nullptr),
   _current_depth(0),
@@ -179,14 +171,14 @@ void DFSClosure::probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth) 
   }
 
   if (_probe_stack.is_full()) {
-    // Probe stack exhausted; see remarks about probe stack max depth above.
+    log("Probe stack full, aborting graph edge");
     return;
   }
 
   ProbeStackItem item { ref, checked_cast<unsigned>(depth), 0 };
   _probe_stack.push(item);
 
-TRCOOPFMT("pushed", pointee, "path depth %u, probestack depth %zu", item.depth, _probe_stack.size());
+  log("pushed: ", pointee, depth, 0);
 
 }
 
@@ -197,15 +189,14 @@ void DFSClosure::probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee,
   assert(chunkindex > 0, "invariant");
 
   if (_probe_stack.is_full()) {
-    // Probe stack exhausted; see remarks about probe stack max depth above.
+    log("Probe stack full, aborting graph edge");
     return;
   }
 
   ProbeStackItem item { ref, checked_cast<unsigned>(depth), chunkindex };
   _probe_stack.push(item);
 
-TRCOOPFMT("pushed", pointee, "path depth %u, probestack depth %zu, chunkindex %d (follow-up)", item.depth, _probe_stack.size(), chunkindex);
-
+  log("pushed: ", pointee, depth, chunkindex);
 }
 
 bool DFSClosure::probe_stack_pop() {
@@ -228,7 +219,7 @@ bool DFSClosure::probe_stack_pop() {
 
   _current_pointee = _current_ref.dereference();
 
-TRCOOPFMT("popped", _current_pointee, "path depth %zu, probestack depth %zu, chunkindex %d%s", _current_depth, _probe_stack.size(), _current_chunkindex, _current_chunkindex > 0 ? " (followup)" : "");
+  log("popped");
 
   return true;
 }
@@ -246,7 +237,6 @@ void DFSClosure::handle_oop() {
     mark_pointee_as_visited(_current_pointee);
     _reference_stack[_current_depth] = _current_ref;
     if (pointee_was_sampled(_current_pointee)) {
-TRC("=> SAMPLE OBJECT FOUND (handle_oop)");
       add_chain();
     }
   }
@@ -276,7 +266,6 @@ void DFSClosure::handle_objarrayoop() {
       _reference_stack[_current_depth] = _current_ref;
 
       if (pointee_was_sampled(_current_pointee)) {
-TRC("=> SAMPLE OBJECT FOUND (handle_objarrayoop)");
         add_chain();
       }
     }
@@ -332,14 +321,7 @@ void DFSClosure::add_chain() {
   Edge* const chain = NEW_RESOURCE_ARRAY(Edge, array_length);
   size_t idx = 0;
 
-if (UseNewCode) {
-  TRC("---- reference stack ----");
-  for (size_t i = 0; i <= _current_depth; i++) {
-    const oop pointee = _reference_stack[i].dereference();
-    TRCOOP("", pointee);
-  }
-  TRC("---- reference stack end ----");
-}
+  log("adding chain for sample object");
 
   // aggregate from depth-first search
   for (size_t i = 0; i <= _current_depth; i++) {
