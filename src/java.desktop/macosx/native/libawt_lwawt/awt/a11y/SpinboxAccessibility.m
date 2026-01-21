@@ -86,7 +86,6 @@
         id child = [clist objectAtIndex:i];
         if ([child conformsToProtocol:@protocol(NSAccessibilityNavigableStaticText)]) {
             NSAccessibilityPostNotification(child, NSAccessibilityLayoutChangedNotification);
-            NSAccessibilityPostNotification(child, NSAccessibilityAnnouncementRequestedNotification);
             [child suppressEditUpdates];
         }
     }
