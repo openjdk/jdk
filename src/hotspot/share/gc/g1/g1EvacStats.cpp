@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "logging/log.hpp"
