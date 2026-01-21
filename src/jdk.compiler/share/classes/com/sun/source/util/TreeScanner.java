@@ -947,6 +947,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     * @since 27
      */
     @Override
     public R visitVarType(VarTypeTree node, P p) {

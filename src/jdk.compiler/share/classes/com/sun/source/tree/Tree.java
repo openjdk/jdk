@@ -268,6 +268,8 @@ public interface Tree {
 
         /**
          * Used for instances of {@link VarTypeTree}.
+         *
+         * @since 27
          */
         VAR_TYPE(VarTypeTree.class),
 
