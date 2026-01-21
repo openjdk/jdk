@@ -933,6 +933,17 @@ void PSParallelCompact::summary_phase(bool should_do_max_compaction)
   }
 }
 
+void PSParallelCompact::report_object_count_after_gc() {
+  GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
+  // The heap is compacted, all objects are iterable. However there may be
+  // filler objects in the heap which we should ignore.
+  class SkipFillerObjectClosure : public BoolObjectClosure {
+  public:
+    bool do_object_b(oop obj) override { return !CollectedHeap::is_filler_object(obj); }
+  } cl;
+  _gc_tracer.report_object_count_after_gc(&cl, &ParallelScavengeHeap::heap()->workers());
+}
+
 bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
@@ -1028,16 +1039,7 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
 
     heap->print_heap_change(pre_gc_values);
 
-    {
-      GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
-      // The heap is compacted, all objects are iterable. However there may be
-      // filler objects in the heap which we should ignore.
-      class SkipFillerObjectClosure : public BoolObjectClosure {
-      public:
-        bool do_object_b(oop obj) override { return !CollectedHeap::is_filler_object(obj); }
-      } cl;
-      _gc_tracer.report_object_count_after_gc(&cl, &ParallelScavengeHeap::heap()->workers());
-    }
+    report_object_count_after_gc();
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
