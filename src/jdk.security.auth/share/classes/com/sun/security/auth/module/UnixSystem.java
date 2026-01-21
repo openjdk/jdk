@@ -187,7 +187,7 @@ public class UnixSystem {
 
             // Do not call invokeExact because the type of buffer_size is not
             // always long in the underlying system.
-            int out = 0;
+            int out;
             if (calling_convention_requires_int_as_long) {
                 out = (int) MH_getpwuid_r.invoke(
                         tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
