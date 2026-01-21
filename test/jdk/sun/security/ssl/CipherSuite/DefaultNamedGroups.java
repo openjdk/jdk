@@ -44,6 +44,7 @@ public class DefaultNamedGroups extends SSLEngineTemplate {
 
     protected static final String DISABLED_NG = "secp256r1";
     protected static final List<String> REFERENCE_NG = Stream.of(
+                    "X25519MLKEM768",
                     "x25519",
                     "secp256r1",
                     "secp384r1",

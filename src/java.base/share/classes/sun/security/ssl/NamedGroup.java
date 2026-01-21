@@ -820,7 +820,6 @@ enum NamedGroup {
         }
     }
 
-    // Inner class encapsulating supported named groups.
     private static class KEMScheme implements NamedGroupScheme {
         private static final KEMScheme instance = new KEMScheme();
 
@@ -857,6 +856,7 @@ enum NamedGroup {
         }
     }
 
+    // Inner class encapsulating supported named groups.
     static final class SupportedGroups {
 
         // Default named groups.
