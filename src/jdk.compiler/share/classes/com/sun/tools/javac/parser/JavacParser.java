@@ -994,7 +994,7 @@ public class JavacParser implements Parser {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
                 e = unannotatedType(allowVar, TYPE | NOLAMBDA);
                 if (var) {
-                    endPosTable.replaceTree(e, e = F.at(e).VarType());
+                    e = replaceTypeWithVar(e);
                 }
             } else {
                 e = parsedType;
@@ -2193,8 +2193,7 @@ public class JavacParser implements Parser {
                         && restrictedTypeName(param.vartype, true) != null) {
                     checkSourceLevel(param.pos, Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS);
                     param.declKind = JCVariableDecl.DeclKind.VAR;
-                    endPosTable.replaceTree(param.vartype,
-                                            param.vartype = F.at(param.vartype).VarType());
+                    param.vartype = replaceTypeWithVar(param.vartype);
                 }
             }
         }
@@ -3842,7 +3841,7 @@ public class JavacParser implements Parser {
                     //error - 'var' and arrays
                     reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
-                    endPosTable.replaceTree(type, type = F.at(type).VarType());
+                    type = replaceTypeWithVar(type);
 
                     if (compound)
                         //error - 'var' in compound local var decl
@@ -3853,6 +3852,16 @@ public class JavacParser implements Parser {
         JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init,
           type.hasTag(VARTYPE) ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT));
         return attach(result, dc);
+    }
+
+    JCExpression replaceTypeWithVar(JCExpression type) {
+        int savedErrorPos = endPosTable.errorEndPos;
+
+        endPosTable.errorEndPos = Position.NOPOS;
+        endPosTable.replaceTree(type, type = F.at(type).VarType());
+        endPosTable.setErrorEndPos(savedErrorPos);
+
+        return type;
     }
 
     Name restrictedTypeName(JCExpression e, boolean shouldWarn) {
