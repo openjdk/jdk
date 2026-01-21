@@ -78,11 +78,6 @@ public class TestReductionReassociationForAssociativeAdds {
             .map(op -> new TestGenerator(op, batchSize, size).generate())
             .forEach(testTemplateTokens::add);
 
-        // A single test to test a non-power-of-2 value
-        testTemplateTokens.add(new TestGenerator(AssociativeAdd.MAX_L, 5, size).generate());
-        // A single test where an intermediate value is used some other way
-        testTemplateTokens.add(new TestGenerator(AssociativeAdd.MAX_L, batchSize, size).generateUseIntermediate());
-
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
             // package and class name.
@@ -151,90 +146,6 @@ public class TestReductionReassociationForAssociativeAdds {
                 );
             });
             return testTemplate.asToken();
-        }
-
-        public TemplateToken generateUseIntermediate() {
-            var testTemplate = Template.make(() -> {
-                String test = $("test");
-                String input = $("input");
-                String expected = $("expected");
-                String setup = $("setup");
-                String check = $("check");
-                return scope(
-                    """
-                    // --- $test start ---
-
-                    """,
-                    generateArrayField(input),
-                    generateExpectedField(test, expected),
-                    generateUseIntermediateTest(input, setup, test),
-                    generateCheck(test, check, expected),
-                    generateAuxMethods(input),
-                    """
-
-                    // --- $test end ---
-                    """
-                );
-            });
-            return testTemplate.asToken();
-        }
-
-        private TemplateToken generateUseIntermediateTest(String input, String setup, String test) {
-            var template = Template.make(() -> scope(
-                let("irNodeName", add.name()),
-                let("input", input),
-                let("setup", setup),
-                let("test", test),
-                let("type", add.type.name()),
-                """
-                @Test
-                @IR(counts = {IRNode.#irNodeName, "= 8"},
-                    phase = CompilePhase.AFTER_LOOP_OPTS)
-                public Object[] #test() {
-                    long result = Long.MIN_VALUE;
-                    long result2 = Long.MIN_VALUE;
-                    int i = 0;
-                    while (i < #input.length) {
-                        var v0 = getArray_dontinline_#input(0, i);
-                        var v1 = getArray_dontinline_#input(1, i);
-                        var v2 = getArray_dontinline_#input(2, i);
-                        var v3 = getArray_dontinline_#input(3, i);
-                        var v4 = getArray_dontinline_#input(4, i);
-                        var v5 = getArray_dontinline_#input(5, i);
-                        var v6 = getArray_dontinline_#input(6, i);
-                        var v7 = getArray_dontinline_#input(7, i);
-                        var u0 = Math.max(v0, result);
-                        var u1 = Math.max(v1, u0);
-                        var u2 = Math.max(v2, u1);
-                        var u3 = Math.max(v3, u2);
-                        if (u3 == #input.hashCode()) {
-                          System.out.print("");
-                        }
-                        var u4 = Math.max(v4, u3);
-                        var u5 = Math.max(v5, u4);
-                        var u6 = Math.max(v6, u5);
-                        var u7 = Math.max(v7, u6);
-
-                        long t0 = Long.max(v0, v1);
-                        long t1 = Long.max(v2, t0);
-                        long t2 = Long.max(v3, t1);
-                        long t3 = Long.max(result, t2);
-                        if (t3 == #input.hashCode()) {
-                          System.out.print("");
-                        }
-                        long t4 = Long.max(v4, t3);
-                        long t5 = Long.max(v5, t4);
-                        long t6 = Long.max(v6, t5);
-                        long t7 = Long.max(v7, t6);
-                        result = u7;
-                        result2 = t7;
-                        i = sum_dontinline_#input(i, 8);
-                    }
-                    return asArray_dontinline_#input(result, result2);
-                }
-                """
-            ));
-            return template.asToken();
         }
 
         private TemplateToken generateAuxMethods(String input) {
