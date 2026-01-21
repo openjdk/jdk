@@ -35,11 +35,7 @@ package gc.parallel;
  * @library /test/lib
  * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC
- *                   -Xlog:gc=debug,metaspace=info -XX:StartFlightRecording:gc=all,duration=1s,filename=myrecording.jfr
+ * @run main/othervm -XX:+UseParallelGC -Xlog:gc=debug,metaspace=info -XX:StartFlightRecording:gc=all,duration=1s,filename=myrecording.jfr
  *                   gc.parallel.TestObjectCountAfterGC
  */
 
@@ -49,14 +45,11 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import jdk.test.whitebox.WhiteBox;
-
 public class TestObjectCountAfterGC {
 
     static final String className = "ClassToLoadUnload";
 
     public static void main(String args[]) throws Exception {
-        final WhiteBox wb = WhiteBox.getWhiteBox();
         final int KEEPALIVE_LENGTH = 100;
 
         Object[] keepalive = new Object[KEEPALIVE_LENGTH];
