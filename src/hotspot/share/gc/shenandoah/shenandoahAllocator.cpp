@@ -276,9 +276,9 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
       if (IS_SHARED_ALLOC_REGION) {
-        region->concurrent_set_update_watermark(region->top());
+        region->concurrent_set_update_watermark(region->top<true>());
       } else {
-        region->set_update_watermark(region->top());
+        region->set_update_watermark(region->top<false>());
       }
     }
 

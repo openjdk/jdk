@@ -572,7 +572,7 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
-  assert(!is_active_alloc_region(), "Must not be active alloc region");
+  assert(!is_atomic_alloc_region(), "Must not be atomic alloc region");
   assert(atomic_top() == nullptr, "Must be");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 

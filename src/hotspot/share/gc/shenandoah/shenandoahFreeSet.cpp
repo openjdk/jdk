@@ -907,7 +907,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
     switch (partition) {
       case ShenandoahFreeSetPartitionId::NotFree:
       {
-        assert(!validate_totals || r->is_active_alloc_region() || (capacity != _region_size_bytes), "Should not be retired if empty");
+        assert(!validate_totals || r->is_atomic_alloc_region() || (capacity != _region_size_bytes), "Should not be retired if empty");
         if (r->is_humongous()) {
           if (r->is_old()) {
             regions[int(ShenandoahFreeSetPartitionId::OldCollector)]++;
@@ -923,7 +923,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
             young_humongous_waste += capacity;
           }
         } else {
-          assert(r->is_cset() || r->is_active_alloc_region() || (capacity < PLAB::min_size() * HeapWordSize),
+          assert(r->is_cset() || r->is_atomic_alloc_region() || (capacity < PLAB::min_size() * HeapWordSize),
                  "Expect retired remnant size to be smaller than min plab size");
           // This region has been retired already or it is in the cset.  In either case, we set capacity to zero
           // so that the entire region will be counted as used.  We count young cset regions as "retired".
@@ -1633,7 +1633,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     // If region is not completely free, the current [beg; end] is useless, and we may fast-forward.  If we can extend
     // the existing range, we can exploit that certain regions are already known to be in the Mutator free set.
     while (!can_allocate_from(_heap->get_region(end))) {
-      assert(!_heap->get_region(end)->is_active_alloc_region(), "Must not");
+      assert(!_heap->get_region(end)->is_atomic_alloc_region(), "Must not be atomic alloc region");
       // region[end] is not empty, so we restart our search after region[end]
       idx_t slide_delta = end + 1 - beg;
       if (beg + slide_delta > last_possible_start) {
@@ -1959,7 +1959,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
   size_t num_regions = _heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
     ShenandoahHeapRegion* region = _heap->get_region(idx);
-    assert(!region->is_active_alloc_region(), "There should be no active alloc regions when choosing collection set");
+    assert(!region->is_atomic_alloc_region(), "There should be no atomic alloc regions when choosing collection set");
     if (region->is_trash()) {
       // Trashed regions represent immediate garbage identified by final mark and regions that had been in the collection
       // partition but have not yet been "cleaned up" following update refs.

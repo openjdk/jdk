@@ -99,7 +99,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
-    assert(!region->is_active_alloc_region(), "There should be no active alloc regions when rebuilding free set");
+    assert(!region->is_atomic_alloc_region(), "There should be no active alloc regions when rebuilding free set");
 
     size_t garbage = region->garbage();
     total_garbage += garbage;

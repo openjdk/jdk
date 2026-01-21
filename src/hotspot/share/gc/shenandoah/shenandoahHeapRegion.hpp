@@ -460,18 +460,20 @@ public:
     return AtomicAccess::load_acquire(&_atomic_top);
   }
 
+  // The field _top can be stale when the region is an atomic alloc region, therefore,
+  // it always checks the atomic top first if CHECK_ATOMIC_TOP is not overridden.
   template<bool CHECK_ATOMIC_TOP = true>
   HeapWord* top() const {
     if (CHECK_ATOMIC_TOP) {
-      HeapWord* v_top = atomic_top();
-      return v_top == nullptr ? AtomicAccess::load(&_top) : v_top;
+      HeapWord* at = atomic_top();
+      return at == nullptr ? AtomicAccess::load(&_top) : at;
     }
-    assert(atomic_top() == nullptr, "Must be");
+    assert(!is_atomic_alloc_region(), "Must not be an atomic alloc region");
     return AtomicAccess::load(&_top);
   }
 
   void set_top(HeapWord* v) {
-    assert(!is_active_alloc_region(), "Sanity check");
+    assert(!is_atomic_alloc_region(), "Must not be an atomic alloc region");
     AtomicAccess::store(&_top, v);
   }
 
@@ -571,7 +573,7 @@ public:
   // when the region is removed from the alloc region array in ShenandoahAllocator.
   inline void unset_active_alloc_region() {
     shenandoah_assert_heaplocked();
-    assert(is_active_alloc_region(), "Must be");
+    assert(is_atomic_alloc_region(), "Must be");
 
     // Before unset _active_alloc_region flag, _atomic_top needs to be set to sentinel value using AtomicAccess::cmpxchg,
     // this avoids race condition when the alloc region removed from the alloc regions array used by lock-free allocation in allocator;
@@ -592,7 +594,7 @@ public:
     assert(top<false>() == current_atomic_top, "Value of _atomic_top must have synced to _top");
   }
 
-  inline bool is_active_alloc_region() const {
+  inline bool is_atomic_alloc_region() const {
     // region is an active atomic alloc region if the atomic top is set
     return atomic_top() != nullptr;
   }
