@@ -522,7 +522,7 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   assert(allow_suspend || !check_async_exception, "invalid case");
 #if INCLUDE_JVMTI
   if (allow_suspend && (_handshakee->is_disable_suspend() || _handshakee->is_vthread_transition_disabler())) {
-    // filter out suspend operations while JavaThread is in disable_suspend mode
+    // filter out suspend operations while JavaThread can not be suspended
     allow_suspend = false;
   }
 #endif

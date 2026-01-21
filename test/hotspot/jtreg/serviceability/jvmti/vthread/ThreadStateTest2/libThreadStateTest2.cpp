@@ -60,8 +60,7 @@ Java_ThreadStateTest2_testSuspendResume(JNIEnv* jni, jclass klass, jthread threa
 
 JNIEXPORT void JNICALL
 Java_ThreadStateTest2_setMonitorContendedMode(JNIEnv* jni, jclass klass, jboolean enable) {
-  jvmtiError err = jvmti->SetEventNotificationMode(enable ? JVMTI_ENABLE : JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
-  check_jvmti_status(jni, err, "setMonitorContendedMode: error in JVMTI SetEventNotificationMode for JVMTI_EVENT_MONITOR_CONTENDED_ENTER");
+  set_event_notification_mode(jvmti, jni, enable ? JVMTI_ENABLE : JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
 }
 
 JNIEXPORT void JNICALL
