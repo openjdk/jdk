@@ -134,6 +134,22 @@ class UnixNativeDispatcher {
         throws UnixException;
 
     /**
+     * linkat(int fd1, const char *name1, int fd2, const char *name2, int flag)
+     */
+    static void linkat(int dfd1, UnixPath path1, int dfd2, UnixPath path2,
+                       int flag)
+        throws UnixException
+    {
+        try (NativeBuffer buffer1 = copyToNativeBuffer(path1);
+             NativeBuffer buffer2 = copyToNativeBuffer(path2)) {
+            linkat0(dfd1, buffer1.address(), dfd2, buffer2.address(), flag);
+        }
+    }
+    private static native void linkat0(int dfd1, long addr1,
+                                       int dfd2, long addr2, int flag)
+        throws UnixException;
+
+    /**
      * unlink(const char* path)
      */
     static void unlink(UnixPath path) throws UnixException {
@@ -200,6 +216,19 @@ class UnixNativeDispatcher {
     private static native void mkdir0(long pathAddress, int mode) throws UnixException;
 
     /**
+     * mkdirat(int dfd, const char *path, mode_t mode)
+     */
+    static void mkdirat(int dfd, UnixPath path, int mode)
+        throws UnixException
+    {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            mkdirat0(dfd, buffer.address(), mode);
+        }
+    }
+    private static native void mkdirat0(int dfd, long pathAddress, int mode)
+        throws UnixException;
+
+    /**
      * rmdir(const char* path)
      */
     static void rmdir(UnixPath path) throws UnixException {
@@ -220,6 +249,18 @@ class UnixNativeDispatcher {
         }
     }
     private static native byte[] readlink0(long pathAddress) throws UnixException;
+
+    /**
+     * readlinkat(int fd, const char* path, char* buf, size_t bufsize)
+     *
+     * @return  link target
+     */
+    static byte[] readlinkat(int fd, UnixPath path) throws UnixException {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            return readlinkat0(fd, buffer.address());
+        }
+    }
+    private static native byte[] readlinkat0(int fd, long pathAddress) throws UnixException;
 
     /**
      * realpath(const char* path, char* resolved_name)
@@ -243,6 +284,20 @@ class UnixNativeDispatcher {
         }
     }
     private static native void symlink0(long name1, long name2)
+        throws UnixException;
+
+    /**
+     * symlinkat(const char* name1, int fd, const char* name2)
+     */
+    static void symlinkat(byte[] name1, int fd, UnixPath name2)
+        throws UnixException
+    {
+        try (NativeBuffer targetBuffer = NativeBuffers.asNativeBuffer(name1);
+             NativeBuffer linkBuffer = copyToNativeBuffer(name2)) {
+            symlinkat0(targetBuffer.address(), fd, linkBuffer.address());
+        }
+    }
+    private static native void symlinkat0(long name1, int dfd, long name2)
         throws UnixException;
 
     /**

@@ -143,11 +143,13 @@ class UnixConstants {
     // flags used with openat/unlinkat/etc.
 #if defined(AT_FDCWD) && defined(AT_SYMLINK_NOFOLLOW) && defined(AT_REMOVEDIR)
     static final int PREFIX_AT_FDCWD = AT_FDCWD;
+    static final int PREFIX_AT_SYMLINK_FOLLOW = AT_SYMLINK_FOLLOW;
     static final int PREFIX_AT_SYMLINK_NOFOLLOW = AT_SYMLINK_NOFOLLOW;
     static final int PREFIX_AT_REMOVEDIR = AT_REMOVEDIR;
 #else
     // not supported (dummy values will not be used at runtime).
     static final int PREFIX_AT_FDCWD = 00;
+    static final int PREFIX_AT_SYMLINK_FOLLOW = 00;
     static final int PREFIX_AT_SYMLINK_NOFOLLOW = 00;
     static final int PREFIX_AT_REMOVEDIR = 00;
 #endif
