@@ -811,7 +811,7 @@ public:
 
 #ifdef ASSERT
   // Check whether t is a proper subset (i.e. a subset that is not equal to the superset) of this
-  bool properly_contains(const TypeInt* t) const;
+  bool strictly_contains(const TypeInt* t) const;
 #endif // ASSERT
 
   virtual bool is_finite() const;  // Has a finite value
@@ -898,7 +898,7 @@ public:
 
 #ifdef ASSERT
   // Check whether t is a proper subset (i.e. a subset that is not equal to the superset) of this
-  bool properly_contains(const TypeLong* t) const;
+  bool strictly_contains(const TypeLong* t) const;
 #endif // ASSERT
 
   // Check for positive 32-bit value.

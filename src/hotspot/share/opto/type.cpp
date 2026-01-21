@@ -1817,7 +1817,7 @@ bool TypeInt::contains(const TypeInt* t) const {
 }
 
 #ifdef ASSERT
-bool TypeInt::properly_contains(const TypeInt* t) const {
+bool TypeInt::strictly_contains(const TypeInt* t) const {
   assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
   return TypeIntHelper::int_type_is_subset(this, t) && !TypeIntHelper::int_type_is_equal(this, t);
 }
@@ -1952,7 +1952,7 @@ bool TypeLong::contains(const TypeLong* t) const {
 }
 
 #ifdef ASSERT
-bool TypeLong::properly_contains(const TypeLong* t) const {
+bool TypeLong::strictly_contains(const TypeLong* t) const {
   assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
   return TypeIntHelper::int_type_is_subset(this, t) && !TypeIntHelper::int_type_is_equal(this, t);
 }
