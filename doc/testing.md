@@ -643,10 +643,10 @@ test/jdk/sun/security/pkcs11/README.
 
 ### SCTP Tests
 
-Most of the linux distributions do not come with the SCTP runtime library
-pre-installed. So the SCTP tests will be skipped by default. If you want to
-enable the SCTP tests, you should install the SCTP library before run the
-tests.
+The SCTP tests require the SCTP runtime library, which is often not installed
+by default in popular Linux distributions. Without this library,
+the SCTP tests will be skipped. If you want to enable the SCTP tests,
+you should install the SCTP library before run the tests.
 
 For apt-based distributions (Debian, Ubuntu, etc), try this:
 
@@ -657,7 +657,7 @@ sudo apt install libsctp1
 For rpm-based distributions (Fedora, Red Hat, etc), try this:
 
 ```
-sudo yum install -y lksctp-tools
+sudo dnf install -y lksctp-tools
 sudo modprobe sctp
 lsmod | grep sctp
 ```
