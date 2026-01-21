@@ -270,8 +270,6 @@ private:
 
   bool _needs_bitmap_reset;
 
-  ShenandoahSharedFlag _active_alloc_region; // Flag indicates that whether the region is an active alloc region.
-
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
@@ -563,11 +561,9 @@ public:
 
   inline void set_active_alloc_region() {
     shenandoah_assert_heaplocked();
-    assert(_active_alloc_region.is_unset(), "Must be");
-    // Sync _top to _atomic_top before setting _active_alloc_region flag to prepare for CAS allocation
     assert(atomic_top() == nullptr, "Must be");
+    // Sync _top to _atomic_top to set the region as an active atomic alloc region
     AtomicAccess::release_store(&_atomic_top, top<false>());
-    _active_alloc_region.set();
   }
 
   // Unset a heap region as active alloc region,
@@ -593,13 +589,12 @@ public:
       }
       current_atomic_top = prior_atomic_top;
     }
-    OrderAccess::fence();
-    assert(top<false>() == current_atomic_top, "Value of _atomic_top must have synced to _top.");
-    _active_alloc_region.unset();
+    assert(top<false>() == current_atomic_top, "Value of _atomic_top must have synced to _top");
   }
 
   inline bool is_active_alloc_region() const {
-    return _active_alloc_region.is_set();
+    // region is an active atomic alloc region if the atomic top is set
+    return atomic_top() != nullptr;
   }
 
 private:
