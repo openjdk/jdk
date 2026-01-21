@@ -30,6 +30,7 @@
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:-TieredCompilation -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:StressSeed=1462975402
  *      -XX:+StressIncrementalInlining
  *      -XX:CompileCommand=compileonly,${test.main.class}::test2
@@ -44,6 +45,7 @@
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:-TieredCompilation -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+StressIncrementalInlining
  *      -XX:CompileCommand=compileonly,${test.main.class}::test2
  *      ${test.main.class}
