@@ -111,7 +111,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ shrptr(end, CardTable::card_shift());
   __ subptr(end, addr); // end --> cards count
 
-  __ mov64(tmp, (intptr_t) ctbs->card_table_base_const());
+  __ mov64(tmp, (intptr_t)ctbs->card_table_base_const());
   __ addptr(addr, tmp);
 __ BIND(L_loop);
   __ movb(Address(addr, count, Address::times_1), 0);
