@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1168,6 +1169,36 @@ public abstract class VectorReduction2 {
         long acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
             long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void longAddBigMixSub1(Blackhole bh) {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) - (in2L[i] * in3L[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void longAddBigMixSub2(Blackhole bh) {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) - (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void longAddBigMixSub3(Blackhole bh) {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) - (in1L[i] * in3L[i]) - (in2L[i] * in3L[i]);
             acc += val;
         }
         bh.consume(acc);

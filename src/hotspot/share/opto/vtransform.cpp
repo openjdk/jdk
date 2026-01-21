@@ -1097,7 +1097,8 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
 }
 
 float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector_node(_vector_opcode, vector_length(), element_basic_type());
+  float weight = node_weight();
+  return weight * vloop_analyzer.cost_for_vector_node(_vector_opcode, vector_length(), element_basic_type());
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {

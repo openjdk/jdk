@@ -596,6 +596,7 @@ public:
   virtual bool optimize(VTransformOptimize& vtoptimize) { return false; }
 
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const = 0;
+  virtual float node_weight() const { return 1; }
 
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const = 0;
   virtual void apply_backedge(VTransformApplyState& apply_state) const {};
@@ -834,6 +835,8 @@ public:
     VTransformVectorNode(vtransform, req, properties), _vector_opcode(vector_opcode) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual float node_weight() const override;
+  int vector_opcode() const { return _vector_opcode; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
