@@ -131,6 +131,7 @@ public class LdapPoolTimeoutTest {
                                 || msg.contains("No route to host")
                                 || msg.contains("Timed out waiting for lock")
                                 || msg.contains("Connect timed out")
+                                || msg.contains("Connection timed out")
                                 || msg.contains("Timeout exceeded while waiting for a connection"))) {
                     // got the expected exception
                     System.out.println("Received expected NamingException with message: " + msg);
