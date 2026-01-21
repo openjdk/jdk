@@ -588,7 +588,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                         irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda)        \
   AppendTriggerInfo(ts, cap, avail, alloced, mt, ls,                                        \
                     aar, aw, act, pfagt, absls, irwps, crba, ca, accel,                     \
-                    pfgt, fpgt, attda, is, r, sr, sttda);	                            \
+                    pfgt, fpgt, attda, is, r, sr, sttda);                                   \
   dumpTriggerInfo(first_rejected_trigger, rejected_trigger_count, rejected_trigger_log);    \
   rejected_trigger_count = 0;                                                               \
   first_rejected_trigger = 0;
