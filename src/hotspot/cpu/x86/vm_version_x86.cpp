@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1137,6 +1137,10 @@ void VM_Version::get_processor_features() {
         warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
       }
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        warning("AES_CTR intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     } else {
       if (UseSSE > 2) {
         if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
