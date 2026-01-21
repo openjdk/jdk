@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -854,8 +854,9 @@ intx defaultStream::hold(intx writer_id) {
       // can't grab a lock if current Thread isn't set
       Thread::current_or_null() == nullptr ||
 
-      // developer hook
-      !SerializeVMOutput ||
+      // developer hook: when SerializeVMOutput is off, we normally don't lock.
+      // But xtty is stateful and must not be interleaved.
+      (!SerializeVMOutput && xtty == nullptr) ||
 
       // VM already unhealthy
       VMError::is_error_reported() ||
