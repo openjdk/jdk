@@ -168,10 +168,10 @@ public:
 struct JcmdOptions {
   enum class TimeStamp {
     Default,
-    Yes
+    Yes // timestamp was explicitly requeted with -T flag
   };
 
-  TimeStamp timestamp;
+  TimeStamp timestamp = TimeStamp::Default;
 };
 
 // The DCmdParser class can be used to create an argument parser for a

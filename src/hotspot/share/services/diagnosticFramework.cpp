@@ -386,7 +386,7 @@ bool DCmdFactory::_has_pending_jmx_notification = false;
  * @param updated_line - return value with "<cmd>"
  */
 static JcmdOptions parse_common_options(const CmdLine& line, stringStream *updated_line) {
-  JcmdOptions options = {};
+  JcmdOptions options;
 
   // there is only TIMESTAMP option so far
   const char TIMESTAMP[] = "-T";
@@ -463,6 +463,11 @@ void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
       assert(command != nullptr, "command error must be handled before this line");
       DCmdMark mark(command);
       command->parse(&line, delim, CHECK);
+
+      if (options.timestamp == JcmdOptions::TimeStamp::Yes){
+        _out->date_stamp(true, "", "\n");
+      }
+
       execute(command, options, CHECK);
     }
     count++;
