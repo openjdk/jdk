@@ -39,6 +39,7 @@ import static javax.sound.sampled.AudioSystem.NOT_SPECIFIED;
 
 /**
  * @test
+ * @sound key
  * @bug 8202264
  */
 public final class AutoCloseTimeCheck {
