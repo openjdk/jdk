@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -53,10 +52,10 @@ inline bool G1STWIsAliveClosure::do_object_b(oop p) {
 
 inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
   count = 0;
-  if (AtomicAccess::load(&_cur_claim) >= _list.length()) {
+  if (_cur_claim.load_relaxed() >= _list.length()) {
     return nullptr;
   }
-  uint claim = AtomicAccess::fetch_then_add(&_cur_claim, _claim_step);
+  uint claim = _cur_claim.fetch_then_add(_claim_step);
   if (claim >= _list.length()) {
     return nullptr;
   }

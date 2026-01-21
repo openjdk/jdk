@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -82,7 +83,7 @@ Thread::Thread(MemTag mem_tag) {
   _threads_hazard_ptr = nullptr;
   _threads_list_ptr = nullptr;
   _nested_threads_hazard_ptr_cnt = 0;
-  _rcu_counter = 0;
+  _rcu_counter.store_relaxed(0);
 
   // the handle mark links itself to last_handle_mark
   new HandleMark(this);

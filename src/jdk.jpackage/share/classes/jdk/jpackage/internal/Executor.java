@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.util.CommandLineFormat;
 import jdk.jpackage.internal.util.CommandOutputControl;
 import jdk.jpackage.internal.util.CommandOutputControl.ProcessAttributes;
@@ -211,17 +212,11 @@ final class Executor {
             throw new IllegalStateException("No target to execute");
         }
 
-        PrintableOutputBuilder printableOutputBuilder;
-        if (dumpOutput()) {
-            printableOutputBuilder = new PrintableOutputBuilder(coc);
-        } else {
-            printableOutputBuilder = null;
-        }
-
         if (dumpOutput()) {
             Log.verbose(String.format("Running %s", CommandLineFormat.DEFAULT.apply(List.of(commandLine().getFirst()))));
         }
 
+        var printableOutputBuilder = new PrintableOutputBuilder(coc);
         Result result;
         try {
             if (timeout == null) {
@@ -233,11 +228,12 @@ final class Executor {
             throw ExceptionBox.toUnchecked(ex);
         }
 
+        var printableOutput = printableOutputBuilder.create();
         if (dumpOutput()) {
-            log(result, printableOutputBuilder.create());
+            log(result, printableOutput);
         }
 
-        return result;
+        return ExecutableAttributesWithCapturedOutput.augmentResultWithOutput(result, printableOutput);
     }
 
     Result executeExpectSuccess() throws IOException {
@@ -309,7 +305,7 @@ final class Executor {
         pid.ifPresent(p -> {
             sb.append(" [PID: ").append(p).append("]");
         });
-        sb.append(":\n    ").append(result.execAttrs());
+        sb.append(":\n    ").append(result.execAttrs().printableCommandLine());
         Log.verbose(sb.toString());
 
         if (!printableOutput.isEmpty()) {
