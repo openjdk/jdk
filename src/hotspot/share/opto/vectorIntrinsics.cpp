@@ -169,6 +169,10 @@ Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType el
   assert(check_vbox(vbox_type), "");
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
   Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, v, merged_memory()));
+  if (gvn().type(unbox)->isa_vect() == nullptr) {
+    assert(gvn().type(unbox) == Type::TOP, "sanity");
+    return nullptr; // not a vector
+  }
   return unbox;
 }
 
@@ -622,8 +626,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
     return false;
   }
 
-  const TypeVect* mask_vt = TypeVect::makemask(elem_bt, num_elem);
-  if (!Matcher::mask_op_prefers_predicate(mopc, mask_vt)) {
+  if (!Matcher::mask_op_prefers_predicate(mopc, mask_vec->bottom_type()->is_vect())) {
     mask_vec = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
   }
   const Type* maskoper_ty = mopc == Op_VectorMaskToLong ? (const Type*)TypeLong::LONG : (const Type*)TypeInt::INT;
@@ -2546,8 +2549,7 @@ bool LibraryCallKit::inline_vector_extract() {
         return false;
       }
       // VectorMaskToLongNode requires the input is either a mask or a vector with BOOLEAN type.
-      const TypeVect* mask_vt = TypeVect::makemask(elem_bt, num_elem);
-      if (!Matcher::mask_op_prefers_predicate(Op_VectorMaskToLong, mask_vt)) {
+      if (!Matcher::mask_op_prefers_predicate(Op_VectorMaskToLong, opd->bottom_type()->is_vect())) {
         opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
       }
       // ((toLong() >>> pos) & 1L
