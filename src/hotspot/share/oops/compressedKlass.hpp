@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ public:
   // Returns the alignment a Klass* is guaranteed to have.
   // Note: *Not* the same as 1 << shift ! Klass are always guaranteed to be at least 64-bit aligned,
   // so this will return 8 even if shift is 0.
-  static int klass_alignment_in_bytes() { return nth_bit(MAX2(3, _shift)); }
+  static int klass_alignment_in_bytes() { return static_cast<int>(nth_bit(MAX2(3, _shift))); }
   static int klass_alignment_in_words() { return klass_alignment_in_bytes() / BytesPerWord; }
 
   // Returns the highest possible narrowKlass value given the current Klass range

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ class ConstantPoolCache: public MetaspaceObj {
 #endif
 
  public:
-  static int size() { return align_metadata_size(sizeof(ConstantPoolCache) / wordSize); }
+  static int size() { return align_metadata_size(sizeof_auto<ConstantPoolCache>() / wordSize); }
 
  private:
   // Helpers

@@ -168,6 +168,25 @@ class oopDesc;
 #define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
+// Use this instead of sizeof() if you want your expression not to be of type size_t
+template <typename T>
+constexpr auto sizeof_auto() {
+  constexpr size_t N = sizeof(T);
+
+  using unsigned_auto =
+    std::conditional_t<N <= std::numeric_limits<uint8_t>::max(), uint8_t,
+      std::conditional_t<N <= std::numeric_limits<uint16_t>::max(), uint16_t,
+        std::conditional_t<N <= std::numeric_limits<uint32_t>::max(), uint32_t, uint64_t>>>;
+
+  return static_cast<unsigned_auto>(N);
+}
+
+// Use this instead of sizeof() if you want your expression not to be of type size_t
+template <typename T>
+constexpr auto sizeof_auto(const T& t) {
+  return sizeof_auto<T>();
+}
+
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;

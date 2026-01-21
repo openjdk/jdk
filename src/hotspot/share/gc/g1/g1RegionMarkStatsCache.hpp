@@ -98,7 +98,7 @@ private:
   size_t _num_cache_entries_mask;
 
   uint hash(uint idx) {
-    return idx & _num_cache_entries_mask;
+    return idx & static_cast<uint>(_num_cache_entries_mask);
   }
 
   G1RegionMarkStatsCacheEntry* find_for_add(uint region_idx);
