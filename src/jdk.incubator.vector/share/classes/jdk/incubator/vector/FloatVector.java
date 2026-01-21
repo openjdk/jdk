@@ -3565,8 +3565,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @Override
     @ForceInline
     final
-    FloatVector maybeSwapOnConverted(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
-        int subLanesPerSrc = subLanesPerSrcIfNeeded(bo, srcSpecies);
+    FloatVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+        ByteOrder bo = ByteOrder.nativeOrder();
+        int subLanesPerSrc = subLanesToSwap(bo, srcSpecies);
         if (subLanesPerSrc < 0) {
             return this;
         }

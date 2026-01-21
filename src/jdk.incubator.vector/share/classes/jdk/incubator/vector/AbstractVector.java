@@ -182,12 +182,15 @@ abstract class AbstractVector<E> extends Vector<E> {
     final AbstractVector<?> asVectorRawTemplate(LaneType laneType) {
         // NOTE:  This assumes that convert0('X')
         // respects REGISTER_ENDIAN order.
-        return convert0('X', vspecies().withLanes(laneType)).maybeSwapOnConverted(java.nio.ByteOrder.nativeOrder(), vspecies());
+        return convert0('X', vspecies().withLanes(laneType)).swapIfNeeded(vspecies());
     }
 
     @ForceInline
     protected static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
         final int lanes = targetSpecies.laneCount();
+
+        // This happens when source and target element sizes are equal
+        // (int -> int, long -> long). Therefore, no reordering is required.
         if (subLanesPerSrc <= 1) {
             int[] id = new int[lanes];
             for (int i = 0; i < lanes; ++i) id[i] = i;
@@ -196,6 +199,9 @@ abstract class AbstractVector<E> extends Vector<E> {
         if ((lanes % subLanesPerSrc) != 0) {
             throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
         }
+
+        // Each group corresponds to one source lane.
+        // For each group, reverse the lanes inside that group.
         final int groups = lanes / subLanesPerSrc;
         int[] map = new int[lanes];
         for (int g = 0; g < groups; ++g) {
@@ -208,8 +214,8 @@ abstract class AbstractVector<E> extends Vector<E> {
     }
 
     @ForceInline
-    final int subLanesPerSrcIfNeeded(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
-        if (bo != java.nio.ByteOrder.BIG_ENDIAN) {
+    protected final int subLanesToSwap(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
+        if (bo != ByteOrder.BIG_ENDIAN) {
             return -1;
         }
         int sBytes = srcSpecies.elementSize();
@@ -279,7 +285,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     abstract AbstractVector<E> maybeSwap(ByteOrder bo);
 
     /*package-private*/
-    abstract AbstractVector<?> maybeSwapOnConverted(ByteOrder bo, AbstractSpecies<?> srcSpecies);
+    abstract AbstractVector<?> swapIfNeeded(AbstractSpecies<?> srcSpecies);
 
     /*package-private*/
     @ForceInline

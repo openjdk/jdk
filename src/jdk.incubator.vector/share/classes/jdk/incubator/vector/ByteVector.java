@@ -4105,7 +4105,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @Override
     @ForceInline
     final
-    ByteVector maybeSwapOnConverted(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
+    ByteVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
         return this;
     }
 
