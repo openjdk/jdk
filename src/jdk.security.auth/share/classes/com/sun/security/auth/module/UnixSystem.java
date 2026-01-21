@@ -25,6 +25,7 @@
 
 package com.sun.security.auth.module;
 
+import jdk.internal.util.Architecture;
 import jdk.internal.util.OperatingSystem;
 
 import java.lang.foreign.AddressLayout;
@@ -79,6 +80,8 @@ public class UnixSystem {
             = (ValueLayout.OfByte) LINKER.canonicalLayouts().get("char");
     private static final ValueLayout.OfInt C_INT
             = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("int");
+    private static final ValueLayout.OfLong C_LONG
+            = (ValueLayout.OfLong) LINKER.canonicalLayouts().get("long");
     private static final AddressLayout C_POINTER
             = ((AddressLayout) LINKER.canonicalLayouts().get("void*"))
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, C_CHAR));
@@ -102,12 +105,19 @@ public class UnixSystem {
             = LINKER.downcallHandle(SYMBOL_LOOKUP.findOrThrow("getuid"),
                     FunctionDescriptor.of(C_INT));
 
+    // Some architectures require appropriate zero or sign extension to 64 bit.
+    // Use long directly before https://bugs.openjdk.org/browse/JDK-8336664 is resolved.
+    private static final boolean calling_convention_requires_int_as_long
+            = Architecture.isPPC64() || Architecture.isPPC64LE() || Architecture.isS390();
+
     // getpwuid_r does not work on AIX, instead we use another similar function
     // extern int _posix_getpwuid_r(uid_t, struct passwd *, char *, int, struct passwd **)
     private static final MethodHandle MH_getpwuid_r
             = LINKER.downcallHandle(SYMBOL_LOOKUP.findOrThrow(
                             OperatingSystem.isAix() ? "_posix_getpwuid_r" : "getpwuid_r"),
-                    FunctionDescriptor.of(C_INT, C_INT, C_POINTER, C_POINTER,
+                    FunctionDescriptor.of(C_INT,
+                            calling_convention_requires_int_as_long ? C_LONG : C_INT,
+                            C_POINTER, C_POINTER,
                             OperatingSystem.isAix() ? C_INT : C_SIZE_T,
                             C_POINTER));
 
@@ -172,11 +182,19 @@ public class UnixSystem {
             var pwd = scope.allocate(ML_passwd);
             var result = scope.allocate(C_POINTER);
             var buffer = scope.allocate(GETPW_R_SIZE_MAX);
-            var tmpUid = (int) MH_getuid.invokeExact();
+
+            long tmpUid = Integer.toUnsignedLong((int) MH_getuid.invokeExact());
+
             // Do not call invokeExact because the type of buffer_size is not
             // always long in the underlying system.
-            int out = (int) MH_getpwuid_r.invoke(
-                    tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
+            int out = 0;
+            if (calling_convention_requires_int_as_long) {
+                out = (int) MH_getpwuid_r.invoke(
+                        tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
+            } else {
+                out = (int) MH_getpwuid_r.invoke(
+                        (int) tmpUid, pwd, buffer, GETPW_R_SIZE_MAX, result);
+            }
             if (out != 0) {
                 // If ERANGE (Result too large) is detected in a new platform,
                 // consider adjusting GETPW_R_SIZE_MAX.
