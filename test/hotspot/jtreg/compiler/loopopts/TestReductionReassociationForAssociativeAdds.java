@@ -26,7 +26,7 @@
  * @bug 8351409
  * @summary Test the IR effects of reduction reassociation
  * @library /test/lib /
- * @run driver compiler.loopopts.TestReductionReassociation
+ * @run driver ${test.main.class}
  */
 
 package compiler.loopopts;
@@ -48,23 +48,24 @@ import java.util.stream.Stream;
 import static compiler.lib.template_framework.Template.*;
 import static compiler.lib.template_framework.Template.let;
 
-public class TestReductionReassociation {
+public class TestReductionReassociationForAssociativeAdds {
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.addJavaSourceCode("compiler.loopopts.templated.ReductionReassociation", generate(comp));
+        comp.addJavaSourceCode("compiler.loopopts.templated.ReductionReassociationForAssociativeAdds", generate(comp));
 
         // Compile the source file.
         comp.compile("--add-modules=jdk.incubator.vector");
 
         String[] flags = new String[] {
             "-XX:-UseSuperWord", "-XX:LoopMaxUnroll=0", "-XX:VerifyIterativeGVN=1000",
+            "-XX:+UseNewCode",
             "-XX:CompileCommand=dontinline,*::*dontinline*",
             "--add-modules=jdk.incubator.vector", "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
         };
-        comp.invoke("compiler.loopopts.templated.ReductionReassociation", "main", new Object[] {flags});
+        comp.invoke("compiler.loopopts.templated.ReductionReassociationForAssociativeAdds", "main", new Object[] {flags});
     }
 
     public static String generate(CompileFramework comp) {
@@ -85,7 +86,7 @@ public class TestReductionReassociation {
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
             // package and class name.
-            "compiler.loopopts.templated", "ReductionReassociation",
+            "compiler.loopopts.templated", "ReductionReassociationForAssociativeAdds",
             // List of imports.
             Set.of("jdk.incubator.vector.Float16",
                 "compiler.lib.generators.*",
