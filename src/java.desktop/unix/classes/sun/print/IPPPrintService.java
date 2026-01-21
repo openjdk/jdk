@@ -1708,9 +1708,9 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
             PrinterResolution[] pres = new PrinterResolution[numRes];
             for (int i = 0; i < numRes; i++) {
                 int units = (rawResolutions[i*3+2] == 4) ? PrinterResolution.DPCM : PrinterResolution.DPI;
-                pres[i] =  new PrinterResolution(rawResolutions[i*3],
-                                                 rawResolutions[i*3+1],
-                                                 units);
+                pres[i] = new PrinterResolution(rawResolutions[i*3],
+                                                rawResolutions[i*3+1],
+                                                units);
             }
             printerResolutions = pres;
         }
