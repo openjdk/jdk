@@ -5035,8 +5035,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
 
   Node* left;
   Node* right;
-  // todo check == add_opcode as opposed to is_associative
-  if (is_associative(node->in(1))) {
+  if (node->in(1)->Opcode() == add_opcode) {
     left = reassociate_chain(add_opcode, node->in(1), phi, loop_head, phase);
     right = node->in(2);
   } else {
