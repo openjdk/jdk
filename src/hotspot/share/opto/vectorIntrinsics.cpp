@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "ci/ciSymbols.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "opto/library_call.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/vectornode.hpp"
 #include "prims/vectorSupport.hpp"
@@ -622,7 +623,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
     return false;
   }
 
-  if (mask_vec->bottom_type()->isa_vectmask() == nullptr) {
+  if (!Matcher::mask_op_prefers_predicate(mopc, mask_vec->bottom_type()->is_vect())) {
     mask_vec = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
   }
   const Type* maskoper_ty = mopc == Op_VectorMaskToLong ? (const Type*)TypeLong::LONG : (const Type*)TypeInt::INT;
@@ -708,7 +709,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
 
   if (opc == Op_VectorLongToMask) {
     const TypeVect* vt = TypeVect::makemask(elem_bt, num_elem);
-    if (vt->isa_vectmask()) {
+    if (Matcher::mask_op_prefers_predicate(opc, vt)) {
       broadcast = gvn().transform(new VectorLongToMaskNode(elem, vt));
     } else {
       const TypeVect* mvt = TypeVect::make(T_BOOLEAN, num_elem);
@@ -2330,6 +2331,21 @@ bool LibraryCallKit::inline_vector_convert() {
   Node* op = opd1;
   if (is_cast) {
     assert(!is_mask || num_elem_from == num_elem_to, "vector mask cast needs the same elem num");
+
+    // Make sure the precondition of VectorCastNode::opcode holds: we can only have
+    // unsigned casts for integral types (excluding long). VectorAPI code is not
+    // expected to violate this at runtime, but we may compile unreachable code
+    // where such impossible combinations arise.
+    if (is_ucast && (!is_integral_type(elem_bt_from) || elem_bt_from == T_LONG)) {
+      // Halt-and-catch fire here. This condition should never happen at runtime.
+      stringStream ss;
+      ss.print("impossible combination: unsigned vector cast from %s", type2name(elem_bt_from));
+      halt(control(), frameptr(), ss.as_string(C->comp_arena()));
+      stop_and_kill_map();
+      log_if_needed("  ** impossible combination: unsigned cast from %s", type2name(elem_bt_from));
+      return true;
+    }
+
     int cast_vopc = VectorCastNode::opcode(-1, elem_bt_from, !is_ucast);
 
     // Make sure that vector cast is implemented to particular type/size combination if it is
@@ -2545,7 +2561,7 @@ bool LibraryCallKit::inline_vector_extract() {
         return false;
       }
       // VectorMaskToLongNode requires the input is either a mask or a vector with BOOLEAN type.
-      if (opd->bottom_type()->isa_vectmask() == nullptr) {
+      if (!Matcher::mask_op_prefers_predicate(Op_VectorMaskToLong, opd->bottom_type()->is_vect())) {
         opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
       }
       // ((toLong() >>> pos) & 1L

@@ -30,7 +30,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/oopStorage.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
 #include "interpreter/interpreter.hpp"
@@ -162,11 +161,6 @@ bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
   if (!cur_state->is_running()) {
     return true;
   }
-  LogTarget(Trace, safepoint) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    cur_state->print_on(&ls);
-  }
   return false;
 }
 
@@ -224,6 +218,8 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
 
   *initial_running = still_running;
 
+  log_trace(safepoint)("%d total threads, waiting for %d threads to block", nof_threads, still_running);
+
   // If there is no thread still running, we are already done.
   if (still_running <= 0) {
     assert(tss_head == nullptr, "Must be empty");
@@ -234,6 +230,8 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
   int64_t start_time = os::javaTimeNanos();
 
   do {
+    log_trace(safepoint)("Checking thread status");
+
     // Check if this has taken too long:
     if (SafepointTimeout && safepoint_limit_time < os::javaTimeNanos()) {
       print_safepoint_timeout();
@@ -244,12 +242,16 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     while (cur_tss != nullptr) {
       assert(cur_tss->is_running(), "Illegal initial state");
       if (thread_not_running(cur_tss)) {
+        log_trace(safepoint)("Thread " INTPTR_FORMAT " [%d] is now blocked",
+                             p2i(cur_tss->thread()), cur_tss->thread()->osthread()->thread_id());
         --still_running;
         *p_prev = nullptr;
         ThreadSafepointState *tmp = cur_tss;
         cur_tss = cur_tss->get_next();
         tmp->set_next(nullptr);
       } else {
+        log_trace(safepoint)("Thread " INTPTR_FORMAT " [%d] is still running",
+                             p2i(cur_tss->thread()), cur_tss->thread()->osthread()->thread_id());
         *p_prev = cur_tss;
         p_prev = cur_tss->next_ptr();
         cur_tss = cur_tss->get_next();
@@ -259,6 +261,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     DEBUG_ONLY(assert_list_is_valid(tss_head, still_running);)
 
     if (still_running > 0) {
+      log_trace(safepoint)("Waiting for %d threads to block", still_running);
       back_off(start_time);
     }
 
@@ -333,10 +336,12 @@ void SafepointSynchronize::begin() {
   EventSafepointBegin begin_event;
   SafepointTracing::begin(VMThread::vm_op_type());
 
+  log_trace(safepoint)("Suspending GC threads");
   Universe::heap()->safepoint_synchronize_begin();
 
   // By getting the Threads_lock, we assure that no threads are about to start or
   // exit. It is released again in SafepointSynchronize::end().
+  log_trace(safepoint)("Blocking threads from starting/exiting");
   Threads_lock->lock();
 
   assert( _state == _not_synchronized, "trying to safepoint synchronize with wrong state");
@@ -344,8 +349,6 @@ void SafepointSynchronize::begin() {
   int nof_threads = Threads::number_of_threads();
 
   _nof_threads_hit_polling_page = 0;
-
-  log_debug(safepoint)("Safepoint synchronization initiated using %s wait barrier. (%d threads)", _wait_barrier->description(), nof_threads);
 
   // Reset the count of active JNI critical threads
   _current_jni_active_count = 0;
@@ -365,6 +368,7 @@ void SafepointSynchronize::begin() {
   int initial_running = 0;
 
   // Arms the safepoint, _current_jni_active_count and _waiting_to_block must be set before.
+  log_trace(safepoint)("Arming safepoint using %s wait barrier", _wait_barrier->description());
   arm_safepoint();
 
   // Will spin until all threads are safe.
@@ -472,8 +476,10 @@ void SafepointSynchronize::end() {
   EventSafepointEnd event;
   assert(Thread::current()->is_VM_thread(), "Only VM thread can execute a safepoint");
 
+  log_trace(safepoint)("Disarming safepoint");
   disarm_safepoint();
 
+  log_trace(safepoint)("Resuming GC threads");
   Universe::heap()->safepoint_synchronize_end();
 
   SafepointTracing::end();
@@ -552,6 +558,9 @@ void SafepointSynchronize::block(JavaThread *thread) {
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
+  log_trace(safepoint)("Blocking thread " INTPTR_FORMAT " [%d]",
+                       p2i(thread), thread->osthread()->thread_id());
+
   // Only bail from the block() call if the thread is gone from the
   // thread list; starting to exit should still block.
   if (thread->is_terminated()) {
@@ -595,6 +604,9 @@ void SafepointSynchronize::block(JavaThread *thread) {
 
   // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
+
+  log_trace(safepoint)("Unblocking thread " INTPTR_FORMAT " [%d]",
+                       p2i(thread), thread->osthread()->thread_id());
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -956,6 +968,7 @@ void SafepointTracing::begin(VM_Operation::VMOp_Type type) {
   _last_safepoint_end_time_ns = 0;
 
   RuntimeService::record_safepoint_begin(_last_app_time_ns);
+  log_debug(safepoint)("Safepoint synchronization initiated");
 }
 
 void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps) {
@@ -964,10 +977,12 @@ void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps)
   _nof_running = nof_running;
   _page_trap   = traps;
   RuntimeService::record_safepoint_synchronized(_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns);
+  log_debug(safepoint)("Safepoint synchronization complete");
 }
 
 void SafepointTracing::leave() {
   _last_safepoint_leave_time_ns = os::javaTimeNanos();
+  log_debug(safepoint)("Leaving safepoint");
 }
 
 void SafepointTracing::end() {
@@ -1002,4 +1017,5 @@ void SafepointTracing::end() {
      );
 
   RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns);
+  log_debug(safepoint)("Safepoint complete");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,19 +85,19 @@ import java.util.stream.Stream;
  * {@code runXX()} methods of {@link TestFramework}. The second way, which gives more control, is to create a new
  * {@code TestFramework} builder object on which {@link #start()} needs to be eventually called to start the testing.
  * <p>
- * The framework is called from the <i>driver VM</i> in which the JTreg test is initially run by specifying {@code
+ * The framework is called from the <i>Driver VM</i> in which the JTreg test is initially run by specifying {@code
  * @run driver} in the JTreg header. This strips all additionally specified JTreg VM and Javaoptions.
- * The framework creates a new <i>flag VM</i> with all these flags added again in order to figure out which flags are
+ * The framework creates a new <i>Flag VM</i> with all these flags added again in order to figure out which flags are
  * required to run the tests specified in the test class (e.g. {@code -XX:+PrintIdeal} and {@code -XX:+PrintOptoAssembly}
  * for IR matching).
  * <p>
- * After the flag VM terminates, it starts a new <i>test VM</i> which performs the execution of the specified
+ * After the Flag VM terminates, it starts a new <i>Test VM</i> which performs the execution of the specified
  * tests in the test class as described in {@link Test}, {@link Check}, and {@link Run}.
  * <p>
- * In a last step, once the test VM has terminated without exceptions, IR matching is performed if there are any IR
+ * In a last step, once the Test VM has terminated without exceptions, IR matching is performed if there are any IR
  * rules and if no VM flags disable it (e.g. not running with {@code -Xint}, see {@link IR} for more details).
  * The IR regex matching is done on the output of {@code -XX:+PrintIdeal} and {@code -XX:+PrintOptoAssembly} by parsing
- * the hotspot_pid file of the test VM. Failing IR rules are reported by throwing a {@link IRViolationException}.
+ * the hotspot_pid file of the Test VM. Failing IR rules are reported by throwing a {@link IRViolationException}.
  *
  * @see Test
  * @see Check
@@ -166,7 +166,7 @@ public class TestFramework {
                                                #############################################################
                                                 - To only run the failed tests use -DTest, -DExclude,
                                                   and/or -DScenarios.
-                                                - To also get the standard output of the test VM run with
+                                                - To also get the standard output of the Test VM run with
                                                   -DReportStdout=true or for even more fine-grained logging
                                                   use -DVerbose=true.
                                                #############################################################
@@ -236,10 +236,10 @@ public class TestFramework {
     }
 
     /**
-     * Tests the class from which this method was invoked from. The test VM is called with the specified {@code flags}.
+     * Tests the class from which this method was invoked from. The Test VM is called with the specified {@code flags}.
      * <ul>
      *     <li><p>The {@code flags} override any set VM or Javaoptions flags by JTreg by default.<p>
-     *            Use {@code -DPreferCommandLineFlags=true} if you want to prefer the JTreg VM and  Javaoptions flags over
+     *            Use {@code -DPreferCommandLineFlags=true} if you want to prefer the JTreg VM and Javaoptions flags over
      *            the specified {@code flags} of this method.</li>
      *     <li><p>If you want to run your entire JTreg test with additional flags, use this method.</li>
      *     <li><p>If you want to run your entire JTreg test with additional flags but for another test class then the one
@@ -248,7 +248,7 @@ public class TestFramework {
      *            {@link #addScenarios(Scenario...)}</li>
      * </ul>
      *
-     * @param flags VM flags to be used for the test VM.
+     * @param flags VM flags to be used for the Test VM.
      */
     public static void runWithFlags(String... flags) {
         StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
@@ -258,13 +258,13 @@ public class TestFramework {
     }
 
     /**
-     * Add VM flags to be used for the test VM. These flags override any VM or Javaoptions set by JTreg by default.<p>
+     * Add VM flags to be used for the Test VM. These flags override any VM or Javaoptions set by JTreg by default.<p>
      * Use {@code -DPreferCommandLineFlags=true} if you want to prefer the VM or Javaoptions over the scenario flags.
      *
      * <p>
      * The testing can be started by invoking {@link #start()}
      *
-     * @param flags VM options to be applied to the test VM.
+     * @param flags VM options to be applied to the Test VM.
      * @return the same framework instance.
      */
     public TestFramework addFlags(String... flags) {
@@ -306,7 +306,7 @@ public class TestFramework {
     }
 
     /**
-     * Add scenarios to be used for the test VM. A test VM is called for each scenario in {@code scenarios} by using the
+     * Add scenarios to be used for the Test VM. A Test VM is called for each scenario in {@code scenarios} by using the
      * specified VM flags in the scenario. The scenario flags override any flags set by {@link #addFlags(String...)}
      * and thus also override any VM or Javaoptions set by JTreg by default.<p>
      * Use {@code -DPreferCommandLineFlags=true} if you want to prefer the VM and Javaoptions over the scenario flags.
@@ -314,7 +314,7 @@ public class TestFramework {
      * <p>
      * The testing can be started by invoking {@link #start()}
      *
-     * @param scenarios scenarios which specify specific flags for the test VM.
+     * @param scenarios scenarios which specify specific flags for the Test VM.
      * @return the same framework instance.
      */
     public TestFramework addScenarios(Scenario... scenarios) {
@@ -327,8 +327,10 @@ public class TestFramework {
 
         for (Scenario scenario : scenarios) {
             int scenarioIndex = scenario.getIndex();
-            TestFormat.checkNoThrow(scenarioIndices.add(scenarioIndex),
-                             "Cannot define two scenarios with the same index " + scenarioIndex);
+            if (!scenarioIndices.add(scenarioIndex)) {
+                TestFormat.failNoThrow("Cannot define two scenarios with the same index " + scenarioIndex);
+                continue;
+            }
             this.scenarios.add(scenario);
         }
         TestFormat.throwIfAnyFailures();
@@ -336,9 +338,12 @@ public class TestFramework {
     }
 
     /**
-     * Add the cross-product (cartesian product) of sets of flags as Scenarios. Unlike when when constructing
+     * Add the cross-product (cartesian product) of sets of flags as Scenarios. Unlike when constructing
      * scenarios directly a string can contain multiple flags separated with a space. This allows grouping
-     * flags that have to be specified togeher. Further, an empty string in a set stands in for "no flag".
+     * flags that have to be specified together. Further, an empty string in a set stands in for "no flag".
+     * <p>
+     * Passing a single set will create a scenario for each of the provided flags in the set (i.e. the same as
+     * passing an additional set with an empty string only).
      * <p>
      * Example:
      * <pre>
@@ -355,7 +360,7 @@ public class TestFramework {
      *     Scenario(5, "-Xbatch -XX:-TieredCompilation", "-XX:+UseNewCode2")
      * </pre>
      *
-     * @param sets sets of flags to generate the cross product for.
+     * @param flagSets sets of flags to generate the cross product for.
      * @return the same framework instance.
      */
     @SafeVarargs
@@ -376,7 +381,7 @@ public class TestFramework {
 
         Stream<List<String>> crossProduct = Arrays.stream(flagSets)
             .reduce(
-                Stream.of(Collections.<String>emptyList()), // Initialize Stream<List<String>> acc with a Stream containing an empty list of Strings.
+                Stream.of(Collections.emptyList()), // Initialize Stream<List<String>> acc with a Stream containing an empty list of Strings.
                 (Stream<List<String>> acc, Set<String> set) ->
                     acc.flatMap(lAcc -> // For each List<String>> lAcc in acc...
                         set.stream().map(flag -> { // ...and each flag in the current set...
@@ -384,19 +389,19 @@ public class TestFramework {
                             newList.add(flag); // ...and append the flag.
                             return newList;
                         }) // This results in one List<List<String>> for each lAcc...
-                    ), // ...that get flattend into one big List<List<String>>.
-                (a, b) -> Stream.concat(a, b)); // combiner; if any reduction steps are executed in parallel, just concat two streams.
+                    ), // ...that get flattened into one big List<List<String>>.
+                Stream::concat); // combiner; if any reduction steps are executed in parallel, just concat two streams.
 
         Scenario[] newScenarios = crossProduct
             .map(flags -> new Scenario( // For each List<String> flags in crossProduct create a new Scenario.
                 idx.getAndIncrement(),
                 flags.stream() // Process flags
-                     .map(s -> Set.of(s.split("[ ]"))) // Split muliple flags in the same string into separate strings.
+                     .map(s -> Set.of(s.split("[ ]"))) // Split multiple flags in the same string into separate strings.
                      .flatMap(Collection::stream) // Flatten the Stream<List<String>> into Stream<String>>.
                      .filter(s -> !s.isEmpty()) // Remove empty string flags.
-                     .collect(Collectors.toList())
+                     .toList()
                      .toArray(new String[0])))
-            .collect(Collectors.toList()).toArray(new Scenario[0]);
+            .toList().toArray(new Scenario[0]);
         return addScenarios(newScenarios);
     }
 
@@ -498,10 +503,10 @@ public class TestFramework {
     }
 
     /**
-     * Get the VM output of the test VM. Use {@code -DVerbose=true} to enable more debug information. If scenarios
+     * Get the VM output of the Test VM. Use {@code -DVerbose=true} to enable more debug information. If scenarios
      * were run, use {@link Scenario#getTestVMOutput()}.
      *
-     * @return the last test VM output.
+     * @return the last Test VM output.
      */
     public static String getLastTestVMOutput() {
         return TestVMProcess.getLastTestVMOutput();
@@ -791,9 +796,9 @@ public class TestFramework {
     }
 
     /**
-     * Execute a separate "flag" VM with White Box access to determine all test VM flags. The flag VM sends an encoding of
-     * all required flags for the test VM to the driver VM over a socket. Once the flag VM exits, this driver VM parses the
-     * test VM flags, which also determine if IR matching should be done, and then starts the test VM to execute all tests.
+     * Execute a separate Flag VM with White Box access to determine all Test VM flags. The Flag VM sends an encoding of
+     * all required flags for the Test VM to the Driver VM over a socket. Once the Flag VM exits, this Driver VM parses the
+     * Test VM flags, which also determine if IR matching should be done, and then starts the Test VM to execute all tests.
      */
     private void start(Scenario scenario) {
         if (scenario != null && !scenario.isEnabled()) {
@@ -818,12 +823,12 @@ public class TestFramework {
                     "" : " - [" + String.join(", ", additionalFlags) + "]";
 
             if (shouldVerifyIR) {
-                // Only need to use flag VM if an IR verification is possibly done.
+                // Only need to use Flag VM if an IR verification is possibly done.
                 System.out.println("Run Flag VM:");
                 FlagVMProcess flagVMProcess = new FlagVMProcess(testClass, additionalFlags);
                 shouldVerifyIR = flagVMProcess.shouldVerifyIR();
                 if (shouldVerifyIR) {
-                    // Add more flags for the test VM which are required to do IR verification.
+                    // Add more flags for the Test VM which are required to do IR verification.
                     additionalFlags.addAll(flagVMProcess.getTestVMFlags());
                 } // else: Flag VM found a reason to not do IR verification.
             } else {
@@ -877,7 +882,7 @@ public class TestFramework {
             try {
                 TestClassParser testClassParser = new TestClassParser(testClass, isAllowNotCompilable);
                 Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
-                                                                     testVMProcess.getIrEncoding());
+                                                                     testVMProcess.getApplicableIRRules());
                 IRMatcher matcher = new IRMatcher(testClassMatchable);
                 matcher.match();
             } catch (IRViolationException e) {
@@ -887,7 +892,7 @@ public class TestFramework {
         } else {
             System.out.println("IR verification disabled either due to no @IR annotations, through explicitly setting " +
                                "-DVerify=false, due to not running a debug build, using a non-whitelisted JTreg VM or " +
-                               "Javaopts flag like -Xint, or running the test VM with other VM flags added by user code " +
+                               "Javaopts flag like -Xint, or running the Test VM with other VM flags added by user code " +
                                "that make the IR verification impossible (e.g. -XX:-UseCompile, " +
                                "-XX:TieredStopAtLevel=[1,2,3], etc.).");
         }

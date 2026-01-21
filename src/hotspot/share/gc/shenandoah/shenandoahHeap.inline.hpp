@@ -31,6 +31,7 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -268,15 +269,24 @@ inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
   return _cancelled_gc.get();
 }
 
-inline void ShenandoahHeap::clear_cancelled_gc(bool clear_oom_handler) {
+inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(GCCause::_no_gc);
+  reset_cancellation_time();
+  _oom_evac_handler.clear();
+}
+
+inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
+  const GCCause::Cause cancellation_cause = _cancelled_gc.cmpxchg(GCCause::_no_gc, expected);
+  if (cancellation_cause == expected) {
+    reset_cancellation_time();
+  }
+  return cancellation_cause;
+}
+
+inline void ShenandoahHeap::reset_cancellation_time() {
   if (_cancel_requested_time > 0) {
     log_debug(gc)("GC cancellation took %.3fs", (os::elapsedTime() - _cancel_requested_time));
     _cancel_requested_time = 0;
-  }
-
-  if (clear_oom_handler) {
-    _oom_evac_handler.clear();
   }
 }
 
@@ -334,9 +344,6 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   }
   if (w.has_monitor()) {
     w = w.monitor()->header();
-  } else if (w.is_being_inflated() || w.has_displaced_mark_helper()) {
-    // Informs caller that we aren't able to determine the age
-    return markWord::max_age + 1; // sentinel
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();

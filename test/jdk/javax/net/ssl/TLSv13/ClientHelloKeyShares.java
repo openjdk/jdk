@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,25 @@
  */
 
 // SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.  For further debugging output
-// set the -Djavax.net.debug=ssl:handshake property on the @run lines.
+// system properties in samevm/agentvm mode.
 
 /*
  * @test
- * @bug 8247630
+ * @bug 8247630 8314323
  * @summary Use two key share entries
- * @run main/othervm ClientHelloKeyShares 29 23
+ * @run main/othervm ClientHelloKeyShares 4588 29
  * @run main/othervm -Djdk.tls.namedGroups=secp384r1,secp521r1,x448,ffdhe2048 ClientHelloKeyShares 24 30
  * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,x25519 ClientHelloKeyShares 29
  * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,secp256r1 ClientHelloKeyShares 23
  * @run main/othervm -Djdk.tls.namedGroups=sect163k1,sect163r1,ffdhe2048,ffdhe3072,ffdhe4096 ClientHelloKeyShares 256
  * @run main/othervm -Djdk.tls.namedGroups=sect163k1,ffdhe2048,x25519,secp256r1 ClientHelloKeyShares 256 29
  * @run main/othervm -Djdk.tls.namedGroups=secp256r1,secp384r1,ffdhe2048,x25519 ClientHelloKeyShares 23 256
- */
+ * @run main/othervm -Djdk.tls.namedGroups=X25519MLKEM768 ClientHelloKeyShares 4588
+ * @run main/othervm -Djdk.tls.namedGroups=x25519,X25519MLKEM768 ClientHelloKeyShares 29 4588
+ * @run main/othervm -Djdk.tls.namedGroups=SecP256r1MLKEM768,x25519 ClientHelloKeyShares 4587 29
+ * @run main/othervm -Djdk.tls.namedGroups=SecP384r1MLKEM1024,secp256r1 ClientHelloKeyShares 4589 23
+ * @run main/othervm -Djdk.tls.namedGroups=X25519MLKEM768,SecP256r1MLKEM768,X25519,secp256r1 ClientHelloKeyShares 4588 29
+*/
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
@@ -46,18 +50,29 @@ import java.util.*;
 
 public class ClientHelloKeyShares {
 
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl,handshake
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
     // Some TLS constants we'll use for testing
     private static final int TLS_REC_HANDSHAKE = 22;
     private static final int HELLO_EXT_SUPP_GROUPS = 10;
     private static final int HELLO_EXT_SUPP_VERS = 43;
     private static final int HELLO_EXT_KEY_SHARE = 51;
     private static final int TLS_PROT_VER_13 = 0x0304;
-    private static final int NG_SECP256R1 = 0x0017;
-    private static final int NG_SECP384R1 = 0x0018;
-    private static final int NG_X25519 = 0x001D;
-    private static final int NG_X448 = 0x001E;
 
     public static void main(String args[]) throws Exception {
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl,handshake");
+        }
+
         // Arguments to this test are an abitrary number of integer
         // values which will be the expected NamedGroup IDs in the key_share
         // extension.  Expected named group assertions may also be affected

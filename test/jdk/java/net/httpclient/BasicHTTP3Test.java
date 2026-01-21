@@ -78,7 +78,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
  */
 public class BasicHTTP3Test implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     String https2URI;
     HttpTestServer h3TestServer;  // HTTP/2 ( h2 + h3)
@@ -216,7 +216,6 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
-                .connectTimeout(Duration.ofSeconds(10))
                 .build();
         return TRACKER.track(client);
     }
@@ -344,10 +343,6 @@ public class BasicHTTP3Test implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new Handler(), "/https2/test/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/test/x";

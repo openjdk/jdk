@@ -34,7 +34,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fa">ܦܪܣܝܬ</language>
 			<language type="ff">ܦܘܠܐܗܝܬ</language>
 			<language type="fi">ܦܝܢܠܢܕܝܬ</language>
-			<language type="fil" draft="unconfirmed">ܦܝܠܝܦܝܢܝܬ</language>
+			<language type="fil">ܦܝܠܝܦܝܢܝܬ</language>
 			<language type="fon">ܦܘܢܝܬ</language>
 			<language type="fr">ܦܪܢܣܝܬ</language>
 			<language type="gaa">ܓܐܝܬ</language>
@@ -42,12 +42,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gu">ܓܘܓܐܪܝܬ</language>
 			<language type="he">ܥܒܪܐܝܬ</language>
 			<language type="hi">ܗܢܕܝܐ</language>
+			<language type="hi_Latn">ܗܢܕܝܐ (ܪܗܘܡܝܐ)</language>
 			<language type="hy">ܐܪܡܢܝܬ</language>
-			<language type="id" draft="unconfirmed">ܐܢܕܘܢܝܬ</language>
+			<language type="id">ܐܢܕܘܢܝܬ</language>
 			<language type="it">ܐܝܛܠܝܬ</language>
-			<language type="ja" draft="unconfirmed">ܝܦܢܝܐ</language>
+			<language type="ja">ܝܦܢܝܐ</language>
 			<language type="ka">ܓܘܪܓܝܐܝܬ</language>
-			<language type="ko" draft="unconfirmed">ܟܘܪܐܝܬ</language>
+			<language type="ko">ܟܘܪܝܐܝܬ</language>
 			<language type="ku">ܩܘܪܕܝܬ</language>
 			<language type="la">ܠܬܝܢܝܬ</language>
 			<language type="lg">ܓܢܕܝܬ</language>
@@ -68,18 +69,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sv">ܣܘܝܕܐܝܬ</language>
 			<language type="sw">ܣܘܐܗܝܠܐܝܬ</language>
 			<language type="syr">ܣܘܪܝܝܐ</language>
-			<language type="th" draft="unconfirmed">ܬܝܠܢܕܐܝܬ</language>
+			<language type="th">ܬܝܠܢܕܐܝܬ</language>
 			<language type="tr">ܬܘܪܟܝܬ</language>
 			<language type="uk">ܐܘܟܪܐܝܢܐܝܬ</language>
 			<language type="und">ܠܫܢܐ ܠܐ ܝܕܝܥܐ</language>
 			<language type="ur">ܐܘܪܕܘܝܬ</language>
 			<language type="vi">ܒܝܬܢܐܡܐܝܬ</language>
 			<language type="yi">ܝܕܝܬܝܬ</language>
-			<language type="zh">ܨܝܢܝܬ</language>
-			<language type="zh" alt="menu">ܨܝܢܝܬ (ܡܐܢܕܘܪܝܐ)</language>
-			<language type="zh_Hans">ܨܝܢܝܬ (ܦܫܝܛܐ)</language>
-			<language type="zh_Hans" alt="long">ܨܝܢܝܬ (ܡܐܢܕܘܪܝܐ ܦܫܝܛܐ)</language>
-			<language type="zh_Hant">ܨܝܢܐܝܬ</language>
+			<language type="zh">ܨܝܢܐܝܬ</language>
+			<language type="zh_Hans">ܨܝܢܐܝܬ ܦܫܝܛܐ</language>
+			<language type="zh_Hant">ܨܝܢܐܝܬ ܝܘܒܠܝܐ</language>
 		</languages>
 		<scripts>
 			<script type="Arab">ܥܪܒܝܬ</script>
@@ -87,58 +86,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Armn">ܐܪܡܢܝܬ</script>
 			<script type="Beng" draft="unconfirmed">ܒܢܓܠܝܬ</script>
 			<script type="Bopo" draft="unconfirmed">ܒܘܦܘܡܘܦܘܐܝܬ</script>
-			<script type="Cyrl" draft="unconfirmed">ܣܝܪܝܠܝܐ</script>
+			<script type="Cyrl">ܩܘܪܠܝܐ</script>
 			<script type="Ethi" draft="unconfirmed">ܟܘܫܝܬ</script>
 			<script type="Geor">ܓܘܪܓܝܬ</script>
 			<script type="Grek">ܝܘܢܝܬ</script>
 			<script type="Gujr">ܓܘܓܐܪܝܬ</script>
-			<script type="Hans" draft="unconfirmed">ܗܢܙ</script>
-			<script type="Hant" draft="unconfirmed">ܗܢܙ ܦܫܝܛܐ</script>
+			<script type="Hans">ܦܫܝܛܐ</script>
+			<script type="Hans" alt="stand-alone">ܨܝܢܐܝܬ ܦܫܝܛܐ</script>
+			<script type="Hant">ܝܘܒܠܝܐ</script>
+			<script type="Hant" alt="stand-alone">ܨܝܢܐܝܬ ܝܘܒܠܝܐ</script>
 			<script type="Hebr">ܥܒܪܝܬ</script>
-			<script type="Jpan" draft="unconfirmed">ܝܦܢܝܐ</script>
+			<script type="Jpan">ܝܦܢܐܝܬ</script>
 			<script type="Knda" draft="unconfirmed">ܟܢܕܐܝܬ</script>
-			<script type="Kore" draft="unconfirmed">ܟܘܪܐܝܬ</script>
-			<script type="Latn" draft="unconfirmed">ܠܬܝܢܝܐ</script>
+			<script type="Kore">ܟܘܪܝܐܝܬ</script>
+			<script type="Latn">ܪܗܘܡܝܐ</script>
 			<script type="Syrc">ܣܘܪܝܬ</script>
 			<script type="Zsye">ܐܝܡܘܓܝ</script>
-			<script type="Zxxx">ܠܝܬ ܟܬܝܒܘܬܐ</script>
-			<script type="Zzzz">ܠܝܬ ܛܟܣܐ ܕܟܬܝܒܬܐ</script>
+			<script type="Zxxx">ܕܠܐ ܟܬܒܐ</script>
+			<script type="Zzzz">ܟܬܝܒܘܬܐ ܠܐ ܝܕܝܥܬܐ</script>
 		</scripts>
 		<territories>
-			<territory type="001">ܬܐܒܝܠ</territory>
+			<territory type="001">ܥܠܡܐ</territory>
 			<territory type="002">ܐܦܪܝܩܐ</territory>
 			<territory type="003">ܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</territory>
 			<territory type="005">ܐܡܪܝܟܐ ܬܝܡܢܝܬܐ</territory>
 			<territory type="009">ܐܘܩܝܢܘܣܝܐ</territory>
-			<territory type="011">ܐܦܪܝܩܐ ܡܥܪܒܝܬܐ</territory>
+			<territory type="011">ܡܥܪܒ ܐܦܪܝܩܐ</territory>
 			<territory type="013">ܐܡܪܝܟܐ ܡܨܥܝܬܐ</territory>
-			<territory type="014">ܐܦܪܝܩܐ ܡܕܢܚܝܬܐ</territory>
-			<territory type="015">ܐܦܪܝܩܐ ܓܪܒܝܝܬܐ</territory>
-			<territory type="017">ܐܦܪܝܩܐ ܡܨܥܝܬܐ</territory>
-			<territory type="018">ܐܦܪܝܩܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="014">ܡܕܢܚ ܐܦܪܝܩܐ</territory>
+			<territory type="015">ܓܪܒܐ ܐܦܪܝܩܐ</territory>
+			<territory type="017">ܡܨܥܬ ܐܦܪܝܩܐ</territory>
+			<territory type="018">ܬܝܡܢ ܐܦܪܝܩܐ</territory>
 			<territory type="019">ܐܡܪ̈ܝܟܐ</territory>
-			<territory type="021">ܓܪܒܝܐ ܐܡܪܝܟܐ</territory>
-			<territory type="029">ܟܐܪܝܒܝܢ</territory>
-			<territory type="030">ܐܣܝܐ ܡܕܢܚܝܬܐ</territory>
-			<territory type="034">ܐܣܝܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="021">ܓܪܒܐ ܐܡܪܝܟܐ</territory>
+			<territory type="029">ܟܐܪܝܒܐ</territory>
+			<territory type="030">ܡܕܢܚ ܐܣܝܐ</territory>
+			<territory type="034">ܬܝܡܢ ܐܣܝܐ</territory>
 			<territory type="035">ܬܝܡܢ ܡܕܢܚ ܐܣܝܐ</territory>
-			<territory type="039">ܐܘܪܘܦܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="039">ܬܝܡܢ ܐܘܪܘܦܐ</territory>
 			<territory type="053">ܐܘܣܛܪܐܠܐܣܝܐ</territory>
 			<territory type="054">ܡܝܠܐܢܝܣܝܐ</territory>
 			<territory type="057">ܡܝܟܪܘܢܝܙܝܐ</territory>
 			<territory type="061">ܦܘܠܢܝܣܝܐ</territory>
 			<territory type="142">ܐܣܝܐ</territory>
-			<territory type="143">ܐܣܝܐ ܡܨܥܝܬܐ</territory>
-			<territory type="145">ܐܣܝܐ ܡܥܪܒܝܬܐ</territory>
+			<territory type="143">ܡܨܥܬ ܐܣܝܐ</territory>
+			<territory type="145">ܡܥܪܒ ܐܣܝܐ</territory>
 			<territory type="150">ܐܘܪܘܦܐ</territory>
-			<territory type="151">ܐܘܪܘܦܐ ܡܕܢܚܝܬܐ</territory>
-			<territory type="154">ܐܘܪܘܦܐ ܓܪܒܝܝܬܐ</territory>
-			<territory type="155">ܐܘܪܘܦܐ ܡܥܪܒ݂ܝܬܐ</territory>
-			<territory type="202">ܐܦܪܝܩܐ ܨܚܪܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="151">ܡܕܢܚ ܐܘܪܘܦܐ</territory>
+			<territory type="154">ܓܪܒܐ ܐܘܪܘܦܐ</territory>
+			<territory type="155">ܡܥܪܒ ܐܘܪܘܦܐ</territory>
+			<territory type="202">ܐܦܪܝܩܐ ܬܝܡܢ ܨܚܪܐ</territory>
 			<territory type="419">ܐܡܪܝܟܐ ܠܬܝܢܝܬܐ</territory>
-			<territory type="AC" draft="unconfirmed">ܓܙܪܬܐ ܕܐܣܝܢܫܘܢ</territory>
+			<territory type="AC">ܓܙܪܬܐ ܕܣܘܠܩܐ</territory>
 			<territory type="AD">ܐܢܕܘܪܐ</territory>
-			<territory type="AE">ܐܡܝܪ̈ܘܬܐ ܡܚܝܕ̈ܬܐ ܥܪ̈ܒܝܐ</territory>
+			<territory type="AE">ܐܡܝܪ̈ܘܬܐ ܥܪ̈ܒܝܬܐ ܡܚܝ̈ܕܬܐ</territory>
 			<territory type="AF">ܐܦܓܐܢܣܬܐܢ</territory>
 			<territory type="AG">ܐܢܬܝܓܘܐ ܘܒܐܪܒܘܕܐ</territory>
 			<territory type="AI">ܐܢܓܘܝܠܐ</territory>
@@ -147,11 +148,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AO">ܐܢܓܘܠܐ</territory>
 			<territory type="AQ">ܐܢܬܪܬܝܟܐ</territory>
 			<territory type="AR">ܐܪܓܢܬܝܢܐ</territory>
-			<territory type="AS">ܣܡܘܐ ܐܡܝܖ̈ܟܝܐ</territory>
+			<territory type="AS">ܣܡܘܐ ܐܡܪܝܟܝܬܐ</territory>
 			<territory type="AT">ܐܘܣܛܪܝܐ</territory>
 			<territory type="AU">ܐܘܣܬܪܠܝܐ</territory>
 			<territory type="AW">ܐܪܘܒܐ</territory>
-			<territory type="AX">ܓܙܝܖ̈ܐ ܕܐܠܐܢܕ</territory>
+			<territory type="AX">ܓܙܪ̈ܬܐ ܕܐܠܐܢܕ</territory>
 			<territory type="AZ">ܐܙܪܒܝܓܐܢ</territory>
 			<territory type="BA">ܒܘܣܢܐ ܘܗܪܬܣܓܘܒܝܢܐ</territory>
 			<territory type="BB">ܒܪܒܐܕܘܣ</territory>
@@ -162,11 +163,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BH">ܒܚܪܝܢ</territory>
 			<territory type="BI">ܒܘܪܘܢܕܝ</territory>
 			<territory type="BJ">ܒܢܝܢ</territory>
-			<territory type="BL">ܡܪܬܝ ܒܪ ܬܘܠܡܝ</territory>
-			<territory type="BM">ܒܪܡܘܕܐ</territory>
+			<territory type="BL">ܡܪܝ ܒܪ ܬܘܠܡܝ</territory>
+			<territory type="BM">ܒܝܪܡܘܕܐ</territory>
 			<territory type="BN">ܒܪܘܢܐܝ</territory>
 			<territory type="BO">ܒܘܠܝܒܝܐ</territory>
-			<territory type="BQ">ܟܐܪܝܒܝܢ ܕܢܝܬܝܪܠܐܢܕܣ</territory>
+			<territory type="BQ">ܟܐܪܝܒܐ ܕܢܝܬܝܪܠܐܢܕܣ</territory>
 			<territory type="BR">ܒܪܐܙܝܠ</territory>
 			<territory type="BS">ܒܗܐܡܣ</territory>
 			<territory type="BT">ܒܘܬܐܢ</territory>
@@ -175,7 +176,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BY">ܒܠܐܪܘܣ</territory>
 			<territory type="BZ">ܒܠܝܙ</territory>
 			<territory type="CA">ܟܢܕܐ</territory>
-			<territory type="CC">ܓܙܝܖ̈ܐ ܕܟܘܟܘܣ</territory>
+			<territory type="CC">ܓܙܪ̈ܬܐ ܕܟܘܟܘܣ</territory>
 			<territory type="CD">ܟܘܢܓܘ - ܟܝܢܫܐܣܐ</territory>
 			<territory type="CD" alt="variant">ܩܘܛܢܝܘܬܐ ܕܝܡܘܩܪܛܝܬܐ ܕܟܘܢܓܘ</territory>
 			<territory type="CF">ܩܘܛܢܝܘܬܐ ܕܐܦܪܝܩܐ ܡܨܥܝܬܐ</territory>
@@ -184,14 +185,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CH">ܣܘܝܣܪܐ</territory>
 			<territory type="CI">ܩܘܛ ܕܝܒܘܐܪ</territory>
 			<territory type="CI" alt="variant">ܣܘܦܐ ܕܓܪܡܦܝܠܐ</territory>
-			<territory type="CK">ܓܙܪܬܐ ܟܘܟ</territory>
+			<territory type="CK">ܓܙܪ̈ܬܐ ܟܘܟ</territory>
 			<territory type="CL">ܬܫܝܠܝ</territory>
 			<territory type="CM">ܟܐܡܪܘܢ</territory>
 			<territory type="CN">ܨܝܢ</territory>
 			<territory type="CO">ܟܘܠܘܡܒܝܐ</territory>
-			<territory type="CP" draft="unconfirmed">ܓܙܪܬܐ ܕܟܠܝܦܝܪܬܘܢ</territory>
-			<territory type="CR">ܟܘܣܬܐ ܪܝܩܐ</territory>
-			<territory type="CU">ܟܘܒܐ</territory>
+			<territory type="CP">ܓܙܪܬܐ ܕܟܠܝܦܝܪܬܘܢ</territory>
+			<territory type="CQ">ܣܐܪܟ</territory>
+			<territory type="CR">ܟܘܣܬܐ ܪܝܟܐ</territory>
+			<territory type="CU">ܩܘܒܐ</territory>
 			<territory type="CV">ܟܐܦ ܒܝܪܕܝ (ܪܝܫܐ ܝܘܪܩܐ)</territory>
 			<territory type="CW">ܟܘܪܐܟܘ</territory>
 			<territory type="CX">ܓܙܪܬܐ ܕܟܪܝܣܬܡܣ</territory>
@@ -199,7 +201,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CZ">ܬܫܝܟܝܐ</territory>
 			<territory type="CZ" alt="variant">ܬܫܝܟ</territory>
 			<territory type="DE">ܐܠܡܢܝܐ</territory>
-			<territory type="DG" draft="unconfirmed">ܕܐܝܓܘ ܓܪܣܝܐ</territory>
+			<territory type="DG">ܕܝܐܓܘ ܓܐܪܣܝܐ</territory>
 			<territory type="DJ">ܓܝܒܘܛܝ</territory>
 			<territory type="DK">ܕܐܢܡܐܪܩ</territory>
 			<territory type="DM">ܕܘܡܝܢܝܩܐ</territory>
@@ -217,10 +219,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="EZ">ܩܠܝܡܐ ܕܐܘܪܘ</territory>
 			<territory type="FI">ܦܝܢܠܢܕ</territory>
 			<territory type="FJ">ܦܝܓܝ</territory>
-			<territory type="FK">ܓܙܪܬܐ ܕܦܠܟܠܢܕ</territory>
-			<territory type="FK" alt="variant">ܓܙܪܬܐ ܕܡܠܒܢܐܣ</territory>
-			<territory type="FM">ܐܬܪܘܬܐ ܦܕܪܠܝܐ ܕܡܝܩܪܘܢܝܣܝܐ</territory>
-			<territory type="FO">ܓܙܝܖ̈ܐ ܕܦܪܘ</territory>
+			<territory type="FK">ܓܙܪ̈ܬܐ ܕܦܠܟܠܢܕ</territory>
+			<territory type="FK" alt="variant">ܓܙܪ̈ܬܐ ܕܡܠܒܢܐܣ</territory>
+			<territory type="FM">ܐܬܪ̈ܘܬܐ ܦܕܪܠܝܐ ܕܡܝܩܪܘܢܝܣܝܐ</territory>
+			<territory type="FO">ܓܙܪ̈ܬܐ ܕܦܪܘ</territory>
 			<territory type="FR">ܦܪܢܣܐ</territory>
 			<territory type="GA">ܓܒܘܢ</territory>
 			<territory type="GB">ܡܠܟܘܬܐ ܡܚܝܕܬܐ</territory>
@@ -236,42 +238,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GP">ܓܘܐܕܘܠܘܦܐܝ</territory>
 			<territory type="GQ">ܓܝܢܝܐ ܫܘܝܬܐ</territory>
 			<territory type="GR">ܝܘܢ</territory>
-			<territory type="GS">ܓܙܝܖ̈ܐ ܕܓܘܪܓܝܐ ܘܣܐܢܕܘܝܟ ܬܝܡܢܝ̈ܐ</territory>
+			<territory type="GS">ܓܙܪ̈ܬܐ ܕܓܘܪܓܝܐ ܘܣܐܢܕܘܝܟ ܬܝܡܢܝ̈ܐ</territory>
 			<territory type="GT">ܓܘܐܬܝܡܐܠܐ</territory>
 			<territory type="GU">ܓܘܐܡ</territory>
 			<territory type="GW">ܓܝܢܝܐ ܒܝܣܐܘ</territory>
 			<territory type="GY">ܓܘܝܐܢܐ</territory>
 			<territory type="HK">ܗܘܢܓ ܟܘܢܓ</territory>
-			<territory type="HM" draft="unconfirmed">ܓܙܝܪ̈ܐ ܕܗܪܕ ܘܡܟܕܘܢܠܕ</territory>
+			<territory type="HM">ܓܙܪ̈ܬܐ ܕܗܪܕ ܘܡܟܕܘܢܠܕ</territory>
 			<territory type="HN">ܗܘܢܕܘܪܣ</territory>
 			<territory type="HR">ܩܪܘܐܛܝܐ</territory>
 			<territory type="HT">ܗܐܝܬܝ</territory>
 			<territory type="HU">ܡܓܪ</territory>
-			<territory type="IC">ܓܙܝܖ̈ܐ ܕܟܐܢܪܝ</territory>
+			<territory type="IC">ܓܙܝܪ̈ܐ ܕܟܐܢܪܝ</territory>
 			<territory type="ID">ܐܝܢܕܘܢܝܣܝܐ</territory>
 			<territory type="IE">ܐܝܪܠܢܕ</territory>
 			<territory type="IL">ܐܝܣܪܐܝܠ</territory>
 			<territory type="IM">ܓܙܪܬܐ ܕܡܐܢ</territory>
 			<territory type="IN">ܗܢܕܘ</territory>
-			<territory type="IO">ܩܠܝܡܐ ܕܒܪܝܛܢܝܐ ܓܘ ܐܘܩܝܢܘܣ ܗܢܕܘܝܐ</territory>
+			<territory type="IO">ܐܬܪܐ ܕܐܘܩܝܢܘܣ ܗܢܕܘܝܐ ܕܒܪܝܛܢܝܐ</territory>
+			<territory type="IO" alt="chagos">ܓܙܪ̈ܬܐ ܕܟܐܓܘܣ</territory>
 			<territory type="IQ">ܥܝܪܩ</territory>
 			<territory type="IR">ܐܝܪܐܢ</territory>
 			<territory type="IS">ܐܝܣܠܢܕ</territory>
 			<territory type="IT">ܐܝܛܠܝܐ</territory>
 			<territory type="JE">ܓܝܪܙܝ</territory>
 			<territory type="JM">ܓܡܝܟܐ</territory>
-			<territory type="JO">ܐܘܪܕܘܢ</territory>
+			<territory type="JO">ܝܘܪܕܢܢ</territory>
 			<territory type="JP">ܝܦܢ</territory>
-			<territory type="KE">ܩܝܢܝܐ</territory>
+			<territory type="KE">ܟܝܢܝܐ</territory>
 			<territory type="KG">ܩܝܪܓܝܙܣܬܐܢ</territory>
 			<territory type="KH">ܟܡܒܘܕܝܐ</territory>
 			<territory type="KI">ܟܝܪܝܒܬܝ</territory>
 			<territory type="KM">ܓܙܪܬܐ ܕܩܡܪ</territory>
 			<territory type="KN">ܣܐܢܬ ܟܝܬܣ ܘܢܝܒܝܣ</territory>
-			<territory type="KP">ܟܘܪܝܐ ܕܓܪܒܝܐ</territory>
-			<territory type="KR">ܟܘܪܝܐ ܕܬܝܡܢܝܐ</territory>
+			<territory type="KP">ܟܘܪܝܐ ܓܪܒܝܝܬܐ</territory>
+			<territory type="KR">ܟܘܪܝܐ ܬܝܡܢܝܬܐ</territory>
 			<territory type="KW">ܟܘܝܬ</territory>
-			<territory type="KY">ܓܙܝܖ̈ܐ ܕܟܐܝܡܐܢ</territory>
+			<territory type="KY">ܓܙܪ̈ܬܐ ܕܟܐܝܡܐܢ</territory>
 			<territory type="KZ">ܟܙܩܣܬܐܢ</territory>
 			<territory type="LA">ܠܐܘܣ</territory>
 			<territory type="LB">ܠܒܢܢ</territory>
@@ -290,13 +293,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ME">ܡܘܢܛܝܢܝܓܪܘ</territory>
 			<territory type="MF">ܣܐܢܬ ܡܐܪܬܝܢ</territory>
 			<territory type="MG">ܡܕܓܣܩܪ</territory>
-			<territory type="MH">ܓܙܪܬܐ ܡܐܪܫܐܠ</territory>
+			<territory type="MH">ܓܙܪ̈ܬܐ ܡܐܪܫܐܠ</territory>
 			<territory type="MK">ܓܪܒܝ ܡܩܕܘܢܝܐ</territory>
 			<territory type="ML">ܡܐܠܝ</territory>
 			<territory type="MM">ܡܝܐܢܡܐܪ (ܒܘܪܡܐ)</territory>
-			<territory type="MN">ܡܘܢܓܘܠܝܐ</territory>
-			<territory type="MO" draft="unconfirmed">ܡܐܟܐܘ</territory>
-			<territory type="MP">ܓܙܝܖ̈ܐ ܕܡܪܝܢܐ ܓܪܒܝܐ</territory>
+			<territory type="MN">ܡܘܓܠܝܐ</territory>
+			<territory type="MO">ܐܬܪܐ ܡܕܒܪܢܝܐ ܦܪܝܫܐ ܕܡܐܟܐܘ</territory>
+			<territory type="MP">ܓܙܪ̈ܬܐ ܕܡܪܝܢܐ ܓܪ̈ܒܝܝܬܐ</territory>
 			<territory type="MQ">ܡܐܪܬܝܢܝܩ</territory>
 			<territory type="MR">ܡܘܪܝܛܢܝܐ</territory>
 			<territory type="MS">ܡܘܢܣܝܪܐܬ</territory>
@@ -308,30 +311,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MY">ܡܠܝܙܝܐ</territory>
 			<territory type="MZ">ܡܘܙܡܒܝܩ</territory>
 			<territory type="NA">ܢܡܝܒܝܐ</territory>
-			<territory type="NC" draft="unconfirmed">ܢܝܘ ܟܠܝܕܘܢܝܐ</territory>
+			<territory type="NC">ܢܝܘ ܟܠܝܕܘܢܝܐ</territory>
 			<territory type="NE">ܢܝܓܪ</territory>
-			<territory type="NF" draft="unconfirmed">ܓܙܪܬܐ ܕܢܘܪܦܠܟ</territory>
+			<territory type="NF">ܓܙܪܬܐ ܕܢܘܪܦܘܠܟ</territory>
 			<territory type="NG">ܢܝܓܝܪܝܐ</territory>
 			<territory type="NI">ܢܝܟܪܐܓܘܐ</territory>
 			<territory type="NL">ܗܘܠܢܕܐ</territory>
 			<territory type="NO">ܢܘܪܒܝܓ</territory>
 			<territory type="NP">ܢܝܦܐܠ</territory>
 			<territory type="NR">ܢܐܘܪܘ</territory>
-			<territory type="NU" draft="unconfirmed">ܢܘܥ</territory>
+			<territory type="NU">ܢܝܘܐܝ</territory>
 			<territory type="NZ">ܢܝܘ ܙܝܠܢܕ</territory>
-			<territory type="NZ" alt="variant" draft="unconfirmed">ܐܬܝܐܐܪܐܘ ܢܝܘ ܙܝܠܢܕ</territory>
+			<territory type="NZ" alt="variant">ܐܘܬܝܐܪܘܐ ܢܝܘ ܙܝܠܢܕ</territory>
 			<territory type="OM">ܥܘܡܐܢ</territory>
 			<territory type="PA">ܦܢܡܐ</territory>
 			<territory type="PE">ܦܝܪܘ</territory>
-			<territory type="PF" draft="unconfirmed">ܦܘܠܝܢܝܣܝܐ ܦܪܢܣܝܐ</territory>
+			<territory type="PF">ܦܘܠܝܢܝܣܝܐ ܦܪܢܣܝܬܐ</territory>
 			<territory type="PG">ܦܐܦܘܐ ܓܝܢܝܐ ܚܕܬܐ</territory>
 			<territory type="PH">ܦܝܠܝܦܝܢܝܐ</territory>
 			<territory type="PK">ܦܐܟܣܬܐܢ</territory>
 			<territory type="PL">ܦܘܠܢܕ</territory>
-			<territory type="PM">ܣܐܢܬ ܦܝܥܪ ܘܡܩܘܠܘܢ</territory>
-			<territory type="PN" draft="unconfirmed">ܓܙܝܪ̈ܐ ܕܦܝܬܟܐܝܪܢ</territory>
+			<territory type="PM">ܡܪܝ ܦܛܪܘܣ ܘܡܝܩܝܠܘܢ</territory>
+			<territory type="PN">ܓܙܝܪ̈ܬܐ ܕܦܝܬܟܐܪܢ</territory>
 			<territory type="PR">ܦܘܐܪܛܘ ܪܝܩܘ</territory>
-			<territory type="PS">ܐܬܖ̈ܘܬܐ ܕܦܠܣܛܝܢ</territory>
+			<territory type="PS">ܐܬܪ̈ܘܬܐ ܕܦܠܣܛܝܢ</territory>
 			<territory type="PS" alt="short">ܦܠܣܛܝܢ</territory>
 			<territory type="PT">ܦܘܪܛܘܓܠ</territory>
 			<territory type="PW">ܦܠܐܘ</territory>
@@ -365,16 +368,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SY">ܣܘܪܝܐ</territory>
 			<territory type="SZ">ܐܣܘܐܛܝܢܝ</territory>
 			<territory type="SZ" alt="variant">ܣܘܐܙܝܠܢܕ</territory>
-			<territory type="TA" draft="unconfirmed">ܬܪܝܣܬܢ ܕܟܘܢܗܐ</territory>
-			<territory type="TC">ܓܙܝܖ̈ܐ ܕܬܘܪܟܣ ܘܟܐܝܟܘܣ</territory>
+			<territory type="TA">ܬܪܝܣܬܢ ܕܟܘܢܗܐ</territory>
+			<territory type="TC">ܓܙܝܪ̈ܐ ܕܬܘܪܟܣ ܘܟܐܝܟܘܣ</territory>
 			<territory type="TD">ܬܫܐܕ</territory>
-			<territory type="TF">ܩܠܝܡ̈ܐ ܕܦܪܢܣܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="TF">ܐܬܪ̈ܘܬܐ ܬܝܡܢܝ̈ܬܐ ܕܦܪܢܣܐ</territory>
 			<territory type="TG">ܬܘܓܘ</territory>
 			<territory type="TH">ܬܐܝܠܢܕ</territory>
 			<territory type="TJ">ܬܐܓܝܟܣܬܐܢ</territory>
-			<territory type="TK" draft="unconfirmed">ܬܘܟܝܠܐܘ</territory>
-			<territory type="TL">ܬܝܡܘܪ-ܠܣܬܝ</territory>
-			<territory type="TL" alt="variant">ܬܝܡܘܪ ܡܕܢܚܐ</territory>
+			<territory type="TK">ܬܘܟܝܠܐܘ</territory>
+			<territory type="TL">ܡܕܢܚ ܬܝܡܘܪ</territory>
 			<territory type="TM">ܬܘܪܟܡܢܣܬܐܢ</territory>
 			<territory type="TN">ܬܘܢܣ</territory>
 			<territory type="TO">ܬܘܢܓܐ</territory>
@@ -385,7 +387,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TZ">ܛܢܙܢܝܐ</territory>
 			<territory type="UA">ܐܘܩܪܐܝܢܐ</territory>
 			<territory type="UG">ܐܘܓܢܕܐ</territory>
-			<territory type="UM" draft="unconfirmed">ܓܙܝܪ̈ܐ ܪ̈ܚܝܩܐ ܕܐܘܚܕ̈ܢܐ ܡܚܝܕ̈ܐ</territory>
+			<territory type="UM">ܓܙܪ̈ܬܐ ܒܪ̈ܝܬܐ ܕܐܘܚܕ̈ܢܐ ܡܚܝܕ̈ܐ</territory>
 			<territory type="UN">ܐܡ̈ܘܬܐ ܡܚܝ̈ܕܬܐ</territory>
 			<territory type="US">ܐܘܚܕ̈ܢܐ ܡܚܝܕ̈ܐ</territory>
 			<territory type="UY">ܐܘܪܘܓܘܐܝ</territory>
@@ -393,11 +395,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VA">ܡܕܝܢܬܐ ܕܘܛܝܩܢ</territory>
 			<territory type="VC">ܣܐܢܬ ܒܝܢܣܝܢܬ ܘܓܪܝܢܐܕܝܢܐܣ</territory>
 			<territory type="VE">ܒܢܙܘܝܠܐ</territory>
-			<territory type="VG">ܓܙܖ̈ܝܐ ܒܬܘ̈ܠܐ ܕܒܪܝܛܢܝܐ</territory>
-			<territory type="VI">ܓܙܖ̈ܝܐ ܒܬܘ̈ܠܐ ܕܐܡܝܪܟܐ</territory>
+			<territory type="VG">ܓܙܪ̈ܬܐ ܕܒܬܘ̈ܠܐ ܕܒܪܝܛܢܝܐ</territory>
+			<territory type="VI">ܓܙܪ̈ܬܐ ܕܒܬܘ̈ܠܐ ܕܐܡܪܝܟܐ</territory>
 			<territory type="VN">ܒܝܬܢܐܡ</territory>
 			<territory type="VU">ܒܐܢܘܐܛܘ</territory>
-			<territory type="WF" draft="unconfirmed">ܘܝܠܝܣ ܘܦܘܬܘܢܐ</territory>
+			<territory type="WF">ܘܐܠܝܣ ܘܦܘܬܘܢܐ</territory>
 			<territory type="WS">ܣܡܘܐ</territory>
 			<territory type="XK">ܩܘܣܘܒܘ</territory>
 			<territory type="YE">ܝܡܢ</territory>
@@ -405,7 +407,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZA">ܬܝܡܢ ܐܦܪܝܩܐ</territory>
 			<territory type="ZM">ܙܐܡܒܝܐ</territory>
 			<territory type="ZW">ܙܝܡܒܐܒܘܝ</territory>
-			<territory type="ZZ" draft="unconfirmed">ܩܠܝܡܐ ܠܐ ܝܕܝܥܐ</territory>
+			<territory type="ZZ">ܐܬܪܐ ܠܐ ܝܕܝܥܐ</territory>
 		</territories>
 		<keys>
 			<key type="calendar">ܣܘܪܓܕܐ</key>
@@ -423,10 +425,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="dangi">ܣܘܪܓܕܐ ܕܢܓܝ</type>
 			<type key="calendar" type="ethiopic">ܣܘܪܓܕܐ ܟܘܫܝܐ</type>
 			<type key="calendar" type="gregorian">ܣܘܪܓܕܐ ܓܪܝܓܘܪܝܐ</type>
+			<type key="calendar" type="gregorian" scope="core">ܓܪܝܓܘܪܝܐ</type>
 			<type key="calendar" type="hebrew">ܣܘܪܓܕܐ ܝܗܘܕܝܐ</type>
 			<type key="calendar" type="indian">ܣܘܪܓܕܐ ܐܘܡܬܢܝܐ ܗܢܕܘܝܐ</type>
-			<type key="calendar" type="islamic">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ</type>
-			<type key="calendar" type="islamic-civil">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ ܡܕܝܢܝܐ</type>
+			<type key="calendar" type="islamic">ܣܘܪܓܕܐ ܡܫܠܡܢܐ</type>
+			<type key="calendar" type="islamic" scope="core">ܣܘܪܓܕܐ ܡܫܠܡܢܐ</type>
+			<type key="calendar" type="islamic-civil">ܣܘܪܓܕܐ ܡܫܠܡܢܐ ܡܕܝܢܝܐ</type>
+			<type key="calendar" type="islamic-civil" scope="core">ܣܘܪܓܕܐ ܡܫܠܡܢܐ ܡܕܝܢܝܐ</type>
 			<type key="calendar" type="iso8601">ܣܘܪܓܕܐ ISO-8601</type>
 			<type key="calendar" type="japanese">ܣܘܪܓܕܐ ܝܦܢܝܐ</type>
 			<type key="calendar" type="persian">ܣܘܪܓܕܐ ܦܪܣܝܐ</type>
@@ -451,14 +456,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="grek">ܡܢܝ̈ܢܐ ܕܝܘܢܝ̈ܐ</type>
 			<type key="numbers" type="hebr">ܡܢܝ̈ܢܐ ܕܝܗܘܕܝ̈ܐ</type>
 			<type key="numbers" type="jpan">ܡܢܝ̈ܢܐ ܕܝܦܢܝ̈ܐ</type>
-			<type key="numbers" type="latn">ܡܢܝ̈ܢܐ ܡܥܪܒܝܐ</type>
+			<type key="numbers" type="latn">ܡܢܝ̈ܢܐ ܡܥܪ̈ܒܝܐ</type>
 			<type key="numbers" type="mong">ܡܢܝ̈ܢܐ ܕܡܘܢܓܘܠܢܝ̈ܐ</type>
 			<type key="numbers" type="roman">ܡܢܝ̈ܢܐ ܪܗܘܡܝܐ</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ܛܟܣܐ ܡܝܬܪܝܐ</measurementSystemName>
 			<measurementSystemName type="UK">ܛܟܣܐ ܒܪܝܛܢܝܐ</measurementSystemName>
-			<measurementSystemName type="US">ܛܟܣܐ ܐܡܝܪܟܐ</measurementSystemName>
+			<measurementSystemName type="US">ܛܟܣܐ ܐܡܪܝܟܝܐ</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">ܠܫܢܐ:‌ {0}</codePattern>
@@ -474,9 +479,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<characters>
 		<exemplarCharacters>[݀ ݃ ݄ ݇ ݈ ݉ ݊ ݁ ݅ ݂ ݆ ܑ ܰ ܱ ܲ ܳ ܴ ܵ ܶ ܷ ܸ ܹ ܺ ܻ ܼ ܽ ܾ ܿ ܃ ܄ ܅ ܆ ܇ ܈ ܉ ܁ ܂ ܀ ܊ ܋ ܌ ܍ ܐ ܒ ܓܔ ܖ ܕ ܗ ܘ ܙ ܚ ܛܜ ܝ ܞ ܟ ܠ ܡ ܢ ܣܤ ܥ ܦܧ ܨ ܩ ܪ ܫ ܬ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[܏\u200C\u200D ܭ ܮ ܯ ݍ ݎ ݏ]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[ܐ ܒ ܓ ܖ ܕ ܗ ܘ ܙ ܚ ܛ ܝ ܟ ܠ ܡ ܢ ܣ ܥ ܦ ܨ ܩ ܪ ܫ ܬ]</exemplarCharacters>
-		<exemplarCharacters type="numbers" draft="contributed">[\u061C\u200E \- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — ، ؛ \: ܃ ܄ ܅ ܆ ܇ ܈ ! ؟ ܉ . … ܁ ܂ ܀ '‘’ &quot;“” « » ( ) \[ \] ܊ ܋ ܌ ܍]</exemplarCharacters>
+		<exemplarCharacters type="index">[ܐ ܒ ܓ ܖ ܕ ܗ ܘ ܙ ܚ ܛ ܝ ܟ ܠ ܡ ܢ ܣ ܥ ܦ ܨ ܩ ܪ ܫ ܬ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\u061C\u200E \- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — ، ؛ \: ܃ ܄ ܅ ܆ ܇ ܈ ! ؟ ܉ . … ܁ ܂ ܀ '‘’ &quot;“” « » ( ) \[ \] ܊ ܋ ܌ ܍]</exemplarCharacters>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
@@ -748,8 +753,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="3">ܐ</month>
 							<month type="4">ܢ</month>
 							<month type="5">ܐ</month>
-							<month type="6">ܬ</month>
-							<month type="7">ܚ</month>
+							<month type="6">ܚ</month>
+							<month type="7">ܬ</month>
 							<month type="8">ܐ</month>
 							<month type="9">ܐ</month>
 							<month type="10">ܬ</month>
@@ -793,11 +798,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">܏ܪ ܐ</quarter>
+							<quarter type="2">܏ܪ ܒ</quarter>
+							<quarter type="3">܏ܪ ܓ</quarter>
+							<quarter type="4">܏ܪ ܕ</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">ܪܘܒܥܐ ܩܕܡܝܐ</quarter>
 							<quarter type="2">ܪܘܒܥܐ ܬܪܝܢܐ</quarter>
 							<quarter type="3">ܪܘܒܥܐ ܬܠܝܬܝܐ</quarter>
 							<quarter type="4">ܪܘܒܥܐ ܪܒܝܥܝܐ</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">܏ܪ ܐ</quarter>
+							<quarter type="2">܏ܪ ܒ</quarter>
+							<quarter type="3">܏ܪ ܓ</quarter>
+							<quarter type="4">܏ܪ ܕ</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -912,6 +931,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d ܒMMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">EEEE، d ܒMMM y G</dateFormatItem>
+						<dateFormatItem id="Hv">v HH܏ܫܥ</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
 						<dateFormatItem id="MEd">EEEE، dd/MM</dateFormatItem>
 						<dateFormatItem id="MMMd">d ܒMMM</dateFormatItem>
@@ -1027,6 +1047,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="islamic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">ܡܘܚܪܡ</month>
+							<month type="2">ܨܦܪ</month>
+							<month type="3">ܪܒܝܥ ܩܕܡܝܐ</month>
+							<month type="4">ܪܒܝܥ ܬܪܝܢܐ</month>
+							<month type="5">ܓܘܡܕܐ ܩܕܡܝܐ</month>
+							<month type="6">ܓܘܡܕܐ ܬܪܝܢܐ</month>
+							<month type="7">ܪܓܒ</month>
+							<month type="8">ܫܥܒܐܢ</month>
+							<month type="9">ܪܡܨܐܢ</month>
+							<month type="10">ܫܘܐܠ</month>
+							<month type="11">ܕܘܠܩܥܕܗ</month>
+							<month type="12">ܕܘܠܚܓܗ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1">ܡܘܚܪܡ</month>
+							<month type="2">ܨܦܪ</month>
+							<month type="3">ܪܒܝܥ ܩܕܡܝܐ</month>
+							<month type="4">ܪܒܝܥ ܬܪܝܢܐ</month>
+							<month type="5">ܓܘܡܕܐ ܩܕܡܝܐ</month>
+							<month type="6">ܓܘܡܕܐ ܬܪܝܢܐ</month>
+							<month type="7">ܪܓܒ</month>
+							<month type="8">ܫܥܒܐܢ</month>
+							<month type="9">ܪܡܨܐܢ</month>
+							<month type="10">ܫܘܐܠ</month>
+							<month type="11">ܕܘܠܩܥܕܗ</month>
+							<month type="12">ܕܘܠܚܓܗ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
@@ -1036,7 +1092,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ܫܢܬܐ</displayName>
 				<relative type="-1">ܐܫܬܩܕܝ</relative>
 				<relative type="0">ܗܕܐ ܫܢܬܐ</relative>
-				<relative type="1">ܫܢܬܐ ܐܚܪܬܐ</relative>
+				<relative type="1">ܫܢܬܐ ܕܐܬܝܐ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ܒܚܕܐ ܫܢܬܐ</relativeTimePattern>
 					<relativeTimePattern count="other">ܒ{0} ܫܢܝ̈ܐ</relativeTimePattern>
@@ -1045,6 +1101,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕܐ ܫܢܬܐ</relativeTimePattern>
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܢܝ̈ܐ</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="year-short">
+				<displayName>܏ܫܢ</displayName>
+				<relative type="-1">܏ܫܬܩܕ</relative>
+				<relative type="0">ܗܕ ܏ܫܢ</relative>
+				<relative type="1">܏ܫܢ ܕܐܬܝܐ</relative>
+			</field>
+			<field type="year-narrow">
+				<displayName>܏ܫܢ</displayName>
+				<relative type="-1">܏ܫܬܩܕ</relative>
+				<relative type="0">ܗܕ ܏ܫܢ</relative>
+				<relative type="1">܏ܫܢ ܕܐܬܝܐ</relative>
 			</field>
 			<field type="quarter">
 				<displayName>ܪܘܒܥܐ ܕܫܢܬܐ</displayName>
@@ -1060,9 +1128,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܪ̈ܘܒܥܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="quarter-short">
+				<displayName>ܪܒܘܥ ܏ܫܢ</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>ܪܒܘܥ ܏ܫܢ</displayName>
+			</field>
 			<field type="month">
 				<displayName>ܝܪܚܐ</displayName>
-				<relative type="-1">ܝܪܚܐ ܕܕܥܒܪ</relative>
+				<relative type="-1">ܝܪܚܐ ܐܚܪܝܐ</relative>
 				<relative type="0">ܗܢܐ ܝܪܚܐ</relative>
 				<relative type="1">ܝܪܚܐ ܕܐܬܐ</relative>
 				<relativeTime type="future">
@@ -1075,15 +1149,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-short">
+				<displayName>܏ܝܪܚ</displayName>
+				<relative type="-1">܏ܝܪܚ ܏ܐܚܪ</relative>
+				<relative type="0">ܗܢ ܏ܝܪܚ</relative>
+				<relative type="1">܏ܝܪܚ ܕܐܬܐ</relative>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܝܪܚܐ</relativeTimePattern>
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܖ̈ܚܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="month-narrow">
+				<displayName>܏ܝܪܚ</displayName>
+				<relative type="-1">܏ܝܪܚ ܏ܐܚܪ</relative>
+				<relative type="0">ܗܢ ܏ܝܪܚ</relative>
+				<relative type="1">܏ܝܪܚ ܕܐܬܐ</relative>
+			</field>
 			<field type="week">
 				<displayName>ܫܒܘܥܐ</displayName>
-				<relative type="-1">ܫܒܘܥܐ ܕܕܥܒܪ</relative>
-				<relative type="0">ܗܕܐ ܫܒܘܥܐ</relative>
+				<relative type="-1">ܫܒܘܥܐ ܐܚܪܝܐ</relative>
+				<relative type="0">ܗܢܐ ܫܒܘܥܐ</relative>
 				<relative type="1">ܫܒܘܥܐ ܕܐܬܐ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ܒܚܕ ܫܒܘܥܐ</relativeTimePattern>
@@ -1096,19 +1180,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativePeriod>ܫܒܘܥܐ ܕ{0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>ܫܒܐ</displayName>
+				<displayName>܏ܫܒܘ</displayName>
+				<relative type="-1">܏ܫܒܘ ܏ܐܚܪ</relative>
+				<relative type="0">ܗܢ ܏ܫܒܘ</relative>
+				<relative type="1">܏ܫܒܘ ܕܐܬܐ</relative>
+				<relativePeriod>܏ܫܒܘ ܕ{0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>܏ܫܒܘ</displayName>
+				<relative type="-1">܏ܫܒܘ ܏ܐܚܪ</relative>
+				<relative type="0">ܗܢ ܏ܫܒܘ</relative>
+				<relative type="1">܏ܫܒܘ ܕܐܬܐ</relative>
+				<relativePeriod>܏ܫܒܘ {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>ܫܒܘܥܐ ܕܝܪܚܐ</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>ܫܒܐ ܕܝܪܚܐ</displayName>
+				<displayName>ܫܒܘܥ ܝܪܚܐ</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>ܫܒܘܥ ܝܪܚܐ</displayName>
 			</field>
 			<field type="day">
 				<displayName>ܝܘܡܐ</displayName>
 				<relative type="-1">ܐܬܡܠܝ</relative>
 				<relative type="0">ܐܕܝܘܡ</relative>
-				<relative type="1">ܝܘܡܐ ܕܐܬܐ</relative>
+				<relative type="1">ܩܘܕܡܐ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ܒܚܕ ܝܘܡܐ</relativeTimePattern>
 					<relativeTimePattern count="other">ܒ{0} ܝܘܡܢ̈ܐ</relativeTimePattern>
@@ -1118,8 +1216,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܘܡܢ̈ܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="day-short">
+				<displayName>܏ܝܘܡ</displayName>
+				<relative type="-1">܏ܬܡܠ</relative>
+				<relative type="0">ܐܕܝܘܡ</relative>
+				<relative type="1">܏ܩܘܕܡ</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName>܏ܝܘܡ</displayName>
+				<relative type="-1">܏ܬܡܠ</relative>
+				<relative type="0">ܐܕܝܘܡ</relative>
+				<relative type="1">܏ܩܘܕܡ</relative>
+			</field>
 			<field type="dayOfYear">
 				<displayName>ܝܘܡܐ ܕܫܢܬܐ</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ܝܘܡ ܫܢܬܐ</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>ܝܘܡܐ ܕܫܒܘܥܐ</displayName>
@@ -1134,11 +1247,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ܝܘܡܐ ܦܘܠܚܢܐ ܕܫܒܐ</displayName>
 			</field>
 			<field type="sun">
-				<relative type="-1">ܚܕܒܫܒܐ ܕܕܥܒܪ</relative>
-				<relative type="0">ܗܕܐ ܚܕܒܫܒܐ</relative>
+				<relative type="-1">ܚܕܒܫܒܐ ܐܚܪܝܐ</relative>
+				<relative type="0">ܗܢܐ ܚܕܒܫܒܐ</relative>
 				<relative type="1">ܚܕܒܫܒܐ ܕܐܬܐ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ܒܚܕ ܚܕܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="one">ܒ{0} ܚܕܒܫܒ̈ܐ</relativeTimePattern>
 					<relativeTimePattern count="other">ܒ{0} ܚܕܒܫܒ̈ܐ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
@@ -1242,6 +1355,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܥ̈ܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="hour-short">
+				<displayName>܏ܫܥ</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>܏ܫܥ</displayName>
+			</field>
 			<field type="minute">
 				<displayName>ܩܛܝܢܬܐ</displayName>
 				<relative type="0">ܗܢܐ ܩܛܝܢܬܐ</relative>
@@ -1253,6 +1372,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕܐ ܩܛܝܢܬܐ</relativeTimePattern>
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܩܛܝ̈ܢܐ</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<displayName>܏ܩܛܝܢ</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>܏ܩܛܝܢ</displayName>
 			</field>
 			<field type="second">
 				<displayName>ܪܦܦܐ</displayName>
@@ -1266,27 +1391,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܖ̈ܦܦܐ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="second-short">
+				<displayName>܏ܪܦ</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>܏ܪܦ</displayName>
+			</field>
 			<field type="zone">
 				<displayName>ܦܢܝܬܐ ܕܙܒܢܐ</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
-			<regionFormat>ܥܕܢܐ {0}</regionFormat>
-			<regionFormat type="daylight">ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ {0}</regionFormat>
-			<regionFormat type="standard">ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ {0}</regionFormat>
+			<regionFormat>ܥܕܢܐ ܕ{0}</regionFormat>
+			<regionFormat type="daylight">ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕ{0}</regionFormat>
+			<regionFormat type="standard">ܥܕܢ {0} ܡܫܘܚܬܢܝܬܐ</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
-					<standard>ܥܕܢܘܬܐ ܬܒܠܝܬܐ ܡܛܟܘܣܬܐ</standard>
+					<standard>ܥܕܢܐ ܬܒܠܝܬܐ ܡܛܘܟܣܬܐ</standard>
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>ܡܕܝܢܬܐ ܠܐ ܝܕܥܝܬܐ</exemplarCity>
+				<exemplarCity>ܐܬܪܐ ܠܐ ܝܕܝܥܐ</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>ܐܢܕܘܪܐ</exemplarCity>
 			</zone>
 			<zone type="Asia/Dubai">
-				<exemplarCity>ܕܘܒܐܝ</exemplarCity>
+				<exemplarCity>ܕܘܒܝ</exemplarCity>
 			</zone>
 			<zone type="Asia/Kabul">
 				<exemplarCity>ܟܐܒܘܠ</exemplarCity>
@@ -1451,10 +1582,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ܦܘܪܬܘ-ܢܘܒܘ</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>ܡܪ ܒܪ ܬܘܠܡܝ</exemplarCity>
+				<exemplarCity>ܡܪܝ ܒܪ ܬܘܠܡܝ</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
-				<exemplarCity>ܒܝܪܡܝܘܕܐ</exemplarCity>
+				<exemplarCity>ܒܝܪܡܘܕܐ</exemplarCity>
 			</zone>
 			<zone type="Asia/Brunei">
 				<exemplarCity>ܒܪܘܢܐܝ</exemplarCity>
@@ -1595,7 +1726,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ܒܠܐܢܟ-ܣܐܒܠܘܢ</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
-				<exemplarCity>ܡܪ ܝܘܚܢܢ</exemplarCity>
+				<exemplarCity>ܡܪܝ ܝܘܚܢܢ</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
 				<exemplarCity>ܟܘܟܘܣ</exemplarCity>
@@ -1613,7 +1744,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ܒܪܐܙܐܒܝܠ</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
-				<exemplarCity>ܙܝܘܪܚ</exemplarCity>
+				<exemplarCity>ܙܝܘܪܟ</exemplarCity>
 			</zone>
 			<zone type="Africa/Abidjan">
 				<exemplarCity>ܐܒܕܓܢ</exemplarCity>
@@ -1623,6 +1754,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Easter">
 				<exemplarCity>ܦܨܚܐ</exemplarCity>
+			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>ܟܘܝܐܝܟܐ</exemplarCity>
 			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>ܦܘܢܬܐ ܥܪܝܢܣ</exemplarCity>
@@ -1697,7 +1831,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ܬܐܠܝܢ</exemplarCity>
 			</zone>
 			<zone type="Africa/Cairo">
-				<exemplarCity>ܩܐܗܖ̈ܗ</exemplarCity>
+				<exemplarCity>ܩܐܗܪܗ</exemplarCity>
 			</zone>
 			<zone type="Africa/El_Aaiun">
 				<exemplarCity>ܐܠ ܥܝܘܢ</exemplarCity>
@@ -1746,7 +1880,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/London">
 				<long>
-					<daylight>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܒܪܝܛܢܝܐ</daylight>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܒܪܝܛܢܝܐ</daylight>
 				</long>
 				<exemplarCity>ܠܘܢܕܘܢ</exemplarCity>
 			</zone>
@@ -1865,7 +1999,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ܪܐܝܟܒܝܟ</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
-				<exemplarCity>ܪܘܡܝ</exemplarCity>
+				<exemplarCity>ܪܗܘܡܐ</exemplarCity>
 			</zone>
 			<zone type="Europe/Jersey">
 				<exemplarCity>ܓܝܪܙܝ</exemplarCity>
@@ -1888,7 +2022,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>ܦܢܘܡ ܦܢ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>ܟܐܢܬܘܢ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -2276,7 +2410,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ܟܝܓܐܠܝ</exemplarCity>
 			</zone>
 			<zone type="Asia/Riyadh">
-				<exemplarCity>ܪܝܐܕ</exemplarCity>
+				<exemplarCity>ܪܝܐܨ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Guadalcanal">
 				<exemplarCity>ܓܘܐܕܐܠܟܐܢܐܠ</exemplarCity>
@@ -2498,7 +2632,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ܘܐܬܝܩܐܢ</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity>ܡܪ ܒܢܣܢܬ</exemplarCity>
+				<exemplarCity>ܡܪܝ ܒܢܣܢܬ</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
 				<exemplarCity>ܟܐܪܐܟܣ</exemplarCity>
@@ -2507,7 +2641,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ܬܘܪܬܘܠܐ</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
-				<exemplarCity>ܡܪ ܬܐܘܡܐ</exemplarCity>
+				<exemplarCity>ܡܪܝ ܬܐܘܡܐ</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>ܡܕܝܢܬܐ ܕܗܘ ܟܝ ܡܝܢ</exemplarCity>
@@ -2565,9 +2699,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>ܥܕܢܐ ܕܡܥܪܒ ܐܦܪܝܩܐ</generic>
-					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܡܥܪܒ ܐܦܪܝܩܐ</standard>
-					<daylight>ܥܕܢܐ ܩܝܬܝܬܐ ܕܡܥܪܒ ܐܦܪܝܩܐ</daylight>
+					<standard>ܥܕܢܐ ܕܡܥܪܒ ܐܦܪܝܩܐ</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2649,9 +2781,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Arabian">
 				<long>
-					<generic draft="unconfirmed">ܥܕܢܐ ܕܐܪܒܝܐ</generic>
-					<standard draft="unconfirmed">ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܪܒܝܐ</standard>
-					<daylight draft="unconfirmed">ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܪܒܝܐ</daylight>
+					<generic>ܥܕܢܐ ܕܐܪܒܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܪܒܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܪܒܝܐ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
@@ -2798,7 +2930,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Cocos">
 				<long>
-					<standard>ܥܕܢܐ ܕܓܙܝܖ̈ܐ ܕܟܘܟܘܣ</standard>
+					<standard>ܥܕܢܐ ܕܓܙܝܪ̈ܐ ܕܟܘܟܘܣ</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
@@ -2817,9 +2949,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>ܥܕܢܐ ܕܟܘܒܐ</generic>
-					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܘܒܐ</standard>
-					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܘܒܐ</daylight>
+					<generic>ܥܕܢܐ ܕܩܘܒܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܩܘܒܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܩܘܒܐ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -2955,6 +3087,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>ܥܕܢܐ ܕܓܘܝܐܢܐ</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܗܐܘܐܝܝ ܐܠܘܫܝܢ</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>ܥܕܢܐ ܕܗܐܘܐܝܝ ܐܠܘܫܝܢ</generic>
@@ -3041,6 +3178,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܦܝܬܪܘܦܒܠܒܣܟܝ-ܟܐܡܟܬܣܟܝ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>ܥܕܢܐ ܕܟܙܩܣܬܐܢ</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard>ܥܕܢܐ ܕܡܕܢܚ ܟܙܩܣܬܐܢ</standard>
@@ -3060,7 +3202,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Kosrae">
 				<long>
-					<standard draft="unconfirmed">ܥܕܢܐ ܟܘܣܪܐܝ</standard>
+					<standard>ܥܕܢܐ ܟܘܣܪܐܝ</standard>
 				</long>
 			</metazone>
 			<metazone type="Krasnoyarsk">
@@ -3490,21 +3632,314 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
-			<nan draft="unconfirmed">ܠܝܬ ܡܢܝܢܐ</nan>
+			<nan>ܠܝܬ ܡܢܝܢܐ</nan>
 		</symbols>
 		<currencyFormats numberSystem="latn">
 			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>
 			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="AMD">
+				<displayName>ܕܪܗܡ ܕܐܪܡܢܝܐ</displayName>
+				<displayName count="one">ܕܪܗܡ ܕܐܪܡܢܝܐ</displayName>
+				<displayName count="other">ܕܪ̈ܗܡܐ ܕܐܪܡܢܝܐ</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>ܦܠܘܪܝܢ ܐܢܬܝܠܝܣܝܐ ܕܗܘܠܢܕܐ</displayName>
+				<displayName count="one">ܦܠܘܪܝܢ ܐܢܬܝܠܝܣܝܐ ܕܗܘܠܢܕܐ</displayName>
+				<displayName count="other">ܦܠܘܪ̈ܝܢܐ ܐܢܬܝܠܝܣܝܐ ܕܗܘܠܢܕܐ</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>ܦܝܣܘ ܕܐܪܓܢܬܝܢܐ</displayName>
+				<displayName count="one">ܦܝܣܘ ܕܐܪܓܢܬܝܢܐ</displayName>
+				<displayName count="other">ܦܝ̈ܣܘܣ ܕܐܪܓܢܬܝܢܐ</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>ܕܘܠܪ ܕܐܘܣܬܪܠܝܐ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܐܘܣܬܪܠܝܐ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܐܘܣܬܪܠܝܐ</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>ܦܠܘܪܝܢ ܕܐܪܘܒܐ</displayName>
+				<displayName count="one">ܦܠܘܪܝܢ ܕܐܪܘܒܐ</displayName>
+				<displayName count="other">ܦܠܘܪ̈ܝܢܐ ܕܐܪܘܒܐ</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>ܕܘܠܪ ܕܒܪܒܐܕܘܣ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܒܪܒܐܕܘܣ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܒܪܒܐܕܘܣ</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>ܕܝܢܪܐ ܕܒܚܪܝܢ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܒܚܪܝܢ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܒܚܪܝܢ</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>ܕܘܠܪ ܕܒܝܪܡܘܕܐ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܒܝܪܡܘܕܐ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܒܝܪܡܘܕܐ</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>ܕܘܠܪ ܕܒܪܘܢܐܝ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܒܪܘܢܐܝ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܒܪܘܢܐܝ</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>ܕܘܠܪ ܕܒܗܐܡܣ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܒܗܐܡܣ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܒܗܐܡܣ</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>ܕܘܠܪ ܕܒܠܝܙ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܒܠܝܙ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܒܠܝܙ</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>ܕܘܠܪ ܕܟܢܕܐ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܟܢܕܐ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܟܢܕܐ</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>ܝܘܐܢ ܕܨܝܢ</displayName>
+				<displayName count="one">ܝܘܐܢ ܕܨܝܢ</displayName>
+				<displayName count="other">ܝܘܐܢ̈ܐ ܕܨܝܢ</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName>ܦܝܣܘ ܕܟܘܠܘܡܒܝܐ</displayName>
+				<displayName count="one">ܦܝܣܘ ܕܟܘܠܘܡܒܝܐ</displayName>
+				<displayName count="other">ܦܝ̈ܣܘܣ ܕܟܘܠܘܡܒܝܐ</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>ܟܘܠܘܢ ܕܟܘܣܬܐ ܪܝܟܐ</displayName>
+				<displayName count="one">ܟܘܠܘܢ ܕܟܘܣܬܐ ܪܝܟܐ</displayName>
+				<displayName count="other">ܟܘܠܘܢ̈ܐ ܕܟܘܣܬܐ ܪܝܟܐ</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>ܦܝܣܘ ܡܬܥܪܦܢܝܬܐ ܕܩܘܒܐ</displayName>
+				<displayName count="one">ܦܝܣܘ ܡܬܥܪܦܢܝܬܐ ܕܩܘܒܐ</displayName>
+				<displayName count="other">ܦܝ̈ܣܘܣ ܡܬܥܪ̈ܦܢܝܬܐ ܕܩܘܒܐ</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>ܦܝܣܘ ܕܩܘܒܐ</displayName>
+				<displayName count="one">ܦܝܣܘ ܕܩܘܒܐ</displayName>
+				<displayName count="other">ܦܝ̈ܣܘܣ ܕܩܘܒܐ</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>ܦܝܣܘ ܕܕܘܡܝܢܝܟܐܢ</displayName>
+				<displayName count="one">ܦܝܣܘ ܕܕܘܡܝܢܝܟܐܢ</displayName>
+				<displayName count="other">ܦܝ̈ܣܘܣ ܕܕܘܡܝܢܝܟܐܢ</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>ܕܝܢܪܐ ܕܓܙܐܪ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܓܙܐܪ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܓܙܐܪ</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>ܠܝܛܪܐ ܕܡܨܪܝܢ</displayName>
+				<displayName count="one">ܠܝܛܪܐ ܕܡܨܪܝܢ</displayName>
+				<displayName count="other">ܠܝܛܪ̈ܐ ܕܡܨܪܝܢ</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>ܐܘܪܘ</displayName>
+				<displayName count="one">ܐܘܪܘ</displayName>
+				<displayName count="other">ܐܘܪ̈ܘܣ</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>ܕܘܠܪ ܕܦܝܓܝ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܦܝܓܝ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܦܝܓܝ</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>ܠܝܛܪܐ ܕܓܙܪ̈ܬܐ ܕܦܠܟܠܢܕ</displayName>
+				<displayName count="one">ܠܝܛܪܐ ܕܓܙܪ̈ܬܐ ܕܦܠܟܠܢܕ</displayName>
+				<displayName count="other">ܠܝܛܪ̈ܐ ܕܓܙܪ̈ܬܐ ܕܦܠܟܠܢܕ</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>ܠܝܛܪܐ ܕܓܒܪܠܛܪ</displayName>
+				<displayName count="one">ܠܝܛܪܐ ܕܓܒܪܠܛܪ</displayName>
+				<displayName count="other">ܠܝܛܪ̈ܐ ܕܓܒܪܠܛܪ</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>ܟܝܬܙܠ ܕܓܘܐܬܝܡܐܠܐ</displayName>
+				<displayName count="one">ܟܝܬܙܠ ܕܓܘܐܬܝܡܐܠܐ</displayName>
+				<displayName count="other">ܟܝܬܙ̈ܠܐ ܕܓܘܐܬܝܡܐܠܐ</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>ܕܘܠܪ ܕܓܘܝܐܢܐ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܓܘܝܐܢܐ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܓܘܝܐܢܐ</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>ܕܘܠܪ ܕܗܘܢܓ ܟܘܢܓ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܗܘܢܓ ܟܘܢܓ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܗܘܢܓ ܟܘܢܓ</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>ܠܝܡܦܝܪܐ ܕܗܘܢܕܘܪܣ</displayName>
+				<displayName count="one">ܠܝܡܦܝܪܐ ܕܗܘܢܕܘܪܣ</displayName>
+				<displayName count="other">ܠܝܡܦܝܪ̈ܐ ܕܗܘܢܕܘܪܣ</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>ܓܘܪܕ ܕܗܐܝܬܝ</displayName>
+				<displayName count="one">ܓܘܪܕ ܕܗܐܝܬܝ</displayName>
+				<displayName count="other">ܓܘܪ̈ܕܐ ܕܗܐܝܬܝ</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>ܬܩܠܐ ܚܕܬܐ ܕܐܝܣܪܐܝܠ</displayName>
+				<displayName count="one">ܬܩܠܐ ܚܕܬܐ ܕܐܝܣܪܐܝܠ</displayName>
+				<displayName count="other">ܬܩ̈ܠܐ ܚܕ̈ܬܐ ܕܐܝܣܪܐܝܠ</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>ܕܝܢܪܐ ܕܥܝܪܐܩ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܥܝܪܐܩ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܥܝܪܐܩ</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>ܕܘܠܪ ܕܓܡܝܟܐ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܓܡܝܟܐ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܓܡܝܟܐ</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>ܕܝܢܪܐ ܕܝܘܪܕܢܢ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܝܘܪܕܢܢ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܝܘܪܕܢܢ</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>ܘܘܢ ܕܟܘܪܝܐ ܓܪܒܝܝܬܐ</displayName>
+				<displayName count="one">ܘܘܢ ܕܟܘܪܝܐ ܓܪܒܝܝܬܐ</displayName>
+				<displayName count="other">ܘܘܢ̈ܐ ܕܟܘܪܝܐ ܓܪܒܝܝܬܐ</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName>ܘܘܢ ܕܟܘܪܝܐ ܬܝܡܢܝܬܐ</displayName>
+				<displayName count="one">ܘܘܢ ܕܟܘܪܝܐ ܬܝܡܢܝܬܐ</displayName>
+				<displayName count="other">ܘܘܢ̈ܐ ܕܟܘܪܝܐ ܬܝܡܢܝܬܐ</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>ܕܝܢܪܐ ܕܟܘܝܬ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܟܘܝܬ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܟܘܝܬ</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>ܕܘܠܪ ܕܓܙܪ̈ܬܐ ܕܟܐܝܡܐܢ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܓܙܪ̈ܬܐ ܕܟܐܝܡܐܢ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܓܙܪ̈ܬܐ ܕܟܐܝܡܐܢ</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>ܠܝܛܪܐ ܕܠܒܢܢ</displayName>
+				<displayName count="one">ܠܝܛܪܐ ܕܠܒܢܢ</displayName>
+				<displayName count="other">ܠܝܛܪ̈ܐ ܕܠܒܢܢ</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName>ܕܝܢܪܐ ܕܠܘܒܐ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܠܘܒܐ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܠܘܒܐ</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName>ܕܪܗܡ ܕܡܓܪܒ</displayName>
+				<displayName count="one">ܕܪܗܡ ܕܡܓܪܒ</displayName>
+				<displayName count="other">ܕܪ̈ܗܡܐ ܕܡܓܪܒ</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>ܕܝܢܪܐ ܕܡܩܕܘܢܝܐ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܡܩܕܘܢܝܐ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܡܩܕܘܢܝܐ</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>ܦܝܣܘ ܕܡܟܣܝܟܘ</displayName>
+				<displayName count="one">ܦܝܣܘ ܕܡܟܣܝܟܘ</displayName>
+				<displayName count="other">ܦܝ̈ܣܘܣ ܕܡܟܣܝܟܘ</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>ܩܘܪܕܘܒܝ ܕܢܝܟܐܪܐܓܘܐ</displayName>
+				<displayName count="one">ܩܘܪܕܘܒܝ ܕܢܝܟܐܪܐܓܘܐ</displayName>
+				<displayName count="other">ܩܘܪ̈ܕܘܒܐ ܕܢܝܟܐܪܐܓܘܐ</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>ܒܐܠܒܘܐ ܕܦܐܢܡܐ</displayName>
+				<displayName count="one">ܒܐܠܒܘܐ ܕܦܐܢܡܐ</displayName>
+				<displayName count="other">ܒܐܠܒܘ̈ܐ ܕܦܐܢܡܐ</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>ܦܝܣܘ ܕܦܝܠܝܦܝܐ</displayName>
+				<displayName count="one">ܦܝܣܘ ܕܦܝܠܝܦܝܐ</displayName>
+				<displayName count="other">ܦܝ̈ܣܘܣ ܕܦܝܠܝܦܝܐ</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>ܕܝܢܪܐ ܕܣܪܒܝܐ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܣܪܒܝܐ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܣܪܒܝܐ</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>ܕܘܠܪ ܕܓܙܪ̈ܬܐ ܕܫܠܝܡܘܢ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܓܙܪ̈ܬܐ ܕܫܠܝܡܘܢ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܓܙܪ̈ܬܐ ܕܫܠܝܡܘܢ</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName>ܠܝܛܪܐ ܕܣܘܕܐܢ</displayName>
+				<displayName count="one">ܠܝܛܪܐ ܕܣܘܕܐܢ</displayName>
+				<displayName count="other">ܠܝܛܪ̈ܐ ܕܣܘܕܐܢ</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>ܕܘܠܪ ܕܣܝܢܓܐܦܘܪ</displayName>
+				<displayName count="one">ܕܘܠܪ̈ܐ ܕܣܝܢܓܐܦܘܪ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܣܝܢܓܐܦܘܪ</displayName>
+			</currency>
 			<currency type="SYP">
-				<symbol draft="unconfirmed">ل.س.‏</symbol>
+				<displayName>ܠܝܛܪܐ ܕܣܘܪܝܐ</displayName>
+				<displayName count="one">ܠܝܛܪܐ ܕܣܘܪܝܐ</displayName>
+				<displayName count="other">ܠܝܛܪ̈ܐ ܕܣܘܪܝܐ</displayName>
+				<symbol draft="contributed">ل.س.‏</symbol>
+			</currency>
+			<currency type="TND">
+				<displayName>ܕܝܢܪܐ ܕܬܘܢܣ</displayName>
+				<displayName count="one">ܕܝܢܪܐ ܕܬܘܢܣ</displayName>
+				<displayName count="other">ܕܝܢܪ̈ܐ ܕܬܘܢܣ</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>ܠܝܛܪܐ ܕܬܘܪܟܝܐ</displayName>
+				<displayName count="one">ܠܝܛܪܐ ܕܬܘܪܟܝܐ</displayName>
+				<displayName count="other">ܠܝܛܪ̈ܐ ܕܬܘܪܟܝܐ</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>ܕܘܠܪ ܕܬܪܝܢܝܕܐܕ ܘܬܘܒܐܓܘ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܬܪܝܢܝܕܐܕ ܘܬܘܒܐܓܘ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܬܪܝܢܝܕܐܕ ܘܬܘܒܐܓܘ</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>ܕܘܠܪ ܕܐܘܚܕܢ̈ܐ ܡܚܘܝܕ̈ܐ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܐܘܚܕܢ̈ܐ ܡܚܘܝܕ̈ܐ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܐܘܚܕܢ̈ܐ ܡܚܘܝܕ̈ܐ</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName>ܦܝܣܘ ܕܐܘܪܘܓܘܐܝ</displayName>
+				<displayName count="one">ܦܝܣܘ ܕܐܘܪܘܓܘܐܝ</displayName>
+				<displayName count="other">ܦܝ̈ܣܘܣ ܕܐܘܪܘܓܘܐܝ</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>ܕܘܢܓ ܕܒܝܬܢܐܡ</displayName>
+				<displayName count="one">ܕܘܢܓ ܕܒܝܬܢܐܡ</displayName>
+				<displayName count="other">ܕܘܢܓ̈ܐ ܕܒܝܬܢܐܡ</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>ܕܘܠܪ ܕܡܕܢܚ ܟܐܪܝܒܐ</displayName>
+				<displayName count="one">ܕܘܠܪ ܕܡܕܢܚ ܟܐܪܝܒܐ</displayName>
+				<displayName count="other">ܕܘܠܪ̈ܐ ܕܡܕܢܚ ܟܐܪܝܒܐ</displayName>
+			</currency>
+			<currency type="XCG">
+				<displayName>ܦܠܘܪܝܢ ܕܩܘܒܐ</displayName>
+				<displayName count="one">ܦܠܘܪܝܢ ܕܩܘܒܐ</displayName>
+				<displayName count="other">ܦܠܘܪ̈ܝܢܐ ܕܩܘܒܐ</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>ܟܣܦܐ ܠܐ ܝܕܝܥܐ</displayName>
+				<displayName count="one">(ܟܣܦܐ ܠܐ ܝܕܝܥܐ)</displayName>
+				<displayName count="other">(ܟܣܦܐ ܠܐ ܝܕܝܥܐ)</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
-			<pluralMinimalPairs count="one" draft="contributed">ܝܠܐ ܝܠܗ ܥܬܝܕܐ</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">ܝܠ̈ܐ ܝܢܐ ܥܬܝܕ̈ܐ &lt;RLM&gt;{0}</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">ܫܩܘܠ ܦܬܠܐ ܕ{0} ܝܡܝܢܐ</ordinalMinimalPairs>
+			<pluralMinimalPairs count="one">ܚܕ ܝܘܡܐ</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} ܝܘܡܢ̈ܐ</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">ܫܩܘܠ ܦܬܠܐ ܝܡܝܢܐ ܕ{0}</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -3676,7 +4111,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">ܚܕ ܡܠܘܐܐ</unitPattern>
 				<unitPattern count="other">{0} ܡܠܘܐ̈ܐ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ܡܢܘ̈ܬܐ ܒܡܠܝܘܢ</displayName>
 				<unitPattern count="one">{0} ܡܢܬܐ ܒܡܠܝܘܢ</unitPattern>
 				<unitPattern count="other">{0} ܡܢܘ̈ܬܐ ܒܡܠܝܘܢ</unitPattern>
@@ -4292,7 +4727,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<coordinateUnitPattern type="east">{0} ܡܕܢܚܐ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} ܓܪܒܝܐ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} ܬܝܡܢܐ</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} ܡܥܪܒ݂ܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ܡܥܪܒܐ</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -4491,7 +4926,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} °F</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName>ܦܢܝܬܐ ܫܪܫܢܝܬܐ</displayName>
+				<displayName>ܦܢܝܬܐ</displayName>
+				<coordinateUnitPattern type="east">{0} ܏ܡܕܢ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} ܏ܓܪܒ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} ܏ܬܝܡ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ܏ܡܥܪ</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -4564,10 +5003,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>☉R</displayName>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0} ܡܕܢܚܐ</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0} ܓܪܒܝܐ</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} ܬܝܡܢܐ</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} ܡܥܪܒ݂ܐ</coordinateUnitPattern>
+				<displayName>ܦܢܝܬܐ</displayName>
+				<coordinateUnitPattern type="east">{0} ܏ܡܕܢܚ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} ܏ܓܪܒܝ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} ܏ܬܝܡܢ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ܏ܡܥܪܒ</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 	</units>
@@ -4607,10 +5047,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}.</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}.{surname-monogram-allCaps}.</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
 			<namePattern>{title} {given} {given2-initial} {surname}</namePattern>
@@ -4625,28 +5065,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}.</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern draft="provisional">{title} {given-initial} {surname}</namePattern>
+			<namePattern>{title} {given-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
 			<namePattern>{given-informal-initial}. {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-monogram-allCaps}.{surname-monogram-allCaps}.</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{surname}، {given} {given2}</namePattern>
@@ -4655,16 +5095,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}.</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}.{given-informal-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}.{given-informal-monogram-allCaps}.</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
 			<namePattern>{surname}، {given} {given2-initial}</namePattern>
@@ -4679,10 +5119,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{given-informal-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
 			<namePattern>{surname}، {given-initial} {given2-initial}</namePattern>
@@ -4691,16 +5131,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern draft="provisional">{title} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern draft="provisional">{given-informal-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
 			<namePattern>{surname-prefix} {surname-core}، {given} {given2}</namePattern>

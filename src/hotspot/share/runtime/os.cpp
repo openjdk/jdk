@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/powerOfTwo.hpp"
-
-#ifdef LINUX
-#include "osContainer_linux.hpp"
-#endif
 
 #ifndef _WINDOWS
 # include <poll.h>
@@ -2205,17 +2201,14 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
 }
 
 bool os::used_memory(physical_memory_size_type& value) {
-#ifdef LINUX
-  if (OSContainer::is_containerized()) {
-    jlong mem_usage = OSContainer::memory_usage_in_bytes();
-    if (mem_usage > 0) {
-      value = static_cast<physical_memory_size_type>(mem_usage);
-      return true;
-    } else {
-      return false;
-    }
+  if (is_containerized()) {
+    return Container::used_memory(value);
   }
-#endif
+
+  return Machine::used_memory(value);
+}
+
+bool os::Machine::used_memory(physical_memory_size_type& value) {
   physical_memory_size_type avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::available_memory(avail_mem);
@@ -2223,6 +2216,44 @@ bool os::used_memory(physical_memory_size_type& value) {
   value = phys_mem - avail_mem;
   return true;
 }
+
+#ifndef LINUX
+bool os::is_containerized() {
+  return false;
+}
+
+bool os::Container::processor_count(double& value) {
+  return false;
+}
+
+bool os::Container::available_memory(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::used_memory(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::total_swap_space(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::free_swap_space(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::memory_limit(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
+  return false;
+}
+
+bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
+  return false;
+}
+#endif
 
 
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
@@ -2581,6 +2612,10 @@ jint os::set_minimum_stack_sizes() {
     return JNI_ERR;
   }
   return JNI_OK;
+}
+
+jlong os::get_minimum_java_stack_size() {
+  return static_cast<jlong>(_java_thread_min_stack_allowed);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name

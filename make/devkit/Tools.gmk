@@ -104,26 +104,48 @@ endif
 ################################################################################
 # Define external dependencies
 
-GCC_VER_ONLY := 14.2.0
-BINUTILS_VER_ONLY := 2.43
-CCACHE_VER_ONLY := 4.10.2
-CCACHE_CMAKE_BASED := 1
-MPFR_VER_ONLY := 4.2.1
-GMP_VER_ONLY := 6.3.0
-MPC_VER_ONLY := 1.3.1
-GDB_VER_ONLY := 15.2
+GNU_BASE_URL := https://ftp.gnu.org/pub/gnu
 
-DEPENDENCIES := GCC BINUTILS CCACHE MPFR GMP MPC GDB
+BINUTILS_VER_ONLY := 2.43
+BINUTILS_BASE_URL := $(GNU_BASE_URL)/binutils
+BINUTILS_SHA512 := 93e063163e54d6a6ee2bd48dc754270bf757a3635b49a702ed6b310e929e94063958512d191e66beaf44275f7ea60865dbde138b624626739679fcc306b133bb
+
+CCACHE_VER_ONLY := 4.10.2
+CCACHE_BASE_URL := https://github.com/ccache/ccache/releases/download
+CCACHE_CMAKE_BASED := 1
+CCACHE_SHA512 := 3815c71d7266c32839acb306763268018acc58b3bbbd9ec79fc101e4217c1720d2ad2f01645bf69168c1c61d27700b6f3bb755cfa82689cca69824f015653f3c
+
+GCC_VER_ONLY := 14.2.0
+GCC_BASE_URL := $(GNU_BASE_URL)/gcc
+GCC_SHA512 := 932bdef0cda94bacedf452ab17f103c0cb511ff2cec55e9112fc0328cbf1d803b42595728ea7b200e0a057c03e85626f937012e49a7515bc5dd256b2bf4bc396
+
+GDB_VER_ONLY := 15.2
+GDB_BASE_URL := $(GNU_BASE_URL)/gdb
+GDB_SHA512 := 624007deceb5b15ba89c0725883d1a699fa46714ef30887f3d0165e17c5d65d634671740a135aa69e437d916218abb08cfa2a38ed309ff19d48f51da56b2a8ba
+
+GMP_VER_ONLY := 6.3.0
+GMP_BASE_URL := $(GNU_BASE_URL)/gmp
+GMP_SHA512 := e85a0dab5195889948a3462189f0e0598d331d3457612e2d3350799dba2e244316d256f8161df5219538eb003e4b5343f989aaa00f96321559063ed8c8f29fd2
+
+MPC_VER_ONLY := 1.3.1
+MPC_BASE_URL := $(GNU_BASE_URL)/mpc
+MPC_SHA512 := 4bab4ef6076f8c5dfdc99d810b51108ced61ea2942ba0c1c932d624360a5473df20d32b300fc76f2ba4aa2a97e1f275c9fd494a1ba9f07c4cb2ad7ceaeb1ae97
+
+MPFR_VER_ONLY := 4.2.1
+MPFR_BASE_URL := https://www.mpfr.org
+MPFR_SHA512 := bc68c0d755d5446403644833ecbb07e37360beca45f474297b5d5c40926df1efc3e2067eecffdf253f946288bcca39ca89b0613f545d46a9e767d1d4cf358475
+
+DEPENDENCIES := BINUTILS CCACHE GCC GDB GMP MPC MPFR
 
 $(foreach dep,$(DEPENDENCIES),$(eval $(dep)_VER := $(call lowercase,$(dep)-$($(dep)_VER_ONLY))))
 
-GCC_URL := https://ftp.gnu.org/pub/gnu/gcc/$(GCC_VER)/$(GCC_VER).tar.xz
-BINUTILS_URL := https://ftp.gnu.org/pub/gnu/binutils/$(BINUTILS_VER).tar.gz
-CCACHE_URL := https://github.com/ccache/ccache/releases/download/v$(CCACHE_VER_ONLY)/$(CCACHE_VER).tar.xz
-MPFR_URL := https://www.mpfr.org/$(MPFR_VER)/$(MPFR_VER).tar.bz2
-GMP_URL := https://ftp.gnu.org/pub/gnu/gmp/$(GMP_VER).tar.bz2
-MPC_URL := https://ftp.gnu.org/pub/gnu/mpc/$(MPC_VER).tar.gz
-GDB_URL := https://ftp.gnu.org/gnu/gdb/$(GDB_VER).tar.xz
+BINUTILS_URL := $(BINUTILS_BASE_URL)/$(BINUTILS_VER).tar.xz
+CCACHE_URL := $(CCACHE_BASE_URL)/v$(CCACHE_VER_ONLY)/$(CCACHE_VER).tar.xz
+GCC_URL := $(GCC_BASE_URL)/$(GCC_VER)/$(GCC_VER).tar.xz
+GDB_URL := $(GDB_BASE_URL)/$(GDB_VER).tar.xz
+GMP_URL := $(GMP_BASE_URL)/$(GMP_VER).tar.xz
+MPC_URL := $(MPC_BASE_URL)/$(MPC_VER).tar.gz
+MPFR_URL := $(MPFR_BASE_URL)/$(MPFR_VER)/$(MPFR_VER).tar.xz
 
 REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
 ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
@@ -198,8 +220,8 @@ download-rpms:
 ################################################################################
 # Unpack source packages
 
-# Generate downloading + unpacking of sources.
-define Download
+# Generate downloading + checksum verification of sources.
+define DownloadVerify
   # Allow override
   $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)_URL))))
   $(1)_DIR = $(abspath $(SRCDIR)/$$($(1)_DIRNAME))
@@ -224,11 +246,20 @@ define Download
 	touch $$@
 
   $$($(1)_FILE) :
-	wget -P $(DOWNLOAD) $$($(1)_URL)
+	mkdir -p $$(@D)
+	wget -O - $$($(1)_URL) > $$@.tmp
+	sha512_actual="$$$$(sha512sum $$@.tmp | awk '{ print $$$$1; }')"; \
+	if [ x"$$$${sha512_actual}" != x"$$($(1)_SHA512)" ]; then \
+	    echo "Checksum mismatch for $$@.tmp"; \
+	    echo "    Expected: $$($(1)_SHA512)"; \
+	    echo "    Actual:   $$$${sha512_actual}"; \
+	    exit 1; \
+	fi
+	mv $$@.tmp $$@
 endef
 
 # Download and unpack all source packages
-$(foreach dep,$(DEPENDENCIES),$(eval $(call Download,$(dep))))
+$(foreach dep,$(DEPENDENCIES),$(eval $(call DownloadVerify,$(dep))))
 
 ################################################################################
 # Unpack RPMS

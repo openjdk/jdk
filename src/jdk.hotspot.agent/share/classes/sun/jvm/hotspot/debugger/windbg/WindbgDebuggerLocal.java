@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,9 +523,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
 
       // Only add the search path for the current CPU architecture:
       String cpu = PlatformInfo.getCPU();
-      if (cpu.equals("x86")) {
-          searchList.add(DTFWHome + " (x86)");
-      } else if (cpu.equals("amd64")) {
+      if (cpu.equals("amd64")) {
           searchList.add(DTFWHome + " (x64)");
       }
       // The last place to search is the system directory:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,8 @@ public:
   // signal support
   static void* install_signal_handler(int sig, signal_handler_t handler);
   static void* user_handler();
+
+  static void context_set_pc(CONTEXT* uc, address pc);
 };
 
 #endif // OS_WINDOWS_OS_WINDOWS_HPP

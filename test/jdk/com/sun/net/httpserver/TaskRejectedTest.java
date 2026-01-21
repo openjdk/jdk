@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class TaskRejectedTest {
 
@@ -92,7 +92,7 @@ public class TaskRejectedTest {
         httpServer.setExecutor(executor);
 
         httpServer.createContext(REQUEST_PATH, exc -> {
-            exc.sendResponseHeaders(200, 0);
+            exc.sendResponseHeaders(200, RSPBODY_EMPTY);
             exc.close();
         });
 

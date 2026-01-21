@@ -270,7 +270,11 @@ public class AARCH64Frame extends Frame {
     }
 
     if (cb != null) {
-      return cb.isUpcallStub() ? senderForUpcallStub(map, (UpcallStub)cb) : senderForCompiledFrame(map, cb);
+      if (cb.isUpcallStub()) {
+        return senderForUpcallStub(map, (UpcallStub)cb);
+      } else if (cb.getFrameSize() > 0) {
+        return senderForCompiledFrame(map, cb);
+      }
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -356,6 +360,16 @@ public class AARCH64Frame extends Frame {
     map.setLocation(fp, savedFPAddr);
   }
 
+  private Frame senderForContinuationStub(AARCH64RegisterMap map, CodeBlob cb) {
+    var contEntry = map.getThread().getContEntry();
+
+    Address senderSP = contEntry.getEntrySP();
+    Address senderPC = contEntry.getEntryPC();
+    Address senderFP = contEntry.getEntryFP();
+
+    return new AARCH64Frame(senderSP, senderFP, senderPC);
+  }
+
   private Frame senderForCompiledFrame(AARCH64RegisterMap map, CodeBlob cb) {
     if (DEBUG) {
       System.out.println("senderForCompiledFrame");
@@ -373,7 +387,11 @@ public class AARCH64Frame extends Frame {
     if (Assert.ASSERTS_ENABLED) {
         Assert.that(cb.getFrameSize() > 0, "must have non-zero frame size");
     }
-    Address senderSP = getUnextendedSP().addOffsetTo(cb.getFrameSize());
+
+    // TODO: senderSP should consider not only PreserveFramePointer but also _sp_is_trusted.
+    Address senderSP = !VM.getVM().getCommandLineBooleanFlag("PreserveFramePointer")
+                           ? getUnextendedSP().addOffsetTo(cb.getFrameSize())
+                           : getSenderSP();
 
     // The return_address is always the word on the stack
     Address senderPC = stripPAC(senderSP.getAddressAt(-1 * VM.getVM().getAddressSize()));

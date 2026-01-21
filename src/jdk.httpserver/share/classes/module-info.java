@@ -23,6 +23,8 @@
  * questions.
  */
 
+import com.sun.net.httpserver.*;
+
 /**
  * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
  * for running a minimal HTTP server.
@@ -109,6 +111,14 @@
  * and implementation of the server does not intend to be a full-featured, high performance
  * HTTP server.
  *
+ * @implNote
+ * Prior to JDK 26, in the JDK default implementation, the {@link HttpExchange} attribute map was
+ * shared with the enclosing {@link HttpContext}.
+ * Since JDK 26, by default, exchange attributes are per-exchange and the context attributes must
+ * be accessed by calling {@link HttpExchange#getHttpContext() getHttpContext()}{@link
+ * HttpContext#getAttributes() .getAttributes()}. <br>
+ * A new system property, <b>{@systemProperty jdk.httpserver.attributes}</b> (default value: {@code ""})
+ * allows to revert this new behavior. Set this property to "context" to restore the pre JDK 26 behavior.
  * @toolGuide jwebserver
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider

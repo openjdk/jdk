@@ -63,33 +63,24 @@ public class BytecodeDescriptor {
     /// @throws TypeNotPresentException if a reference type cannot be found by
     ///         the loader (before the descriptor is found invalid)
     public static List<Class<?>> parseMethod(String descriptor, ClassLoader loader) {
-        return parseMethod(descriptor, 0, descriptor.length(), loader);
-    }
-
-    /**
-     * @param loader the class loader in which to look up the types (null means
-     *               bootstrap class loader)
-     */
-    static List<Class<?>> parseMethod(String bytecodeSignature,
-            int start, int end, ClassLoader loader) {
-        String str = bytecodeSignature;
-        int[] i = {start};
+        int end = descriptor.length(); // implicit null check
+        int[] i = {0};
         var ptypes = new ArrayList<Class<?>>();
-        if (i[0] < end && str.charAt(i[0]) == '(') {
+        if (i[0] < end && descriptor.charAt(i[0]) == '(') {
             ++i[0];  // skip '('
-            while (i[0] < end && str.charAt(i[0]) != ')') {
-                Class<?> pt = parseSig(str, i, end, loader);
+            while (i[0] < end && descriptor.charAt(i[0]) != ')') {
+                Class<?> pt = parseSig(descriptor, i, end, loader);
                 if (pt == null || pt == void.class)
-                    parseError(str, "bad argument type");
+                    parseError(descriptor, "bad argument type");
                 ptypes.add(pt);
             }
             ++i[0];  // skip ')'
         } else {
-            parseError(str, "not a method type");
+            parseError(descriptor, "not a method type");
         }
-        Class<?> rtype = parseSig(str, i, end, loader);
+        Class<?> rtype = parseSig(descriptor, i, end, loader);
         if (rtype == null || i[0] != end)
-            parseError(str, "bad return type");
+            parseError(descriptor, "bad return type");
         ptypes.add(rtype);
         return ptypes;
     }
@@ -115,8 +106,22 @@ public class BytecodeDescriptor {
         if (i[0] == end)  return null;
         char c = str.charAt(i[0]++);
         if (c == 'L') {
-            int begc = i[0], endc = str.indexOf(';', begc);
-            if (endc < 0)  return null;
+            int begc = i[0];
+            int identifierStart = begc;
+            int endc;
+            while (true) {
+                int next = nextNonIdentifier(str, identifierStart, end);
+                if (identifierStart == next || next >= end) return null;  // Empty name segment, or the end
+                char ch = str.charAt(next);
+                if (ch == ';') {
+                    endc = next;
+                    break;
+                } else if (ch == '/') {
+                    identifierStart = next + 1;  // Next name segment
+                } else {
+                    return null;  // Bad char [ or .
+                }
+            }
             i[0] = endc+1;
             String name = str.substring(begc, endc).replace('/', '.');
             try {
@@ -146,6 +151,23 @@ public class BytecodeDescriptor {
             }
             return w.primitiveType();
         }
+    }
+
+    private static final int CHECK_OFFSET = 32;
+    private static final long NON_IDENTIFIER_MASK = (1L << ('.' - CHECK_OFFSET))
+            | (1L << ('/' - CHECK_OFFSET))
+            | (1L << (';' - CHECK_OFFSET))
+            | (1L << ('[' - CHECK_OFFSET));
+
+    private static int nextNonIdentifier(String str, int index, int end) {
+        while (index < end) {
+            int check = str.charAt(index) - CHECK_OFFSET;
+            if ((check & -Long.SIZE) == 0 && (NON_IDENTIFIER_MASK & (1L << check)) != 0) {
+                break;
+            }
+            index++;
+        }
+        return index;
     }
 
     public static String unparse(Class<?> type) {

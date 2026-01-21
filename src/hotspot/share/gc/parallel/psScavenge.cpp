@@ -313,12 +313,6 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
 
-  // Check for potential problems.
-  if (!should_attempt_scavenge()) {
-    log_info(gc, ergo)("Young-gc might fail so skipping");
-    return false;
-  }
-
   IsSTWGCActiveMark mark;
 
   _gc_timer.register_gc_start();
@@ -336,8 +330,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
   PSOldGen* old_gen = heap->old_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
 
-  assert(young_gen->to_space()->is_empty(),
-         "Attempt to scavenge with live objects in to_space");
+  assert(young_gen->to_space()->is_empty(), "precondition");
 
   heap->increment_total_collections();
 
@@ -518,34 +511,6 @@ void PSScavenge::clean_up_failed_promotion() {
 
   // Reset the PromotionFailureALot counters.
   NOT_PRODUCT(ParallelScavengeHeap::heap()->reset_promotion_should_fail();)
-}
-
-bool PSScavenge::should_attempt_scavenge() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-
-  PSYoungGen* young_gen = heap->young_gen();
-  PSOldGen* old_gen = heap->old_gen();
-
-  if (!young_gen->to_space()->is_empty()) {
-    log_debug(gc, ergo)("To-space is not empty; should run full-gc instead.");
-    return false;
-  }
-
-  // Test to see if the scavenge will likely fail.
-  PSAdaptiveSizePolicy* policy = heap->size_policy();
-
-  size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
-  size_t promotion_estimate = MIN2(avg_promoted, young_gen->used_in_bytes());
-  // Total free size after possible old gen expansion
-  size_t free_in_old_gen = old_gen->max_gen_size() - old_gen->used_in_bytes();
-  bool result = promotion_estimate < free_in_old_gen;
-
-  log_trace(gc, ergo)("%s scavenge: average_promoted %zu padded_average_promoted %zu free in old gen %zu",
-                result ? "Do" : "Skip", (size_t) policy->average_promoted_in_bytes(),
-                (size_t) policy->padded_average_promoted_in_bytes(),
-                free_in_old_gen);
-
-  return result;
 }
 
 // Adaptive size policy support.

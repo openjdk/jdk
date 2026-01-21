@@ -260,6 +260,9 @@ public final class Float16
      * Float#toString(float)} in the handling of special values
      * (signed zeros, infinities, and NaN) and the generation of a
      * decimal string that will convert back to the argument value.
+     * However, the range for plain notation is defined to be the interval
+     * [10<sup>-3</sup>, 10<sup>3</sup>) rather than the interval used
+     * for {@code float} and {@code double}.
      *
      * @param   f16   the {@code Float16} to be converted.
      * @return a string representation of the argument.
@@ -295,10 +298,12 @@ public final class Float16
             // replace subnormal double exponent with subnormal Float16
             // exponent
             String s = Double.toHexString(Math.scalb((double)f,
-                                                     /* -1022+14 */
-                                                     Double.MIN_EXPONENT-
+                                                     // -1022 + 14
+                                                     Double.MIN_EXPONENT -
                                                      MIN_EXPONENT));
-            return s.replaceFirst("p-1022$", "p-14");
+            // The char sequence "-1022" can only appear in the
+            // representation of the exponent, not in the (hex) significand.
+            return s.replace("-1022", "-14");
         } else {// double string will be the same as Float16 string
             return Double.toHexString(f);
         }
@@ -2104,7 +2109,7 @@ public final class Float16
             int h = (int) (f * 107_375L >>> 30);
             int l = f - 10_000 * h;
 
-            if (0 < e && e <= 7) {
+            if (0 < e && e <= 3) {
                 return toChars1(h, l, e);
             }
             if (-3 < e && e <= 0) {
