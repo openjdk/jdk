@@ -688,19 +688,6 @@ void ShenandoahGenerationalHeap::reset_generation_reserves() {
   old_generation()->set_promoted_reserve(0);
 }
 
-void ShenandoahGenerationalHeap::TransferResult::print_on(const char* when, outputStream* ss) const {
-  auto heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahYoungGeneration* const young_gen = heap->young_generation();
-  ShenandoahOldGeneration* const old_gen = heap->old_generation();
-  const size_t young_available = young_gen->available();
-  const size_t old_available = old_gen->available();
-  ss->print_cr("After %s, %s %zu regions to %s to prepare for next gc, old available: "
-                     PROPERFMT ", young_available: " PROPERFMT,
-                     when,
-                     success? "successfully transferred": "failed to transfer", region_count, region_destination,
-                     PROPERFMTARGS(old_available), PROPERFMTARGS(young_available));
-}
-
 void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) {
   class ShenandoahGlobalCoalesceAndFill : public WorkerTask {
   private:
