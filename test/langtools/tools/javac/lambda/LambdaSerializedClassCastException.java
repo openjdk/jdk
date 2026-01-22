@@ -22,10 +22,12 @@
  */
 
 /*
-@test
-@bug 8208752
-@summary NPE generating serializedLambdaName for nested lambda
-*/
+ * @test
+ * @bug 8208752
+ * @summary NPE generating serializedLambdaName for nested lambda
+ * @compile/ref=LambdaSerializedClassCastException.out -XDrawDiagnostics --debug=dumpLambdaDeserializationStats LambdaSerializedClassCastException.java
+ * @run main LambdaSerializedClassCastException
+ */
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -50,13 +52,12 @@ public class LambdaSerializedClassCastException {
     @SuppressWarnings("unchecked")
     static <T> T serialDeserial(T object) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(object);
-        oos.close();
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        ObjectInputStream ois = new ObjectInputStream(bais);
-        T result = (T) ois.readObject();
-        ois.close();
-        return result;
+        try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(object);
+        }
+        try (ObjectInputStream ois =
+                new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
+            return (T) ois.readObject();
+        }
     }
 }

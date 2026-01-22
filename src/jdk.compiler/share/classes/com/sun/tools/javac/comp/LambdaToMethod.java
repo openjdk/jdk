@@ -759,7 +759,8 @@ public class LambdaToMethod extends TreeTranslator {
                     implMethodKind,
                     implClass,
                     implMethodName,
-                    implMethodSignature));
+                    implMethodSignature,
+                    instantiatedMethodType));
         }
         stmts.append(stmt);
     }
