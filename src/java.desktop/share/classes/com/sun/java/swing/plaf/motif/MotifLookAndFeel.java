@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,24 +56,29 @@ import sun.swing.SwingUtilities2;
 @Deprecated(since="13", forRemoval=true)
 public class MotifLookAndFeel extends BasicLookAndFeel
 {
+    @Override
     public String getName() {
         return "CDE/Motif";
     }
 
+    @Override
     public String getID() {
         return "Motif";
     }
 
+    @Override
     public String getDescription() {
         return "The CDE/Motif Look and Feel";
     }
 
 
+    @Override
     public boolean isNativeLookAndFeel() {
         return false;
     }
 
 
+    @Override
     public boolean isSupportedLookAndFeel() {
         return true;
     }
@@ -87,6 +92,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
      * values, otherwise we create color objects whose values match
      * the default CDE/Motif colors.
      */
+    @Override
     protected void initSystemColorDefaults(UIDefaults table)
     {
         String[] defaultSystemColors = {
@@ -123,6 +129,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
     }
 
 
+    @Override
     protected void initClassDefaults(UIDefaults table)
     {
         super.initClassDefaults(table);
@@ -178,6 +185,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
     }
 
 
+    @Override
     protected void initComponentDefaults(UIDefaults table)
     {
         super.initComponentDefaults(table);
@@ -255,36 +263,42 @@ public class MotifLookAndFeel extends BasicLookAndFeel
                                         ));
 
         Object menuItemCheckIcon = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 return MotifIconFactory.getMenuItemCheckIcon();
             }
         };
 
         Object menuItemArrowIcon = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 return MotifIconFactory.getMenuItemArrowIcon();
             }
         };
 
         Object menuArrowIcon = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 return MotifIconFactory.getMenuArrowIcon();
             }
         };
 
         Object checkBoxIcon = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 return MotifIconFactory.getCheckBoxIcon();
             }
         };
 
         Object radioButtonIcon = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 return MotifIconFactory.getRadioButtonIcon();
             }
         };
 
         Object unselectedTabBackground = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 Color c = table.getColor("control");
                 return new ColorUIResource(Math.max((int)(c.getRed()*.85),0),
@@ -294,6 +308,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
         };
 
         Object unselectedTabForeground = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 Color c = table.getColor("controlText");
                 return new ColorUIResource(Math.max((int)(c.getRed()*.85),0),
@@ -303,6 +318,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
         };
 
         Object unselectedTabShadow = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 Color c = table.getColor("control");
                 Color base = new Color(Math.max((int)(c.getRed()*.85),0),
@@ -313,6 +329,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
         };
 
         Object unselectedTabHighlight = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 Color c = table.getColor("control");
                 Color base = new Color(Math.max((int)(c.getRed()*.85),0),
@@ -462,18 +479,21 @@ public class MotifLookAndFeel extends BasicLookAndFeel
                                                          "icons/TreeClosed.gif");
 
         Object treeLeafIcon = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 return MotifTreeCellRenderer.loadLeafIcon();
             }
         };
 
         Object treeExpandedIcon = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 return MotifTreeUI.MotifExpandedIcon.createExpandedIcon();
             }
         };
 
         Object treeCollapsedIcon = new UIDefaults.LazyValue() {
+            @Override
             public Object createValue(UIDefaults table) {
                 return MotifTreeUI.MotifCollapsedIcon.createCollapsedIcon();
             }
