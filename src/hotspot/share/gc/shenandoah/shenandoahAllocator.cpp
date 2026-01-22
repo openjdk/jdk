@@ -398,9 +398,11 @@ void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
     }
     assert(alloc_region.address == nullptr, "Alloc region is set to nullptr after release");
   }
-  _free_set->partitions()->decrease_used(ALLOC_PARTITION, total_free_bytes);
-  _free_set->partitions()->increase_region_counts(ALLOC_PARTITION, total_regions_to_unretire);
-  accounting_updater._need_update = true;
+  if (total_regions_to_unretire > 0) {
+    _free_set->partitions()->decrease_used(ALLOC_PARTITION, total_free_bytes);
+    _free_set->partitions()->increase_region_counts(ALLOC_PARTITION, total_regions_to_unretire);
+    accounting_updater._need_update = true;
+  }
 }
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
