@@ -2160,13 +2160,11 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
-    ldr(rscratch1, Address(mdp, poly_count_offset));
-    add(rscratch1, rscratch1, DataLayout::counter_increment);
-    str(rscratch1, Address(mdp, poly_count_offset));
+    increment(Address(mdp, poly_count_offset), DataLayout::counter_increment);
     return;
   }
 
-  Register offset = rscratch1;
+  Register offset = rscratch2;
 
   Label L_loop_search_receiver, L_loop_search_empty;
   Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
@@ -2223,21 +2221,21 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // Fastest: receiver is already installed
   mov(offset, base_receiver_offset);
   bind(L_loop_search_receiver);
-    ldr(rscratch2, Address(mdp, offset));
-    cmp(rscratch2, recv);
+    ldr(rscratch1, Address(mdp, offset));
+    cmp(rscratch1, recv);
     br(Assembler::EQ, L_found_recv);
   add(offset, offset, receiver_step);
-  sub(rscratch2, offset, end_receiver_offset);
-  cbnz(rscratch2, L_loop_search_receiver);
+  sub(rscratch1, offset, end_receiver_offset);
+  cbnz(rscratch1, L_loop_search_receiver);
 
   // Fast: no receiver, but profile is full
   mov(offset, base_receiver_offset);
   bind(L_loop_search_empty);
-    ldr(rscratch2, Address(mdp, offset));
-    cbz(rscratch2, L_found_empty);
+    ldr(rscratch1, Address(mdp, offset));
+    cbz(rscratch1, L_found_empty);
   add(offset, offset, receiver_step);
-  sub(rscratch2, offset, end_receiver_offset);
-  cbnz(rscratch2, L_loop_search_empty);
+  sub(rscratch1, offset, end_receiver_offset);
+  cbnz(rscratch1, L_loop_search_empty);
   b(L_polymorphic);
 
   // Slow: try to install receiver
@@ -2245,12 +2243,13 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   // Atomically swing receiver slot: null -> recv.
   //
-  // The update code uses CAS, which clobbers rscratch1. However we
-  // will no longer need this value so we do not need to save it.
+  // The update uses CAS, which clobbers rscratch1. Therefore, rscratch2
+  // is used to hold the destination address. This is safe because the
+  // offset is no longer needed after the address is computed.
 
   lea(rscratch2, Address(mdp, offset));
   cmpxchg(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword,
-          /*acquire*/ false, /*release*/ false, /*weak*/ false, noreg);
+          /*acquire*/ false, /*release*/ false, /*weak*/ true, noreg);
 
   // CAS success means the slot now has the receiver we want. CAS failure means
   // something had claimed the slot concurrently: it can be the same receiver we want,
@@ -2270,9 +2269,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add(offset, offset, receiver_to_count_step);
 
   bind(L_count_update);
-  ldr(rscratch2, Address(mdp, offset));
-  add(rscratch2, rscratch2, DataLayout::counter_increment);
-  str(rscratch2, Address(mdp, offset));
+  increment(Address(mdp, offset), DataLayout::counter_increment);
 }
 
 
