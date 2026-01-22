@@ -51,7 +51,6 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -287,11 +286,11 @@ public final class ErrorTest {
             }
 
             Builder error(String key, Object ... args) {
-                return messages(makeError(JPackageStringBundle.MAIN.cannedFormattedString(key, args)));
+                return messages(makeError(key, args));
             }
 
             Builder advice(String key, Object ... args) {
-                return messages(makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(key, args)));
+                return messages(makeAdvice(key, args));
             }
 
             Builder invalidTypeArg(String arg, String... otherArgs) {
@@ -707,8 +706,7 @@ public final class ErrorTest {
         final var signingId = "foo";
 
         final List<CannedFormattedString> errorMessages = new ArrayList<>();
-        errorMessages.add(makeError(JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.cert.not.found", "Developer ID Application: " + signingId, "")));
+        errorMessages.add(makeError("error.cert.not.found", "Developer ID Application: " + signingId, ""));
 
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
@@ -720,9 +718,9 @@ public final class ErrorTest {
             errorMessages.stream()
                     .map(CannedFormattedString::getValue)
                     .map(TKit::assertTextStream)
-                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateOutput);
+                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateErr);
         } else {
-            cmd.validateOutput(errorMessages.toArray(CannedFormattedString[]::new));
+            cmd.validateErr(errorMessages.toArray(CannedFormattedString[]::new));
         }
 
         cmd.execute(1);
@@ -750,12 +748,12 @@ public final class ErrorTest {
     }
 
     private static void macInvalidRuntime(Consumer<TestSpec> accumulator) {
-        var runtimeWithBinDirErr = makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+        var runtimeWithBinDirErr = makeError(
                 "error.invalid-runtime-image-bin-dir", JPackageCommand.cannedArgument(cmd -> {
                     return Path.of(cmd.getArgumentValue("--runtime-image"));
-                }, Token.JAVA_HOME.token())));
-        var runtimeWithBinDirErrAdvice = makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store"));
+                }, Token.JAVA_HOME.token()));
+        var runtimeWithBinDirErrAdvice = makeAdvice(
+                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store");
 
         Stream.of(
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
@@ -795,10 +793,10 @@ public final class ErrorTest {
         }
 
         private CannedFormattedString expectedErrorMsg() {
-            return makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+            return makeError(
                     "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
                         return Path.of(cmd.getArgumentValue("--runtime-image"));
-                    }, runtimeDir.token()), missingFile));
+                    }, runtimeDir.token()), missingFile);
         }
     }
 
@@ -880,7 +878,7 @@ public final class ErrorTest {
         // with jpackage arguments in this test.
         cmd.ignoreDefaultRuntime(true);
 
-        cmd.validateOutput(expectedMessages.toArray(CannedFormattedString[]::new));
+        cmd.validateErr(expectedMessages.toArray(CannedFormattedString[]::new));
     }
 
     private static <T> Collection<Object[]> toTestArgs(Stream<T> stream) {

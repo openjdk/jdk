@@ -70,7 +70,7 @@ public final class FailedCommandErrorValidator {
     }
 
     public void applyTo(JPackageCommand cmd) {
-        cmd.validateOutput(createGroup().create());
+        cmd.validateErr(createGroup().create());
     }
 
     public FailedCommandErrorValidator validator(TKit.TextStreamVerifier.Group v) {

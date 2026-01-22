@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
@@ -94,7 +95,13 @@ public class PkgScriptsTest {
                             "message.no-default-resource",
                             String.format("[%s]", role.resourceCategory()),
                             role.scriptName());
-                }).forEach(cmd::validateOutput);
+                }).forEach(str -> {
+                    new JPackageOutputValidator()
+                            .expectMatchingStrings(str)
+                            .matchTimestamps()
+                            .stripTimestamps()
+                            .applyTo(cmd);
+                });
             }).addInstallVerifier(cmd -> {
                 customScripts.forEach(customScript -> {
                     customScript.verify(cmd);
