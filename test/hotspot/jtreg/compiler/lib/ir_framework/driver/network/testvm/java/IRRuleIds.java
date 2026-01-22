@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,43 +21,48 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser;
+package compiler.lib.ir_framework.driver.network.testvm.java;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethod;
-import compiler.lib.ir_framework.driver.network.testvm.java.IRRuleIds;
 
-import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
- * This class represents a test method parsed by {@link ApplicableIRRulesParser}. In combination with the associated
- * {@link LoggedMethod}, a new {@link IRMethod} is created to IR match on later.
- *
- * @see ApplicableIRRulesParser
- * @see LoggedMethod
- * @see IRMethod
+ * Class to hold the indices of the applicable {@link IR @IR} rules of an {@link IRMethod}.
  */
-public class TestMethod {
-    private final Method method;
-    private final IR[] irAnnos;
-    private final IRRuleIds irRuleIds;
+public class IRRuleIds implements Iterable<Integer> {
+    private final List<Integer> ruleIds;
 
-    public TestMethod(Method m, IR[] irAnnos, IRRuleIds irRuleIds) {
-        this.method = m;
-        this.irAnnos = irAnnos;
-        this.irRuleIds = irRuleIds;
+    public IRRuleIds(List<Integer> ruleIds) {
+        this.ruleIds = ruleIds;
     }
 
-    public Method method() {
-        return method;
+    public int first() {
+        return ruleIds.getFirst();
     }
 
-    public IR[] irAnnos() {
-        return irAnnos;
+    public int last() {
+        return ruleIds.getLast();
     }
 
-    public IRRuleIds irRuleIds() {
-        return irRuleIds;
+    public boolean isEmpty() {
+        return ruleIds.isEmpty();
+    }
+
+    public int count() {
+        return ruleIds.size();
+    }
+
+    @Override
+    public Iterator<Integer> iterator() {
+        return ruleIds.iterator();
+    }
+
+    public Stream<Integer> stream() {
+        return ruleIds.stream();
     }
 }
