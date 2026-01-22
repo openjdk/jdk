@@ -1118,7 +1118,6 @@ void ShenandoahFullGC::phase5_epilog() {
     size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
     ShenandoahFreeSet* free_set = heap->free_set();
     {
-      free_set->collector_allocator()->release_alloc_regions();
       free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
       // We also do not expand old generation size following Full GC because we have scrambled age populations and
       // no longer have objects separated by age into distinct regions.

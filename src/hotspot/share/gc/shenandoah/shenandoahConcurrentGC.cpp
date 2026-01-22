@@ -1200,6 +1200,8 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     heap->verifier()->verify_roots_in_to_space(_generation);
   }
 
+  heap->free_set()->release_alloc_regions_under_lock();
+
   // If we are running in generational mode and this is an aging cycle, this will also age active
   // regions that haven't been used for allocation.
   heap->update_heap_region_states(true /*concurrent*/);
@@ -1221,8 +1223,6 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
-
-  heap->free_set()->release_alloc_regions_under_lock();
 
   heap->rebuild_free_set(true /*concurrent*/);
 

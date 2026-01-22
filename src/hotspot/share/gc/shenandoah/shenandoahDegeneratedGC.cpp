@@ -428,6 +428,8 @@ void ShenandoahDegenGC::op_update_roots() {
 
   update_roots(false /*full_gc*/);
 
+  heap->free_set()->release_alloc_regions_under_lock();
+
   heap->update_heap_region_states(false /*concurrent*/);
 
   if (ShenandoahVerify) {
@@ -438,7 +440,6 @@ void ShenandoahDegenGC::op_update_roots() {
     Universe::verify();
   }
 
-  heap->free_set()->release_alloc_regions_under_lock();
   heap->rebuild_free_set(false /*concurrent*/);
 }
 

@@ -591,6 +591,7 @@ public:
       current_atomic_top = prior_atomic_top;
     }
     assert(top<false>() == current_atomic_top, "Value of _atomic_top must have synced to _top");
+    assert(!is_atomic_alloc_region(), "Must not");
   }
 
   inline bool is_atomic_alloc_region() const {

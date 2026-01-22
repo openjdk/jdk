@@ -86,6 +86,7 @@ public:
         default:
           assert(false, "won't happen");
       }
+      _free_set->partitions()->assert_bounds(true);
     }
   }
 };
