@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/ticks.hpp"
 
 // Collection of statistics for concurrent refinement processing.
 // Used for collecting per-thread statistics and for summaries over a
@@ -52,36 +51,36 @@ public:
 
   // Time spent performing sweeping the refinement table (includes actual refinement,
   // but not yield time).
-  jlong sweep_duration() const { return _sweep_duration.load_relaxed() - yield_during_sweep_duration(); }
-  jlong yield_during_sweep_duration() const { return _yield_during_sweep_duration.load_relaxed(); }
-  jlong refine_duration() const { return _refine_duration.load_relaxed(); }
+  inline jlong sweep_duration() const;
+  inline jlong yield_during_sweep_duration() const;
+  inline jlong refine_duration() const;
 
   // Number of refined cards.
-  size_t refined_cards() const { return cards_not_clean(); }
+  inline size_t refined_cards() const;
 
-  size_t cards_scanned() const { return _cards_scanned.load_relaxed(); }
-  size_t cards_clean() const { return _cards_clean.load_relaxed(); }
-  size_t cards_not_clean() const { return cards_scanned() - cards_clean(); }
-  size_t cards_not_parsable() const { return _cards_not_parsable.load_relaxed(); }
-  size_t cards_already_refer_to_cset() const { return _cards_already_refer_to_cset.load_relaxed(); }
-  size_t cards_refer_to_cset() const { return _cards_refer_to_cset.load_relaxed(); }
-  size_t cards_no_cross_region() const { return _cards_no_cross_region.load_relaxed(); }
+  inline size_t cards_scanned() const;
+  inline size_t cards_clean() const;
+  inline size_t cards_not_clean() const;
+  inline size_t cards_not_parsable() const;
+  inline size_t cards_already_refer_to_cset() const;
+  inline size_t cards_refer_to_cset() const;
+  inline size_t cards_no_cross_region() const;
   // Number of cards that were marked dirty and in need of refinement. This includes cards recently
   // found to refer to the collection set as they originally were dirty.
-  size_t cards_pending() const { return cards_not_clean() - cards_already_refer_to_cset(); }
+  inline size_t cards_pending() const;
 
-  size_t cards_to_cset() const { return cards_already_refer_to_cset() + cards_refer_to_cset(); }
+  inline size_t cards_to_cset() const;
 
-  void inc_sweep_time(jlong t) { _sweep_duration.store_relaxed(_sweep_duration.load_relaxed() + t); }
-  void inc_yield_during_sweep_duration(jlong t) { _yield_during_sweep_duration.store_relaxed(yield_during_sweep_duration() + t); }
-  void inc_refine_duration(jlong t) { _refine_duration.store_relaxed(refine_duration() + t); }
+  inline void inc_sweep_time(jlong t);
+  inline void inc_yield_during_sweep_duration(jlong t);
+  inline void inc_refine_duration(jlong t);
 
-  void inc_cards_scanned(size_t increment) { _cards_scanned.store_relaxed(cards_scanned() + increment); }
-  void inc_cards_clean(size_t increment) { _cards_clean.store_relaxed(cards_clean() + increment); }
-  void inc_cards_not_parsable() { _cards_not_parsable.store_relaxed(cards_not_parsable() + 1); }
-  void inc_cards_already_refer_to_cset() { _cards_already_refer_to_cset.store_relaxed(cards_already_refer_to_cset() + 1); }
-  void inc_cards_refer_to_cset() { _cards_refer_to_cset.store_relaxed(cards_refer_to_cset() + 1); }
-  void inc_cards_no_cross_region() { _cards_no_cross_region.store_relaxed(cards_no_cross_region() + 1); }
+  inline void inc_cards_scanned(size_t increment);
+  inline void inc_cards_clean(size_t increment);
+  inline void inc_cards_not_parsable();
+  inline void inc_cards_already_refer_to_cset();
+  inline void inc_cards_refer_to_cset();
+  inline void inc_cards_no_cross_region();
 
   void add_atomic(G1ConcurrentRefineStats* other);
 

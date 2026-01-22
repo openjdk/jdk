@@ -32,7 +32,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
-#include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
