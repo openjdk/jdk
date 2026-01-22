@@ -57,30 +57,14 @@ public abstract class PrintServiceLookup {
     protected PrintServiceLookup() {}
 
     /**
-     * Contains a lists of services.
+     * The list of lookup services.
      */
-    static class Services {
+    private static ArrayList<PrintServiceLookup> listOfLookupServices = null;
 
-        /**
-         * The list of lookup services.
-         */
-        private ArrayList<PrintServiceLookup> listOfLookupServices = null;
-
-        /**
-         * The list of registered services.
-         */
-        private ArrayList<PrintService> registeredServices = null;
-    }
-
-    private static final Services SERVICES = new Services();
     /**
-     * Returns the singleton Services instance.
-     *
-     * @return the services
+     * The list of registered services.
      */
-    private static Services getServices() {
-        return SERVICES;
-    }
+    private static ArrayList<PrintService> registeredServices = null;
 
     /**
      * Returns the list of lookup services.
@@ -88,7 +72,7 @@ public abstract class PrintServiceLookup {
      * @return the list of lookup services
      */
     private static ArrayList<PrintServiceLookup> getListOfLookupServices() {
-        return getServices().listOfLookupServices;
+        return listOfLookupServices;
     }
 
     /**
@@ -97,8 +81,7 @@ public abstract class PrintServiceLookup {
      * @return the list of lookup services
      */
     private static ArrayList<PrintServiceLookup> initListOfLookupServices() {
-        ArrayList<PrintServiceLookup> listOfLookupServices = new ArrayList<>();
-        getServices().listOfLookupServices = listOfLookupServices;
+        listOfLookupServices = new ArrayList<>();
         return listOfLookupServices;
     }
 
@@ -108,7 +91,7 @@ public abstract class PrintServiceLookup {
      * @return the list of registered services
      */
     private static ArrayList<PrintService> getRegisteredServices() {
-        return getServices().registeredServices;
+        return registeredServices;
     }
 
     /**
@@ -117,8 +100,7 @@ public abstract class PrintServiceLookup {
      * @return the list of registered services
      */
     private static ArrayList<PrintService> initRegisteredServices() {
-        ArrayList<PrintService> registeredServices = new ArrayList<>();
-        getServices().registeredServices = registeredServices;
+        registeredServices = new ArrayList<>();
         return registeredServices;
     }
 
