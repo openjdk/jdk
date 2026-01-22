@@ -413,7 +413,7 @@ static double saturate(double value, double min, double max) {
   return MAX2(MIN2(value, max), min);
 }
 
-#undef KELVIN_START_GC
+#define KELVIN_START_GC
 #ifdef KELVIN_START_GC
 const size_t MaxRejectedTriggers = 256;
 typedef struct gc_start_info {
