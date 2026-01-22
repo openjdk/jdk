@@ -58,7 +58,9 @@ public:
 
   void work(uint worker_id) override;
 
-  uint total_selected_for_rebuild() const { return _total_selected_for_rebuild.load_relaxed(); }
+  uint total_selected_for_rebuild() const {
+    return _total_selected_for_rebuild.load_relaxed();
+  }
 
   static uint desired_num_workers(uint num_regions);
 };
