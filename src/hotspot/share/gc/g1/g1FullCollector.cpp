@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,8 +116,8 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _num_workers(calc_active_workers()),
     _has_compaction_targets(false),
     _has_humongous(false),
-    _oop_queue_set(_num_workers),
-    _array_queue_set(_num_workers),
+    _marking_task_queues(_num_workers),
+    _partial_array_state_manager(nullptr),
     _preserved_marks_set(true),
     _serial_compaction_point(this, nullptr),
     _humongous_compaction_point(this, nullptr),
@@ -140,15 +140,21 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _compaction_tops[j] = nullptr;
   }
 
+  _partial_array_state_manager = new PartialArrayStateManager(_num_workers);
+
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _live_stats);
     _compaction_points[i] = new G1FullGCCompactionPoint(this, _preserved_marks_set.get(i));
-    _oop_queue_set.register_queue(i, marker(i)->oop_stack());
-    _array_queue_set.register_queue(i, marker(i)->objarray_stack());
+    _marking_task_queues.register_queue(i, marker(i)->task_queue());
   }
+
   _serial_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
   _humongous_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
   _region_attr_table.initialize(heap->reserved(), G1HeapRegion::GrainBytes);
+}
+
+PartialArrayStateManager* G1FullCollector::partial_array_state_manager() const {
+  return _partial_array_state_manager;
 }
 
 G1FullCollector::~G1FullCollector() {
@@ -156,6 +162,8 @@ G1FullCollector::~G1FullCollector() {
     delete _markers[i];
     delete _compaction_points[i];
   }
+
+  delete _partial_array_state_manager;
 
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
@@ -279,8 +287,8 @@ public:
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1FullKeepAliveClosure keep_alive(_collector.marker(index));
     BarrierEnqueueDiscoveredFieldClosure enqueue;
-    G1FollowStackClosure* complete_gc = _collector.marker(index)->stack_closure();
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_gc);
+    G1MarkStackClosure* complete_marking = _collector.marker(index)->stack_closure();
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_marking);
   }
 };
 
@@ -302,7 +310,7 @@ void G1FullCollector::phase1_mark_live_objects() {
     const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, _heap->workers(), pt);
     scope()->tracer()->report_gc_reference_stats(stats);
     pt.print_all_references();
-    assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
+    assert(marker(0)->task_queue()->is_empty(), "Should be no oops on the stack");
   }
 
   {
@@ -328,8 +336,7 @@ void G1FullCollector::phase1_mark_live_objects() {
     scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
   }
 #if TASKQUEUE_STATS
-  oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");
-  array_queue_set()->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
+  marking_task_queues()->print_and_reset_taskqueue_stats("Marking Task Queue");
 #endif
 }
 
