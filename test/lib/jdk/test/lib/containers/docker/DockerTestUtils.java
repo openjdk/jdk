@@ -291,7 +291,9 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static void removeDockerImage(String imageNameAndTag) throws Exception {
+        if(!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
             execute(Container.ENGINE_COMMAND, "rmi", "--force", imageNameAndTag);
+        }
     }
 
 

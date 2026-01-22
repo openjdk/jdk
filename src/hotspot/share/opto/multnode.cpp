@@ -260,12 +260,7 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptR
     // Not a projection of an If or variation of a dead If node.
     return nullptr;
   }
-  return other_if_proj()->is_uncommon_trap_proj(reason);
-}
-
-ProjNode* ProjNode::other_if_proj() const {
-  assert(_con == 0 || _con == 1, "not an if?");
-  return in(0)->as_If()->proj_out(1-_con);
+  return as_IfProj()->other_if_proj()->is_uncommon_trap_proj(reason);
 }
 
 NarrowMemProjNode::NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type)
