@@ -63,8 +63,8 @@ enum class RBTreeOrdering : int { LT, EQ, GT };
 
 template <typename K, typename NodeType, typename COMPARATOR>
 class AbstractRBTree;
-class outputStream;
 class Arena;
+class outputStream;
 class ResourceArea;
 
 class IntrusiveRBNode {
