@@ -89,9 +89,7 @@ public class X509Factory extends CertificateFactorySpi {
     {
         if (is == null) {
             // clear the caches (for debugging)
-            synchronized (certCache) {
-                certCache.clear();
-            }
+            certCache.clear();
             X509CertificatePair.clearCache();
             throw new CertificateException("Missing input stream");
         }
@@ -117,7 +115,7 @@ public class X509Factory extends CertificateFactorySpi {
         // Build outside lock
         X509CertImpl newCert = new X509CertImpl(encoding);
         byte[] enc = newCert.getEncodedInternal();
-        return addToCache(certCache, enc, newCert);
+        return addIfNotPresent(certCache, enc, newCert);
     }
 
     /**
@@ -178,9 +176,16 @@ public class X509Factory extends CertificateFactorySpi {
         }
 
         // Build outside lock
-        X509CertImpl newC = isImpl ? (X509CertImpl) c : new X509CertImpl(encoding);
-        byte[] enc = isImpl ? encoding : newC.getEncodedInternal();
-        return addToCache(certCache, enc, newC);
+        X509CertImpl newC;
+        byte[] enc;
+        if (isImpl) {
+            newC = (X509CertImpl) c;
+            enc = encoding;
+        } else {
+            newC = new X509CertImpl(encoding);
+            enc = newC.getEncodedInternal();
+        }
+        return addIfNotPresent(certCache, enc, newC);
     }
 
     /**
@@ -210,9 +215,16 @@ public class X509Factory extends CertificateFactorySpi {
             return cached;
         }
 
-        X509CRLImpl newC = isImpl ? (X509CRLImpl) c : new X509CRLImpl(encoding);
-        byte[] enc = isImpl ? encoding : newC.getEncodedInternal();
-        return addToCache(crlCache, enc, newC);
+        X509CRLImpl newC;
+        byte[] enc;
+        if (isImpl) {
+            newC = (X509CRLImpl) c;
+            enc = encoding;
+        } else {
+            newC = new X509CRLImpl(encoding);
+            enc = newC.getEncodedInternal();
+        }
+        return addIfNotPresent(crlCache, enc, newC);
     }
 
     /**
@@ -227,7 +239,7 @@ public class X509Factory extends CertificateFactorySpi {
     /**
      * Add the X509CertImpl or X509CRLImpl to the cache.
      */
-    private static <V> V addToCache(Cache<Object, V> cache, byte[] encoding, V value) {
+    private static <V> V addIfNotPresent(Cache<Object, V> cache, byte[] encoding, V value) {
         if (encoding.length > ENC_MAX_LENGTH) {
             return value;
         }
@@ -241,7 +253,6 @@ public class X509Factory extends CertificateFactorySpi {
             return value;
         }
     }
-
 
     /**
      * Generates a <code>CertPath</code> object and initializes it with
@@ -387,9 +398,7 @@ public class X509Factory extends CertificateFactorySpi {
     {
         if (is == null) {
             // clear the cache (for debugging)
-            synchronized (crlCache) {
-                crlCache.clear();
-            }
+            crlCache.clear();
             throw new CRLException("Missing input stream");
         }
         try {
@@ -402,7 +411,7 @@ public class X509Factory extends CertificateFactorySpi {
                 // Build outside lock
                 X509CRLImpl crl = new X509CRLImpl(encoding);
                 byte[] enc = crl.getEncodedInternal();
-                return addToCache(crlCache, enc, crl);
+                return addIfNotPresent(crlCache, enc, crl);
             } else {
                 throw new IOException("Empty input");
             }
