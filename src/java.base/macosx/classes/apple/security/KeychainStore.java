@@ -429,8 +429,8 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
         final Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
         if (entry != null) {
-            if (entry instanceof TrustedCertEntry) {
-                return ((TrustedCertEntry)entry).date;
+            if (entry instanceof TrustedCertEntry trustedCertEntry) {
+                return trustedCertEntry.date;
             } else {
                 return ((KeyEntry)entry).date;
             }
