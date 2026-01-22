@@ -26,6 +26,7 @@
  * @bug 8351409
  * @summary Test the IR effects of reduction reassociation on all associative add operations
  * @library /test/lib /
+ * @compile ../lib/verify/Verify.java
  * @run driver ${test.main.class}
  */
 
