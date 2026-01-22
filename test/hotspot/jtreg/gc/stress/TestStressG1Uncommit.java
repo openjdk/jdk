@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,11 @@ package gc.stress;
  * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver/timeout=1300 gc.stress.TestStressG1Uncommit
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm/timeout=1300 -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   gc.stress.TestStressG1Uncommit
  */
 
 import java.lang.management.ManagementFactory;
@@ -50,11 +54,17 @@ import com.sun.management.ThreadMXBean;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestStressG1Uncommit {
     public static void main(String[] args) throws Exception {
         ArrayList<String> options = new ArrayList<>();
         Collections.addAll(options,
+            "-Xbootclasspath/a:.",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+WhiteBoxAPI",
+            "-XX:MinHeapFreeRatio=40",
+            "-XX:MaxHeapFreeRatio=70",
             "-Xlog:gc,gc+heap+region=debug",
             "-XX:+UseG1GC",
             "-Xmx1g",
@@ -75,6 +85,7 @@ class StressUncommit {
     private static final ThreadMXBean threadBean = (ThreadMXBean) ManagementFactory.getThreadMXBean();
     private static final MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
     private static ConcurrentLinkedQueue<Object> globalKeepAlive;
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static void main(String args[]) throws InterruptedException {
         // Leave 20% head room to try to avoid Full GCs.
@@ -111,7 +122,7 @@ class StressUncommit {
 
                 // Do a GC that should shrink the heap.
                 long committedBefore = memoryBean.getHeapMemoryUsage().getCommitted();
-                System.gc();
+                WHITE_BOX.fullGC();
                 long committedAfter = memoryBean.getHeapMemoryUsage().getCommitted();
                 Asserts.assertLessThan(committedAfter, committedBefore);
             }
