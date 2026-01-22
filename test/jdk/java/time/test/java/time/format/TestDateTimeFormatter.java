@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@
  */
 package test.java.time.format;
 
+import static java.time.format.DateTimeFormatter.*;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -93,15 +94,19 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.util.Locale;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test DateTimeFormatter.
- * @bug 8085887 8293146
+ * @bug 8085887 8293146 8210336
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDateTimeFormatter {
@@ -332,5 +337,28 @@ public class TestDateTimeFormatter {
         } else {
             assertThrows(DateTimeException.class, () -> LocalDate.parse(weekDate, f));
         }
+    }
+
+    private static Stream<Arguments> data_iso_short_offset_parse() {
+        return Stream.of(
+            Arguments.of("20260123-01", BASIC_ISO_DATE),
+            Arguments.of("2026-01-23-01", ISO_DATE),
+            Arguments.of("2026-01-23T11:30:59-01", ISO_DATE_TIME),
+            Arguments.of("11:30:59-01", ISO_TIME),
+            Arguments.of("2026-01-23-01", ISO_OFFSET_DATE),
+            Arguments.of("2026-01-23T11:30:59-01", ISO_OFFSET_DATE_TIME),
+            Arguments.of("11:30:59-01", ISO_OFFSET_TIME),
+            Arguments.of("2026-023-01", ISO_ORDINAL_DATE),
+            Arguments.of("2026-W04-5-01", ISO_WEEK_DATE)
+        );
+    }
+
+    // Checks if predefined ISO formatters can parse hour-only offsets
+    @ParameterizedTest
+    @MethodSource("data_iso_short_offset_parse")
+    public void test_iso_short_offset_parse(String text, DateTimeFormatter formatter) {
+        var formatted = formatter.format(formatter.parse(text));
+        var expected = text + (formatter == BASIC_ISO_DATE ? "00" : ":00");
+        assertEquals(expected, formatted);
     }
 }

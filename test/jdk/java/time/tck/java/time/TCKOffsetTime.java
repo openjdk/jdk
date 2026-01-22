@@ -421,7 +421,6 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
                 {"00;00"},
                 {"12-00"},
                 {"-01:00"},
-                {"00:00:00-09"},
                 {"00:00:00,09"},
                 {"00:00:abs"},
                 {"11"},
