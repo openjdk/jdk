@@ -31,12 +31,14 @@ package compiler.ccp;
 public class TestCmpUMonotonicity {
     public static void main(String[] args) {
         for (int i = 0; i < 20000; i++) {
-            test(true, 1, 100, 2);
-            test(false, 1, 100, 2);
+            testInt(true, 1, 100, 2);
+            testInt(false, 1, 100, 2);
+            testLong(true, 1, 100, 2);
+            testLong(false, 1, 100, 2);
         }
     }
 
-    private static void test(boolean b, int start, int limit, int step) {
+    private static int testInt(boolean b, int start, int limit, int step) {
         int v2 = b ? 1 : -1;
         int v1 = 0;
         for (int i = start; i < limit; i *= step) {
@@ -46,5 +48,19 @@ public class TestCmpUMonotonicity {
                 v1 = 0;
             }
         }
+        return v1;
+    }
+
+    private static long testLong(boolean b, int start, int limit, int step) {
+        long v2 = b ? 1 : -1;
+        long v1 = 0;
+        for (int i = start; i < limit; i *= step) {
+            if (Long.compareUnsigned(v1, v2) < 0) {
+                v1 = 2;
+            } else {
+                v1 = 0;
+            }
+        }
+        return v1;
     }
 }
