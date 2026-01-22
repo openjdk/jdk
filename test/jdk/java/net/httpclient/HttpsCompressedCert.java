@@ -35,30 +35,31 @@ import javax.net.ssl.SSLParameters;
  * @test
  * @bug 8372526
  * @summary TLS certificate compression
- * @library /test/lib
- *          /javax/net/ssl/templates
- * @run main/othervm HttpsCompressedCert true
- * @run main/othervm HttpsCompressedCert false
+ * @run main/manual/othervm HttpsCompressedCert true
+ * @run main/manual/othervm HttpsCompressedCert false
  */
 
 public class HttpsCompressedCert {
+
     public static void main(String[] args) throws Exception {
         SSLParameters sslParameters = new SSLParameters();
         sslParameters.setEnableCertificateCompression(
                 Boolean.parseBoolean(args[0]));
-        HttpClient httpClient = HttpClient.newBuilder()
+
+        try (HttpClient httpClient = HttpClient.newBuilder()
                 .sslContext(SSLClientContext.createClientSSLContext())
                 .version(HttpClient.Version.HTTP_2)
                 .sslParameters(sslParameters)
-                .build();
+                .build()) {
 
-        HttpRequest httpRequest = HttpRequest.newBuilder(
-                        new URI("https://www.google.com/"))
-                .GET()
-                .build();
-        HttpResponse<String> response = httpClient.send(
-                httpRequest, ofString());
-        assertEquals(response.statusCode(), 200);
+            HttpRequest httpRequest = HttpRequest.newBuilder(
+                            new URI("https://www.google.com/"))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(
+                    httpRequest, ofString());
+            assertEquals(response.statusCode(), 200);
+        }
     }
 }
 
