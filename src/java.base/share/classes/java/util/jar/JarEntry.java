@@ -114,9 +114,10 @@ public class JarEntry extends ZipEntry {
      * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
      *
-     * @return the {@code Certificate} objects for this entry, or
-     * {@code null} if none. If non-null, returns a new array
-     * each time it is invoked.
+     * @implSpec If non-null, this implementation returns a new array each time
+     *           this method is invoked.
+     *
+     * @return the {@code Certificate} objects for this entry, or {@code null} if none.
      *
      */
     public Certificate[] getCertificates() {
@@ -140,9 +141,10 @@ public class JarEntry extends ZipEntry {
      * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
      *
-     * @return the {@code CodeSigner} objects for this entry, or
-     * {@code null} if none. If non-null, returns a new array
-     * each time it is invoked.
+     * @implSpec If non-null, this implementation returns a new array each time
+     *           this method is invoked.
+     *
+     * @return the {@code CodeSigner} objects for this entry, or {@code null} if none.
      *
      * @since 1.5
      */
