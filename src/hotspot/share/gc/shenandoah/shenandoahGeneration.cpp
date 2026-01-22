@@ -76,6 +76,9 @@ public:
     }
   }
 
+  // Bitmap reset task is heavy-weight and benefits from much smaller tasks than the default.
+  size_t parallel_region_stride() override { return 8; }
+
   bool is_thread_safe() override { return true; }
 };
 
@@ -502,10 +505,10 @@ inline void assert_no_in_place_promotions() {
 #endif
 }
 
-// Preselect for inclusion into the collection set regions whose age is at or above tenure age which contain more than
-// ShenandoahOldGarbageThreshold amounts of garbage.  We identify these regions by setting the appropriate entry of
-// the collection set's preselected regions array to true.  All entries are initialized to false before calling this
-// function.
+// Preselect for inclusion into the collection set all regions whose age is at or above tenure age and for which the
+// garbage percentage exceeds a dynamically adjusted threshold (known as the old-garbage threshold percentage).  We
+// identify these regions by setting the appropriate entry of the collection set's preselected regions array to true.
+// All entries are initialized to false before calling this function.
 //
 // During the subsequent selection of the collection set, we give priority to these promotion set candidates.
 // Without this prioritization, we found that the aged regions tend to be ignored because they typically have
@@ -524,12 +527,12 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   assert_no_in_place_promotions();
 
   auto const heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahYoungGeneration* young_gen = heap->young_generation();
   ShenandoahFreeSet* free_set = heap->free_set();
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
+  const size_t old_garbage_threshold =
+    (ShenandoahHeapRegion::region_size_bytes() * heap->old_generation()->heuristics()->get_old_garbage_threshold()) / 100;
 
   const size_t pip_used_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage) / 100;
 
@@ -562,7 +565,6 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   size_t pip_mutator_bytes = 0;
   size_t pip_collector_bytes = 0;
 
-  size_t min_remnant_size = PLAB::min_size() * HeapWordSize;
   for (idx_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
@@ -813,10 +815,9 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    size_t young_cset_regions, old_cset_regions;
 
     // We are preparing for evacuation.  At this time, we ignore cset region tallies.
-    size_t first_old, last_old, num_old;
+    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
 
     if (heap->mode()->is_generational()) {
@@ -936,8 +937,8 @@ size_t ShenandoahGeneration::available_with_reserve() const {
   return result;
 }
 
-size_t ShenandoahGeneration::soft_available() const {
-  size_t result = available(ShenandoahHeap::heap()->soft_max_capacity());
+size_t ShenandoahGeneration::soft_mutator_available() const {
+  size_t result = available(ShenandoahHeap::heap()->soft_max_capacity() * (100.0 - ShenandoahEvacReserve) / 100);
   return result;
 }
 
