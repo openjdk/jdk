@@ -23,17 +23,12 @@
 
 /*
  * @test
+ * @bug 8374654
  * @summary test lambda deserialization for Object method references on interfaces
- * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build toolbox.ToolBox toolbox.JavacTask
  * @compile/ref=SerializableObjectMethodReferencesOnInterfaces.out -XDrawDiagnostics --debug=dumpLambdaDeserializationStats SerializableObjectMethodReferencesOnInterfaces.java
  */
 
 import java.io.Serializable;
-import java.lang.classfile.*;
 
 public class SerializableObjectMethodReferencesOnInterfaces {
 
@@ -53,7 +48,7 @@ public class SerializableObjectMethodReferencesOnInterfaces {
             ONE
         }
 
-        void f() throws Exception {
+        void run() throws Exception {
             F<I1, Integer> f1 = I1::hashCode;
             F<I2, Integer> f2 = I2::hashCode;
             F<E, Integer> f3 = E::hashCode;
