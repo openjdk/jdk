@@ -256,7 +256,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate_in(ShenandoahHeapRegion
   assert(ready_for_retire == false, "Sanity check");
   if (!IS_SHARED_ALLOC_REGION) {
     shenandoah_assert_heaplocked();
-    assert(!region->is_active_alloc_region(), "Must not");
+    assert(!region->is_atomic_alloc_region(), "Must not");
   }
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();
