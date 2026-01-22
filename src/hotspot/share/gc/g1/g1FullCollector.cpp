@@ -137,7 +137,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
   for (uint j = 0; j < heap->max_num_regions(); j++) {
     _live_stats[j].clear();
-    _compaction_tops[j].store_relaxed(nullptr);
+    ::new (&_compaction_tops[j]) Atomic<HeapWord*>{};
   }
 
   for (uint i = 0; i < _num_workers; i++) {
