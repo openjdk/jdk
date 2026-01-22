@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -86,7 +86,14 @@ void ImageDecompressor::image_decompressor_init() {
 }
 
 void ImageDecompressor::image_decompressor_close() {
-    delete[] _decompressors;
+    if (_decompressors != NULL) {
+        for (int i = 0; i < _decompressors_num; i++) {
+            delete _decompressors[i];
+        }
+        delete[] _decompressors;
+        _decompressors = NULL;
+        _decompressors_num = 0;
+    }
 }
 
 /*

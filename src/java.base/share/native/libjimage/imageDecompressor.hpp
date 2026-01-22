@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -105,6 +105,8 @@ private:
 protected:
     ImageDecompressor(const char* name) : _name(name) {
     }
+    virtual ~ImageDecompressor() {
+    }
     virtual void decompress_resource(u1* data, u1* uncompressed,
         ResourceHeader* header, const ImageStrings* strings) = 0;
 
@@ -166,6 +168,6 @@ private:
 public:
     SharedStringDecompressor(const char* sym) : ImageDecompressor(sym){}
     void decompress_resource(u1* data, u1* uncompressed, ResourceHeader* header,
-    const ImageStrings* strings);
+        const ImageStrings* strings);
 };
 #endif // LIBJIMAGE_IMAGEDECOMPRESSOR_HPP
