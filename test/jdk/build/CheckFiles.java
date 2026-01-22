@@ -23,6 +23,7 @@
  */
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,7 +37,7 @@ import jdk.test.lib.Platform;
 
 /*
  * @test
- * @summary Check for unwanted file (types/extensions) in the jdk image
+ * @summary Check for unwanted files (types/extensions) in the jdk image
  * @library /test/lib
  * @requires !vm.debug
  * @run main CheckFiles
@@ -46,6 +47,20 @@ public class CheckFiles {
     // Set this property on command line to scan an alternate dir or file:
     // JTREG=JAVA_OPTIONS=-Djdk.test.build.CheckFiles.dir=/path/to/dir
     public static final String DIR_PROPERTY = "jdk.test.build.CheckFiles.dir";
+
+    private static boolean isGpl(Path myFile) {
+        if (myFile == null || !Files.exists(myFile)) {
+            return false;
+        }
+
+        try {
+            String firstLine = Files.readAllLines(myFile).stream()
+                                    .findFirst().orElse("");
+            return firstLine.contains("The GNU General Public License (GPL)");
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         String jdkPathString = System.getProperty("test.jdk");
@@ -146,6 +161,48 @@ public class CheckFiles {
                 System.out.println("Jmods directory scan successful.");
             } else {
                 throw new Error("jmods dir scan failed");
+            }
+        }
+
+        Path legalDir = mainDirToScan.resolve("legal");
+        Path javabaseLicenseFile = mainDirToScan.resolve("legal/java.base/LICENSE");
+        if (isGpl(javabaseLicenseFile)) { // for now check only legal dir of GPL based images; other ones might have other content
+            System.out.println("GPL info found in java.base LICENSE file");
+            ArrayList<String> allowedEndingsLegalDir = new ArrayList<>();
+            allowedEndingsLegalDir.add(".md");
+            allowedEndingsLegalDir.add("ADDITIONAL_LICENSE_INFO");
+            allowedEndingsLegalDir.add("ASSEMBLY_EXCEPTION");
+            allowedEndingsLegalDir.add("LICENSE");
+
+            ArrayList<String> requiredFilesInLegalSubdirs = new ArrayList<>();
+            requiredFilesInLegalSubdirs.add("LICENSE");
+            requiredFilesInLegalSubdirs.add("ADDITIONAL_LICENSE_INFO");
+            requiredFilesInLegalSubdirs.add("ASSEMBLY_EXCEPTION");
+
+            System.out.println("Legal directory to scan:" + legalDir);
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(legalDir)) {
+                for (Path subfolder : stream) {
+                    if (Files.isDirectory(subfolder)) {
+                        System.out.println("Checking legal dir subfolder for required files: " + subfolder.getFileName());
+
+                        for (String fileName : requiredFilesInLegalSubdirs) {
+                            Path filePath = subfolder.resolve(fileName);
+                            if (Files.exists(filePath)) {
+                                System.out.println("  Found " + fileName);
+                            } else {
+                                System.out.println("  Missing " + fileName);
+                                throw new Error("legal dir scan for required files failed");
+                            }
+                        }
+                    }
+                }
+            }
+
+            boolean legalDirRes = scanFiles(legalDir, allowedEndingsLegalDir);
+            if (legalDirRes) {
+                System.out.println("Legal directory scan successful.");
+            } else {
+                throw new Error("Legal dir scan failed");
             }
         }
     }
