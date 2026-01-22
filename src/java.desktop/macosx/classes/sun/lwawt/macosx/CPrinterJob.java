@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,20 +355,9 @@ public final class CPrinterJob extends RasterPrinterJob {
             validateDestination(destinationAttr);
         }
 
-        /* Get the range of pages we are to print. If the
-         * last page to print is unknown, then we print to
-         * the end of the document. Note that firstPage
-         * and lastPage are 0 based page indices.
-         */
-
+        // Note that firstPage is 0 based page index.
         int firstPage = getFirstPage();
-        int lastPage = getLastPage();
-        if(lastPage == Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-            int totalPages = mDocument.getNumberOfPages();
-            if (totalPages != Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-                lastPage = mDocument.getNumberOfPages() - 1;
-            }
-        }
+        int totalPages = mDocument.getNumberOfPages();
 
         try {
             synchronized (this) {
@@ -393,7 +382,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                     try {
                         // Fire off the print rendering loop on the AppKit thread, and don't have
                         //  it wait and block this thread.
-                        if (printLoop(false, firstPage, lastPage)) {
+                        if (printLoop(false, firstPage, totalPages)) {
                             // Start a secondary loop on EDT until printing operation is finished or cancelled
                             printingLoop.enter();
                         }
@@ -407,7 +396,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                     onEventThread = false;
 
                     try {
-                        printLoop(true, firstPage, lastPage);
+                        printLoop(true, firstPage, totalPages);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -417,7 +406,6 @@ public final class CPrinterJob extends RasterPrinterJob {
                 }
                 if (++loopi < prMembers.length) {
                      firstPage = prMembers[loopi][0]-1;
-                     lastPage = prMembers[loopi][1] -1;
                 }
             }  while (loopi < prMembers.length);
         } finally {
@@ -693,7 +681,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
-    private native boolean printLoop(boolean waitUntilDone, int firstPage, int lastPage) throws PrinterException;
+    private native boolean printLoop(boolean waitUntilDone, int firstPage, int totalPages) throws PrinterException;
 
     private PageFormat getPageFormat(int pageIndex) {
         // This is called from the native side.

@@ -170,8 +170,7 @@ bool GenericTaskQueue<E, MT, N>::pop_local_slow(uint localBot, Age oldAge) {
   if (localBot == oldAge.top()) {
     // No competing pop_global has yet incremented "top"; we'll try to
     // install new_age, thus claiming the element.
-    Age tempAge = cmpxchg_age(oldAge, newAge);
-    if (tempAge == oldAge) {
+    if (par_set_age(oldAge, newAge)) {
       // We win.
       assert_not_underflow(localBot, age_top_relaxed());
       TASKQUEUE_STATS_ONLY(stats.record_pop_slow());
@@ -283,12 +282,12 @@ typename GenericTaskQueue<E, MT, N>::PopResult GenericTaskQueue<E, MT, N>::pop_g
   idx_t new_top = increment_index(oldAge.top());
   idx_t new_tag = oldAge.tag() + ((new_top == 0) ? 1 : 0);
   Age newAge(new_top, new_tag);
-  Age resAge = cmpxchg_age(oldAge, newAge);
+  bool result = par_set_age(oldAge, newAge);
 
   // Note that using "bottom" here might fail, since a pop_local might
   // have decremented it.
   assert_not_underflow(localBot, newAge.top());
-  return resAge == oldAge ? PopResult::Success : PopResult::Contended;
+  return result ? PopResult::Success : PopResult::Contended;
 }
 
 inline int randomParkAndMiller(int *seed0) {

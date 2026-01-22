@@ -1229,8 +1229,7 @@ void Parse::do_method_entry() {
       Node* not_subtype_ctrl = gen_subtype_check(receiver_obj, holder_klass);
       assert(!stopped(), "not a subtype");
 
-      Node* halt = _gvn.transform(new HaltNode(not_subtype_ctrl, frameptr(), "failed receiver subtype check"));
-      C->root()->add_req(halt);
+      halt(not_subtype_ctrl, frameptr(), "failed receiver subtype check");
     }
   }
 #endif // ASSERT

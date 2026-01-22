@@ -111,7 +111,7 @@ jobs:
           --with-zlib=system
           --with-jmod-compress=zip-1
           --with-external-symbols-in-bundles=none
-          --with-debug-info-level=1
+          --with-native-debug-symbols-level=1
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&

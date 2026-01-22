@@ -183,8 +183,8 @@ protected:
     _age.store_relaxed(new_age);
   }
 
-  Age cmpxchg_age(Age old_age, Age new_age) {
-    return _age.compare_exchange(old_age, new_age);
+  bool par_set_age(Age old_age, Age new_age) {
+    return _age.compare_set(old_age, new_age);
   }
 
   idx_t age_top_relaxed() const {
@@ -345,7 +345,7 @@ protected:
 
   using TaskQueueSuper<N, MT>::age_relaxed;
   using TaskQueueSuper<N, MT>::set_age_relaxed;
-  using TaskQueueSuper<N, MT>::cmpxchg_age;
+  using TaskQueueSuper<N, MT>::par_set_age;
   using TaskQueueSuper<N, MT>::age_top_relaxed;
 
   using TaskQueueSuper<N, MT>::increment_index;

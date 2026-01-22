@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@ import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethod;
 import java.lang.reflect.Method;
 
 /**
- * This class represents a test method parsed by {@link IREncodingParser}. In combination with the associated
+ * This class represents a test method parsed by {@link ApplicableIRRulesParser}. In combination with the associated
  * {@link LoggedMethod}, a new {@link IRMethod} is created to IR match on later.
  *
- * @see IREncodingParser
+ * @see ApplicableIRRulesParser
  * @see LoggedMethod
  * @see IRMethod
  */

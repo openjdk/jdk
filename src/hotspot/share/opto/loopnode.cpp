@@ -979,9 +979,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   Node* inner_iters_max = nullptr;
   if (stride_con > 0) {
-    inner_iters_max = MaxNode::max_diff_with_zero(limit, outer_phi, TypeInteger::bottom(bt), _igvn);
+    inner_iters_max = MinMaxNode::max_diff_with_zero(limit, outer_phi, TypeInteger::bottom(bt), _igvn);
   } else {
-    inner_iters_max = MaxNode::max_diff_with_zero(outer_phi, limit, TypeInteger::bottom(bt), _igvn);
+    inner_iters_max = MinMaxNode::max_diff_with_zero(outer_phi, limit, TypeInteger::bottom(bt), _igvn);
   }
 
   Node* inner_iters_limit = _igvn.integercon(iters_limit, bt);
@@ -989,7 +989,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // Long.MIN_VALUE to Long.MAX_VALUE for instance). Use an unsigned
   // min.
   const TypeInteger* inner_iters_actual_range = TypeInteger::make(0, iters_limit, Type::WidenMin, bt);
-  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, inner_iters_actual_range, _igvn);
+  Node* inner_iters_actual = MinMaxNode::unsigned_min(inner_iters_max, inner_iters_limit, inner_iters_actual_range, _igvn);
 
   Node* inner_iters_actual_int;
   if (bt == T_LONG) {
@@ -1618,7 +1618,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
       Node* max_jint_plus_one_long = longcon((jlong)max_jint + 1);
       Node* max_range = new AddLNode(max_jint_plus_one_long, L);
       register_new_node(max_range, entry_control);
-      R = MaxNode::unsigned_min(R, max_range, TypeLong::POS, _igvn);
+      R = MinMaxNode::unsigned_min(R, max_range, TypeLong::POS, _igvn);
       set_subtree_ctrl(R, true);
     }
 
@@ -1717,9 +1717,9 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
 }
 
 Node* PhaseIdealLoop::clamp(Node* R, Node* L, Node* H) {
-  Node* min = MaxNode::signed_min(R, H, TypeLong::LONG, _igvn);
+  Node* min = MinMaxNode::signed_min(R, H, TypeLong::LONG, _igvn);
   set_subtree_ctrl(min, true);
-  Node* max = MaxNode::signed_max(L, min, TypeLong::LONG, _igvn);
+  Node* max = MinMaxNode::signed_max(L, min, TypeLong::LONG, _igvn);
   set_subtree_ctrl(max, true);
   return max;
 }
@@ -3485,14 +3485,14 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     // the loop body to be run for LoopStripMiningIter.
     Node* max = nullptr;
     if (stride > 0) {
-      max = MaxNode::max_diff_with_zero(limit, iv_phi, TypeInt::INT, *igvn);
+      max = MinMaxNode::max_diff_with_zero(limit, iv_phi, TypeInt::INT, *igvn);
     } else {
-      max = MaxNode::max_diff_with_zero(iv_phi, limit, TypeInt::INT, *igvn);
+      max = MinMaxNode::max_diff_with_zero(iv_phi, limit, TypeInt::INT, *igvn);
     }
     // sub is positive and can be larger than the max signed int
     // value. Use an unsigned min.
     Node* const_iters = igvn->intcon(scaled_iters);
-    Node* min = MaxNode::unsigned_min(max, const_iters, TypeInt::make(0, scaled_iters, Type::WidenMin), *igvn);
+    Node* min = MinMaxNode::unsigned_min(max, const_iters, TypeInt::make(0, scaled_iters, Type::WidenMin), *igvn);
     // min is the number of iterations for the next inner loop execution:
     // unsigned_min(max(limit - iv_phi, 0), scaled_iters) if stride > 0
     // unsigned_min(max(iv_phi - limit, 0), scaled_iters) if stride < 0

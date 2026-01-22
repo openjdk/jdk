@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -130,6 +130,7 @@ class MemBarNode;
 class MemBarStoreStoreNode;
 class MemNode;
 class MergeMemNode;
+class MinMaxNode;
 class MoveNode;
 class MulNode;
 class MultiNode;
@@ -809,6 +810,7 @@ public:
     DEFINE_CLASS_ID(AddP,     Node, 9)
     DEFINE_CLASS_ID(BoxLock,  Node, 10)
     DEFINE_CLASS_ID(Add,      Node, 11)
+      DEFINE_CLASS_ID(MinMax,      Add, 0)
     DEFINE_CLASS_ID(Mul,      Node, 12)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt,     Node, 15)
@@ -843,7 +845,8 @@ public:
     Flag_has_swapped_edges           = 1ULL << 11,
     Flag_is_scheduled                = 1ULL << 12,
     Flag_is_expensive                = 1ULL << 13,
-    Flag_is_predicated_vector        = 1ULL << 14,
+    Flag_is_predicated_vector        = 1ULL << 14, // Marked on a vector node that has an additional
+                                                   // mask input controlling the lane operations.
     Flag_for_post_loop_opts_igvn     = 1ULL << 15,
     Flag_for_merge_stores_igvn       = 1ULL << 16,
     Flag_is_removed_by_peephole      = 1ULL << 17,
@@ -986,6 +989,7 @@ public:
   DEFINE_CLASS_QUERY(MemBar)
   DEFINE_CLASS_QUERY(MemBarStoreStore)
   DEFINE_CLASS_QUERY(MergeMem)
+  DEFINE_CLASS_QUERY(MinMax)
   DEFINE_CLASS_QUERY(Move)
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
