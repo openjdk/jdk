@@ -41,6 +41,7 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FailedCommandErrorVerifier;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacHelper.NamedCertificateRequestSupplier;
@@ -104,13 +105,13 @@ public class MacSignTest {
             // To make jpackage fail, specify bad additional content.
             JPackageCommand.helloAppImage()
                     .mutate(MacSignTest::init)
-                    .validateOutput(group.create())
+                    .validateErr(group.create())
                     .addArguments("--app-content", appContent)
                     .mutate(signingKeyOption::addTo)
                     .mutate(cmd -> {
                         if (MacHelper.isXcodeDevToolsInstalled()) {
                             // Check there is no warning about missing xcode command line developer tools.
-                            cmd.validateOutput(xcodeWarning.copy().negate());
+                            cmd.validateErr(xcodeWarning.copy().negate());
                         }
                     }).execute(1);
 
@@ -138,7 +139,7 @@ public class MacSignTest {
 
             JPackageCommand.helloAppImage()
                     .mutate(MacSignTest::init)
-                    .validateOutput(outputVerifier.create())
+                    .validateErr(outputVerifier.create())
                     .mutate(signingKeyOption::addTo)
                     .mutate(MacHelper.useKeychain(keychain))
                     .execute(1);
@@ -229,12 +230,10 @@ public class MacSignTest {
                  * identities without validation to signing commands, signing a .pkg installer
                  * with a name matching two signing identities succeeds.
                  */
-                var group = TKit.TextStreamVerifier.group();
-
-                group.add(TKit.assertTextStream(JPackageStringBundle.MAIN.cannedFormattedString(
-                        "warning.unsigned.app.image", "pkg").getValue()));
-
-                cmd.validateOutput(group.create().andThen(TKit.assertEndOfTextStream()));
+                new JPackageOutputValidator().stdout()
+                        .expectMatchingStrings(JPackageStringBundle.MAIN.cannedFormattedString("warning.unsigned.app.image", "pkg"))
+                        .validateEndOfStream()
+                        .applyTo(cmd);
 
                 cmd.execute();
                 return;
@@ -333,16 +332,13 @@ public class MacSignTest {
 
         // Validate jpackage's output matches expected output.
 
-        var outputValidator = options.sorted(Comparator.comparing(option -> {
-            return option.certRequest().type();
-        })).map(conv).reduce(
-                TKit.TextStreamVerifier.group(),
-                TKit.TextStreamVerifier.Group::add,
-                TKit.TextStreamVerifier.Group::add).tryCreate().map(consumer -> {
-                    return consumer.andThen(TKit.assertEndOfTextStream());
-                }).orElseGet(TKit::assertEndOfTextStream);
+        var outputValidator = new JPackageOutputValidator().stderr();
 
-        cmd.validateOutput(outputValidator);
+        options.sorted(Comparator.comparing(option -> {
+            return option.certRequest().type();
+        })).map(conv).forEach(outputValidator::validator);
+
+        outputValidator.validateEndOfStream().applyTo(cmd);
 
         return cmd;
     }
