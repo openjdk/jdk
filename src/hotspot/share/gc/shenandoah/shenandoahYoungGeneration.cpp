@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
@@ -39,13 +40,29 @@ ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues) :
 void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->set_concurrent_young_mark_in_progress(in_progress);
-  if (is_bootstrap_cycle() && in_progress && !heap->is_prepare_for_old_mark_in_progress()) {
-    // This is not a bug. When the bootstrapping marking phase is complete,
-    // the old generation marking is still in progress, unless it's not.
-    // In the case that old-gen preparation for mixed evacuation has been
-    // preempted, we do not want to set concurrent old mark to be in progress.
-    heap->set_concurrent_old_mark_in_progress(in_progress);
+  if (is_bootstrap_cycle() && in_progress) {
+    // The start of concurrent mark for young is also the start of the concurrent mark for old
+    assert(!heap->is_prepare_for_old_mark_in_progress(), "Filling old regions must be complete before bootstrap");
+    heap->set_concurrent_old_mark_in_progress(true);
   }
+}
+
+// A bootstrap cycle will run as normal young cycle except that rather than
+// ignore old references it will mark and enqueue them in the old concurrent
+// task queues, but it will not traverse them. Similarly, we must configure
+// the young ref processor to have the old ref processor discover old weak
+// references.
+void ShenandoahYoungGeneration::prepare_for_bootstrap(ShenandoahGeneration* generation) {
+  assert(generation->is_old(), "Need old generation to prepare for bootstrap");
+  ShenandoahReferenceProcessor* old_ref_processor = generation->ref_processor();
+  _old_gen_task_queues = generation->task_queues();
+  ref_processor()->set_old_generation_ref_processor(old_ref_processor);
+  old_ref_processor->reset_thread_locals();
+}
+
+void ShenandoahYoungGeneration::clear_bootstrap_configuration() {
+  _old_gen_task_queues = nullptr;
+  ref_processor()->clear_old_generation_ref_processor();
 }
 
 bool ShenandoahYoungGeneration::contains(ShenandoahAffiliation affiliation) const {

@@ -58,8 +58,11 @@ void ShenandoahGenerationalFullGC::prepare() {
   // No need for old_gen->increase_used() as this was done when plabs were allocated.
   heap->reset_generation_reserves();
 
+  // If we were bootstrapping, we don't need that configuration anymore
+  heap->young_generation()->clear_bootstrap_configuration();
+
   // Full GC supersedes any marking or coalescing in old generation.
-  heap->old_generation()->cancel_gc();
+  heap->old_generation()->abandon_gc();
 }
 
 void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {

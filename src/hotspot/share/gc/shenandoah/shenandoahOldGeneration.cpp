@@ -293,7 +293,7 @@ void ShenandoahOldGeneration::cancel_marking() {
   ShenandoahGeneration::cancel_marking();
 }
 
-void ShenandoahOldGeneration::cancel_gc() {
+void ShenandoahOldGeneration::abandon_gc() {
   shenandoah_assert_safepoint();
   if (is_idle()) {
 #ifdef ASSERT
@@ -305,8 +305,6 @@ void ShenandoahOldGeneration::cancel_gc() {
     cancel_marking();
     // Stop tracking old regions
     abandon_collection_candidates();
-    // Remove old generation access to young generation mark queues
-    ShenandoahHeap::heap()->young_generation()->set_old_gen_task_queues(nullptr);
     // Transition to IDLE now.
     transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
   }
@@ -449,8 +447,9 @@ const char* ShenandoahOldGeneration::state_name(State state) {
 
 void ShenandoahOldGeneration::transition_to(State new_state) {
   if (_state != new_state) {
-    log_debug(gc, thread)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
-    EventMark event("Old was %s, now is %s", state_name(_state), state_name(new_state));
+    FormatBuffer<> msg("Old was %s, now is %s", state_name(_state), state_name(new_state));
+    log_debug(gc, thread)("%s", msg.buffer());
+    Events::log(Thread::current(), "%s", msg.buffer());
     validate_transition(new_state);
     _state = new_state;
   }
@@ -534,10 +533,11 @@ void ShenandoahOldGeneration::validate_transition(State new_state) {
       assert(_state == WAITING_FOR_BOOTSTRAP, "Cannot reset bitmap without making old regions parsable, state is '%s'", state_name(_state));
       assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot bootstrap with mixed collection candidates");
       assert(!heap->is_prepare_for_old_mark_in_progress(), "Cannot still be making old regions parsable.");
+      assert(heap->young_generation()->is_bootstrap_cycle(), "Young generation needs old mark queues.");
       break;
     case MARKING:
       assert(_state == BOOTSTRAPPING, "Must have finished bootstrapping before marking, state is '%s'", state_name(_state));
-      assert(heap->young_generation()->old_gen_task_queues() != nullptr, "Young generation needs old mark queues.");
+      assert(!heap->young_generation()->is_bootstrap_cycle(), "Young generation is done with bootstrapping");
       assert(heap->is_concurrent_old_mark_in_progress(), "Should be marking old now.");
       break;
     case EVACUATING_AFTER_GLOBAL:
@@ -555,7 +555,6 @@ void ShenandoahOldGeneration::validate_transition(State new_state) {
 bool ShenandoahOldGeneration::validate_waiting_for_bootstrap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot become ready for bootstrap during old mark.");
-  assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot become ready for bootstrap when still setup for bootstrapping.");
   assert(!is_concurrent_mark_in_progress(), "Cannot be marking in IDLE");
   assert(!heap->young_generation()->is_bootstrap_cycle(), "Cannot have old mark queues if IDLE");
   assert(!_old_heuristics->has_coalesce_and_fill_candidates(), "Cannot have coalesce and fill candidates in IDLE");

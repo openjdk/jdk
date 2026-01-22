@@ -180,19 +180,18 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
-  ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
-  request.generation = _heap->global_generation();
-  global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
-  global_heuristics->record_requested_gc();
+  ShenandoahHeuristics* heuristics = request.generation->heuristics();
+  heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
+  heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
-    return stw_full;;
-  } else {
-    // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
-    // the same `should_unload_classes` call as the regulator's concurrent gc request.
-    _heap->set_unload_classes(global_heuristics->can_unload_classes());
-    return concurrent_normal;
+    return stw_full;
   }
+
+  // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
+  // the same `should_unload_classes` call as the regulator's concurrent gc request.
+  _heap->set_unload_classes(heuristics->can_unload_classes());
+  return concurrent_normal;
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const {
@@ -417,15 +416,11 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       return;
     }
     case ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP:
+      // Configure the young generation for bootstrapping the old mark
+      young_generation->prepare_for_bootstrap(old_generation);
       old_generation->transition_to(ShenandoahOldGeneration::BOOTSTRAPPING);
     case ShenandoahOldGeneration::BOOTSTRAPPING: {
-      // Configure the young generation's concurrent mark to put objects in
-      // old regions into the concurrent mark queues associated with the old
-      // generation. The young cycle will run as normal except that rather than
-      // ignore old references it will mark and enqueue them in the old concurrent
-      // task queues but it will not traverse them.
       set_gc_mode(bootstrapping_old);
-      young_generation->set_old_gen_task_queues(old_generation->task_queues());
       service_concurrent_cycle(young_generation, request.cause, true);
       _heap->process_gc_stats();
       if (_heap->cancelled_gc()) {
@@ -571,10 +566,10 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
       }
     }
   } else {
-    assert(generation->is_global(), "If not young, must be GLOBAL");
-    assert(!do_old_gc_bootstrap, "Do not bootstrap with GLOBAL GC");
+    assert(generation->is_global(), "If not young, must be Global");
+    assert(!do_old_gc_bootstrap, "Do not bootstrap with Global GC");
     if (_heap->cancelled_gc()) {
-      msg = "At end of Interrupted Concurrent GLOBAL GC";
+      msg = "At end of Interrupted Concurrent Global GC";
     } else {
       // We only record GC results if GC was successful
       msg = "At end of Concurrent Global GC";
@@ -740,16 +735,7 @@ bool ShenandoahGenerationalControlThread::preempt_old_marking(ShenandoahGenerati
   return generation->is_young() && _allow_old_preemption.try_unset();
 }
 
-void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause) {
-  // For normal requested GCs (System.gc) we want to block the caller. However,
-  // for whitebox requested GC, we want to initiate the GC and return immediately.
-  // The whitebox caller thread will arrange for itself to wait until the GC notifies
-  // it that has reached the requested breakpoint (phase in the GC).
-  if (cause == GCCause::_wb_breakpoint) {
-    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
-    return;
-  }
-
+void ShenandoahGenerationalControlThread::wait_for_gc_cycle(GCCause::Cause cause, ShenandoahGeneration* generation) {
   // Make sure we have at least one complete GC cycle before unblocking
   // from the explicit GC request.
   //
@@ -764,10 +750,25 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     // Make requests to run a global cycle until at least one is completed
-    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
+    notify_control_thread(cause, generation);
     ml.wait();
     current_gc_id = get_gc_id();
   }
+}
+
+void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause) {
+  // For normal requested GCs (System.gc) we want to block the caller. However,
+  // for whitebox requested GC, we want to initiate the GC and return immediately.
+  // The whitebox caller thread will arrange for itself to wait until the GC notifies
+  // it that has reached the requested breakpoint (phase in the GC).
+  if (cause == GCCause::_wb_breakpoint) {
+    notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
+    return;
+  }
+  ShenandoahGeneration* generation = cause == GCCause::_wb_young_gc
+                                   ? ShenandoahHeap::heap()->young_generation()
+                                   : ShenandoahHeap::heap()->global_generation();
+  wait_for_gc_cycle(cause, generation);
 }
 
 void ShenandoahGenerationalControlThread::notify_gc_waiters() {
@@ -795,8 +796,9 @@ void ShenandoahGenerationalControlThread::set_gc_mode(GCMode new_mode) {
 
 void ShenandoahGenerationalControlThread::set_gc_mode(MonitorLocker& ml, GCMode new_mode) {
   if (_gc_mode != new_mode) {
-    log_debug(gc, thread)("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
-    EventMark event("Control thread transition from: %s, to %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    FormatBuffer<> msg("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    log_debug(gc, thread)("%s", msg.buffer());
+    Events::log(this, "%s", msg.buffer());
     _gc_mode = new_mode;
     ml.notify_all();
   }

@@ -98,6 +98,9 @@ public:
   }
 
   template<typename T>
+  void heal_discovered_list();
+
+  template<typename T>
   T* discovered_list_addr();
   template<typename T>
   oop discovered_list_head() const;
@@ -136,11 +139,11 @@ private:
   oop _pending_list;
   void* _pending_list_tail; // T*
 
-  volatile uint _iterate_discovered_list_id;
-
   ReferenceProcessorStats _stats;
 
   ShenandoahGeneration* _generation;
+
+  ShenandoahReferenceProcessor* _old_generation_ref_processor;
 
   template <typename T>
   bool is_inactive(oop reference, oop referent, ReferenceType type) const;
@@ -161,7 +164,7 @@ private:
   template <typename T>
   oop drop(oop reference, ReferenceType type);
   template <typename T>
-  T* keep(oop reference, ReferenceType type, uint worker_id);
+  T* keep(oop reference, ReferenceType type);
 
   template <typename T>
   void process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id);
@@ -181,13 +184,44 @@ public:
 
   void set_soft_reference_policy(bool clear);
 
+  void set_old_generation_ref_processor(ShenandoahReferenceProcessor* ref_processor) {
+    _old_generation_ref_processor = ref_processor;
+  }
+
+  void clear_old_generation_ref_processor() {
+    _old_generation_ref_processor = nullptr;
+  }
+
+  ShenandoahReferenceProcessor* get_old_generation_ref_processor() const {
+    return _old_generation_ref_processor;
+  }
+
+  // The generational mode for Shenandoah will collect _referents_ for the generation
+  // being collected. For example, if we have a young reference pointing to an old
+  // referent, that young reference will be processed after we finish marking the old
+  // generation. This presents a problem for discovery.
+  //
+  // When the young mark _encounters_ a young reference with an old referent, it
+  // cannot "discover" it because old marking hasn't finished. However, if it does not
+  // discover it, the old referent will be strongly marked. This will prevent the
+  // old generation from clearing the referent (if it even reaches it again during
+  // old marking).
+  //
+  // To solve this, we let young reference processing discover the old reference
+  // by having it use the old generation reference processor to discover it. This means
+  // the old reference processor can have a discovered list that contains young
+  // weak references. If any of these young references reside in a region that is collected,
+  // old reference processing will crash when it processes this young reference. Therefore,
+  // we have this method to traverse the discovered lists after young evacuation is
+  // complete. It will replace any forwarded entries in the discovered list with the
+  // forwardee.
+  void heal_discovered_lists(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
+
   bool discover_reference(oop obj, ReferenceType type) override;
 
   void process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
 
-  const ReferenceProcessorStats& reference_process_stats() { return _stats; }
-
-  void work();
+  const ReferenceProcessorStats& reference_process_stats() const { return _stats; }
 
   void abandon_partial_discovery();
 };

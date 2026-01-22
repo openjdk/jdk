@@ -162,10 +162,11 @@ void ShenandoahDegenGC::op_degenerated() {
       } else {
         if (_generation->is_concurrent_mark_in_progress()) {
           // We want to allow old generation marking to be punctuated by young collections
-          // (even if they have degenerated). If this is a global cycle, we'd have cancelled
+          // (even if they have degenerated). If this is a global cycle, we'd have abandoned
           // the entire old gc before coming into this switch. Note that cancel_marking on
-          // the generation does NOT abandon incomplete SATB buffers as cancel_concurrent_mark does.
-          // We need to separate out the old pointers which is done below.
+          // the young generation does NOT abandon incomplete SATB buffers in the old generation
+          // as cancel_concurrent_mark does. We need to separate out the old pointers which
+          // is done below.
           _generation->cancel_marking();
         }
 

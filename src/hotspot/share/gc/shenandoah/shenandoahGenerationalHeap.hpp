@@ -43,6 +43,8 @@ public:
   void initialize_heuristics() override;
   void post_initialize_heuristics() override;
 
+  bool start_old_collection();
+
   static ShenandoahGenerationalHeap* heap() {
     assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     CollectedHeap* heap = Universe::heap();
@@ -142,6 +144,7 @@ public:
   void complete_degenerated_cycle();
   void complete_concurrent_cycle();
 private:
+  void complete_cycle();
   void initialize_controller() override;
   void entry_global_coalesce_and_fill();
 

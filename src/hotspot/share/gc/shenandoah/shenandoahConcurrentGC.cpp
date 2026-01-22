@@ -670,7 +670,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   if (heap->mode()->is_generational()) {
     if (_generation->is_global()) {
-      heap->old_generation()->cancel_gc();
+      heap->old_generation()->abandon_gc();
     }
 
     {
@@ -696,18 +696,17 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   start_mark();
 
-  if (_do_old_gc_bootstrap) {
-    shenandoah_assert_generational();
-    // Update region state for both young and old regions
+  {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
-    heap->parallel_heap_region_iterate(&cl);
-    heap->old_generation()->ref_processor()->reset_thread_locals();
-  } else {
-    // Update region state for only young regions
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
-    ShenandoahInitMarkUpdateRegionStateClosure cl;
-    _generation->parallel_heap_region_iterate(&cl);
+    if (_do_old_gc_bootstrap) {
+      // Update region state for both young and old regions
+      shenandoah_assert_generational();
+      heap->parallel_heap_region_iterate(&cl);
+    } else {
+      // Update region state for only current generation regions
+      _generation->parallel_heap_region_iterate(&cl);
+    }
   }
 
   // Weak reference processing
@@ -1098,7 +1097,7 @@ void ShenandoahConcurrentGC::op_init_update_refs() {
   }
 }
 
-void ShenandoahConcurrentGC::op_update_refs() {
+void ShenandoahConcurrentGC::op_update_refs() const {
   ShenandoahHeap::heap()->update_heap_references(_generation, true /*concurrent*/);
 }
 
