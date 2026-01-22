@@ -231,7 +231,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
           // old regions use it for old->collection set candidates, so they should not be cleared
           // either.
         }
-        cur = next;
+        cur = max;
       }
     }
   };
