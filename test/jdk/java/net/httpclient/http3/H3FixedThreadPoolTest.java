@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8087112 8177935 8376089
+ * @bug 8087112 8177935
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.Asserts
