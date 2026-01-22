@@ -41,26 +41,36 @@
 #include "utilities/stack.inline.hpp"
 
 #ifdef ASSERT
-void DFSClosure::log(const char* msg) {
-  log(msg, _current_pointee, _current_depth, _current_chunkindex);
+void DFSClosure::log(const char* msg, ...) {
+  LogTarget(Debug, jfr, system, dfs) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    va_list args;
+    va_start(args, msg);
+    ls.vprint(msg, args);
+    va_end(args);
+    ls.cr();
+  }
 }
-
-void DFSClosure::log(const char* msg, oop obj, size_t depth, int chunkindex) {
+void DFSClosure::log_reference_stack() {
   LogTarget(Trace, jfr, system, dfs) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print_raw(msg);
-    if (obj != nullptr) {
-      ls.print(" " PTR_FORMAT " ", p2i(obj));
-      obj->klass()->name()->print_value_on(&ls); \
-      ls.print(" (edge depth %zu, probestack depth %zu)",
-          depth, _probe_stack.size());
-      if (chunkindex > 0) {
-        ls.print(" (follow-up %d)",
-            chunkindex);
+    ls.print_cr("--- ref stack ---");
+    for (size_t i = 0; i <= _current_depth; i++) {
+      const void* refaddr = (void*)_reference_stack[i].addr<uintptr_t>();
+      if (refaddr != 0) {
+        const oop pointee = _reference_stack[i].dereference();
+        ls.print(PTR_FORMAT " " PTR_FORMAT " : ", p2i(refaddr), p2i(pointee));
+        if (pointee != nullptr) {
+          pointee->klass()->name()->print_value_on(&ls);
+        }
+      } else {
+        ls.print(PTR_FORMAT " ??? : ", p2i(refaddr));
       }
+      ls.cr();
     }
-    ls.cr();
+    ls.print_cr("--- /ref stack ---");
   }
 }
 #endif // ASSERT
@@ -76,10 +86,10 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
 
   // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
-  dfs.log("scanning from edge for ", start_edge->pointee(), 0, 0);
+  dfs.log("DFS: scanning from edge");
   start_edge->pointee()->oop_iterate(&dfs);
   dfs.drain_probe_stack();
-  dfs.log("DFS: done.");
+  dfs.log("DFS: done");
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
@@ -103,39 +113,35 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   dfs.log("DFS: scanning in depth ...");
   rs.process();
   dfs.drain_probe_stack();
-  dfs.log("DFS: done.");
+  dfs.log("DFS: done");
 
 }
 
-// Memory usage of DFS search is defined by the probe stack usage. Probe
-// stack usage will be (avg. of outgoing references per oop) * depth.
+// Memory usage of DFS search is dominated by probe stack usage. That
+// is a function of (avg. number of outgoing references per oop) * depth.
+// This is because we only can iterate an instanceOop in full, we cannot
+// partly iterate it and store the iteration state (as recursion implicitly
+// does).
 //
-// We can disregard the special case of objArrayOop here, since deeply
-// nested hierarchies of broad object arrays are highly uncommon, and we
-// use array chunking anyway to not flood the probe stack.
+// Note that we can disregard objArrayOop: deep graphs of object arrays are
+// very rare. Still, to be on the safe side, we also use array chunking with
+// a rather small chunksize.
 //
-// Therefore (avg. of outgoing references per oop) is really (avg.
-// InstanceKlass oopmap size), which is pretty low - statistics show that
-// the vast majority of instance objects do not have more than ~3-4 outgoing
-// references.
+// Statistically, the mean number of outgoing references is pretty small.
+// Moreover, deep graphs will typically be the result of heavy hitters
+// like LinkedListNode, which has just three references, only two of which
+// need to be put on the probe stack (the backward reference points to an
+// already marked object).
 //
-// In practice, a few "heavy hitter" classes will often dominate deep object
-// graphs, e.g. LinkedListNode. LinkedListNode has three outgoing references,
-// and only two of which will be pushed to the probe stack (next node ref and
-// payload ref).
+// Hence, with a max_dfs_depth of 3200, we get a typically max probe stack
+// depth of <10000, which costs <~160KB - not a problem at all.
 //
-// Assuming an avg oop map size of 3, and a max_dfs_depth of 3200, we get
-// a probe stack size at max. depth of 9600 -> 153KB - not that much.
-//
-// Still, to be very sure we also limit the probe stack size itself to
-// handle pathological object graphs (eg. many deeply nested object arrays).
-// We handle that case the same way we handle max_dfs_depth, by simply aborting
-// the scan for that particular graph branch.
+// But To be very sure we also limit the probe stack size itself. The max size
+// is generous enough to make it very unlikely we ever hit it before hitting
+// max_depth. When we hit it, we treat it the same way we treat max_depth -
+// we just stop following that particular graph edge.
 static constexpr size_t max_probe_stack_elems = 256 * K; // 4 MB
 
-// We use a much smaller array chunk size than GCs do, to avoid running out
-// of probe stack too early. Reason is that Leak Profiler is often used
-// in memory-starved situations.
 static constexpr int array_chunk_size = 64;
 
 DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
@@ -145,17 +151,19 @@ DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* 
   _current_ref(UnifiedOopRef::encode_null()),
   _current_pointee(nullptr),
   _current_depth(0),
-  _current_chunkindex(0)
+  _current_chunkindex(0),
+  _num_objects_processed(0),
+  _num_sampled_objects_found(0)
 {
 }
 
-#ifdef ASSERT
 DFSClosure::~DFSClosure() {
   if (!GranularTimer::is_finished()) {
     assert(_probe_stack.is_empty(), "We should have drained the probe stack?");
   }
+  log("DFS: " UINT64_FORMAT " objects processed, " UINT64_FORMAT " sample objects found",
+      _num_objects_processed, _num_sampled_objects_found);
 }
-#endif // ASSERT
 
 void DFSClosure::probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth) {
 
@@ -166,20 +174,18 @@ void DFSClosure::probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth) 
   }
 
   if (depth > 0 && pointee_was_visited(pointee)) {
-    // Don't push oops we already visited (exception: root oops)
+    // Optimization: don't push if marked (special handling for root oops)
     return;
   }
 
   if (_probe_stack.is_full()) {
-    log("Probe stack full, aborting graph edge");
+    log("Probe stack full (graph depth: %zu, probe stack size: %zu), aborting graph edge",
+        _current_depth, _probe_stack.size());
     return;
   }
 
   ProbeStackItem item { ref, checked_cast<unsigned>(depth), 0 };
   _probe_stack.push(item);
-
-  log("pushed: ", pointee, depth, 0);
-
 }
 
 void DFSClosure::probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee, size_t depth, int chunkindex) {
@@ -189,14 +195,13 @@ void DFSClosure::probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee,
   assert(chunkindex > 0, "invariant");
 
   if (_probe_stack.is_full()) {
-    log("Probe stack full, aborting graph edge");
+    log("Probe stack full (graph depth: %zu, probe stack size: %zu), aborting graph edge",
+        _current_depth, _probe_stack.size());
     return;
   }
 
   ProbeStackItem item { ref, checked_cast<unsigned>(depth), chunkindex };
   _probe_stack.push(item);
-
-  log("pushed: ", pointee, depth, chunkindex);
 }
 
 bool DFSClosure::probe_stack_pop() {
@@ -219,7 +224,7 @@ bool DFSClosure::probe_stack_pop() {
 
   _current_pointee = _current_ref.dereference();
 
-  log("popped");
+  _num_objects_processed++;
 
   return true;
 }
@@ -243,10 +248,14 @@ void DFSClosure::handle_oop() {
 
   // trace children if needed
   if (_current_depth == _max_depth - 1) {
+    log("max graph depth reached (graph depth: %zu, probe stack size: %zu), aborting graph edge",
+        _current_depth, _probe_stack.size());
     return; // stop following this chain
   }
 
+  _current_depth ++;
   _current_pointee->oop_iterate(this);
+  _current_depth --;
 }
 
 void DFSClosure::handle_objarrayoop() {
@@ -274,6 +283,8 @@ void DFSClosure::handle_objarrayoop() {
   // trace children if needed
 
   if (_current_depth == _max_depth - 1) {
+    log("max graph depth reached (graph depth: %zu, probe stack size: %zu), aborting graph edge",
+        _current_depth, _probe_stack.size());
     return; // stop following this chain
   }
 
@@ -292,7 +303,9 @@ void DFSClosure::handle_objarrayoop() {
   }
 
   // push child references
+  _current_depth ++;
   pointee_oa->oop_iterate_range(this, begidx, endidx);
+  _current_depth --;
 }
 
 void DFSClosure::drain_probe_stack() {
@@ -321,7 +334,12 @@ void DFSClosure::add_chain() {
   Edge* const chain = NEW_RESOURCE_ARRAY(Edge, array_length);
   size_t idx = 0;
 
-  log("adding chain for sample object");
+  _num_sampled_objects_found++;
+
+#ifdef ASSERT
+  log("Sample object found (" UINT64_FORMAT " so far)", _num_sampled_objects_found);
+  log_reference_stack();
+#endif
 
   // aggregate from depth-first search
   for (size_t i = 0; i <= _current_depth; i++) {
@@ -345,14 +363,14 @@ void DFSClosure::do_oop(oop* ref) {
   assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, HeapWordSize), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
-  probe_stack_push(UnifiedOopRef::encode_in_heap(ref), pointee, _current_depth + 1);
+  probe_stack_push(UnifiedOopRef::encode_in_heap(ref), pointee, _current_depth);
 }
 
 void DFSClosure::do_oop(narrowOop* ref) {
   assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
-  probe_stack_push(UnifiedOopRef::encode_in_heap(ref), pointee, _current_depth + 1);
+  probe_stack_push(UnifiedOopRef::encode_in_heap(ref), pointee, _current_depth);
 }
 
 void DFSClosure::do_root(UnifiedOopRef ref) {

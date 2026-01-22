@@ -50,7 +50,7 @@ class DFSClosure : public BasicOopIterateClosure {
   bool _ignore_root_set;
 
   DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge);
-  DEBUG_ONLY(~DFSClosure());
+  ~DFSClosure();
 
   void add_chain();
 
@@ -66,6 +66,8 @@ class DFSClosure : public BasicOopIterateClosure {
   oop _current_pointee;
   size_t _current_depth;
   int _current_chunkindex;
+  uint64_t _num_objects_processed;
+  uint64_t _num_sampled_objects_found;
 
   bool pointee_was_visited(const oop pointee) const { return _mark_bits->is_marked(pointee); }
   void mark_pointee_as_visited(const oop pointee)   { _mark_bits->mark_obj(pointee); }
@@ -78,8 +80,8 @@ class DFSClosure : public BasicOopIterateClosure {
   void handle_oop();
   void handle_objarrayoop();
 
-  void log(const char* msg) DEBUG_ONLY(;) NOT_DEBUG({})
-  void log(const char* msg, oop obj, size_t depth, int chunkindex) DEBUG_ONLY(;) NOT_DEBUG({})
+  void log(const char* msg, ...) DEBUG_ONLY(;) NOT_DEBUG({})
+  void log_reference_stack() DEBUG_ONLY(;) NOT_DEBUG({})
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }

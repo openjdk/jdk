@@ -29,45 +29,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 
-#define TRC(msg) { \
-  if (UseNewCode) { \
-    printf(msg); \
-    printf("\n"); \
-    fflush(stdout); \
-  } \
-}
-
-#define TRCFMT(format, ...) { \
-  if (UseNewCode) { \
-    printf(format, __VA_ARGS__); \
-    printf("\n"); \
-    fflush(stdout); \
-  } \
-}
-
-#define TRCOOP(prefix, o) { \
-  if (UseNewCode) { \
-    char txt[1024]; \
-    stringStream ss(txt, sizeof(txt)); \
-    o->klass()->name()->print_value_on(&ss); \
-    printf("%s: " PTR_FORMAT " %s ", prefix, p2i(o), txt); \
-    printf("\n"); \
-    fflush(stdout); \
-  } \
-}
-
-#define TRCOOPFMT(prefix, o, format, ...) { \
-  if (UseNewCode) { \
-    char txt[1024]; \
-    stringStream ss(txt, sizeof(txt)); \
-    o->klass()->name()->print_value_on(&ss); \
-    printf("%s: " PTR_FORMAT " %s ", prefix, p2i(o), txt); \
-    printf(format, __VA_ARGS__); \
-    printf("\n"); \
-    fflush(stdout); \
-  } \
-}
-
 StoredEdge::StoredEdge(const Edge* parent, UnifiedOopRef reference) : Edge(parent, reference), _gc_root_id(0), _skip_length(0) {}
 
 StoredEdge::StoredEdge(const Edge& edge) : Edge(edge), _gc_root_id(0), _skip_length(0) {}
@@ -304,11 +265,6 @@ static constexpr const int max_idx =  right_n_bits(32 - markWord::lock_bits);
 
 static void store_idx_precondition(oop sample_object, int idx) {
   assert(sample_object != nullptr, "invariant");
-
-if (UseNewCode && !sample_object->mark().is_marked()) {
-  TRCOOP("Sample Object Not Marked", sample_object);
-}
-
   assert(sample_object->mark().is_marked(), "invariant");
   assert(idx > 0, "invariant");
   assert(idx <= max_idx, "invariant");
