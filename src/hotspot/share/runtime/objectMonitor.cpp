@@ -1866,7 +1866,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   //   while (!timeout && !interrupted && node.TState == TS_WAIT) park()
 
   int ret = OS_OK;
-  bool was_notified = false;
+  bool was_notified = true;
 
   // Need to check interrupt state whilst still _thread_in_vm
   bool interrupted = interruptible && current->is_interrupted(false);
@@ -1904,7 +1904,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // highly unlikely).  If the following LD fetches a stale TS_WAIT value
     // then we'll acquire the lock and then re-fetch a fresh TState value.
     // That is, we fail toward safety.
-    was_notified = true;
+
     if (node.TState == ObjectWaiter::TS_WAIT) {
       SpinCriticalSection scs(&_wait_set_lock);
       if (node.TState == ObjectWaiter::TS_WAIT) {
@@ -1913,7 +1913,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         was_notified = false;
       }
     }
-    // The thread is now either on off-list (TS_RUN),
+    // The thread is now either off-list (TS_RUN),
     // or on the entry_list (TS_ENTER).
     // The Node's TState variable is stable from the perspective of this thread.
     // No other threads will asynchronously modify TState.
@@ -1929,14 +1929,16 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // (Don't cache naked oops over safepoints, of course).
 
     // Post monitor waited event. Note that this is past-tense, we are done waiting.
-    // An event could have been enabled after notification, need to check the state.
-    if (JvmtiExport::should_post_monitor_waited() && node.TState != ObjectWaiter::TS_ENTER) {
+    // An event could have been enabled after notification, in this case
+    // a thread will have TS_ENTER state and posting the event may hit a suspension point.
+    // From a debugging perspective, it is more important to have no missing events.
+    if (interruptible && JvmtiExport::should_post_monitor_waited()) {
 
       // Process suspend requests now if any, before posting the event.
-      {
+      if (node.TState != ObjectWaiter::TS_ENTER) {
         ThreadBlockInVM tbvm(current, true);
       }
-
+        
       JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
     }
 
