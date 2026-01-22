@@ -32,7 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.zip.Adler32;
+import java.util.zip.CRC32C;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
@@ -201,10 +201,10 @@ enum CompressionAlgorithm {
 
     // Fast checksum.
     private static long getChecksum(byte[] input) {
-        Adler32 adler32 = new Adler32();
-        adler32.update(input);
-        // The upper 32 bits are not used in the long returned by Adler32,
+        CRC32C crc32c = new CRC32C();
+        crc32c.update(input);
+        // The upper 32 bits are not used in the long returned by CRC32C,
         // place input's length there to reduce the chance of collision.
-        return adler32.getValue() | (long) input.length << 32;
+        return crc32c.getValue() | (long) input.length << 32;
     }
 }
