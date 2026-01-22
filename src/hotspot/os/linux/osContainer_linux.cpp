@@ -304,12 +304,13 @@ void OSContainer::print_container_metric(outputStream* st, const char* metrics, 
   constexpr int longest_value = max_length - 11; // Max length - shortest "metric: " string ("cpu_quota: ")
   char value_str[longest_value + 1] = {};
   os::snprintf_checked(value_str, longest_value, metric_fmt<T>::fmt, value);
-  st->print("%s: %*s", metrics, max_length - static_cast<int>(strlen(metrics)) - 2, value_str); // -2 for the ": "
-  if (unit[0] != '\0') {
-    st->print_cr(" %s", unit);
-  } else {
-    st->print_cr("");
-  }
+
+  const int pad_width = max_length - static_cast<int>(strlen(metrics)) - 2; // -2 for the ": "
+  const char* unit_prefix = unit[0] != '\0' ? " " : "";
+
+  char line[128] = {};
+  os::snprintf_checked(line, sizeof(line), "%s: %*s%s%s", metrics, pad_width, value_str, unit_prefix, unit);
+  st->print_cr("%s", line);
 }
 
 void OSContainer::print_container_helper(outputStream* st, MetricResult& res, const char* metrics) {
