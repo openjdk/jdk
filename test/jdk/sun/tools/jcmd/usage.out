@@ -1,8 +1,8 @@
-Usage: jcmd <pid | main class> [-T] <command ...|PerfCounter.print|-f file>
+Usage: jcmd <pid | main class> [-t] <command ...|PerfCounter.print|-f file>
    or: jcmd -l                                                    
    or: jcmd <-h | --help>                                         
                                                                   
-  -T flag ensures the dignostic command begins with a timestamp   
+  -t flag ensures the dignostic command begins with a timestamp   
                                                                   
   command must be a valid jcmd command for the selected JVM.      
   Use the command "help" to see which commands are available.   

@@ -33,16 +33,16 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @summary test jcmd generic flag "-T" to make sure dignostic coommand is timestamped
+ * @summary test jcmd generic flag "-t" to make sure dignostic coommand is timestamped
  * @library /test/lib
  * @run main/othervm TestJcmdTimestamp
  */
 public class TestJcmdTimestamp {
 
     public static void main(String[] args) throws Exception {
-        TestJcmdTimestamp(new PidJcmdExecutor(), "-T VM.version", true /* expectTimestamp */);
+        TestJcmdTimestamp(new PidJcmdExecutor(), "-t VM.version", true /* expectTimestamp */);
         TestJcmdTimestamp(new PidJcmdExecutor(), "VM.version", false /* expectTimestamp */);
-        TestJcmdTimestamp(new FileJcmdExecutor(), "-T VM.version", true /* expectTimestamp */);
+        TestJcmdTimestamp(new FileJcmdExecutor(), "-t VM.version", true /* expectTimestamp */);
         TestJcmdTimestamp(new FileJcmdExecutor(), "VM.version", false /* expectTimestamp */);
     }
 

@@ -168,7 +168,7 @@ public:
 struct JcmdOptions {
   enum class TimeStamp {
     Default,
-    Yes // timestamp was explicitly requeted with -T flag
+    Yes // a timestamp was requsted with "-t" flag
   };
 
   TimeStamp timestamp = TimeStamp::Default;

@@ -33,7 +33,7 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
 
 ## Synopsis
 
-`jcmd` \[*pid* \| *main-class*\] [`-T`] *command*... \| `PerfCounter.print` \| `-f`
+`jcmd` \[*pid* \| *main-class*\] [`-t`] *command*... \| `PerfCounter.print` \| `-f`
 *filename*
 
 `jcmd` \[`-l`\]
@@ -48,7 +48,7 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
 :   When used, the `jcmd` utility sends the diagnostic command request to all
     Java processes with the specified name of the main class.
 
-`-T`
+`-t`
 :   When used, the diagnostic commands output starts with a timestamp.
 
 *command*
