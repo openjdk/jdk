@@ -125,14 +125,14 @@ public final class ModulePathTest {
         } else {
             final CannedFormattedString expectedErrorMessage;
             if (modulePathArgs.isEmpty()) {
-                expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
+                expectedErrorMessage = JPackageCommand.makeError(
                         "ERR_MissingArgument2", "--runtime-image", "--module-path");
             } else {
-                expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
+                expectedErrorMessage = JPackageCommand.makeError(
                         "error.no-module-in-path", appDesc.moduleName());
             }
 
-            cmd.validateOutput(expectedErrorMessage).execute(1);
+            cmd.validateErr(expectedErrorMessage).execute(1);
         }
     }
 
