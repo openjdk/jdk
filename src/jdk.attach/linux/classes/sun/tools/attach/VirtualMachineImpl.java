@@ -26,6 +26,7 @@ package sun.tools.attach;
 
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
 import java.io.File;
@@ -253,7 +254,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         return f;
     }
 
-    private String findTargetProcessTmpDirectory(long pid) throws AttachNotSupportedException, IOException {
+    private String findTargetProcessTmpDirectory(long pid) throws IOException {
         final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
         /* We need to handle at least 4 different cases:
@@ -279,7 +280,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
                 return TMPDIR.toString();
             } else {
-                throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
+                throw new AttachOperationFailedException("Unable to access the filesystem of the target process");
             }
         } catch (IOException ioe) {
             try {
@@ -297,7 +298,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 throw ioe;
             } catch (MonitorException | URISyntaxException e) {
                 // Other exceptions (happened at MonitoredHost) would be wrapped with AttachNotSupportedException
-                throw new AttachNotSupportedException("Unable to find target proces", e);
+                throw new AttachOperationFailedException("Unable to find target proces", e);
             }
         }
     }
