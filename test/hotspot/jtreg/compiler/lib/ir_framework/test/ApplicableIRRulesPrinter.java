@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,13 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Prints an encoding to the dedicated test framework socket whether @IR rules of @Test methods should be applied or not.
- * This is done during the execution of the test VM by checking the active VM flags. This encoding is eventually parsed
- * and checked by the IRMatcher class in the driver VM after the termination of the test VM. IR rule indices start at 1.
+ * Prints all applicable IR rules to the dedicated test framework socket whether @IR rules of @Test methods should be
+ * applied or not. This is done during the execution of the Test VM by checking the active VM flags. This
+ * Applicable IR Rules message is eventually parsed and checked by the IRMatcher class in the Driver VM after the
+ * termination of the Test VM. IR rule indices start at 1.
  */
-public class IREncodingPrinter {
-    public static final String START = "##### IRMatchRulesEncoding - used by TestFramework #####";
+public class ApplicableIRRulesPrinter {
+    public static final String START = "##### ApplicableIRRules - used by TestFramework #####";
     public static final String END = "----- END -----";
     public static final int NO_RULE_APPLIED = -1;
 
@@ -60,7 +61,7 @@ public class IREncodingPrinter {
     // Platforms for use in IR preconditions. Please verify that e.g. there is
     // a corresponding use in a jtreg @requires annotation before adding new platforms,
     // as adding non-existent platforms can lead to skipped tests.
-    private static final List<String> irTestingPlatforms = new ArrayList<String>(Arrays.asList(
+    private static final List<String> irTestingPlatforms = new ArrayList<>(Arrays.asList(
         // os.family
         "aix",
         "linux",
@@ -85,7 +86,7 @@ public class IREncodingPrinter {
     // Please verify new CPU features before adding them. If we allow non-existent features
     // on this list, we will ignore tests and never execute them. Consult CPU_FEATURE_FLAGS
     // in corresponding vm_version_.hpp file to find correct cpu feature's name.
-    private static final List<String> verifiedCPUFeatures = new ArrayList<String>( Arrays.asList(
+    private static final List<String> verifiedCPUFeatures = new ArrayList<>( Arrays.asList(
         // x86
         "fma",
         "f16c",
@@ -126,7 +127,7 @@ public class IREncodingPrinter {
         "zvkn"
     ));
 
-    public IREncodingPrinter() {
+    public ApplicableIRRulesPrinter() {
         output.append(START).append(System.lineSeparator());
         output.append("<method>,{comma separated applied @IR rule ids}").append(System.lineSeparator());
     }
@@ -136,7 +137,7 @@ public class IREncodingPrinter {
      * - indices of all @IR rules that should be applied, separated by a comma
      * - "-1" if no @IR rule should not be applied
      */
-    public void emitRuleEncoding(Method m, boolean skipped) {
+    public void emitApplicableIRRules(Method m, boolean skipped) {
         method = m;
         int i = 0;
         ArrayList<Integer> validRules = new ArrayList<>();
@@ -170,7 +171,7 @@ public class IREncodingPrinter {
     private void printDisableReason(String method, String reason, String[] apply, int ruleIndex, int ruleMax) {
         TestFrameworkSocket.write("Disabling IR matching for rule " + ruleIndex + " of " + ruleMax + " in " +
                                   method + ": " + reason + ": " + String.join(", ", apply),
-                                  "[IREncodingPrinter]", true);
+                                  "[ApplicableIRRules]", true);
     }
 
     private boolean shouldApplyIrRule(IR irAnno, String m, int ruleIndex, int ruleMax) {
@@ -521,7 +522,7 @@ public class IREncodingPrinter {
 
     public void emit() {
         output.append(END);
-        TestFrameworkSocket.write(output.toString(), "IR rule application encoding");
+        TestFrameworkSocket.write(output.toString(), "ApplicableIRRules");
     }
 }
 
