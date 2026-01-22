@@ -27,19 +27,33 @@
 
 #include "gc/g1/g1EvacStats.hpp"
 
-inline uint G1EvacStats::regions_filled() const { return _regions_filled.load_relaxed(); }
+inline uint G1EvacStats::regions_filled() const {
+  return _regions_filled.load_relaxed();
+}
 
-inline size_t G1EvacStats::num_plab_filled() const { return _num_plab_filled.load_relaxed(); }
+inline size_t G1EvacStats::num_plab_filled() const {
+  return _num_plab_filled.load_relaxed();
+}
 
-inline size_t G1EvacStats::region_end_waste() const { return _region_end_waste.load_relaxed(); }
+inline size_t G1EvacStats::region_end_waste() const {
+  return _region_end_waste.load_relaxed();
+}
 
-inline size_t G1EvacStats::direct_allocated() const { return _direct_allocated.load_relaxed(); }
+inline size_t G1EvacStats::direct_allocated() const {
+  return _direct_allocated.load_relaxed();
+}
 
-inline size_t G1EvacStats::num_direct_allocated() const { return _num_direct_allocated.load_relaxed(); }
+inline size_t G1EvacStats::num_direct_allocated() const {
+  return _num_direct_allocated.load_relaxed();
+}
 
-inline size_t G1EvacStats::failure_used() const { return _failure_used.load_relaxed(); }
+inline size_t G1EvacStats::failure_used() const {
+  return _failure_used.load_relaxed();
+}
 
-inline size_t G1EvacStats::failure_waste() const { return _failure_waste.load_relaxed(); }
+inline size_t G1EvacStats::failure_waste() const {
+  return _failure_waste.load_relaxed();
+}
 
 inline void G1EvacStats::add_direct_allocated(size_t value) {
   _direct_allocated.add_then_fetch(value, memory_order_relaxed);
