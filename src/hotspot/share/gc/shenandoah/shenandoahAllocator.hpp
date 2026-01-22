@@ -141,7 +141,7 @@ public:
   // Caller must hold the heap lock at safepoint. This causes all directly allocatable regions to be placed into
   // the appropriate ShenandoahFreeSet partition.
   // Collector calls this in preparation for choosing a collection set and/or rebuilding the freeset.
-  virtual void release_alloc_regions();
+  virtual void release_alloc_regions(bool should_update_accounting = true);
 
   // Caller must hold the heap lock at safepoint. This causes us to set aside N regions as directly allocatable
   // by removing these regions from the relevant ShenandoahFreeSet partitions.

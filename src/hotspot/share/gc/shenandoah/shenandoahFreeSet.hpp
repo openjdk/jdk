@@ -851,15 +851,15 @@ public:
     return _old_collector_allocator;
   }
 
-  void release_alloc_regions() {
-    mutator_allocator()->release_alloc_regions();
-    collector_allocator()->release_alloc_regions();
+  void release_alloc_regions(bool should_update_accounting = true) {
+    mutator_allocator()->release_alloc_regions(should_update_accounting);
+    collector_allocator()->release_alloc_regions(should_update_accounting);
   }
 
-  void release_alloc_regions_under_lock() {
+  void release_alloc_regions_under_lock(bool should_update_accounting = true) {
     shenandoah_assert_not_heaplocked();
     ShenandoahHeapLocker locker(_heap->lock());
-    release_alloc_regions();
+    release_alloc_regions(should_update_accounting);
   }
 
   // Handle allocation for collector (for evacuation).

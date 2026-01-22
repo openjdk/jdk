@@ -372,7 +372,7 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate(ShenandoahAllocRequest 
 }
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
-void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
+void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions(bool should_update_accounting) {
   assert_at_safepoint();
   shenandoah_assert_heaplocked();
 
@@ -401,7 +401,7 @@ void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions() {
   if (total_regions_to_unretire > 0) {
     _free_set->partitions()->decrease_used(ALLOC_PARTITION, total_free_bytes);
     _free_set->partitions()->increase_region_counts(ALLOC_PARTITION, total_regions_to_unretire);
-    accounting_updater._need_update = true;
+    accounting_updater._need_update = should_update_accounting;
   }
 }
 

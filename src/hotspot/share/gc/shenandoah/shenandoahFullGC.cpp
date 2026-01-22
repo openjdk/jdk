@@ -217,7 +217,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     heap->tlabs_retire(ResizeTLAB);
   }
 
-  heap->free_set()->release_alloc_regions_under_lock();
+  heap->free_set()->release_alloc_regions_under_lock(false);
 
   OrderAccess::fence();
 
