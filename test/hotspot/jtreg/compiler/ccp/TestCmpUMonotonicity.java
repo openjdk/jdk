@@ -28,7 +28,7 @@ package compiler.ccp;
  * @summary Test that CmpUNode::sub conforms monotonicity
  *
  * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test* ${test.main.class}
  */
 public class TestCmpUMonotonicity {
     public static void main(String[] args) {
