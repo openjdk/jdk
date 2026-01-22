@@ -220,7 +220,6 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
           k0 = pk[0]; k1 = pk[1];
           p2 = sp[0];
 
-          sp += 2*sll;
           sp += sll;
 
           for (j = 0; j <= (hsize - 2); j += 2) {
@@ -251,7 +250,6 @@ static mlib_status mlib_ImageConv1xN(mlib_image       *dst,
 
           k0 = pk[0];
 
-          sp += 2*sll;
           for (j = 0; j < hsize; j++) {
             p0 = sp[0];
 
