@@ -420,7 +420,14 @@ public:
 
   // span is the total memory affiliated with these stats (some of which is in use and other is available)
   size_t span() const { return _regions * ShenandoahHeapRegion::region_size_bytes(); }
-  size_t non_trashed_span() const { return (_regions - _trashed_regions) * ShenandoahHeapRegion::region_size_bytes(); }
+  size_t non_trashed_span() const {
+    assert(_regions >= _trashed_regions, "sanity");
+    return (_regions - _trashed_regions) * ShenandoahHeapRegion::region_size_bytes();
+  }
+  size_t non_trashed_committed() const {
+    assert(_committed >= _trashed_regions * ShenandoahHeapRegion::region_size_bytes(), "sanity");
+    return _committed - (_trashed_regions * ShenandoahHeapRegion::region_size_bytes());
+  }
 };
 
 class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
