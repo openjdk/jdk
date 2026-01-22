@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8374654 8208752
  * @summary test lambda deserialization for Object method references on interfaces
  * @compile/ref=SerializableObjectMethodReferencesOnInterfaces.out -XDrawDiagnostics --debug=dumpLambdaDeserializationStats SerializableObjectMethodReferencesOnInterfaces.java
  * @run main SerializableObjectMethodReferencesOnInterfaces
