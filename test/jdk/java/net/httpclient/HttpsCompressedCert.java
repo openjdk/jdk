@@ -35,6 +35,8 @@ import javax.net.ssl.SSLParameters;
  * @test
  * @bug 8372526
  * @summary TLS certificate compression
+ * @library /test/lib
+ *          /javax/net/ssl/templates
  * @run main/manual/othervm HttpsCompressedCert true
  * @run main/manual/othervm HttpsCompressedCert false
  */
