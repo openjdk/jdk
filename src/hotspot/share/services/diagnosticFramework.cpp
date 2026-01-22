@@ -417,11 +417,6 @@ static JcmdOptions parse_common_options(const CmdLine& line, stringStream *updat
 }
 
 
-static void print_local_time(outputStream* output) {
-  char buf[32];
-  output->print_cr("%s", os::local_time_string(buf, sizeof(buf)));
-}
-
 void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
 
   if (cmdline == nullptr) return; // Nothing to do!
@@ -470,7 +465,7 @@ void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
       command->parse(&line, delim, CHECK);
 
       if (options.timestamp) {
-        print_local_time(_out);
+        _out->date_stamp(true, "", "\n");
       }
 
       execute(command, CHECK);

@@ -33,7 +33,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @summary test jcmd generic flag "-t" to make sure dignostic coommand is timestamped
+ * @summary test whether jcmd generic flag "-t" adds a timestamp to the output
  * @library /test/lib
  * @run main/othervm TestJcmdTimestamp
  */
