@@ -166,7 +166,7 @@ public:
 
 
 struct JcmdOptions {
-  bool timestamp;
+  bool timestamp; // a timestamp was requsted with "-t" flag
 };
 
 // The DCmdParser class can be used to create an argument parser for a

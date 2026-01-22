@@ -389,7 +389,7 @@ static JcmdOptions parse_common_options(const CmdLine& line, stringStream *updat
   JcmdOptions options = {0};
 
   // there is only TIMESTAMP option so far
-  const char TIMESTAMP[] = "-T";
+  const char TIMESTAMP[] = "-t";
 
   const char* line_str = line.cmd_addr();
 
