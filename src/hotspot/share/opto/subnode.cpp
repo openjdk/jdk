@@ -764,7 +764,8 @@ const Type* CmpUNode::sub(const Type* t1, const Type* t2) const {
   } else if (r0->_ulo > r1->_uhi) {
     return TypeInt::CC_GT;
   } else if (r0->is_con() && r1->is_con()) {
-    assert(r0->get_con() == r1->get_con(), "must be equal");
+    // Since r0->_ulo == r0->_uhi == r0->get_con(), we only reach here if the constants are equal
+    assert(r0->get_con() == r1->get_con(), "must reach a previous branch otherwise");
     return TypeInt::CC_EQ;
   } else if (r0->_uhi == r1->_ulo) {
     return TypeInt::CC_LE;
@@ -939,7 +940,8 @@ const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
   } else if (r0->_ulo > r1->_uhi) {
     return TypeInt::CC_GT;
   } else if (r0->is_con() && r1->is_con()) {
-    assert(r0->get_con() == r1->get_con(), "must be equal");
+    // Since r0->_ulo == r0->_uhi == r0->get_con(), we only reach here if the constants are equal
+    assert(r0->get_con() == r1->get_con(), "must reach a previous branch otherwise");
     return TypeInt::CC_EQ;
   } else if (r0->_uhi == r1->_ulo) {
     return TypeInt::CC_LE;
