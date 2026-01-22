@@ -39,7 +39,6 @@ class ObjectMonitorContentionMark;
 class ParkEvent;
 class BasicLock;
 class ContinuationWrapper;
-class EventJavaMonitorWait;
 
 class ObjectWaiter : public CHeapObj<mtThread> {
  public:
