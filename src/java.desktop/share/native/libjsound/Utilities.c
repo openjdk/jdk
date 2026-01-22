@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,6 @@
 
 
 #include "Utilities.h"
-
-
-int UTIL_IsBigEndianPlatform() {
-#ifdef _LITTLE_ENDIAN
-    return 0;
-#else
-    return 1;
-#endif
-}
 
 void ThrowJavaMessageException(JNIEnv *e, const char *exClass, const char *msg) {
     jclass newExcCls;

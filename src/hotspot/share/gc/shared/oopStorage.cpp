@@ -700,7 +700,7 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
     // then someone else has made such a claim and the deferred update has not
     // yet been processed and will include our change, so we don't need to do
     // anything further.
-    if (_deferred_updates_next.compare_exchange(nullptr, this) == nullptr) {
+    if (_deferred_updates_next.compare_set(nullptr, this)) {
       // Successfully claimed.  Push, with self-loop for end-of-list.
       Block* head = owner->_deferred_updates.load_relaxed();
       while (true) {
