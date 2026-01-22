@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1489,8 +1489,7 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
   }
   Node *if_f = _gvn.transform(new IfFalseNode(iff));
   Node *frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
-  Node* halt = _gvn.transform(new HaltNode(if_f, frame, "unexpected null in intrinsic"));
-  C->root()->add_req(halt);
+  halt(if_f, frame, "unexpected null in intrinsic");
   Node *if_t = _gvn.transform(new IfTrueNode(iff));
   set_control(if_t);
   return cast_not_null(value, do_replace_in_map);
@@ -2073,6 +2072,12 @@ void GraphKit::increment_counter(Node* counter_addr) {
   store_to_memory(ctrl, counter_addr, incr, T_LONG, MemNode::unordered);
 }
 
+void GraphKit::halt(Node* ctrl, Node* frameptr, const char* reason, bool generate_code_in_product) {
+  Node* halt = new HaltNode(ctrl, frameptr, reason
+                            PRODUCT_ONLY(COMMA generate_code_in_product));
+  halt = _gvn.transform(halt);
+  root()->add_req(halt);
+}
 
 //------------------------------uncommon_trap----------------------------------
 // Bail out to the interpreter in mid-method.  Implemented by calling the
@@ -2195,11 +2200,15 @@ Node* GraphKit::uncommon_trap(int trap_request,
   // The debug info is the only real input to this call.
 
   // Halt-and-catch fire here.  The above call should never return!
-  HaltNode* halt = new HaltNode(control(), frameptr(), "uncommon trap returned which should never happen"
-                                                       PRODUCT_ONLY(COMMA /*reachable*/false));
-  _gvn.set_type_bottom(halt);
-  root()->add_req(halt);
-
+  // We only emit code for the HaltNode in debug, which is enough for
+  // verifying correctness. In product, we don't want to emit it so
+  // that we can save on code space. HaltNode often get folded because
+  // the compiler can prove that the unreachable path is dead. But we
+  // cannot generally expect that for uncommon traps, which are often
+  // reachable and occasionally taken.
+  halt(control(), frameptr(),
+       "uncommon trap returned which should never happen",
+       false /* don't emit code in product */);
   stop_and_kill_map();
   return call;
 }
@@ -2505,7 +2514,8 @@ Node* GraphKit::make_runtime_call(int flags,
     uint num_bits = call_type->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
     call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
   } else if (flags & RC_PURE) {
-    call = new CallLeafPureNode(call_type, call_addr, call_name, adr_type);
+    assert(adr_type == nullptr, "pure call does not touch memory");
+    call = new CallLeafPureNode(call_type, call_addr, call_name);
   } else {
     call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
   }
@@ -3417,6 +3427,7 @@ Node* GraphKit::insert_mem_bar(int opcode, Node* precedent) {
   mb->init_req(TypeFunc::Control, control());
   mb->init_req(TypeFunc::Memory,  reset_memory());
   Node* membar = _gvn.transform(mb);
+  record_for_igvn(membar);
   set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
   set_all_memory_call(membar);
   return membar;
@@ -3446,6 +3457,7 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
     mb->set_req(TypeFunc::Memory, memory(alias_idx));
   }
   Node* membar = _gvn.transform(mb);
+  record_for_igvn(membar);
   set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
   if (alias_idx == Compile::AliasIdxBot) {
     merged_memory()->set_base_memory(_gvn.transform(new ProjNode(membar, TypeFunc::Memory)));

@@ -146,6 +146,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
+        map.put("jdk.explodedImage", this::explodedImage);
         map.put("jlink.packagedModules", this::packagedModules);
         map.put("jdk.static", this::isStatic);
         vmGC(map); // vm.gc.X = true/false
@@ -749,6 +750,20 @@ public class VMProps implements Callable<Map<String, String>> {
     private String jdkContainerized() {
         String isEnabled = System.getenv("TEST_JDK_CONTAINERIZED");
         return "" + "true".equalsIgnoreCase(isEnabled);
+    }
+
+    private String explodedImage() {
+        try {
+            Path jmodFile = Path.of(System.getProperty("java.home"), "jmods", "java.base.jmod");
+            if (Files.exists(jmodFile)) {
+                return Boolean.FALSE.toString();
+            } else {
+                return Boolean.TRUE.toString();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return errorWithMessage("Error in explodedImage " + t);
+        }
     }
 
     private String packagedModules() {

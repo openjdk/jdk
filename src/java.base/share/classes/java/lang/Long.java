@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Optional;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -915,6 +916,7 @@ public final class Long extends Number
         return Long.valueOf(parseLong(s, 10));
     }
 
+    @AOTSafeClassInitializer
     private static final class LongCache {
         private LongCache() {}
 
@@ -1413,6 +1415,7 @@ public final class Long extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned quotient of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #remainderUnsigned
      * @since 1.8
      */
@@ -1436,6 +1439,7 @@ public final class Long extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned remainder of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #divideUnsigned
      * @since 1.8
      */
