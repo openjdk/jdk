@@ -297,7 +297,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 // Throw original IOE if target process not found on localhost.
                 throw ioe;
             } catch (MonitorException | URISyntaxException e) {
-                // Other exceptions (happened at MonitoredHost) would be wrapped with AttachNotSupportedException
+                // Other exceptions (happened at MonitoredHost) would be wrapped with AttachOperationFailedException
                 throw new AttachOperationFailedException("Unable to find target proces", e);
             }
         }
