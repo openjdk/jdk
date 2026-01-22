@@ -908,6 +908,9 @@ inline void Assembler::xvrdpic(   VectorSRegister d, VectorSRegister b)         
 inline void Assembler::xvrdpim(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIM_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpip(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIP_OPCODE | vsrt(d) | vsrb(b)); }
 
+inline void Assembler::xsminjdp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XSMINJDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xsmaxjdp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XSMAXJDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+
 inline void Assembler::xvminsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmindp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmaxsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMAXSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }

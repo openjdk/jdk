@@ -12313,6 +12313,54 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_pipe(pipe_class_default);
 %}
 
+instruct minF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MinF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MinD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MaxF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MaxD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 //---------- Population Count Instructions ------------------------------------
 
 instruct popCountI(iRegIdst dst, iRegIsrc src) %{

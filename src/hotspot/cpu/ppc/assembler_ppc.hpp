@@ -599,6 +599,9 @@ class Assembler : public AbstractAssembler {
     XVMAXSP_OPCODE = (60u << OPCODE_SHIFT |  192u << 3),
     XVMAXDP_OPCODE = (60u << OPCODE_SHIFT |  224u << 3),
 
+    XSMINJDP_OPCODE = (60u << OPCODE_SHIFT | 152u << 3),
+    XSMAXJDP_OPCODE = (60u << OPCODE_SHIFT | 144u << 3),
+
     // Deliver A Random Number (introduced with POWER9)
     DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
 
@@ -2454,6 +2457,9 @@ class Assembler : public AbstractAssembler {
   inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
+
+  inline void xsminjdp( VectorSRegister d, VectorSRegister a, VectorSRegister b); // Requires Power 9
+  inline void xsmaxjdp( VectorSRegister d, VectorSRegister a, VectorSRegister b); // Requires Power 9
 
   // The following functions do not match exactly the Java.math semantics.
   inline void xvminsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
