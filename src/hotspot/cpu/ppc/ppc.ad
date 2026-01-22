@@ -2234,6 +2234,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
 
+    case Op_MinF:
+    case Op_MaxF:
+    case Op_MinD:
+    case Op_MaxD:
+      return (PowerArchitecturePPC64 >= 9);
+
     case Op_Digit:
       return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
     case Op_LowerCase:
