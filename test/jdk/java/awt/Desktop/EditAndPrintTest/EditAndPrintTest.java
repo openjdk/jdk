@@ -48,7 +48,7 @@ public class EditAndPrintTest extends JPanel {
             This test tries to edit and print a directory, which will expectedly raise IOException.
             Then this test would edit and print a .txt file, which should be successful.
             After test execution close the editor if it was launched by test.
-            If you see any EXCEPTION messages in the output press FAIL.
+            If you see any EXCEPTION messages in case of .txt file in the output press FAIL.
             """;
 
     static Desktop desktop;

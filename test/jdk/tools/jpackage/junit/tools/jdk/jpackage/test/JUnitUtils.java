@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 package jdk.jpackage.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.Assertions;
@@ -38,7 +40,11 @@ public final class JUnitUtils {
      * @param actual   the actual array to test for equality
      */
     public static void assertArrayEquals(Object expected, Object actual) {
-        ARRAY_ASSERTERS.getOrDefault(expected.getClass().componentType(), OBJECT_ARRAY_ASSERTER).acceptUnchecked(expected, actual);
+        if (expected == null || actual == null) {
+            assertEquals(expected, actual);
+        } else {
+            ARRAY_ASSERTERS.getOrDefault(expected.getClass().componentType(), OBJECT_ARRAY_ASSERTER).acceptUnchecked(expected, actual);
+        }
     }
 
     /**
@@ -56,6 +62,10 @@ public final class JUnitUtils {
      */
     public static Map<String, Object> exceptionAsPropertyMap(Exception ex) {
         return EXCEPTION_OM.toMap(ex);
+    }
+
+    public static Exception removeExceptionCause(Exception ex) {
+        return new ExceptionCauseRemover(ex);
     }
 
 
@@ -108,6 +118,23 @@ public final class JUnitUtils {
         private String expectedMessage;
         private Class<? extends Exception> expectedType;
         private Class<? extends Throwable> expectedCauseType;
+    }
+
+
+    private static final class ExceptionCauseRemover extends Exception {
+
+        ExceptionCauseRemover(Exception ex) {
+            super(ex.getMessage());
+            type = ex.getClass();
+        }
+
+        public Class<?> getType() {
+            return type;
+        }
+
+        private final Class<?> type;
+
+        private static final long serialVersionUID = 1L;
     }
 
 

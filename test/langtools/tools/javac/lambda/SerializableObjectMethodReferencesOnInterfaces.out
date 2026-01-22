@@ -1,0 +1,4 @@
+SerializableObjectMethodReferencesOnInterfaces.java:57:33: compiler.note.lambda.deserialization.stat: SerializableObjectMethodReferencesOnInterfaces$Test$F, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Object, hashCode, ()I
+SerializableObjectMethodReferencesOnInterfaces.java:58:33: compiler.note.lambda.deserialization.stat: SerializableObjectMethodReferencesOnInterfaces$Test$F, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Object, hashCode, ()I
+SerializableObjectMethodReferencesOnInterfaces.java:59:32: compiler.note.lambda.deserialization.stat: SerializableObjectMethodReferencesOnInterfaces$Test$F, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Enum, hashCode, ()I
+SerializableObjectMethodReferencesOnInterfaces.java:60:37: compiler.note.lambda.deserialization.stat: SerializableObjectMethodReferencesOnInterfaces$Test$F, apply, (Ljava/lang/Object;)Ljava/lang/Object;, 5, java/lang/Object, hashCode, ()I

@@ -29,27 +29,13 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main SerializableObjectMethodReferencesOnInterfaces
+ * @compile/ref=SerializableObjectMethodReferencesOnInterfaces.out -XDrawDiagnostics --debug=dumpLambdaDeserializationStats SerializableObjectMethodReferencesOnInterfaces.java
  */
 
 import java.io.Serializable;
 import java.lang.classfile.*;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.instruction.ConstantInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Iterator;
 
 public class SerializableObjectMethodReferencesOnInterfaces {
-
-    public static void main(String... args) throws Exception {
-        new SerializableObjectMethodReferencesOnInterfaces().run();
-    }
 
     static class Test {
         interface I1 extends Serializable {}
@@ -73,85 +59,5 @@ public class SerializableObjectMethodReferencesOnInterfaces {
             F<E, Integer> f3 = E::hashCode;
             F<Object, Integer> f4 = Object::hashCode;
         }
-    }
-
-    public void run() throws Exception {
-        URL url =
-                SerializableObjectMethodReferencesOnInterfaces.class.getResource(
-                        "SerializableObjectMethodReferencesOnInterfaces$Test.class");
-        Path file = Paths.get(url.toURI());
-
-        ClassModel cf = ClassFile.of().parse(file);
-        String actual = printDeserializationTests(cf);
-        String expected =
-                """
-                getImplMethodKind 5
-                getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
-                getFunctionalInterfaceMethodName apply
-                getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
-                getImplClass java/lang/Object
-                getImplMethodSignature ()I
-                getInstantiatedMethodType (LSerializableObjectMethodReferencesOnInterfaces$Test$I1;)Ljava/lang/Integer;
-                getImplMethodKind 5
-                getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
-                getFunctionalInterfaceMethodName apply
-                getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
-                getImplClass java/lang/Object
-                getImplMethodSignature ()I
-                getInstantiatedMethodType (LSerializableObjectMethodReferencesOnInterfaces$Test$I2;)Ljava/lang/Integer;
-                getImplMethodKind 5
-                getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
-                getFunctionalInterfaceMethodName apply
-                getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
-                getImplClass java/lang/Enum
-                getImplMethodSignature ()I
-                getInstantiatedMethodType (LSerializableObjectMethodReferencesOnInterfaces$Test$E;)Ljava/lang/Integer;
-                getImplMethodKind 5
-                getFunctionalInterfaceClass SerializableObjectMethodReferencesOnInterfaces$Test$F
-                getFunctionalInterfaceMethodName apply
-                getFunctionalInterfaceMethodSignature (Ljava/lang/Object;)Ljava/lang/Object;
-                getImplClass java/lang/Object
-                getImplMethodSignature ()I
-                getInstantiatedMethodType (Ljava/lang/Object;)Ljava/lang/Integer;
-                """;
-        if (!actual.equals(expected)) {
-            throw new AssertionError(
-                    "Unexpected deserialization tests, expected:\n"
-                            + expected
-                            + "\nactual:\n"
-                            + actual);
-        }
-    }
-
-    private static String printDeserializationTests(ClassModel cf) {
-        MethodModel m =
-                cf.methods().stream()
-                        .filter(
-                                x ->
-                                        x.methodName()
-                                                .stringValue()
-                                                .contentEquals("$deserializeLambda$"))
-                        .findFirst()
-                        .get();
-        Iterator<CodeElement> it = m.code().get().iterator();
-        StringBuilder sb = new StringBuilder();
-        while (it.hasNext()) {
-            CodeElement curr = it.next();
-            if (curr instanceof InvokeInstruction i
-                    && i.method()
-                            .owner()
-                            .asInternalName()
-                            .contentEquals("java/lang/invoke/SerializedLambda")) {
-                CodeElement next = it.next();
-                if (next instanceof ConstantInstruction c) {
-                    sb.append(
-                            i.method().name().stringValue()
-                                    + " "
-                                    + c.constantValue().toString()
-                                    + "\n");
-                }
-            }
-        }
-        return sb.toString();
     }
 }

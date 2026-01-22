@@ -142,6 +142,9 @@ public class LambdaToMethod extends TreeTranslator {
     /** dump statistics about lambda code generation */
     private final boolean dumpLambdaToMethodStats;
 
+    /** dump statistics about lambda deserialization code generation */
+    private final boolean dumpLambdaDeserializationStats;
+
     /** force serializable representation, for stress testing **/
     private final boolean forceSerializable;
 
@@ -187,6 +190,7 @@ public class LambdaToMethod extends TreeTranslator {
         transTypes = TransTypes.instance(context);
         Options options = Options.instance(context);
         dumpLambdaToMethodStats = options.isSet("debug.dumpLambdaToMethodStats");
+        dumpLambdaDeserializationStats = options.isSet("debug.dumpLambdaDeserializationStats");
         attr = Attr.instance(context);
         forceSerializable = options.isSet("forceSerializable");
         boolean lineDebugInfo =
@@ -716,8 +720,9 @@ public class LambdaToMethod extends TreeTranslator {
         String implMethodSignature = typeSig(types.erasure(refSym.type));
         String instantiatedMethodType = typeSig(types.erasure(samType));
 
+        int implMethodKind = refSym.referenceKind();
         JCExpression kindTest = eqTest(syms.intType, deserGetter("getImplMethodKind", syms.intType),
-                make.Literal(refSym.referenceKind()));
+                make.Literal(implMethodKind));
         ListBuffer<JCExpression> serArgs = new ListBuffer<>();
         int i = 0;
         for (Type t : indyType.getParameterTypes()) {
@@ -746,17 +751,16 @@ public class LambdaToMethod extends TreeTranslator {
             stmts = new ListBuffer<>();
             kInfo.deserializeCases.put(implMethodName, stmts);
         }
-        /* **
-        System.err.printf("+++++++++++++++++\n");
-        System.err.printf("*functionalInterfaceClass: '%s'\n", functionalInterfaceClass);
-        System.err.printf("*functionalInterfaceMethodName: '%s'\n", functionalInterfaceMethodName);
-        System.err.printf("*functionalInterfaceMethodSignature: '%s'\n", functionalInterfaceMethodSignature);
-        System.err.printf("*implMethodKind: %d\n", implMethodKind);
-        System.err.printf("*implClass: '%s'\n", implClass);
-        System.err.printf("*implMethodName: '%s'\n", implMethodName);
-        System.err.printf("*implMethodSignature: '%s'\n", implMethodSignature);
-        System.err.printf("*instantiatedMethodType: '%s'\n", instantiatedMethodType);
-        ****/
+        if (dumpLambdaDeserializationStats) {
+            log.note(pos, Notes.LambdaDeserializationStat(
+                    functionalInterfaceClass,
+                    functionalInterfaceMethodName,
+                    functionalInterfaceMethodSignature,
+                    implMethodKind,
+                    implClass,
+                    implMethodName,
+                    implMethodSignature));
+        }
         stmts.append(stmt);
     }
 
@@ -1157,7 +1161,7 @@ public class LambdaToMethod extends TreeTranslator {
                     propagateAnnos = false;
                     break;
                 case LOCAL_VAR:
-                    ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym);
+                    ret = new VarSymbol(sym.flags(), sym.name, sym.type, translatedSym);
                     ret.pos = sym.pos;
                     // If sym.data == ElementKind.EXCEPTION_PARAMETER,
                     // set ret.data = ElementKind.EXCEPTION_PARAMETER too.
@@ -1169,7 +1173,8 @@ public class LambdaToMethod extends TreeTranslator {
                     }
                     break;
                 case PARAM:
-                    ret = new VarSymbol((sym.flags() & FINAL) | PARAMETER, sym.name, types.erasure(sym.type), translatedSym);
+                    Assert.check((sym.flags() & PARAMETER) != 0);
+                    ret = new VarSymbol(sym.flags(), sym.name, types.erasure(sym.type), translatedSym);
                     ret.pos = sym.pos;
                     break;
                 default:
