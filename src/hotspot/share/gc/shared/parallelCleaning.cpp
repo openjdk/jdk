@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(bool unloading_occurred) :
   if(iter.next()) {
     _first_nmethod = iter.method();
   }
-  _claimed_nmethod = _first_nmethod;
+  _claimed_nmethod.store_relaxed(_first_nmethod);
 }
 
 CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
@@ -53,7 +53,7 @@ void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num
   do {
     *num_claimed_nmethods = 0;
 
-    first = _claimed_nmethod;
+    first = _claimed_nmethod.load_relaxed();
     last = NMethodIterator(NMethodIterator::all, first);
 
     if (first != nullptr) {
@@ -67,7 +67,7 @@ void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num
       }
     }
 
-  } while (AtomicAccess::cmpxchg(&_claimed_nmethod, first, last.method()) != first);
+  } while (!_claimed_nmethod.compare_set(first, last.method()));
 }
 
 void CodeCacheUnloadingTask::work(uint worker_id) {
