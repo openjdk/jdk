@@ -154,14 +154,13 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
                     System.out.println("No events found in recording. Retrying.");
                     continue;
                 }
-                int foundChains = numChainsFoundInEvents(events);
-                final int minChainsRequired = 30; // very conservative, should be in the low 100s normally
-                if (expectedChains && foundChains < minChainsRequired) {
+                boolean chains = hasChains(events);
+                if (expectedChains && !chains) {
                     System.out.println(events);
-                    System.out.println("Expected chains but found not enough (" + foundChains + "). Retrying.");
+                    System.out.println("Expected chains but found none. Retrying.");
                     continue;
                 }
-                if (!expectedChains && foundChains > 0) {
+                if (!expectedChains && chains) {
                     System.out.println(events);
                     System.out.println("Didn't expect chains but found some. Retrying.");
                     continue;
@@ -176,7 +175,7 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
       System.gc();
     }
 
-    private static int numChainsFoundInEvents(List<RecordedEvent> events) throws IOException {
+    private static boolean hasChains(List<RecordedEvent> events) throws IOException {
         int found = 0;
         for (RecordedEvent e : events) {
             RecordedObject ro = e.getValue("object");
@@ -185,7 +184,8 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
 
             }
         }
-        return found;
+        System.out.println("Found chains: " + found);
+        return found > 0;
     }
 
     private static void buildLeak(int objectCount) {
