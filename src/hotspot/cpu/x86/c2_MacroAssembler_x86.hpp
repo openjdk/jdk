@@ -35,9 +35,9 @@ public:
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full description in c2_MacroAssembler_x86.cpp.
-  void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
-                             Register t, Register thread);
-  void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
+  void fast_lock(Register obj, Register box, Register rax_reg,
+                 Register t, Register thread);
+  void fast_unlock(Register obj, Register reg_rax, Register t, Register thread);
 
   void verify_int_in_range(uint idx, const TypeInt* t, Register val);
   void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);

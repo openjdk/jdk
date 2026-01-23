@@ -41,7 +41,7 @@ void assert_regions_used_not_more_than_capacity(ShenandoahGeneration* generation
 }
 
 void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
-  assert(generation->used_including_humongous_waste() <= generation->used_regions_size(),
+  assert(generation->used() <= generation->used_regions_size(),
          "%s consumed can be no larger than span of affiliated regions", generation->name());
 }
 #else
@@ -53,8 +53,7 @@ void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
 void ShenandoahGenerationalFullGC::prepare() {
   auto heap = ShenandoahGenerationalHeap::heap();
   // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
-  heap->set_gc_generation(heap->global_generation());
-  heap->set_active_generation();
+  heap->set_active_generation(heap->global_generation());
 
   // No need for old_gen->increase_used() as this was done when plabs were allocated.
   heap->reset_generation_reserves();
@@ -84,7 +83,7 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   assert_usage_not_more_than_regions_used(young);
 
   // Establish baseline for next old-has-grown trigger.
-  old->set_live_bytes_after_last_mark(old->used_including_humongous_waste());
+  old->set_live_bytes_after_last_mark(old->used());
 }
 
 void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) {
@@ -103,33 +102,6 @@ void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) 
   // we came to the full GC from an incomplete global cycle, we need to indicate
   // that the old regions are parsable.
   heap->old_generation()->set_parsable(true);
-}
-
-void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* heap) {
-  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::cast(heap);
-  ShenandoahOldGeneration* const old_gen = gen_heap->old_generation();
-
-  size_t old_usage = old_gen->used_regions_size();
-  size_t old_capacity = old_gen->max_capacity();
-
-  assert(old_usage % ShenandoahHeapRegion::region_size_bytes() == 0, "Old usage must align with region size");
-  assert(old_capacity % ShenandoahHeapRegion::region_size_bytes() == 0, "Old capacity must align with region size");
-
-  if (old_capacity > old_usage) {
-    size_t excess_old_regions = (old_capacity - old_usage) / ShenandoahHeapRegion::region_size_bytes();
-    gen_heap->generation_sizer()->transfer_to_young(excess_old_regions);
-  } else if (old_capacity < old_usage) {
-    size_t old_regions_deficit = (old_usage - old_capacity) / ShenandoahHeapRegion::region_size_bytes();
-    gen_heap->generation_sizer()->force_transfer_to_old(old_regions_deficit);
-  }
-
-  log_info(gc, ergo)("FullGC done: young usage: " PROPERFMT ", old usage: " PROPERFMT,
-               PROPERFMTARGS(gen_heap->young_generation()->used()),
-               PROPERFMTARGS(old_gen->used()));
-}
-
-ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
-  return ShenandoahGenerationalHeap::heap()->balance_generations();
 }
 
 void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {

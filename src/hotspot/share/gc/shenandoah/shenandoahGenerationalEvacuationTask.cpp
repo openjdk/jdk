@@ -50,10 +50,12 @@ public:
 };
 
 ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
+                                                                           ShenandoahGeneration* generation,
                                                                            ShenandoahRegionIterator* iterator,
                                                                            bool concurrent, bool only_promote_regions) :
   WorkerTask("Shenandoah Evacuation"),
   _heap(heap),
+  _generation(generation),
   _regions(iterator),
   _concurrent(concurrent),
   _only_promote_regions(only_promote_regions)
@@ -169,15 +171,16 @@ void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRe
 // We identify the entirety of the region as DIRTY to force the next remembered set scan to identify the "interesting pointers"
 // contained herein.
 void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion* region) {
-  assert(!_heap->gc_generation()->is_old(), "Sanity check");
+  assert(!_generation->is_old(), "Sanity check");
   ShenandoahMarkingContext* const marking_context = _heap->young_generation()->complete_marking_context();
   HeapWord* const tams = marking_context->top_at_mark_start(region);
+  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   {
-    const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
-    shenandoah_assert_generations_reconciled();
+    const size_t old_garbage_threshold = (region_size_bytes * ShenandoahOldGarbageThreshold) / 100;
     assert(!_heap->is_concurrent_old_mark_in_progress(), "Cannot promote in place during old marking");
-    assert(region->garbage_before_padded_for_promote() < old_garbage_threshold, "Region %zu has too much garbage for promotion", region->index());
+    assert(region->garbage_before_padded_for_promote() < old_garbage_threshold,
+           "Region %zu has too much garbage for promotion", region->index());
     assert(region->is_young(), "Only young regions can be promoted");
     assert(region->is_regular(), "Use different service to promote humongous regions");
     assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
@@ -224,43 +227,36 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     ShenandoahHeapLocker locker(_heap->lock());
 
     HeapWord* update_watermark = region->get_update_watermark();
+    // pip_unpadded is memory too small to be filled above original top
+    size_t pip_unpadded = (region->end() - region->top()) * HeapWordSize;
+    assert((region->top() == region->end())
+           || (pip_unpadded == (size_t) ((region->end() - region->top()) * HeapWordSize)), "Invariant");
+    assert(pip_unpadded < ShenandoahHeap::min_fill_size() * HeapWordSize, "Sanity");
+    size_t pip_pad_bytes = (region->top() - region->get_top_before_promote()) * HeapWordSize;
+    assert((pip_unpadded == 0) || (pip_pad_bytes == 0), "Only one of pip_unpadded and pip_pad_bytes is non-zero");
 
     // Now that this region is affiliated with old, we can allow it to receive allocations, though it may not be in the
-    // is_collector_free range.
+    // is_collector_free range.  We'll add it to that range below.
     region->restore_top_before_promote();
-
-    size_t region_used = region->used();
+#ifdef ASSERT
+    size_t region_to_be_used_in_old = region->used();
+    assert(region_to_be_used_in_old + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
+#endif
 
     // The update_watermark was likely established while we had the artificially high value of top.  Make it sane now.
     assert(update_watermark >= region->top(), "original top cannot exceed preserved update_watermark");
     region->set_update_watermark(region->top());
 
-    // Unconditionally transfer one region from young to old. This represents the newly promoted region.
-    // This expands old and shrinks new by the size of one region.  Strictly, we do not "need" to expand old
-    // if there are already enough unaffiliated regions in old to account for this newly promoted region.
-    // However, if we do not transfer the capacities, we end up reducing the amount of memory that would have
-    // otherwise been available to hold old evacuations, because old available is max_capacity - used and now
-    // we would be trading a fully empty region for a partially used region.
-    young_gen->decrease_used(region_used);
-    young_gen->decrement_affiliated_region_count();
-
-    // transfer_to_old() increases capacity of old and decreases capacity of young
-    _heap->generation_sizer()->force_transfer_to_old(1);
-    region->set_affiliation(OLD_GENERATION);
-
-    old_gen->increment_affiliated_region_count();
-    old_gen->increase_used(region_used);
-
-    // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
+    // Transfer this region from young to old, increasing promoted_reserve if available space exceeds plab_min_size()
     _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
+    region->set_affiliation(OLD_GENERATION);
   }
 }
 
 void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegion* region) {
   ShenandoahMarkingContext* marking_context = _heap->marking_context();
   oop obj = cast_to_oop(region->bottom());
-  assert(_heap->gc_generation()->is_mark_complete(), "sanity");
-  shenandoah_assert_generations_reconciled();
+  assert(_generation->is_mark_complete(), "sanity");
   assert(region->is_young(), "Only young regions can be promoted");
   assert(region->is_humongous_start(), "Should not promote humongous continuation in isolation");
   assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
@@ -268,7 +264,8 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
 
   const size_t used_bytes = obj->size() * HeapWordSize;
   const size_t spanned_regions = ShenandoahHeapRegion::required_regions(used_bytes);
-  const size_t humongous_waste = spanned_regions * ShenandoahHeapRegion::region_size_bytes() - obj->size() * HeapWordSize;
+  const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+  const size_t humongous_waste = spanned_regions * region_size_bytes - obj->size() * HeapWordSize;
   const size_t index_limit = region->index() + spanned_regions;
 
   ShenandoahOldGeneration* const old_gen = _heap->old_generation();
@@ -282,13 +279,6 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     // usage totals, including humongous waste, after evacuation is done.
     log_debug(gc)("promoting humongous region %zu, spanning %zu", region->index(), spanned_regions);
 
-    young_gen->decrease_used(used_bytes);
-    young_gen->decrease_humongous_waste(humongous_waste);
-    young_gen->decrease_affiliated_region_count(spanned_regions);
-
-    // transfer_to_old() increases capacity of old and decreases capacity of young
-    _heap->generation_sizer()->force_transfer_to_old(spanned_regions);
-
     // For this region and each humongous continuation region spanned by this humongous object, change
     // affiliation to OLD_GENERATION and adjust the generation-use tallies.  The remnant of memory
     // in the last humongous region that is not spanned by obj is currently not used.
@@ -300,9 +290,8 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
       r->set_affiliation(OLD_GENERATION);
     }
 
-    old_gen->increase_affiliated_region_count(spanned_regions);
-    old_gen->increase_used(used_bytes);
-    old_gen->increase_humongous_waste(humongous_waste);
+    ShenandoahFreeSet* freeset = _heap->free_set();
+    freeset->transfer_humongous_regions_from_mutator_to_old_collector(spanned_regions, humongous_waste);
   }
 
   // Since this region may have served previously as OLD, it may hold obsolete object range info.

@@ -233,7 +233,7 @@ int MacroAssembler::align(int modulus, int extra_offset) {
 }
 
 void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions) {
-  call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
+  call_VM_base(oop_result, noreg, noreg, nullptr, entry_point, number_of_arguments, check_exceptions);
 }
 
 // Implementation of call_VM versions
@@ -284,7 +284,7 @@ void MacroAssembler::call_VM(Register oop_result,
                              address entry_point,
                              int number_of_arguments,
                              bool check_exceptions) {
-  call_VM_base(oop_result, xthread, last_java_sp, entry_point, number_of_arguments, check_exceptions);
+  call_VM_base(oop_result, xthread, last_java_sp, nullptr, entry_point, number_of_arguments, check_exceptions);
 }
 
 void MacroAssembler::call_VM(Register oop_result,
@@ -409,13 +409,10 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
   sd(zr, Address(xthread, JavaThread::last_Java_pc_offset()));
 }
 
-static bool is_preemptable(address entry_point) {
-  return entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter);
-}
-
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register java_thread,
                                   Register last_java_sp,
+                                  Label*   return_pc,
                                   address  entry_point,
                                   int      number_of_arguments,
                                   bool     check_exceptions) {
@@ -423,6 +420,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
   if (!java_thread->is_valid()) {
     java_thread = xthread;
   }
+
   // determine last_java_sp register
   if (!last_java_sp->is_valid()) {
     last_java_sp = esp;
@@ -442,12 +440,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
   assert(last_java_sp != fp, "can't use fp");
 
   Label l;
-  if (is_preemptable(entry_point)) {
-    // skip setting last_pc since we already set it to desired value.
-    set_last_Java_frame(last_java_sp, fp, noreg);
-  } else {
-    set_last_Java_frame(last_java_sp, fp, l, t0);
-  }
+  set_last_Java_frame(last_java_sp, fp, return_pc != nullptr ? *return_pc : l, t0);
 
   // do the call, remove parameters
   MacroAssembler::call_VM_leaf_base(entry_point, number_of_arguments, &l);
@@ -6442,12 +6435,12 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
   }
 }
 
-// Implements lightweight-locking.
+// Implements fast-locking.
 //
 //  - obj: the object to be locked
 //  - tmp1, tmp2, tmp3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails
-void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
+void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
   assert_different_registers(basic_lock, obj, tmp1, tmp2, tmp3, t0);
 
   Label push;
@@ -6506,7 +6499,7 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 // - obj: the object to be unlocked
 // - tmp1, tmp2, tmp3: temporary registers
 // - slow: branched to if unlocking fails
-void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
+void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
   assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
 
 #ifdef ASSERT
@@ -6553,7 +6546,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tm
   Label not_unlocked;
   test_bit(t, mark, exact_log2(markWord::unlocked_value));
   beqz(t, not_unlocked);
-  stop("lightweight_unlock already unlocked");
+  stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif
 

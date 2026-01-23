@@ -25,12 +25,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.Security;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
@@ -49,6 +47,7 @@ import javax.net.ssl.TrustManagerFactory;
 /*
  * @test
  * @bug 8205111
+ * @enablePreview
  * @summary Test TLS with different types of supported keys.
  * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha1 TLS_AES_128_GCM_SHA256
  * @run main/othervm -Djavax.net.debug=ssl,handshake TLSTest TLSv1.3 rsa_pkcs1_sha256 TLS_AES_128_GCM_SHA256
@@ -315,34 +314,27 @@ public class TLSTest {
             String trustedCertStr, String keyCertStr,
             String privateKey, String keyType) throws Exception {
 
-        // Generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        PEMDecoder pemDecoder = PEMDecoder.of();
 
         // Create a key store
         KeyStore ts = KeyStore.getInstance("PKCS12");
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ts.load(null, null);
         ks.load(null, null);
-        char passphrase[] = "passphrase".toCharArray();
+        char[] passphrase = "passphrase".toCharArray();
 
         // Import the trusted cert
         ts.setCertificateEntry("trusted-cert-" + keyType,
-                cf.generateCertificate(new ByteArrayInputStream(
-                        trustedCertStr.getBytes())));
+                pemDecoder.decode(trustedCertStr, X509Certificate.class));
 
         boolean hasKeyMaterials = keyCertStr != null && privateKey != null;
         if (hasKeyMaterials) {
 
             // Generate the private key.
-            PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                    Base64.getMimeDecoder().decode(privateKey));
-            KeyFactory kf = KeyFactory.getInstance(keyType);
-            PrivateKey priKey = kf.generatePrivate(priKeySpec);
-
+            PrivateKey priKey = pemDecoder.decode(privateKey, PrivateKey.class);
             // Generate certificate chain
-            Certificate keyCert = cf.generateCertificate(
-                    new ByteArrayInputStream(keyCertStr.getBytes()));
-            Certificate[] chain = new Certificate[]{keyCert};
+            Certificate keyCert =pemDecoder.decode(keyCertStr, X509Certificate.class);
+                    Certificate[] chain = new Certificate[]{keyCert};
 
             // Import the key entry.
             ks.setKeyEntry("cert-" + keyType, priKey, passphrase, chain);
@@ -422,9 +414,11 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgVHQp1EG3PgASz7Nu\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgVHQp1EG3PgASz7Nu\n"
                 + "uv9dvFLxsr3qfgC6CgZU4xorLbChRANCAARdc4XgHchFHqyzVKlx8Nlpl5zFSZyk\n"
-                + "jE3qvm5PVrGRgTmcyXBLcq9fPOyQEbq59Lieyd2C1DZTLh2klmfIRMRr"
+                + "jE3qvm5PVrGRgTmcyXBLcq9fPOyQEbq59Lieyd2C1DZTLh2klmfIRMRr\n"
+                + "-----END PRIVATE KEY-----"
         ),
         ecdsa_sha1(
                 "EC",
@@ -449,9 +443,11 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgyJJNI8eqYVKcCshG\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgyJJNI8eqYVKcCshG\n"
                 + "t89mrRZ1jMeD8fAbgijAG7WfgtGhRANCAAR6LMO6lBGdmpo87XTjtA2vsXvq1kd8\n"
-                + "ktaIGEdCrA8BKk0A30LW8SY5Be29ScYu8d+IjQ3X/fpblrVh/64pOgQz"
+                + "ktaIGEdCrA8BKk0A30LW8SY5Be29ScYu8d+IjQ3X/fpblrVh/64pOgQz\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pss_pss_sha256(
                 "RSASSA-PSS",
@@ -487,7 +483,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEuwIBADALBgkqhkiG9w0BAQoEggSnMIIEowIBAAKCAQEApfK+EK4NuwWFDv9V\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEuwIBADALBgkqhkiG9w0BAQoEggSnMIIEowIBAAKCAQEApfK+EK4NuwWFDv9V\n"
                 + "WtiMfEDxszf5b85irz+RX9uqLzVuL0VMevB8wIYYlrXJfj8C0myaia3hJE5ZXuz5\n"
                 + "0QMqW8t3zu2QCtGN2Ih6rmgYO3fu2BYYR8L/IBtJWXMgNAZFxSR6nau+qmq9MRwu\n"
                 + "g1Xs15tCt5nHHsphrRUfQc1pgI/uw2LEsL7U0O1jaEJn9HHQzEjO9SMGk8CML09s\n"
@@ -512,7 +509,8 @@ public class TLSTest {
                 + "ofaiiWffsaytVvotmT6+atElvAMbAua42V+nAQKBgHtIn3mYMHLriYGhQzpkFEA2\n"
                 + "8YcAMlKppueOMAKVy8nLu2r3MidmLAhMiKJQKG45I3Yg0/t/25tXLiOPJlwrOebh\n"
                 + "xQqUBI/JUOIpGAEnr48jhOXnCS+i+z294G5U/RgjXrlR4bCPvrtCmwzWwe0h79w2\n"
-                + "Q2hO5ZTW6UD9CVA85whf"
+                + "Q2hO5ZTW6UD9CVA85whf\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pss_rsae_sha256(
                 "RSA",
@@ -579,7 +577,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDD8nVjgSWSwVmP\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDD8nVjgSWSwVmP\n"
                 + "6wHXl+8cjESonTvCqSU1xLiySoqOH+/u5kTcg5uk7J9qr3sDpLLVmnB7lITrv3cx\n"
                 + "X7GufAC2lrWPhKdY2/BTpCGP4Twg/sC7Z2MnAPNabmPh+BhpQA3PllULdnsV/aEK\n"
                 + "eP3dFF+piJmSDKwowLhDc0wdD1t15jDk812UnNQugd465g0g6z57m3MFX1veUrya\n"
@@ -604,7 +603,8 @@ public class TLSTest {
                 + "j+4Sinm9qkHWc7ixKZdocRQjCriHrENSMy/FBNBBAoGAfi0ZGZxyIeik5qUBy+P+\n"
                 + "+ce6n5/1kdczPTpzJae+eCPqg3VQuGz3NutZ2tdx1IMcYSeMfiB6xLMWSKSraxEi\n"
                 + "2BCtdPcyUau8w12BXwn+hyK2u79OhHbexisrJUOVXE+yA8C/k0r0SrZHS0PHYZjj\n"
-                + "xkWyr/6XyeGP/vX8WvfF2eM="
+                + "xkWyr/6XyeGP/vX8WvfF2eM=\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pkcs1_sha1(
                 "RSA",
@@ -638,7 +638,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQClt40e4e/lW5S1\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQClt40e4e/lW5S1\n"
                 + "4zFrkZrg3ZAOeYaTWkAa6EVUbtGiH/eRTeAnODRQey9zQFRY8cM6izBheJbfPN9r\n"
                 + "ZN1SfL8R4XfHHDXS9udX4zWIOcrAMQxoK2KEFMcJ1F3cMFGQ1vIM+A4FTjObHl9m\n"
                 + "Et6Pq0LQTPlX7JJw+1R7REJYSkxFm7h/lsr/8CScVxF4SZtO6/EMPoG2kSPylQlq\n"
@@ -663,7 +664,8 @@ public class TLSTest {
                 + "7qCBIYk8Nk9F7v+7M69NAfK97Dd5gzRsyL3sbFECgYBxz2nCKeBv2frxtD36nlY1\n"
                 + "bDhZv1Asyxq0yt9GSkVWeHnSIFHfwBu3w6qW7+qdlQizu+6GZ3wq9dyyrXUA4zPU\n"
                 + "QnYWYYk30p4uqLXFCrnscVOm3v7f51oEYVoEKjqGl2C/BTy7iSgCRd+cp6y34DsV\n"
-                + "PsRyQCB/QarxsDNAuioguQ=="
+                + "PsRyQCB/QarxsDNAuioguQ==\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pkcs1_sha256(
                 "RSA",
@@ -697,7 +699,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDaMM8YyiBz12rb\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDaMM8YyiBz12rb\n"
                 + "Dlv4Uept9oY+iRGbI5uJTzL+X92qQzn0hX6qPxVBQjg22l0JNavXrzXbPgCNeuTk\n"
                 + "cgGsQJ9Bsc9RybWuZ7lhVnRbFXT5R/KEOasbAMuGTEapzeE6FGuUXbB1d5R+MjOG\n"
                 + "9L35L/jTX763+O+r5yoUXUEefNg676WduL+j3k6qjwyXCJGqDfHLd81F+peTsNbL\n"
@@ -722,7 +725,8 @@ public class TLSTest {
                 + "QFuQIMdYm9dJLZnOkxLXrOZoHeui0poX2Ya6FawhAoGAAI/QCyDbuvnJzGmjSbvl\n"
                 + "5Ndr9lNAansCXaUzXuVLp6dD6PnB8HVCE8tdETZrcXseyTBeltaxAhj+tCybJvDO\n"
                 + "sV8UmPR0w9ibExmUIVGX5BpoRlB/KWxEG3ar/wJbUZVZ2oSdIAZvCvdbN956SLDg\n"
-                + "Pg5M5wrRqs71s2EiIJd0HrU="
+                + "Pg5M5wrRqs71s2EiIJd0HrU=\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pkcs1_sha384(
                 "RSA",
@@ -756,7 +760,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQC8iCdCvecakzP9\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQC8iCdCvecakzP9\n"
                 + "BiSyTav5KmptGGI4Wejpz+TImZK7xNDTxFXwB3wJqWcAOQeU8GhOYKpjm/1o66ly\n"
                 + "XX6MJ7t7iJ3Pggmy5jUpFT9SPiVhWo7VbvwfEiAp3eNtKAD3rbyUno2G/o6rIDwo\n"
                 + "IicpugjwV0OZ1FXO74UKYYosG1RWc486TMzO22SuDujJSgJqBiLNktjyWFQDxF+D\n"
@@ -781,7 +786,8 @@ public class TLSTest {
                 + "jFP4YVofTd3ltSFI3x5pVZA2a88rE49gNkGWU9mReD0CgYEAkXoH6Sn+Elp6Oa+k\n"
                 + "jF5jQ14RNH4SoBSFR8mY6jOIGzINTWiMCaBMiPusjkrq7SfgIM3iEeJWmgghlZdl\n"
                 + "0ynmwThnfQnEEtsvpSMteI11eVrZrMGVZOhgALxf4zcmQCpPVQicNQLkocuAZSAo\n"
-                + "mzO1FvNUBCMZb/5PQdiFw3pMEyQ="
+                + "mzO1FvNUBCMZb/5PQdiFw3pMEyQ=\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pkcs1_sha512(
                 "RSA",
@@ -815,7 +821,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDaF4fhwBKMatza\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDaF4fhwBKMatza\n"
                 + "KvqfimqhBLNPmaGVHz+IX/let8hJJud9k1mc+TZxNBIMPwc1tFP1u+2shhAhOsaB\n"
                 + "RgoFPC3DJywzq/vr5MVaw8EdZufxufJ4awXGE1eytFdliKoPCiI8T4nxpNAy3haU\n"
                 + "0FpmO3/0ERRjJPJnxzndZZoT1pITexDKe6Vnyu6GRz2FvJsQ7VR8BARYhj6dHRT1\n"
@@ -840,7 +847,8 @@ public class TLSTest {
                 + "K86SqEklQKYXAnUmZiESGQgjSn68llowSwTznZPhAoGBAMH2scnvGRbPmzm91pyY\n"
                 + "1loeejtO8qWQsRFaSZyqtlW1c/zHaotTU1XhmVxnliv/HCb3t7qlssb3snCTUY9R\n"
                 + "mcyMWbaTIBMNfW2IspX4hhkLuCwzhskl/08/8GJwkOEAo3q/TYigyFPVEwq8R9uq\n"
-                + "l0uEakWMhPrvr/N1FT1KXo6S"
+                + "l0uEakWMhPrvr/N1FT1KXo6S\n"
+                + "-----END PRIVATE KEY-----"
         ),
         ecdsa_secp384r1_sha384(
                 "EC",
@@ -867,10 +875,12 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDCpxyn85BJ+JFfT5U7U\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDCpxyn85BJ+JFfT5U7U\n"
                 + "VY+c8v2oY873YOVussMDiC82VYGKZDZH8D6C6h0b33iCpm2hZANiAAR5esh3fLL/\n"
                 + "SYk81dcZeUxJAS8ilLIMJwopB3ZmbWq3SADUdRIe6V9K3IdQjoOX+ljuJHTA7/Fg\n"
-                + "haGKuapP5dtU9NYglvbjkt/0YWJH93pTJRupe42D0amdRGzLlmHHgN8="
+                + "haGKuapP5dtU9NYglvbjkt/0YWJH93pTJRupe42D0amdRGzLlmHHgN8=\n"
+                + "-----END PRIVATE KEY-----"
         ),
         ecdsa_secp521r1_sha512(
                 "EC",
@@ -898,12 +908,14 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIHuAgEAMBAGByqGSM49AgEGBSuBBAAjBIHWMIHTAgEBBEIAz7qc9msPhSoh0iiT\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIHuAgEAMBAGByqGSM49AgEGBSuBBAAjBIHWMIHTAgEBBEIAz7qc9msPhSoh0iiT\n"
                 + "Z0146/sLJL5K+JNo2KdKpZOf1mS/egCCbp7lndigL7jr0JnBRIjk+pmeBtIId6mW\n"
                 + "MrcvF4KhgYkDgYYABACzWmHHe0hLD4bYcDyvhl+VDdD/mj1TnN4XPv0+woQ9KwTX\n"
                 + "GEZtTJYNqwFJ5Qo69WyWLm9jLSF07XfZDs2X5AA1QQBFjZrHkRFcgkFj1L49F0/s\n"
                 + "4bh+v3rpG/y9oITaDylX02cC1qU3eyTyIIR1VS2G8v1HqeimIR3sXP1IxEY5K7Xw\n"
-                + "Vg=="
+                + "Vg==\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pss_rsae_sha384(
                 "RSA",
@@ -970,7 +982,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCe7chGqR+iYpXW\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCe7chGqR+iYpXW\n"
                 + "HDWK0LZVff4XDc/dS0CloNQr6GAa/Gb7p37vkjWStk5BKpRg1SNZtssFNEOXR4ph\n"
                 + "jFf3boUQ7A1i9e+eYJAmbGalwwotY1zxdr5kfaWYxIiMSaPHHwPfe/pnY1RF6lOs\n"
                 + "LlegPw6xxg08LETaU+M9QCJ9EodXDEb19/KwINer/Cduou7TdVDFPYY02lMoj7Wr\n"
@@ -995,7 +1008,8 @@ public class TLSTest {
                 + "xd/NBqsx/vHpxxxeekBfu8rhI1h7M7XLBHL4s30CgYEAnmwpLxK36H4fyg3FT5uS\n"
                 + "nCJuWFIP8LvWaPm8iDUJ45flOPbXokoV+UZbe7A+TK6tdyTXtfoM59/IsLtiEp7n\n"
                 + "VuE9osST2ZOTD+l10ukIcjJJgI/Pwjtd36EGXyGftdAtT4sFMRxP4sGSXZodqHrZ\n"
-                + "T9fE4yY/E4FyzS7yMeoXIyo="
+                + "T9fE4yY/E4FyzS7yMeoXIyo=\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pss_rsae_sha512(
                 "RSA",
@@ -1062,7 +1076,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDCyeGmgpaHoXnR\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDCyeGmgpaHoXnR\n"
                 + "csuhMhzsoinxDqSCHfJB62g0HuZDpZG3yjlEU9zVTLeuCtWsrQnC0LCaNODjjvE9\n"
                 + "vI1tbY5L7B1pz3JNHrASzituzd3vPNlKjX5fEUG4dBEOIx0UvwTDlf8taL897aLR\n"
                 + "mUHKE29qPV3Xo80M794CdQsUSq/sNQDkE1qFm7MAmznXTS++RUqtofyz4W570KBw\n"
@@ -1087,7 +1102,8 @@ public class TLSTest {
                 + "+LAfJE/tRliLHYDfAyRnjoZn2bPZQr8Qroj5+xydAoGACHEc7aoEwZ/z8cnrHuoT\n"
                 + "T0QUw6HNlic5FgK+bZy7SXj9SqJBkWADzRJ/tVDopWT/EiDiGeqNP/uBPYt6i7m2\n"
                 + "SoqCLYdGDIbUFyDQg3zC48IXlHyEF3whx0bg/0hoKs/E/rXuxYIH/10aEwmb0FQO\n"
-                + "GA3T726uW8XrrTssMkhzixU="
+                + "GA3T726uW8XrrTssMkhzixU=\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pss_pss_sha384(
                 "RSASSA-PSS",
@@ -1123,7 +1139,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEvAIBADALBgkqhkiG9w0BAQoEggSoMIIEpAIBAAKCAQEAz+1/SVKdaz83Mcs6\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEvAIBADALBgkqhkiG9w0BAQoEggSoMIIEpAIBAAKCAQEAz+1/SVKdaz83Mcs6\n"
                 + "RzkuIyZvwDoYCQubniueMJ/mcMSJOIQIxxgxrFCH8cw5jFu5wsb5sPwVdMXwKgnS\n"
                 + "0WHdSHfXDLjYj2Ig7vywtdKzEW3RZdBkL52qlxi29BCREyYhFomHppY7MK+BN4c3\n"
                 + "ipOmdnVw+FoVJfTPuAAoweYRg01A9LCmDDLY0X89U1VLYJ286hzHNHWRWOwVQiKD\n"
@@ -1148,7 +1165,8 @@ public class TLSTest {
                 + "MZwdpuKcfsysbPZhnaoBHc5kf6lNBreahd+PfQKBgQDzZHFUndVfI28zn10ZzY8M\n"
                 + "zVeUMn+m1Dhp/e4F0t3XPTWCkwlYI3bk0k5BWHYSdLb2R7gKhTMynxPUb53oeY6P\n"
                 + "Pt/tA+dbjGHPx+v98wOorsD28qH0WG/V1xQdGRA9/dDZtJDolLqNn2B3t0QH9Kco\n"
-                + "LsJldTLzMQSVP/05BAt6DQ=="
+                + "LsJldTLzMQSVP/05BAt6DQ==\n"
+                + "-----END PRIVATE KEY-----"
         ),
         rsa_pss_pss_sha512(
                 "RSASSA-PSS",
@@ -1184,7 +1202,8 @@ public class TLSTest {
                 //
                 // Private key.
                 //
-                "MIIEvAIBADALBgkqhkiG9w0BAQoEggSoMIIEpAIBAAKCAQEAxv/aW7ezE+gXt2lI\n"
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "MIIEvAIBADALBgkqhkiG9w0BAQoEggSoMIIEpAIBAAKCAQEAxv/aW7ezE+gXt2lI\n"
                 + "PeFSkPQTKIy2IwQ8zO23f8tO/i33XeuyFIUOVZCXMYLO0LW/M7Z1CUBM8iwZHGQP\n"
                 + "4b76S1FyVD91IrETVddjAXx1HBQFTd96XZu1/1CQ1WnVGUwH3uj1CLpP/maTpk58\n"
                 + "BP7BH4QmQLTcJvtPBHcrFISvWlZfN7wvnhI9tufOFc3dn0I/WGFNYTdDilr2r6x7\n"
@@ -1209,7 +1228,8 @@ public class TLSTest {
                 + "qckcE14nt7o5rlcHNwLQ0o8h+IHxBnZdXernwQKBgQCunOWvYd7MGlIjpkl6roq7\n"
                 + "MrQ/zaAkUyGsTgBxEu3p5+x2ENG6SukEtHGGDE6TMxlcKdTSohL2lXZX2AkP+eXf\n"
                 + "sF3h66iQ8DrGrYoyCgx3KTx3G+KPfblAqwDMTqj2G5fAeWDwXrpEacpTXiFZvNAn\n"
-                + "KtqEurWf+mUeJVzLj1x1BA=="
+                + "KtqEurWf+mUeJVzLj1x1BA==\n"
+                + "-----END PRIVATE KEY-----"
         );
 
         private final String keyType;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public class SocketChannelStreams {
     }
 
     /**
-     * Test interrupt status set before read.
+     * Test interrupted status set before read.
      */
     public void testRead7() throws Exception {
         withConnection((sc, peer) -> {
@@ -220,7 +220,7 @@ public class SocketChannelStreams {
     }
 
     /**
-     * Test interrupt status set before write.
+     * Test interrupted status set before write.
      */
     public void testWrite4() throws Exception {
         withConnection((sc, peer) -> {

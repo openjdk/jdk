@@ -97,10 +97,11 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   Bytecodes::Code bytecode    = caller->java_code_at_bci(bci);
   ciMethod*       orig_callee = caller->get_method_at_bci(bci);
 
-  const bool is_virtual_or_interface = (bytecode == Bytecodes::_invokevirtual) ||
-                                       (bytecode == Bytecodes::_invokeinterface) ||
-                                       (orig_callee->intrinsic_id() == vmIntrinsics::_linkToVirtual) ||
-                                       (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface);
+  const bool is_virtual = (bytecode == Bytecodes::_invokevirtual) || (orig_callee->intrinsic_id() == vmIntrinsics::_linkToVirtual);
+  const bool is_interface = (bytecode == Bytecodes::_invokeinterface) || (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface);
+  const bool is_virtual_or_interface = is_virtual || is_interface;
+
+  const bool check_access = !orig_callee->is_method_handle_intrinsic(); // method handle intrinsics don't perform access checks
 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
@@ -239,7 +240,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           // this invoke because it may lead to bimorphic inlining which
           // a speculative type should help us avoid.
           receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                   speculative_receiver_type);
+                                                   speculative_receiver_type,
+                                                   check_access);
           if (receiver_method == nullptr) {
             speculative_receiver_type = nullptr;
           } else {
@@ -256,8 +258,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
            (morphism == 2 && UseBimorphicInlining))) {
         // receiver_method = profile.method();
         // Profiles do not suggest methods now.  Look it up in the major receiver.
+        assert(check_access, "required");
         receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                      profile.receiver(0));
+                                                 profile.receiver(0));
       }
       if (receiver_method != nullptr) {
         // The single majority receiver sufficiently outweighs the minority.
@@ -268,8 +271,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           CallGenerator* next_hit_cg = nullptr;
           ciMethod* next_receiver_method = nullptr;
           if (morphism == 2 && UseBimorphicInlining) {
+            assert(check_access, "required");
             next_receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                               profile.receiver(1));
+                                                          profile.receiver(1));
             if (next_receiver_method != nullptr) {
               next_hit_cg = this->call_generator(next_receiver_method,
                                   vtable_index, !call_does_dispatch, jvms,
@@ -334,16 +338,25 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // number of implementors for decl_interface is 0 or 1. If
     // it's 0 then no class implements decl_interface and there's
     // no point in inlining.
-    if (call_does_dispatch && bytecode == Bytecodes::_invokeinterface) {
-      ciInstanceKlass* declared_interface =
-          caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
+    if (call_does_dispatch && is_interface) {
+      ciInstanceKlass* declared_interface = nullptr;
+      if (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface) {
+        // MemberName doesn't keep information about resolved interface class (REFC) once
+        // resolution is over, but resolved method holder (DECC) can be used as a
+        // conservative approximation.
+        declared_interface = callee->holder();
+      } else {
+        assert(!orig_callee->is_method_handle_intrinsic(), "not allowed");
+        declared_interface = caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
+      }
+      assert(declared_interface->is_interface(), "required");
       ciInstanceKlass* singleton = declared_interface->unique_implementor();
 
       if (singleton != nullptr) {
         assert(singleton != declared_interface, "not a unique implementor");
 
         ciMethod* cha_monomorphic_target =
-            callee->find_monomorphic_target(caller->holder(), declared_interface, singleton);
+            callee->find_monomorphic_target(caller->holder(), declared_interface, singleton, check_access);
 
         if (cha_monomorphic_target != nullptr &&
             cha_monomorphic_target->holder() != env()->Object_klass()) { // subtype check against Object is useless
@@ -366,7 +379,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           }
         }
       }
-    } // call_does_dispatch && bytecode == Bytecodes::_invokeinterface
+    } // call_does_dispatch && is_interface
 
     // Nothing claimed the intrinsic, we go with straight-forward inlining
     // for already discovered intrinsic.
@@ -1046,14 +1059,19 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   assert(!stopped(), "you should return if you finish the chain");
 
   // Oops, need to call into the VM to resolve the klasses at runtime.
-  // Note:  This call must not deoptimize, since it is not a real at this bci!
   kill_dead_locals();
 
-  make_runtime_call(RC_NO_LEAF | RC_MUST_THROW,
-                    OptoRuntime::rethrow_Type(),
-                    OptoRuntime::rethrow_stub(),
-                    nullptr, nullptr,
-                    ex_node);
+  { PreserveReexecuteState preexecs(this);
+    // When throwing an exception, set the reexecute flag for deoptimization.
+    // This is mostly needed to pass -XX:+VerifyStack sanity checks.
+    jvms()->set_should_reexecute(true);
+
+    make_runtime_call(RC_NO_LEAF | RC_MUST_THROW,
+                      OptoRuntime::rethrow_Type(),
+                      OptoRuntime::rethrow_stub(),
+                      nullptr, nullptr,
+                      ex_node);
+  }
 
   // Rethrow is a pure call, no side effects, only a result.
   // The result cannot be allocated, so we use I_O

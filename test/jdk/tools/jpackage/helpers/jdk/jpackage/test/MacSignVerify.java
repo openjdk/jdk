@@ -61,11 +61,9 @@ public final class MacSignVerify {
 
         assertSigned(bundleRoot, certRequest);
 
-        if (!cmd.isRuntime()) {
-            cmd.addLauncherNames().stream().map(cmd::appLauncherPath).forEach(launcherPath -> {
-                assertSigned(launcherPath, certRequest);
-            });
-        }
+        cmd.addLauncherNames(true).stream().map(cmd::appLauncherPath).forEach(launcherPath -> {
+            assertSigned(launcherPath, certRequest);
+        });
 
         // Set to "null" if the sign origin is not found, instead of bailing out with an exception.
         // Let is fail in the following TKit.assertEquals() call with a proper log message.

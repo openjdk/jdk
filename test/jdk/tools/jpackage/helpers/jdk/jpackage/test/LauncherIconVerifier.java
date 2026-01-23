@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public final class LauncherIconVerifier {
     public LauncherIconVerifier() {
@@ -37,12 +38,18 @@ public final class LauncherIconVerifier {
 
     public LauncherIconVerifier setExpectedIcon(Path v) {
         expectedIcon = v;
+        expectedDefault = false;
         return this;
     }
 
     public LauncherIconVerifier setExpectedDefaultIcon() {
+        expectedIcon = null;
         expectedDefault = true;
         return this;
+    }
+
+    public LauncherIconVerifier setExpectedNoIcon() {
+        return setExpectedIcon(null);
     }
 
     public LauncherIconVerifier verifyFileInAppImageOnly(boolean v) {
@@ -50,19 +57,20 @@ public final class LauncherIconVerifier {
         return this;
     }
 
-    public void applyTo(JPackageCommand cmd) throws IOException {
-        final String curLauncherName;
-        final String label;
-        if (launcherName == null) {
-            curLauncherName = cmd.name();
-            label = "main";
-        } else {
-            curLauncherName = launcherName;
-            label = String.format("[%s]", launcherName);
-        }
+    public boolean expectDefaultIcon() {
+        return expectedDefault;
+    }
 
-        Path iconPath = cmd.appLayout().desktopIntegrationDirectory().resolve(
-                curLauncherName + TKit.ICON_SUFFIX);
+    public Optional<Path> expectIcon() {
+        return Optional.ofNullable(expectedIcon);
+    }
+
+    public void applyTo(JPackageCommand cmd) throws IOException {
+        final String label = Optional.ofNullable(launcherName).map(v -> {
+            return String.format("[%s]", v);
+        }).orElse("main");
+
+        Path iconPath = cmd.appLayout().desktopIntegrationDirectory().resolve(iconFileName(cmd));
 
         if (TKit.isWindows()) {
             TKit.assertPathExists(iconPath, false);
@@ -70,7 +78,7 @@ public final class LauncherIconVerifier {
                 WinExecutableIconVerifier.verifyLauncherIcon(cmd, launcherName, expectedIcon, expectedDefault);
             }
         } else if (expectedDefault) {
-            TKit.assertPathExists(iconPath, true);
+            TKit.assertFileExists(iconPath);
         } else if (expectedIcon == null) {
             TKit.assertPathExists(iconPath, false);
         } else {
@@ -81,6 +89,14 @@ public final class LauncherIconVerifier {
                         "Check icon file [%s] of %s launcher is a copy of source icon file [%s]",
                         iconPath, label, expectedIcon));
             }
+        }
+    }
+
+    private Path iconFileName(JPackageCommand cmd) {
+        if (TKit.isLinux()) {
+            return LinuxHelper.getLauncherIconFileName(cmd, launcherName);
+        } else {
+            return Path.of(Optional.ofNullable(launcherName).orElseGet(cmd::name) + TKit.ICON_SUFFIX);
         }
     }
 

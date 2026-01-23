@@ -107,7 +107,7 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
   cl->set_nonexact_trip_count();
 
   // Loop's test should be part of loop.
-  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
+  if (!phase->ctrl_is_member(this, cl->loopexit()->in(CountedLoopEndNode::TestValue)))
     return; // Infinite loop
 
 #ifdef ASSERT
@@ -611,7 +611,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
       if (test_cond != nullptr && // Test?
           !test_cond->is_Con() && // And not already obvious?
           // And condition is not a member of this loop?
-          !loop->is_member(get_loop(get_ctrl(test_cond)))) {
+          !ctrl_is_member(loop, test_cond)) {
         // Walk loop body looking for instances of this test
         for (uint i = 0; i < loop->_body.size(); i++) {
           Node* n = loop->_body.at(i);
@@ -1411,7 +1411,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
 
   C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
 
-  Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
   Node *incr      = main_end ->incr();
   Node *limit     = main_end ->limit();
@@ -1682,7 +1681,7 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
     for (DUIterator_Fast imax, l = last->fast_outs(imax); l < imax; l++) {
       Node* use = last->fast_out(l);
       if (use->is_Store() && use->in(MemNode::Memory) == last) {
-        if (is_member(outer_loop, get_ctrl(use))) {
+        if (ctrl_is_member(outer_loop, use)) {
           assert(unique_next == last, "memory node should only have one usage in the loop body");
           unique_next = use;
         }
@@ -1795,7 +1794,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
       // as this is when we would normally expect a Phi as input. If the memory input
       // is in the loop body as well, then we can safely assume it is still correct as the entire
       // body was cloned as a unit
-      if (!is_member(outer_loop, get_ctrl(store->in(MemNode::Memory)))) {
+      if (!ctrl_is_member(outer_loop, store->in(MemNode::Memory))) {
         Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
         Node* store_new = old_new[store->_idx];
         store_new->set_req(MemNode::Memory, mem_out);
@@ -1970,8 +1969,19 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     if (opaq == nullptr) {
       return;
     }
-    // Zero-trip test uses an 'opaque' node which is not shared.
-    assert(opaq->outcnt() == 1 && opaq->in(1) == limit, "");
+    // Zero-trip test uses an 'opaque' node which is not shared, otherwise bail out.
+    if (opaq->outcnt() != 1 || opaq->in(1) != limit) {
+#ifdef ASSERT
+      // In rare cases, loop cloning (as for peeling, for instance) can break this by replacing
+      // limit and the input of opaq by equivalent but distinct phis.
+      // Next IGVN should clean it up. Let's try to detect we are in such a case.
+      Unique_Node_List& worklist = loop->_phase->_igvn._worklist;
+      assert(C->major_progress(), "The operation that replaced limit and opaq->in(1) (e.g. peeling) should have set major_progress");
+      assert(opaq->in(1)->is_Phi() && limit->is_Phi(), "Nodes limit and opaq->in(1) should have been replaced by PhiNodes by fix_data_uses from clone_loop.");
+      assert(worklist.member(opaq->in(1)) && worklist.member(limit), "Nodes limit and opaq->in(1) differ and should have been recorded for IGVN.");
+#endif
+      return;
+    }
   }
 
   C->set_major_progress();
@@ -3274,7 +3284,7 @@ bool IdealLoopTree::empty_loop_candidate(PhaseIdealLoop* phase) const {
   if (!cl->is_valid_counted_loop(T_INT)) {
     return false;   // Malformed loop
   }
-  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue)))) {
+  if (!phase->ctrl_is_member(this, cl->loopexit()->in(CountedLoopEndNode::TestValue))) {
     return false;   // Infinite loop
   }
   return true;
@@ -3365,7 +3375,7 @@ bool IdealLoopTree::empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase)
     return false;
   }
 
-  if (phase->is_member(this, phase->get_ctrl(cl->limit()))) {
+  if (phase->ctrl_is_member(this, cl->limit())) {
     return false;
   }
   return true;
@@ -4031,7 +4041,9 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   call->init_req(TypeFunc::I_O,       C->top());       // Does no I/O.
   call->init_req(TypeFunc::Memory,    mem_phi->in(LoopNode::EntryControl));
   call->init_req(TypeFunc::ReturnAdr, C->start()->proj_out_or_null(TypeFunc::ReturnAdr));
-  call->init_req(TypeFunc::FramePtr,  C->start()->proj_out_or_null(TypeFunc::FramePtr));
+  Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
+  _igvn.register_new_node_with_optimizer(frame);
+  call->init_req(TypeFunc::FramePtr,  frame);
   _igvn.register_new_node_with_optimizer(call);
   result_ctrl = new ProjNode(call,TypeFunc::Control);
   _igvn.register_new_node_with_optimizer(result_ctrl);
@@ -4071,7 +4083,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     Node* outer_sfpt = head->outer_safepoint();
     Node* in = outer_sfpt->in(0);
     Node* outer_out = head->outer_loop_exit();
-    lazy_replace(outer_out, in);
+    replace_node_and_forward_ctrl(outer_out, in);
     _igvn.replace_input_of(outer_sfpt, 0, C->top());
   }
 
@@ -4080,7 +4092,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // state of the loop.  It's safe in this case to replace it with the
   // result_mem.
   _igvn.replace_node(store->in(MemNode::Memory), result_mem);
-  lazy_replace(exit, result_ctrl);
+  replace_node_and_forward_ctrl(exit, result_ctrl);
   _igvn.replace_node(store, result_mem);
   // Any uses the increment outside of the loop become the loop limit.
   _igvn.replace_node(head->incr(), head->limit());

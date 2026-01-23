@@ -25,28 +25,28 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.I18N.buildConfigException;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Launcher.Stub;
 import jdk.jpackage.internal.model.LauncherIcon;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.util.PathUtils;
 
 final class LauncherBuilder {
 
-    Launcher create() throws ConfigException {
+    Launcher create() {
         CustomLauncherIcon.fromLauncherIcon(icon)
                 .map(CustomLauncherIcon::path)
-                .ifPresent(toConsumer(LauncherBuilder::validateIcon));
+                .ifPresent(LauncherBuilder::validateIcon);
 
         final var fa = createFileAssociations(faSources, Optional.ofNullable(faTraits).orElse(DEFAULT_FA_TRAITS));
 
@@ -110,7 +110,16 @@ final class LauncherBuilder {
         return Optional.ofNullable(name).orElseGet(() -> startupInfo.simpleClassName());
     }
 
-    static void validateIcon(Path icon) throws ConfigException {
+    static OverridableResource createLauncherIconResource(Launcher launcher,
+            Function<String, OverridableResource> resourceSupplier) {
+
+        var defaultIconResourceName = launcher.defaultIconResourceName();
+        return resourceSupplier.apply(defaultIconResourceName)
+                    .setPublicName(launcher.executableName() + PathUtils.getSuffix(Path.of(defaultIconResourceName)))
+                    .setCategory("icon");
+    }
+
+    static Path validateIcon(Path icon) {
         switch (OperatingSystem.current()) {
             case WINDOWS -> {
                 if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
@@ -131,13 +140,15 @@ final class LauncherBuilder {
                 throw new UnsupportedOperationException();
             }
         }
+
+        return icon;
     }
 
     record FileAssociationTraits() {
     }
 
     private static List<FileAssociation> createFileAssociations(
-            List<FileAssociationGroup> groups, FileAssociationTraits faTraits) throws ConfigException {
+            List<FileAssociationGroup> groups, FileAssociationTraits faTraits) {
 
         Objects.requireNonNull(groups);
         Objects.requireNonNull(faTraits);

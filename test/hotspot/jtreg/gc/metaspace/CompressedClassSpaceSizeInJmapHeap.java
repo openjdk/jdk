@@ -46,6 +46,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 public class CompressedClassSpaceSizeInJmapHeap {
+
     // Note that on some platforms it may require root privileges to run this test.
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
@@ -67,8 +68,15 @@ public class CompressedClassSpaceSizeInJmapHeap {
         File err = new File("CompressedClassSpaceSizeInJmapHeap.stderr.txt");
         pb.redirectError(err);
 
-        run(pb);
-
+        // If we attempt to attach to LingeredApp before it has initialized, the heap dump request will fail, so we allow 3 tries
+        int allowedTries = 3;
+        int exitValue;
+        do {
+            exitValue = run(pb);
+        } while ((exitValue != 0) && (allowedTries-- > 0));
+        if (exitValue != 0) {
+            throw new Exception("jmap -heap exited with error code: " + exitValue);
+        }
         OutputAnalyzer output = new OutputAnalyzer(read(out));
         output.shouldContain("CompressedClassSpaceSize = 50331648 (48.0MB)");
         out.delete();
@@ -76,12 +84,9 @@ public class CompressedClassSpaceSizeInJmapHeap {
         LingeredApp.stopApp(theApp);
     }
 
-    private static void run(ProcessBuilder pb) throws Exception {
+    private static int run(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        int exitValue = output.getExitValue();
-        if (exitValue != 0) {
-            throw new Exception("jmap -heap exited with error code: " + exitValue);
-        }
+        return output.getExitValue();
     }
 
     private static String read(File f) throws Exception {

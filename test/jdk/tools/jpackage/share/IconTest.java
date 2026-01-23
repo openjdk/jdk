@@ -21,7 +21,10 @@
  * questions.
  */
 
+import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
+
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -29,10 +32,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
@@ -40,8 +43,11 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.LauncherIconVerifier;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.PackageTest;
@@ -159,27 +165,37 @@ public class IconTest {
 
     @Test
     public void test() throws IOException {
-        if (appImage) {
-            JPackageCommand cmd = initAppImageTest();
-            var result = cmd.executeAndAssertImageCreated();
-            ThrowingConsumer.toConsumer(createInstallVerifier()).accept(cmd);
-            ThrowingBiConsumer.toBiConsumer(createBundleVerifier()).accept(cmd, result);
-        } else {
-            PackageTest test = initPackageTest();
-            test.addInstallVerifier(createInstallVerifier());
-            test.addBundleVerifier(createBundleVerifier());
 
+        final ConfigurationTarget target;
+        if (appImage) {
+            target = new ConfigurationTarget(JPackageCommand.helloAppImage());
+        } else {
+            target = new ConfigurationTarget(new PackageTest().configureHelloApp());
+        }
+
+        initTest(target);
+
+        var installVerifier = createInstallVerifier();
+        var bundleVerifier = createBundleVerifier();
+
+        var cmdResult = target.cmd().map(JPackageCommand::executeAndAssertImageCreated);
+
+        target.apply(ThrowingConsumer.toConsumer(installVerifier), test -> {
+            test.addInstallVerifier(installVerifier);
+        }).apply(cmd -> {
+            ThrowingBiConsumer.toBiConsumer(bundleVerifier).accept(cmd, cmdResult.orElseThrow());
+        }, test -> {
+            test.addBundleVerifier(bundleVerifier);
             test.addBundleDesktopIntegrationVerifier(config.values().stream()
                     .anyMatch(this::isWithDesktopIntegration));
+        });
 
-            test.run(PackageTest.Action.CREATE_AND_UNPACK);
-        }
+        target.test().ifPresent(v -> {
+            v.run(PackageTest.Action.CREATE_AND_UNPACK);
+        });
     }
 
     boolean isWithDesktopIntegration(IconType iconType) {
-        if (appImage) {
-            return false;
-        }
         boolean withDesktopFile = !Set.of(
                 IconType.NoIcon,
                 IconType.DefaultIcon).contains(iconType);
@@ -189,89 +205,110 @@ public class IconTest {
 
     private ThrowingBiConsumer<JPackageCommand, Executor.Result> createBundleVerifier() {
         return (cmd, result) -> {
-            var verifier = createConsoleOutputVerifier(cmd.name(), config.get(
-                    Launcher.Main), null);
-            if (verifier != null) {
-                verifier.apply(result.getOutput());
-            }
-
-            if (config.containsKey(Launcher.Additional)) {
-                verifier = createConsoleOutputVerifier(
-                        Launcher.Additional.launcherName, config.get(
-                                Launcher.Additional), config.get(Launcher.Main));
-                if (verifier != null) {
+            Stream.of(Launcher.Main, Launcher.Additional).filter(config::containsKey).forEach(launcher -> {
+                createConsoleOutputVerifier(cmd, launcher).ifPresent(verifier -> {
                     verifier.apply(result.getOutput());
-                }
-            }
+                });
+            });
         };
     }
 
-    private TKit.TextStreamVerifier createConsoleOutputVerifier(
-            String launcherName, IconType iconType, IconType mainIconType) {
-        if (iconType == IconType.DefaultIcon && mainIconType != null) {
-            iconType = mainIconType;
+    private Optional<TKit.TextStreamVerifier> createConsoleOutputVerifier(
+            JPackageCommand cmd, Launcher launcher) {
+
+        var launcherName = Optional.ofNullable(launcher.launcherName).orElseGet(cmd::name);
+        var resourceName = launcherName;
+        Optional<Path> customIcon;
+
+        if (launcherName.equals(cmd.name())) {
+            customIcon = Optional.ofNullable(cmd.getArgumentValue("--icon")).map(Path::of);
+        } else if (config.get(launcher) == IconType.DefaultIcon) {
+            resourceName = cmd.name();
+            customIcon = Optional.ofNullable(cmd.getArgumentValue("--icon")).map(Path::of);
+        } else {
+            customIcon = getAdditionalLauncherProperties(cmd, launcherName).findProperty("icon").map(Path::of);
         }
-        return createConsoleOutputVerifier(launcherName, iconType);
+
+        return createConsoleOutputVerifier(
+                getBundleIconType(cmd, launcher),
+                launcherName,
+                resourceName,
+                customIcon);
     }
 
-    private static TKit.TextStreamVerifier createConsoleOutputVerifier(
-            String launcherName, IconType iconType) {
-        String lookupString = null;
+    private static Optional<TKit.TextStreamVerifier> createConsoleOutputVerifier(
+            IconType iconType, String launcherName, String resourceName, Optional<Path> customIcon) {
+
+        Objects.requireNonNull(launcherName);
+        Objects.requireNonNull(resourceName);
+        Objects.requireNonNull(customIcon);
+
+        CannedFormattedString lookupString;
+
         switch (iconType) {
             case DefaultIcon:
-                lookupString = String.format(
-                        "Using default package resource %s [icon] (add %s%s to the resource-dir to customize)",
+                lookupString = JPackageStringBundle.MAIN.cannedFormattedString(
+                        "message.using-default-resource",
                         "JavaApp" + TKit.ICON_SUFFIX,
-                        launcherName, TKit.ICON_SUFFIX);
+                        "[icon]",
+                        launcherName + TKit.ICON_SUFFIX);
                 break;
 
             case ResourceDirIcon:
-                lookupString = String.format(
-                        "Using custom package resource [icon] (loaded from %s%s)",
-                        launcherName, TKit.ICON_SUFFIX);
+                lookupString = JPackageStringBundle.MAIN.cannedFormattedString(
+                        "message.using-custom-resource",
+                        "[icon]",
+                        resourceName + TKit.ICON_SUFFIX);
                 break;
 
             case CustomIcon:
             case CustomWithResourceDirIcon:
-                lookupString = "Using custom package resource [icon] (loaded from file";
+                lookupString = JPackageStringBundle.MAIN.cannedFormattedString(
+                        "message.using-custom-resource-from-file",
+                        "[icon]",
+                        customIcon.orElseThrow());
                 break;
 
             default:
-                return null;
+                return Optional.empty();
         }
 
-        return TKit.assertTextStream(lookupString);
+        return Optional.of(TKit.assertTextStream(lookupString.getValue()));
     }
 
     private ThrowingConsumer<JPackageCommand> createInstallVerifier() {
-        LauncherIconVerifier verifier = new LauncherIconVerifier();
-        switch (config.get(Launcher.Main)) {
-            case NoIcon:
-                verifier.setExpectedIcon(null);
-                break;
-
-            case DefaultIcon:
-                verifier.setExpectedDefaultIcon();
-                break;
-
-            case CustomIcon:
-                verifier.setExpectedIcon(Launcher.Main.cmdlineIcon);
-                break;
-
-            case ResourceDirIcon:
-                verifier.setExpectedIcon(Launcher.Main.resourceDirIcon);
-                break;
-
-            case CustomWithResourceDirIcon:
-                verifier.setExpectedIcon(Launcher.Main2.cmdlineIcon);
-                break;
-        }
-
         return cmd -> {
+            var verifier = new LauncherIconVerifier();
+
+            var bundleIconType = getBundleIconType(cmd, Launcher.Main);
+
+            switch (bundleIconType) {
+                case NoIcon:
+                    verifier.setExpectedNoIcon();
+                    break;
+
+                case DefaultIcon:
+                    verifier.setExpectedDefaultIcon();
+                    break;
+
+                case CustomIcon:
+                    verifier.setExpectedIcon(Launcher.Main.cmdlineIcon);
+                    break;
+
+                case ResourceDirIcon:
+                    verifier.setExpectedIcon(Launcher.Main.resourceDirIcon);
+                    break;
+
+                case CustomWithResourceDirIcon:
+                    verifier.setExpectedIcon(Launcher.Main2.cmdlineIcon);
+                    break;
+            }
+
             verifier.applyTo(cmd);
+
             if (TKit.isLinux() && !cmd.isImagePackageType()) {
                 Path desktopFile = LinuxHelper.getDesktopFile(cmd);
-                if (isWithDesktopIntegration(config.get(Launcher.Main))) {
+                if (isWithDesktopIntegration(bundleIconType)) {
                     TKit.assertFileExists(desktopFile);
                 } else {
                     TKit.assertPathExists(desktopFile, false);
@@ -280,80 +317,61 @@ public class IconTest {
         };
     }
 
-    private void initTest(JPackageCommand cmd, PackageTest test) {
+    private void initTest(ConfigurationTarget target) {
         config.entrySet().forEach(ThrowingConsumer.toConsumer(entry -> {
-            initTest(entry.getKey(), entry.getValue(), cmd, test);
+            initTest(entry.getKey(), entry.getValue(), target);
         }));
 
-        ThrowingConsumer<JPackageCommand> initializer = testCmd -> {
-            testCmd.saveConsoleOutput(true);
-            testCmd.setFakeRuntime();
-            testCmd.addArguments(extraJPackageArgs);
-        };
-
-        if (test != null) {
-            test.addInitializer(initializer);
-        } else {
-            ThrowingConsumer.toConsumer(initializer).accept(cmd);
-        }
+        target.addInitializer(cmd -> {
+            cmd.saveConsoleOutput(true);
+            cmd.setFakeRuntime();
+            cmd.addArguments(extraJPackageArgs);
+        });
     }
 
     private static void initTest(Launcher cfg, IconType iconType,
-            JPackageCommand cmd, PackageTest test) throws IOException {
-        Consumer<AdditionalLauncher> addLauncher = v -> {
-            if (test != null) {
-                v.applyTo(test);
-            } else {
-                v.applyTo(cmd);
-            }
-        };
+            ConfigurationTarget target) throws IOException {
 
         switch (iconType) {
             case DefaultIcon:
-                if (cfg.launcherName != null) {
-                    addLauncher.accept(new AdditionalLauncher(cfg.launcherName));
-                }
+                Optional.ofNullable(cfg.launcherName).map(AdditionalLauncher::new)
+                        .ifPresent(target::add);
                 break;
 
             case NoIcon:
-                if (cfg.launcherName != null) {
-                    addLauncher.accept(
-                            new AdditionalLauncher(cfg.launcherName).setNoIcon());
-                }
+                Optional.ofNullable(cfg.launcherName).map(AdditionalLauncher::new)
+                        .map(AdditionalLauncher::setNoIcon)
+                        .ifPresent(target::add);
                 break;
 
             case CustomIcon:
-                if (test != null) {
-                    addCustomIcon(null, test, cfg.launcherName, cfg.cmdlineIcon);
-                } else {
-                    addCustomIcon(cmd, null, cfg.launcherName, cfg.cmdlineIcon);
-                }
+                addCustomIcon(target, cfg.launcherName, cfg.cmdlineIcon);
                 break;
 
             case ResourceDirIcon:
-                if (Launcher.PRIMARY.contains(cfg) && cfg.launcherName != null) {
-                    addLauncher.accept(new AdditionalLauncher(cfg.launcherName));
+                if (Launcher.PRIMARY.contains(cfg)) {
+                    Optional.ofNullable(cfg.launcherName).map(AdditionalLauncher::new)
+                            .ifPresent(target::add);
                 }
-                if (test != null) {
-                    test.addInitializer(testCmd -> {
-                        addResourceDirIcon(testCmd, cfg.launcherName,
-                                cfg.resourceDirIcon);
-                    });
-                } else {
-                    addResourceDirIcon(cmd, cfg.launcherName, cfg.resourceDirIcon);
-                }
+                target.addInitializer(cmd -> {
+                    try {
+                        addResourceDirIcon(cmd, cfg.launcherName, cfg.resourceDirIcon);
+                    } catch (IOException ex) {
+                        throw new UncheckedIOException(ex);
+                    }
+                });
                 break;
 
             case CustomWithResourceDirIcon:
                 switch (cfg) {
                     case Main:
-                        initTest(Launcher.Main2, IconType.CustomIcon, cmd, test);
-                        initTest(Launcher.Main2, IconType.ResourceDirIcon, cmd, test);
+                        initTest(Launcher.Main2, IconType.CustomIcon, target);
+                        initTest(Launcher.Main2, IconType.ResourceDirIcon, target);
                         break;
 
                     case Additional:
-                        initTest(Launcher.Additional2, IconType.CustomIcon, cmd, test);
-                        initTest(Launcher.Additional2, IconType.ResourceDirIcon, cmd, test);
+                        initTest(Launcher.Additional2, IconType.CustomIcon, target);
+                        initTest(Launcher.Additional2, IconType.ResourceDirIcon, target);
                         break;
 
                     default:
@@ -363,29 +381,54 @@ public class IconTest {
         }
     }
 
-    private JPackageCommand initAppImageTest() {
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-        initTest(cmd, null);
-        return cmd;
+    private IconType getBundleIconType(JPackageCommand cmd, Launcher launcher) {
+        return getBundleIconType(cmd, config.get(Launcher.Main), launcher, config.get(launcher));
     }
 
-    private PackageTest initPackageTest() {
-        PackageTest test = new PackageTest().configureHelloApp();
-        initTest(null, test);
-        return test;
+    /**
+     * Returns the expected icon type of the given launcher in the output bundle
+     * that the given jpackage command line will output based on the icon type
+     * configured for the launcher.
+     *
+     * @param cmd                  jpackage command line
+     * @param mainLauncherIconType the icon type configured for the main launcher
+     * @param launcher             the launcher
+     * @param iconType             the icon type configured for the specified
+     *                             launcher
+     * @return the type of of an icon of the given launcher in the output bundle
+     */
+    private static IconType getBundleIconType(JPackageCommand cmd,
+            IconType mainLauncherIconType, Launcher launcher, IconType iconType) {
+
+        Objects.requireNonNull(cmd);
+        Objects.requireNonNull(mainLauncherIconType);
+        Objects.requireNonNull(launcher);
+        Objects.requireNonNull(iconType);
+
+        if (iconType == IconType.DefaultIcon) {
+            iconType = mainLauncherIconType;
+        }
+
+        if (TKit.isLinux()) {
+            var noDefaultIcon = cmd.isImagePackageType() || !cmd.hasArgument("--linux-shortcut");
+
+            if (noDefaultIcon && iconType == IconType.DefaultIcon) {
+                iconType = IconType.NoIcon;
+            }
+        }
+
+        return iconType;
     }
 
     private static void addResourceDirIcon(JPackageCommand cmd,
             String launcherName, Path iconPath) throws IOException {
-        Path resourceDir = cmd.getArgumentValue("--resource-dir", () -> null,
-                Path::of);
-        if (resourceDir == null) {
-            resourceDir = TKit.createTempDirectory("resources");
-            cmd.addArguments("--resource-dir", resourceDir);
-        }
+        var resourceDir = Optional.ofNullable(cmd.getArgumentValue("--resource-dir")).map(Path::of).orElseGet(() -> {
+            return TKit.createTempDirectory("resources");
+        });
 
-        String dstIconFileName = Optional.ofNullable(launcherName).orElseGet(
-                () -> cmd.name()) + TKit.ICON_SUFFIX;
+        cmd.addArguments("--resource-dir", resourceDir);
+
+        String dstIconFileName = Optional.ofNullable(launcherName).orElseGet(cmd::name) + TKit.ICON_SUFFIX;
 
         TKit.trace(String.format("Resource file: [%s] <- [%s]",
                 resourceDir.resolve(dstIconFileName), iconPath));
@@ -393,23 +436,16 @@ public class IconTest {
                 StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private static void addCustomIcon(JPackageCommand cmd, PackageTest test,
-            String launcherName, Path iconPath) throws IOException {
+    private static void addCustomIcon(ConfigurationTarget target,
+            String launcherName, Path iconPath) {
 
         if (launcherName != null) {
-            AdditionalLauncher al = new AdditionalLauncher(launcherName).setIcon(
-                    iconPath);
-            if (test != null) {
-                al.applyTo(test);
-            } else {
-                al.applyTo(cmd);
-            }
-        } else if (test != null) {
-            test.addInitializer(testCmd -> {
-                testCmd.addArguments("--icon", iconPath);
-            });
+            var al = new AdditionalLauncher(launcherName).setIcon(iconPath);
+            target.apply(al::applyTo, al::applyTo);
         } else {
-            cmd.addArguments("--icon", iconPath);
+            target.addInitializer(cmd -> {
+                cmd.addArguments("--icon", iconPath);
+            });
         }
     }
 

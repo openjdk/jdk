@@ -330,9 +330,7 @@ public final class UCharacterProperty
      */
     @SuppressWarnings("deprecation")
     private static final String DATA_FILE_NAME_ =
-            "/jdk/internal/icu/impl/data/icudt" +
-            VersionInfo.ICU_DATA_VERSION_PATH +
-            "/uprops.icu";
+            "/jdk/internal/icu/impl/data/icudata/uprops.icu";
 
     /**
      * Shift value for lead surrogate to form a supplementary character.

@@ -51,6 +51,8 @@
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
 
+#include <intrin.h>
+
 
 #undef REG_SP
 #undef REG_FP
@@ -160,7 +162,6 @@ bool os::win32::register_code_area(char *low, char *high) {
   return true;
 }
 
-#if defined(_M_AMD64)
 //-----------------------------------------------------------------------------
 bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // handle exception caused by native method modifying control word
@@ -195,99 +196,6 @@ bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
   return false;
 }
-#endif
-
-#ifdef HAVE_PLATFORM_PRINT_NATIVE_STACK
-/*
- * Windows/x64 does not use stack frames the way expected by Java:
- * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
- * [2] in rare cases, when alloca() is used, a frame pointer is used, but this may
- *     not be RBP.
- * See http://msdn.microsoft.com/en-us/library/ew5tede7.aspx
- *
- * So it's not possible to print the native stack using the
- *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
- * loop in vmError.cpp. We need to roll our own loop.
- */
-bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
-                                            char *buf, int buf_size, address& lastpc)
-{
-  CONTEXT ctx;
-  if (context != nullptr) {
-    memcpy(&ctx, context, sizeof(ctx));
-  } else {
-    RtlCaptureContext(&ctx);
-  }
-
-  st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
-
-  STACKFRAME stk;
-  memset(&stk, 0, sizeof(stk));
-  stk.AddrStack.Offset    = ctx.Rsp;
-  stk.AddrStack.Mode      = AddrModeFlat;
-  stk.AddrFrame.Offset    = ctx.Rbp;
-  stk.AddrFrame.Mode      = AddrModeFlat;
-  stk.AddrPC.Offset       = ctx.Rip;
-  stk.AddrPC.Mode         = AddrModeFlat;
-
-  // Ensure we consider dynamically loaded dll's
-  SymbolEngine::refreshModuleList();
-
-  int count = 0;
-  address lastpc_internal = 0;
-  while (count++ < StackPrintLimit) {
-    intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
-    intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
-    address pc = (address)stk.AddrPC.Offset;
-
-    if (pc != nullptr) {
-      if (count == 2 && lastpc_internal == pc) {
-        // Skip it -- StackWalk64() may return the same PC
-        // (but different SP) on the first try.
-      } else {
-        // Don't try to create a frame(sp, fp, pc) -- on WinX64, stk.AddrFrame
-        // may not contain what Java expects, and may cause the frame() constructor
-        // to crash. Let's just print out the symbolic address.
-        frame::print_C_frame(st, buf, buf_size, pc);
-        // print source file and line, if available
-        char buf[128];
-        int line_no;
-        if (SymbolEngine::get_source_info(pc, buf, sizeof(buf), &line_no)) {
-          st->print("  (%s:%d)", buf, line_no);
-        } else {
-          st->print("  (no source info available)");
-        }
-        st->cr();
-      }
-      lastpc_internal = pc;
-    }
-
-    PVOID p = WindowsDbgHelp::symFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
-    if (!p) {
-      // StackWalk64() can't handle this PC. Calling StackWalk64 again may cause crash.
-      lastpc = lastpc_internal;
-      break;
-    }
-
-    BOOL result = WindowsDbgHelp::stackWalk64(
-        IMAGE_FILE_MACHINE_AMD64,  // __in      DWORD MachineType,
-        GetCurrentProcess(),       // __in      HANDLE hProcess,
-        GetCurrentThread(),        // __in      HANDLE hThread,
-        &stk,                      // __inout   LP STACKFRAME64 StackFrame,
-        &ctx);                     // __inout   PVOID ContextRecord,
-
-    if (!result) {
-      break;
-    }
-  }
-  if (count > StackPrintLimit) {
-    st->print_cr("...<more frames>...");
-  }
-  st->cr();
-
-  return true;
-}
-#endif // HAVE_PLATFORM_PRINT_NATIVE_STACK
 
 address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
@@ -339,11 +247,15 @@ intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
 
 // Returns the current stack pointer. Accurate value needed for
 // os::verify_stack_alignment().
+// The function is intentionally not inlined. This way, the transfer of control
+// into this method must be made with a call instruction. The MSVC
+// _AddressOfReturnAddress() intrinsic returns the address of the return PC
+// saved by that call instruction. Therefore, the stack pointer of the caller
+// just before the call instruction, is acquired by skipping over the return PC
+// slot in the stack.
+__declspec(noinline)
 address os::current_stack_pointer() {
-  typedef address get_sp_func();
-  get_sp_func* func = CAST_TO_FN_PTR(get_sp_func*,
-                                     StubRoutines::x86::get_previous_sp_entry());
-  return (*func)();
+  return ((address)_AddressOfReturnAddress()) + sizeof(void*);
 }
 
 bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
@@ -500,11 +412,7 @@ void os::setup_fpu() {
 
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
-  // The current_stack_pointer() calls generated get_previous_sp stub routine.
-  // Only enable the assert after the routine becomes available.
-  if (StubRoutines::initial_stubs_code() != nullptr) {
-    assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
-  }
+  assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
 }
 #endif
 

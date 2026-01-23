@@ -263,7 +263,7 @@ public class Cipher {
     }
 
     /**
-     * Creates a {code Cipher} object. Called internally by {code NullCipher}.
+     * Creates a {@code Cipher} object. Called internally by {@code NullCipher}.
      *
      * @param cipherSpi the delegate
      * @param transformation the transformation
@@ -2690,7 +2690,7 @@ public class Cipher {
     }
 
     /**
-     * Returns an {code AlgorithmParameterSpec} object which contains
+     * Returns an {@code AlgorithmParameterSpec} object which contains
      * the maximum {@code Cipher} parameter value according to the
      * jurisdiction policy file. If JCE unlimited strength jurisdiction
      * policy files are installed or there is no maximum limit on the
@@ -2698,7 +2698,7 @@ public class Cipher {
      * {@code null} will be returned.
      *
      * @param transformation the cipher transformation
-     * @return an {code AlgorithmParameterSpec} object which holds the maximum
+     * @return an {@code AlgorithmParameterSpec} object which holds the maximum
      * value or {@code null}
      * @throws NullPointerException if {@code transformation}
      * is {@code null}
