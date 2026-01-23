@@ -35,9 +35,9 @@ class ShenandoahAggressiveHeuristics : public ShenandoahHeuristics {
 public:
   ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info);
 
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                     RegionData* data, size_t size,
-                                                     size_t free);
+  virtual size_t choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                       RegionData* data, size_t size,
+                                                       size_t free);
 
   virtual bool should_start_gc();
 
