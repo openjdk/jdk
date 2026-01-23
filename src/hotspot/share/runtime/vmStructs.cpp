@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,8 +347,8 @@
                                                                                                                                      \
      static_field(MetaspaceObj,                _aot_metaspace_base,                           void*)                                 \
      static_field(MetaspaceObj,                _aot_metaspace_top,                            void*)                                 \
-  nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        HeapWord*)                             \
-  nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          HeapWord*)                             \
+  nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        Atomic<HeapWord*>)                     \
+  nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          Atomic<HeapWord*>)                     \
   nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
@@ -901,6 +901,7 @@
   /*****************************/                                         \
                                                                           \
   declare_toplevel_type(void*)                                            \
+  declare_toplevel_type(Atomic<HeapWord*>)                                \
   declare_toplevel_type(int*)                                             \
   declare_toplevel_type(char*)                                            \
   declare_toplevel_type(char**)                                           \

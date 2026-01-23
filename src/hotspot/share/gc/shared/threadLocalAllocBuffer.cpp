@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/threadSMR.hpp"
@@ -313,7 +312,7 @@ void ThreadLocalAllocBuffer::set_back_allocation_end() {
 }
 
 void ThreadLocalAllocBuffer::set_sampling_point(HeapWord* sampling_point) {
-  precond(sampling_point >= _top);
+  precond(sampling_point >= top());
   precond(sampling_point <= _allocation_end);
 
   // This will trigger a slow-path, which in turn might take a sample.
@@ -459,9 +458,9 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
 }
 
 const HeapWord* ThreadLocalAllocBuffer::start_relaxed() const {
-  return AtomicAccess::load(&_start);
+  return _start.load_relaxed();
 }
 
 const HeapWord* ThreadLocalAllocBuffer::top_relaxed() const {
-  return AtomicAccess::load(&_top);
+  return _top.load_relaxed();
 }

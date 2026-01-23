@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_THREADLOCALALLOCBUFFER_HPP
 
 #include "gc/shared/gcUtil.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/align.hpp"
 #include "utilities/sizes.hpp"
@@ -47,8 +48,8 @@ class ThreadLocalAllocBuffer: public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 private:
-  HeapWord* _start;                              // address of TLAB
-  HeapWord* _top;                                // address after last allocation
+  Atomic<HeapWord*> _start;                      // address of TLAB
+  Atomic<HeapWord*> _top;                        // address after last allocation
   HeapWord* _pf_top;                             // allocation prefetch watermark
   HeapWord* _end;                                // allocation end (can be the sampling end point or _allocation_end)
   HeapWord* _allocation_end;                     // end for allocations (actual TLAB end, excluding alignment_reserve)
@@ -71,10 +72,10 @@ private:
 
   void reset_statistics();
 
-  void set_start(HeapWord* start)                { _start = start; }
+  void set_start(HeapWord* start)                { _start.store_relaxed(start); }
   void set_end(HeapWord* end)                    { _end = end; }
   void set_allocation_end(HeapWord* ptr)         { _allocation_end = ptr; }
-  void set_top(HeapWord* top)                    { _top = top; }
+  void set_top(HeapWord* top)                    { _top.store_relaxed(top); }
   void set_pf_top(HeapWord* pf_top)              { _pf_top = pf_top; }
   void set_desired_size(size_t desired_size)     { _desired_size = desired_size; }
   void set_refill_waste_limit(size_t waste)      { _refill_waste_limit = waste;  }
@@ -112,9 +113,9 @@ public:
   static size_t max_size_in_bytes()              { return max_size() * BytesPerWord; }
   static void set_max_size(size_t max_size)      { _max_size = max_size; }
 
-  HeapWord* start() const                        { return _start; }
+  HeapWord* start() const                        { return _start.load_relaxed(); }
   HeapWord* end() const                          { return _end; }
-  HeapWord* top() const                          { return _top; }
+  HeapWord* top() const                          { return _top.load_relaxed(); }
   HeapWord* hard_end();
   HeapWord* pf_top() const                       { return _pf_top; }
   size_t desired_size() const                    { return _desired_size; }
@@ -170,14 +171,6 @@ public:
   void set_sampling_point(HeapWord* sampling_point);
 
   static size_t refill_waste_limit_increment();
-
-  template <typename T> void addresses_do(T f) {
-    f(&_start);
-    f(&_top);
-    f(&_pf_top);
-    f(&_end);
-    f(&_allocation_end);
-  }
 
   // Code generation support
   static ByteSize start_offset()                 { return byte_offset_of(ThreadLocalAllocBuffer, _start); }

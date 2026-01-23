@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,8 +444,8 @@
   JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_excluded,                                bool))                                 \
   JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread,                                         bool))                                 \
                                                                                                                                      \
-  nonstatic_field(ThreadLocalAllocBuffer,   _start,                                           HeapWord*)                             \
-  nonstatic_field(ThreadLocalAllocBuffer,   _top,                                             HeapWord*)                             \
+  nonstatic_field(ThreadLocalAllocBuffer,   _start,                                           Atomic<HeapWord*>)                     \
+  nonstatic_field(ThreadLocalAllocBuffer,   _top,                                             Atomic<HeapWord*>)                     \
   nonstatic_field(ThreadLocalAllocBuffer,   _end,                                             HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,   _pf_top,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,   _desired_size,                                    size_t)                                \
