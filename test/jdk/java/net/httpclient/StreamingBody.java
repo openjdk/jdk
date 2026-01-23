@@ -132,7 +132,7 @@ public class StreamingBody implements HttpServerAdapters {
     /// help garbage collecting HttpClient intances. This test
     /// wants to verify that HttpClient instances which are no
     /// longer strongly referenced are not garbage collected
-    /// before pending HTTP request are finished. The test
+    /// before pending HTTP requests are finished. The test
     /// creates many client instances (up to 500) and relies
     /// on the GC to collect them, since it does not want to
     /// keep a strong reference, and therefore cannot not call
