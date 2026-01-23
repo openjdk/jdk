@@ -482,38 +482,10 @@ public final class Integer extends Number
      */
     public static int parseInt(String s, int radix)
                 throws NumberFormatException {
-        int len;
-        byte[] value;
-        if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
-            return parseInt0(s, radix);
+        if (radix == 10) {
+            return parseInt(s);
         }
-        /* Accumulating negatively avoids surprises near MAX_VALUE */
-        int fc = value[0];
-        int result = Integer.isDigitLatin1(fc)
-                ? '0' - fc
-                : len != 1 && (fc == '-' || fc == '+')
-                ? 0
-                : 1;  // or any value > 0
-        int i = 1;
-        int d;
-        while (i + 1 < len
-                && (d = DecimalDigits.digit2(value, i)) != -1
-                && MIN_VALUE / 100 <= result & result <= 0) {
-            result = result * 100 - d;  // overflow from d => result > 0
-            i += 2;
-        }
-        if (i < len
-                && Integer.isDigitLatin1(d = value[i])
-                && MIN_VALUE / 10 <= result & result <= 0) {
-            result = result * 10 + '0' - d;  // overflow from '0' - d => result > 0
-            i += 1;
-        }
-        if (i == len
-                & result <= 0
-                & (MIN_VALUE < result || fc == '-')) {
-            return fc == '-' ? result : -result;
-        }
-        throw NumberFormatException.forInputString(s);
+        return parseInt0(s, radix);
     }
 
     private static int parseInt0(String s, int radix) {
@@ -625,7 +597,38 @@ public final class Integer extends Number
      *               parsable integer.
      */
     public static int parseInt(String s) throws NumberFormatException {
-        return parseInt(s, 10);
+        int len;
+        byte[] value;
+        if (s == null || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
+            return parseInt0(s, 10);
+        }
+        /* Accumulating negatively avoids surprises near MAX_VALUE */
+        int fc = value[0];
+        int result = Integer.isDigitLatin1(fc)
+                ? '0' - fc
+                : len != 1 && (fc == '-' || fc == '+')
+                ? 0
+                : 1;  // or any value > 0
+        int i = 1;
+        int d;
+        while (i + 1 < len
+                && (d = DecimalDigits.digit2(value, i)) != -1
+                && MIN_VALUE / 100 <= result & result <= 0) {
+            result = result * 100 - d;  // overflow from d => result > 0
+            i += 2;
+        }
+        if (i < len
+                && Integer.isDigitLatin1(d = value[i])
+                && MIN_VALUE / 10 <= result & result <= 0) {
+            result = result * 10 + '0' - d;  // overflow from '0' - d => result > 0
+            i += 1;
+        }
+        if (i == len
+                & result <= 0
+                & (MIN_VALUE < result || fc == '-')) {
+            return fc == '-' ? result : -result;
+        }
+        throw NumberFormatException.forInputString(s);
     }
 
     /**
