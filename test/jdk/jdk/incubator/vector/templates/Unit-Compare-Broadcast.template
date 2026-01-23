@@ -47,7 +47,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), [[TEST_OP]](a[i + j], {#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())):($type$)((long)b[i])}));
+                AssertEquals(mv.laneIsSet(j), [[TEST_OP]](a[i + j], {#if[FP16]?float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())):($type$)((long)b[i])}));
             }
         }
     }
@@ -67,7 +67,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), mask[j] && ([[TEST_OP]](a[i + j],{#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())):($type$)((long)b[i])})));
+                AssertEquals(mv.laneIsSet(j), mask[j] && ([[TEST_OP]](a[i + j],{#if[FP16]?float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())):($type$)((long)b[i])})));
             }
         }
     }

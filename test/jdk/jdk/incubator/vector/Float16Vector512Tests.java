@@ -64,8 +64,6 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static Float16Vector bcast_vec = Float16Vector.broadcast(SPECIES, (short)10);
-
     static void AssertEquals(short actual, short expected) {
         Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected));
     }
@@ -119,9 +117,9 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     // Identity values for reduction operations
     private static final short ADD_IDENTITY = (short)0;
     private static final short FIRST_NONZERO_IDENTITY = (short)0;
-    private static final short MAX_IDENTITY = float16ToShortBits(Float16.NEGATIVE_INFINITY);
-    private static final short MIN_IDENTITY = float16ToShortBits(Float16.POSITIVE_INFINITY);
-    private static final short MUL_IDENTITY = float16ToShortBits(Float16.valueOf(1.0f));
+    private static final short MAX_IDENTITY = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
+    private static final short MIN_IDENTITY = float16ToRawShortBits(Float16.POSITIVE_INFINITY);
+    private static final short MUL_IDENTITY = float16ToRawShortBits(Float16.valueOf(1.0f));
 
     // for floating point addition reduction ops that may introduce rounding errors
     private static final short RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (short)10.0;
@@ -205,13 +203,13 @@ public class Float16Vector512Tests extends AbstractVectorTest {
                                             short relativeErrorFactor) {
         int i = 0;
         try {
-            AssertEquals(rc, fa.apply(a), float16ToShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))));
+            AssertEquals(rc, fa.apply(a), float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))));
             for (; i < a.length; i += SPECIES.length()) {
-                AssertEquals(r[i], f.apply(a, i), float16ToShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))));
+                AssertEquals(r[i], f.apply(a, i), float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))));
             }
         } catch (AssertionError e) {
-            AssertEquals(rc, fa.apply(a), float16ToShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))), "Final result is incorrect!");
-            AssertEquals(r[i], f.apply(a, i), float16ToShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))), "at index #" + i);
+            AssertEquals(rc, fa.apply(a), float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))), "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i), float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))), "at index #" + i);
         }
     }
 
@@ -233,13 +231,13 @@ public class Float16Vector512Tests extends AbstractVectorTest {
                                             short relativeError) {
         int i = 0;
         try {
-            AssertEquals(rc, fa.apply(a, mask), float16ToShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))));
+            AssertEquals(rc, fa.apply(a, mask), float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))));
             for (; i < a.length; i += SPECIES.length()) {
-                AssertEquals(r[i], f.apply(a, i, mask), float16ToShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))));
+                AssertEquals(r[i], f.apply(a, i, mask), float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))));
             }
         } catch (AssertionError e) {
-            AssertEquals(rc, fa.apply(a, mask), float16ToShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))), "Final result is incorrect!");
-            AssertEquals(r[i], f.apply(a, i, mask), float16ToShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))), "at index #" + i);
+            AssertEquals(rc, fa.apply(a, mask), float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))), "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i, mask), float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))), "at index #" + i);
         }
     }
 
@@ -600,10 +598,10 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue()))));
+                AssertEquals(r[i], f.apply(a[i], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue()))));
             }
         } catch (AssertionError e) {
-            AssertEquals(r[i], f.apply(a[i], (float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())))),
+            AssertEquals(r[i], f.apply(a[i], (float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())))),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -664,10 +662,10 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())), mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())), mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            AssertEquals(r[i], f.apply(a[i], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())),
+            AssertEquals(r[i], f.apply(a[i], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())),
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -1154,23 +1152,9 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     }
 
     static short genValue(int i) {
-        return float16ToShortBits(Float16.valueOf(i));
+        return float16ToRawShortBits(Float16.valueOf(i));
     }
 
-    static int intCornerCaseValue(int i) {
-        switch(i % 5) {
-            case 0:
-                return Integer.MAX_VALUE;
-            case 1:
-                return Integer.MIN_VALUE;
-            case 2:
-                return Integer.MIN_VALUE;
-            case 3:
-                return Integer.MAX_VALUE;
-            default:
-                return (int)0;
-        }
-    }
 
     static final List<IntFunction<short[]>> INT_FLOAT16_GENERATORS = List.of(
             withToString("Float16[-i * 5]", (int s) -> {
@@ -1184,10 +1168,6 @@ public class Float16Vector512Tests extends AbstractVectorTest {
             withToString("Float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (((short)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
-            }),
-            withToString("Float16[intCornerCaseValue(i)]", (int s) -> {
-                return fill(s * BUFFER_REPS,
-                            i -> (short)intCornerCaseValue(i));
             })
     );
 
@@ -1202,23 +1182,9 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         }
     }
 
-    static long longCornerCaseValue(int i) {
-        switch(i % 5) {
-            case 0:
-                return Long.MAX_VALUE;
-            case 1:
-                return Long.MIN_VALUE;
-            case 2:
-                return Long.MIN_VALUE;
-            case 3:
-                return Long.MAX_VALUE;
-            default:
-                return (long)0;
-        }
-    }
 
     static short genValue(long i) {
-        return float16ToShortBits(Float16.valueOf(i));
+        return float16ToRawShortBits(Float16.valueOf(i));
     }
 
     static final List<IntFunction<short[]>> LONG_FLOAT16_GENERATORS = List.of(
@@ -1233,10 +1199,6 @@ public class Float16Vector512Tests extends AbstractVectorTest {
             withToString("Float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (((short)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
-            }),
-            withToString("Float16[cornerCaseValue(i)]", (int s) -> {
-                return fill(s * BUFFER_REPS,
-                            i -> (short)genValue(longCornerCaseValue(i)));
             })
     );
 
@@ -1571,12 +1533,12 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
     static short cornerCaseValue(int i) {
         return switch(i % 8) {
-            case 0  -> float16ToShortBits(Float16.MAX_VALUE);
-            case 1  -> float16ToShortBits(Float16.MIN_VALUE);
-            case 2  -> float16ToShortBits(Float16.NEGATIVE_INFINITY);
-            case 3  -> float16ToShortBits(Float16.POSITIVE_INFINITY);
-            case 4  -> float16ToShortBits(Float16.NaN);
-            case 5  -> float16ToShortBits(shortBitsToFloat16((short)0x7FFA));
+            case 0  -> float16ToRawShortBits(Float16.MAX_VALUE);
+            case 1  -> float16ToRawShortBits(Float16.MIN_VALUE);
+            case 2  -> float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
+            case 3  -> float16ToRawShortBits(Float16.POSITIVE_INFINITY);
+            case 4  -> float16ToRawShortBits(Float16.NaN);
+            case 5  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7FFA));
             case 6  -> ((short)0.0);
             default -> ((short)-0.0);
         };
@@ -1643,211 +1605,211 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     static short scalar_add(short a, short b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.add(at, bt));
+        return float16ToRawShortBits(Float16.add(at, bt));
     }
 
     static short scalar_sub(short a, short b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.subtract(at, bt));
+        return float16ToRawShortBits(Float16.subtract(at, bt));
     }
 
     static short scalar_mul(short a, short b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.multiply(at, bt));
+        return float16ToRawShortBits(Float16.multiply(at, bt));
 
     }
     static short scalar_max(short a, short b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.max(at, bt));
+        return float16ToRawShortBits(Float16.max(at, bt));
     }
 
     static short scalar_min(short a, short b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.min(at, bt));
+        return float16ToRawShortBits(Float16.min(at, bt));
     }
 
     static short scalar_div(short a, short b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.divide(at, bt));
+        return float16ToRawShortBits(Float16.divide(at, bt));
     }
 
     static short scalar_fma(short a, short b, short c) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
         Float16 ct = shortBitsToFloat16(c);
-        return float16ToShortBits(Float16.fma(at, bt, ct));
+        return float16ToRawShortBits(Float16.fma(at, bt, ct));
     }
 
     static short scalar_abs(short a) {
         Float16 at = shortBitsToFloat16(a);
-        return float16ToShortBits(Float16.abs(at));
+        return float16ToRawShortBits(Float16.abs(at));
     }
 
     static short scalar_neg(short a) {
         Float16 at = shortBitsToFloat16(a);
-        return float16ToShortBits(Float16.valueOf(-at.floatValue()));
+        return float16ToRawShortBits(Float16.valueOf(-at.floatValue()));
     }
 
     static short scalar_sin(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.sin(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.sin(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_exp(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.exp(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.exp(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_log1p(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.log1p(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.log1p(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_log(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.log(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.log(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_log10(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.log10(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.log10(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_expm1(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.expm1(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.expm1(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_cos(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.cos(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.cos(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_tan(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.tan(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.tan(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_sinh(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.sinh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.sinh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_cosh(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.cosh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.cosh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_tanh(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.tanh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.tanh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_asin(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.asin(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.asin(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_acos(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.acos(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.acos(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_atan(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.atan(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.atan(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_cbrt(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.cbrt(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.cbrt(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_sqrt(short a) {
-        return float16ToShortBits(Float16.valueOf(Math.sqrt(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.sqrt(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short scalar_hypot(short a, short b) {
-        return float16ToShortBits(Float16.valueOf(Math.hypot(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(Math.hypot(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
     }
 
     static short scalar_pow(short a, short b) {
-        return float16ToShortBits(Float16.valueOf(Math.pow(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(Math.pow(shortBitsToFloat16(a).doubleValue(),
                                                                    shortBitsToFloat16(b).doubleValue())));
     }
 
     static short scalar_atan2(short a, short b) {
-        return float16ToShortBits(Float16.valueOf(Math.atan2(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(Math.atan2(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
     }
 
     static short strict_scalar_sin(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.sin(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.sin(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_exp(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.exp(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.exp(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_log1p(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.log1p(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.log1p(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_log(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.log(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.log(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_log10(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.log10(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.log10(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_expm1(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.expm1(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.expm1(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_cos(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.cos(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.cos(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_tan(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.tan(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.tan(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_sinh(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.sinh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.sinh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_cosh(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.cosh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.cosh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_tanh(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.tanh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.tanh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_asin(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.asin(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.asin(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_acos(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.acos(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.acos(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_atan(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.atan(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.atan(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_cbrt(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.cbrt(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.cbrt(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_sqrt(short a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.sqrt(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.sqrt(shortBitsToFloat16(a).doubleValue())));
     }
 
     static short strict_scalar_hypot(short a, short b) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.hypot(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.hypot(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
     }
 
     static short strict_scalar_pow(short a, short b) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.pow(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.pow(shortBitsToFloat16(a).doubleValue(),
                                                                    shortBitsToFloat16(b).doubleValue())));
     }
 
     static short strict_scalar_atan2(short a, short b) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.atan2(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.atan2(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
     }
 
@@ -1863,10 +1825,10 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
     @Test
     static void smokeTest1() {
-        Float16Vector three = Float16Vector.broadcast(SPECIES, float16ToShortBits(Float16.valueOf(-3)));
+        Float16Vector three = Float16Vector.broadcast(SPECIES, float16ToRawShortBits(Float16.valueOf(-3)));
         Float16Vector three2 = (Float16Vector) SPECIES.broadcast(Float16.valueOf(-3).longValue());
         assert(three.eq(three2).allTrue());
-        Float16Vector three3 = three2.broadcast(float16ToShortBits(Float16.valueOf(1))).broadcast(Float16.valueOf(-3).longValue());
+        Float16Vector three3 = three2.broadcast(float16ToRawShortBits(Float16.valueOf(1))).broadcast(Float16.valueOf(-3).longValue());
         assert(three.eq(three3).allTrue());
         int scale = 2;
         Class<?> ETYPE = short.class;
@@ -1877,12 +1839,12 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         Float16Vector higher = three.addIndex(scale);
         VectorMask<Float16> m = three.compare(VectorOperators.LE, higher);
         assert(m.allTrue());
-        m = higher.min(float16ToShortBits(Float16.valueOf(-1))).test(VectorOperators.IS_NEGATIVE);
+        m = higher.min(float16ToRawShortBits(Float16.valueOf(-1))).test(VectorOperators.IS_NEGATIVE);
         assert(m.allTrue());
         m = higher.test(VectorOperators.IS_FINITE);
         assert(m.allTrue());
         short max = higher.reduceLanes(VectorOperators.MAX);
-        assert(max == float16ToShortBits(Float16.add(Float16.valueOf(-3), Float16.multiply(Float16.valueOf(scale), Float16.valueOf((SPECIES.length()-1))))));
+        assert(max == float16ToRawShortBits(Float16.add(Float16.valueOf(-3), Float16.multiply(Float16.valueOf(scale), Float16.valueOf((SPECIES.length()-1))))));
     }
 
     private static short[]
@@ -2461,6 +2423,8 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         assertBroadcastLongArraysEquals(r, a, b, mask, Float16Vector512Tests::ADD);
     }
 
+    static Float16Vector bv_MIN = Float16Vector.broadcast(SPECIES, (short)10);
+
     @Test(dataProvider = "shortUnaryOpProvider")
     static void MINFloat16Vector512TestsWithMemOp(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -2469,12 +2433,14 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bcast_vec).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, Float16Vector512Tests::MIN);
     }
+
+    static Float16Vector bv_min = Float16Vector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void minFloat16Vector512TestsWithMemOp(IntFunction<short[]> fa) {
@@ -2484,12 +2450,14 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                av.min(bcast_vec).intoArray(r, i);
+                av.min(bv_min).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, Float16Vector512Tests::min);
     }
+
+    static Float16Vector bv_MIN_M = Float16Vector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void MINFloat16Vector512TestsMaskedWithMemOp(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
@@ -2501,12 +2469,14 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bcast_vec, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, mask, Float16Vector512Tests::MIN);
     }
+
+    static Float16Vector bv_MAX = Float16Vector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void MAXFloat16Vector512TestsWithMemOp(IntFunction<short[]> fa) {
@@ -2516,12 +2486,14 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bcast_vec).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, Float16Vector512Tests::MAX);
     }
+
+    static Float16Vector bv_max = Float16Vector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void maxFloat16Vector512TestsWithMemOp(IntFunction<short[]> fa) {
@@ -2531,12 +2503,14 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                av.max(bcast_vec).intoArray(r, i);
+                av.max(bv_max).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, Float16Vector512Tests::max);
     }
+
+    static Float16Vector bv_MAX_M = Float16Vector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void MAXFloat16Vector512TestsMaskedWithMemOp(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
@@ -2548,7 +2522,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 Float16Vector av = Float16Vector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bcast_vec, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
             }
         }
 
@@ -3762,7 +3736,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), lt(a[i + j], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue()))));
+                AssertEquals(mv.laneIsSet(j), lt(a[i + j], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue()))));
             }
         }
     }
@@ -3782,7 +3756,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
+                AssertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
             }
         }
     }
@@ -3834,7 +3808,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), eq(a[i + j], float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue()))));
+                AssertEquals(mv.laneIsSet(j), eq(a[i + j], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue()))));
             }
         }
     }
@@ -3854,7 +3828,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                AssertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
+                AssertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
             }
         }
     }

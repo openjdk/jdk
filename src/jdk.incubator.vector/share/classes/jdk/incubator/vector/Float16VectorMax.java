@@ -686,7 +686,7 @@ final class Float16VectorMax extends Float16Vector {
             return (Float16MaskMax)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 Float16VectorMax.class, Float16MaskMax.class, T_FLOAT16, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                Float16.float16ToShortBits(Float16.valueOf(m1.trueCount()))));
+                Float16.float16ToRawShortBits(Float16.valueOf(m1.trueCount()))));
         }
 
 

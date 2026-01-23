@@ -922,7 +922,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                     v0.uOp(m, (i, a) -> ($fallbacktype$) Math.log10(a));
             case VECTOR_OP_SQRT: return (v0, m) ->
 #if[FP16]
-                    v0.sOp(m, (i, a) -> ($type$) float16ToShortBits(Float16.sqrt(shortBitsToFloat16(a))));
+                    v0.sOp(m, (i, a) -> ($type$) float16ToRawShortBits(Float16.sqrt(shortBitsToFloat16(a))));
 #else[FP16]
                     v0.uOp(m, (i, a) -> ($fallbacktype$) Math.sqrt(a));
 #end[FP16]
@@ -1238,7 +1238,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public final
     $abstractvectortype$ lanewise(VectorOperators.Binary op,
                                   long e) {
-        $type$ e1 = {#if[FP16]?float16ToShortBits(Float16.valueOf(e)):($type$) e};
+        $type$ e1 = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(e)):($type$) e};
 #if[BITWISE]
         if ((long)e1 != e
             // allow shift ops to clip down their int parameters
@@ -1265,7 +1265,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public final
     $abstractvectortype$ lanewise(VectorOperators.Binary op,
                                   long e, VectorMask<$Boxtype$> m) {
-        $type$ e1 = {#if[FP16]?float16ToShortBits(Float16.valueOf(e)):($type$) e};
+        $type$ e1 = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(e)):($type$) e};
 #if[BITWISE]
         if ((long)e1 != e
             // allow shift ops to clip down their int parameters
@@ -1455,7 +1455,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #if[FP]
             case VECTOR_OP_FMA: return (v0, v1_, v2_, m) ->
 #if[FP16]
-                    v0.tOp(v1_, v2_, m, (i, a, b, c) -> float16ToShortBits(Float16.fma(shortBitsToFloat16(a), shortBitsToFloat16(b), shortBitsToFloat16(c))));
+                    v0.tOp(v1_, v2_, m, (i, a, b, c) -> float16ToRawShortBits(Float16.fma(shortBitsToFloat16(a), shortBitsToFloat16(b), shortBitsToFloat16(c))));
 #else[FP16]
                     v0.tOp(v1_, v2_, m, (i, a, b, c) -> Math.fma(a, b, c));
 #end[FP16]
@@ -2487,7 +2487,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 // first kill the sign:
                 bits = bits.and($Boxbitstype$.MAX_VALUE);
                 // next find the bit pattern for infinity:
-                $bitstype$ infbits = ($bitstype$) toBits({#if[FP16]?float16ToShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY});
+                $bitstype$ infbits = ($bitstype$) toBits({#if[FP16]?float16ToRawShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY});
                 // now compare:
                 if (op == IS_FINITE) {
                     m = bits.compare(LT, infbits);
@@ -2541,7 +2541,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 // first kill the sign:
                 bits = bits.and($Boxbitstype$.MAX_VALUE);
                 // next find the bit pattern for infinity:
-                $bitstype$ infbits = ($bitstype$) toBits({#if[FP16]?float16ToShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY});
+                $bitstype$ infbits = ($bitstype$) toBits({#if[FP16]?float16ToRawShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY});
                 // now compare:
                 if (op == IS_FINITE) {
                     m = bits.compare(LT, infbits, m);
@@ -2769,7 +2769,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 // and multiply.
                 $abstractvectortype$ iota = s.iota();
                 $type$ sc = ($type$) scale_;
-                return v.add(sc == 1 ? iota : iota.mul({#if[FP16]?float16ToShortBits(Float16.valueOf(sc)):sc}));
+                return v.add(sc == 1 ? iota : iota.mul({#if[FP16]?float16ToRawShortBits(Float16.valueOf(sc)):sc}));
             });
     }
 
@@ -3580,8 +3580,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
 
 #if[FP]
-    private static final $type$ MIN_OR_INF = {#if[FP16]?float16ToShortBits($Boxtype$.NEGATIVE_INFINITY):$Boxtype$.NEGATIVE_INFINITY};
-    private static final $type$ MAX_OR_INF = {#if[FP16]?float16ToShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY};
+    private static final $type$ MIN_OR_INF = {#if[FP16]?float16ToRawShortBits($Boxtype$.NEGATIVE_INFINITY):$Boxtype$.NEGATIVE_INFINITY};
+    private static final $type$ MAX_OR_INF = {#if[FP16]?float16ToRawShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY};
 #else[FP]
     private static final $type$ MIN_OR_INF = $Boxtype$.MIN_VALUE;
     private static final $type$ MAX_OR_INF = $Boxtype$.MAX_VALUE;
@@ -3683,7 +3683,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] a = toArray();
         int[] res = new int[a.length];
         for (int i = 0; i < a.length; i++) {
+#if[FP16]
+            float e = shortBitsToFloat16(a[i]).floatValue();
+#else[FP16]
             $type$ e = a[i];
+#end[FP16]
             res[i] = (int) $Type$Species.toIntegralChecked(e, true);
         }
         return res;
@@ -3720,7 +3724,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] a = toArray();
         long[] res = new long[a.length];
         for (int i = 0; i < a.length; i++) {
-            $type$ e = {#if[FP16]?shortBitsToFloat16(a[i]).shortValue():a[i]};
+#if[FP16]
+            float e = shortBitsToFloat16(a[i]).floatValue();
+#else[FP16]
+            $type$ e = a[i];
+#end[FP16]
             res[i] = $Type$Species.toIntegralChecked(e, false);
         }
         return res;
@@ -5761,7 +5769,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             return value;
 #else[long]
             // Do the conversion, and then test it for failure.
-            $type$ e = {#if[FP16]?float16ToShortBits(Float16.valueOf(value)):($type$) value};
+            $type$ e = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(value)):($type$) value};
             if ({#if[FP16]?shortBitsToFloat16(e).longValue():(long) e} != value) {
                 throw badElementBits(value, e);
             }
@@ -5771,7 +5779,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
         /*package-private*/
         @ForceInline
-        static long toIntegralChecked($type$ e, boolean convertToInt) {
+        static long toIntegralChecked({#if[FP16]?float:$type$} e, boolean convertToInt) {
             long value = convertToInt ? (int) e : (long) e;
             if (($type$) value != e) {
                 throw badArrayBits(e, convertToInt, value);
@@ -5788,7 +5796,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             for (int i = 0; i < va.length; i++) {
                 int lv = values[i];
 #if[FP16]
-                $type$ v = float16ToShortBits(Float16.valueOf(lv));
+                $type$ v = float16ToRawShortBits(Float16.valueOf(lv));
                 va[i] = v;
                 if (Float16.valueOf(lv).intValue() != lv) {
                     throw badElementBits(lv, v);

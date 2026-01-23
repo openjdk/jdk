@@ -92,8 +92,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static $abstractvectortype$ bcast_vec = $abstractvectortype$.broadcast(SPECIES, ($type$)10);
-
 #if[FP16]
     static void AssertEquals($type$ actual, $type$ expected) {
         Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected));
@@ -193,9 +191,9 @@ public class $vectorteststype$ extends AbstractVectorTest {
     private static final $type$ AND_IDENTITY = ($type$)-1;
 #end[BITWISE]
     private static final $type$ FIRST_NONZERO_IDENTITY = ($type$)0;
-    private static final $type$ MAX_IDENTITY = {#if[FP16]?float16ToShortBits($Wideboxtype$.$MinValue$):$Wideboxtype$.$MinValue$};
-    private static final $type$ MIN_IDENTITY = {#if[FP16]?float16ToShortBits($Wideboxtype$.$MaxValue$):$Wideboxtype$.$MaxValue$};
-    private static final $type$ MUL_IDENTITY = {#if[FP16]?float16ToShortBits(Float16.valueOf(1.0f)):($type$)1};
+    private static final $type$ MAX_IDENTITY = {#if[FP16]?float16ToRawShortBits($Wideboxtype$.$MinValue$):$Wideboxtype$.$MinValue$};
+    private static final $type$ MIN_IDENTITY = {#if[FP16]?float16ToRawShortBits($Wideboxtype$.$MaxValue$):$Wideboxtype$.$MaxValue$};
+    private static final $type$ MUL_IDENTITY = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(1.0f)):($type$)1};
 #if[BITWISE]
     private static final $type$ OR_IDENTITY = ($type$)0;
     private static final $type$ SUADD_IDENTITY = ($type$)0;
@@ -312,13 +310,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
                                             $type$ relativeErrorFactor) {
         int i = 0;
         try {
-            AssertEquals(rc, fa.apply(a), {#if[FP16]?float16ToShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(rc) * relativeErrorFactor});
+            AssertEquals(rc, fa.apply(a), {#if[FP16]?float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(rc) * relativeErrorFactor});
             for (; i < a.length; i += SPECIES.length()) {
-                AssertEquals(r[i], f.apply(a, i), {#if[FP16]?float16ToShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(r[i]) * relativeErrorFactor});
+                AssertEquals(r[i], f.apply(a, i), {#if[FP16]?float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(r[i]) * relativeErrorFactor});
             }
         } catch (AssertionError e) {
-            AssertEquals(rc, fa.apply(a), {#if[FP16]?float16ToShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(rc) * relativeErrorFactor}, "Final result is incorrect!");
-            AssertEquals(r[i], f.apply(a, i), {#if[FP16]?float16ToShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(r[i]) * relativeErrorFactor}, "at index #" + i);
+            AssertEquals(rc, fa.apply(a), {#if[FP16]?float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(rc) * relativeErrorFactor}, "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i), {#if[FP16]?float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(r[i]) * relativeErrorFactor}, "at index #" + i);
         }
     }
 #end[FP]
@@ -355,13 +353,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
                                             $type$ relativeError) {
         int i = 0;
         try {
-            AssertEquals(rc, fa.apply(a, mask), {#if[FP16]?float16ToShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))):Math.abs(rc * relativeError)});
+            AssertEquals(rc, fa.apply(a, mask), {#if[FP16]?float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))):Math.abs(rc * relativeError)});
             for (; i < a.length; i += SPECIES.length()) {
-                AssertEquals(r[i], f.apply(a, i, mask), {#if[FP16]?float16ToShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))):Math.abs(r[i] * relativeError)});
+                AssertEquals(r[i], f.apply(a, i, mask), {#if[FP16]?float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))):Math.abs(r[i] * relativeError)});
             }
         } catch (AssertionError e) {
-            AssertEquals(rc, fa.apply(a, mask), {#if[FP16]?float16ToShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))):Math.abs(rc * relativeError)}, "Final result is incorrect!");
-            AssertEquals(r[i], f.apply(a, i, mask), {#if[FP16]?float16ToShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))):Math.abs(r[i] * relativeError)}, "at index #" + i);
+            AssertEquals(rc, fa.apply(a, mask), {#if[FP16]?float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))):Math.abs(rc * relativeError)}, "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i, mask), {#if[FP16]?float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))):Math.abs(r[i] * relativeError)}, "at index #" + i);
         }
     }
 #end[FP]
@@ -725,10 +723,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]}));
+                AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]}));
             }
         } catch (AssertionError e) {
-            AssertEquals(r[i], f.apply(a[i], ({#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]})),
+            AssertEquals(r[i], f.apply(a[i], ({#if[FP16]?float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]})),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -789,10 +787,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]}, mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]}, mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]},
+            AssertEquals(r[i], f.apply(a[i], {#if[FP16]?float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[(i / SPECIES.length()) * SPECIES.length()]).longValue())):($type$)(long)b[(i / SPECIES.length()) * SPECIES.length()]},
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -1301,7 +1299,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     static $type$ genValue(int i) {
 #if[FP16]
-        return float16ToShortBits(Float16.valueOf(i));
+        return float16ToRawShortBits(Float16.valueOf(i));
 #else[FP16]
         return ($type$) i;
 #end[FP16]
@@ -1309,6 +1307,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
 #if[!Int]
 #if[!byteOrShort]
+#if[!FP16]
     static int intCornerCaseValue(int i) {
         switch(i % 5) {
             case 0:
@@ -1323,6 +1322,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
                 return (int)0;
         }
     }
+#end[!FP16]
 
     static final List<IntFunction<$type$[]>> INT_$TYPE$_GENERATORS = List.of(
             withToString("$Wideboxtype$[-i * 5]", (int s) -> {
@@ -1336,10 +1336,12 @@ public class $vectorteststype$ extends AbstractVectorTest {
             withToString("$Wideboxtype$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+#if[!FP16]
             }),
             withToString("$Wideboxtype$[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)intCornerCaseValue(i));
+#end[!FP16]
             })
     );
 #end[!byteOrShort]
@@ -1362,6 +1364,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
 #if[!Long]
 #if[FP]
+#if[!FP16]
     static long longCornerCaseValue(int i) {
         switch(i % 5) {
             case 0:
@@ -1376,10 +1379,11 @@ public class $vectorteststype$ extends AbstractVectorTest {
                 return (long)0;
         }
     }
+#end[!FP16]
 
     static $type$ genValue(long i) {
 #if[FP16]
-        return float16ToShortBits(Float16.valueOf(i));
+        return float16ToRawShortBits(Float16.valueOf(i));
 #else[FP16]
         return ($type$) i;
 #end[FP16]
@@ -1397,10 +1401,12 @@ public class $vectorteststype$ extends AbstractVectorTest {
             withToString("$Wideboxtype$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+#if[!FP16]
             }),
             withToString("$Wideboxtype$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)genValue(longCornerCaseValue(i)));
+#end[!FP16]
             })
     );
 #end[FP]
@@ -1898,12 +1904,12 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #if[FP]
 #if[FP16]
         return switch(i % 8) {
-            case 0  -> float16ToShortBits($Wideboxtype$.MAX_VALUE);
-            case 1  -> float16ToShortBits($Wideboxtype$.MIN_VALUE);
-            case 2  -> float16ToShortBits($Wideboxtype$.NEGATIVE_INFINITY);
-            case 3  -> float16ToShortBits($Wideboxtype$.POSITIVE_INFINITY);
-            case 4  -> float16ToShortBits($Wideboxtype$.NaN);
-            case 5  -> float16ToShortBits(shortBitsToFloat16((short)0x7FFA));
+            case 0  -> float16ToRawShortBits($Wideboxtype$.MAX_VALUE);
+            case 1  -> float16ToRawShortBits($Wideboxtype$.MIN_VALUE);
+            case 2  -> float16ToRawShortBits($Wideboxtype$.NEGATIVE_INFINITY);
+            case 3  -> float16ToRawShortBits($Wideboxtype$.POSITIVE_INFINITY);
+            case 4  -> float16ToRawShortBits($Wideboxtype$.NaN);
+            case 5  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7FFA));
             case 6  -> (($type$)0.0);
             default -> (($type$)-0.0);
         };
@@ -2088,211 +2094,211 @@ public class $vectorteststype$ extends AbstractVectorTest {
     static $type$ scalar_add($type$ a, $type$ b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.add(at, bt));
+        return float16ToRawShortBits(Float16.add(at, bt));
     }
 
     static $type$ scalar_sub($type$ a, $type$ b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.subtract(at, bt));
+        return float16ToRawShortBits(Float16.subtract(at, bt));
     }
 
     static $type$ scalar_mul($type$ a, $type$ b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.multiply(at, bt));
+        return float16ToRawShortBits(Float16.multiply(at, bt));
 
     }
     static $type$ scalar_max($type$ a, $type$ b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.max(at, bt));
+        return float16ToRawShortBits(Float16.max(at, bt));
     }
 
     static $type$ scalar_min($type$ a, $type$ b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.min(at, bt));
+        return float16ToRawShortBits(Float16.min(at, bt));
     }
 
     static $type$ scalar_div($type$ a, $type$ b) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
-        return float16ToShortBits(Float16.divide(at, bt));
+        return float16ToRawShortBits(Float16.divide(at, bt));
     }
 
     static $type$ scalar_fma($type$ a, $type$ b, $type$ c) {
         Float16 at = shortBitsToFloat16(a);
         Float16 bt = shortBitsToFloat16(b);
         Float16 ct = shortBitsToFloat16(c);
-        return float16ToShortBits(Float16.fma(at, bt, ct));
+        return float16ToRawShortBits(Float16.fma(at, bt, ct));
     }
 
     static $type$ scalar_abs($type$ a) {
         Float16 at = shortBitsToFloat16(a);
-        return float16ToShortBits(Float16.abs(at));
+        return float16ToRawShortBits(Float16.abs(at));
     }
 
     static $type$ scalar_neg($type$ a) {
         Float16 at = shortBitsToFloat16(a);
-        return float16ToShortBits(Float16.valueOf(-at.floatValue()));
+        return float16ToRawShortBits(Float16.valueOf(-at.floatValue()));
     }
 
     static $type$ scalar_sin($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.sin(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.sin(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_exp($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.exp(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.exp(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_log1p($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.log1p(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.log1p(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_log($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.log(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.log(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_log10($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.log10(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.log10(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_expm1($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.expm1(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.expm1(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_cos($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.cos(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.cos(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_tan($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.tan(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.tan(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_sinh($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.sinh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.sinh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_cosh($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.cosh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.cosh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_tanh($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.tanh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.tanh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_asin($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.asin(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.asin(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_acos($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.acos(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.acos(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_atan($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.atan(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.atan(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_cbrt($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.cbrt(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.cbrt(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_sqrt($type$ a) {
-        return float16ToShortBits(Float16.valueOf(Math.sqrt(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(Math.sqrt(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ scalar_hypot($type$ a, $type$ b) {
-        return float16ToShortBits(Float16.valueOf(Math.hypot(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(Math.hypot(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
     }
 
     static $type$ scalar_pow($type$ a, $type$ b) {
-        return float16ToShortBits(Float16.valueOf(Math.pow(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(Math.pow(shortBitsToFloat16(a).doubleValue(),
                                                                    shortBitsToFloat16(b).doubleValue())));
     }
 
     static $type$ scalar_atan2($type$ a, $type$ b) {
-        return float16ToShortBits(Float16.valueOf(Math.atan2(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(Math.atan2(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
     }
 
     static $type$ strict_scalar_sin($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.sin(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.sin(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_exp($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.exp(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.exp(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_log1p($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.log1p(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.log1p(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_log($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.log(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.log(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_log10($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.log10(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.log10(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_expm1($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.expm1(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.expm1(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_cos($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.cos(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.cos(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_tan($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.tan(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.tan(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_sinh($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.sinh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.sinh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_cosh($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.cosh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.cosh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_tanh($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.tanh(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.tanh(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_asin($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.asin(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.asin(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_acos($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.acos(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.acos(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_atan($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.atan(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.atan(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_cbrt($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.cbrt(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.cbrt(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_sqrt($type$ a) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.sqrt(shortBitsToFloat16(a).doubleValue())));
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.sqrt(shortBitsToFloat16(a).doubleValue())));
     }
 
     static $type$ strict_scalar_hypot($type$ a, $type$ b) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.hypot(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.hypot(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
     }
 
     static $type$ strict_scalar_pow($type$ a, $type$ b) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.pow(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.pow(shortBitsToFloat16(a).doubleValue(),
                                                                    shortBitsToFloat16(b).doubleValue())));
     }
 
     static $type$ strict_scalar_atan2($type$ a, $type$ b) {
-        return float16ToShortBits(Float16.valueOf(StrictMath.atan2(shortBitsToFloat16(a).doubleValue(),
+        return float16ToRawShortBits(Float16.valueOf(StrictMath.atan2(shortBitsToFloat16(a).doubleValue(),
                                                                      shortBitsToFloat16(b).doubleValue())));
     }
 #else[FP16]
@@ -2574,10 +2580,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     @Test
     static void smokeTest1() {
-        $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, {#if[FP16]?float16ToShortBits(Float16.valueOf(-3)):(byte)-3});
+        $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, {#if[FP16]?float16ToRawShortBits(Float16.valueOf(-3)):(byte)-3});
         $abstractvectortype$ three2 = ($abstractvectortype$) SPECIES.broadcast({#if[FP16]?Float16.valueOf(-3).longValue():-3});
         assert(three.eq(three2).allTrue());
-        $abstractvectortype$ three3 = three2.broadcast({#if[FP16]?float16ToShortBits(Float16.valueOf(1)):1}).broadcast({#if[FP16]?Float16.valueOf(-3).longValue():-3});
+        $abstractvectortype$ three3 = three2.broadcast({#if[FP16]?float16ToRawShortBits(Float16.valueOf(1)):1}).broadcast({#if[FP16]?Float16.valueOf(-3).longValue():-3});
         assert(three.eq(three3).allTrue());
         int scale = 2;
         Class<?> ETYPE = $type$.class;
@@ -2588,7 +2594,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
         $abstractvectortype$ higher = three.addIndex(scale);
         VectorMask<$Wideboxtype$> m = three.compare(VectorOperators.LE, higher);
         assert(m.allTrue());
-        m = higher.min({#if[FP16]?float16ToShortBits(Float16.valueOf(-1)):($type$)-1}).test(VectorOperators.IS_NEGATIVE);
+        m = higher.min({#if[FP16]?float16ToRawShortBits(Float16.valueOf(-1)):($type$)-1}).test(VectorOperators.IS_NEGATIVE);
         assert(m.allTrue());
 #if[FP]
         m = higher.test(VectorOperators.IS_FINITE);
@@ -2596,7 +2602,7 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #end[FP]
         $type$ max = higher.reduceLanes(VectorOperators.MAX);
 #if[FP16]
-        assert(max == float16ToShortBits(Float16.add(Float16.valueOf(-3), Float16.multiply(Float16.valueOf(scale), Float16.valueOf((SPECIES.length()-1))))));
+        assert(max == float16ToRawShortBits(Float16.add(Float16.valueOf(-3), Float16.multiply(Float16.valueOf(scale), Float16.valueOf((SPECIES.length()-1))))));
 #else[FP16]
         assert(max == -3 + scale * (SPECIES.length()-1));
 #end[FP16]

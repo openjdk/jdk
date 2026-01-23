@@ -62,8 +62,6 @@ public class FloatVector256Tests extends AbstractVectorTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static FloatVector bcast_vec = FloatVector.broadcast(SPECIES, (float)10);
-
     static void AssertEquals(float actual, float expected) {
         Assert.assertEquals(actual, expected);
     }
@@ -2414,6 +2412,8 @@ public class FloatVector256Tests extends AbstractVectorTest {
         assertBroadcastLongArraysEquals(r, a, b, mask, FloatVector256Tests::ADD);
     }
 
+    static FloatVector bv_MIN = FloatVector.broadcast(SPECIES, (float)10);
+
     @Test(dataProvider = "floatUnaryOpProvider")
     static void MINFloatVector256TestsWithMemOp(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
@@ -2422,12 +2422,14 @@ public class FloatVector256Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bcast_vec).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, FloatVector256Tests::MIN);
     }
+
+    static FloatVector bv_min = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpProvider")
     static void minFloatVector256TestsWithMemOp(IntFunction<float[]> fa) {
@@ -2437,12 +2439,14 @@ public class FloatVector256Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.min(bcast_vec).intoArray(r, i);
+                av.min(bv_min).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, FloatVector256Tests::min);
     }
+
+    static FloatVector bv_MIN_M = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpMaskProvider")
     static void MINFloatVector256TestsMaskedWithMemOp(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
@@ -2454,12 +2458,14 @@ public class FloatVector256Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bcast_vec, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, mask, FloatVector256Tests::MIN);
     }
+
+    static FloatVector bv_MAX = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpProvider")
     static void MAXFloatVector256TestsWithMemOp(IntFunction<float[]> fa) {
@@ -2469,12 +2475,14 @@ public class FloatVector256Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bcast_vec).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, FloatVector256Tests::MAX);
     }
+
+    static FloatVector bv_max = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpProvider")
     static void maxFloatVector256TestsWithMemOp(IntFunction<float[]> fa) {
@@ -2484,12 +2492,14 @@ public class FloatVector256Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.max(bcast_vec).intoArray(r, i);
+                av.max(bv_max).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, FloatVector256Tests::max);
     }
+
+    static FloatVector bv_MAX_M = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpMaskProvider")
     static void MAXFloatVector256TestsMaskedWithMemOp(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
@@ -2501,7 +2511,7 @@ public class FloatVector256Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bcast_vec, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
             }
         }
 

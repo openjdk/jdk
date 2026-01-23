@@ -701,7 +701,7 @@ final class Float16Vector128 extends Float16Vector {
             return (Float16Mask128)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 Float16Vector128.class, Float16Mask128.class, T_FLOAT16, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                Float16.float16ToShortBits(Float16.valueOf(m1.trueCount()))));
+                Float16.float16ToRawShortBits(Float16.valueOf(m1.trueCount()))));
         }
 
 

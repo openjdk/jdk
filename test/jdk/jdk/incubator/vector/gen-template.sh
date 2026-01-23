@@ -385,7 +385,7 @@ function gen_bool_reduction_op {
 }
 
 function gen_saturating_reduction_op {
-  echo "Generating saturating reduction op $1 ($2) ($4)..."
+  echo "Generating saturating reduction op $1 ($2)..."
   gen_op_tmpl $reduction_scalar_func "$@"
   gen_op_tmpl $reduction_saturating_op "$@"
   gen_op_tmpl $reduction_scalar_masked_func "$@"

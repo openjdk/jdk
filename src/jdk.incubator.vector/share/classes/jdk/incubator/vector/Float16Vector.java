@@ -803,7 +803,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
             case VECTOR_OP_LOG10: return (v0, m) ->
                     v0.uOp(m, (i, a) -> (float) Math.log10(a));
             case VECTOR_OP_SQRT: return (v0, m) ->
-                    v0.sOp(m, (i, a) -> (short) float16ToShortBits(Float16.sqrt(shortBitsToFloat16(a))));
+                    v0.sOp(m, (i, a) -> (short) float16ToRawShortBits(Float16.sqrt(shortBitsToFloat16(a))));
             case VECTOR_OP_CBRT: return (v0, m) ->
                     v0.uOp(m, (i, a) -> (float) Math.cbrt(a));
             case VECTOR_OP_SINH: return (v0, m) ->
@@ -1004,7 +1004,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     public final
     Float16Vector lanewise(VectorOperators.Binary op,
                                   long e) {
-        short e1 = float16ToShortBits(Float16.valueOf(e));
+        short e1 = float16ToRawShortBits(Float16.valueOf(e));
         if (shortBitsToFloat16(e1).longValue() != e) {
             vspecies().checkValue(e);  // for exception
         }
@@ -1025,7 +1025,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     public final
     Float16Vector lanewise(VectorOperators.Binary op,
                                   long e, VectorMask<Float16> m) {
-        short e1 = float16ToShortBits(Float16.valueOf(e));
+        short e1 = float16ToRawShortBits(Float16.valueOf(e));
         if (shortBitsToFloat16(e1).longValue() != e) {
             vspecies().checkValue(e);  // for exception
         }
@@ -1118,7 +1118,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     private static TernaryOperation<Float16Vector, VectorMask<Float16>> ternaryOperations(int opc_) {
         switch (opc_) {
             case VECTOR_OP_FMA: return (v0, v1_, v2_, m) ->
-                    v0.tOp(v1_, v2_, m, (i, a, b, c) -> float16ToShortBits(Float16.fma(shortBitsToFloat16(a), shortBitsToFloat16(b), shortBitsToFloat16(c))));
+                    v0.tOp(v1_, v2_, m, (i, a, b, c) -> float16ToRawShortBits(Float16.fma(shortBitsToFloat16(a), shortBitsToFloat16(b), shortBitsToFloat16(c))));
             default: return null;
         }
     }
@@ -1895,7 +1895,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
                 // first kill the sign:
                 bits = bits.and(Short.MAX_VALUE);
                 // next find the bit pattern for infinity:
-                short infbits = (short) toBits(float16ToShortBits(Float16.POSITIVE_INFINITY));
+                short infbits = (short) toBits(float16ToRawShortBits(Float16.POSITIVE_INFINITY));
                 // now compare:
                 if (op == IS_FINITE) {
                     m = bits.compare(LT, infbits);
@@ -1943,7 +1943,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
                 // first kill the sign:
                 bits = bits.and(Short.MAX_VALUE);
                 // next find the bit pattern for infinity:
-                short infbits = (short) toBits(float16ToShortBits(Float16.POSITIVE_INFINITY));
+                short infbits = (short) toBits(float16ToRawShortBits(Float16.POSITIVE_INFINITY));
                 // now compare:
                 if (op == IS_FINITE) {
                     m = bits.compare(LT, infbits, m);
@@ -2153,7 +2153,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
                 // and multiply.
                 Float16Vector iota = s.iota();
                 short sc = (short) scale_;
-                return v.add(sc == 1 ? iota : iota.mul(float16ToShortBits(Float16.valueOf(sc))));
+                return v.add(sc == 1 ? iota : iota.mul(float16ToRawShortBits(Float16.valueOf(sc))));
             });
     }
 
@@ -2753,8 +2753,8 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     }
 
 
-    private static final short MIN_OR_INF = float16ToShortBits(Float16.NEGATIVE_INFINITY);
-    private static final short MAX_OR_INF = float16ToShortBits(Float16.POSITIVE_INFINITY);
+    private static final short MIN_OR_INF = float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
+    private static final short MAX_OR_INF = float16ToRawShortBits(Float16.POSITIVE_INFINITY);
 
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op);
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op,
@@ -2826,7 +2826,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         short[] a = toArray();
         int[] res = new int[a.length];
         for (int i = 0; i < a.length; i++) {
-            short e = a[i];
+            float e = shortBitsToFloat16(a[i]).floatValue();
             res[i] = (int) Float16Species.toIntegralChecked(e, true);
         }
         return res;
@@ -2840,7 +2840,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         short[] a = toArray();
         long[] res = new long[a.length];
         for (int i = 0; i < a.length; i++) {
-            short e = shortBitsToFloat16(a[i]).shortValue();
+            float e = shortBitsToFloat16(a[i]).floatValue();
             res[i] = Float16Species.toIntegralChecked(e, false);
         }
         return res;
@@ -4140,7 +4140,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         @ForceInline
         long longToElementBits(long value) {
             // Do the conversion, and then test it for failure.
-            short e = float16ToShortBits(Float16.valueOf(value));
+            short e = float16ToRawShortBits(Float16.valueOf(value));
             if (shortBitsToFloat16(e).longValue() != value) {
                 throw badElementBits(value, e);
             }
@@ -4149,7 +4149,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
 
         /*package-private*/
         @ForceInline
-        static long toIntegralChecked(short e, boolean convertToInt) {
+        static long toIntegralChecked(float e, boolean convertToInt) {
             long value = convertToInt ? (int) e : (long) e;
             if ((short) value != e) {
                 throw badArrayBits(e, convertToInt, value);
@@ -4165,7 +4165,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
             short[] va = new short[laneCount()];
             for (int i = 0; i < va.length; i++) {
                 int lv = values[i];
-                short v = float16ToShortBits(Float16.valueOf(lv));
+                short v = float16ToRawShortBits(Float16.valueOf(lv));
                 va[i] = v;
                 if (Float16.valueOf(lv).intValue() != lv) {
                     throw badElementBits(lv, v);

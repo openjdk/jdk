@@ -63,8 +63,6 @@ public class ByteVector128Tests extends AbstractVectorTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static ByteVector bcast_vec = ByteVector.broadcast(SPECIES, (byte)10);
-
     static void AssertEquals(byte actual, byte expected) {
         Assert.assertEquals(actual, expected);
     }
@@ -3193,6 +3191,8 @@ public class ByteVector128Tests extends AbstractVectorTest {
     }
 
 
+    static ByteVector bv_MIN = ByteVector.broadcast(SPECIES, (byte)10);
+
     @Test(dataProvider = "byteUnaryOpProvider")
     static void MINByteVector128TestsWithMemOp(IntFunction<byte[]> fa) {
         byte[] a = fa.apply(SPECIES.length());
@@ -3201,12 +3201,14 @@ public class ByteVector128Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bcast_vec).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (byte)10, ByteVector128Tests::MIN);
     }
+
+    static ByteVector bv_min = ByteVector.broadcast(SPECIES, (byte)10);
 
     @Test(dataProvider = "byteUnaryOpProvider")
     static void minByteVector128TestsWithMemOp(IntFunction<byte[]> fa) {
@@ -3216,12 +3218,14 @@ public class ByteVector128Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                av.min(bcast_vec).intoArray(r, i);
+                av.min(bv_min).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (byte)10, ByteVector128Tests::min);
     }
+
+    static ByteVector bv_MIN_M = ByteVector.broadcast(SPECIES, (byte)10);
 
     @Test(dataProvider = "byteUnaryOpMaskProvider")
     static void MINByteVector128TestsMaskedWithMemOp(IntFunction<byte[]> fa, IntFunction<boolean[]> fm) {
@@ -3233,12 +3237,14 @@ public class ByteVector128Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bcast_vec, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (byte)10, mask, ByteVector128Tests::MIN);
     }
+
+    static ByteVector bv_MAX = ByteVector.broadcast(SPECIES, (byte)10);
 
     @Test(dataProvider = "byteUnaryOpProvider")
     static void MAXByteVector128TestsWithMemOp(IntFunction<byte[]> fa) {
@@ -3248,12 +3254,14 @@ public class ByteVector128Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bcast_vec).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (byte)10, ByteVector128Tests::MAX);
     }
+
+    static ByteVector bv_max = ByteVector.broadcast(SPECIES, (byte)10);
 
     @Test(dataProvider = "byteUnaryOpProvider")
     static void maxByteVector128TestsWithMemOp(IntFunction<byte[]> fa) {
@@ -3263,12 +3271,14 @@ public class ByteVector128Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                av.max(bcast_vec).intoArray(r, i);
+                av.max(bv_max).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (byte)10, ByteVector128Tests::max);
     }
+
+    static ByteVector bv_MAX_M = ByteVector.broadcast(SPECIES, (byte)10);
 
     @Test(dataProvider = "byteUnaryOpMaskProvider")
     static void MAXByteVector128TestsMaskedWithMemOp(IntFunction<byte[]> fa, IntFunction<boolean[]> fm) {
@@ -3280,7 +3290,7 @@ public class ByteVector128Tests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bcast_vec, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
             }
         }
 

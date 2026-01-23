@@ -1021,7 +1021,7 @@ final class $vectortype$ extends $abstractvectortype$ {
             return ($masktype$)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 $vectortype$.class, $masktype$.class, $laneType$, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
-                {#if[FP16]?Float16.float16ToShortBits(Float16.valueOf(m1.trueCount())):m1.trueCount()}));
+                {#if[FP16]?Float16.float16ToRawShortBits(Float16.valueOf(m1.trueCount())):m1.trueCount()}));
         }
 
 
