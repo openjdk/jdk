@@ -43,7 +43,7 @@ import java.util.function.BiFunction;
  *           }
  *       }
  * </pre>
- * This class supports reading, writing, and convert between them.
+ * This class supports reading, writing, and converting between them.
  * <p>
  * Current code follows draft-ietf-lamps-kyber-certificates-11 and RFC 9881.
  */
