@@ -132,7 +132,7 @@ public:
   static const char* tagToStr(uint32_t user_tag) {
     switch (user_tag) {
       case 0:
-        return 0;
+        return nullptr;
       X1(MALLOC, malloc);
       X1(MALLOC_SMALL, malloc_small);
       X1(MALLOC_LARGE, malloc_large);
