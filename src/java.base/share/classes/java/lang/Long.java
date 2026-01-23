@@ -316,7 +316,7 @@ public final class Long extends Number
             if (len > 8) {
                 len -= 8;
                 Unsafe.getUnsafe().putLongUnaligned(chars, Unsafe.ARRAY_BYTE_BASE_OFFSET + len, x, true);
-                x = HexDigits.hex8Be((int)(i >>> 32));
+                x = HexDigits.hex8Be((int) (i >>> 32));
             }
             do {
                 chars[--len] = (byte) x;
