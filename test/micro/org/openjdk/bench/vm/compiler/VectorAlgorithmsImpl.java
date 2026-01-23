@@ -36,6 +36,7 @@ public class VectorAlgorithmsImpl {
     private static final VectorSpecies<Integer> SPECIES_I    = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> SPECIES_I512 = IntVector.SPECIES_512;
     private static final VectorSpecies<Integer> SPECIES_I256 = IntVector.SPECIES_256;
+    private static final VectorSpecies<Byte> SPECIES_B       = ByteVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Byte> SPECIES_B64     = ByteVector.SPECIES_64;
     private static final VectorSpecies<Float> SPECIES_F      = FloatVector.SPECIES_PREFERRED;
 
@@ -67,6 +68,10 @@ public class VectorAlgorithmsImpl {
         public float[] bF;
 
         public byte[] aB;
+        public byte[] strB;
+        public byte[] rB1;
+        public byte[] rB2;
+        public byte[] rB3;
 
         public int[] oopsX4;
         public int[] memX4;
@@ -114,7 +119,12 @@ public class VectorAlgorithmsImpl {
 
             // byte: just random data.
             aB = new byte[size];
+            strB = new byte[size];
+            rB1 = new byte[size];
+            rB2 = new byte[size];
+            rB3 = new byte[size];
             random.nextBytes(aB);
+            random.nextBytes(strB); // TODO: special data!
         }
     }
 
@@ -201,7 +211,7 @@ public class VectorAlgorithmsImpl {
             v.intoArray(r, i);
         }
         for (; i < r.length; i++) {
-            r[i] = a[i];
+            r[i] = a[i] * 42;
         }
         return r;
     }
@@ -706,4 +716,60 @@ public class VectorAlgorithmsImpl {
         }
         return sum;
     }
+
+    // The lowerCase example demonstrates a lane-wise control-flow diamond.
+    public static Object lowerCaseB_loop(byte[] a, byte[] r) {
+        for (int i = 0; i < a.length; i++) {
+            byte c = a[i];
+            if (c >= 'A' && c <= 'Z') {
+                c += ('a' - 'A'); // c += 32
+            }
+            r[i] = c;
+        }
+        return r;
+    }
+
+    // Control-flow diamonds can easily be simulated by "if-conversion", i.e.
+    // by using masked operations. An alternative would be to use blend.
+    public static Object lowerCaseB_VectorAPI_v1(byte[] a, byte[] r) {
+        int i;
+        for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+            var vc = ByteVector.fromArray(SPECIES_B, a, i);
+            var maskA = vc.compare(VectorOperators.GE, (byte)'A');
+            var maskZ = vc.compare(VectorOperators.LE, (byte)'Z');
+            var mask = maskA.and(maskZ);
+            vc = vc.add((byte)32, mask);
+            vc.intoArray(r, i);
+        }
+        for (; i < a.length; i++) {
+            byte c = a[i];
+            if (c >= 'A' && c <= 'Z') {
+                c += ('a' - 'A');
+            }
+            r[i] = c;
+        }
+        return r;
+    }
+
+    public static Object lowerCaseB_VectorAPI_v2(byte[] a, byte[] r) {
+        int i;
+        for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+            var vc = ByteVector.fromArray(SPECIES_B, a, i);
+            // We can convert the range 65..90 (represents ascii A..Z) into a range 0..25.
+            // This allows us to only use a single unsigned comparison.
+            var vt = vc.add((byte)-'A');
+            var mask = vt.compare(VectorOperators.ULE, (byte)25);
+            vc = vc.add((byte)32, mask);
+            vc.intoArray(r, i);
+        }
+        for (; i < a.length; i++) {
+            byte c = a[i];
+            if (c >= 'A' && c <= 'Z') {
+                c += ('a' - 'A');
+            }
+            r[i] = c;
+        }
+        return r;
+    }
 }
+

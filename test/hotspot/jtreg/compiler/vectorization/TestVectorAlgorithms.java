@@ -90,21 +90,21 @@ public class TestVectorAlgorithms {
     public TestVectorAlgorithms () {
         testGroups.put("fillI", new HashMap<String,TestFunction>());
         testGroups.get("fillI").put("fillI_loop",      i -> { return fillI_loop(d.rI1); });
-        testGroups.get("fillI").put("fillI_VectorAPI", i -> { return fillI_VectorAPI(d.rI1); });
-        testGroups.get("fillI").put("fillI_Arrays",    i -> { return fillI_Arrays(d.rI1); });
+        testGroups.get("fillI").put("fillI_VectorAPI", i -> { return fillI_VectorAPI(d.rI2); });
+        testGroups.get("fillI").put("fillI_Arrays",    i -> { return fillI_Arrays(d.rI3); });
 
         testGroups.put("iotaI", new HashMap<String,TestFunction>());
         testGroups.get("iotaI").put("iotaI_loop",      i -> { return iotaI_loop(d.rI1); });
-        testGroups.get("iotaI").put("iotaI_VectorAPI", i -> { return iotaI_VectorAPI(d.rI1); });
+        testGroups.get("iotaI").put("iotaI_VectorAPI", i -> { return iotaI_VectorAPI(d.rI2); });
 
         testGroups.put("copyI", new HashMap<String,TestFunction>());
         testGroups.get("copyI").put("copyI_loop",             i -> { return copyI_loop(d.aI, d.rI1); });
-        testGroups.get("copyI").put("copyI_VectorAPI",        i -> { return copyI_VectorAPI(d.aI, d.rI1); });
-        testGroups.get("copyI").put("copyI_System_arraycopy", i -> { return copyI_System_arraycopy(d.aI, d.rI1); });
+        testGroups.get("copyI").put("copyI_VectorAPI",        i -> { return copyI_VectorAPI(d.aI, d.rI2); });
+        testGroups.get("copyI").put("copyI_System_arraycopy", i -> { return copyI_System_arraycopy(d.aI, d.rI3); });
 
         testGroups.put("mapI", new HashMap<String,TestFunction>());
         testGroups.get("mapI").put("mapI_loop",      i -> { return mapI_loop(d.aI, d.rI1); });
-        testGroups.get("mapI").put("mapI_VectorAPI", i -> { return mapI_VectorAPI(d.aI, d.rI1); });
+        testGroups.get("mapI").put("mapI_VectorAPI", i -> { return mapI_VectorAPI(d.aI, d.rI2); });
 
         testGroups.put("reduceAddI", new HashMap<String,TestFunction>());
         testGroups.get("reduceAddI").put("reduceAddI_loop",                           i -> { return reduceAddI_loop(d.aI); });
@@ -147,6 +147,11 @@ public class TestVectorAlgorithms {
         testGroups.put("reduceAddIFieldsX4", new HashMap<String,TestFunction>());
         testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_loop",      i -> { return reduceAddIFieldsX4_loop(d.oopsX4, d.memX4); });
         testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_VectorAPI", i -> { return reduceAddIFieldsX4_VectorAPI(d.oopsX4, d.memX4); });
+
+        testGroups.put("lowerCaseB", new HashMap<String,TestFunction>());
+        testGroups.get("lowerCaseB").put("lowerCaseB_loop",         i -> { return lowerCaseB_loop(d.strB, d.rB1); });
+        testGroups.get("lowerCaseB").put("lowerCaseB_VectorAPI_v1", i -> { return lowerCaseB_VectorAPI_v1(d.strB, d.rB2); });
+        testGroups.get("lowerCaseB").put("lowerCaseB_VectorAPI_v2", i -> { return lowerCaseB_VectorAPI_v2(d.strB, d.rB3); });
     }
 
     @Warmup(100)
@@ -183,7 +188,10 @@ public class TestVectorAlgorithms {
                  "filterI_loop",
                  "filterI_VectorAPI",
                  "reduceAddIFieldsX4_loop",
-                 "reduceAddIFieldsX4_VectorAPI"})
+                 "reduceAddIFieldsX4_VectorAPI",
+                 "lowerCaseB_loop",
+                 "lowerCaseB_VectorAPI_v1",
+                 "lowerCaseB_VectorAPI_v2"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1 : 20;
@@ -520,5 +528,28 @@ public class TestVectorAlgorithms {
         applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
     public int reduceAddIFieldsX4_VectorAPI(int[] oops, int[] mem) {
         return VectorAlgorithmsImpl.reduceAddIFieldsX4_VectorAPI(oops, mem);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0"})
+    // Currently does not vectorize, but might in the future.
+    public Object lowerCaseB_loop(byte[] a, byte[] r) {
+        return VectorAlgorithmsImpl.lowerCaseB_loop(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object lowerCaseB_VectorAPI_v1(byte[] a, byte[] r) {
+        return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v1(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public Object lowerCaseB_VectorAPI_v2(byte[] a, byte[] r) {
+        return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v2(a, r);
     }
 }

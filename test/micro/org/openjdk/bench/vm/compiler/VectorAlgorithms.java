@@ -256,4 +256,19 @@ public class VectorAlgorithms {
     public int reduceAddIFieldsX4_VectorAPI() {
         return VectorAlgorithmsImpl.reduceAddIFieldsX4_VectorAPI(d.oopsX4, d.memX4);
     }
+
+    @Benchmark
+    public Object lowerCaseB_loop() {
+        return VectorAlgorithmsImpl.lowerCaseB_loop(d.strB, d.rB1);
+    }
+
+    @Benchmark
+    public Object lowerCaseB_VectorAPI_v1() {
+        return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v1(d.strB, d.rB1);
+    }
+
+    @Benchmark
+    public Object lowerCaseB_VectorAPI_v2() {
+        return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v2(d.strB, d.rB1);
+    }
 }
