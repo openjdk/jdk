@@ -127,7 +127,8 @@ public final class VarHandleGuardMethodGenerator {
                     }""";
 
     // The void bypass is necessary if a (name + return-dropping type) combination has multiple call sites, each
-    // having its own constant VarHandle. See VarHandle$AccessDescriptor for the mechanism.
+    // having its own constant VarHandle. In that case, the AccessMode::adaptedMethodHandle adaption mechanism
+    // does not work due to multiple VarHandles, but this bypass still enables constant folding.
     static final String GUARD_METHOD_TEMPLATE_V =
             """
                     @ForceInline

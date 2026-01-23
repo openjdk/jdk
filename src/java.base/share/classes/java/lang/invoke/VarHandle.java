@@ -2039,20 +2039,17 @@ public abstract sealed class VarHandle implements Constable
         // 2. That call site only sees a constant VarHandle instance
         // 3. That VarHandle does not keep other class loaders alive
         //
-        // Condition 1 and 2 indicates this access descriptor may see a VarHandle
-        // different from the captured VarHandle.  Condition 3 requires the
-        // capture to be made only for loader-safe VarHandles.
-        // Due to condition 1, we have to retain the GUARD_METHOD_TEMPLATE_V
-        // in VarHandleGuards. One (name, return-dropping type) combination
-        // such as compareAndSet can appear at two sites, where each site
-        // has its own constant VarHandle. Such a usage pattern hurts adaption,
-        // but is perfectly dealt by the getMethodType_V constant folding branch.
+        // If either condition 1 or 2 doesn't hold, we may see different var
+        // handle instances using the same shared AccessDescriptor. In those
+        // cases we only cache the adaptation for one of the var handle instances
+        // (usually the first one, arbitrary under race).
+        // Other instances will always use the slow path.
 
-        // In the long run, we wish to put a specific-type invoker that converts
+        // In the long run, we wish to cache each specific-type invoker that converts
         // from one fixed type (symbolicMethodTypeInvoker) to another (the
         // invocation type of the underlying MemberName, or MH for indirect VH),
-        // perform a foldable lookup with a hash table, and hope C2 inline it
-        // all. Such an optimization applies for general MethodHandle.asType.
+        // using a foldable lookup with a hash table, and hope C2 inline it
+        // all. Such an optimization applies to general MethodHandle.asType.
 
         // Object indirection is the best way to ensure the vh and mh are not
         // from two writes (they must not be tearable)
@@ -2089,8 +2086,8 @@ public abstract sealed class VarHandle implements Constable
                 if (vh.isReachableFrom(loader)) {
                     // If our assumption stands, this is trivially correct.
                     // Otherwise, a loader-safe witness is installed.
-                    // Adaption of the witness will constant-fold to `cache.mh`.
-                    // Adaption of the others will fold to a `vh.getMethodHandle(mode).asType(...)`.
+                    // Adaption of the witness will constant-fold to fast path `cache.mh`.
+                    // Adaption of the others will fold to slow path `vh.getMethodHandle(mode).asType(...)`.
                     // Racy installation here is ok - Adaption record is not tearable
                     adaption = new Adaption(vh, mh);
                 }
