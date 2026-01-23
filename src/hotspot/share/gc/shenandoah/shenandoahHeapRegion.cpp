@@ -76,6 +76,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _plab_allocs(0),
   _live_data(0),
   _critical_pins(0),
+  _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
 #ifdef SHENANDOAH_CENSUS_NOISE
@@ -576,6 +577,7 @@ void ShenandoahHeapRegion::recycle_internal() {
   assert(atomic_top() == nullptr, "Must be");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  _mixed_candidate_garbage_words = 0;
   set_top(bottom());
   clear_live_data();
   reset_alloc_metadata();
@@ -604,6 +606,8 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
     _recycling.unset();
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
+    // Otherwise, the mutator might see region as fully recycled and might change its affiliation only to have
+    // the racing GC worker thread overwrite its affiliation to FREE.
     while (_recycling.is_set()) {
       if (os::is_MP()) {
         SpinPause();
@@ -614,6 +618,8 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
   }
 }
 
+// Note that return from try_recycle() does not mean the region has been recycled.  It only means that
+// some GC worker thread has taken responsibility to recycle the region, eventually.
 void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
   if (is_trash() && _recycling.try_set()) {
