@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8280377
  * @build m1/* m2/* Unnamed
  * @run testng/othervm m1/p1.Main
- * @run testng/othervm Unnamed
+ * @run main/othervm Unnamed
  * @summary Test MethodHandleProxies::asInterfaceInstance with a default
  *          method with varargs
  */

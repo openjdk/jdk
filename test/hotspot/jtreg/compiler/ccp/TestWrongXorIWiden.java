@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
-#define SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP
+package compiler.ccp;
 
-#include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
+/*
+ * @test
+ * @bug 8374180
+ * @summary Test that _widen is set correctly in XorI::add_ring() to ensure monotonicity.
+ * @run main/othervm -XX:CompileCommand=compileonly,${test.main.class}::* -Xcomp ${test.main.class}
+ */
+public class TestWrongXorIWiden {
+    static byte byFld;
 
-#include "gc/shared/gc_globals.hpp"
-#include "oops/oop.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
+    public static void main(String[] strArr) {
+        test();
+    }
 
-inline bool G1CMObjArrayProcessor::should_be_sliced(oop obj) {
-  return obj->is_objArray() && ((objArrayOop)obj)->size() >= 2 * ObjArrayMarkingStride;
+    static void test() {
+        int k, i17 = 0;
+        long lArr[] = new long[400];
+        for (int i = 9; i < 54; ++i) {
+            for (int j = 7; j > 1; j--) {
+                for (k = 1; k < 2; k++) {
+                    i17 >>= i;
+                }
+                byFld += j ^ i17;
+                for (int a = 1; a < 2; a++) {
+                    i17 = k;
+                }
+            }
+        }
+    }
 }
-
-#endif // SHARE_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_INLINE_HPP

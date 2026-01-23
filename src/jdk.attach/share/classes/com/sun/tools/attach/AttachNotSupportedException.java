@@ -68,6 +68,8 @@ public class AttachNotSupportedException extends Exception {
      *
      * @param   message the detail message.
      * @param   cause   the cause of this exception.
+     *
+     * @since 27
      */
     public AttachNotSupportedException(String message, Throwable cause) {
         super(message, cause);
