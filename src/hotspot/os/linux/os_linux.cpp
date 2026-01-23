@@ -3453,6 +3453,9 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
     log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
                        RANGEFMTARGS(addr, size),
                        os::strerror(ep.saved_errno()));
+    if (ep.saved_errno() == ENOMEM) {
+      fatal("Failed to uncommit " RANGEFMT " It is possible that the process's maximum number of mappings would have been exceeded. Try increasing the limit.", RANGEFMTARGS(addr, size));
+    }
     return false;
   }
   return true;
