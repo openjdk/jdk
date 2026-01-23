@@ -3724,8 +3724,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @ForceInline
     final
     IntVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        ByteOrder bo = ByteOrder.nativeOrder();
-        int subLanesPerSrc = subLanesToSwap(bo, srcSpecies);
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
         if (subLanesPerSrc < 0) {
             return this;
         }

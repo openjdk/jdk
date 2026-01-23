@@ -3616,8 +3616,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     final
     DoubleVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        ByteOrder bo = ByteOrder.nativeOrder();
-        int subLanesPerSrc = subLanesToSwap(bo, srcSpecies);
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
         if (subLanesPerSrc < 0) {
             return this;
         }

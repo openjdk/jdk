@@ -214,12 +214,14 @@ abstract class AbstractVector<E> extends Vector<E> {
     }
 
     @ForceInline
-    protected final int subLanesToSwap(ByteOrder bo, AbstractSpecies<?> srcSpecies) {
-        if (bo != ByteOrder.BIG_ENDIAN) {
+    protected final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
+        if (java.nio.ByteOrder.nativeOrder() != ByteOrder.BIG_ENDIAN) {
             return -1;
         }
         int sBytes = srcSpecies.elementSize();
         int tBytes = vspecies().elementSize();
+
+        // No lane reordering needed for same size or widening reinterprets
         if (sBytes == tBytes || (sBytes % tBytes) != 0) {
             return -1;
         }

@@ -4078,8 +4078,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     final
     ShortVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        ByteOrder bo = ByteOrder.nativeOrder();
-        int subLanesPerSrc = subLanesToSwap(bo, srcSpecies);
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
         if (subLanesPerSrc < 0) {
             return this;
         }

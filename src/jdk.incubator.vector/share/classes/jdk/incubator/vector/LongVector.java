@@ -3659,8 +3659,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     @ForceInline
     final
     LongVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        ByteOrder bo = ByteOrder.nativeOrder();
-        int subLanesPerSrc = subLanesToSwap(bo, srcSpecies);
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
         if (subLanesPerSrc < 0) {
             return this;
         }
