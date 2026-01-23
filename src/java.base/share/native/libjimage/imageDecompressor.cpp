@@ -85,17 +85,6 @@ void ImageDecompressor::image_decompressor_init() {
     }
 }
 
-void ImageDecompressor::image_decompressor_close() {
-    if (_decompressors != NULL) {
-        for (int i = 0; i < _decompressors_num; i++) {
-            delete _decompressors[i];
-        }
-        delete[] _decompressors;
-        _decompressors = NULL;
-        _decompressors_num = 0;
-    }
-}
-
 /*
  * Locate decompressor.
  */

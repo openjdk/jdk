@@ -105,8 +105,7 @@ private:
 protected:
     ImageDecompressor(const char* name) : _name(name) {
     }
-    virtual ~ImageDecompressor() {
-    }
+
     virtual void decompress_resource(u1* data, u1* uncompressed,
         ResourceHeader* header, const ImageStrings* strings) = 0;
 
