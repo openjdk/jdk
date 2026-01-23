@@ -2305,7 +2305,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
     public abstract
     ShortVector slice(int origin, Vector<Short> v1);
 
-
     /*package-private*/
     final
     @ForceInline

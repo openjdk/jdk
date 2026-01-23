@@ -1696,6 +1696,7 @@ class VectorSliceNode : public VectorNode {
  public:
   VectorSliceNode(Node* vec1, Node* vec2, Node* origin, const TypeVect* vt)
     : VectorNode(vec1, vec2, origin, vt) {
+    assert(origin->is_Con(), "origin must be a constant");
   }
 
   virtual int Opcode() const;

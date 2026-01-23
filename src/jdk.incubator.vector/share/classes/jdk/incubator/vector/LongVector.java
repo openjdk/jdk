@@ -2155,7 +2155,6 @@ public abstract class LongVector extends AbstractVector<Long> {
     public abstract
     LongVector slice(int origin, Vector<Long> v1);
 
-
     /*package-private*/
     final
     @ForceInline

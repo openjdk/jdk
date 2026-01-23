@@ -1703,13 +1703,13 @@ bool LibraryCallKit::inline_vector_slice() {
     return false; // should be primitive type
   }
 
-  int num_elem = vlen->get_con();
-  BasicType elem_bt = elem_type->basic_type();
-
   if (!origin->is_con()) {
     log_if_needed("  ** vector slice from non-constant index not supported");
     return false;
   }
+
+  int num_elem = vlen->get_con();
+  BasicType elem_bt = elem_type->basic_type();
 
   if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=2 op=slice vlen=%d etype=%s",

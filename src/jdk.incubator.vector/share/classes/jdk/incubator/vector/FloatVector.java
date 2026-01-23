@@ -2170,7 +2170,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector slice(int origin, Vector<Float> v1);
 
-
     /*package-private*/
     final
     @ForceInline

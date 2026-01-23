@@ -2158,7 +2158,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public abstract
     DoubleVector slice(int origin, Vector<Double> v1);
 
-
     /*package-private*/
     final
     @ForceInline

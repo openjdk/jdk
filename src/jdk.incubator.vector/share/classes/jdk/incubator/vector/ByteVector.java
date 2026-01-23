@@ -2304,7 +2304,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     public abstract
     ByteVector slice(int origin, Vector<Byte> v1);
 
-
     /*package-private*/
     final
     @ForceInline

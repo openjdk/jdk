@@ -2289,7 +2289,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
     public abstract
     IntVector slice(int origin, Vector<Integer> v1);
 
-
     /*package-private*/
     final
     @ForceInline
