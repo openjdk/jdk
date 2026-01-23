@@ -237,7 +237,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Validate setNull specifying the supported type values
      */
     @ParameterizedTest
-    @MethodSource("TODO: cannot automatically find data provider named 'jdbcTypes', please resolve manually.")
+    @MethodSource("jdbcTypes")
     public void baseRowSetTest0011(Integer type) throws Exception {
         brs = new StubBaseRowSet();
         brs.setNull(1, type);
@@ -249,7 +249,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * typeName is set internally
      */
     @ParameterizedTest
-    @MethodSource("TODO: cannot automatically find data provider named 'jdbcTypes', please resolve manually.")
+    @MethodSource("jdbcTypes")
     public void baseRowSetTest0012(Integer type) throws Exception {
         brs = new StubBaseRowSet();
         brs.setNull(1, type, "SUPERHERO");

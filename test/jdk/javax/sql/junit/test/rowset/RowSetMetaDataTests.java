@@ -36,6 +36,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import org.junit.jupiter.params.provider.ValueSource;
 import util.BaseTest;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -519,7 +520,7 @@ public class RowSetMetaDataTests extends BaseTest {
      * Validate that the correct type is returned for the column
      */
     @ParameterizedTest
-    @MethodSource("TODO: cannot automatically find data provider named 'jdbcTypes', please resolve manually.")
+    @MethodSource("jdbcTypes")
     public void test39(Integer type) throws Exception {
         rsmd.setColumnType(1, type);
         assertTrue(type == rsmd.getColumnType(1));
@@ -529,7 +530,7 @@ public class RowSetMetaDataTests extends BaseTest {
      * Validate that the correct value is returned from the isXXX methods
      */
     @ParameterizedTest
-    @MethodSource("TODO: cannot automatically find data provider named 'trueFalse', please resolve manually.")
+    @ValueSource(booleans = {true, false})
     public void test40(Boolean b) throws Exception {
         rsmd.setAutoIncrement(1, b);
         rsmd.setCaseSensitive(1, b);
