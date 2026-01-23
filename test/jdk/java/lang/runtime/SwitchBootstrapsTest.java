@@ -35,7 +35,6 @@ import java.lang.runtime.SwitchBootstraps;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.classfile.ClassFile;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -404,17 +403,17 @@ public class SwitchBootstrapsTest {
 
     @Test
     public void testNullLookup() throws Throwable {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
             BSM_TYPE_SWITCH.invoke(null, "", switchType, Object.class);
         });
         enum E {}
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
             BSM_ENUM_SWITCH.invoke(null, "", switchType,
                     new Object[] {});
         });
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
             BSM_ENUM_SWITCH.invoke(null, "", switchType,
                     new Object[] {"A"});
