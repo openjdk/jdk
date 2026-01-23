@@ -330,6 +330,14 @@ class StubGenerator: public StubCodeGenerator {
 
   void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
 
+  // A version of ECB/AES Encrypt which does 4 blocks in a loop at a time
+  // to hide instruction latency
+  address generate_electronicCodeBook_encryptAESCrypt_multiBlock_Parallel();
+
+  // A version of ECB/AES Decrypt which does 4 blocks in a loop at a time
+  // to hide instruction latency
+  address generate_electronicCodeBook_decryptAESCrypt_multiBlock_Parallel();
+
   // Vector AES Galois Counter Mode implementation
   address generate_galoisCounterMode_AESCrypt();
   void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
