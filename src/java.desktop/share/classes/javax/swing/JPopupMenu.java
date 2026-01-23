@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -952,18 +952,20 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     @BeanProperty(bound = false, expert = true, description
             = "The invoking component for the popup menu")
     public void setInvoker(Component invoker) {
-        Component oldInvoker = this.invoker;
-        this.invoker = invoker;
+        if (invoker != null) {
+            Component oldInvoker = this.invoker;
+            this.invoker = invoker;
 
-        if ((oldInvoker != this.invoker) && (ui != null)) {
-            ui.uninstallUI(this);
-            if (oldInvoker != null) {
-                oldInvoker.removePropertyChangeListener("ancestor", propListener);
+            if ((oldInvoker != this.invoker) && (ui != null)) {
+                ui.uninstallUI(this);
+                if (oldInvoker != null) {
+                    oldInvoker.removePropertyChangeListener("ancestor", propListener);
+                }
+                invoker.addPropertyChangeListener("ancestor", propListener);
+                ui.installUI(this);
             }
-            invoker.addPropertyChangeListener("ancestor", propListener);
-            ui.installUI(this);
+            invalidate();
         }
-        invalidate();
     }
 
     /**
