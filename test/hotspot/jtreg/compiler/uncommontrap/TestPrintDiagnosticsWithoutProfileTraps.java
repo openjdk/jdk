@@ -26,17 +26,33 @@
  * @bug 8374807
  * @summary Regression test for -XX:+TraceDeoptimization -XX:-ProfileTraps
  *          -XX:-TieredCompilation -Xcomp crash
+ * @modules java.base/jdk.internal.misc
  * @requires vm.debug
  * @run main/othervm -XX:+TraceDeoptimization -XX:-ProfileTraps
- *                   -XX:-TieredCompilation -Xcomp
+ *                   -XX:-TieredCompilation -Xcomp -Xbatch
+ *                   -XX:CompileCommand=compileonly,compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps::test
  *                   compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps
  */
 
 package compiler.uncommontrap;
 
+import jdk.internal.misc.Unsafe;
+
 public class TestPrintDiagnosticsWithoutProfileTraps {
+    static final Unsafe UNSAFE=Unsafe.getUnsafe();
+    static volatile long sink;
+
+    static class TestSubClass {
+        int f;
+    }
+
+    static void test(){
+        // Trigger a deopt/uncommon-trap path while resolving the field offset.
+        sink = UNSAFE.objectFieldOffset(TestSubClass.class,"f");
+    }
 
     public static void main(String[] args) {
+        test();
         System.out.println("passed");
     }
 }
