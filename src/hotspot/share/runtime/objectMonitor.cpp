@@ -1932,10 +1932,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // An event could have been enabled after notification, in this case
     // a thread will have TS_ENTER state and posting the event may hit a suspension point.
     // From a debugging perspective, it is more important to have no missing events.
-    if (interruptible && JvmtiExport::should_post_monitor_waited()) {
+    if (interruptible && JvmtiExport::should_post_monitor_waited() && node.TState != ObjectWaiter::TS_ENTER) {
 
       // Process suspend requests now if any, before posting the event.
-      if (node.TState != ObjectWaiter::TS_ENTER) {
+      {
         ThreadBlockInVM tbvm(current, true);
       }
 
