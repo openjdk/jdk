@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -490,7 +490,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _suspend_resume_manager(this, &_handshake._lock),
 
   _is_in_vthread_transition(false),
-  DEBUG_ONLY(_is_vthread_transition_disabler(false) COMMA)
+  JVMTI_ONLY(_is_vthread_transition_disabler(false) COMMA)
   DEBUG_ONLY(_is_disabler_at_start(false) COMMA)
 
   _popframe_preserved_args(nullptr),
@@ -1048,7 +1048,11 @@ void JavaThread::set_exception_oop(oop o) {
 }
 
 void JavaThread::handle_special_runtime_exit_condition() {
-  if (is_obj_deopt_suspend()) {
+  // We mustn't block for object deopt if the thread is
+  // currently executing in a JNI critical region, as that
+  // can cause deadlock because allocation may be locked out
+  // and the object deopt suspender may try to allocate.
+  if (is_obj_deopt_suspend() && !in_critical()) {
     frame_anchor()->make_walkable();
     wait_for_object_deoptimization();
   }
@@ -1157,11 +1161,13 @@ void JavaThread::set_is_in_vthread_transition(bool val) {
   AtomicAccess::store(&_is_in_vthread_transition, val);
 }
 
-#ifdef ASSERT
+#if INCLUDE_JVMTI
 void JavaThread::set_is_vthread_transition_disabler(bool val) {
   _is_vthread_transition_disabler = val;
 }
+#endif
 
+#ifdef ASSERT
 void JavaThread::set_is_disabler_at_start(bool val) {
   _is_disabler_at_start = val;
 }
@@ -1175,7 +1181,9 @@ void JavaThread::set_is_disabler_at_start(bool val) {
 //
 bool JavaThread::java_suspend(bool register_vthread_SR) {
   // Suspending a vthread transition disabler can cause deadlocks.
-  assert(!is_vthread_transition_disabler(), "no suspend allowed for vthread transition disablers");
+  // The HandshakeState::has_operation does not allow such suspends.
+  // But the suspender thread is an exclusive transition disablers, so there can't be other disabers here.
+  JVMTI_ONLY(assert(!is_vthread_transition_disabler(), "suspender thread is an exclusive transition disabler");)
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");

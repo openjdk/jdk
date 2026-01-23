@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,15 @@ bool os::available_memory(physical_memory_size_type& value) {
   return Bsd::available_memory(value);
 }
 
+bool os::Machine::available_memory(physical_memory_size_type& value) {
+  return Bsd::available_memory(value);
+}
+
 bool os::free_memory(physical_memory_size_type& value) {
+  return Bsd::available_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return Bsd::available_memory(value);
 }
 
@@ -181,6 +189,10 @@ void os::Bsd::print_uptime_info(outputStream* st) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
@@ -195,6 +207,10 @@ bool os::total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::free_swap_space(physical_memory_size_type& value) {
+  return Machine::free_swap_space(value);
+}
+
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
@@ -209,6 +225,10 @@ bool os::free_swap_space(physical_memory_size_type& value) {
 }
 
 physical_memory_size_type os::physical_memory() {
+  return Bsd::physical_memory();
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
   return Bsd::physical_memory();
 }
 
@@ -608,7 +628,7 @@ static void *thread_native_entry(Thread *thread) {
   log_info(os, thread)("Thread finished (tid: %zu, pthread id: %zu).",
     os::current_thread_id(), (uintx) pthread_self());
 
-  return 0;
+  return nullptr;
 }
 
 bool os::create_thread(Thread* thread, ThreadType thr_type,
@@ -861,6 +881,90 @@ pid_t os::Bsd::gettid() {
     return getpid();
   }
 }
+
+// Returns the uid of a process or -1 on error.
+uid_t os::Bsd::get_process_uid(pid_t pid) {
+  struct kinfo_proc kp;
+  size_t size = sizeof kp;
+  int mib_kern[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+  if (sysctl(mib_kern, 4, &kp, &size, nullptr, 0) == 0) {
+    if (size > 0 && kp.kp_proc.p_pid == pid) {
+      return kp.kp_eproc.e_ucred.cr_uid;
+    }
+  }
+  return (uid_t)-1;
+}
+
+// Returns true if the process is running as root.
+bool os::Bsd::is_process_root(pid_t pid) {
+  uid_t uid = get_process_uid(pid);
+  return (uid != (uid_t)-1) ? os::Posix::is_root(uid) : false;
+}
+
+#ifdef __APPLE__
+
+// macOS has a secure per-user temporary directory.
+// Root can attach to a non-root process, hence it needs
+// to lookup /var/folders for the user specific temporary directory
+// of the form /var/folders/*/*/T, that contains PERFDATA_NAME_user
+// directory.
+static const char VAR_FOLDERS[] = "/var/folders/";
+int os::Bsd::get_user_tmp_dir_macos(const char* user, int vmid, char* output_path, int output_size) {
+
+  // read the var/folders directory
+  DIR* varfolders_dir = os::opendir(VAR_FOLDERS);
+  if (varfolders_dir != nullptr) {
+
+    // var/folders directory contains 2-characters subdirectories (buckets)
+    struct dirent* bucket_de;
+
+    // loop until the PERFDATA_NAME_user directory has been found
+    while ((bucket_de = os::readdir(varfolders_dir)) != nullptr) {
+      // skip over files and special "." and ".."
+      if (bucket_de->d_type != DT_DIR || bucket_de->d_name[0] == '.') {
+        continue;
+      }
+      // absolute path to the bucket
+      char bucket[PATH_MAX];
+      int b = os::snprintf(bucket, PATH_MAX, "%s%s/", VAR_FOLDERS, bucket_de->d_name);
+
+      // the total length of the absolute path must not exceed the buffer size
+      if (b >= PATH_MAX || b < 0) {
+        continue;
+      }
+      // each bucket contains next level subdirectories
+      DIR* bucket_dir = os::opendir(bucket);
+      if (bucket_dir == nullptr) {
+        continue;
+      }
+      // read each subdirectory, skipping over regular files
+      struct dirent* subbucket_de;
+      while ((subbucket_de = os::readdir(bucket_dir)) != nullptr) {
+        if (subbucket_de->d_type != DT_DIR || subbucket_de->d_name[0] == '.') {
+          continue;
+        }
+        // If the PERFDATA_NAME_user directory exists in the T subdirectory,
+        // this means the subdirectory is the temporary directory of the user.
+        char perfdata_path[PATH_MAX];
+        int p = os::snprintf(perfdata_path, PATH_MAX, "%s%s/T/%s_%s/", bucket, subbucket_de->d_name, PERFDATA_NAME, user);
+
+        // the total length must not exceed the output buffer size
+        if (p >= PATH_MAX || p < 0) {
+          continue;
+        }
+        // check if the subdirectory exists
+        if (os::file_exists(perfdata_path)) {
+          // the return value of snprintf is not checked for the second time
+          return os::snprintf(output_path, output_size, "%s%s/T", bucket, subbucket_de->d_name);
+        }
+      }
+      os::closedir(bucket_dir);
+    }
+    os::closedir(varfolders_dir);
+  }
+  return -1;
+}
+#endif
 
 intx os::current_thread_id() {
 #ifdef __APPLE__
@@ -1317,7 +1421,7 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
 #elif defined(__APPLE__)
   for (uint32_t i = 1; i < _dyld_image_count(); i++) {
     // Value for top_address is returned as 0 since we don't have any information about module size
-    if (callback(_dyld_get_image_name(i), (address)_dyld_get_image_header(i), (address)0, param)) {
+    if (callback(_dyld_get_image_name(i), (address)_dyld_get_image_header(i), nullptr, param)) {
       return 1;
     }
   }
@@ -2106,6 +2210,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
   return _processor_count;
 }
 
@@ -2278,8 +2386,8 @@ int os::open(const char *path, int oflag, int mode) {
 
     if (ret != -1) {
       if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
         ::close(fd);
+        errno = EISDIR;
         return -1;
       }
     } else {

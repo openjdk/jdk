@@ -24,11 +24,11 @@
  */
 
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
-#include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfrfiles/jfrEventIds.hpp"
 #include "logging/log.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinCriticalSection.hpp"
 
 constexpr static const JfrSamplerParams _disabled_params = {
                                                              0, // sample points per window
@@ -128,7 +128,7 @@ JfrEventThrottler* JfrEventThrottler::create_throttler(JfrEventId id) {
  * - period_ms   time period expressed in milliseconds
  */
 void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
-  JfrSpinlockHelper mutex(&_lock);
+  SpinCriticalSection scs(&_lock);
   _sample_size = sample_size;
   _period_ms = period_ms;
   _update = true;
