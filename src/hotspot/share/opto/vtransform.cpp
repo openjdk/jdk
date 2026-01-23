@@ -1557,7 +1557,7 @@ void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& 
   // Using the cl is sometimes not the most accurate, but still correct. We do not have to be
   // perfectly accurate, because we will set major_progress anyway.
   phase->register_new_node(vn, apply_state.vloop().cl());
-  
+
   phase->igvn()._worklist.push(vn);
   VectorNode::trace_new_vector(vn, "AutoVectorization");
 }
