@@ -160,7 +160,11 @@ public enum CompilePhase {
 
     static {
         for (CompilePhase phase : CompilePhase.values()) {
-            PHASES_BY_PARSED_NAME.put(phase.name(), phase);
+            if (phase == PRINT_IDEAL) {
+                PHASES_BY_PARSED_NAME.put("PrintIdeal", phase);
+            } else {
+                PHASES_BY_PARSED_NAME.put(phase.name(), phase);
+            }
         }
     }
     private enum ActionOnRepeat {
