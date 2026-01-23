@@ -26,7 +26,6 @@ package sun.jvm.hotspot.debugger.windbg;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.amd64.*;
@@ -68,6 +67,19 @@ class WindbgCDebugger implements CDebugger {
     return null;
   }
 
+  private JavaThread mapThreadProxyToJavaThread(ThreadProxy thread) {
+    var threads = VM.getVM().getThreads();
+    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+      var jt = threads.getJavaThreadAt(i);
+      if (thread.equals(jt.getThreadProxy())) {
+        return jt;
+      }
+    }
+
+    // not found
+    return null;
+  }
+
   public CFrame topFrameForThread(ThreadProxy thread) throws DebuggerException {
     if (dbg.getCPU().equals("amd64")) {
       AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
@@ -80,12 +92,8 @@ class WindbgCDebugger implements CDebugger {
       Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
       if (pc == null) return null;
 
-      Threads threads = VM.getVM().getThreads();
-      JavaThread ownerThread = IntStream.range(0, threads.getNumberOfThreads())
-                                        .mapToObj(threads::getJavaThreadAt)
-                                        .filter(jt -> thread.equals(jt.getThreadProxy()))
-                                        .findFirst()
-                                        .orElse(null);
+      // get JavaThread as the owner from ThreadProxy
+      JavaThread ownerThread = mapThreadProxyToJavaThread(thread);
 
       return new WindowsAMD64CFrame(dbg, ownerThread, rsp, rbp, pc);
     } else {
