@@ -550,14 +550,26 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
   return (uintptr_t) NULL;
 }
 
+static bool is_in(uintptr_t offset, struct elf_symbol* sym) {
+  if (offset == sym->offset) {
+    // offset points the top of the symbol
+    return true;
+  } else if (offset > sym->offset && offset < sym->offset + sym->size) {
+    // offset is in address range of the symbol
+    return true;
+  }
+
+  // offset is out of address range of the symbol
+  return false;
+}
+
 const char* nearest_symbol(struct symtab* symtab, uintptr_t offset,
                            uintptr_t* poffset) {
   int n = 0;
   if (!symtab) return NULL;
   for (; n < symtab->num_symbols; n++) {
      struct elf_symbol* sym = &(symtab->symbols[n]);
-     if (sym->name != NULL &&
-         offset >= sym->offset && offset <= sym->offset + sym->size) {
+     if (sym->name != NULL && is_in(offset, sym)) {
         if (poffset) *poffset = (offset - sym->offset);
         return sym->name;
      }
