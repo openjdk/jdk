@@ -1471,7 +1471,9 @@ public:
   bool is_iv(Node* exp, Node* iv, BasicType bt);
 
   // Return true if exp is a scaled induction var plus (or minus) constant
-  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale = nullptr, int depth = 0);
+  // p_short_scale: set if int multiplication was widened to long (ConvI2L around MulI)
+  // p_short_offset: set if int addition was widened to long (ConvI2L around AddI)
+  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale = nullptr, bool* p_short_offset = nullptr, int depth = 0);
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset) {
     jlong long_scale;
     if (is_scaled_iv_plus_offset(exp, iv, T_INT, &long_scale, p_offset)) {
@@ -1487,7 +1489,7 @@ public:
   bool is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset2, Node* iv,
                                       BasicType bt,
                                       jlong* p_scale, Node** p_offset,
-                                      bool* p_short_scale, int depth);
+                                      bool* p_short_scale, bool* p_short_offset, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   IfTrueNode* create_new_if_for_predicate(const ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,

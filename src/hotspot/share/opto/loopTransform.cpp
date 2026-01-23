@@ -2514,12 +2514,11 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
 // Also, (*p_short_scale) reports if a ConvI2L conversion was seen after a MulI,
 // meaning bt is T_LONG but iv was scaled using 32-bit arithmetic.
 // To avoid looping, the match is depth-limited, and so may fail to match the grammar to complex expressions.
-bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale, int depth) {
+bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale, bool* p_short_offset, int depth) {
   assert(bt == T_INT || bt == T_LONG, "unexpected int type");
   jlong scale = 0;  // to catch result from is_scaled_iv()
-  BasicType exp_bt = bt;
   exp = exp->uncast();
-  if (is_scaled_iv(exp, iv, exp_bt, &scale, p_short_scale)) {
+  if (is_scaled_iv(exp, iv, bt, &scale, p_short_scale)) {
     if (p_scale != nullptr) {
       *p_scale = scale;
     }
@@ -2529,17 +2528,45 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
     }
     return true;
   }
-  if (exp_bt != bt) {
-    // We would now be matching inputs like (ConvI2L exp:(AddI (MulI iv S) E)).
-    // It's hard to make 32-bit arithmetic linear if it overflows.  Although we do
-    // cope with overflowing multiplication by S, it would be even more work to
-    // handle overflowing addition of E.  So we bail out here on ConvI2L input.
-    return false;
+  // Handle ConvI2L wrapping an int linear expression: ConvI2L(iv + E) or ConvI2L(iv*K + E)
+  // The int arithmetic may overflow, so flag this case via p_short_offset for special
+  // handling at RCE time (clamp at max_jint + 1 instead of max_jint + offset + 1).
+  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
+    Node* inner = exp->in(1);
+    jlong inner_scale = 0;
+    Node* inner_offset = nullptr;
+    bool inner_short_scale = false;
+    if (is_scaled_iv_plus_offset(inner, iv, T_INT, &inner_scale, &inner_offset, &inner_short_scale, nullptr, depth + 1)) {
+      // Found linear int expression inside ConvI2L
+      if (p_scale != nullptr) {
+        *p_scale = inner_scale;
+      }
+      if (p_offset != nullptr) {
+        // Convert int offset to long
+        if (inner_offset != nullptr && inner_offset->is_Con()) {
+          *p_offset = longcon(inner_offset->get_int());
+        } else if (inner_offset != nullptr) {
+          Node* ctrl = get_ctrl(inner_offset);
+          Node* long_offset = new ConvI2LNode(inner_offset);
+          register_new_node(long_offset, ctrl);
+          *p_offset = long_offset;
+        } else {
+          *p_offset = longcon(0);
+        }
+      }
+      if (p_short_scale != nullptr) {
+        *p_short_scale = inner_short_scale;
+      }
+      if (p_short_offset != nullptr) {
+        *p_short_offset = true;
+      }
+      return true;
+    }
   }
   int opc = exp->Opcode();
   int which = 0;  // this is which subexpression we find the iv in
   Node* offset = nullptr;
-  if (opc == Op_Add(exp_bt)) {
+  if (opc == Op_Add(bt)) {
     // Check for a scaled IV in (AddX (MulX iv S) E) or (AddX E (MulX iv S)).
     if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, p_short_scale) ||
         is_scaled_iv(exp->in(which = 2), iv, bt, &scale, p_short_scale)) {
@@ -2553,11 +2580,11 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
       return true;
     }
     // Check for more addends, like (AddX (AddX (MulX iv S) E1) E2), etc.
-    if (is_scaled_iv_plus_extra_offset(exp->in(1), exp->in(2), iv, bt, p_scale, p_offset, p_short_scale, depth) ||
-        is_scaled_iv_plus_extra_offset(exp->in(2), exp->in(1), iv, bt, p_scale, p_offset, p_short_scale, depth)) {
+    if (is_scaled_iv_plus_extra_offset(exp->in(1), exp->in(2), iv, bt, p_scale, p_offset, p_short_scale, p_short_offset, depth) ||
+        is_scaled_iv_plus_extra_offset(exp->in(2), exp->in(1), iv, bt, p_scale, p_offset, p_short_scale, p_short_offset, depth)) {
       return true;
     }
-  } else if (opc == Op_Sub(exp_bt)) {
+  } else if (opc == Op_Sub(bt)) {
     if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, p_short_scale) ||
         is_scaled_iv(exp->in(which = 2), iv, bt, &scale, p_short_scale)) {
       // Match (SubX SIV[iv] E) as if (AddX SIV[iv] (SubX 0 E)), and
@@ -2575,9 +2602,9 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
       }
       if (p_offset != nullptr) {
         if (which == 1) {  // must negate the extracted offset
-          Node* zero = integercon(0, exp_bt);
+          Node* zero = integercon(0, bt);
           Node *ctrl_off = get_ctrl(offset);
-          offset = SubNode::make(zero, offset, exp_bt);
+          offset = SubNode::make(zero, offset, bt);
           register_new_node(offset, ctrl_off);
         }
         *p_offset = offset;
@@ -2595,7 +2622,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
 bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, Node* iv,
                                                     BasicType bt,
                                                     jlong* p_scale, Node** p_offset,
-                                                    bool* p_short_scale, int depth) {
+                                                    bool* p_short_scale, bool* p_short_offset, int depth) {
   // By the time we reach here, it is unlikely that exp1 is a simple iv*K.
   // If is a linear iv transform, it is probably an add or subtract.
   // Let's collect the internal offset2 from it.
@@ -2603,7 +2630,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
   if (offset3->is_Con() &&
       depth < 2 &&
       is_scaled_iv_plus_offset(exp1, iv, bt, p_scale,
-                               &offset2, p_short_scale, depth+1)) {
+                               &offset2, p_short_scale, p_short_offset, depth+1)) {
     if (p_offset != nullptr) {
       Node* ctrl_off2 = get_ctrl(offset2);
       Node* offset = AddNode::make(offset2, offset3, bt);

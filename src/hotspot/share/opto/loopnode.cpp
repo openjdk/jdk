@@ -1577,7 +1577,8 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
       continue;
     }
     bool short_scale = false;
-    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, T_LONG, &scale, &offset, &short_scale);
+    bool short_offset = false;
+    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, T_LONG, &scale, &offset, &short_scale, &short_offset);
     assert(ok, "inconsistent: was tested before");
     Node* range = rc_cmp->in(2);
     Node* c = rc->in(0);
@@ -1588,7 +1589,14 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
 
     Node* L = offset;
 
-    if (short_scale) {
+    if (short_offset) {
+      // ConvI2L(i + E): clamp R at max_jint + 1 (offset E is inside int arithmetic).
+      // Unlike short_scale where L is added in long after ConvI2L, here the offset
+      // is part of the int computation, so we clamp without adding L.
+      Node* max_jint_plus_one_long = longcon((jlong)max_jint + 1);
+      R = MinMaxNode::unsigned_min(R, max_jint_plus_one_long, TypeLong::POS, _igvn);
+      set_subtree_ctrl(R, true);
+    } else if (short_scale) {
       // This converts:
       // (int)i*K + L <u64 R
       // with K an int into:
