@@ -711,9 +711,7 @@ public class ExhaustivenessComputer {
             Type[] componentTypes;
 
             if (!record.type.isErroneous()) {
-                componentTypes = ((ClassSymbol) record.type.tsym).getRecordComponents()
-                        .map(r -> types.memberType(record.type, r))
-                        .toArray(s -> new Type[s]);
+                componentTypes = instantiatedComponentTypes(record.type);
             }
             else {
                 componentTypes = record.nested.map(t -> types.createErrorType(t.type)).toArray(s -> new Type[s]);;
@@ -912,9 +910,7 @@ public class ExhaustivenessComputer {
                 //if there is a binding pattern at a place where the original based patterns
                 //have a record pattern, try to expand the binding pattern into a record pattern
                 //create all possible combinations of record pattern components:
-                Type[] componentTypes = ((ClassSymbol) bp.type.tsym).getRecordComponents()
-                        .map(r -> types.memberType(bp.type, r))
-                        .toArray(s -> new Type[s]);
+                Type[] componentTypes = instantiatedComponentTypes(bp.type);
                 List<List<Type>> combinatorialNestedTypes = List.of(List.nil());
 
                 for (Type componentType : componentTypes) {
@@ -1217,6 +1213,16 @@ public class ExhaustivenessComputer {
                                             newNested,
                                             sourcePatterns));
         }
+    }
+
+    /* For a given record type, return the record's component types, with their
+     * types instatiated according to the exact record type.
+     */
+    private Type[] instantiatedComponentTypes(Type recordType) {
+        Type[] componentTypes = ((ClassSymbol) recordType.tsym).getRecordComponents()
+                .map(r -> types.memberType(recordType, r))
+                .toArray(s -> new Type[s]);
+        return componentTypes;
     }
 
     /* The stricness of determining the equivalent of patterns, used in
