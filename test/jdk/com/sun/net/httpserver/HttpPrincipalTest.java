@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 8251496
  * @summary Tests for methods in HttpPrincipal
- * @run testng/othervm HttpPrincipalTest
+ * @run junit/othervm HttpPrincipalTest
  */
 
 import com.sun.net.httpserver.HttpPrincipal;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class HttpPrincipalTest {
 
@@ -39,10 +39,10 @@ public class HttpPrincipalTest {
     public void testGetters() {
         var principal = new HttpPrincipal("test", "123");
 
-        assertEquals(principal.getUsername(), "test");
-        assertEquals(principal.getRealm(), "123");
-        assertEquals(principal.getName(), "123:test");
-        assertEquals(principal.toString(), principal.getName());
-        assertEquals(("test"+"123").hashCode(), principal.hashCode());
+        assertEquals("test", principal.getUsername());
+        assertEquals("123", principal.getRealm());
+        assertEquals("123:test", principal.getName());
+        assertEquals(principal.getName(), principal.toString());
+        assertEquals(principal.hashCode(), ("test"+"123").hashCode());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -686,8 +685,9 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   // the check before we do the actual allocation. The reason for doing it
   // before the allocation is that we avoid having to keep track of the newly
   // allocated memory while we do a GC.
-  if (policy()->need_to_start_conc_mark("concurrent humongous allocation",
-                                        word_size)) {
+  // Only try that if we can actually perform a GC.
+  if (is_init_completed() &&
+      policy()->need_to_start_conc_mark("concurrent humongous allocation", word_size)) {
     try_collect(word_size, GCCause::_g1_humongous_allocation, collection_counters(this));
   }
 
@@ -2355,7 +2355,8 @@ static void print_region_type(outputStream* st, const char* type, uint count, bo
 }
 
 void G1CollectedHeap::print_heap_on(outputStream* st) const {
-  size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
+  size_t heap_used = (Thread::current_or_null_safe() != nullptr &&
+                      Heap_lock->owned_by_self()) ? used() : used_unlocked();
   st->print("%-20s", "garbage-first heap");
   st->print(" total reserved %zuK, committed %zuK, used %zuK",
             _hrm.reserved().byte_size()/K, capacity()/K, heap_used/K);

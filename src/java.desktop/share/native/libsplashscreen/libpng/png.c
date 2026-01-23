@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018-2025 Cosmin Truta
+ * Copyright (c) 2018-2026 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -42,7 +42,7 @@
 #include "pngpriv.h"
 
 /* Generate a compiler error if there is an old png.h in the search path. */
-typedef png_libpng_version_1_6_47 Your_png_h_is_not_version_1_6_47;
+typedef png_libpng_version_1_6_54 Your_png_h_is_not_version_1_6_54;
 
 /* Sanity check the chunks definitions - PNG_KNOWN_CHUNKS from pngpriv.h and the
  * corresponding macro definitions.  This causes a compile time failure if
@@ -130,17 +130,24 @@ png_sig_cmp(png_const_bytep sig, size_t start, size_t num_to_check)
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
 /* Function to allocate memory for zlib */
 PNG_FUNCTION(voidpf /* PRIVATE */,
-png_zalloc,(voidpf png_ptr, uInt items, uInt size),PNG_ALLOCATED)
+png_zalloc,(voidpf png_ptr, uInt items, uInt size),
+    PNG_ALLOCATED)
 {
    png_alloc_size_t num_bytes = size;
 
    if (png_ptr == NULL)
       return NULL;
 
-   if (items >= (~(png_alloc_size_t)0)/size)
+   /* This check against overflow is vestigial, dating back from
+    * the old times when png_zalloc used to be an exported function.
+    * We're still keeping it here for now, as an extra-cautious
+    * prevention against programming errors inside zlib, although it
+    * should rather be a debug-time assertion instead.
+    */
+   if (size != 0 && items >= (~(png_alloc_size_t)0) / size)
    {
-      png_warning (png_voidcast(png_structrp, png_ptr),
-          "Potential overflow in png_zalloc()");
+      png_warning(png_voidcast(png_structrp, png_ptr),
+                  "Potential overflow in png_zalloc()");
       return NULL;
    }
 
@@ -267,10 +274,6 @@ png_user_version_check(png_structrp png_ptr, png_const_charp user_png_ver)
       png_warning(png_ptr, m);
 #endif
 
-#ifdef PNG_ERROR_NUMBERS_SUPPORTED
-      png_ptr->flags = 0;
-#endif
-
       return 0;
    }
 
@@ -284,7 +287,8 @@ png_user_version_check(png_structrp png_ptr, png_const_charp user_png_ver)
 PNG_FUNCTION(png_structp /* PRIVATE */,
 png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
     png_error_ptr error_fn, png_error_ptr warn_fn, png_voidp mem_ptr,
-    png_malloc_ptr malloc_fn, png_free_ptr free_fn),PNG_ALLOCATED)
+    png_malloc_ptr malloc_fn, png_free_ptr free_fn),
+    PNG_ALLOCATED)
 {
    png_struct create_struct;
 #  ifdef PNG_SETJMP_SUPPORTED
@@ -388,7 +392,8 @@ png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
 
 /* Allocate the memory for an info_struct for the application. */
 PNG_FUNCTION(png_infop,PNGAPI
-png_create_info_struct,(png_const_structrp png_ptr),PNG_ALLOCATED)
+png_create_info_struct,(png_const_structrp png_ptr),
+    PNG_ALLOCATED)
 {
    png_inforp info_ptr;
 
@@ -729,7 +734,7 @@ png_get_io_ptr(png_const_structrp png_ptr)
  * function of your own because "FILE *" isn't necessarily available.
  */
 void PNGAPI
-png_init_io(png_structrp png_ptr, png_FILE_p fp)
+png_init_io(png_structrp png_ptr, FILE *fp)
 {
    png_debug(1, "in png_init_io");
 
@@ -844,8 +849,8 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.47" PNG_STRING_NEWLINE \
-      "Copyright (c) 2018-2025 Cosmin Truta" PNG_STRING_NEWLINE \
+      "libpng version 1.6.54" PNG_STRING_NEWLINE \
+      "Copyright (c) 2018-2026 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
@@ -1520,7 +1525,7 @@ png_XYZ_from_xy(png_XYZ *XYZ, const png_xy *xy)
 }
 #endif /* COLORSPACE */
 
-#ifdef PNG_iCCP_SUPPORTED
+#ifdef PNG_READ_iCCP_SUPPORTED
 /* Error message generation */
 static char
 png_icc_tag_char(png_uint_32 byte)
@@ -1596,9 +1601,7 @@ png_icc_profile_error(png_const_structrp png_ptr, png_const_charp name,
 
    return 0;
 }
-#endif /* iCCP */
 
-#ifdef PNG_READ_iCCP_SUPPORTED
 /* Encoded value of D50 as an ICC XYZNumber.  From the ICC 2010 spec the value
  * is XYZ(0.9642,1.0,0.8249), which scales to:
  *
@@ -2286,8 +2289,8 @@ PNG_FP_End:
 int
 png_check_fp_string(png_const_charp string, size_t size)
 {
-   int        state=0;
-   size_t char_index=0;
+   int state = 0;
+   size_t char_index = 0;
 
    if (png_check_fp_number(string, size, &state, &char_index) != 0 &&
       (char_index == size || string[char_index] == 0))
@@ -3998,7 +4001,7 @@ png_image_free_function(png_voidp argument)
 #  ifdef PNG_STDIO_SUPPORTED
       if (cp->owned_file != 0)
       {
-         FILE *fp = png_voidcast(FILE*, cp->png_ptr->io_ptr);
+         FILE *fp = png_voidcast(FILE *, cp->png_ptr->io_ptr);
          cp->owned_file = 0;
 
          /* Ignore errors here. */
