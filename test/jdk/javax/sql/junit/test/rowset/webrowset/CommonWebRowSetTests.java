@@ -38,7 +38,6 @@ import javax.sql.rowset.WebRowSet;
 
 import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertEqualsNoOrder;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Disabled;
@@ -368,7 +367,10 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
         FileInputStream fis = new FileInputStream(INSERTED_COFFEE_ROWS_XML);
         wrs1.readXml(fis);
         assertTrue(wrs1.size() == expectedSize);
-        assertEqualsNoOrder(getPrimaryKeys(wrs1), expected);
+        var actual = getPrimaryKeys(wrs1);
+        Arrays.sort(actual);
+        Arrays.sort(expected);
+        Assertions.assertArrayEquals(expected, actual);
         wrs1.beforeFirst();
         while (wrs1.next()) {
             if (wrs1.getInt(1) == 15 || wrs1.getInt(1) == 20) {
