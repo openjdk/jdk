@@ -1267,7 +1267,6 @@ public:
 
   bool is_marked(oop obj) const;
 
-  inline static bool is_obj_filler(const oop obj);
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const G1HeapRegion* hr) const;
