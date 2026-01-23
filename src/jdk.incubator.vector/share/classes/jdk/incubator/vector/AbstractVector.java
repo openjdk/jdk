@@ -189,13 +189,6 @@ abstract class AbstractVector<E> extends Vector<E> {
     protected static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
         final int lanes = targetSpecies.laneCount();
 
-        // This happens when source and target element sizes are equal
-        // (int -> int, long -> long). Therefore, no reordering is required.
-        if (subLanesPerSrc <= 1) {
-            int[] id = new int[lanes];
-            for (int i = 0; i < lanes; ++i) id[i] = i;
-            return VectorShuffle.fromArray(targetSpecies, id, 0);
-        }
         if ((lanes % subLanesPerSrc) != 0) {
             throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
         }
