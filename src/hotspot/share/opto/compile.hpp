@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,7 @@ class Compile : public Phase {
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
+  bool                  _print_phase_loop_opts; // True if we should before and after print phase loop opts
 #ifndef PRODUCT
   uint                  _phase_counter;         // Counter for the number of already printed phases
   uint                  _igv_idx;               // Counter for IGV node identifiers

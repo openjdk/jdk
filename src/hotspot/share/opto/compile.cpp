@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1876,7 +1876,7 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);
 
-  if (has_loops() || ((0 <= _loop_opts_cnt) && (_loop_opts_cnt < LoopOptsCount))) {
+  if (_print_phase_loop_opts) {
     print_method(PHASE_AFTER_LOOP_OPTS, 2);
   }
   C->set_post_loop_opts_phase(); // no more loop opts allowed
@@ -2404,7 +2404,8 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  if (has_loops()) {
+  _print_phase_loop_opts = has_loops();
+  if (_print_phase_loop_opts) {
     print_method(PHASE_BEFORE_LOOP_OPTS, 2);
   }
 
