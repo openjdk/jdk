@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_INTERPRETER_BYTECODETRACER_HPP
-#define SHARE_INTERPRETER_BYTECODETRACER_HPP
+ /**
+ * @test
+ * @bug 8374862
+ * @summary Regression test for -XX:+Verbose -XX:+WizardMode -XX:+PrintDeoptimizationDetails crash
+ * @requires vm.debug
+ * @run main/othervm -XX:+Verbose -XX:+WizardMode -XX:+PrintDeoptimizationDetails compiler.uncommontrap.TestDeoptDetailsLockRank
+ */
 
-#include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
+package compiler.uncommontrap;
 
-// The BytecodeTracer is a helper class used by the interpreter for run-time
-// bytecode tracing. If TraceBytecodes turned on, trace_interpreter() will be called
-// for each bytecode.
+public class TestDeoptDetailsLockRank {
 
-class methodHandle;
-class outputStream;
-
-class BytecodeClosure;
-class BytecodeTracer: AllStatic {
- public:
-  NOT_PRODUCT(static void trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st = tty);)
-  static void print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered = true);
-};
-
-#endif // SHARE_INTERPRETER_BYTECODETRACER_HPP
+    public static void main(String[] args) {
+        System.out.println("passed");
+    }
+}
