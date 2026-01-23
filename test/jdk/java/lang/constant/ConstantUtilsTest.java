@@ -21,17 +21,19 @@
  * questions.
  */
 
-package jdk.internal.constant;
-
 import java.lang.constant.*;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import jdk.internal.constant.ConstantAccess;
+import jdk.internal.constant.ConstantUtils;
 import org.junit.jupiter.api.Test;
 
 /*
  * @test
  * @bug 8303930
+ * @build java.base/jdk.internal.constant.*
  * @compile ConstantUtilsTest.java
  * @modules java.base/jdk.internal.constant
  * @run junit ConstantUtilsTest
@@ -43,7 +45,7 @@ public class ConstantUtilsTest {
     @Test
     public void testValidateMemberName() {
         assertThrows(NullPointerException.class, () -> ConstantUtils.validateMemberName(null, false));
-        assertThrows(NullPointerException.class, () -> ConstantUtils.validateMemberName("", false));
+        assertThrows(IllegalArgumentException.class, () -> ConstantUtils.validateMemberName("", false));
 
         List<String> badNames = List.of(".", ";", "[", "/", "<", ">");
         for (String n : badNames) {
@@ -53,7 +55,7 @@ public class ConstantUtilsTest {
 
     @Test
     public void testSkipOverFieldSignatureVoid() {
-       int ret = ConstantUtils.skipOverFieldSignature("(V)V", 1, 4);
+       int ret = ConstantAccess.skipOverFieldSignature("(V)V", 1, 4);
        assertEquals(0, ret, "Descriptor of (V)V starting at index 1, void disallowed");
     }
 }

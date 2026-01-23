@@ -290,7 +290,8 @@ public class ClassDescTest extends SymbolicDescTest {
         String descWith255ArrayDims = "[".repeat(255);
         assertThrows(IllegalArgumentException.class, () -> ClassDesc.ofDescriptor(descWith255ArrayDims + "[Ljava/lang/String;"),
                 "can't create an array type descriptor with more than 255 dimensions");
-        assertThrows(IllegalArgumentException.class, () -> ClassDesc.ofDescriptor(descWith255ArrayDims + "Ljava/lang/String;"),
+        ClassDesc arrWith255Dims = ClassDesc.ofDescriptor(descWith255ArrayDims + "Ljava/lang/String;");
+        assertThrows(IllegalArgumentException.class, () -> arrWith255Dims.arrayType(1),
                 "can't create an array type descriptor with more than 255 dimensions");
     }
 
