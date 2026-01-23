@@ -41,17 +41,6 @@
 #include "utilities/stack.inline.hpp"
 
 #ifdef ASSERT
-void DFSClosure::log(const char* msg, ...) {
-  LogTarget(Debug, jfr, system, dfs) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    va_list args;
-    va_start(args, msg);
-    ls.vprint(msg, args);
-    va_end(args);
-    ls.cr();
-  }
-}
 void DFSClosure::log_reference_stack() {
   LogTarget(Trace, jfr, system, dfs) lt;
   if (lt.is_enabled()) {
@@ -87,7 +76,9 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
   // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
   log_debug(jfr, system, dfs)("DFS: scanning from edge");
-  start_edge->pointee()->oop_iterate(&dfs);
+  const UnifiedOopRef ref = start_edge->reference();
+  const oop obj = ref.dereference();
+  dfs.probe_stack_push(ref, obj, 0);
   dfs.drain_probe_stack();
   log_debug(jfr, system, dfs)("DFS: done");
 }
@@ -114,7 +105,6 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   rs.process();
   dfs.drain_probe_stack();
   log_debug(jfr, system, dfs)("DFS: done");
-
 }
 
 // Memory usage of DFS search is dominated by probe stack usage. That
@@ -133,10 +123,10 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
 // need to be put on the probe stack (the backward reference points to an
 // already marked object).
 //
-// Hence, with a max_dfs_depth of 3200, we get a typically max probe stack
-// depth of <10000, which costs <~160KB - not a problem at all.
+// Hence, with a max_dfs_depth of 4000, we get a typical probe stack at
+// max depth of ~10000, which costs <~160KB - not a problem at all.
 //
-// But To be very sure we also limit the probe stack size itself. The max size
+// But to be very sure we also limit the probe stack size itself. The max size
 // is generous enough to make it very unlikely we ever hit it before hitting
 // max_depth. When we hit it, we treat it the same way we treat max_depth -
 // we just stop following that particular graph edge.
@@ -153,7 +143,9 @@ DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* 
   _current_depth(0),
   _current_chunkindex(0),
   _num_objects_processed(0),
-  _num_sampled_objects_found(0)
+  _num_sampled_objects_found(0),
+  _times_max_depth_reached(0),
+  _times_probe_stack_full(0)
 {
 }
 
@@ -161,13 +153,22 @@ DFSClosure::~DFSClosure() {
   if (!GranularTimer::is_finished()) {
     assert(_probe_stack.is_empty(), "We should have drained the probe stack?");
   }
-  log_info(jfr, system, dfs)("DFS: " UINT64_FORMAT " objects processed, " UINT64_FORMAT " sample objects found",
-      _num_objects_processed, _num_sampled_objects_found);
+  log_info(jfr, system, dfs)("DFS: objects processed: " UINT64_FORMAT ","
+       " sampled objects found: " UINT64_FORMAT ","
+       " reached max graph depth: " UINT64_FORMAT ","
+       " reached max probe stack depth: " UINT64_FORMAT,
+      _num_objects_processed, _num_sampled_objects_found,
+      _times_max_depth_reached, _times_probe_stack_full);
 }
 
 void DFSClosure::probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth) {
 
   assert(!ref.is_null(), "invariant");
+
+  if (_probe_stack.is_full()) {
+    _times_probe_stack_full ++;
+    return;
+  }
 
   if (pointee == nullptr) {
     return;
@@ -175,12 +176,6 @@ void DFSClosure::probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth) 
 
   if (depth > 0 && pointee_was_visited(pointee)) {
     // Optimization: don't push if marked (special handling for root oops)
-    return;
-  }
-
-  if (_probe_stack.is_full()) {
-    log_debug(jfr, system, dfs)("Probe stack full (graph depth: %zu, probe stack size: %zu)",
-        _current_depth, _probe_stack.size());
     return;
   }
 
@@ -195,8 +190,7 @@ void DFSClosure::probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee,
   assert(chunkindex > 0, "invariant");
 
   if (_probe_stack.is_full()) {
-    log_debug(jfr, system, dfs)("Probe stack full (graph depth: %zu, probe stack size: %zu)",
-        _current_depth, _probe_stack.size());
+    _times_probe_stack_full ++;
     return;
   }
 
@@ -248,8 +242,7 @@ void DFSClosure::handle_oop() {
 
   // trace children if needed
   if (_current_depth == _max_depth - 1) {
-    log_debug(jfr, system, dfs)("max depth reached (%zu, probe stack size: %zu)",
-        _current_depth, _probe_stack.size());
+    _times_max_depth_reached ++;
     return; // stop following this chain
   }
 
@@ -283,8 +276,7 @@ void DFSClosure::handle_objarrayoop() {
   // trace children if needed
 
   if (_current_depth == _max_depth - 1) {
-    log_debug(jfr, system, dfs)("max depth reached (%zu, probe stack size: %zu)",
-        _current_depth, _probe_stack.size());
+    _times_max_depth_reached ++;
     return; // stop following this chain
   }
 

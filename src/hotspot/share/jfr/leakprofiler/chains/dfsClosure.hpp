@@ -39,7 +39,7 @@ class EdgeQueue;
 // Class responsible for iterating the heap depth-first
 class DFSClosure : public BasicOopIterateClosure {
  private:
-  static const size_t max_dfs_depth = 3200;
+  static const size_t max_dfs_depth = 4000;
   static UnifiedOopRef _reference_stack[max_dfs_depth];
 
   EdgeStore* _edge_store;
@@ -67,6 +67,8 @@ class DFSClosure : public BasicOopIterateClosure {
   int _current_chunkindex;
   uint64_t _num_objects_processed;
   uint64_t _num_sampled_objects_found;
+  uint64_t _times_max_depth_reached;
+  uint64_t _times_probe_stack_full;
 
   bool pointee_was_visited(const oop pointee) const { return _mark_bits->is_marked(pointee); }
   void mark_pointee_as_visited(const oop pointee)   { _mark_bits->mark_obj(pointee); }
@@ -79,7 +81,6 @@ class DFSClosure : public BasicOopIterateClosure {
   void handle_oop();
   void handle_objarrayoop();
 
-  void log(const char* msg, ...) DEBUG_ONLY(;) NOT_DEBUG({})
   void log_reference_stack() DEBUG_ONLY(;) NOT_DEBUG({})
 
  public:

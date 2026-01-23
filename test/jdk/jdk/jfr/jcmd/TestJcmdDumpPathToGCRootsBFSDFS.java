@@ -47,7 +47,7 @@ import jdk.test.lib.jfr.EventNames;
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  *
- * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS dfs-only
+ * @run main/othervm -XX:TLABSize=2k -Xmx256m -Xlog:jfr+system+dfs jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS dfs-only
  */
 
 /**
@@ -154,13 +154,14 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
                     System.out.println("No events found in recording. Retrying.");
                     continue;
                 }
-                boolean chains = hasChains(events);
-                if (expectedChains && !chains) {
+                int foundChains = numChainsFoundInEvents(events);
+                final int minChainsRequired = 30; // very conservative, should be in the low 100s normally
+                if (expectedChains && foundChains < minChainsRequired) {
                     System.out.println(events);
-                    System.out.println("Expected chains but found none. Retrying.");
+                    System.out.println("Expected chains but found not enough (" + foundChains + "). Retrying.");
                     continue;
                 }
-                if (!expectedChains && chains) {
+                if (!expectedChains && foundChains > 0) {
                     System.out.println(events);
                     System.out.println("Didn't expect chains but found some. Retrying.");
                     continue;
@@ -175,14 +176,16 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
       System.gc();
     }
 
-    private static boolean hasChains(List<RecordedEvent> events) throws IOException {
+    private static int numChainsFoundInEvents(List<RecordedEvent> events) throws IOException {
+        int found = 0;
         for (RecordedEvent e : events) {
             RecordedObject ro = e.getValue("object");
             if (ro.getValue("referrer") != null) {
-                return true;
+                found++;
+
             }
         }
-        return false;
+        return found;
     }
 
     private static void buildLeak(int objectCount) {
