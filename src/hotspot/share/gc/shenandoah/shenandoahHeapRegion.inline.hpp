@@ -167,8 +167,6 @@ public:
 
 HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAllocRequest& req, bool &ready_for_retire) {
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
-  assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
-  assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
 
   ShenandoahHeapRegionReadyForRetireChecker retire_checker(ready_for_retire);
   HeapWord* obj = atomic_top();
@@ -199,8 +197,6 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
 
 HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size, bool &ready_for_retire) {
   assert(req.is_lab_alloc() && req.type() != ShenandoahAllocRequest::_alloc_plab, "Only tlab/gclab alloc");
-  assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
-  assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
 
   ShenandoahHeapRegionReadyForRetireChecker retire_checker(ready_for_retire);
   HeapWord* obj = atomic_top();

@@ -373,7 +373,6 @@ HeapWord* ShenandoahAllocator<ALLOC_PARTITION>::allocate(ShenandoahAllocRequest 
 
 template <ShenandoahFreeSetPartitionId ALLOC_PARTITION>
 void ShenandoahAllocator<ALLOC_PARTITION>::release_alloc_regions(bool should_update_accounting) {
-  assert_at_safepoint();
   shenandoah_assert_heaplocked();
 
   log_debug(gc, alloc)("%sAllocator: Releasing all alloc regions", _alloc_partition_name);

@@ -538,7 +538,7 @@ void ShenandoahConcurrentGC::entry_cleanup_early() {
     // This is an abbreviated cycle.  Rebuild the freeset in order to establish reserves for the next GC cycle.  Doing
     // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that we will degenerate
     // during promote-in-place processing.
-    heap->rebuild_free_set(true /*concurrent*/);
+    heap->rebuild_free_set(true /*concurrent*/, true /*release alloc regions before rebuilding*/);
   }
 }
 
@@ -745,9 +745,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
-  // Release all alloc regions at the beginning of final mark.
-  heap->free_set()->release_alloc_regions_under_lock();
-
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_no_forwarded(_generation);
   }
@@ -758,6 +755,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
+
+    // Release all alloc regions before choosing cset.
+    heap->free_set()->release_alloc_regions_under_lock();
 
     // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
     // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in
@@ -801,10 +801,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
     {
       ShenandoahHeapLocker locker(heap->lock());
-      if (heap->is_evacuation_in_progress()) {
-        // Reserve alloc regions for evacuation.
-        heap->free_set()->collector_allocator()->reserve_alloc_regions();
-      }
+      // Free set has been re-built, reserve alloc regions for mutator
       heap->free_set()->mutator_allocator()->reserve_alloc_regions();
     }
   }
@@ -1103,6 +1100,12 @@ void ShenandoahConcurrentGC::op_cleanup_early() {
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {
+  {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahHeapLocker locker(heap->lock());
+    // Reserve alloc regions for evacuation.
+    heap->free_set()->collector_allocator()->reserve_alloc_regions();
+  }
   ShenandoahHeap::heap()->evacuate_collection_set(_generation, true /*concurrent*/);
 }
 

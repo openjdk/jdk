@@ -2484,8 +2484,11 @@ void ShenandoahHeap::final_update_refs_update_region_states() {
   parallel_heap_region_iterate(&cl);
 }
 
-void ShenandoahHeap::rebuild_free_set_within_phase() {
+void ShenandoahHeap::rebuild_free_set_within_phase(const bool release_atomic_alloc_regions_first) {
   ShenandoahHeapLocker locker(lock());
+  if (release_atomic_alloc_regions_first) {
+    _free_set->release_alloc_regions();
+  }
   size_t young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count;
   _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old_region, last_old_region, old_region_count);
   // If there are no old regions, first_old_region will be greater than last_old_region
@@ -2522,11 +2525,11 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
   }
 }
 
-void ShenandoahHeap::rebuild_free_set(bool concurrent) {
+void ShenandoahHeap::rebuild_free_set(bool concurrent, bool release_atomic_alloc_regions_first) {
   ShenandoahGCPhase phase(concurrent ?
                           ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
                           ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
-  rebuild_free_set_within_phase();
+  rebuild_free_set_within_phase(release_atomic_alloc_regions_first);
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {
