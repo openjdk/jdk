@@ -2213,7 +2213,6 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   AtomicAccess::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
