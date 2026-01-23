@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,52 +33,50 @@ import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodHandleDesc;
 
-import org.testng.annotations.Test;
-
 import static java.lang.constant.ConstantDescs.CD_MethodHandle;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_VarHandle;
 import static java.lang.constant.ConstantDescs.CD_int;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertNotSame;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
  * @compile CondyDescTest.java
- * @run testng CondyDescTest
+ * @run junit CondyDescTest
  * @summary unit tests for java.lang.constant.CondyDescTest
  */
-@Test
 public class CondyDescTest extends SymbolicDescTest {
     private final static ConstantDesc[] EMPTY_ARGS = new ConstantDesc[0];
     private final static ClassDesc CD_ConstantBootstraps = ClassDesc.of("java.lang.invoke.ConstantBootstraps");
 
     private static<T> void testDCR(DynamicConstantDesc<T> r, T c) throws ReflectiveOperationException {
-        assertEquals(r, DynamicConstantDesc.ofNamed(r.bootstrapMethod(), r.constantName(), r.constantType(), r.bootstrapArgs()));
-        assertEquals(r.resolveConstantDesc(LOOKUP), c);
+        assertEquals(DynamicConstantDesc.ofNamed(r.bootstrapMethod(), r.constantName(), r.constantType(), r.bootstrapArgs()), r);
+        assertEquals(c, r.resolveConstantDesc(LOOKUP));
     }
 
     private void testVarHandleDesc(DynamicConstantDesc<VarHandle> r, VarHandle vh) throws ReflectiveOperationException  {
         testSymbolicDesc(r);
-        assertEquals(vh.describeConstable().orElseThrow(), r);
+        assertEquals(r, vh.describeConstable().orElseThrow());
     }
 
     private static<E extends Enum<E>> void testEnumDesc(EnumDesc<E> r, E e) throws ReflectiveOperationException {
         testSymbolicDesc(r);
 
-        assertEquals(r, EnumDesc.of(r.constantType(), r.constantName()));
-        assertEquals(r.resolveConstantDesc(LOOKUP), e);
+        assertEquals(EnumDesc.of(r.constantType(), r.constantName()), r);
+        assertEquals(e, r.resolveConstantDesc(LOOKUP));
     }
 
+    @Test
     public void testNullConstant() throws ReflectiveOperationException {
         DynamicConstantDesc<?> r = (DynamicConstantDesc<?>) ConstantDescs.NULL;
-        assertEquals(r, DynamicConstantDesc.ofNamed(r.bootstrapMethod(), r.constantName(), r.constantType(), r.bootstrapArgs()));
+        assertEquals(DynamicConstantDesc.ofNamed(r.bootstrapMethod(), r.constantName(), r.constantType(), r.bootstrapArgs()), r);
         assertNull(r.resolveConstantDesc(LOOKUP));
     }
 
@@ -86,6 +84,7 @@ public class CondyDescTest extends SymbolicDescTest {
         return a + b;
     }
 
+    @Test
     public void testDynamicConstant() throws ReflectiveOperationException {
         DirectMethodHandleDesc bsmDesc = ConstantDescs.ofConstantBootstrap(ClassDesc.of("CondyDescTest"), "concatBSM",
                                                                             CD_String, CD_String, CD_String);
@@ -93,6 +92,7 @@ public class CondyDescTest extends SymbolicDescTest {
         testDCR(r, "foobar");
     }
 
+    @Test
     public void testNested() throws Throwable {
         DirectMethodHandleDesc invoker = ConstantDescs.ofConstantBootstrap(CD_ConstantBootstraps, "invoke", CD_Object, CD_MethodHandle, CD_Object.arrayType());
         DirectMethodHandleDesc format = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, CD_String, "format",
@@ -101,7 +101,7 @@ public class CondyDescTest extends SymbolicDescTest {
         String s = (String) invoker.resolveConstantDesc(LOOKUP)
                                    .invoke(LOOKUP, "", String.class,
                                            format.resolveConstantDesc(LOOKUP), "%s%s", "moo", "cow");
-        assertEquals(s, "moocow");
+        assertEquals("moocow", s);
 
         DynamicConstantDesc<String> desc = DynamicConstantDesc.of(invoker, format, "%s%s", "moo", "cow");
         testDCR(desc, "moocow");
@@ -112,6 +112,7 @@ public class CondyDescTest extends SymbolicDescTest {
 
     enum MyEnum { A, B, C }
 
+    @Test
     public void testEnumDesc() throws ReflectiveOperationException {
         ClassDesc enumClass = ClassDesc.of("CondyDescTest").nested("MyEnum");
 
@@ -131,6 +132,7 @@ public class CondyDescTest extends SymbolicDescTest {
         int f;
     }
 
+    @Test
     public void testVarHandles() throws ReflectiveOperationException {
         ClassDesc testClass = ClassDesc.of("CondyDescTest").nested("MyClass");
         MyClass instance = new MyClass();
@@ -140,20 +142,20 @@ public class CondyDescTest extends SymbolicDescTest {
         VarHandle varHandle = LOOKUP.findStaticVarHandle(MyClass.class, "sf", int.class);
         testVarHandleDesc(vhc, varHandle);
 
-        assertEquals(varHandle.varType(), int.class);
+        assertEquals(int.class, varHandle.varType());
         varHandle.set(8);
         assertEquals(8, (int) varHandle.get());
-        assertEquals(MyClass.sf, 8);
+        assertEquals(8, MyClass.sf);
 
         // static varHandle
         vhc = VarHandleDesc.ofField(testClass, "f", CD_int);
         varHandle = LOOKUP.findVarHandle(MyClass.class, "f", int.class);
         testVarHandleDesc(vhc, varHandle);
 
-        assertEquals(varHandle.varType(), int.class);
+        assertEquals(int.class, varHandle.varType());
         varHandle.set(instance, 9);
         assertEquals(9, (int) varHandle.get(instance));
-        assertEquals(instance.f, 9);
+        assertEquals(9, instance.f);
 
         vhc = VarHandleDesc.ofArray(CD_int.arrayType());
         varHandle = MethodHandles.arrayElementVarHandle(int[].class);
@@ -205,16 +207,17 @@ public class CondyDescTest extends SymbolicDescTest {
         assertNotSame(canonical, nonCanonical);
         assertTrue(clazz.isAssignableFrom(canonical.getClass()));
         assertFalse(clazz.isAssignableFrom(nonCanonical.getClass()));
-        assertEquals(prototype, canonical);
         assertEquals(canonical, prototype);
+        assertEquals(prototype, canonical);
         if (prototype instanceof DynamicConstantDesc) {
-            assertEquals(canonical, nonCanonical);
             assertEquals(nonCanonical, canonical);
-            assertEquals(prototype, nonCanonical);
+            assertEquals(canonical, nonCanonical);
             assertEquals(nonCanonical, prototype);
+            assertEquals(prototype, nonCanonical);
         }
     }
 
+    @Test
     public void testLifting() {
         DynamicConstantDesc<Object> unliftedNull = DynamicConstantDesc.ofNamed(ConstantDescs.BSM_NULL_CONSTANT, "_", CD_Object, EMPTY_ARGS);
         assertEquals(ConstantDescs.NULL, unliftedNull);
