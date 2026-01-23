@@ -332,11 +332,11 @@ class StubGenerator: public StubCodeGenerator {
 
   // A version of ECB/AES Encrypt which does 4 blocks in a loop at a time
   // to hide instruction latency
-  address generate_electronicCodeBook_encryptAESCrypt_multiBlock_Parallel();
+  address generate_electronicCodeBook_encryptAESCrypt_Parallel();
 
   // A version of ECB/AES Decrypt which does 4 blocks in a loop at a time
   // to hide instruction latency
-  address generate_electronicCodeBook_decryptAESCrypt_multiBlock_Parallel();
+  address generate_electronicCodeBook_decryptAESCrypt_Parallel();
 
   // Vector AES Galois Counter Mode implementation
   address generate_galoisCounterMode_AESCrypt();

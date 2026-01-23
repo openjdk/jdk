@@ -218,8 +218,8 @@ void StubGenerator::generate_aes_stubs() {
       StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     } else {
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
-      StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt_multiBlock_Parallel();
-      StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt_multiBlock_Parallel();
+      StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt_Parallel();
+      StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt_Parallel();
       if (VM_Version::supports_avx2()) {
           StubRoutines::_galoisCounterMode_AESCrypt = generate_avx2_galoisCounterMode_AESCrypt();
       }
@@ -1401,7 +1401,24 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   return start;
 }
 
-address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_multiBlock_Parallel() {
+// This is a version of ECB/AES Encrypt which does 4 blocks in a loop at a time
+// to hide instruction latency
+//
+// Arguments:
+//
+// Inputs:
+//   c_rarg0   - source byte array address
+//   c_rarg1   - destination byte array address
+//   c_rarg2   - sessionKe (key) in little endian int array
+//   Linux
+//     c_rarg3   - input length (must be multiple of blocksize 16)
+//   Windows
+//     rbp + 6 * wordSize - input length
+//
+// Output:
+//   rax       - input length
+//
+address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_electronicCodeBook_encryptAESCrypt_id;
@@ -1440,18 +1457,14 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_multiBlock_Pa
 #undef DoOne
 #endif
 
-#define DoFour(opc, reg)        \
-  do {                        \
-    __ opc(xmm_result0, reg); \
-    __ opc(xmm_result1, reg); \
-    __ opc(xmm_result2, reg); \
-    __ opc(xmm_result3, reg); \
-  } while (0)
+#define DoFour(opc, reg)           \
+__ opc(xmm_result0, reg);         \
+__ opc(xmm_result1, reg);         \
+__ opc(xmm_result2, reg);         \
+__ opc(xmm_result3, reg);         \
 
-#define DoOne(opc, reg)         \
-  do {                        \
-    __ opc(xmm_result0, reg); \
-  } while (0)
+#define DoOne(opc, reg)           \
+__ opc(xmm_result0, reg);        \
 
   __ enter();
 #ifdef _WIN64
@@ -1774,7 +1787,24 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_multiBlock_Pa
 #undef DoOne
 }
 
-address StubGenerator::generate_electronicCodeBook_decryptAESCrypt_multiBlock_Parallel() {
+// This is a version of ECB/AES Decrypt which does 4 blocks in a loop at a time
+// to hide instruction latency
+//
+// Arguments:
+//
+// Inputs:
+//   c_rarg0   - source byte array address
+//   c_rarg1   - destination byte array address
+//   c_rarg2   - sessionKd (key) in little endian int array
+//   Linux
+//     c_rarg3   - input length (must be multiple of blocksize 16)
+//   Windows
+//     rbp + 6 * wordSize - input length
+//
+// Output:
+//   rax       - input length
+//
+address StubGenerator::generate_electronicCodeBook_decryptAESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
@@ -1813,18 +1843,14 @@ address StubGenerator::generate_electronicCodeBook_decryptAESCrypt_multiBlock_Pa
 #undef DoOne
 #endif
 
-#define DoFour(opc, reg)        \
-  do {                        \
-    __ opc(xmm_result0, reg); \
-    __ opc(xmm_result1, reg); \
-    __ opc(xmm_result2, reg); \
-    __ opc(xmm_result3, reg); \
-  } while (0)
+#define DoFour(opc, reg)           \
+__ opc(xmm_result0, reg);         \
+__ opc(xmm_result1, reg);         \
+__ opc(xmm_result2, reg);         \
+__ opc(xmm_result3, reg);         \
 
-#define DoOne(opc, reg)         \
-  do {                        \
-    __ opc(xmm_result0, reg); \
-  } while (0)
+#define DoOne(opc, reg)           \
+__ opc(xmm_result0, reg);        \
 
   __ enter();
 #ifdef _WIN64
