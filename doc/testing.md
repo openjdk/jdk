@@ -644,7 +644,7 @@ test/jdk/sun/security/pkcs11/README.
 ### SCTP Tests
 
 The SCTP tests require the SCTP runtime library, which is often not installed
-by default in popular Linux distributions. Without this library,the SCTP tests
+by default in popular Linux distributions. Without this library, the SCTP tests
 will be skipped. If you want to enable the SCTP tests, you should install the
 SCTP library before running the tests.
 
