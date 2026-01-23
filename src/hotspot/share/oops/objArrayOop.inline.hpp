@@ -29,6 +29,7 @@
 
 #include "oops/access.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 
@@ -49,6 +50,15 @@ inline void objArrayOopDesc::obj_at_put(int index, oop value) {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
   ptrdiff_t offset = UseCompressedOops ? obj_at_offset<narrowOop>(index) : obj_at_offset<oop>(index);
   HeapAccess<IS_ARRAY>::oop_store_at(as_oop(), offset, value);
+}
+
+template <typename OopClosureType>
+void objArrayOopDesc::oop_iterate_elements_range(OopClosureType* blk, int start, int end) {
+  if (UseCompressedOops) {
+    ((ObjArrayKlass*)klass())->oop_oop_iterate_elements_range<narrowOop>(this, blk, start, end);
+  } else {
+    ((ObjArrayKlass*)klass())->oop_oop_iterate_elements_range<oop>(this, blk, start, end);
+  }
 }
 
 #endif // SHARE_OOPS_OBJARRAYOOP_INLINE_HPP

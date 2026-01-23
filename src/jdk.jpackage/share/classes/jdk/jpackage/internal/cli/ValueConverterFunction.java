@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.internal.cli;
 
+@FunctionalInterface
+interface ValueConverterFunction<T, U> {
 
-#include "Utilities.h"
-// Platform.java includes
-#include "com_sun_media_sound_Platform.h"
-
-/*
- * Declare library specific JNI_Onload entry if static build
- */
-DEF_STATIC_JNI_OnLoad
-
-/*
- * Class:     com_sun_media_sound_Platform
- * Method:    nIsBigEndian
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_sun_media_sound_Platform_nIsBigEndian(JNIEnv *env, jclass clss) {
-    return UTIL_IsBigEndianPlatform();
+    /**
+     * Converts value of one type into another.
+     *
+     * @param value the value to convert
+     * @return the converted value
+     * @throws IllegalArgumentException if the given value can not be converted to
+     *                                  an object of type {@link U}
+     * @throws Exception                if internal converter error occurs
+     */
+    U convert(T value) throws Exception, IllegalArgumentException;
 }

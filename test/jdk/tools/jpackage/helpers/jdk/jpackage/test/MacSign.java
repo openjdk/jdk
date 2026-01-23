@@ -61,6 +61,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.naming.ldap.LdapName;
@@ -1130,6 +1131,18 @@ public final class MacSign {
                 }
             }
             return certMap;
+        }
+
+        public Function<CertificateRequest, X509Certificate> asCertificateResolver() {
+            return certRequest -> {
+                if (!spec.certificateRequests().contains(certRequest)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Certificate request %s not found in [%s] keychain",
+                            certRequest, name()));
+                } else {
+                    return Objects.requireNonNull(mapCertificateRequests().get(certRequest));
+                }
+            };
         }
 
         private final KeychainWithCertsSpec spec;

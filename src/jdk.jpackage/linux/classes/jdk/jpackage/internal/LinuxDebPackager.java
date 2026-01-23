@@ -147,8 +147,6 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
         Path debFile = outputPackageFile();
 
-        Log.verbose(I18N.format("message.outputting-to-location", debFile.toAbsolutePath()));
-
         List<String> cmdline = new ArrayList<>();
         Stream.of(sysEnv.fakeroot(), sysEnv.dpkgdeb()).map(Path::toString).forEach(cmdline::add);
         if (Log.isVerbose()) {
@@ -159,8 +157,6 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         // run dpkg
         Executor.of(cmdline).retryOnKnownErrorMessage(
                 "semop(1): encountered an error: Invalid argument").execute();
-
-        Log.verbose(I18N.format("message.output-to-location", debFile.toAbsolutePath()));
     }
 
     @Override
