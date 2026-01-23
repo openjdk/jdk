@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,8 @@ public final class VarHandleGuardMethodGenerator {
                         }
                     }""";
 
-    // The void bypass is necessary if a sigpoly signature (name + type) is shared by multiple handle instances
+    // The void bypass is necessary if a (name + return-dropping type) combination has multiple call sites, each
+    // having its own constant VarHandle. See VarHandle$AccessDescriptor for the mechanism.
     static final String GUARD_METHOD_TEMPLATE_V =
             """
                     @ForceInline
