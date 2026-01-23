@@ -47,7 +47,7 @@ public class LargeMenuTextArrowIconPosition {
         A frame will be shown with a label.
         Right click on the label.
 
-        Check the arrow icon at the end of 
+        Check the arrow icon at the end of
         "Really long Menu-Text" text.
         If it overlaps with the menu text,
         press Fail else press Pass.""";
