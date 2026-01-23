@@ -93,6 +93,7 @@ class VTransformPhiVectorNode;
 class VTransformMemVectorNode;
 class VTransformLoadVectorNode;
 class VTransformStoreVectorNode;
+class VTransformCastVectorNode;
 
 // Result from VTransformNode::apply
 class VTransformApplyResult {
@@ -587,6 +588,7 @@ public:
   virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
   virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
   virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
+  virtual VTransformCastVectorNode* isa_CastVector() { return nullptr; }
 
   virtual bool is_load_in_loop() const { return false; }
   virtual bool is_load_or_store_in_loop() const { return false; }
@@ -986,6 +988,7 @@ public:
   // req = 2 -> [ctrl, input]
   VTransformCastVectorNode(VTransform& vtransform, int vlen, BasicType from_bt, BasicType to_bt) : VTransformNode(vtransform, 2),
     _vlen(vlen), _from_bt(from_bt), _to_bt(to_bt) {}
+  virtual VTransformCastVectorNode* isa_CastVector() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "CastVector"; };)

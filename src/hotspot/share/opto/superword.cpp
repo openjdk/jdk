@@ -2312,18 +2312,11 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def, cons
   }
 
   // Subword cast: Element sizes differ, but the platform supports a cast to change the def shape to the use shape.
-  if (is_supported_subword_cast(def_bt, use_bt, pack_size)) {
+  if (VectorCastNode::is_supported_subword_cast(def_bt, use_bt, pack_size)) {
     return true;
   }
 
   return false;
-}
-
-bool SuperWord::is_supported_subword_cast(BasicType def_bt, BasicType use_bt, const uint pack_size) {
-  assert(def_bt != use_bt, "use and def types must be different");
-
-  // Opcode is only required to disambiguate half float, so we pass -1 as it can't be encountered here.
-  return (is_subword_type(def_bt) || is_subword_type(use_bt)) && VectorCastNode::implemented(-1, pack_size, def_bt, use_bt);
 }
 
 // Return nullptr if success, else failure message

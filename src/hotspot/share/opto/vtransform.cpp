@@ -1310,8 +1310,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       return false; // not compatible
     }
 
-    VTransformVectorNode* vector_input = current_red->in_req(2)->isa_Vector();
-    if (vector_input == nullptr) {
+    if (current_red->in_req(2)->isa_Vector() == nullptr && current_red->in_req(2)->isa_CastVector() == nullptr) {
       assert(false, "reduction has a bad vector input");
       return false;
     }

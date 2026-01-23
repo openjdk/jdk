@@ -73,7 +73,8 @@ public class TestSubwordTruncation {
     // Shorts
 
     @Test
-    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortLeadingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -98,7 +99,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortTrailingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -123,7 +125,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortReverse(short[] in) {
         short[] res = new short[SIZE];
@@ -148,7 +151,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortBitCount(short[] in) {
         short[] res = new short[SIZE];
@@ -277,7 +281,8 @@ public class TestSubwordTruncation {
     // Bytes
 
     @Test
-    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteLeadingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -302,7 +307,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteTrailingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -327,7 +333,8 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteReverse(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -352,7 +359,7 @@ public class TestSubwordTruncation {
     }
 
     @Test
-    @IR(applyIfCPUFeature = { "avx2", "true" }, counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteReverseBytesS(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -403,7 +410,8 @@ public class TestSubwordTruncation {
 
 
     @Test
-    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteBitCount(byte[] in) {
         byte[] res = new byte[SIZE];

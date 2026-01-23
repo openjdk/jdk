@@ -1533,6 +1533,13 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
   return false;
 }
 
+bool VectorCastNode::is_supported_subword_cast(BasicType def_bt, BasicType use_bt, const uint pack_size) {
+  assert(def_bt != use_bt, "use and def types must be different");
+
+  // Opcode is only required to disambiguate half float, so we pass -1 as it can't be encountered here.
+  return (is_subword_type(def_bt) || is_subword_type(use_bt)) && VectorCastNode::implemented(-1, pack_size, def_bt, use_bt);
+}
+
 Node* VectorCastNode::Identity(PhaseGVN* phase) {
   if (!in(1)->is_top()) {
     BasicType  in_bt = in(1)->bottom_type()->is_vect()->element_basic_type();
