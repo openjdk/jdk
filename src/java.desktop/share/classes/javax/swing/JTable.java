@@ -3204,6 +3204,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             if (columnModel.getColumn(i).getPreferredWidth() != 75
                     && columnModel.getColumn(i).getWidth() == 75) {
                 prefWidthSet = true;
+                break;
             }
         }
         if (resizingColumn == null || prefWidthSet) {
