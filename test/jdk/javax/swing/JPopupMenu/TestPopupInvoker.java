@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4938801
+ * @bug 4938801 8376169
  * @key headful
  * @summary Verifies popup is removed when the component is removed
  * @run main TestPopupInvoker
