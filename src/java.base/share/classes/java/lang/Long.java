@@ -310,13 +310,13 @@ public final class Long extends Number
     public static String toHexString(long i) {
         int mag = Long.SIZE - Long.numberOfLeadingZeros(i);
         int len = Math.max(((mag + 3) >> 2), 1);
-        long x = HexDigits.hex8(i);
+        long x = HexDigits.hex8Be((int)i);
         if (COMPACT_STRINGS) {
             byte[] chars = new byte[len];
             if (len > 8) {
                 len -= 8;
                 Unsafe.getUnsafe().putLongUnaligned(chars, Unsafe.ARRAY_BYTE_BASE_OFFSET + len, x, true);
-                x = HexDigits.hex8(i >>> 32);
+                x = HexDigits.hex8Be((int)(i >>> 32));
             }
             do {
                 chars[--len] = (byte) x;
@@ -332,7 +332,7 @@ public final class Long extends Number
                     StringUTF16.putChar(chars, --len, b);
                     x >>>= 8;
                 }
-                x = HexDigits.hex8(i >>> 32);
+                x = HexDigits.hex8Be((int)(i >>> 32));
             }
             do {
                 StringUTF16.putChar(chars, --len, (byte) x);

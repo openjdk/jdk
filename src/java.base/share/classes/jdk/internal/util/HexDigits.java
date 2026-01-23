@@ -110,77 +110,19 @@ public final class HexDigits {
                 : v;
     }
 
-    /**
-     * Efficiently converts 8 hexadecimal digits to their ASCII representation using SIMD-style vector operations.
-     * This method processes multiple digits in parallel by treating a long value as eight 8-bit lanes,
-     * achieving significantly better performance compared to traditional loop-based conversion.
-     *
-     * <p>The conversion algorithm works as follows:
-     * <pre>
-     * 1. Input expansion: Each 4-bit hex digit is expanded to 8 bits
-     * 2. Vector processing:
-     *    - Add 6 to each digit: triggers carry flag for a-f digits
-     *    - Mask with 0x10 pattern to isolate carry flags
-     *    - Calculate ASCII adjustment: (carry << 1) + (carry >> 1) - (carry >> 4)
-     *    - Add ASCII '0' base (0x30) and original value
-     * 3. Byte order adjustment for final output
-     * </pre>
-     *
-     * <p>Performance characteristics:
-     * <ul>
-     *   <li>Processes 8 digits in parallel using vector operations
-     *   <li>Avoids branching and loops completely
-     *   <li>Uses only integer arithmetic and bit operations
-     *   <li>Constant time execution regardless of input values
-     * </ul>
-     *
-     * <p>ASCII conversion mapping:
-     * <ul>
-     *   <li>Digits 0-9 → ASCII '0'-'9' (0x30-0x39)
-     *   <li>Digits a-f → ASCII 'a'-'f' (0x61-0x66)
-     * </ul>
-     *
-     * @param input A long containing 8 hex digits (each digit must be 0-15)
-     * @return A long containing 8 ASCII bytes representing the hex digits
-     *
-     * @implNote The implementation leverages CPU vector processing capabilities through
-     *           long integer operations. The algorithm is based on the observation that
-     *           ASCII hex digits have a specific pattern that can be computed efficiently
-     *           using carry flag manipulation.
-     *
-     * @example
-     * <pre>
-     * Input:  0xABCDEF01
-     * Output: 3130666564636261 ('1','0','f','e','d','c','b','a' in ASCII)
-     * </pre>
-     *
-     */
-    public static long hex8(long i) {
+    /// Prints an unsigned 4-byte number into 8 hexadecimal digits in an ASCII character buffer.
+    /// The buffer is represented as a big-endian 8 byte integer.
+    ///
+    /// Input:  0xA__B__C__D__E__F__0__1
+    /// Output: 0x61_62_63_64_65_66_30_31
+    public static long hex8Be(int i) {
         // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0xA0A0B0B0C0C0D0D
-        i = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
+        long x = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
 
-        /*
-         * This method efficiently converts 8 hexadecimal digits simultaneously using vector operations
-         * The algorithm works as follows:
-         *
-         * For input values 0-15:
-         * - For digits 0-9: converts to ASCII '0'-'9' (0x30-0x39)
-         * - For digits 10-15: converts to ASCII 'a'-'f' (0x61-0x66)
-         *
-         * The conversion process:
-         * 1. Add 6 to each 4-bit group: i + 0x0606_0606_0606_0606L
-         * 2. Mask to get the adjustment flags: & 0x1010_1010_1010_1010L
-         * 3. Calculate the offset: (m << 1) + (m >> 1) - (m >> 4)
-         *    - For 0-9: offset = 0
-         *    - For a-f: offset = 39 (to bridge the gap between '9' and 'a' in ASCII)
-         * 4. Add ASCII '0' base (0x30) and the original value
-         * 5. Reverse byte order for correct positioning
-         */
-        long m = (i + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
+        long m = (x + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
 
-        // Calculate final ASCII values and reverse bytes for proper ordering
         return ((m << 1) + (m >> 1) - (m >> 4))
                 + 0x3030_3030_3030_3030L // Add ASCII '0' base to all digits
-                + i;                     // Add original values
+                + x;                     // Add original values
     }
 }
