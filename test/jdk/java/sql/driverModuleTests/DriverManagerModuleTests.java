@@ -26,11 +26,7 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -48,22 +44,6 @@ public class DriverManagerModuleTests {
     private final String LUCKYDOGDRIVER_URL = "jdbc:tennis:myDB";
     private static final String STUBDRIVERURL = "jdbc:stub:myDB";
     private static final String CONNECTION_CLASS_NAME = "com.luckydogtennis.StubConnection";
-
-    @BeforeAll
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterAll
-    public static void tearDownClass() throws Exception {
-    }
-
-    @BeforeEach
-    public void setUpMethod() throws Exception {
-    }
-
-    @AfterEach
-    public void tearDownMethod() throws Exception {
-    }
 
     /**
      * Validate JDBC drivers as modules will be accessible. One driver will be
