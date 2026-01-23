@@ -310,7 +310,7 @@ public final class Long extends Number
     public static String toHexString(long i) {
         int mag = Long.SIZE - Long.numberOfLeadingZeros(i);
         int len = Math.max(((mag + 3) >> 2), 1);
-        long x = HexDigits.hex8Be((int)i);
+        long x = HexDigits.hex8Be((int) i);
         if (COMPACT_STRINGS) {
             byte[] chars = new byte[len];
             if (len > 8) {
