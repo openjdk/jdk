@@ -2523,7 +2523,7 @@ public class Exhaustiveness extends TestRunner {
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
                              "-XDshould-stop.at=FLOW",
-                             "-XDexhaustivityTimeout=0",
+                             "-XDexhaustivityMaxBaseChecks=0",
                              stopAtFlow ? "-XDshould-stop.ifNoError=FLOW"
                                         : "-XDnoop")
                     .outdir(classes)

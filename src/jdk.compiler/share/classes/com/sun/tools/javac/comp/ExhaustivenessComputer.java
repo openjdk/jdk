@@ -61,7 +61,7 @@ import static com.sun.tools.javac.code.Flags.RECORD;
  *  deletion without notice.</b>
  */
 public class ExhaustivenessComputer {
-    private static final long DEFAULT_TIMEOUT = 5000; //5s
+    private static final long DEFAULT_MAX_BASE_CHECKS = 4_000_000;
 
     protected static final Context.Key<ExhaustivenessComputer> exhaustivenessKey = new Context.Key<>();
 
@@ -70,8 +70,8 @@ public class ExhaustivenessComputer {
     private final Check chk;
     private final Infer infer;
     private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new HashMap<>();
-    private final long missingExhaustivenessTimeout;
-    private long startTime = -1;
+    private final long maxBaseChecks;
+    private long baseChecks = -1;
 
     public static ExhaustivenessComputer instance(Context context) {
         ExhaustivenessComputer instance = context.get(exhaustivenessKey);
@@ -88,18 +88,18 @@ public class ExhaustivenessComputer {
         chk = Check.instance(context);
         infer = Infer.instance(context);
         Options options = Options.instance(context);
-        String timeout = options.get("exhaustivityTimeout");
-        long computedTimeout = DEFAULT_TIMEOUT;
+        String baseChecks = options.get("exhaustivityMaxBaseChecks");
+        long computedMaxBaseChecks = DEFAULT_MAX_BASE_CHECKS;
 
-        if (timeout != null) {
+        if (baseChecks != null) {
             try {
-                computedTimeout = Long.parseLong(timeout);
+                computedMaxBaseChecks = Long.parseLong(baseChecks);
             } catch (NumberFormatException _) {
                 //ignore invalid values and use the default timeout
             }
         }
 
-        missingExhaustivenessTimeout = computedTimeout;
+        maxBaseChecks = computedMaxBaseChecks;
     }
 
     public ExhaustivenessResult exhausts(JCExpression selector, List<JCCase> cases) {
@@ -458,8 +458,6 @@ public class ExhaustivenessComputer {
                          .filter(pd -> pd.nested.length == nestedPatternsCount)
                          .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0));
                 for (var candidates : groupEquivalenceCandidates.values()) {
-                    checkTimeout();
-
                     var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
                     for (int firstCandidate = 0;
@@ -691,9 +689,9 @@ public class ExhaustivenessComputer {
     }
 
     protected void checkTimeout() {
-        if (startTime != (-1) &&
-            (System.currentTimeMillis() - startTime) > missingExhaustivenessTimeout) {
-            throw new TimeoutException(null);
+        if (baseChecks != (-1) &&
+            ++baseChecks > maxBaseChecks) {
+            throw new TooManyChecksException(null);
         }
     }
 
@@ -831,21 +829,21 @@ public class ExhaustivenessComputer {
     //computation of missing patterns:
     protected Set<PatternDescription> computeMissingPatternDescriptions(Type selectorType,
                                                                         Set<PatternDescription> incompletePatterns) {
-        if (missingExhaustivenessTimeout == 0) {
+        if (maxBaseChecks == 0) {
             return Set.of();
         }
         try {
-            startTime = System.currentTimeMillis();
+            baseChecks = 0;
             PatternDescription defaultPattern = new BindingPattern(selectorType);
             return expandMissingPatternDescriptions(selectorType,
                                                     selectorType,
                                                     defaultPattern,
                                                     incompletePatterns,
                                                     Set.of(defaultPattern));
-        } catch (TimeoutException ex) {
+        } catch (TooManyChecksException ex) {
             return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
         } finally {
-            startTime = -1;
+            baseChecks = -1;
         }
     }
 
@@ -858,9 +856,9 @@ public class ExhaustivenessComputer {
             return doExpandMissingPatternDescriptions(selectorType, targetType,
                                                       toExpand, basePatterns,
                                                       inMissingPatterns);
-        } catch (TimeoutException ex) {
+        } catch (TooManyChecksException ex) {
             if (ex.missingPatterns == null) {
-                ex = new TimeoutException(inMissingPatterns);
+                ex = new TooManyChecksException(inMissingPatterns);
             }
             throw ex;
         }
@@ -1233,11 +1231,11 @@ public class ExhaustivenessComputer {
         LOOSE;
     }
 
-    protected static class TimeoutException extends RuntimeException {
+    protected static class TooManyChecksException extends RuntimeException {
         private static final long serialVersionUID = 0L;
         private transient final Set<PatternDescription> missingPatterns;
 
-        public TimeoutException(Set<PatternDescription> missingPatterns) {
+        public TooManyChecksException(Set<PatternDescription> missingPatterns) {
             super(null, null, false, false);
             this.missingPatterns = missingPatterns;
         }

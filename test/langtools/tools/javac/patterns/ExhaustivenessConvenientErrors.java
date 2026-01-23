@@ -564,7 +564,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                      "--class-path", libClasses.toString(),
                      "-XDshould-stop.at=FLOW",
                      "-XDshould-stop.ifNoError=FLOW",
-                     "-XDexhaustivityTimeout=" + Long.MAX_VALUE) //never timeout
+                     "-XDexhaustivityMaxBaseChecks=" + Long.MAX_VALUE) //never give up
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .diagnosticListener(d -> {
