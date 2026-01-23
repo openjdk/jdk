@@ -96,8 +96,22 @@ void WorkerThreads::initialize_workers() {
   }
 }
 
+bool WorkerThreads::allow_inject_creation_failure() const {
+  if (!is_init_completed()) {
+    // Never allow creation failures during VM init
+    return false;
+  }
+
+  if (_created_workers == 0) {
+    // Never allow creation failures of the first worker, it will cause the VM to exit
+    return false;
+  }
+
+  return true;
+}
+
 WorkerThread* WorkerThreads::create_worker(uint name_suffix) {
-  if (is_init_completed() && InjectGCWorkerCreationFailure) {
+  if (InjectGCWorkerCreationFailure && allow_inject_creation_failure()) {
     return nullptr;
   }
 
