@@ -86,10 +86,10 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
 
   // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
-  dfs.log("DFS: scanning from edge");
+  log_debug(jfr, system, dfs)("DFS: scanning from edge");
   start_edge->pointee()->oop_iterate(&dfs);
   dfs.drain_probe_stack();
-  dfs.log("DFS: done");
+  log_debug(jfr, system, dfs)("DFS: done");
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
@@ -103,17 +103,17 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   DFSClosure dfs(edge_store, mark_bits, nullptr);
   dfs._max_depth = 1;
   RootSetClosure<DFSClosure> rs(&dfs);
-  dfs.log("DFS: scanning roots...");
+  log_debug(jfr, system, dfs)("DFS: scanning roots...");
   rs.process();
   dfs.drain_probe_stack();
 
   // Depth-first search
   dfs._max_depth = max_dfs_depth;
   dfs._ignore_root_set = true;
-  dfs.log("DFS: scanning in depth ...");
+  log_debug(jfr, system, dfs)("DFS: scanning in depth ...");
   rs.process();
   dfs.drain_probe_stack();
-  dfs.log("DFS: done");
+  log_debug(jfr, system, dfs)("DFS: done");
 
 }
 
@@ -161,7 +161,7 @@ DFSClosure::~DFSClosure() {
   if (!GranularTimer::is_finished()) {
     assert(_probe_stack.is_empty(), "We should have drained the probe stack?");
   }
-  log("DFS: " UINT64_FORMAT " objects processed, " UINT64_FORMAT " sample objects found",
+  log_info(jfr, system, dfs)("DFS: " UINT64_FORMAT " objects processed, " UINT64_FORMAT " sample objects found",
       _num_objects_processed, _num_sampled_objects_found);
 }
 
@@ -179,7 +179,7 @@ void DFSClosure::probe_stack_push(UnifiedOopRef ref, oop pointee, size_t depth) 
   }
 
   if (_probe_stack.is_full()) {
-    log("Probe stack full (graph depth: %zu, probe stack size: %zu), aborting graph edge",
+    log_debug(jfr, system, dfs)("Probe stack full (graph depth: %zu, probe stack size: %zu)",
         _current_depth, _probe_stack.size());
     return;
   }
@@ -195,7 +195,7 @@ void DFSClosure::probe_stack_push_followup_chunk(UnifiedOopRef ref, oop pointee,
   assert(chunkindex > 0, "invariant");
 
   if (_probe_stack.is_full()) {
-    log("Probe stack full (graph depth: %zu, probe stack size: %zu), aborting graph edge",
+    log_debug(jfr, system, dfs)("Probe stack full (graph depth: %zu, probe stack size: %zu)",
         _current_depth, _probe_stack.size());
     return;
   }
@@ -248,7 +248,7 @@ void DFSClosure::handle_oop() {
 
   // trace children if needed
   if (_current_depth == _max_depth - 1) {
-    log("max graph depth reached (graph depth: %zu, probe stack size: %zu), aborting graph edge",
+    log_debug(jfr, system, dfs)("max depth reached (%zu, probe stack size: %zu)",
         _current_depth, _probe_stack.size());
     return; // stop following this chain
   }
@@ -283,7 +283,7 @@ void DFSClosure::handle_objarrayoop() {
   // trace children if needed
 
   if (_current_depth == _max_depth - 1) {
-    log("max graph depth reached (graph depth: %zu, probe stack size: %zu), aborting graph edge",
+    log_debug(jfr, system, dfs)("max depth reached (%zu, probe stack size: %zu)",
         _current_depth, _probe_stack.size());
     return; // stop following this chain
   }
@@ -337,7 +337,7 @@ void DFSClosure::add_chain() {
   _num_sampled_objects_found++;
 
 #ifdef ASSERT
-  log("Sample object found (" UINT64_FORMAT " so far)", _num_sampled_objects_found);
+  log_trace(jfr, system, dfs)("Sample object found (" UINT64_FORMAT " so far)", _num_sampled_objects_found);
   log_reference_stack();
 #endif
 

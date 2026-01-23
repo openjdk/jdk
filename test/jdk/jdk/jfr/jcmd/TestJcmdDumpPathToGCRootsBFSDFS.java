@@ -80,9 +80,8 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
     // DFS-only mode should work well, and so should BFS-only mode.
 
     // The minimum size of the edge queue in BFS (keep in sync with hotspot)
+    // see edge_queue_memory_reservation() in pathToGCRootsOperation.cpp
     private final static int minimumEdgeQueueSizeCap = 32 * 1024 * 1024;
-    // The size of the Edge structure (keep in sync with hotspot)
-    private final static int edgeSizeBytes = 16;
 
     public static List<Object[]> leak;
 

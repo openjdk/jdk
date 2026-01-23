@@ -39,7 +39,6 @@ class EdgeQueue;
 // Class responsible for iterating the heap depth-first
 class DFSClosure : public BasicOopIterateClosure {
  private:
-  // max dfs depth should not exceed size of stack
   static const size_t max_dfs_depth = 3200;
   static UnifiedOopRef _reference_stack[max_dfs_depth];
 

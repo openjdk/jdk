@@ -47,7 +47,7 @@ import jdk.jfr.Configuration;
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm -Xlog:jfr+system+parser=debug -XX:TLABSize=2k jdk.jfr.jvm.TestWaste
+ * @run main/othervm -Xmx256m -Xlog:jfr+system+parser=debug -XX:TLABSize=2k jdk.jfr.jvm.TestWaste
  */
 public class TestWaste {
     static List<Object> list = new LinkedList<>();
@@ -55,6 +55,7 @@ public class TestWaste {
 
     public static void main(String... args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
+        WhiteBox.setSkipBFS(true);
         Configuration c = Configuration.getConfiguration("profile");
         Path file = Path.of("recording.jfr");
         Path scrubbed = Path.of("scrubbed.jfr");

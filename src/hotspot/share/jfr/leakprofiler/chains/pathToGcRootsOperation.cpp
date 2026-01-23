@@ -47,7 +47,7 @@
 
 PathToGcRootsOperation::PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all, bool skip_bfs) :
   _sampler(sampler),_edge_store(edge_store), _cutoff_ticks(cutoff), _emit_all(emit_all),
-  _skip_bfs(UseNewCode/*skip_bfs*/) {}
+  _skip_bfs(skip_bfs) {}
 
 /* The EdgeQueue is backed by directly managed virtual memory.
  * We will attempt to dimension an initial reservation
