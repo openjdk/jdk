@@ -746,8 +746,8 @@ const Type* CmpINode::Value(PhaseGVN* phase) const {
 // Simplify a CmpU (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type* CmpUNode::sub(const Type* t1, const Type* t2) const {
-  const TypeInt *r0 = t1->is_int();
-  const TypeInt *r1 = t2->is_int();
+  const TypeInt* r0 = t1->is_int();
+  const TypeInt* r1 = t2->is_int();
 
   // Check for special case in Hashtable::get - the hash index is
   // mod'ed to the table size so the following range check is useless.
