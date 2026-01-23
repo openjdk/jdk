@@ -704,14 +704,8 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
     // This means the access is dead
     return phase->C->top();
   } else if (adr_type->base() == TypePtr::AnyPtr) {
-    // Compile::get_alias_index will complain with these accesses
-    if (adr_type->ptr() == TypePtr::Null) {
-      // Access to null cannot happen, this means the access must be in a dead path
-      return phase->C->top();
-    } else {
-      // Give up on a very wide access
-      return nullptr;
-    }
+    // Give up on a very wide access
+    return nullptr;
   }
 
   int alias_idx = phase->C->get_alias_index(adr_type);
