@@ -123,11 +123,11 @@ class Arguments {
     }
 
     public static void usage() {
-        System.out.println("Usage: jcmd <pid | main class> [-t] <command ...|PerfCounter.print|-f file>");
+        System.out.println("Usage: jcmd <pid | main class> <[-t] command ...|PerfCounter.print|-f file>");
         System.out.println("   or: jcmd -l                                                    ");
         System.out.println("   or: jcmd <-h | --help>                                         ");
         System.out.println("                                                                  ");
-        System.out.println("  -t flag ensures the dignostic command begins with a timestamp   ");
+        System.out.println("  -t  Show timestamp before running the command.                  ");
         System.out.println("                                                                  ");
         System.out.println("  command must be a valid jcmd command for the selected JVM.      ");
         System.out.println("  Use the command \"help\" to see which commands are available.   ");

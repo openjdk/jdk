@@ -49,7 +49,7 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
     Java processes with the specified name of the main class.
 
 `-t`
-:   When used, the diagnostic commands output starts with a timestamp.
+:   Show timestamp before running the command.
 
 *command*
 :   The `command` must be a valid `jcmd` command for the selected JVM. The list
