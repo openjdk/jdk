@@ -830,7 +830,7 @@ public class TestVM {
      * Once all framework tests are collected, they are run in this method.
      */
     private void runTests() {
-        TreeMap<Long, String> durations = (PRINT_TIMES || VERBOSE) ? new TreeMap<>() : null;
+        TreeMap<Long, String> durations = PRINT_TIMES ? new TreeMap<>() : null;
         long startTime = System.nanoTime();
         List<AbstractTest> testList;
         boolean testFilterPresent = testFilterPresent();
