@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,9 @@ final class LinuxFromOptions {
         return LinuxApplication.create(appBuilder.create());
     }
 
-    static LinuxRpmPackage createLinuxRpmPackage(Options options) {
+    static LinuxRpmPackage createLinuxRpmPackage(Options options, LinuxRpmSystemEnvironment sysEnv) {
 
-        final var superPkgBuilder = createLinuxPackageBuilder(options, LINUX_RPM);
+        final var superPkgBuilder = createLinuxPackageBuilder(options, sysEnv, LINUX_RPM);
 
         final var pkgBuilder = new LinuxRpmPackageBuilder(superPkgBuilder);
 
@@ -81,9 +81,9 @@ final class LinuxFromOptions {
         return pkgBuilder.create();
     }
 
-    static LinuxDebPackage createLinuxDebPackage(Options options) {
+    static LinuxDebPackage createLinuxDebPackage(Options options, LinuxDebSystemEnvironment sysEnv) {
 
-        final var superPkgBuilder = createLinuxPackageBuilder(options, LINUX_DEB);
+        final var superPkgBuilder = createLinuxPackageBuilder(options, sysEnv, LINUX_DEB);
 
         final var pkgBuilder = new LinuxDebPackageBuilder(superPkgBuilder);
 
@@ -99,13 +99,15 @@ final class LinuxFromOptions {
         return pkg;
     }
 
-    private static LinuxPackageBuilder createLinuxPackageBuilder(Options options, StandardPackageType type) {
+    private static LinuxPackageBuilder createLinuxPackageBuilder(Options options, LinuxSystemEnvironment sysEnv, StandardPackageType type) {
 
         final var app = createLinuxApplication(options);
 
         final var superPkgBuilder = createPackageBuilder(options, app, type);
 
         final var pkgBuilder = new LinuxPackageBuilder(superPkgBuilder);
+
+        pkgBuilder.arch(sysEnv.packageArch());
 
         LINUX_PACKAGE_DEPENDENCIES.ifPresentIn(options, pkgBuilder::additionalDependencies);
         LINUX_APP_CATEGORY.ifPresentIn(options, pkgBuilder::category);

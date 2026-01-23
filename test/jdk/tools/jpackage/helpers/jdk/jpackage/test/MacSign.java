@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
@@ -60,6 +61,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.naming.ldap.LdapName;
@@ -526,7 +528,7 @@ public final class MacSign {
 
     private record CertificateStats(List<ResolvedCertificateRequest> allResolvedCertificateRequests,
             List<CertificateRequest> knownCertificateRequests,
-            Map<X509Certificate, Throwable> unmappedCertificates) {
+            Map<X509Certificate, Exception> unmappedCertificates) {
 
         static CertificateStats get(KeychainWithCertsSpec spec) {
             return CACHE.computeIfAbsent(spec, CertificateStats::create);
@@ -560,7 +562,7 @@ public final class MacSign {
         private static CertificateStats create(KeychainWithCertsSpec spec) {
             final var allCertificates = spec.keychain().findCertificates();
             final List<ResolvedCertificateRequest> allResolvedCertificateRequests = new ArrayList<>();
-            final Map<X509Certificate, Throwable> unmappedCertificates = new HashMap<>();
+            final Map<X509Certificate, Exception> unmappedCertificates = new HashMap<>();
 
             withTempDirectory(workDir -> {
                 for (final var cert : allCertificates) {
@@ -568,13 +570,7 @@ public final class MacSign {
                     try {
                         resolvedCertificateRequest = new ResolvedCertificateRequest(cert);
                     } catch (RuntimeException ex) {
-                        final Throwable t;
-                        if (ex instanceof ExceptionBox) {
-                            t = ex.getCause();
-                        } else {
-                            t = ex;
-                        }
-                        unmappedCertificates.put(cert, t);
+                        unmappedCertificates.put(cert, ExceptionBox.unbox(ex));
                         continue;
                     }
 
@@ -635,13 +631,13 @@ public final class MacSign {
         SHA1(20, () -> MessageDigest.getInstance("SHA-1")),
         SHA256(32, () -> MessageDigest.getInstance("SHA-256"));
 
-        DigestAlgorithm(int hashLength, ThrowingSupplier<MessageDigest> createDigest) {
+        DigestAlgorithm(int hashLength, ThrowingSupplier<MessageDigest, NoSuchAlgorithmException> createDigest) {
             this.hashLength = hashLength;
             this.createDigest = createDigest;
         }
 
         final int hashLength;
-        final ThrowingSupplier<MessageDigest> createDigest;
+        final ThrowingSupplier<MessageDigest, NoSuchAlgorithmException> createDigest;
     }
 
     public record CertificateHash(byte[] value, DigestAlgorithm alg) {
@@ -1137,6 +1133,18 @@ public final class MacSign {
             return certMap;
         }
 
+        public Function<CertificateRequest, X509Certificate> asCertificateResolver() {
+            return certRequest -> {
+                if (!spec.certificateRequests().contains(certRequest)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Certificate request %s not found in [%s] keychain",
+                            certRequest, name()));
+                } else {
+                    return Objects.requireNonNull(mapCertificateRequests().get(certRequest));
+                }
+            };
+        }
+
         private final KeychainWithCertsSpec spec;
         private volatile Map<CertificateRequest, X509Certificate> certMap;
     }
@@ -1177,7 +1185,7 @@ public final class MacSign {
                     "-c", certFile.normalize().toString(),
                     "-k", keychain.name(),
                     "-p", resolvedCertificateRequest.installed().type().verifyPolicy()).saveOutput(!quite).executeWithoutExitCodeCheck();
-            if (result.exitCode() == 0) {
+            if (result.getExitCode() == 0) {
                 return VerifyStatus.VERIFY_OK;
             }
         }
@@ -1223,7 +1231,7 @@ public final class MacSign {
         }).map(KeychainWithCertsSpec::keychain);
     }
 
-    private static void withTempDirectory(ThrowingConsumer<Path> callback) {
+    private static void withTempDirectory(ThrowingConsumer<Path, ? extends Exception> callback) {
         try {
             final var dir = Files.createTempDirectory("jdk.jpackage.test");
             try {
