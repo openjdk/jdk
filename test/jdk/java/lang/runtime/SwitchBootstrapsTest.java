@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,5 +446,32 @@ public class SwitchBootstrapsTest {
                                    cb.return_();
                                });
                     });
+    }
+
+    public void testNullLookup() throws Throwable {
+        try {
+            MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
+            BSM_TYPE_SWITCH.invoke(null, "", switchType, Object.class);
+            fail("Didn't get the expected exception.");
+        } catch (NullPointerException ex) {
+            //OK
+        }
+        enum E {}
+        try {
+            MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
+            BSM_ENUM_SWITCH.invoke(null, "", switchType,
+                                   new Object[] {});
+            fail("Didn't get the expected exception.");
+        } catch (NullPointerException ex) {
+            //OK
+        }
+        try {
+            MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
+            BSM_ENUM_SWITCH.invoke(null, "", switchType,
+                                   new Object[] {"A"});
+            fail("Didn't get the expected exception.");
+        } catch (NullPointerException ex) {
+            //OK
+        }
     }
 }
