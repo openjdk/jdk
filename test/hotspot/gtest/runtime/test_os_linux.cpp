@@ -379,8 +379,8 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   for (int i = 0; i < 1000; i++)
     EXPECT_EQ(*iptr++, i);
 
-  EXPECT_TRUE(os::uncommit_memory(heap, size, false));
-  EXPECT_TRUE(os::release_memory(heap, size));
+  os::uncommit_memory(heap, size, false);
+  os::release_memory(heap, size);
   UseTransparentHugePages = useThp;
 }
 

@@ -1768,7 +1768,7 @@ void ShenandoahHeap::scan_roots_for_iteration(ShenandoahScanObjectStack* oop_sta
 
 void ShenandoahHeap::reclaim_aux_bitmap_for_iteration() {
   if (!_aux_bitmap_region_special) {
-    os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false, "Auxiliary marking bitmap uncommit failed");
+    os::uncommit_memory((char*)_aux_bitmap_region.start(), _aux_bitmap_region.byte_size(), false);
   }
 }
 
@@ -2618,7 +2618,7 @@ void ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   size_t len = _bitmap_bytes_per_slice;
 
   char* addr = (char*) _bitmap_region.start() + off;
-  os::uncommit_memory(addr, len, false, "Bitmap slice uncommit failed");
+  os::uncommit_memory(addr, len, false);
 }
 
 void ShenandoahHeap::forbid_uncommit() {

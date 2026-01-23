@@ -116,7 +116,7 @@ void StackOverflow::remove_stack_guard_pages() {
   size_t len = stack_guard_zone_size();
 
   if (os::must_commit_stack_guard_pages()) {
-    if (os::remove_stack_guard_pages((char *) low_addr, len, "Attempt to deallocate stack guard pages failed")) {
+    if (os::remove_stack_guard_pages((char *) low_addr, len)) {
       _stack_guard_state = stack_guard_unused;
     } else {
       log_warning(os, thread)("Attempt to deallocate stack guard pages failed ("

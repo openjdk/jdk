@@ -229,13 +229,13 @@ ReservedSpace MemoryReserver::reserve(size_t size,
                  mem_tag);
 }
 
-bool MemoryReserver::release(const ReservedSpace& reserved) {
+void MemoryReserver::release(const ReservedSpace& reserved) {
   assert(reserved.is_reserved(), "Precondition");
 
   if (reserved.special()) {
-    return os::release_memory_special(reserved.base(), reserved.size());
+    os::release_memory_special(reserved.base(), reserved.size());
   } else {
-    return os::release_memory(reserved.base(), reserved.size());
+    os::release_memory(reserved.base(), reserved.size());
   }
 }
 

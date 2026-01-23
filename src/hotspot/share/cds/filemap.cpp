@@ -1325,9 +1325,7 @@ char* FileMapInfo::map_auxiliary_region(int region_index, bool read_only) {
 
   if (VerifySharedSpaces && !r->check_region_crc(mapped_base)) {
     aot_log_error(aot)("region %d CRC error", region_index);
-    char err_msg[] = "os::unmap_memory of region 2147483647 failed";
-    os::snprintf_checked(err_msg, sizeof(err_msg), "os::unmap_memory of region %d failed", region_index);
-    os::unmap_memory(mapped_base, r->used_aligned(), err_msg);
+    os::unmap_memory(mapped_base, r->used_aligned());
     return nullptr;
   }
 

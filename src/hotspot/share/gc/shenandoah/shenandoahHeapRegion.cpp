@@ -811,7 +811,7 @@ void ShenandoahHeapRegion::do_commit() {
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->is_heap_region_special()) {
-    os::uncommit_memory((char *) bottom(), RegionSizeBytes, false, "Region uncommit failed");
+    os::uncommit_memory((char *) bottom(), RegionSizeBytes, false);
   }
   if (!heap->is_bitmap_region_special()) {
     heap->uncommit_bitmap_slice(this);
