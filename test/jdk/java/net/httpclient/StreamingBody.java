@@ -25,6 +25,7 @@
  * @test
  * @summary Exercise a streaming subscriber ( InputStream ) without holding a
  *          strong (or any ) reference to the client.
+ * @key randomness
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run junit/othervm
@@ -148,7 +149,7 @@ public class StreamingBody implements HttpServerAdapters {
         private final long gcinterval;
         private final Thread runner;
         private volatile boolean stop;
-        private final Random RANDOM = RandomFactory.getRandom();
+        private final static Random RANDOM = RandomFactory.getRandom();
 
         GCTrigger(long gcinterval) {
             this.gcinterval = Math.clamp(gcinterval, 100, Long.MAX_VALUE/2);
@@ -218,6 +219,14 @@ public class StreamingBody implements HttpServerAdapters {
                         ? newClientBuilderForH3()
                         : HttpClient.newBuilder();
                 clientCount.incrementAndGet();
+
+                // we want to relinquish the reference to the HttpClient facade
+                // as soon as possible. We're using `ofInputStream()` because
+                // the HttpResponse will be returned almost immediately, before
+                // the response is read. Similarly we use sendAsync() because
+                // this will return a CompletableFuture and not wait for the
+                // request to complete within a method called on the client
+                // facade.
                 HttpResponse<InputStream> response = builder
                         .sslContext(sslContext)
                         .proxy(NO_PROXY)
@@ -297,7 +306,7 @@ public class StreamingBody implements HttpServerAdapters {
     static final void printFailedTests() {
         out.println("\n=========================");
         try {
-            out.printf("%n%sCreated %d servers and %d clients%n",
+            out.printf("%n%sCreated %s servers and %s clients%n",
                     now(), serverCount.get(), clientCount.get());
             if (FAILURES.isEmpty()) return;
             out.println("Failed tests: ");
