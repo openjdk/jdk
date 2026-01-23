@@ -272,7 +272,6 @@ final class OptionsAnalyzer {
             } else {
                 var spec = new StandardOptionContext(os).mapOptionSpec(typeOption.spec());
                 return spec
-                        .converter().orElseThrow()
                         .convert(spec.name(), StringToken.of(((String[])obj)[0]))
                         .orElseThrow();
             }
