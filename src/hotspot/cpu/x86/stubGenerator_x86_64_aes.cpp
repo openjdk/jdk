@@ -1410,10 +1410,7 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
 //   c_rarg2   - sessionKe (key) in little endian int array
-//   Linux
-//     c_rarg3   - input length (must be multiple of blocksize 16)
-//   Windows
-//     rbp + 6 * wordSize - input length
+//   c_rarg3   - input length (must be multiple of blocksize 16)
 //
 // Output:
 //   rax       - input length
@@ -1428,12 +1425,7 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_Parallel() {
   const Register from   = c_rarg0;  // source array address
   const Register to     = c_rarg1;  // destination array address
   const Register key    = c_rarg2;  // key array address
-#ifndef _WIN64
   const Register len_reg = c_rarg3; // src len (must be multiple of blocksize 16)
-#else
-  const Address  len_mem(rbp, 6 * wordSize);
-  const Register len_reg = r11;     // pick a volatile windows register
-#endif
   const Register pos    = rax;
   const Register keylen = rbx;
 
@@ -1467,16 +1459,12 @@ __ opc(xmm_result3, reg);         \
 __ opc(xmm_result0, reg);        \
 
   __ enter();
-#ifdef _WIN64
-  __ movl(len_reg, len_mem);
-#else
   __ push(len_reg); // save original length for return value
-#endif
   __ push(rbx);
 
   __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-  __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), rbx /*rscratch*/);
+  __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), r10 /*rscratch*/);
   __ xorptr(pos, pos);
 
   __ cmpl(keylen, 44);
@@ -1773,11 +1761,7 @@ __ opc(xmm_result0, reg);        \
 
   __ BIND(L_exit);
   __ pop(rbx);
-#ifdef _WIN64
-  __ movl(rax, len_mem);
-#else
   __ pop(rax);
-#endif
   __ leave();
   __ ret(0);
 
@@ -1796,10 +1780,7 @@ __ opc(xmm_result0, reg);        \
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
 //   c_rarg2   - sessionKd (key) in little endian int array
-//   Linux
-//     c_rarg3   - input length (must be multiple of blocksize 16)
-//   Windows
-//     rbp + 6 * wordSize - input length
+//   c_rarg3   - input length (must be multiple of blocksize 16)
 //
 // Output:
 //   rax       - input length
@@ -1814,12 +1795,7 @@ address StubGenerator::generate_electronicCodeBook_decryptAESCrypt_Parallel() {
   const Register from   = c_rarg0;  // source array address
   const Register to     = c_rarg1;  // destination array address
   const Register key    = c_rarg2;  // key array address
-#ifndef _WIN64
   const Register len_reg = c_rarg3; // src len (must be multiple of blocksize 16)
-#else
-  const Address  len_mem(rbp, 6 * wordSize);
-  const Register len_reg = r11;
-#endif
   const Register pos    = rax;
   const Register keylen = rbx;
 
@@ -1853,16 +1829,12 @@ __ opc(xmm_result3, reg);         \
 __ opc(xmm_result0, reg);        \
 
   __ enter();
-#ifdef _WIN64
-  __ movl(len_reg, len_mem);
-#else
   __ push(len_reg); // save original length for return value
-#endif
   __ push(rbx);
 
   __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-  __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), rbx /*rscratch*/);
+  __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), r10 /*rscratch*/);
   __ xorptr(pos, pos);
 
   __ cmpl(keylen, 44);
@@ -2161,11 +2133,7 @@ __ opc(xmm_result0, reg);        \
 
   __ BIND(L_exit);
   __ pop(rbx);
-#ifdef _WIN64
-  __ movl(rax, len_mem);
-#else
   __ pop(rax);
-#endif
   __ leave();
   __ ret(0);
 
