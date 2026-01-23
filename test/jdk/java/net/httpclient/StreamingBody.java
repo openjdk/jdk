@@ -29,7 +29,7 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
- *       StreamingBody
+ *       ${test.main.class}
  */
 
 import java.io.IOException;
