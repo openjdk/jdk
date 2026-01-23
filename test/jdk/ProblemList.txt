@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,6 @@ java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/List/KeyEventsTest/KeyEventsTest.java 8201307 linux-all
 java/awt/List/NoEvents/ProgrammaticChange.java 8201307 linux-all
 java/awt/Paint/ListRepaint.java 8201307 linux-all
-java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8370584 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
@@ -161,33 +160,7 @@ java/awt/Mixing/AWT_Mixing/JInternalFrameMoveOverlapping.java 6986109 windows-al
 java/awt/Mixing/AWT_Mixing/MixingPanelsResizing.java 8049405 generic-all
 java/awt/Mixing/AWT_Mixing/JComboBoxOverlapping.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/JPopupMenuOverlapping.java 8049405 macosx-all
-java/awt/Mixing/AWT_Mixing/JButtonInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JButtonOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JColorChooserOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JEditorPaneInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JEditorPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JLabelInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JLabelOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JListInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JListOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JPanelInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JPanelOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JProgressBarInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JProgressBarOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JScrollBarInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JScrollBarOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JSliderInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JSliderOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JSpinnerInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JSpinnerOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8158801,8357360 windows-all,linux-all
-java/awt/Mixing/AWT_Mixing/JTableOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JTextAreaInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JTextAreaOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JTextFieldInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JTextFieldOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JToggleButtonInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JToggleButtonOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8357360 windows-all,linux-all
 java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
@@ -588,8 +561,6 @@ java/net/MulticastSocket/Test.java                              7145658,8308807 
 
 # jdk_nio
 
-java/nio/channels/AsyncCloseAndInterrupt.java                   8368290 macosx-26.0.1
-
 java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807,8144003 aix-ppc64,macosx-all
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
@@ -739,7 +710,6 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
-jdk/jfr/event/oldobject/TestEmergencyDumpAtOOM.java             8371014 aix-ppc64,linux-ppc64le
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8371630 generic-all
@@ -807,4 +777,3 @@ java/awt/Cursor/CursorDragTest/ListDragCursor.java 7177297 macosx-all
 # jdk_since_checks
 
 tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 8354921 generic-all
-tools/sincechecker/modules/java.base/JavaBaseCheckSince.java 8372801 generic-all
