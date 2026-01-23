@@ -40,7 +40,7 @@ import java.util.zip.Inflater;
  * Enum for TLS certificate compression algorithms.
  */
 enum CompressionAlgorithm {
-    ZLIB(1, "zlib", new ConcurrentHashMap<>(2)),
+    ZLIB(1, "zlib", new ConcurrentHashMap<>(3)),
     // Placeholders, we currently support only ZLIB.
     BROTLI(2, "brotli", null),
     ZSTD(3, "zstd", null);
@@ -87,7 +87,7 @@ enum CompressionAlgorithm {
     static Map<Integer, Function<byte[], byte[]>> findInflaters(
             SSLConfiguration config) {
         if (config.certInflaters == null || config.certInflaters.isEmpty()) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                 SSLLogger.finest(
                         "No supported certificate compression algorithms");
             }
@@ -95,14 +95,14 @@ enum CompressionAlgorithm {
         }
 
         Map<Integer, Function<byte[], byte[]>> inflaters =
-                new LinkedHashMap<>(config.certInflaters.size());
+                LinkedHashMap.newLinkedHashMap(config.certInflaters.size());
 
         for (Map.Entry<String, Function<byte[], byte[]>> entry :
                 config.certInflaters.entrySet()) {
             CompressionAlgorithm ca =
                     CompressionAlgorithm.nameOf(entry.getKey());
             if (ca == null) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                     SSLLogger.finest("Ignore unsupported certificate " +
                             "compression algorithm: " + entry.getKey());
                 }
@@ -143,7 +143,7 @@ enum CompressionAlgorithm {
     static Map<String, Function<byte[], byte[]>> getDefaultDeflaters() {
         return Map.of(ZLIB.name, (input) ->
                 ZLIB.cache.computeIfAbsent(getChecksum(input), _ -> {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                         SSLLogger.info("Deflating and caching new " + ZLIB.name
                                 + " certificate data of " + input.length
                                 + " bytes");
@@ -164,8 +164,7 @@ enum CompressionAlgorithm {
 
                         return outputStream.toByteArray();
                     } catch (Exception e) {
-                        if (SSLLogger.isOn()
-                                && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                             SSLLogger.warning("Exception during certificate "
                                     + "compression: ", e);
                         }
@@ -190,7 +189,7 @@ enum CompressionAlgorithm {
 
                 return outputStream.toByteArray();
             } catch (Exception e) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                     SSLLogger.warning(
                             "Exception during certificate decompression: ", e);
                 }
