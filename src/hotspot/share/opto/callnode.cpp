@@ -844,6 +844,20 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
       }
     }
     guarantee(dest != nullptr, "Call had only one ptr in, broken IR!");
+    if (dest->is_Proj() && dest->in(0)->is_Allocate()) {
+      AllocateNode* alloc = dest->in(0)->as_Allocate();
+      Node* result_cast = alloc->result_cast();
+      if (result_cast != nullptr) {
+        if (result_cast == alloc) {
+          return true;
+        }
+        if (may_modify_arraycopy_helper(phase->type(result_cast)->is_oopptr(), t_oop, phase)) {
+          ShouldNotReachHere();
+          return true;
+        }
+      }
+      return false;
+    }
     if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
       return true;
     }
