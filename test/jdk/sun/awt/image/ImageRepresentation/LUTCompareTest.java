@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6570475
+ * @bug     6570475 8375338
  * @summary Test verifies that palette comparison procedure of
  *          ImageRepresentation class does not produce extra transparent
  *          pixels.
