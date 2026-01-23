@@ -55,10 +55,10 @@ void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, int a
   }
 }
 
-Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType elembt) {
+Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType elembt, bool raw_base) {
   uint shift  = exact_log2(type2aelembytes(elembt));
   uint header = arrayOopDesc::base_offset_in_bytes(elembt);
-  Node* base =  basic_plus_adr(ary, header);
+  Node* base =  basic_plus_adr(raw_base ? top() : ary, ary, header);
 #ifdef _LP64
   // see comment in GraphKit::array_element_address
   int index_max = max_jint - 1;  // array size is max_jint, index is one less
@@ -67,7 +67,7 @@ Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType el
 #endif
   Node* scale = new LShiftXNode(idx, intcon(shift));
   transform_later(scale);
-  return basic_plus_adr(ary, base, scale);
+  return basic_plus_adr(raw_base ? top() : ary, base, scale);
 }
 
 Node* PhaseMacroExpand::ConvI2L(Node* offset) {
@@ -379,6 +379,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
                                            bool disjoint_bases,
                                            bool length_never_negative,
                                            RegionNode* slow_region) {
+  Node* orig_dest = dest;
   if (slow_region == nullptr) {
     slow_region = new RegionNode(1);
     transform_later(slow_region);
@@ -411,6 +412,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
       assert(dest->is_CheckCastPP(), "sanity");
       assert(dest->in(0)->in(0) == init, "dest pinned");
       adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory
+      dest = dest->in(1);
       // From this point on, every exit path is responsible for
       // initializing any non-copied parts of the object to zero.
       // Also, if this flag is set we make sure that arraycopy interacts properly
@@ -839,7 +841,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   _igvn.replace_node(_callprojs.fallthrough_catchproj, *ctrl);
 
 #ifdef ASSERT
-  const TypeOopPtr* dest_t = _igvn.type(dest)->is_oopptr();
+  const TypeOopPtr* dest_t = _igvn.type(orig_dest)->is_oopptr();
   if (dest_t->is_known_instance()) {
     ArrayCopyNode* ac = nullptr;
     assert(ArrayCopyNode::may_modify(dest_t, (*ctrl)->in(0)->as_MemBar(), &_igvn, ac), "dependency on arraycopy lost");
@@ -915,12 +917,12 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
   if (start_con >= 0 && end_con >= 0) {
     // Constant start and end.  Simple.
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end_con, false, &_igvn);
+                                       start_con, end_con, adr_type == TypeRawPtr::BOTTOM, &_igvn);
   } else if (start_con >= 0 && dest_size != top()) {
     // Constant start, pre-rounded end after the tail of the array.
     Node* end = dest_size;
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end, false, &_igvn);
+                                       start_con, end, adr_type == TypeRawPtr::BOTTOM, &_igvn);
   } else if (start_con >= 0 && slice_len != top()) {
     // Constant start, non-constant end.  End needs rounding up.
     // End offset = round_up(abase + ((slice_idx_con + slice_len) << scale), 8)
@@ -933,7 +935,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
     end = transform_later(new AddXNode(end, MakeConX(end_base)) );
     end = transform_later(new AndXNode(end, MakeConX(~end_round)) );
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start_con, end, false, &_igvn);
+                                       start_con, end, adr_type == TypeRawPtr::BOTTOM, &_igvn);
   } else if (start_con < 0 && dest_size != top()) {
     // Non-constant start, pre-rounded end after the tail of the array.
     // This is almost certainly a "round-to-end" operation.
@@ -967,7 +969,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
     }
     Node* end = dest_size; // pre-rounded
     mem = ClearArrayNode::clear_memory(ctrl, mem, dest,
-                                       start, end, false, &_igvn);
+                                       start, end, adr_type == TypeRawPtr::BOTTOM, &_igvn);
   } else {
     // Non-constant start, unrounded non-constant end.
     // (Nobody zeroes a random midsection of an array using this routine.)
@@ -1037,7 +1039,7 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
 
   // Do this copy by giant steps.
   Node* sptr  = basic_plus_adr(src,  src_off);
-  Node* dptr  = basic_plus_adr(dest, dest_off);
+  Node* dptr  = basic_plus_adr(adr_type == TypeRawPtr::BOTTOM ? top() : dest, dest, dest_off);
   Node* countx = dest_size;
   countx = transform_later(new SubXNode(countx, MakeConX(dest_off)));
   countx = transform_later(new URShiftXNode(countx, intcon(LogBytesPerLong)));
@@ -1134,8 +1136,8 @@ Node* PhaseMacroExpand::generate_checkcast_arraycopy(Node** ctrl, MergeMemNode**
   Node* check_offset = ConvI2X(transform_later(n3));
   Node* check_value  = dest_elem_klass;
 
-  Node* src_start  = array_element_address(src,  src_offset,  T_OBJECT);
-  Node* dest_start = array_element_address(dest, dest_offset, T_OBJECT);
+  Node* src_start  = array_element_address(src,  src_offset,  T_OBJECT, false);
+  Node* dest_start = array_element_address(dest, dest_offset, T_OBJECT, adr_type == TypeRawPtr::BOTTOM);
 
   const TypeFunc* call_type = OptoRuntime::checkcast_arraycopy_Type();
   Node* call = make_leaf_call(*ctrl, *mem, call_type, copyfunc_addr, "checkcast_arraycopy", adr_type,
@@ -1190,8 +1192,8 @@ void PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
   Node* src_start  = src;
   Node* dest_start = dest;
   if (src_offset != nullptr || dest_offset != nullptr) {
-    src_start =  array_element_address(src, src_offset, basic_elem_type);
-    dest_start = array_element_address(dest, dest_offset, basic_elem_type);
+    src_start =  array_element_address(src, src_offset, basic_elem_type, false);
+    dest_start = array_element_address(dest, dest_offset, basic_elem_type, adr_type == TypeRawPtr::BOTTOM);
   }
 
   // Figure out which arraycopy runtime method to call.
