@@ -30,7 +30,6 @@
  * @run main/othervm -Djdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding,Cipher.DES TestDisabledWithOids
  */
 import java.security.NoSuchAlgorithmException;
-import java.security.Security;
 import javax.crypto.Cipher;
 import jdk.test.lib.Utils;
 
