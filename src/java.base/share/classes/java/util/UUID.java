@@ -521,15 +521,15 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
 
         // Although the UUID byte ordering is defined to be big-endian, ByteArrayLittleEndian is used here to optimize
         // for the most common architectures.
-        ByteArrayLittleEndian.setLong(buf, 0, Long.reverseBytes(HexDigits.hex8Be((int)(mostSigBits >>> 32))));
-        long x0 = Long.reverseBytes(HexDigits.hex8Be((int)mostSigBits));
+        ByteArrayLittleEndian.setLong(buf, 0, Long.reverseBytes(HexDigits.hex8Be((int) (mostSigBits >>> 32))));
+        long x0 = Long.reverseBytes(HexDigits.hex8Be((int) mostSigBits));
         ByteArrayLittleEndian.setInt(buf, 9, (int) x0);
         ByteArrayLittleEndian.setInt(buf, 14, (int) (x0 >>> 32));
 
-        long x1 = Long.reverseBytes(HexDigits.hex8Be((int)(leastSigBits >>> 32)));
+        long x1 = Long.reverseBytes(HexDigits.hex8Be((int) (leastSigBits >>> 32)));
         ByteArrayLittleEndian.setInt(buf, 19, (int) (x1));
         ByteArrayLittleEndian.setInt(buf, 24, (int) (x1 >>> 32));
-        ByteArrayLittleEndian.setLong(buf, 28, Long.reverseBytes(HexDigits.hex8Be((int)leastSigBits)));
+        ByteArrayLittleEndian.setLong(buf, 28, Long.reverseBytes(HexDigits.hex8Be((int) leastSigBits)));
 
         return jla.uncheckedNewStringWithLatin1Bytes(buf);
     }
