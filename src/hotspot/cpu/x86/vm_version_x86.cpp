@@ -141,7 +141,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     const uint32_t CPU_FAMILY_486 = (4 << CPU_FAMILY_SHIFT);
     bool use_evex = FLAG_IS_DEFAULT(UseAVX) || (UseAVX > 2);
 
-    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuidb, std_cpuid24, std_cpuid29;
+    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuid24, std_cpuid29;
     Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7;
     Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
@@ -215,25 +215,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi,12), rdx);
 
     __ cmpl(rax, 0xa);                  // Is cpuid(0xB) supported?
-    __ jcc(Assembler::belowEqual, std_cpuid4);
-
-    __ cmpl(rax, 0x19);                  // Is cpuid(0x1A) supported?
-    __ jccb(Assembler::belowEqual, std_cpuidb);
-
-    //
-    // cpuid(0x1A) Native Model ID
-    //
-    __ movl(rax, 0x1A);
-    __ xorl(rcx, rcx);   // must be 0
-    __ cpuid();
-
-    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1a_offset())));
-    __ movl(Address(rsi, 0), rax);
+    __ jccb(Assembler::belowEqual, std_cpuid4);
 
     //
     // cpuid(0xB) Processor Topology
     //
-    __ bind(std_cpuidb);
     __ movl(rax, 0xb);
     __ xorl(rcx, rcx);   // Threads level
     __ cpuid();
@@ -935,7 +921,8 @@ void VM_Version::get_processor_features() {
 
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
-    (_cpuid_info.std_cpuid1a_eax.bits.core_type == 0x20 /* Atom (E-Core) */ || supports_hybrid())) {
+    (supports_hybrid() ||
+     _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ )) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 

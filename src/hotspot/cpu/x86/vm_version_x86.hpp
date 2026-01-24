@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,14 +306,6 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
-  union StdCpuid1AEax {
-    uint32_t value;
-    struct {
-      uint32_t core_native_model_id : 24,
-               core_type            : 8;
-    } bits;
-  };
-
   union StdCpuidEax29Ecx0 {
     uint32_t value;
     struct {
@@ -602,13 +594,6 @@ protected:
     SefCpuid7SubLeaf1Eax sefsl1_cpuid7_eax;
     SefCpuid7SubLeaf1Edx sefsl1_cpuid7_edx;
 
-    // cpuid function 1A (Native Model ID Enumeration)
-    // eax = 0x1A, ecx = 0
-    StdCpuid1AEax std_cpuid1a_eax;
-    uint32_t      std_cpuid1a_ebx; // unused currently
-    uint32_t      std_cpuid1a_ecx; // unused currently
-    uint32_t      std_cpuid1a_edx; // unused currently
-
     // cpuid function 24 converged vector ISA main leaf
     // eax = 24, ecx = 0
     StdCpuid24MainLeafEax std_cpuid24_eax;
@@ -737,7 +722,6 @@ public:
   // Offsets for cpuid asm stub
   static ByteSize std_cpuid0_offset() { return byte_offset_of(CpuidInfo, std_max_function); }
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
-  static ByteSize std_cpuid1a_offset() { return byte_offset_of(CpuidInfo, std_cpuid1a_eax); }
   static ByteSize std_cpuid24_offset() { return byte_offset_of(CpuidInfo, std_cpuid24_eax); }
   static ByteSize std_cpuid29_offset() { return byte_offset_of(CpuidInfo, std_cpuid29_ebx); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
