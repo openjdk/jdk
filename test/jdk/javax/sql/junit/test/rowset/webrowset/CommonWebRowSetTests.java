@@ -137,7 +137,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
     /*
      * Validate the expected Rows are contained within the RowSet
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void WebRowSetTest0000(WebRowSet wrs) throws Exception {
         Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs));
@@ -149,7 +149,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * Validate the expected Rows are contained within the RowSet
      * populated by readXML(Reader)
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void WebRowSetTest0001(WebRowSet wrs1) throws Exception {
 
@@ -166,7 +166,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * Validate the expected Rows are contained within the RowSet
      * populated by readXML(InputStream)
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void WebRowSetTest0002(WebRowSet wrs1) throws Exception {
         try (FileInputStream fis = new FileInputStream(COFFEE_ROWS_XML)) {
@@ -182,7 +182,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * back via readXML(InputStream) and validate the primary  keys
      * are the same
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void WebRowSetTest0003(WebRowSet wrs) throws Exception {
         ByteArrayOutputStream baos = writeWebRowSetWithOutputStream(wrs);
@@ -197,7 +197,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * back via readXML(InputStream) and validate the primary  keys
      * are the same
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void WebRowSetTest0004(WebRowSet wrs) throws Exception {
         ResultSet rs = wrs;
@@ -214,7 +214,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * back via readXML(Reader) and validate the primary  keys
      * are the same
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void WebRowSetTest0005(WebRowSet wrs) throws Exception {
         ByteArrayOutputStream baos = writeWebRowSetWithOutputStreamWithWriter(wrs);
@@ -229,7 +229,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * back via readXML(Reader) and validate the primary  keys
      * are the same
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void WebRowSetTest0006(WebRowSet wrs) throws Exception {
         ResultSet rs = wrs;
@@ -246,7 +246,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * after deleting the specified rows
      */
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void WebRowSetTest0007(WebRowSet wrs) throws Exception {
         Assertions.assertArrayEquals(COFFEES_PRIMARY_KEYS, getPrimaryKeys(wrs));
@@ -277,7 +277,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * that was populated by reading an xml file with all rows
      * marked as a currentRow
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void WebRowSetTest0008(WebRowSet wrs1) throws Exception {
         FileInputStream fis = new FileInputStream(COFFEE_ROWS_XML);
@@ -300,7 +300,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * Also validate that they are or are not visible based on the
      * setShowDeleted value
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void WebRowSetTest0009(WebRowSet wrs1) throws Exception {
         int[] rowsToDelete = {2, 4};
@@ -328,7 +328,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * Validate that the correct row in the WebRowSet that had been created
      * from an xml file is marked as updated and contains the correct values
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void WebRowSetTest0010(WebRowSet wrs1) throws Exception {
         FileInputStream fis = new FileInputStream(UPDATED_COFFEE_ROWS_XML);
@@ -355,7 +355,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
      * Validate the correct row is marked as inserted in a WebRowSet
      * that is read from an xml file
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void WebRowSetTest0011(WebRowSet wrs1) throws Exception {
         int expectedSize = COFFEES_ROWS + 2;
@@ -389,7 +389,7 @@ public abstract class CommonWebRowSetTests extends CommonCachedRowSetTests {
     /*
      * Read an xml file which contains a row that was inserted and updated
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void WebRowSetTest0012(WebRowSet wrs1) throws Exception {
         int expectedSize = COFFEES_ROWS + 1;

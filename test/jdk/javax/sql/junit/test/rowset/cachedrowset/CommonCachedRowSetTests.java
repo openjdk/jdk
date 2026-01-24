@@ -359,7 +359,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate SyncProviderException is thrown when acceptChanges is called
      * but there is not a way to make a connection to the datasource
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0000(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SyncProviderException.class, () -> {
@@ -372,7 +372,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate SyncProviderException is thrown when acceptChanges is called
      * when null is passed as the datasource
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0001(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SyncProviderException.class, () -> {
@@ -384,7 +384,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that that RIOPtimsticProvider is the default SyncProvider
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0002(CachedRowSet rs) throws SQLException {
         SyncProvider sp = rs.getSyncProvider();
@@ -395,7 +395,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that you can specify a SyncProvider
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0003(CachedRowSet rs) throws SQLException {
 
@@ -411,7 +411,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Create a RowSetListener and validate that notifyRowSetChanged is called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0004(CachedRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -424,7 +424,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Create a RowSetListener and validate that notifyRowSetChanged is called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0005(CachedRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -437,7 +437,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Create a RowSetListener and validate that notifyRowChanged is called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0006(RowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -457,7 +457,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Create a multiple RowSetListeners and validate that notifyRowChanged,
      * notifiyMoved is called on all listners
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0007(RowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -482,7 +482,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Create a RowSetListener and validate that notifyRowChanged  and
      * notifyCursorMoved are  called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0008(CachedRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -503,7 +503,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Create a RowSetListener and validate that notifyCursorMoved is called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0009(RowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -516,7 +516,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that getTableName() returns the proper values
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0010(CachedRowSet rs) throws Exception {
         assertNull(rs.getTableName());
@@ -528,7 +528,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that getKeyColumns() returns the proper values
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0011(CachedRowSet rs) throws Exception {
         int[] pkeys = {1, 3};
@@ -542,7 +542,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that setMatchColumn throws a SQLException if the column
      * index specified is out of range
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0012(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -555,7 +555,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that setMatchColumn throws a SQLException if the column
      * index specified is out of range
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0013(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -569,7 +569,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that setMatchColumn throws a SQLException if the column
      * index specified is out of range
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0014(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -582,7 +582,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that setMatchColumn throws a SQLException if the column
      * index specified is out of range
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0015(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -596,7 +596,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * setMatchColumn
      */
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0016(CachedRowSet rs) throws Exception {
         int[] expectedCols = {1};
@@ -617,7 +617,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * setMatchColumn
      */
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0017(CachedRowSet rs) throws Exception {
         int[] expectedCols = {1};
@@ -635,7 +635,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * setMatchColumn
      */
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0018(CachedRowSet rs) throws Exception {
         int[] expectedCols = {1, 3};
@@ -654,7 +654,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * setMatchColumn
      */
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0019(CachedRowSet rs) throws Exception {
         int[] expectedCols = {1, 3};
@@ -671,7 +671,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that getMatchColumnIndexes throws a SQLException if
      * unsetMatchColumn has been called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0020(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -688,7 +688,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that getMatchColumnNames throws a SQLException if
      * unsetMatchColumn has been called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0021(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -706,7 +706,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that getMatchColumnIndexes throws a SQLException if
      * unsetMatchColumn has been called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0022(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -724,7 +724,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that getMatchColumnNames throws a SQLException if
      * unsetMatchColumn has been called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0023(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -741,7 +741,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate size() returns the correct number of rows
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0024(CachedRowSet rs) throws Exception {
         assertTrue(rs.size() == COFFEE_HOUSES_ROWS);
@@ -752,7 +752,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that the correct rows are returned comparing the primary
      * keys
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0025(RowSet rs) throws SQLException {
         Assertions.assertArrayEquals(COFFEE_HOUSES_PRIMARY_KEYS, getPrimaryKeys(rs));
@@ -764,7 +764,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate the visibility of the row depending on the value of
      * setShowdelete
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0026(CachedRowSet rs) throws Exception {
         Object[] afterDelete = {
@@ -790,7 +790,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that there is no page size by default
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0027(CachedRowSet rs) throws Exception {
         assertTrue(rs.getPageSize() == 0);
@@ -801,7 +801,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate the value you set via setPageSize is returned by getPageSize
      * then reset to having no limit
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0028(CachedRowSet rs) throws Exception {
         int rows = 100;
@@ -816,7 +816,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate SQLException is thrown when an invalid value is specified
      * for setPageSize
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0029(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -829,7 +829,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate SQLException is thrown when nextPage is called without a
      * call to populate or execute
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0030(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -842,7 +842,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate SQLException is thrown when previousPage is called without a
      * call to populate or execute
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0031(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -856,7 +856,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate SQLException is thrown when execute is called
      * but there is not a way to make a connection to the datasource
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0032(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -869,7 +869,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate SQLException is thrown when execute is called
      * but there is not a way to make a connection to the datasource
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0033(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -881,7 +881,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that toCollection(<column>) returns the proper values
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0034(CachedRowSet rs) throws Exception {
         Object[] cities = {"Mendocino", "Seattle", "SF", "Portland", "SF",
@@ -896,7 +896,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that toCollection() returns the proper values
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0035(CachedRowSet rs) throws Exception {
         Collection<?> col = rs.toCollection();
@@ -915,7 +915,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that createCopy() returns the proper values
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0036(CachedRowSet rs) throws Exception {
         try (CachedRowSet crs1 = rs.createCopy()) {
@@ -927,7 +927,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * Validate that createCopySchema() returns the proper values
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0037(CachedRowSet rs) throws Exception {
         try (CachedRowSet crs1 = rs.createCopySchema()) {
@@ -942,7 +942,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * and getMatchColumnIndexes should throw a SQLException. This test
      * specifies setMatchColumn(int)
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0038(CachedRowSet rs) throws Exception {
         rs.setMatchColumn(1);
@@ -972,7 +972,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * and getMatchColumnIndexes should throw a SQLException. This test
      * specifies setMatchColumn(String)
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0039(CachedRowSet rs) throws Exception {
         rs.setMatchColumn("ID");
@@ -1001,7 +1001,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that columnUpdated works with the various datatypes specifying
      * the column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingDataTypes")
     public void commonCachedRowSetTest0040(CachedRowSet rs, JDBCType type) throws Exception {
         rs.beforeFirst();
@@ -1099,7 +1099,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that columnUpdated works with the various datatypes specifying
      * the column name
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingDataTypes")
     public void commonCachedRowSetTest0041(CachedRowSet rs, JDBCType type) throws Exception {
         rs.beforeFirst();
@@ -1198,7 +1198,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate isBeforeFirst(), isFirst() and first() return the correct
      * results
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0042(RowSet rs) throws Exception {
         assertFalse(rs.isBeforeFirst());
@@ -1222,7 +1222,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate isAfterLast(), isLast() and last() return the correct
      * results
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0043(RowSet rs) throws Exception {
         assertFalse(rs.isAfterLast());
@@ -1246,7 +1246,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoDelete is called on the
      * insertRow
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0044(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1260,7 +1260,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoDelete is called when
      * cursor is before the first row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0045(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1275,7 +1275,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoDelete is called when
      * cursor is after the last row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0046(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1290,7 +1290,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoUpdate is called on the
      * insertRow
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0047(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1304,7 +1304,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoUpdate is called when
      * cursor is before the first row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0048(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1319,7 +1319,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoUpdate is called when
      * cursor is after the last row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0049(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1334,7 +1334,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoInsert is called on the
      * insertRow
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0050(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1348,7 +1348,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoInsert is called when
      * cursor is before the first row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0051(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1363,7 +1363,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate a SQLException is thrown when undoInsert is called when
      * cursor is after the last row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0052(CachedRowSet rs) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -1378,7 +1378,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Insert a row, then call undoInsert to roll back the insert and validate
      * the row is not there
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0053(CachedRowSet rs) throws Exception {
         int rowToInsert = 1961;
@@ -1406,7 +1406,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Insert a row, delete the row and then call undoDelete to make sure it
      * is comes back
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0054(CachedRowSet rs) throws Exception {
         int rowToDelete = 1961;
@@ -1441,7 +1441,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Insert a row, modify a field and then call undoUpdate to revert the
      * insert
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0055(CachedRowSet rs) throws Exception {
         int rowToInsert = 1961;
@@ -1479,7 +1479,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate getOriginal returns a ResultSet which is a copy of the original
      * RowSet
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void commonCachedRowSetTest0056(CachedRowSet rs) throws Exception {
         String coffee = "Hazelnut";
@@ -1523,7 +1523,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate getOriginalRow returns a ResultSet which is a copy of the
      * original row that was modified
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void commonCachedRowSetTest0057(CachedRowSet rs) throws Exception {
         String coffee = "Hazelnut";
@@ -1568,7 +1568,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that restoreOrginal will restore the RowSet to its
      * state prior to the insert of a row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0058(CachedRowSet rs) throws Exception {
         int rowToInsert = 1961;
@@ -1606,7 +1606,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that restoreOrginal will restore the RowSet to its
      * state prior to deleting a row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void commonCachedRowSetTest0059(CachedRowSet rs) throws Exception {
         int rowToDelete = 2;
@@ -1638,7 +1638,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate that restoreOrginal will restore the RowSet to its
      * state prior to updating a row
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffees")
     public void commonCachedRowSetTest0060(CachedRowSet rs) throws Exception {
         int rowToUpdate = 2;
@@ -1677,7 +1677,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Initialize a RowSet via the populate method. Validate it matches
      * the original ResultSet
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0061(CachedRowSet rs) throws Exception {
         try (CachedRowSet crs1 = rsf.createCachedRowSet()) {
@@ -1693,7 +1693,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
      * Validate it matches the original ResultSet starting for the specofied
      * offset
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowsetUsingCoffeeHouses")
     public void commonCachedRowSetTest0062(CachedRowSet rs) throws Exception {
         Object[] expectedRows = {

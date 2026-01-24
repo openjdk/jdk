@@ -54,7 +54,7 @@ public class RowSetFactoryTests extends BaseTest {
      * Validate that the RowSetFactory returned by RowSetProvider.newFactory()
      * returns the correct RowSet implementations
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("RowSetValues")
     public void test(RowSetFactory rsf, String impl) throws SQLException {
         validateRowSetImpl(rsf, impl);

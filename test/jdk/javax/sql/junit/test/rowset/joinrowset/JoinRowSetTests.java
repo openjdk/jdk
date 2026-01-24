@@ -189,7 +189,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
     /*
      * Join two CachedRowSets specifying a column name to join against
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("createCachedRowSetsToUse")
     public void joinRowSetTests0000(CachedRowSet crs, CachedRowSet crs1)
             throws Exception {
@@ -206,7 +206,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
     /*
      * Join two CachedRowSets specifying a column index to join against
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("createCachedRowSetsToUse")
     public void joinRowSetTests0001(CachedRowSet crs, CachedRowSet crs1)
             throws Exception {
@@ -223,7 +223,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
     /*
      * Join two CachedRowSets specifying a column name to join against
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("createCachedRowSetsToUse")
     public void joinRowSetTests0002(CachedRowSet crs, CachedRowSet crs1)
             throws Exception {
@@ -241,7 +241,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
     /*
      * Join two CachedRowSets specifying a column index to join against
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("createCachedRowSetsToUse")
     public void joinRowSetTests0003(CachedRowSet crs, CachedRowSet crs1)
             throws Exception {
@@ -260,7 +260,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
     /*
      * Join two CachedRowSets specifying a column name to join against
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("createCachedRowSetsToUse")
     public void joinRowSetTests0005(CachedRowSet crs, CachedRowSet crs1)
             throws Exception {
@@ -279,7 +279,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
     /*
      * Join two CachedRowSets specifying a column index to join against
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("createCachedRowSetsToUse")
     public void joinRowSetTests0006(CachedRowSet crs, CachedRowSet crs1)
             throws Exception {
@@ -298,54 +298,54 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
 
     // Disabled tests due to bugs in JoinRowSet
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0004(CachedRowSet rs) throws Exception {
     }
 
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0005(CachedRowSet rs) throws Exception {
     }
 
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0008(CachedRowSet rs) throws Exception {
     }
 
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0026(CachedRowSet rs) throws Exception {
     }
 
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0027(CachedRowSet rs) throws Exception {
     }
 
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0053(CachedRowSet rs) throws Exception {
     }
 
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0054(CachedRowSet rs) throws Exception {
     }
 
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0055(CachedRowSet rs) throws Exception {
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void WebRowSetTest0009(WebRowSet wrs1) throws Exception {
     }

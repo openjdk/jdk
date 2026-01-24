@@ -56,7 +56,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -67,7 +67,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test01(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -78,7 +78,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test02(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -89,7 +89,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test03(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -100,7 +100,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test04(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -111,7 +111,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test05(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -122,7 +122,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test06(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -133,7 +133,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test07(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -144,7 +144,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test08(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -155,7 +155,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test09(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -166,7 +166,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test10(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -177,7 +177,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test11(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -188,7 +188,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test12(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -199,7 +199,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test13(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -210,7 +210,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test14(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -221,7 +221,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test15(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -232,7 +232,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test16(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -243,7 +243,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test17(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -254,7 +254,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test18(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -265,7 +265,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test19(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -276,7 +276,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test20(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -287,7 +287,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test21(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -298,7 +298,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test22(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -309,7 +309,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test23(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -320,7 +320,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test24(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -331,7 +331,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test25(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -342,7 +342,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test26(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -353,7 +353,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test27(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -364,7 +364,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test28(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -375,7 +375,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test29(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -386,7 +386,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test30(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -397,7 +397,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test31(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -408,7 +408,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test32(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -419,7 +419,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test33(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -430,7 +430,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test34(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -441,7 +441,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate a SQLException is thrown for an invalid column index
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidColumnRanges")
     public void test35(Integer col) throws Exception {
         Assertions.assertThrows(SQLException.class, () -> {
@@ -454,7 +454,7 @@ public class RowSetMetaDataTests extends BaseTest {
      * Note:  Once setColumnClassName is added to RowSetMetaData, this
      * method will need to change.
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("columnClassNames")
     public void test36(Integer type, String name) throws Exception {
         rsmd.setColumnType(1, type);
@@ -465,7 +465,7 @@ public class RowSetMetaDataTests extends BaseTest {
      * Validate that all of the methods are accessible and the correct value
      * is returned for each column
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("columnRanges")
     public void test37(Integer col) throws Exception {
         rsmd.setAutoIncrement(col, true);
@@ -510,7 +510,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate that the proper values are accepted by setNullable
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validSetNullableValues")
     public void test38(Integer val) throws Exception {
         rsmd.setNullable(1, val);
@@ -519,7 +519,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate that the correct type is returned for the column
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("jdbcTypes")
     public void test39(Integer type) throws Exception {
         rsmd.setColumnType(1, type);
@@ -529,7 +529,7 @@ public class RowSetMetaDataTests extends BaseTest {
     /*
      * Validate that the correct value is returned from the isXXX methods
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @ValueSource(booleans = {true, false})
     public void test40(Boolean b) throws Exception {
         rsmd.setAutoIncrement(1, b);

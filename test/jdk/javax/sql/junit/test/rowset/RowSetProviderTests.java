@@ -95,7 +95,7 @@ public class RowSetProviderTests extends BaseTest {
     /*
      * Validate that the correct RowSetFactory is returned by newFactory().
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("RowSetFactoryValues")
     public void test(RowSetFactory rsf, String impl) throws SQLException {
         validateProvider(rsf, impl);

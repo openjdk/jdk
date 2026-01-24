@@ -72,7 +72,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
     /*
      * Create a RowSetListener and validate that notifyCursorMoved is called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0000(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -84,7 +84,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
     /*
      * Create a RowSetListener and validate that notifyRowChanged is called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0001(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -96,7 +96,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
     /*
      * Create a RowSetListener and validate that notifyRowSetChanged is called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0002(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -109,7 +109,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Create multiple RowSetListeners and validate that notifyRowSetChanged
      * is called on all listeners
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0003(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -125,7 +125,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Create multiple RowSetListeners and validate that notifyRowChanged
      * is called on all listeners
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0004(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -141,7 +141,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Create multiple RowSetListeners and validate that notifyCursorMoved
      * is called on all listeners
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0005(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -157,7 +157,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Create a RowSetListener and validate that notifyRowSetChanged,
      * notifyRowChanged() and notifyCursorMoved are called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0006(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -175,7 +175,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Create multiple RowSetListeners and validate that notifyRowSetChanged,
      * notifyRowChanged() and notifyCursorMoved are called on all listeners
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0007(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -198,7 +198,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * remove the listener, invoke notifyRowSetChanged again and verify the
      * listner is not called
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0008(StubBaseRowSet rs) throws Exception {
         TestRowSetListener rsl = new TestRowSetListener();
@@ -216,7 +216,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Set the base parameters and validate that the value set is
      * the correct type and value
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("testBaseParameters")
     public void baseRowSetTest0009(int pos, Object o) throws Exception {
         assertTrue(getParam(pos, o).getClass().isInstance(o));
@@ -227,7 +227,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Set the complex parameters and validate that the value set is
      * the correct type
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("testAdvancedParameters")
     public void baseRowSetTest0010(int pos, Object o) throws Exception {
         assertTrue(getParam(pos, o).getClass().isInstance(o));
@@ -236,7 +236,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
     /*
      * Validate setNull specifying the supported type values
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("jdbcTypes")
     public void baseRowSetTest0011(Integer type) throws Exception {
         brs = new StubBaseRowSet();
@@ -248,7 +248,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
      * Validate setNull specifying the supported type values and that
      * typeName is set internally
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("jdbcTypes")
     public void baseRowSetTest0012(Integer type) throws Exception {
         brs = new StubBaseRowSet();
@@ -292,7 +292,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
     /*
      * Validate that initParams() initializes the parameters
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void baseRowSetTest0016(StubBaseRowSet rs) throws Exception {
         rs.setInt(1, 1);

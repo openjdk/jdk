@@ -141,7 +141,7 @@ public class FilteredRowSetTests extends CommonWebRowSetTests {
 
 
     @Disabled
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("rowSetType")
     public void commonCachedRowSetTest0043(RowSet rs) throws Exception {
         // Need to fix bug in FilteredRowSets
