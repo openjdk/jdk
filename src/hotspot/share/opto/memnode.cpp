@@ -44,6 +44,7 @@
 #include "opto/mempointer.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -1232,8 +1233,13 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       }
       // LoadVector/StoreVector needs additional check to ensure the types match.
       if (st->is_StoreVector()) {
-        const TypeVect*  in_vt = st->as_StoreVector()->vect_type();
-        const TypeVect* out_vt = as_LoadVector()->vect_type();
+        // Some kind of masked access or gather/scatter
+        if ((Opcode() != Op_LoadVector && Opcode() != Op_StoreVector) || st->Opcode() != Op_StoreVector) {
+          return nullptr;
+        }
+
+        const TypeVect* in_vt = st->as_StoreVector()->vect_type();
+        const TypeVect* out_vt = is_Load() ? as_LoadVector()->vect_type() : as_StoreVector()->vect_type();
         if (in_vt != out_vt) {
           return nullptr;
         }
@@ -3556,8 +3562,11 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
-    // Ensure vector type is the same
-    if (!is_StoreVector() || (mem->is_LoadVector() && as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type())) {
+    if (!is_StoreVector()) {
+      result = mem;
+    } else if (Opcode() == Op_StoreVector && val->Opcode() == Op_LoadVector &&
+               as_StoreVector()->vect_type() == val->as_LoadVector()->vect_type()) {
+      // Ensure vector type is the same
       result = mem;
     }
   }
@@ -3597,19 +3606,22 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     if (mem->is_Proj() && mem->in(0)->is_Allocate()) {
       result = mem;
     }
-  }
 
-  // Store the same value that is in the memory, we can elide the store
-  if (result == this && is_unordered()) {
-    Node* prev_mem = find_previous_store(phase);
-    if (prev_mem != nullptr) {
-      if (prev_mem->is_top()) {
-        // find_previous_store returns top when the access is dead
-        return prev_mem;
-      }
-      Node* prev_val = can_see_stored_value(prev_mem, phase);
-      if (prev_val == val) {
-        result = mem;
+    if (result == this) {
+      // the store may also apply to zero-bits in an earlier object
+      Node* prev_mem = find_previous_store(phase);
+      // Steps (a), (b):  Walk past independent stores to find an exact match.
+      if (prev_mem != nullptr) {
+        if (prev_mem->is_top()) {
+          // find_previous_store returns top when the access is dead
+          return prev_mem;
+        }
+        Node* prev_val = can_see_stored_value(prev_mem, phase);
+        if (prev_val != nullptr && prev_val == val) {
+          // prev_val and val might differ by a cast; it would be good
+          // to keep the more informative of the two.
+          result = mem;
+        }
       }
     }
   }

@@ -50,7 +50,7 @@ public class TestFindStore {
         C2 c2 = new C2();
 
         Asserts.assertEQ(1, testLoad(c1, c2, 1, 0));
-        testStore(c1, c2, 1, 0);
+        Asserts.assertEQ(0, testStore(c2, 0).v);
     }
 
     @Test
@@ -62,10 +62,11 @@ public class TestFindStore {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE, "2"})
-    static void testStore(C1 c1, C2 c2, int v1, int v2) {
-        c1.v = v1;
+    @IR(counts = {IRNode.STORE, "1"}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    static C1 testStore(C2 c2, int v2) {
+        C1 c1 = new C1();
         c2.v = v2;
-        c1.v = v1;
+        c1.v = 0;
+        return c1;
     }
 }
