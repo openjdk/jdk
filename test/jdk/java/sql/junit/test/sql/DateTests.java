@@ -38,7 +38,7 @@ public class DateTests extends BaseTest {
     /*
      * Validate an IllegalArgumentException is thrown for an invalid Date string
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidDateValues")
     public void test(String d) throws Exception {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Date.valueOf(d));
@@ -48,7 +48,7 @@ public class DateTests extends BaseTest {
      * Test that a date created from a date string is equal to the value
      * returned from toString()
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validDateValues")
     public void test00(String d, String expectedD) {
         Date d1 = Date.valueOf(d);

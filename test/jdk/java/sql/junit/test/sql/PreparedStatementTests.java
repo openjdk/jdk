@@ -55,7 +55,7 @@ public class PreparedStatementTests extends BaseTest {
      * Verify that enquoteLiteral creates a  valid literal and converts every
      * single quote to two single quotes
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validEnquotedLiteralValues")
     public void test00(String s, String expected) throws SQLException {
         assertEquals(expected, pstmt.enquoteLiteral(s));
@@ -73,7 +73,7 @@ public class PreparedStatementTests extends BaseTest {
     /*
      * Validate that enquoteIdentifier returns the expected value
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validEnquotedIdentifierValues")
     public void test02(String s, boolean alwaysQuote, String expected) throws SQLException {
         assertEquals(expected, pstmt.enquoteIdentifier(s, alwaysQuote));
@@ -83,7 +83,7 @@ public class PreparedStatementTests extends BaseTest {
      * Validate that a SQLException is thrown for values that are not valid
      * for a SQL identifier
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidEnquotedIdentifierValues")
     public void test03(String s, boolean alwaysQuote) throws SQLException {
         Assertions.assertThrows(SQLException.class, () -> pstmt.enquoteIdentifier(s, alwaysQuote));
@@ -93,7 +93,7 @@ public class PreparedStatementTests extends BaseTest {
      * Validate a NullPointerException is thrown is the string passed to
      * enquoteIdentiifer is null
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @ValueSource(booleans = {true, false})
     public void test04(boolean alwaysQuote) throws SQLException {
         Assertions.assertThrows(NullPointerException.class, () -> pstmt.enquoteIdentifier(null, alwaysQuote));
@@ -102,7 +102,7 @@ public class PreparedStatementTests extends BaseTest {
     /*
      * Validate that isSimpleIdentifier returns the expected value
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("simpleIdentifierValues")
     public void test05(String s, boolean expected) throws SQLException {
         assertEquals(expected, pstmt.isSimpleIdentifier(s));
@@ -121,7 +121,7 @@ public class PreparedStatementTests extends BaseTest {
      * Verify that enquoteLiteral creates a  valid literal and converts every
      * single quote to two single quotes
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validEnquotedNCharLiteralValues")
     public void test07(String s, String expected) throws SQLException {
         assertEquals(expected, pstmt.enquoteNCharLiteral(s));

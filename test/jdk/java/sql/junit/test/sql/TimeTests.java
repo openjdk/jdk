@@ -153,7 +153,7 @@ public class TimeTests extends BaseTest {
      * toString() of the other and that the correct value is returned from
      * toString()
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validTimeValues")
     public void test13(String time, String expected) {
         Time t1 = Time.valueOf(time);
@@ -187,7 +187,7 @@ public class TimeTests extends BaseTest {
     /*
      * Validate an IllegalArgumentException is thrown for an invalid Time string
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidTimeValues")
     public void test16(String time) throws Exception {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Time.valueOf(time));

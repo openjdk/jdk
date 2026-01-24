@@ -68,7 +68,7 @@ public class TimestampTests extends BaseTest {
     /*
      * Validate an IllegalArgumentException is thrown for an invalid Timestamp
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("invalidTimestampValues")
     public void test(String ts) throws Exception {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Timestamp.valueOf(ts));
@@ -223,7 +223,7 @@ public class TimestampTests extends BaseTest {
      * Validate that two Timestamps are equal when one is created from the
      * toString() of the other
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validTimestampValues")
     public void test13(String ts, String expectedTS) {
         Timestamp ts1 = Timestamp.valueOf(ts);
@@ -633,7 +633,7 @@ public class TimestampTests extends BaseTest {
      * Validate that two Timestamps are equal when one is created from the
      * toString() of the other
      */
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validateNanos")
     public void test51(String ts, int nanos) {
         Timestamp ts1 = Timestamp.valueOf(ts);
@@ -642,7 +642,7 @@ public class TimestampTests extends BaseTest {
                 "Error with Nanos");
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("validTimestampLongValues")
     public void test52(long value, String ts) {
         Timestamp ts1 = new Timestamp(value);

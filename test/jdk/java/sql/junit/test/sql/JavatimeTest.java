@@ -67,7 +67,7 @@ public class JavatimeTest {
                 return Arguments.of(millis, nanos, ldt, secs, nanos_ms);
             }).toList();
 
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @FieldSource("DATE_TIME_ARGS")
     void timestampTest(long millis, int nanos, LocalDateTime ldt, long secs) {
         Timestamp ta = new Timestamp(millis);
@@ -94,7 +94,7 @@ public class JavatimeTest {
         );
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @FieldSource("DATE_TIME_ARGS")
     void sqlDateTest(long millis, int nanos, LocalDateTime ldt) {
         // j.s.d/t uses j.u.d.equals() !!!!!!!!
@@ -107,7 +107,7 @@ public class JavatimeTest {
                 errMsg("ld -> j.s.d", millis, nanos, ldt, results(ld, java.sql.Date.valueOf(ld))));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @FieldSource("DATE_TIME_ARGS")
     void sqlTimeTest(long millis, int nanos, LocalDateTime ldt, long secs, int nanos_ms) {
         java.sql.Time jst = new java.sql.Time(millis);
