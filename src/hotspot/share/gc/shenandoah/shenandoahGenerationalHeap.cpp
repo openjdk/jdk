@@ -192,6 +192,16 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) {
+
+  if (is_concurrent_old_mark_in_progress()) {
+    // Discovered lists may have young references with old referents. These references will be
+    // processed at the end of old marking. We need to update them.
+    ShenandoahReferenceProcessor* old_ref_processor = old_generation()->ref_processor();
+    assert(old_ref_processor != nullptr, "Must have old ref processor if old marking is in progress");
+    ShenandoahPhaseTimings::Phase phase = concurrent ? ShenandoahPhaseTimings::conc_weak_refs : ShenandoahPhaseTimings::degen_gc_weakrefs;
+    old_ref_processor->heal_discovered_lists(phase, workers(), concurrent);
+  }
+
   ShenandoahRegionIterator regions;
   ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, false /* only promote regions */);
   workers()->run_task(&task);
@@ -943,15 +953,6 @@ private:
 
 void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
-
-  if (is_concurrent_old_mark_in_progress()) {
-    // Discovered lists may have young references with old referents. These references will be
-    // processed at the end of old marking. We need to update them.
-    ShenandoahReferenceProcessor* old_ref_processor = old_generation()->ref_processor();
-    assert(old_ref_processor != nullptr, "Must have old ref processor if old marking is in progress");
-    ShenandoahPhaseTimings::Phase phase = concurrent ? ShenandoahPhaseTimings::conc_weak_refs : ShenandoahPhaseTimings::degen_gc_weakrefs;
-    old_ref_processor->heal_discovered_lists(phase, workers(), concurrent);
-  }
 
   const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);

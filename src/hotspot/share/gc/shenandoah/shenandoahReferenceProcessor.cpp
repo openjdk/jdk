@@ -248,14 +248,18 @@ void ShenandoahRefProcThreadLocal::heal_discovered_list() {
   T* list = reinterpret_cast<T*>(&_discovered_list);
   while (list != nullptr) {
     const oop discovered_ref = CompressedOops::decode(*list);
-    const oop reference = lrb(discovered_ref);
+    if (discovered_ref == nullptr) {
+      break;
+    }
+
+    const oop reference = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(discovered_ref);
     if (discovered_ref != reference) {
       // Update our list with the forwarded object
       set_oop_field(list, reference);
     }
 
     // Discovered list terminates with a self-loop
-    const oop discovered = lrb(reference_discovered<T>(reference));
+    const oop discovered = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(reference_discovered<T>(reference));
     if (reference == discovered) {
       break;
     }
