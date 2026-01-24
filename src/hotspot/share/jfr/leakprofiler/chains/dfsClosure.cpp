@@ -107,29 +107,25 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   log_debug(jfr, system, dfs)("DFS: done");
 }
 
-// Memory usage of DFS search is dominated by probe stack usage. That
-// is a function of (avg. number of outgoing references per oop) * depth.
-// This is because we only can iterate an instanceOop in full, we cannot
-// partly iterate it and store the iteration state (as recursion implicitly
-// does).
+// Memory usage of DFS search is dominated by probe stack usage, which is
+// (avg. number of outgoing references per oop) * depth.
 //
-// Note that we can disregard objArrayOop: deep graphs of object arrays are
-// very rare. Still, to be on the safe side, we also use array chunking with
-// a rather small chunksize.
+// We disregard objArrayOop: deep graphs of broad object arrays are rare.
+// But we also use array chunking, to be on the safe side.
 //
-// Statistically, the mean number of outgoing references is pretty small.
-// Moreover, deep graphs will typically be the result of heavy hitters
-// like LinkedListNode, which has just three references, only two of which
-// need to be put on the probe stack (the backward reference points to an
-// already marked object).
+// Statistically, instanceKlass oopmaps are very small. Moreover, deep
+// graphs will typically consist of heavy hitters like LinkedListNode,
+// which has just two references that need to be pushed onto the probe stack
+// (its backward reference is typically already marked).
 //
-// Hence, with a max_dfs_depth of 4000, we get a typical probe stack at
-// max depth of ~10000, which costs <~160KB - not a problem at all.
+// Hence, at max_dfs_depth of 4000, on average we have a probe stack depth of
+// ~10000, which costs us <~160KB. In practice, these numbers seem to be even
+// smaller. Not a problem at all.
 //
-// But to be very sure we also limit the probe stack size itself. The max size
-// is generous enough to make it very unlikely we ever hit it before hitting
-// max_depth. When we hit it, we treat it the same way we treat max_depth -
-// we just stop following that particular graph edge.
+// But we could run into weird pathological object graphs. Therfore we also
+// cap the max size of the probe stack. When we hit it, we deal with it the same
+// way we deal with reaching max_dfs_depth - by aborting the trace of that
+// particular graph edge.
 static constexpr size_t max_probe_stack_elems = 256 * K; // 4 MB
 
 static constexpr int array_chunk_size = 64;

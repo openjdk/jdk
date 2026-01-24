@@ -23,14 +23,6 @@
 
 package jdk.jfr.jcmd;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import jdk.jfr.Enabled;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -39,96 +31,65 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.test.WhiteBox;
 import jdk.test.lib.jfr.EventNames;
 
-/**
- * @test id=dfs-only
- * @summary Test dumping with path-to-gc-roots and DFS only
- * @bug 8373490
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- *
- * @run main/othervm -XX:TLABSize=2k -Xmx256m -Xlog:jfr+system+dfs jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS dfs-only
- */
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
+// This test tests that even with a rather small stack size we can execute path-to-gc-roots search in
+// leak profiler.
+// (Note: VMThreadStackSize dictates stack size for *all* VM threads, not just the VMThread; therefore
+//  we cannot go infinitly low)
 
 /**
- * @test id=bfs-only
- * @summary Test dumping with path-to-gc-roots and BFS only
- * @bug 8373490
+ * @test id=dfs-only
+ * @summary Test dumping with path-to-gc-roots and DFS only, with a very small VMThread stack size
  * @requires vm.hasJFR & vm.flagless
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  *
- * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS bfs-only
+ * @run main/othervm -Xmx1g -XX:VMThreadStackSize=128k -Xlog:jfr+system+dfs jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS dfs-only
  */
 
 /**
  * @test id=bfsdfs
- * @summary Test dumping with path-to-gc-roots and mixed BFS+DFS
+ * @summary Test dumping with path-to-gc-roots and mixed BFS+DFS, with a very small VMThread stack size
  * @bug 8373490
  * @requires vm.hasJFR & vm.flagless
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  *
- * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS bfsdfs
+ * @run main/othervm -Xmx1g -XX:VMThreadStackSize=128k -Xlog:jfr+system+dfs jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS bfsdfs
  */
-public class TestJcmdDumpPathToGCRootsBFSDFS {
+public class TestJcmdDumpPathToGCRootsDFSWithSmallStack {
 
-    // Note:
-    // - We start with a small heap of 256M in order to get the minimum Edge Queue size in BFS (lower cap is 32MB, enough to hold ~2mio edges)
-    // - We build a leak with an array containing more than 2mio entries
-    // That will hit BFS first, then fall back to DFS, showing the performance problem JDK-8373490 describes.
-    // DFS-only mode should work well, and so should BFS-only mode.
+    // Note for BFS-DFS: in order to force the JVM to take the BFS-DFS path instead of just doing things BFS-only,
+    // we start with a small heap of 256M. That gives us a (low-capped) BFS edge queue size of 32M. We then build up
+    // a leak with > 2mio entries, which will exhaust the edge queue eventually and cause BFS to invoke the DFS fallback.
 
     // The minimum size of the edge queue in BFS (keep in sync with hotspot)
     // see edge_queue_memory_reservation() in pathToGCRootsOperation.cpp
     private final static int minimumEdgeQueueSizeCap = 32 * 1024 * 1024;
 
-    public static List<Object[]> leak;
+    private static List<Object[]> leak;
+    private final static int leakedObjectCount = 5_000_000;
 
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
         String settingName = EventNames.OldObjectSample + "#" + "cutoff";
 
-        int edgesPerMinSizedQueue = minimumEdgeQueueSizeCap / 16;
-        int lower = 1_000_000;
-        int upper = 3_000_000;
-        int fudge = 250_000;
-        if (edgesPerMinSizedQueue < (lower + fudge)) {
-            throw new RuntimeException("edgesPerMinSizedQueue lower bound wrong?");
-        }
-        if (edgesPerMinSizedQueue > (upper - fudge)) {
-            throw new RuntimeException("edgesPerMinSizedQueue upper bound wrong?");
-        }
-
-        int leakedObjectCount;
-        boolean skipBFS;
-        switch (args[0]) {
-            case "bfsdfs" -> {
-                // Mixed mode: enough objects to saturate BFS queue
-                leakedObjectCount = upper;
-                skipBFS = false;
-            }
-            case "dfs-only" -> {
-                // DFS-only mode: object count does not matter, we enter DFS right away
-                leakedObjectCount = upper;
-                skipBFS = true;
-            }
-            case "bfs-only" -> {
-                // BFS-only mode: not enough objects to saturate BFS queue
-                leakedObjectCount = lower;
-                skipBFS = false;
-            }
+        boolean skipBFS = switch (args[0]) {
+            case "bfsdfs" -> false;
+            case "dfs-only" -> true;
             default -> {
                 throw new RuntimeException("Invalid argument");
             }
         };
 
         WhiteBox.setSkipBFS(skipBFS);
-
-        testDump(Collections.singletonMap(settingName, "infinity"), leakedObjectCount);
+        testDump(Collections.singletonMap(settingName, "infinity"));
     }
 
-    private static void testDump(Map<String, String> settings, int leakedObjectCount) throws Exception {
+    private static void testDump(Map<String, String> settings) throws Exception {
         final String pathToGcRoots = "path-to-gc-roots=true";
         int numTries = 3;
         while (--numTries >= 0) {
