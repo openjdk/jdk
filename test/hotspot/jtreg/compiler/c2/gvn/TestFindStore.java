@@ -27,8 +27,9 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8360192
- * @summary Tests that count bits nodes are handled correctly.
+ * @bug 8376220
+ * @summary Tests that memory accesses can get elided if there is a preceding access to the same
+ *          field but the bases are provably different.
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
