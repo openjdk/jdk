@@ -32,7 +32,7 @@ import jdk.test.lib.util.CoreUtils;
 
 /**
  * @test
- * @bug 8374482
+ * @bug 8374482 8376264
  * @requires (os.family == "linux") & (vm.hasSA)
  * @requires os.arch == "amd64"
  * @library /test/lib
@@ -61,6 +61,7 @@ public class TestJhsdbJstackMixedCore {
 
         out.shouldContain("<signal handler called>");
         out.shouldContain("Java_jdk_test_lib_apps_LingeredApp_crash");
+        out.shouldContain("* jdk.test.lib.apps.LingeredApp.crash()");
     }
 
     public static void main(String... args) throws Throwable {
