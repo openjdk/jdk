@@ -922,7 +922,8 @@ void VM_Version::get_processor_features() {
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
     (supports_hybrid() ||
-     _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ )) {
+     _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ ||
+     _model == 0xDD /* Xeon 6+ E-cores (Clearwater Forest) */ )) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
