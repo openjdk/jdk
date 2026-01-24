@@ -211,7 +211,7 @@ perform.
 
 ## Commands for Creating or Adding Data to the Keystore
 
-[`-gencert`]{#option-gencert}
+[`-gencert`]{#command-gencert}
 :   The following are the available options for the `-gencert` command:
 
     -   {`-rfc`}: Output in RFC (Request For Comment) style
@@ -478,7 +478,7 @@ perform.
     specified by `-startdate`, or the current date when `-startdate` isn't
     specified) for which the certificate should be considered valid.
 
-[`-genseckey`]{#option-genseckey}
+[`-genseckey`]{#command-genseckey}
 :   The following are the available options for the `-genseckey` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -521,7 +521,7 @@ perform.
     the same password that is used for the `-keystore`. The `-keypass` value
     must contain at least six characters.
 
-[`-importcert`]{#option-importcert}
+[`-importcert`]{#command-importcert}
 :   The following are the available options for the `-importcert` command:
 
     -   {`-noprompt`}: Do not prompt
@@ -586,7 +586,7 @@ perform.
     entry, then the `keytool` command assumes that you're importing a
     certificate reply.
 
-[`-importpass`]{#option-importpass}
+[`-importpass`]{#command-importpass}
 :   The following are the available options for the `-importpass` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -629,7 +629,7 @@ perform.
 
 ## Commands for Importing Contents from Another Keystore
 
-[`-importkeystore`]{#option-importkeystore}
+[`-importkeystore`]{#command-importkeystore}
 :   The following are the available options for the `-importkeystore` command:
 
     -   `-srckeystore` *keystore*: Source keystore name
@@ -724,7 +724,7 @@ perform.
 
 ## Commands for Generating a Certificate Request
 
-[`-certreq`]{#option-certreq}
+[`-certreq`]{#command-certreq}
 :   The following are the available options for the `-certreq` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -786,7 +786,7 @@ perform.
 
 ## Commands for Exporting Data
 
-[`-exportcert`]{#option-exportcert}
+[`-exportcert`]{#command-exportcert}
 :   The following are the available options for the `-exportcert` command:
 
     -   {`-rfc`}: Output in RFC style
@@ -834,7 +834,7 @@ perform.
 
 ## Commands for Displaying Data
 
-[`-list`]{#option-list}
+[`-list`]{#command-list}
 :   The following are the available options for the `-list` command:
 
     -   {`-rfc`}: Output in RFC style
@@ -881,7 +881,7 @@ perform.
     You can't specify both `-v` and `-rfc` in the same command. Otherwise, an
     error is reported.
 
-[`-printcert`]{#option-printcert}
+[`-printcert`]{#command-printcert}
 :   The following are the available options for the `-printcert` command:
 
     -   {`-rfc`}: Output in RFC style
@@ -946,7 +946,7 @@ perform.
     trusted certificate in the user keystore (specified by `-keystore`) or in
     the `cacerts` keystore (if `-trustcacerts` is specified).
 
-[`-printcertreq`]{#option-printcertreq}
+[`-printcertreq`]{#command-printcertreq}
 :   The following are the available options for the `-printcertreq` command:
 
     -   {`-file` *file*}: Input file name
@@ -958,7 +958,7 @@ perform.
     command. The command reads the request from file. If there is no file, then
     the request is read from the standard input.
 
-[`-printcrl`]{#option-printcrl}
+[`-printcrl`]{#command-printcrl}
 :   The following are the available options for the `-printcrl` command:
 
     -   {`-file crl`}: Input file name
@@ -999,7 +999,7 @@ perform.
 
 ## Commands for Managing the Keystore
 
-[`-storepasswd`]{#option-storepasswd}
+[`-storepasswd`]{#command-storepasswd}
 :   The following are the available options for the `-storepasswd` command:
 
     -   \[`-new` *arg*\]: New password
@@ -1029,7 +1029,7 @@ perform.
     integrity of the keystore contents. The new password is set by `-new` *arg*
     and must contain at least six characters.
 
-[`-keypasswd`]{#option-keypasswd}
+[`-keypasswd`]{#command-keypasswd}
 :   The following are the available options for the `-keypasswd` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -1069,7 +1069,7 @@ perform.
     If the `-new` option isn't provided at the command line, then the user is
     prompted for it.
 
-[`-delete`]{#option-delete}
+[`-delete`]{#command-delete}
 :   The following are the available options for the `-delete` command:
 
     -   \[`-alias` *alias*\]: Alias name of the entry to process
@@ -1101,7 +1101,7 @@ perform.
     keystore. When not provided at the command line, the user is prompted for
     the `alias`.
 
-[`-changealias`]{#option-changealias}
+[`-changealias`]{#command-changealias}
 :   The following are the available options for the `-changealias` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -1143,7 +1143,7 @@ perform.
 
 ## Commands for Displaying Security-related Information
 
-[`-showinfo`]{#option-showinfo}
+[`-showinfo`]{#command-showinfo}
 :   The following are the available options for the `-showinfo` command:
 
     -   {`-tls`}: Displays TLS configuration information
