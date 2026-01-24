@@ -551,10 +551,17 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
 }
 
 static bool is_in(uintptr_t offset, struct elf_symbol* sym) {
-  if (offset == sym->offset) {
-    // offset points to the top of the symbol
+  if (sym->size == 0 && offset == sym->offset) {
+    // offset points to the top of the symbol.
+    // Some functions have size 0. For example, __restore_rt() (signal trampoline
+    // in glibc) would be detected as out of the function incorrectly, even if it
+    // points to the top of the instruction address, because the size of
+    // __restore_rt() is 0 (you can see this with "readelf -s libc.so.6" when
+    // debug symbols are available).
+    // Hence we need to treat this as a special case if the function size is 0,
+    // only the exact symbol address should be treated as inside.
     return true;
-  } else if (offset > sym->offset && offset < sym->offset + sym->size) {
+  } else if (offset >= sym->offset && offset < sym->offset + sym->size) {
     // offset is in address range of the symbol
     return true;
   }
