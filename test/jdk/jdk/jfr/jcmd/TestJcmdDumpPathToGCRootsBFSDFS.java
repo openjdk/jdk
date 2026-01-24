@@ -125,11 +125,12 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
 
         WhiteBox.setSkipBFS(skipBFS);
 
-        testDump("path-to-gc-roots=true", Collections.singletonMap(settingName, "infinity"), leakedObjectCount, true);
+        testDump("path-to-gc-roots=true", Collections.singletonMap(settingName, "infinity"), leakedObjectCount);
     }
 
-    private static void testDump(String pathToGcRoots, Map<String, String> settings, int leakedObjectCount, boolean expectedChains) throws Exception {
-        while (true) {
+    private static void testDump(String pathToGcRoots, Map<String, String> settings, int leakedObjectCount) throws Exception {
+        int numTries = 3;
+        while (--numTries >= 0) {
             try (Recording r = new Recording()) {
                 Map<String, String> p = new HashMap<>(settings);
                 p.put(EventNames.OldObjectSample + "#" + Enabled.NAME, "true");
@@ -141,7 +142,6 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
                 System.out.println("Recording id: " + r.getId());
                 System.out.println("Settings: " + settings.toString());
                 System.out.println("Command: JFR.dump " + pathToGcRoots);
-                System.out.println("Chains expected: " + expectedChains);
                 buildLeak(leakedObjectCount);
                 System.gc();
                 System.gc();
@@ -154,20 +154,17 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
                     System.out.println("No events found in recording. Retrying.");
                     continue;
                 }
-                boolean chains = hasChains(events);
-                if (expectedChains && !chains) {
+                int chains = countChains(events);
+                final int minNumberOfChains = 20; // very conservative; normally 130-160
+                if (chains < minNumberOfChains) {
                     System.out.println(events);
-                    System.out.println("Expected chains but found none. Retrying.");
-                    continue;
-                }
-                if (!expectedChains && chains) {
-                    System.out.println(events);
-                    System.out.println("Didn't expect chains but found some. Retrying.");
+                    System.out.println("Not enough chains found (" + chains + "), retrying.");
                     continue;
                 }
                 return; // Success
             }
         }
+        throw new RuntimeException("Failed");
     }
 
     private static void clearLeak() {
@@ -175,17 +172,16 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
       System.gc();
     }
 
-    private static boolean hasChains(List<RecordedEvent> events) throws IOException {
+    private static int countChains(List<RecordedEvent> events) throws IOException {
         int found = 0;
         for (RecordedEvent e : events) {
             RecordedObject ro = e.getValue("object");
             if (ro.getValue("referrer") != null) {
                 found++;
-
             }
         }
         System.out.println("Found chains: " + found);
-        return found > 0;
+        return found;
     }
 
     private static void buildLeak(int objectCount) {
