@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Copyright (c) 2025, 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
 /**
- * @test 8371603
+ * @test 8371603 8376220
  * @key randomness
  * @library /test/lib /
  * @summary Test the missing optimization issues for vector load/store caused by JDK-8286941
@@ -94,6 +94,14 @@ public class TestVectorLoadStoreOptimization {
         for (int i = 3 * SPECIES.length(); i < 4 * SPECIES.length(); i++) {
             Asserts.assertEquals(a[i], a[i - 2 * SPECIES.length()]);
         }
+    }
+
+    // Test that store a value that is just loaded from the same memory location is elided
+    @Test
+    @IR(failOn = IRNode.STORE_VECTOR,
+        applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
+    public static void testStoreVector2() {
+        IntVector.fromArray(SPECIES, a, 0).intoArray(a, 0);
     }
 
     public static void main(String[] args) {
