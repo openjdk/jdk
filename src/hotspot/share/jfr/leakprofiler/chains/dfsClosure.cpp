@@ -302,7 +302,7 @@ void DFSClosure::handle_objarrayoop() {
 
 void DFSClosure::drain_probe_stack() {
 
-  DEBUG_ONLY(unsigned last_depth = 0;)
+  DEBUG_ONLY(size_t last_depth = 0;)
 
   while (probe_stack_pop() && !GranularTimer::is_finished()) {
 
