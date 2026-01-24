@@ -552,7 +552,7 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
 
 static bool is_in(uintptr_t offset, struct elf_symbol* sym) {
   if (offset == sym->offset) {
-    // offset points the top of the symbol
+    // offset points to the top of the symbol
     return true;
   } else if (offset > sym->offset && offset < sym->offset + sym->size) {
     // offset is in address range of the symbol
