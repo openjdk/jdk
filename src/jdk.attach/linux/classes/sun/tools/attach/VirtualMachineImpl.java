@@ -296,7 +296,13 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 }
                 // Throw original IOE if target process not found on localhost.
                 throw ioe;
-            } catch (MonitorException | URISyntaxException e) {
+            } catch (URISyntaxException e) {
+                // URISyntaxException is defined as a checked exception at
+                // MonitoredHost.getMonitoredHost() if the URI string poorly
+                // formed. However "//localhost" is hard-coded at here, so the
+                // exception should not happen.
+                throw new AssertionError("Unexpected exception", e);
+            } catch (MonitorException e) {
                 // Other exceptions (happened at MonitoredHost) would be wrapped with AttachOperationFailedException
                 throw new AttachOperationFailedException("Unable to find target proces", e);
             }
