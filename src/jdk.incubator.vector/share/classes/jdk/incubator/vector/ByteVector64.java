@@ -753,25 +753,22 @@ final class ByteVector64 extends ByteVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ByteMask64.class, T_BYTE,
-                                                            VLENGTH, this,
-                                                            (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ByteMask64.class, T_BYTE, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ByteMask64.class, T_BYTE,
-                                                            VLENGTH, this,
-                                                            (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ByteMask64.class, T_BYTE, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ByteMask64.class, T_BYTE,
-                                                            VLENGTH, this,
-                                                            (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ByteMask64.class, T_BYTE, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -780,8 +777,7 @@ final class ByteVector64 extends ByteVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, ByteMask64.class, T_BYTE,
-                                                      VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, ByteMask64.class, T_BYTE, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -801,16 +797,16 @@ final class ByteVector64 extends ByteVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, ByteMask64.class, T_BYTE, VLENGTH,
-                                      this, vspecies().maskAll(true),
-                                      (m, __) -> anyTrueHelper(((ByteMask64)m).getBits()));
+                                         this, vspecies().maskAll(true),
+                                         (m, __) -> anyTrueHelper(((ByteMask64)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, ByteMask64.class, T_BYTE, VLENGTH,
-                                      this, vspecies().maskAll(true),
-                                      (m, __) -> allTrueHelper(((ByteMask64)m).getBits()));
+                                         this, vspecies().maskAll(true),
+                                         (m, __) -> allTrueHelper(((ByteMask64)m).getBits()));
         }
 
         @ForceInline

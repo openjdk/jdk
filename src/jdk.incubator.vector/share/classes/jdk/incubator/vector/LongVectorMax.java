@@ -729,25 +729,22 @@ final class LongVectorMax extends LongVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, LongMaskMax.class, T_LONG,
-                                                            VLENGTH, this,
-                                                            (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, LongMaskMax.class, T_LONG, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, LongMaskMax.class, T_LONG,
-                                                            VLENGTH, this,
-                                                            (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, LongMaskMax.class, T_LONG, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, LongMaskMax.class, T_LONG,
-                                                            VLENGTH, this,
-                                                            (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, LongMaskMax.class, T_LONG, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -756,8 +753,7 @@ final class LongVectorMax extends LongVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, LongMaskMax.class, T_LONG,
-                                                      VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, LongMaskMax.class, T_LONG, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -777,16 +773,16 @@ final class LongVectorMax extends LongVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, LongMaskMax.class, T_LONG, VLENGTH,
-                                      this, vspecies().maskAll(true),
-                                      (m, __) -> anyTrueHelper(((LongMaskMax)m).getBits()));
+                                         this, vspecies().maskAll(true),
+                                         (m, __) -> anyTrueHelper(((LongMaskMax)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, LongMaskMax.class, T_LONG, VLENGTH,
-                                      this, vspecies().maskAll(true),
-                                      (m, __) -> allTrueHelper(((LongMaskMax)m).getBits()));
+                                         this, vspecies().maskAll(true),
+                                         (m, __) -> allTrueHelper(((LongMaskMax)m).getBits()));
         }
 
         @ForceInline

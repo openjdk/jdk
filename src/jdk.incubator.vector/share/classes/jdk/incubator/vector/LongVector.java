@@ -132,13 +132,6 @@ public abstract class LongVector extends AbstractVector<Long> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    @Override
-    @ForceInline
-    final int laneBasicType() {
-        return T_LONG;
-    }
-
     @ForceInline
     final
     LongVector vOp(VectorMask<Long> m, FVOp f) {
@@ -3209,7 +3202,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         offset = checkFromIndexSize(offset, length(), a.length);
         LongSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_LONG, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3317,7 +3310,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), null, T_LONG, vsp.laneCount(),
+            vsp.vectorType(), null, vsp.laneBasicType(), vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, null,
@@ -3444,7 +3437,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     LongVector fromArray0Template(long[] a, int offset) {
         LongSpecies vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), T_LONG, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3461,7 +3454,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         m.check(species());
         LongSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, T_LONG, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3529,7 +3522,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     LongVector fromMemorySegment0Template(MemorySegment ms, long offset) {
         LongSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
-                vsp.vectorType(), T_LONG, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, LongVector::memorySegmentGet);
@@ -3545,7 +3538,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         LongSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_LONG, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, LongVector::memorySegmentGet);
@@ -3563,7 +3556,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     void intoArray0Template(long[] a, int offset) {
         LongSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_LONG, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
@@ -3580,7 +3573,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         m.check(species());
         LongSpecies vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, T_LONG, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -3628,7 +3621,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), maskClass, T_LONG, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, m,
@@ -3647,7 +3640,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     void intoMemorySegment0(MemorySegment ms, long offset) {
         LongSpecies vsp = vspecies();
         ScopedMemoryAccess.storeIntoMemorySegment(
-                vsp.vectorType(), T_LONG, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 this,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
@@ -3664,7 +3657,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         LongSpecies vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_LONG, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 this, m,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
@@ -3839,18 +3832,6 @@ public abstract class LongVector extends AbstractVector<Long> {
         @Override
         @ForceInline
         public final Class<Long> elementType() {
-            return long.class;
-        }
-
-        @Override
-        @ForceInline
-        final int laneBasicType() {
-            return T_LONG;
-        }
-
-        @Override
-        @ForceInline
-        final Class<?> carrierType() {
             return long.class;
         }
 

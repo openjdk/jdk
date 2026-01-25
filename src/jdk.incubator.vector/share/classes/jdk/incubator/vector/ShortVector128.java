@@ -753,25 +753,22 @@ final class ShortVector128 extends ShortVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ShortMask128.class, T_SHORT,
-                                                            VLENGTH, this,
-                                                            (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ShortMask128.class, T_SHORT, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ShortMask128.class, T_SHORT,
-                                                            VLENGTH, this,
-                                                            (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ShortMask128.class, T_SHORT, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ShortMask128.class, T_SHORT,
-                                                            VLENGTH, this,
-                                                            (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ShortMask128.class, T_SHORT, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -780,8 +777,7 @@ final class ShortVector128 extends ShortVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, ShortMask128.class, T_SHORT,
-                                                      VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, ShortMask128.class, T_SHORT, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -801,16 +797,16 @@ final class ShortVector128 extends ShortVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, ShortMask128.class, T_SHORT, VLENGTH,
-                                      this, vspecies().maskAll(true),
-                                      (m, __) -> anyTrueHelper(((ShortMask128)m).getBits()));
+                                         this, vspecies().maskAll(true),
+                                         (m, __) -> anyTrueHelper(((ShortMask128)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, ShortMask128.class, T_SHORT, VLENGTH,
-                                      this, vspecies().maskAll(true),
-                                      (m, __) -> allTrueHelper(((ShortMask128)m).getBits()));
+                                         this, vspecies().maskAll(true),
+                                         (m, __) -> allTrueHelper(((ShortMask128)m).getBits()));
         }
 
         @ForceInline

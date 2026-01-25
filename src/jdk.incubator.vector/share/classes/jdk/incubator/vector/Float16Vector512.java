@@ -790,25 +790,22 @@ final class Float16Vector512 extends Float16Vector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float16Mask512.class, T_SHORT,
-                                                            VLENGTH, this,
-                                                            (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float16Mask512.class, T_SHORT, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float16Mask512.class, T_SHORT,
-                                                            VLENGTH, this,
-                                                            (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float16Mask512.class, T_SHORT, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float16Mask512.class, T_SHORT,
-                                                            VLENGTH, this,
-                                                            (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float16Mask512.class, T_SHORT, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -817,8 +814,7 @@ final class Float16Vector512 extends Float16Vector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float16Mask512.class, T_SHORT,
-                                                      VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float16Mask512.class, T_SHORT, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -838,16 +834,16 @@ final class Float16Vector512 extends Float16Vector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, Float16Mask512.class, T_SHORT, VLENGTH,
-                                      this, vspecies().maskAll(true),
-                                      (m, __) -> anyTrueHelper(((Float16Mask512)m).getBits()));
+                                         this, vspecies().maskAll(true),
+                                         (m, __) -> anyTrueHelper(((Float16Mask512)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, Float16Mask512.class, T_SHORT, VLENGTH,
-                                      this, vspecies().maskAll(true),
-                                      (m, __) -> allTrueHelper(((Float16Mask512)m).getBits()));
+                                         this, vspecies().maskAll(true),
+                                         (m, __) -> allTrueHelper(((Float16Mask512)m).getBits()));
         }
 
         @ForceInline

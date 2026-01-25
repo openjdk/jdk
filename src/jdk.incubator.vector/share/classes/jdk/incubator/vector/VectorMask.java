@@ -211,7 +211,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
                 bits, (long) offset + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, false,
                 bits, offset, vsp,
                 (c, idx, s)
-                  -> s.opm(n -> c[((int)idx) + n]));
+                  -> s.opm(n -> c[((int )idx) + n]));
     }
 
     /**

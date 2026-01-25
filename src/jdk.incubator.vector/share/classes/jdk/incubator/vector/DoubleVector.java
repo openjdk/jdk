@@ -132,13 +132,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    @Override
-    @ForceInline
-    final int laneBasicType() {
-        return T_DOUBLE;
-    }
-
     @ForceInline
     final
     DoubleVector vOp(VectorMask<Double> m, FVOp f) {
@@ -3166,7 +3159,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         offset = checkFromIndexSize(offset, length(), a.length);
         DoubleSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_DOUBLE, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3274,7 +3267,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), null, T_DOUBLE, vsp.laneCount(),
+            vsp.vectorType(), null, vsp.laneBasicType(), vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, null,
@@ -3401,7 +3394,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     DoubleVector fromArray0Template(double[] a, int offset) {
         DoubleSpecies vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), T_DOUBLE, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3418,7 +3411,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         m.check(species());
         DoubleSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, T_DOUBLE, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3486,7 +3479,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     DoubleVector fromMemorySegment0Template(MemorySegment ms, long offset) {
         DoubleSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
-                vsp.vectorType(), T_DOUBLE, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, DoubleVector::memorySegmentGet);
@@ -3502,7 +3495,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         DoubleSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_DOUBLE, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, DoubleVector::memorySegmentGet);
@@ -3520,7 +3513,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     void intoArray0Template(double[] a, int offset) {
         DoubleSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_DOUBLE, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
@@ -3537,7 +3530,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         m.check(species());
         DoubleSpecies vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, T_DOUBLE, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -3585,7 +3578,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), maskClass, T_DOUBLE, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, m,
@@ -3604,7 +3597,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     void intoMemorySegment0(MemorySegment ms, long offset) {
         DoubleSpecies vsp = vspecies();
         ScopedMemoryAccess.storeIntoMemorySegment(
-                vsp.vectorType(), T_DOUBLE, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 this,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
@@ -3621,7 +3614,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         DoubleSpecies vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_DOUBLE, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 this, m,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
@@ -3796,18 +3789,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         @Override
         @ForceInline
         public final Class<Double> elementType() {
-            return double.class;
-        }
-
-        @Override
-        @ForceInline
-        final int laneBasicType() {
-            return T_DOUBLE;
-        }
-
-        @Override
-        @ForceInline
-        final Class<?> carrierType() {
             return double.class;
         }
 

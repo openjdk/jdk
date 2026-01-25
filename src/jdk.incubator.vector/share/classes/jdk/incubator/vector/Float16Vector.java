@@ -135,13 +135,6 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    @Override
-    @ForceInline
-    final int laneBasicType() {
-        return T_FLOAT16;
-    }
-
     @ForceInline
     final
     Float16Vector vOp(VectorMask<Float16> m, FVOp f) {
@@ -3320,7 +3313,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         offset = checkFromIndexSize(offset, length(), a.length);
         Float16Species vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_FLOAT16, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3469,7 +3462,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         offset = checkFromIndexSize(offset, length(), a.length);
         Float16Species vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_FLOAT16, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3674,7 +3667,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     Float16Vector fromArray0Template(short[] a, int offset) {
         Float16Species vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), T_FLOAT16, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3691,7 +3684,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         m.check(species());
         Float16Species vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, T_FLOAT16, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3754,7 +3747,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     Float16Vector fromCharArray0Template(char[] a, int offset) {
         Float16Species vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), T_FLOAT16, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3771,7 +3764,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         m.check(species());
         Float16Species vsp = vspecies();
         return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, T_FLOAT16, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 a, charArrayAddress(a, offset), false, m, offsetInRange,
                 a, offset, vsp,
                 (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3786,7 +3779,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     Float16Vector fromMemorySegment0Template(MemorySegment ms, long offset) {
         Float16Species vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
-                vsp.vectorType(), T_FLOAT16, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, Float16Vector::memorySegmentGet);
@@ -3802,7 +3795,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         Float16Species vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_FLOAT16, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, Float16Vector::memorySegmentGet);
@@ -3820,7 +3813,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     void intoArray0Template(short[] a, int offset) {
         Float16Species vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_FLOAT16, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
@@ -3837,7 +3830,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         m.check(species());
         Float16Species vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, T_FLOAT16, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -3852,7 +3845,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     void intoMemorySegment0(MemorySegment ms, long offset) {
         Float16Species vsp = vspecies();
         ScopedMemoryAccess.storeIntoMemorySegment(
-                vsp.vectorType(), T_FLOAT16, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 this,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
@@ -3869,7 +3862,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         Float16Species vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_FLOAT16, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 this, m,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
@@ -3887,7 +3880,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         m.check(species());
         Float16Species vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, T_FLOAT16, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -4078,18 +4071,6 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         @ForceInline
         public final Class<Float16> elementType() {
             return Float16.class;
-        }
-
-        @Override
-        @ForceInline
-        final int laneBasicType() {
-            return T_FLOAT16;
-        }
-
-        @Override
-        @ForceInline
-        final Class<?> carrierType() {
-            return short.class;
         }
 
         @Override

@@ -132,13 +132,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    @Override
-    @ForceInline
-    final int laneBasicType() {
-        return T_INT;
-    }
-
     @ForceInline
     final
     IntVector vOp(VectorMask<Integer> m, FVOp f) {
@@ -3330,7 +3323,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         offset = checkFromIndexSize(offset, length(), a.length);
         IntSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_INT, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3419,7 +3412,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), null, T_INT, vsp.laneCount(),
+            vsp.vectorType(), null, vsp.laneBasicType(), vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, null,
@@ -3546,7 +3539,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector fromArray0Template(int[] a, int offset) {
         IntSpecies vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), T_INT, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3563,7 +3556,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         m.check(species());
         IntSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, T_INT, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3613,7 +3606,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector fromMemorySegment0Template(MemorySegment ms, long offset) {
         IntSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
-                vsp.vectorType(), T_INT, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, IntVector::memorySegmentGet);
@@ -3629,7 +3622,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_INT, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, IntVector::memorySegmentGet);
@@ -3647,7 +3640,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     void intoArray0Template(int[] a, int offset) {
         IntSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_INT, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
@@ -3664,7 +3657,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         m.check(species());
         IntSpecies vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, T_INT, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -3693,7 +3686,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), maskClass, T_INT, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, m,
@@ -3712,7 +3705,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     void intoMemorySegment0(MemorySegment ms, long offset) {
         IntSpecies vsp = vspecies();
         ScopedMemoryAccess.storeIntoMemorySegment(
-                vsp.vectorType(), T_INT, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 this,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
@@ -3729,7 +3722,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_INT, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 this, m,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
@@ -3904,18 +3897,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @Override
         @ForceInline
         public final Class<Integer> elementType() {
-            return int.class;
-        }
-
-        @Override
-        @ForceInline
-        final int laneBasicType() {
-            return T_INT;
-        }
-
-        @Override
-        @ForceInline
-        final Class<?> carrierType() {
             return int.class;
         }
 

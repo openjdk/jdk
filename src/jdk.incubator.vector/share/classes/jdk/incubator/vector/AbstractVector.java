@@ -84,9 +84,6 @@ abstract class AbstractVector<E> extends Vector<E> {
     /*package-private*/
     abstract AbstractSpecies<E> vspecies();
 
-    /*package-private*/
-    abstract int laneBasicType();
-
     @Override
     @ForceInline
     public final VectorSpecies<E> species() {
@@ -777,7 +774,7 @@ abstract class AbstractVector<E> extends Vector<E> {
         case 'C':  // lane-wise cast (but not identity)
             rtype = rsp.laneBasicType();
             rlength = rsp.laneCount();
-            etype = this.laneBasicType(); // (profile)
+            etype = this.vspecies().laneBasicType(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();
@@ -789,7 +786,7 @@ abstract class AbstractVector<E> extends Vector<E> {
         case 'X':  // reinterpret cast, not lane-wise if lane sizes differ
             rtype = rsp.laneBasicType();
             rlength = rsp.laneCount();
-            etype = this.laneBasicType(); // (profile)
+            etype = this.vspecies().laneBasicType(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();

@@ -144,6 +144,20 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         return (Class<E>) laneType.elementType;
     }
 
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    //NOT FINAL: SPECIALIZED
+    int laneBasicType() {
+        return laneType.basicType;
+    }
+
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    //NOT FINAL: SPECIALIZED
+    Class<E> carrierType() {
+        return (Class<E>) laneType.carrierType;
+    }
+
     // FIXME: appeal to general method (see https://bugs.openjdk.org/browse/JDK-6176992)
     // replace usages of this method and remove
     @ForceInline
@@ -302,13 +316,6 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     }
     /*package-private*/
     abstract Vector<E> fromIntValues(int[] values);
-
-    /*package-private*/
-    abstract int laneBasicType();
-
-    /*package-private*/
-    abstract Class<?> carrierType();
-
 
     /**
      * Do not use a dummy except to call methods on it when you don't

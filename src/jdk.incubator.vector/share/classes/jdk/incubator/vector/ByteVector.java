@@ -132,13 +132,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return vectorFactory(res);
     }
 
-    /*package-private*/
-    @Override
-    @ForceInline
-    final int laneBasicType() {
-        return T_BYTE;
-    }
-
     @ForceInline
     final
     ByteVector vOp(VectorMask<Byte> m, FVOp f) {
@@ -3527,7 +3520,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         offset = checkFromIndexSize(offset, length(), a.length);
         ByteSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3681,7 +3674,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         ByteVector normalized = this.and((byte) 1);
         VectorSupport.store(
-            vsp.vectorType(), T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, booleanArrayAddress(a, offset), false,
             normalized,
             a, offset,
@@ -3894,7 +3887,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     ByteVector fromArray0Template(byte[] a, int offset) {
         ByteSpecies vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3911,7 +3904,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         m.check(species());
         ByteSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3984,7 +3977,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     ByteVector fromBooleanArray0Template(boolean[] a, int offset) {
         ByteSpecies vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, booleanArrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -4001,7 +3994,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         m.check(species());
         ByteSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, booleanArrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -4015,7 +4008,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     ByteVector fromMemorySegment0Template(MemorySegment ms, long offset) {
         ByteSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
-                vsp.vectorType(), T_BYTE, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, ByteVector::memorySegmentGet);
@@ -4031,7 +4024,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_BYTE, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, ByteVector::memorySegmentGet);
@@ -4049,7 +4042,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     void intoArray0Template(byte[] a, int offset) {
         ByteSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
@@ -4066,7 +4059,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         m.check(species());
         ByteSpecies vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -4085,7 +4078,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         ByteVector normalized = this.and((byte) 1);
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, T_BYTE, vsp.laneCount(),
+            vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
             a, booleanArrayAddress(a, offset), false,
             normalized, m, a, offset,
             (arr, off, v, vm)
@@ -4098,7 +4091,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     void intoMemorySegment0(MemorySegment ms, long offset) {
         ByteSpecies vsp = vspecies();
         ScopedMemoryAccess.storeIntoMemorySegment(
-                vsp.vectorType(), T_BYTE, vsp.laneCount(),
+                vsp.vectorType(), vsp.laneBasicType(), vsp.laneCount(),
                 this,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
@@ -4115,7 +4108,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
-                vsp.vectorType(), maskClass, T_BYTE, vsp.laneCount(),
+                vsp.vectorType(), maskClass, vsp.laneBasicType(), vsp.laneCount(),
                 this, m,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
@@ -4299,18 +4292,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         @Override
         @ForceInline
         public final Class<Byte> elementType() {
-            return byte.class;
-        }
-
-        @Override
-        @ForceInline
-        final int laneBasicType() {
-            return T_BYTE;
-        }
-
-        @Override
-        @ForceInline
-        final Class<?> carrierType() {
             return byte.class;
         }
 

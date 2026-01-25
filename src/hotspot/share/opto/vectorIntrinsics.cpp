@@ -513,7 +513,7 @@ bool LibraryCallKit::inline_vector_call(int arity) {
   if (entry        == nullptr   || !entry->is_con() ||
       vector_klass == nullptr   || vector_klass->const_oop() == nullptr ||
       laneType     == nullptr   || !laneType->is_con() ||
-      vlen  == nullptr   || !vlen->is_con() ||
+      vlen         == nullptr   || !vlen->is_con() ||
       debug_name_oop == nullptr || debug_name_oop->const_oop() == nullptr) {
     log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s debug_name=%s",
                   NodeClassNames[argument(0)->Opcode()],
