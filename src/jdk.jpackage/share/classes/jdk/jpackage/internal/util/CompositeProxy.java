@@ -39,9 +39,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
 import java.util.stream.Stream;
 
 /**
@@ -137,7 +140,12 @@ public final class CompositeProxy {
          *         dispatching the interface method invocations to the given handlers
          */
         public <T> T create(Class<T> interfaceType, Object... slices) {
-            return CompositeProxy.createCompositeProxy(interfaceType, conflictResolver, invokeTunnel, slices);
+            return CompositeProxy.createCompositeProxy(
+                    interfaceType,
+                    Optional.ofNullable(conflictResolver).orElse(STANDARD_CONFLICT_RESOLVER),
+                    Optional.ofNullable(interfaceConflictResolver).orElse(STANDARD_INTERFACE_CONFLICT_RESOLVER),
+                    invokeTunnel,
+                    slices);
         }
 
         /**
@@ -155,6 +163,24 @@ public final class CompositeProxy {
         }
 
         /**
+         * Sets the interface conflict resolver for this builder. The interface conflict
+         * resolver is used by the composite proxy to select one of multiple objects
+         * that implement the given interface.
+         * <p>
+         * The default interface conflict resolver resolves conflicts by throwing
+         * {@code IllegalArgumentException}.
+         *
+         * @param v the interface conflict resolver for this builder or
+         *          <code>null</code> if the default interface conflict resolver should
+         *          be used
+         * @return this
+         */
+        public Builder interfaceConflictResolver(InterfaceConflictResolver v) {
+            interfaceConflictResolver = v;
+            return this;
+        }
+
+        /**
          * Sets the invocation tunnel for this builder.
          *
          * @param v the invocation tunnel for this builder or <code>null</code> if no
@@ -168,8 +194,35 @@ public final class CompositeProxy {
 
         private Builder() {}
 
-        private BinaryOperator<Method> conflictResolver = STANDARD_CONFLICT_RESOLVER;
+        private BinaryOperator<Method> conflictResolver;
+        private InterfaceConflictResolver interfaceConflictResolver;
         private InvokeTunnel invokeTunnel;
+    }
+
+    /**
+     * Interface conflict resolver. Used when multiple objects implement the same
+     * interface and the composite proxy needs to choose one of them.
+     */
+    public interface InterfaceConflictResolver {
+
+        /**
+         * Returns the object that should be used in a composite proxy to implement
+         * {@code iface} interface.
+         * <p>
+         * The return value must be the value of either {@code a} or {@code b}
+         * parameter.
+         *
+         * @param <T>   interface type
+         * @param iface interface
+         * @param a     an object implementing interface {@code iface}
+         * @param b     an object implementing interface {@code iface}
+         * @return the object that should be used in a composite proxy to implement
+         *         {@code iface} interface
+         * @throws RuntimeException if can't detect which of {@code a} or {@code b}
+         *                          objects should be used in a composite proxy to
+         *                          implement {@code iface} interface
+         */
+        <T> T chooseImplementer(Class<T> iface, T a, T b);
     }
 
     /**
@@ -263,8 +316,16 @@ public final class CompositeProxy {
     private CompositeProxy() {
     }
 
-    private static <T> T createCompositeProxy(Class<T> interfaceType, BinaryOperator<Method> conflictResolver,
-            InvokeTunnel invokeTunnel, Object... slices) {
+    private static <T> T createCompositeProxy(
+            Class<T> interfaceType,
+            BinaryOperator<Method> conflictResolver,
+            InterfaceConflictResolver interfaceConflictResolver,
+            InvokeTunnel invokeTunnel,
+            Object... slices) {
+
+        Objects.requireNonNull(interfaceType);
+        Objects.requireNonNull(conflictResolver);
+        Objects.requireNonNull(interfaceConflictResolver);
 
         validateTypeIsInterface(interfaceType);
 
@@ -276,7 +337,7 @@ public final class CompositeProxy {
                     String.format("type %s must extend %d interfaces", interfaceType.getName(), slices.length));
         }
 
-        final Map<Class<?>, Object> interfaceDispatch = createInterfaceDispatch(interfaces, slices);
+        final Map<Class<?>, Object> interfaceDispatch = createInterfaceDispatch(interfaces, slices, interfaceConflictResolver);
 
         final Map<Method, Handler> methodDispatch = getProxyableMethods(interfaceType).map(method -> {
             var handler = createHandler(interfaceType, method, interfaceDispatch, conflictResolver, invokeTunnel);
@@ -368,7 +429,8 @@ public final class CompositeProxy {
         }
     }
 
-    private static Map<Class<?>, Object> createInterfaceDispatch(Class<?>[] interfaces, Object[] slices) {
+    private static Map<Class<?>, Object> createInterfaceDispatch(
+            Class<?>[] interfaces, Object[] slices, InterfaceConflictResolver interfaceConflictResolver) {
 
         if (interfaces.length == 0) {
             return Collections.emptyMap();
@@ -408,7 +470,19 @@ public final class CompositeProxy {
             return unfoldInterface(iface).map(unfoldedIface -> {
                 return Map.entry(unfoldedIface, dispatch.get(iface));
             });
-        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }).collect(Collector.of(HashMap::new, (map, e) -> {
+            var iface = Objects.requireNonNull(e.getKey());
+            map.merge(iface, Objects.requireNonNull(e.getValue()), (a, b) -> {
+                return chooseImplementer(interfaceConflictResolver, iface, a, b);
+            });
+        }, (map1, map2) -> {
+            map2.forEach((k, v) -> {
+                map1.merge(k, v, (a, b) -> {
+                    return chooseImplementer(interfaceConflictResolver, k, a, b);
+                });
+            });
+            return map1;
+        }, Characteristics.UNORDERED));
     }
 
     private static Stream<Class<?>> unfoldInterface(Class<?> interfaceType) {
@@ -617,6 +691,22 @@ public final class CompositeProxy {
         }
     }
 
+    private static <T> T chooseImplementer(InterfaceConflictResolver resolver, Class<T> iface, Object a, Object b) {
+        Objects.requireNonNull(resolver);
+        Objects.requireNonNull(iface);
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        @SuppressWarnings("unchecked")
+        var impl = resolver.chooseImplementer(iface, (T)a, (T)b);
+
+        if (impl == a || impl == b) {
+            return impl;
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
     private static final BinaryOperator<Method> STANDARD_CONFLICT_RESOLVER = (a, b) -> {
         if (a.isDefault() == b.isDefault()) {
             throw new IllegalArgumentException(String.format("ambiguous choice between %s and %s", a, b));
@@ -624,6 +714,13 @@ public final class CompositeProxy {
             return a;
         } else {
             return b;
+        }
+    };
+
+    private static final InterfaceConflictResolver STANDARD_INTERFACE_CONFLICT_RESOLVER = new InterfaceConflictResolver() {
+        @Override
+        public <T> T chooseImplementer(Class<T> iface, T a, T b) {
+            throw new IllegalArgumentException(String.format("ambiguous choice between %s and %s for implementing %s", a, b, iface));
         }
     };
 }
