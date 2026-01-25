@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,11 +86,11 @@ public class ZipFile implements ZipConstants, Closeable {
     private final ZipCoder zipCoder;
     private volatile boolean closeRequested;
 
-    // The "resource" used by this ZIP file that needs to be
-    // cleaned after use.
+    // An object holding state which needs to be cleaned after
+    // this ZipFile is closed or becomes unreachable:
     // a) the input streams that need to be closed
     // b) the list of cached Inflater objects
-    // c) the "native" source of this ZIP file.
+    // c) the Source object providing read access to the actual ZIP file
     private final @Stable CleanableResource res;
 
     private static final int STORED = ZipEntry.STORED;
