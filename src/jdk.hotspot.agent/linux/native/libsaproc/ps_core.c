@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@
 #include <elf.h>
 #include <link.h>
 #include <errno.h>
+#include <sys/mman.h>
+#include <sys/sendfile.h>
+#include <sys/utsname.h>
 #include "libproc_impl.h"
 #include "ps_core_common.h"
 #include "proc_service.h"
@@ -285,6 +288,8 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
             // We will adjust it in read_exec_segments().
             ph->core->dynamic_addr = auxv->a_un.a_val;
             break;
+          } else if (auxv->a_type == AT_SYSINFO_EHDR) {
+            ph->core->vdso_addr = auxv->a_un.a_val;
           }
           auxv++;
         }
@@ -349,6 +354,10 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
                      core_php->p_vaddr, core_php->p_filesz, core_php->p_flags) == NULL) {
                   print_error("failed to add map info\n");
                   goto err;
+               }
+               if (core_php->p_vaddr == ph->core->vdso_addr) {
+                  ph->core->vdso_offset = core_php->p_offset;
+                  ph->core->vdso_size = core_php->p_memsz;
                }
             }
             break;
@@ -687,9 +696,40 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
          // it will fail later.
       }
 
-      if (lib_name[0] != '\0') {
-         // ignore empty lib names
-         lib_fd = pathmap_open(lib_name);
+      if (lib_name[0] != '\0') { // ignore empty lib names
+         if (strcmp("linux-vdso.so.1", lib_name) == 0 ||
+             strcmp("linux-vdso64.so.1", lib_name) == 0) {
+            struct utsname uts;
+            uname(&uts);
+
+            const char *vdso_name
+#ifdef _LP64
+              = "vdso64.so";
+#else
+              = "vdso32.so";
+#endif
+
+            // Check vDSO binary at first (for referring debuginfo if possible).
+            char vdso_path[PATH_MAX];
+            snprintf(vdso_path, sizeof(vdso_path), "/lib/modules/%s/vdso/%s", uts.release, vdso_name);
+            if (access(vdso_path, F_OK) == 0) {
+               print_debug("replace vDSO: %s -> %s\n", lib_name, vdso_path);
+               strcpy(lib_name, vdso_path);
+               lib_fd = pathmap_open(lib_name);
+            } else {
+               // Copy vDSO memory segment to temporal memory from core
+               // if vDSO binary is not available.
+               lib_fd = memfd_create("[vdso] in core", 0);
+               off64_t ofs = ph->core->vdso_offset;
+               if (sendfile64(lib_fd, ph->core->core_fd, &ofs, ph->core->vdso_size) == -1) {
+                  print_debug("can't copy vDSO (%d)\n", errno);
+                  close(lib_fd);
+                  lib_fd = -1;
+               }
+            }
+         } else {
+           lib_fd = pathmap_open(lib_name);
+         }
 
          if (lib_fd < 0) {
             print_debug("can't open shared object %s\n", lib_name);
