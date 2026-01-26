@@ -37,7 +37,7 @@ import javax.swing.plaf.ComponentUI;
  */
 public class MotifCheckBoxUI extends MotifRadioButtonUI {
 
-    private static final MotifCheckBoxUI MOTIF_CHECK_BOX_UI = new MotifCheckBoxUI();
+    private static final ComponentUI UI = new MotifCheckBoxUI();
 
     private static final String propertyPrefix = "CheckBox" + ".";
 
@@ -48,7 +48,7 @@ public class MotifCheckBoxUI extends MotifRadioButtonUI {
     //         Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        return MOTIF_CHECK_BOX_UI;
+        return UI;
     }
 
     @Override

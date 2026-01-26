@@ -37,9 +37,9 @@ import javax.swing.plaf.basic.BasicLabelUI;
  */
 public class MotifLabelUI extends BasicLabelUI
 {
-    private static final MotifLabelUI MOTIF_LABEL_UI = new MotifLabelUI();
+    private static final ComponentUI UI = new MotifLabelUI();
 
     public static ComponentUI createUI(JComponent c) {
-        return MOTIF_LABEL_UI;
+        return UI;
     }
 }

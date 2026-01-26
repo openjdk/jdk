@@ -46,7 +46,7 @@ import javax.swing.plaf.basic.BasicToggleButtonUI;
  */
 public class MotifToggleButtonUI extends BasicToggleButtonUI
 {
-    private static final MotifToggleButtonUI MOTIF_TOGGLE_BUTTON_UI = new MotifToggleButtonUI();
+    private static final ComponentUI UI = new MotifToggleButtonUI();
 
     protected Color selectColor;
 
@@ -56,7 +56,7 @@ public class MotifToggleButtonUI extends BasicToggleButtonUI
     //         Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent b) {
-        return MOTIF_TOGGLE_BUTTON_UI;
+        return UI;
     }
 
     // ********************************

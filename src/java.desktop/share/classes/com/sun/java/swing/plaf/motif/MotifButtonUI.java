@@ -53,13 +53,13 @@ public class MotifButtonUI extends BasicButtonUI {
 
     private boolean defaults_initialized = false;
 
-    private static final MotifButtonUI MOTIF_BUTTON_UI = new MotifButtonUI();
+    private static final ComponentUI UI = new MotifButtonUI();
 
     // ********************************
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        return MOTIF_BUTTON_UI;
+        return UI;
     }
 
     // ********************************
