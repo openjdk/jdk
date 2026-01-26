@@ -271,7 +271,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     }
 
     /**
-     * @since     26
+     * @since 27
      */
     @Override
     public synchronized int codePointCount() {

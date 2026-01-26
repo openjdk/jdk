@@ -254,12 +254,10 @@ public interface CharSequence {
     }
 
     /**
-     * Returns the number of Unicode code points in
-     * this sequence. Unpaired surrogates count
-     * as one code point each.
+     * {@return the number of Unicode code points in this character sequence}
+     * Unpaired surrogates count as one code point each.
      *
-     * @return the number of Unicode code points in this sequence
-     * @since 26
+     * @since 27
      */
     public default int codePointCount() {
         final int length = length();

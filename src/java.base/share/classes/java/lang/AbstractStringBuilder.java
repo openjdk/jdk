@@ -530,12 +530,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Returns the number of Unicode code points in
-     * this sequence. Unpaired surrogates count
-     * as one code point each.
-     *
-     * @return the number of Unicode code points in this String
-     * @since  26
+     * @since 27
      */
     public int codePointCount() {
         byte coder = this.coder;
