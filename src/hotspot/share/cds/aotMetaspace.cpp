@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1141,7 +1141,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     AOTReferenceObjSupport::initialize(CHECK);
     AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
 
-    if (CDSConfig::is_initing_classes_at_dump_time()) {
+    if (CDSConfig::is_dumping_aot_linked_classes()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
       // to null, and it will be initialized again at runtime.
       log_debug(aot)("Resetting Class::reflectionFactory");
@@ -2159,7 +2159,6 @@ void AOTMetaspace::initialize_shared_spaces() {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     DynamicArchive::serialize(&rc);
-    DynamicArchive::setup_array_klasses();
   }
 
   LogStreamHandle(Info, aot) lsh;

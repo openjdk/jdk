@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,22 @@
  * @test
  * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
  *          to hit compilation thresholds
- * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccess$Type$
+ * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccess$Type$
  */
-
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
     static final $type$ static_final_v = $value1$;
 
@@ -60,7 +60,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         vhFinalField = MethodHandles.lookup().findVarHandle(
                 VarHandleTestMethodHandleAccess$Type$.class, "final_v", $type$.class);
@@ -77,8 +77,6 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         vhArray = MethodHandles.arrayElementVarHandle($type$[].class);
     }
 
-
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -111,7 +109,8 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -120,13 +119,12 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         }
     }
 
-
     static void testInstanceField(VarHandleTestMethodHandleAccess$Type$ recv, Handles hs) throws Throwable {
         // Plain
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "set $type$ value");
+            assertEquals($value1$, x, "set $type$ value");
         }
 
 
@@ -134,21 +132,21 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET_VOLATILE).invokeExact(recv, $value2$);
             $type$ x = ($type$) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(recv);
-            assertEquals(x, $value2$, "setVolatile $type$ value");
+            assertEquals($value2$, x, "setVolatile $type$ value");
         }
 
         // Lazy
         {
             hs.get(TestAccessMode.SET_RELEASE).invokeExact(recv, $value1$);
             $type$ x = ($type$) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(recv);
-            assertEquals(x, $value1$, "setRelease $type$ value");
+            assertEquals($value1$, x, "setRelease $type$ value");
         }
 
         // Opaque
         {
             hs.get(TestAccessMode.SET_OPAQUE).invokeExact(recv, $value2$);
             $type$ x = ($type$) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(recv);
-            assertEquals(x, $value2$, "setOpaque $type$ value");
+            assertEquals($value2$, x, "setOpaque $type$ value");
         }
 
 #if[CAS]
@@ -159,56 +157,56 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, $value1$, $value2$);
             assertEquals(r, true, "success compareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "success compareAndSet $type$ value");
+            assertEquals($value2$, x, "success compareAndSet $type$ value");
         }
 
         {
             boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, $value1$, $value3$);
             assertEquals(r, false, "failing compareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "failing compareAndSet $type$ value");
+            assertEquals($value2$, x, "failing compareAndSet $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, $value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "success compareAndExchange $type$ value");
+            assertEquals($value1$, x, "success compareAndExchange $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, $value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
+            assertEquals($value1$, x, "failing compareAndExchange $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, $value1$, $value2$);
             assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
+            assertEquals($value2$, x, "success compareAndExchangeAcquire $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, $value1$, $value3$);
             assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
+            assertEquals($value2$, x, "failing compareAndExchangeAcquire $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, $value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
+            assertEquals($value1$, x, "success compareAndExchangeRelease $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, $value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
+            assertEquals($value1$, x, "failing compareAndExchangeRelease $type$ value");
         }
 
         {
@@ -220,14 +218,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetPlain $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "success weakCompareAndSetPlain $type$ value");
+            assertEquals($value2$, x, "success weakCompareAndSetPlain $type$ value");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(recv, $value1$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "failing weakCompareAndSetPlain $type$ value");
+            assertEquals($value2$, x, "failing weakCompareAndSetPlain $type$ value");
         }
 
         {
@@ -239,14 +237,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "success weakCompareAndSetAcquire $type$");
+            assertEquals($value1$, x, "success weakCompareAndSetAcquire $type$");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, $value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "failing weakCompareAndSetAcquire $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSetAcquire $type$ value");
         }
 
         {
@@ -258,14 +256,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "success weakCompareAndSetRelease $type$");
+            assertEquals($value2$, x, "success weakCompareAndSetRelease $type$");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, $value1$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "failing weakCompareAndSetRelease $type$ value");
+            assertEquals($value2$, x, "failing weakCompareAndSetRelease $type$ value");
         }
 
         {
@@ -277,22 +275,22 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "success weakCompareAndSet $type$");
+            assertEquals($value1$, x, "success weakCompareAndSet $type$");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, $value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value1$, "failing weakCompareAndSet $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSet $type$ value");
         }
 
         // Compare set and get
         {
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndSet $type$");
+            assertEquals($value1$, o, "getAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, $value2$, "getAndSet $type$ value");
+            assertEquals($value2$, x, "getAndSet $type$ value");
         }
 #end[CAS]
 
@@ -302,27 +300,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndAdd $type$");
+            assertEquals($value1$, o, "getAndAdd $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
+            assertEquals(($type$)($value1$ + $value2$), x, "getAndAdd $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndAddAcquire $type$");
+            assertEquals($value1$, o, "getAndAddAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddAcquire $type$ value");
+            assertEquals(($type$)($value1$ + $value2$), x, "getAndAddAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndAddRelease $type$");
+            assertEquals($value1$, o, "getAndAddRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddRelease $type$ value");
+            assertEquals(($type$)($value1$ + $value2$), x, "getAndAddRelease $type$ value");
         }
 #end[AtomicAdd]
 
@@ -332,27 +330,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOr $type$");
+            assertEquals($value1$, o, "getAndBitwiseOr $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOr $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOr $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOrAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseOrAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrAcquire $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOrAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOrRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseOrRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrRelease $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOrRelease $type$ value");
         }
 
         // get and bitwise and
@@ -360,27 +358,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAnd $type$");
+            assertEquals($value1$, o, "getAndBitwiseAnd $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAnd $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAnd $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAndAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseAndAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndAcquire $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAndAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAndRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseAndRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndRelease $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAndRelease $type$ value");
         }
 
         // get and bitwise xor
@@ -388,27 +386,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXor $type$");
+            assertEquals($value1$, o, "getAndBitwiseXor $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXor $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXor $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXorAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseXorAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorAcquire $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXorAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact(recv, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXorRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseXorRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorRelease $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXorRelease $type$ value");
         }
 #end[Bitwise]
     }
@@ -457,7 +455,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "set $type$ value");
+            assertEquals($value1$, x, "set $type$ value");
         }
 
 
@@ -465,21 +463,21 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
         {
             hs.get(TestAccessMode.SET_VOLATILE).invokeExact($value2$);
             $type$ x = ($type$) hs.get(TestAccessMode.GET_VOLATILE).invokeExact();
-            assertEquals(x, $value2$, "setVolatile $type$ value");
+            assertEquals($value2$, x, "setVolatile $type$ value");
         }
 
         // Lazy
         {
             hs.get(TestAccessMode.SET_RELEASE).invokeExact($value1$);
             $type$ x = ($type$) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact();
-            assertEquals(x, $value1$, "setRelease $type$ value");
+            assertEquals($value1$, x, "setRelease $type$ value");
         }
 
         // Opaque
         {
             hs.get(TestAccessMode.SET_OPAQUE).invokeExact($value2$);
             $type$ x = ($type$) hs.get(TestAccessMode.GET_OPAQUE).invokeExact();
-            assertEquals(x, $value2$, "setOpaque $type$ value");
+            assertEquals($value2$, x, "setOpaque $type$ value");
         }
 
 #if[CAS]
@@ -490,56 +488,56 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact($value1$, $value2$);
             assertEquals(r, true, "success compareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "success compareAndSet $type$ value");
+            assertEquals($value2$, x, "success compareAndSet $type$ value");
         }
 
         {
             boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact($value1$, $value3$);
             assertEquals(r, false, "failing compareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "failing compareAndSet $type$ value");
+            assertEquals($value2$, x, "failing compareAndSet $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact($value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "success compareAndExchange $type$ value");
+            assertEquals($value1$, x, "success compareAndExchange $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact($value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
+            assertEquals($value1$, x, "failing compareAndExchange $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact($value1$, $value2$);
             assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
+            assertEquals($value2$, x, "success compareAndExchangeAcquire $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact($value1$, $value3$);
             assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
+            assertEquals($value2$, x, "failing compareAndExchangeAcquire $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact($value2$, $value1$);
             assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
+            assertEquals($value1$, x, "success compareAndExchangeRelease $type$ value");
         }
 
         {
             $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact($value2$, $value3$);
             assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
+            assertEquals($value1$, x, "failing compareAndExchangeRelease $type$ value");
         }
 
         {
@@ -551,14 +549,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetPlain $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "success weakCompareAndSetPlain $type$ value");
+            assertEquals($value2$, x, "success weakCompareAndSetPlain $type$ value");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact($value1$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "failing weakCompareAndSetPlain $type$ value");
+            assertEquals($value2$, x, "failing weakCompareAndSetPlain $type$ value");
         }
 
         {
@@ -570,7 +568,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "success weakCompareAndSetAcquire $type$");
+            assertEquals($value1$, x, "success weakCompareAndSetAcquire $type$");
         }
 
         {
@@ -578,7 +576,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             boolean success = (boolean) mh.invokeExact($value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "failing weakCompareAndSetAcquire $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSetAcquire $type$ value");
         }
 
         {
@@ -590,14 +588,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "success weakCompareAndSetRelease $type$");
+            assertEquals($value2$, x, "success weakCompareAndSetRelease $type$");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact($value1$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "failing weakCompareAndSetRelease $type$ value");
+            assertEquals($value2$, x, "failing weakCompareAndSetRelease $type$ value");
         }
 
         {
@@ -609,14 +607,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "success weakCompareAndSet $type$");
+            assertEquals($value1$, x, "success weakCompareAndSet $type$");
         }
 
         {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact($value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value1$, "failing weakCompareAndSetRe $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSetRe $type$ value");
         }
 
         // Compare set and get
@@ -624,9 +622,9 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndSet $type$");
+            assertEquals($value1$, o, "getAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "getAndSet $type$ value");
+            assertEquals($value2$, x, "getAndSet $type$ value");
         }
 
         // Compare set and get
@@ -634,9 +632,9 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndSetAcquire $type$");
+            assertEquals($value1$, o, "getAndSetAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "getAndSetAcquire $type$ value");
+            assertEquals($value2$, x, "getAndSetAcquire $type$ value");
         }
 
         // Compare set and get
@@ -644,9 +642,9 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndSetRelease $type$");
+            assertEquals($value1$, o, "getAndSetRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, $value2$, "getAndSetRelease $type$ value");
+            assertEquals($value2$, x, "getAndSetRelease $type$ value");
         }
 #end[CAS]
 
@@ -656,27 +654,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndAdd $type$");
+            assertEquals($value1$, o, "getAndAdd $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
+            assertEquals(($type$)($value1$ + $value2$), x, "getAndAdd $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndAddAcquire $type$");
+            assertEquals($value1$, o, "getAndAddAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddAcquire $type$ value");
+            assertEquals(($type$)($value1$ + $value2$), x, "getAndAddAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndAddRelease $type$");
+            assertEquals($value1$, o, "getAndAddRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddRelease $type$ value");
+            assertEquals(($type$)($value1$ + $value2$), x, "getAndAddRelease $type$ value");
         }
 #end[AtomicAdd]
 
@@ -686,27 +684,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOr $type$");
+            assertEquals($value1$, o, "getAndBitwiseOr $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOr $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOr $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOrAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseOrAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrAcquire $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOrAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOrRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseOrRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrRelease $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOrRelease $type$ value");
         }
 
         // get and bitwise and
@@ -714,27 +712,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAnd $type$");
+            assertEquals($value1$, o, "getAndBitwiseAnd $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAnd $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAnd $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAndAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseAndAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndAcquire $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAndAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAndRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseAndRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndRelease $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAndRelease $type$ value");
         }
 
         // get and bitwise xor
@@ -742,27 +740,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXor $type$");
+            assertEquals($value1$, o, "getAndBitwiseXor $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXor $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXor $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXorAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseXorAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorAcquire $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXorAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact($value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXorRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseXorRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorRelease $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXorRelease $type$ value");
         }
 #end[Bitwise]
     }
@@ -814,7 +812,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "get $type$ value");
+                assertEquals($value1$, x, "get $type$ value");
             }
 
 
@@ -822,21 +820,21 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             {
                 hs.get(TestAccessMode.SET_VOLATILE).invokeExact(array, i, $value2$);
                 $type$ x = ($type$) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(array, i);
-                assertEquals(x, $value2$, "setVolatile $type$ value");
+                assertEquals($value2$, x, "setVolatile $type$ value");
             }
 
             // Lazy
             {
                 hs.get(TestAccessMode.SET_RELEASE).invokeExact(array, i, $value1$);
                 $type$ x = ($type$) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(array, i);
-                assertEquals(x, $value1$, "setRelease $type$ value");
+                assertEquals($value1$, x, "setRelease $type$ value");
             }
 
             // Opaque
             {
                 hs.get(TestAccessMode.SET_OPAQUE).invokeExact(array, i, $value2$);
                 $type$ x = ($type$) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(array, i);
-                assertEquals(x, $value2$, "setOpaque $type$ value");
+                assertEquals($value2$, x, "setOpaque $type$ value");
             }
 
 #if[CAS]
@@ -847,56 +845,56 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, $value1$, $value2$);
                 assertEquals(r, true, "success compareAndSet $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "success compareAndSet $type$ value");
+                assertEquals($value2$, x, "success compareAndSet $type$ value");
             }
 
             {
                 boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, $value1$, $value3$);
                 assertEquals(r, false, "failing compareAndSet $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "failing compareAndSet $type$ value");
+                assertEquals($value2$, x, "failing compareAndSet $type$ value");
             }
 
             {
                 $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, $value2$, $value1$);
                 assertEquals(r, $value2$, "success compareAndExchange $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "success compareAndExchange $type$ value");
+                assertEquals($value1$, x, "success compareAndExchange $type$ value");
             }
 
             {
                 $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, $value2$, $value3$);
                 assertEquals(r, $value1$, "failing compareAndExchange $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
+                assertEquals($value1$, x, "failing compareAndExchange $type$ value");
             }
 
             {
                 $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, $value1$, $value2$);
                 assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
+                assertEquals($value2$, x, "success compareAndExchangeAcquire $type$ value");
             }
 
             {
                 $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, $value1$, $value3$);
                 assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
+                assertEquals($value2$, x, "failing compareAndExchangeAcquire $type$ value");
             }
 
             {
                 $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, $value2$, $value1$);
                 assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
+                assertEquals($value1$, x, "success compareAndExchangeRelease $type$ value");
             }
 
             {
                 $type$ r = ($type$) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, $value2$, $value3$);
                 assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
+                assertEquals($value1$, x, "failing compareAndExchangeRelease $type$ value");
             }
 
             {
@@ -908,14 +906,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetPlain $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "success weakCompareAndSetPlain $type$ value");
+                assertEquals($value2$, x, "success weakCompareAndSetPlain $type$ value");
             }
 
             {
                 boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(array, i, $value1$, $value3$);
                 assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "failing weakCompareAndSetPlain $type$ value");
+                assertEquals($value2$, x, "failing weakCompareAndSetPlain $type$ value");
             }
 
             {
@@ -927,14 +925,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "success weakCompareAndSetAcquire $type$");
+                assertEquals($value1$, x, "success weakCompareAndSetAcquire $type$");
             }
 
             {
                 boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, $value2$, $value3$);
                 assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "failing weakCompareAndSetAcquire $type$ value");
+                assertEquals($value1$, x, "failing weakCompareAndSetAcquire $type$ value");
             }
 
             {
@@ -946,14 +944,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetRelease $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "success weakCompareAndSetRelease $type$");
+                assertEquals($value2$, x, "success weakCompareAndSetRelease $type$");
             }
 
             {
                 boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, $value1$, $value3$);
                 assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "failing weakCompareAndSetAcquire $type$ value");
+                assertEquals($value2$, x, "failing weakCompareAndSetAcquire $type$ value");
             }
 
             {
@@ -965,14 +963,14 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSet $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "success weakCompareAndSet $type$");
+                assertEquals($value1$, x, "success weakCompareAndSet $type$");
             }
 
             {
                 boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, $value2$, $value3$);
                 assertEquals(success, false, "failing weakCompareAndSet $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value1$, "failing weakCompareAndSet $type$ value");
+                assertEquals($value1$, x, "failing weakCompareAndSet $type$ value");
             }
 
             // Compare set and get
@@ -980,27 +978,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
                 $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, $value2$);
-                assertEquals(o, $value1$, "getAndSet $type$");
+                assertEquals($value1$, o, "getAndSet $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "getAndSet $type$ value");
+                assertEquals($value2$, x, "getAndSet $type$ value");
             }
 
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
                 $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(array, i, $value2$);
-                assertEquals(o, $value1$, "getAndSetAcquire $type$");
+                assertEquals($value1$, o, "getAndSetAcquire $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "getAndSetAcquire $type$ value");
+                assertEquals($value2$, x, "getAndSetAcquire $type$ value");
             }
 
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
                 $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(array, i, $value2$);
-                assertEquals(o, $value1$, "getAndSetRelease $type$");
+                assertEquals($value1$, o, "getAndSetRelease $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, $value2$, "getAndSetRelease $type$ value");
+                assertEquals($value2$, x, "getAndSetRelease $type$ value");
             }
 #end[CAS]
 
@@ -1010,27 +1008,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
                 $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, $value2$);
-                assertEquals(o, $value1$, "getAndAdd $type$");
+                assertEquals($value1$, o, "getAndAdd $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$ value");
+                assertEquals(($type$)($value1$ + $value2$), x, "getAndAdd $type$ value");
             }
 
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
                 $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD_ACQUIRE).invokeExact(array, i, $value2$);
-                assertEquals(o, $value1$, "getAndAddAcquire $type$");
+                assertEquals($value1$, o, "getAndAddAcquire $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddAcquire $type$ value");
+                assertEquals(($type$)($value1$ + $value2$), x, "getAndAddAcquire $type$ value");
             }
 
             {
                 hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
                 $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_ADD_RELEASE).invokeExact(array, i, $value2$);
-                assertEquals(o, $value1$, "getAndAddRelease $type$");
+                assertEquals($value1$, o, "getAndAddRelease $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, ($type$)($value1$ + $value2$), "getAndAddRelease $type$ value");
+                assertEquals(($type$)($value1$ + $value2$), x, "getAndAddRelease $type$ value");
             }
 #end[AtomicAdd]
 
@@ -1040,27 +1038,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOr $type$");
+            assertEquals($value1$, o, "getAndBitwiseOr $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOr $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOr $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR_ACQUIRE).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOrAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseOrAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrAcquire $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOrAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_OR_RELEASE).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseOrRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseOrRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ | $value2$), "getAndBitwiseOrRelease $type$ value");
+            assertEquals(($type$)($value1$ | $value2$), x, "getAndBitwiseOrRelease $type$ value");
         }
 
         // get and bitwise and
@@ -1068,27 +1066,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAnd $type$");
+            assertEquals($value1$, o, "getAndBitwiseAnd $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAnd $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAnd $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND_ACQUIRE).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAndAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseAndAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndAcquire $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAndAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_AND_RELEASE).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseAndRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseAndRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ & $value2$), "getAndBitwiseAndRelease $type$ value");
+            assertEquals(($type$)($value1$ & $value2$), x, "getAndBitwiseAndRelease $type$ value");
         }
 
         // get and bitwise xor
@@ -1096,27 +1094,27 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXor $type$");
+            assertEquals($value1$, o, "getAndBitwiseXor $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXor $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXor $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_ACQUIRE).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXorAcquire $type$");
+            assertEquals($value1$, o, "getAndBitwiseXorAcquire $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorAcquire $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXorAcquire $type$ value");
         }
 
         {
             hs.get(TestAccessMode.SET).invokeExact(array, i, $value1$);
 
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_BITWISE_XOR_RELEASE).invokeExact(array, i, $value2$);
-            assertEquals(o, $value1$, "getAndBitwiseXorRelease $type$");
+            assertEquals($value1$, o, "getAndBitwiseXorRelease $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-            assertEquals(x, ($type$)($value1$ ^ $value2$), "getAndBitwiseXorRelease $type$ value");
+            assertEquals(($type$)($value1$ ^ $value2$), x, "getAndBitwiseXorRelease $type$ value");
         }
 #end[Bitwise]
         }
