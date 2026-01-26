@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          throws the correct exception message, if the connect() fails
  * @run junit ${test.main.class}
  */
-class FailedConnect {
+class ConnectionRefusedMessage {
 
     /*
      * On a non-blocking SocketChannel, registered with a Selector, this test method
