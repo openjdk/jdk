@@ -69,7 +69,7 @@ public class CmpUNodeValueTests {
         Asserts.assertEQ(0, testIntGT(false, true));
         Asserts.assertEQ(0, testIntGT(true, false));
         Asserts.assertEQ(0, testIntGT(true, true));
-        Asserts.assertEQ(0, testIntGE((int) x, (int) y));
+        Asserts.assertEQ(0, testIntGE((int) y));
         Asserts.assertEQ(0, testIntEQ());
         Asserts.assertEQ(0, testIntNE(false, false));
         Asserts.assertEQ(0, testIntNE(false, true));
@@ -90,7 +90,7 @@ public class CmpUNodeValueTests {
         Asserts.assertEQ(0, testLongGT(false, true));
         Asserts.assertEQ(0, testLongGT(true, false));
         Asserts.assertEQ(0, testLongGT(true, true));
-        Asserts.assertEQ(0, testLongGE((int) x, (int) y));
+        Asserts.assertEQ(0, testLongGE((int) y));
         Asserts.assertEQ(0, testLongEQ());
         Asserts.assertEQ(0, testLongNE(false, false));
         Asserts.assertEQ(0, testLongNE(false, true));
@@ -132,10 +132,9 @@ public class CmpUNodeValueTests {
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_U, IRNode.CALL})
-    int testIntGE(int x, int y) {
-        int v1 = x | Integer.MIN_VALUE; // Set the highest bit, make v1 negative
+    int testIntGE(int y) {
         int v2 = y & Integer.MAX_VALUE; // Unset the highest bit, make v2 non-negative
-        return Integer.compareUnsigned(v1, v2) >= 0 ? 0 : one();
+        return Integer.compareUnsigned(Integer.MIN_VALUE, v2) >= 0 ? 0 : one();
     }
 
     @Test
@@ -187,10 +186,9 @@ public class CmpUNodeValueTests {
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true"}, failOn = {IRNode.CMP_UL, IRNode.CALL})
-    int testLongGE(int x, int y) {
-        long v1 = x | Long.MIN_VALUE; // Set the highest bit, make v1 negative
+    int testLongGE(int y) {
         long v2 = y & Long.MAX_VALUE; // Unset the highest bit, make v2 non-negative
-        return Long.compareUnsigned(v1, v2) >= 0 ? 0 : one();
+        return Long.compareUnsigned(Long.MIN_VALUE, v2) >= 0 ? 0 : one();
     }
 
     @Test
