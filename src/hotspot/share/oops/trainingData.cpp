@@ -119,7 +119,7 @@ void TrainingData::verify() {
 
 MethodTrainingData* MethodTrainingData::make(const methodHandle& method, bool null_if_not_found, bool use_cache) {
   MethodTrainingData* mtd = nullptr;
-  if (!have_data() && !need_data()) {
+  if ((!have_data() && !need_data()) || (assembling_data() && !CDSConfig::is_at_aot_safepoint())) {
     return mtd;
   }
   // Try grabbing the cached value first.
