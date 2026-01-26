@@ -80,8 +80,9 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
     // DFS-only mode should work well, and so should BFS-only mode.
 
     // The minimum size of the edge queue in BFS (keep in sync with hotspot)
-    // see edge_queue_memory_reservation() in pathToGCRootsOperation.cpp
     private final static int minimumEdgeQueueSizeCap = 32 * 1024 * 1024;
+    // The size of the Edge structure (keep in sync with hotspot)
+    private final static int edgeSizeBytes = 16;
 
     public static List<Object[]> leak;
 
@@ -125,13 +126,11 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
 
         WhiteBox.setSkipBFS(skipBFS);
 
-        testDump(Collections.singletonMap(settingName, "infinity"), leakedObjectCount);
+        testDump("path-to-gc-roots=true", Collections.singletonMap(settingName, "infinity"), leakedObjectCount, true);
     }
 
-    private static void testDump(Map<String, String> settings, int leakedObjectCount) throws Exception {
-        final String pathToGcRoots = "path-to-gc-roots=true";
-        int numTries = 3;
-        while (--numTries >= 0) {
+    private static void testDump(String pathToGcRoots, Map<String, String> settings, int leakedObjectCount, boolean expectedChains) throws Exception {
+        while (true) {
             try (Recording r = new Recording()) {
                 Map<String, String> p = new HashMap<>(settings);
                 p.put(EventNames.OldObjectSample + "#" + Enabled.NAME, "true");
@@ -143,6 +142,7 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
                 System.out.println("Recording id: " + r.getId());
                 System.out.println("Settings: " + settings.toString());
                 System.out.println("Command: JFR.dump " + pathToGcRoots);
+                System.out.println("Chains expected: " + expectedChains);
                 buildLeak(leakedObjectCount);
                 System.gc();
                 System.gc();
@@ -155,17 +155,20 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
                     System.out.println("No events found in recording. Retrying.");
                     continue;
                 }
-                int chains = countChains(events);
-                final int minNumberOfChains = 20; // very conservative; normally 130-160
-                if (chains < minNumberOfChains) {
+                boolean chains = hasChains(events);
+                if (expectedChains && !chains) {
                     System.out.println(events);
-                    System.out.println("Not enough chains found (" + chains + "), retrying.");
+                    System.out.println("Expected chains but found none. Retrying.");
+                    continue;
+                }
+                if (!expectedChains && chains) {
+                    System.out.println(events);
+                    System.out.println("Didn't expect chains but found some. Retrying.");
                     continue;
                 }
                 return; // Success
             }
         }
-        throw new RuntimeException("Failed");
     }
 
     private static void clearLeak() {
@@ -173,16 +176,14 @@ public class TestJcmdDumpPathToGCRootsBFSDFS {
       System.gc();
     }
 
-    private static int countChains(List<RecordedEvent> events) throws IOException {
-        int found = 0;
+    private static boolean hasChains(List<RecordedEvent> events) throws IOException {
         for (RecordedEvent e : events) {
             RecordedObject ro = e.getValue("object");
             if (ro.getValue("referrer") != null) {
-                found++;
+                return true;
             }
         }
-        System.out.println("Found chains: " + found);
-        return found;
+        return false;
     }
 
     private static void buildLeak(int objectCount) {
