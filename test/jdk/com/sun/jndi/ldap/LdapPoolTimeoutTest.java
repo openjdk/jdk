@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ public class LdapPoolTimeoutTest {
                                 || msg.contains("No route to host")
                                 || msg.contains("Timed out waiting for lock")
                                 || msg.contains("Connect timed out")
+                                || msg.contains("Connection timed out")
                                 || msg.contains("Timeout exceeded while waiting for a connection"))) {
                     // got the expected exception
                     System.out.println("Received expected NamingException with message: " + msg);
