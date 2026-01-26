@@ -124,6 +124,7 @@ public class DiagnosticGetEndPosition {
                     // different between the text block and the written file.
                     int line = (int) d.getLineNumber();
                     int col = (int) d.getColumnNumber();
+                    assertEquals(1, d.getEndPosition() - d.getStartPosition());
                     String substring = implCode.split("\\R")[line - 1].substring(col - 1, col);
                     assertEquals("0", substring);
                 },

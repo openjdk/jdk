@@ -91,6 +91,8 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER)
     public Boolean call() {
+        if (used.get())
+            throw new IllegalStateException();
         return doCall().isOK();
     }
 
@@ -244,6 +246,8 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends CompilationUnitTree> parse() {
+        if (used.get())
+            throw new IllegalStateException();
         Pair<Iterable<? extends CompilationUnitTree>, Throwable> result =  invocationHelper(this::parseInternal);
         if (result.snd == null) {
             return result.fst;
