@@ -158,7 +158,7 @@ class RelocActions : public AllStatic {
 
 public:
 
-  static int ALWAYSINLINE run(address insn_addr, address &target) {
+  ALWAYSINLINE static int run(address insn_addr, address &target) {
     int instructions = 1;
     uint32_t insn = insn_at(insn_addr, 0);
 

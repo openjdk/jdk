@@ -77,9 +77,14 @@
 #define REG_LR 30
 #define REG_BCP 22
 
-NOINLINE address os::current_stack_pointer() {
-  return (address)__builtin_frame_address(0);
-}
+asm (R"(
+    .globl  _ZN2os21current_stack_pointerEv
+    .hidden _ZN2os21current_stack_pointerEv
+    .type   _ZN2os21current_stack_pointerEv, @function
+_ZN2os21current_stack_pointerEv:
+    mov     x0, sp
+    ret
+)");
 
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
