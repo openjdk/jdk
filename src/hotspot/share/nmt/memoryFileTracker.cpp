@@ -46,8 +46,8 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
   file->_tree.commit_mapping(offset, size, regiondata, diff);
   for (int i = 0; i < mt_number_of_tags; i++) {
     VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
-    summary->reserve_memory(diff.tag[i].commit);
-    summary->commit_memory(diff.tag[i].commit);
+    summary->reserve_memory(diff.tag(i).commit);
+    summary->commit_memory(diff.tag(i).commit);
   }
 }
 
@@ -56,8 +56,8 @@ void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size
   file->_tree.release_mapping(offset, size, diff);
   for (int i = 0; i < mt_number_of_tags; i++) {
     VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
-    summary->reserve_memory(diff.tag[i].commit);
-    summary->commit_memory(diff.tag[i].commit);
+    summary->reserve_memory(diff.tag(i).commit);
+    summary->commit_memory(diff.tag(i).commit);
   }
 }
 

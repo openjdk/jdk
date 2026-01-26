@@ -375,7 +375,7 @@ class VirtualMemoryTracker {
 
   // Snapshot current thread stacks
   void snapshot_thread_stacks();
-  void apply_summary_diff(VMATree::SummaryDiff diff);
+  void apply_summary_diff(VMATree::SummaryDiff& diff);
   size_t committed_size(const ReservedMemoryRegion* rmr);
   address thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr);
 
@@ -400,7 +400,7 @@ class VirtualMemoryTracker {
     static bool walk_virtual_memory(VirtualMemoryWalker* walker);
     static bool print_containing_region(const void* p, outputStream* st);
     static void snapshot_thread_stacks();
-    static void apply_summary_diff(VMATree::SummaryDiff diff);
+    static void apply_summary_diff(VMATree::SummaryDiff& diff);
     static size_t committed_size(const ReservedMemoryRegion* rmr);
     // uncommitted thread stack bottom, above guard pages if there is any.
     static address thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr);
