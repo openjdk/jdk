@@ -650,9 +650,9 @@ public class TreeInfo {
         if (tree == null)
             return Position.NOPOS;
 
-        int mapPos = tree.endpos;
-        if (mapPos != Position.NOPOS)
-            return mapPos;
+        int endpos = tree.endpos;
+        if (endpos != Position.NOPOS)
+            return endpos;
 
         switch(tree.getTag()) {
             case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
