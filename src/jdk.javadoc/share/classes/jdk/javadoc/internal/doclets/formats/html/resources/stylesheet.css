@@ -163,6 +163,13 @@
     <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
     <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
     --current-theme-svg: url("moon.svg");
+    div.block a[href], div.horizontal-scroll a[href], div.inherited-list h3 a[href], header > div a[href],
+    .hierarchy a[href], .index a[href], div.caption a[href], .sub-title a[href], .deprecation-comment a[href],
+    .serialized-class-details a[href] {
+        text-decoration: underline;
+        text-decoration-thickness: 0.02em;
+        text-underline-offset: 0.12em;
+    }
 }
 /*
  * Styles for individual HTML elements.
