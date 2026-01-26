@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework.driver.network.testvm.java;
 
+import compiler.lib.ir_framework.test.network.MessageTag;
+
 /**
  * Class to collect all Java messages sent from the Test VM to the Driver VM.
  */
@@ -39,6 +41,9 @@ public class JavaMessages {
         return output;
     }
 
+    /**
+     * Return whether Test VM sent messages to be put on stdout (starting with {@link MessageTag#STDOUT}).
+     */
     public boolean hasStdOut() {
         return receivedStdOut;
     }
