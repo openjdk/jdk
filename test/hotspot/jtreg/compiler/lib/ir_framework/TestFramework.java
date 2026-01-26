@@ -881,8 +881,7 @@ public class TestFramework {
         if (shouldVerifyIR) {
             try {
                 TestClassParser testClassParser = new TestClassParser(testClass, allowNotCompilable);
-                Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
-                                                                     testVMProcess.getApplicableIRRules());
+                Matchable testClassMatchable = testClassParser.parse(testVMProcess.testVmData());
                 IRMatcher matcher = new IRMatcher(testClassMatchable);
                 matcher.match();
             } catch (IRViolationException e) {

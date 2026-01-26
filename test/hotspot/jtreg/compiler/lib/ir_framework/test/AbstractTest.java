@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@ package compiler.lib.ir_framework.test;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestRun;
 import compiler.lib.ir_framework.shared.TestRunException;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-
-import compiler.lib.ir_framework.shared.TestFrameworkSocket;
 
 /**
  * Abstract super class for base, checked and custom run tests.
@@ -118,7 +117,7 @@ abstract class AbstractTest {
             tryCompileMethod(test);
         } catch (MethodNotCompilableException e) {
             final Method testMethod = test.getTestMethod();
-            TestFrameworkSocket.write("Method not compilable: " + testMethod, TestFrameworkSocket.NOT_COMPILABLE_TAG, true);
+            TestVmSocket.send("Method not compilable: " + testMethod);
             TestRun.check(test.isAllowNotCompilable(),
                           "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel() +
                           ". Most likely, this is not expected, but if it is, you can use 'allowNotCompilable'.");

@@ -27,6 +27,8 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 
@@ -169,9 +171,8 @@ public class ApplicableIRRulesPrinter {
     }
 
     private void printDisableReason(String method, String reason, String[] apply, int ruleIndex, int ruleMax) {
-        TestFrameworkSocket.write("Disabling IR matching for rule " + ruleIndex + " of " + ruleMax + " in " +
-                                  method + ": " + reason + ": " + String.join(", ", apply),
-                                  "[ApplicableIRRules]", true);
+        TestVmSocket.send("Disabling IR matching for rule " + ruleIndex + " of " + ruleMax + " in " + method + ": " +
+                                  reason + ": " + String.join(", ", apply));
     }
 
     private boolean shouldApplyIrRule(IR irAnno, String m, int ruleIndex, int ruleMax) {
@@ -284,7 +285,7 @@ public class ApplicableIRRulesPrinter {
                 IRNode.checkIRNodeSupported(s);
             }
         } catch (CheckedTestFrameworkException e) {
-            TestFrameworkSocket.write("Skip Rule " + ruleIndex + ": " + e.getMessage(), TestFrameworkSocket.DEFAULT_REGEX_TAG, true);
+            TestVmSocket.send("Skip Rule " + ruleIndex + ": " + e.getMessage());
             return true;
         }
         return false;
@@ -522,7 +523,7 @@ public class ApplicableIRRulesPrinter {
 
     public void emit() {
         output.append(END);
-        TestFrameworkSocket.write(output.toString(), "ApplicableIRRules");
+        TestVmSocket.sendWithTag(MessageTag.APPLICABLE_IR_RULES, output.toString());
     }
 }
 

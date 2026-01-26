@@ -23,7 +23,8 @@
 
 package compiler.lib.ir_framework.test;
 
-import compiler.lib.ir_framework.shared.TestFrameworkSocket;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.whitebox.WhiteBox;
 
 /**
@@ -65,6 +66,6 @@ public class VMInfoPrinter {
               .append(System.lineSeparator());
 
         vmInfo.append(END_VM_INFO);
-        TestFrameworkSocket.write(vmInfo.toString(), "VMInfo");
+        TestVmSocket.sendWithTag(MessageTag.VM_INFO, vmInfo.toString());
     }
 }
