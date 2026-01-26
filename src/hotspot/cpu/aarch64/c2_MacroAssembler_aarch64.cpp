@@ -2445,8 +2445,10 @@ void C2_MacroAssembler::sve_extract_integral(Register dst, BasicType bt, FloatRe
       smov(dst, src, size, idx);
     }
   } else {
-    sve_orr(vtmp, src, src);
-    sve_ext(vtmp, vtmp, idx << size);
+    sve_movprfx(vtmp, src);
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    sve_ext(vtmp, src, idx << size);
     if (bt == T_INT || bt == T_LONG) {
       umov(dst, vtmp, size, 0);
     } else {

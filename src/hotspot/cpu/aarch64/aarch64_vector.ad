@@ -1379,42 +1379,54 @@ instruct vand_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 
 // vector and reg imm (unpredicated)
 
-instruct vandImmB(vReg dst_src, immBLog con) %{
+instruct vandImmB(vReg dst, vReg src, immBLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
-  match(Set dst_src (AndV dst_src (Replicate con)));
-  format %{ "vandImmB $dst_src, $dst_src, $con" %}
+  match(Set dst (AndV src (Replicate con)));
+  format %{ "vandImmB $dst, $src, $con" %}
   ins_encode %{
-    __ sve_and($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_and($dst$$FloatRegister, __ B, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vandImmS(vReg dst_src, immSLog con) %{
+instruct vandImmS(vReg dst, vReg src, immSLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (AndV dst_src (Replicate con)));
-  format %{ "vandImmS $dst_src, $dst_src, $con" %}
+  match(Set dst (AndV src (Replicate con)));
+  format %{ "vandImmS $dst, $src, $con" %}
   ins_encode %{
-    __ sve_and($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_and($dst$$FloatRegister, __ H, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vandImmI(vReg dst_src, immILog con) %{
+instruct vandImmI(vReg dst, vReg src, immILog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_INT);
-  match(Set dst_src (AndV dst_src (Replicate con)));
-  format %{ "vandImmI $dst_src, $dst_src, $con" %}
+  match(Set dst (AndV src (Replicate con)));
+  format %{ "vandImmI $dst, $src, $con" %}
   ins_encode %{
-    __ sve_and($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_and($dst$$FloatRegister, __ S, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vandImmL(vReg dst_src, immLLog con) %{
+instruct vandImmL(vReg dst, vReg src, immLLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (AndV dst_src (Replicate con)));
-  format %{ "vandImmL $dst_src, $dst_src, $con" %}
+  match(Set dst (AndV src (Replicate con)));
+  format %{ "vandImmL $dst, $src, $con" %}
   ins_encode %{
-    __ sve_and($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_and($dst$$FloatRegister, __ D, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1455,42 +1467,54 @@ instruct vor_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 
 // vector or reg imm (unpredicated)
 
-instruct vorImmB(vReg dst_src, immBLog con) %{
+instruct vorImmB(vReg dst, vReg src, immBLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
-  match(Set dst_src (OrV dst_src (Replicate con)));
-  format %{ "vorImmB $dst_src, $dst_src, $con" %}
+  match(Set dst (OrV src (Replicate con)));
+  format %{ "vorImmB $dst, $src, $con" %}
   ins_encode %{
-    __ sve_orr($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_orr($dst$$FloatRegister, __ B, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vorImmS(vReg dst_src, immSLog con) %{
+instruct vorImmS(vReg dst, vReg src, immSLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (OrV dst_src (Replicate con)));
-  format %{ "vorImmS $dst_src, $dst_src, $con" %}
+  match(Set dst (OrV src (Replicate con)));
+  format %{ "vorImmS $dst, $src, $con" %}
   ins_encode %{
-    __ sve_orr($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_orr($dst$$FloatRegister, __ H, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vorImmI(vReg dst_src, immILog con) %{
+instruct vorImmI(vReg dst, vReg src, immILog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_INT);
-  match(Set dst_src (OrV dst_src (Replicate con)));
-  format %{ "vorImmI $dst_src, $dst_src, $con" %}
+  match(Set dst (OrV src (Replicate con)));
+  format %{ "vorImmI $dst, $src, $con" %}
   ins_encode %{
-    __ sve_orr($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_orr($dst$$FloatRegister, __ S, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vorImmL(vReg dst_src, immLLog con) %{
+instruct vorImmL(vReg dst, vReg src, immLLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (OrV dst_src (Replicate con)));
-  format %{ "vorImmL $dst_src, $dst_src, $con" %}
+  match(Set dst (OrV src (Replicate con)));
+  format %{ "vorImmL $dst, $src, $con" %}
   ins_encode %{
-    __ sve_orr($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_orr($dst$$FloatRegister, __ D, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1531,42 +1555,54 @@ instruct vxor_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 
 // vector xor reg imm (unpredicated)
 
-instruct vxorImmB(vReg dst_src, immBLog con) %{
+instruct vxorImmB(vReg dst, vReg src, immBLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
-  match(Set dst_src (XorV dst_src (Replicate con)));
-  format %{ "vxorImmB $dst_src, $dst_src, $con" %}
+  match(Set dst (XorV src (Replicate con)));
+  format %{ "vxorImmB $dst, $src, $con" %}
   ins_encode %{
-    __ sve_eor($dst_src$$FloatRegister, __ B, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_eor($dst$$FloatRegister, __ B, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorImmS(vReg dst_src, immSLog con) %{
+instruct vxorImmS(vReg dst, vReg src, immSLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst_src (XorV dst_src (Replicate con)));
-  format %{ "vxorImmS $dst_src, $dst_src, $con" %}
+  match(Set dst (XorV src (Replicate con)));
+  format %{ "vxorImmS $dst, $src, $con" %}
   ins_encode %{
-    __ sve_eor($dst_src$$FloatRegister, __ H, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_eor($dst$$FloatRegister, __ H, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorImmI(vReg dst_src, immILog con) %{
+instruct vxorImmI(vReg dst, vReg src, immILog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_INT);
-  match(Set dst_src (XorV dst_src (Replicate con)));
-  format %{ "vxorImmI $dst_src, $dst_src, $con" %}
+  match(Set dst (XorV src (Replicate con)));
+  format %{ "vxorImmI $dst, $src, $con" %}
   ins_encode %{
-    __ sve_eor($dst_src$$FloatRegister, __ S, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_eor($dst$$FloatRegister, __ S, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorImmL(vReg dst_src, immLLog con) %{
+instruct vxorImmL(vReg dst, vReg src, immLLog con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst_src (XorV dst_src (Replicate con)));
-  format %{ "vxorImmL $dst_src, $dst_src, $con" %}
+  match(Set dst (XorV src (Replicate con)));
+  format %{ "vxorImmL $dst, $src, $con" %}
   ins_encode %{
-    __ sve_eor($dst_src$$FloatRegister, __ D, (uint64_t)($con$$constant));
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    __ sve_eor($dst$$FloatRegister, __ D, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1633,24 +1669,38 @@ instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
 
 // vector not - predicated
 
-instruct vnotI_masked(vReg dst_src, immI_M1 m1, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vnotI_masked(vReg dst, vReg src, immI_M1 m1, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (XorV (Binary dst_src (Replicate m1)) pg));
-  format %{ "vnotI_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (XorV (Binary src (Replicate m1)) pg));
+  format %{ "vnotI_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_not($dst_src$$FloatRegister, get_reg_variant(this),
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_not($dst$$FloatRegister, get_reg_variant(this),
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vnotL_masked(vReg dst_src, immL_M1 m1, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vnotL_masked(vReg dst, vReg src, immL_M1 m1, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (XorV (Binary dst_src (Replicate m1)) pg));
-  format %{ "vnotL_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (XorV (Binary src (Replicate m1)) pg));
+  format %{ "vnotL_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_not($dst_src$$FloatRegister, get_reg_variant(this),
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_not($dst$$FloatRegister, get_reg_variant(this),
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1947,62 +1997,104 @@ instruct vabsD(vReg dst, vReg src) %{
 
 // vector abs - predicated
 
-instruct vabsB_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vabsB_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AbsVB dst_src pg));
-  format %{ "vabsB_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (AbsVB src pg));
+  format %{ "vabsB_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_abs($dst_src$$FloatRegister, __ B, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_abs($dst$$FloatRegister, __ B, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vabsS_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vabsS_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AbsVS dst_src pg));
-  format %{ "vabsS_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (AbsVS src pg));
+  format %{ "vabsS_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_abs($dst_src$$FloatRegister, __ H, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_abs($dst$$FloatRegister, __ H, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vabsI_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vabsI_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AbsVI dst_src pg));
-  format %{ "vabsI_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (AbsVI src pg));
+  format %{ "vabsI_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_abs($dst_src$$FloatRegister, __ S, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_abs($dst$$FloatRegister, __ S, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vabsL_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vabsL_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AbsVL dst_src pg));
-  format %{ "vabsL_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (AbsVL src pg));
+  format %{ "vabsL_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_abs($dst_src$$FloatRegister, __ D, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_abs($dst$$FloatRegister, __ D, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vabsF_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vabsF_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AbsVF dst_src pg));
-  format %{ "vabsF_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (AbsVF src pg));
+  format %{ "vabsF_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_fabs($dst_src$$FloatRegister, __ S, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_fabs($dst$$FloatRegister, __ S, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vabsD_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vabsD_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (AbsVD dst_src pg));
-  format %{ "vabsD_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (AbsVD src pg));
+  format %{ "vabsD_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_fabs($dst_src$$FloatRegister, __ D, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_fabs($dst$$FloatRegister, __ D, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2120,44 +2212,72 @@ instruct vnegD(vReg dst, vReg src) %{
 
 // vector neg - predicated
 
-instruct vnegI_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vnegI_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (NegVI dst_src pg));
-  format %{ "vnegI_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (NegVI src pg));
+  format %{ "vnegI_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_neg($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_neg($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vnegL_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vnegL_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (NegVL dst_src pg));
-  format %{ "vnegL_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (NegVL src pg));
+  format %{ "vnegL_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_neg($dst_src$$FloatRegister, __ D, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_neg($dst$$FloatRegister, __ D, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vnegF_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vnegF_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (NegVF dst_src pg));
-  format %{ "vnegF_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (NegVF src pg));
+  format %{ "vnegF_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_fneg($dst_src$$FloatRegister, __ S, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_fneg($dst$$FloatRegister, __ S, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vnegD_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vnegD_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (NegVD dst_src pg));
-  format %{ "vnegD_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (NegVD src pg));
+  format %{ "vnegD_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_fneg($dst_src$$FloatRegister, __ D, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_fneg($dst$$FloatRegister, __ D, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2213,22 +2333,36 @@ instruct vsqrtD(vReg dst, vReg src) %{
 
 // vector sqrt - predicated
 
-instruct vsqrtF_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vsqrtF_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (SqrtVF dst_src pg));
-  format %{ "vsqrtF_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (SqrtVF src pg));
+  format %{ "vsqrtF_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_fsqrt($dst_src$$FloatRegister, __ S, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_fsqrt($dst$$FloatRegister, __ S, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vsqrtD_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vsqrtD_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (SqrtVD dst_src pg));
-  format %{ "vsqrtD_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (SqrtVD src pg));
+  format %{ "vsqrtD_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_fsqrt($dst_src$$FloatRegister, __ D, $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_fsqrt($dst$$FloatRegister, __ D, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5232,7 +5366,7 @@ instruct insertI_index_lt32(vReg dst, vReg src, iRegIorL2I val, immI idx,
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, size, ptrue,
                $tmp$$FloatRegister, (int)($idx$$constant) - 16);
     if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     }
     __ sve_cpy($dst$$FloatRegister, size, $pgtmp$$PRegister, $val$$Register);
   %}
@@ -5257,7 +5391,7 @@ instruct insertI_index_ge32(vReg dst, vReg src, iRegIorL2I val, immI idx, vReg t
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, size, ptrue,
                $tmp1$$FloatRegister, $tmp2$$FloatRegister);
     if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     }
     __ sve_cpy($dst$$FloatRegister, size, $pgtmp$$PRegister, $val$$Register);
   %}
@@ -5293,7 +5427,7 @@ instruct insertL_gt128b(vReg dst, vReg src, iRegL val, immI idx,
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ D, ptrue,
                $tmp$$FloatRegister, (int)($idx$$constant) - 16);
     if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     }
     __ sve_cpy($dst$$FloatRegister, __ D, $pgtmp$$PRegister, $val$$Register);
   %}
@@ -5332,7 +5466,7 @@ instruct insertF_index_lt32(vReg dst, vReg src, vRegF val, immI idx,
     __ sve_index($dst$$FloatRegister, __ S, -16, 1);
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ S, ptrue,
                $dst$$FloatRegister, (int)($idx$$constant) - 16);
-    __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+    __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, __ S, $pgtmp$$PRegister, $val$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -5351,7 +5485,7 @@ instruct insertF_index_ge32(vReg dst, vReg src, vRegF val, immI idx, vReg tmp,
     __ sve_dup($dst$$FloatRegister, __ S, (int)($idx$$constant));
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ S, ptrue,
                $tmp$$FloatRegister, $dst$$FloatRegister);
-    __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+    __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, __ S, $pgtmp$$PRegister, $val$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -5386,7 +5520,7 @@ instruct insertD_gt128b(vReg dst, vReg src, vRegD val, immI idx,
     __ sve_index($dst$$FloatRegister, __ D, -16, 1);
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ D, ptrue,
                $dst$$FloatRegister, (int)($idx$$constant) - 16);
-    __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+    __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, __ D, $pgtmp$$PRegister, $val$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -5556,8 +5690,10 @@ instruct extractF(vRegF dst, vReg src, immI idx) %{
       __ ins($dst$$FloatRegister, __ S, $src$$FloatRegister, 0, index);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
-      __ sve_ext($dst$$FloatRegister, $dst$$FloatRegister, index << 2);
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+      // Fusion limitation: avoid using the movprfx destination as
+      // the source of the next instruction.
+      __ sve_ext($dst$$FloatRegister, $src$$FloatRegister, index << 2);
     }
   %}
   ins_pipe(pipe_slow);
@@ -5577,8 +5713,10 @@ instruct extractD(vRegD dst, vReg src, immI idx) %{
       __ ins($dst$$FloatRegister, __ D, $src$$FloatRegister, 0, index);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
-      __ sve_ext($dst$$FloatRegister, $dst$$FloatRegister, index << 3);
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+      // Fusion limitation: avoid using the movprfx destination as
+      // the source of the next instruction.
+      __ sve_ext($dst$$FloatRegister, $src$$FloatRegister, index << 3);
     }
   %}
   ins_pipe(pipe_slow);
@@ -6755,25 +6893,39 @@ instruct vpopcountL(vReg dst, vReg src) %{
 
 // vector popcount - predicated
 
-instruct vpopcountI_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vpopcountI_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (PopCountVI dst_src pg));
-  format %{ "vpopcountI_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (PopCountVI src pg));
+  format %{ "vpopcountI_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_cnt($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_cnt($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vpopcountL_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vpopcountL_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (PopCountVL dst_src pg));
-  format %{ "vpopcountL_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (PopCountVL src pg));
+  format %{ "vpopcountL_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_cnt($dst_src$$FloatRegister, __ D,
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_cnt($dst$$FloatRegister, __ D,
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -7140,14 +7292,21 @@ instruct vcountLeadingZeros(vReg dst, vReg src) %{
 // The dst and src should use the same register to make sure the
 // inactive lanes in dst save the same elements as src.
 
-instruct vcountLeadingZeros_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vcountLeadingZeros_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (CountLeadingZerosV dst_src pg));
-  format %{ "vcountLeadingZeros_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (CountLeadingZerosV src pg));
+  format %{ "vcountLeadingZeros_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_clz($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_clz($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -7196,19 +7355,24 @@ instruct vcountTrailingZeros(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// The dst and src should use the same register to make sure the
-// inactive lanes in dst save the same elements as src.
-instruct vcountTrailingZeros_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vcountTrailingZeros_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (CountTrailingZerosV dst_src pg));
-  format %{ "vcountTrailingZeros_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (CountTrailingZerosV src pg));
+  format %{ "vcountTrailingZeros_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-    __ sve_rbit($dst_src$$FloatRegister, size,
-                $pg$$PRegister, $dst_src$$FloatRegister);
-    __ sve_clz($dst_src$$FloatRegister, size,
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_rbit($dst$$FloatRegister, size,
+                $pg$$PRegister, $src$$FloatRegister);
+    __ sve_clz($dst$$FloatRegister, size,
+               $pg$$PRegister, $dst$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -7247,14 +7411,21 @@ instruct vreverse(vReg dst, vReg src) %{
 // The dst and src should use the same register to make sure the
 // inactive lanes in dst save the same elements as src.
 
-instruct vreverse_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vreverse_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (ReverseV dst_src pg));
-  format %{ "vreverse_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (ReverseV src pg));
+  format %{ "vreverse_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_rbit($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    if ($dst$$FloatRegister != $src$$FloatRegister) {
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    }
+    // Fusion limitation: avoid using the movprfx destination as
+    // the source of the next instruction.
+    __ sve_rbit($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -7293,19 +7464,26 @@ instruct vreverseBytes(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// The dst and src should use the same register to make sure the
-// inactive lanes in dst save the same elements as src.
-instruct vreverseBytes_masked(vReg dst_src, pRegGov pg) %{
+// The API requires that the value of the inactive lane in dst be
+// consistent with that in src.
+instruct vreverseBytes_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (ReverseBytesV dst_src pg));
-  format %{ "vreverseBytes_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (ReverseBytesV src pg));
+  format %{ "vreverseBytes_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (bt == T_BYTE) {
-      // do nothing
+      if ($dst$$FloatRegister != $src$$FloatRegister) {
+        __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+      }
     } else {
-      __ sve_revb($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-                  $pg$$PRegister, $dst_src$$FloatRegister);
+      if ($dst$$FloatRegister != $src$$FloatRegister) {
+        __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+      }
+      // Fusion limitation: avoid using the movprfx destination as
+      // the source of the next instruction.
+      __ sve_revb($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                  $pg$$PRegister, $src$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);
