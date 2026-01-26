@@ -435,6 +435,11 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
         Assertions.assertThrows(DateTimeParseException.class, () -> OffsetTime.parse(unparsable));
     }
 
+    @Test
+    public void factory_parse_hourOnlyOffset() {
+        Assertions.assertDoesNotThrow(() -> OffsetTime.parse("00:00:00-09"));
+    }
+
     //-----------------------------------------------------------------------s
     @Test
     public void factory_parse_illegalHour() {
