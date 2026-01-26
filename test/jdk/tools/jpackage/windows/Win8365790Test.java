@@ -43,6 +43,8 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary Test case for JDK-8365790
  * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
+ * @build jtreg.SkippedException 
  * @build jdk.jpackage.test.*
  * @build Win8365790Test
  * @requires (os.family == "windows")
