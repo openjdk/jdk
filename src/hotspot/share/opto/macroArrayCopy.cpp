@@ -58,7 +58,7 @@ void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, int a
 Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType elembt, bool raw_base) {
   uint shift  = exact_log2(type2aelembytes(elembt));
   uint header = arrayOopDesc::base_offset_in_bytes(elembt);
-  Node* base =  basic_plus_adr(raw_base ? top() : ary, ary, header);
+  Node* base =  basic_plus_adr(ary, header, raw_base);
 #ifdef _LP64
   // see comment in GraphKit::array_element_address
   int index_max = max_jint - 1;  // array size is max_jint, index is one less
@@ -962,7 +962,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
       if (bump_bit != 0) {
         // Store a zero to the immediately preceding jint:
         Node* x1 = transform_later(new AddXNode(start, MakeConX(-bump_bit)) );
-        Node* p1 = basic_plus_adr(dest, x1);
+        Node* p1 = basic_plus_adr(dest, x1, adr_type == TypeRawPtr::BOTTOM);
         mem = StoreNode::make(_igvn, ctrl, mem, p1, adr_type, intcon(0), T_INT, MemNode::unordered);
         mem = transform_later(mem);
       }
@@ -1011,7 +1011,7 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
     if (((src_off | dest_off) & (BytesPerLong-1)) == BytesPerInt &&
         ((src_off ^ dest_off) & (BytesPerLong-1)) == 0) {
       Node* sptr = basic_plus_adr(src,  src_off);
-      Node* dptr = basic_plus_adr(dest, dest_off);
+      Node* dptr = basic_plus_adr(dest, dest_off, adr_type == TypeRawPtr::BOTTOM);
       const TypePtr* s_adr_type = _igvn.type(sptr)->is_ptr();
       assert(s_adr_type->isa_aryptr(), "impossible slice");
       uint s_alias_idx = C->get_alias_index(s_adr_type);
@@ -1039,7 +1039,7 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
 
   // Do this copy by giant steps.
   Node* sptr  = basic_plus_adr(src,  src_off);
-  Node* dptr  = basic_plus_adr(adr_type == TypeRawPtr::BOTTOM ? top() : dest, dest, dest_off);
+  Node* dptr  = basic_plus_adr(dest, dest_off, adr_type == TypeRawPtr::BOTTOM);
   Node* countx = dest_size;
   countx = transform_later(new SubXNode(countx, MakeConX(dest_off)));
   countx = transform_later(new URShiftXNode(countx, intcon(LogBytesPerLong)));

@@ -40,14 +40,15 @@ private:
 
 public:
   // Helper methods roughly modeled after GraphKit:
-  Node* basic_plus_adr(Node* base, int offset) {
-    return (offset == 0)? base: basic_plus_adr(base, MakeConX(offset));
+  Node* basic_plus_adr(Node* ptr, int offset, bool raw_base = false) {
+    return (offset == 0)? ptr: basic_plus_adr(ptr, MakeConX(offset), raw_base);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, int offset) {
     return (offset == 0)? ptr: basic_plus_adr(base, ptr, MakeConX(offset));
   }
-  Node* basic_plus_adr(Node* base, Node* offset) {
-    return basic_plus_adr(base, base, offset);
+  Node* basic_plus_adr(Node* ptr, Node* offset, bool raw_base = false) {
+    Node* base = raw_base ? top() : ptr;
+    return basic_plus_adr(base, ptr, offset);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
     Node* adr = new AddPNode(base, ptr, offset);
