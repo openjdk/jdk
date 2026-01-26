@@ -647,11 +647,6 @@ bool LibraryCallKit::inline_vector_mask_operation() {
 
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
-  if (!is_java_primitive(elem_bt)) {
-    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt));
-    return false;
-  }
-
   int mopc = VectorSupport::vop2ideal(oper->get_con(), elem_bt);
   if (!arch_supports_vector(mopc, num_elem, elem_bt, VecMaskUseLoad)) {
     log_if_needed("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
@@ -1711,11 +1706,12 @@ bool LibraryCallKit::inline_vector_blend() {
     return false; // should be primitive type
   }
 
-  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   if (!is_klass_initialized(vector_klass) || !is_klass_initialized(mask_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
+
+  BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   BasicType mask_bt = elem_bt;
   int num_elem = vlen->get_con();
 
@@ -2235,7 +2231,6 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     }
   }
 
-
   int num_elem = vlen->get_con();
   BasicType elem_bt = get_vector_primitive_lane_type(laneType->get_con());
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
@@ -2402,15 +2397,7 @@ bool LibraryCallKit::inline_vector_convert() {
   }
 
   BasicType elem_bt_from = get_vector_primitive_lane_type(laneType_from->get_con());
-  if (!is_java_primitive(elem_bt_from)) {
-    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt_from));
-    return false;
-  }
   BasicType elem_bt_to = get_vector_primitive_lane_type(laneType_to->get_con());
-  if (!is_java_primitive(elem_bt_to)) {
-    log_if_needed("  ** unhandled bt=%s", type2name(elem_bt_to));
-    return false;
-  }
 
   int num_elem_from = vlen_from->get_con();
   int num_elem_to = vlen_to->get_con();
