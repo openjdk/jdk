@@ -44,23 +44,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /*
  * @test
  * @bug 8375580
- * @summary Verify that URLClassPath discovers JAR Class-Path URLs in DFS order
- * @run junit JarClassPathDfsOrder
+ * @summary Verify that URLClassPath discovers JAR Class-Path URLs in the expected order
+ * @run junit JarManifestClassPathOrder
  */
-public class JarClassPathDfsOrder {
+public class JarManifestClassPathOrder {
 
     // Name of the JAR resource use for lookups
     private static final String ENTRY_NAME = "JarClassPathOrdering.txt";
 
     /**
-     * Verify that URLClassPath discovers JAR files in DFS order when only
-     * root JARs are on the 'original' class path and the other JARs are
+     * Verify that URLClassPath discovers JAR files in the expected order when
+     * only root JARs are on the 'original' class path and the other JARs are
      * found via multiple levels of Class-Path Manifest attributes.
      *
      * @throws IOException if an unexpected error occurs
      */
     @Test
-    public void shouldLoadJARsInDFSOrder() throws IOException {
+    public void shouldLoadJARsInExpectedOrder() throws IOException {
 
         // Set up a 'Class-Path' JAR tree of depth 3
         JarTree specs = new JarTree();
@@ -69,12 +69,12 @@ public class JarClassPathDfsOrder {
         // List of "root" JAR file URLs to use for URLClassLoader
         List<URL> searchPath = new ArrayList<>();
 
-        // Order of JAR files we expect URLClassPath to find
-        List<String> dfsJarNames = new ArrayList<>();
+        // Order of JAR files we expect URLClassPath to find after a DFS search
+        List<String> expectedJarNames = new ArrayList<>();
 
         for (JarSpec spec : specs.dfs) {
             Path jar = createJar(spec);
-            dfsJarNames.add(jar.getFileName().toString());
+            expectedJarNames.add(jar.getFileName().toString());
             // Only root JARs in the search path, others are discovered transitively via "Class-Path"
             if (spec.isRoot()) {
                 searchPath.add(jar.toUri().toURL());
@@ -90,7 +90,7 @@ public class JarClassPathDfsOrder {
                     .map(this::extractJarName)
                     .collect(Collectors.toList());
             // JARs should be found in DFS order
-            assertEquals(dfsJarNames, actualJarNames, "JAR files not found in expected DFS order");
+            assertEquals(expectedJarNames, actualJarNames, "JAR files not found in expected order");
         }
     }
 
