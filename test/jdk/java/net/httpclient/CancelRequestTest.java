@@ -65,15 +65,18 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -87,11 +90,17 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 public class CancelRequestTest implements HttpServerAdapters {
 
     private static final Random random = RandomFactory.getRandom();
+    private static final ConcurrentHashMap<String, Semaphore> semaphores
+            = new ConcurrentHashMap<>();
+    // A number big enough to make sure nothing else could
+    // be blocked trying to acquire a released semaphore.
+    private static final int RELEASE_ALL = 1000;
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
@@ -117,6 +126,7 @@ public class CancelRequestTest implements HttpServerAdapters {
     static volatile boolean tasksFailed;
     static final AtomicLong serverCount = new AtomicLong();
     static final AtomicLong clientCount = new AtomicLong();
+    static final AtomicLong requestCount = new AtomicLong();
     static final long start = System.nanoTime();
     public static String now() {
         long now = System.nanoTime() - start;
@@ -278,7 +288,8 @@ public class CancelRequestTest implements HttpServerAdapters {
     // set HTTP/3 version on the request when targeting
     // an HTTP/3 server
     private HttpRequest.Builder requestBuilder(String uri) {
-        var builder = HttpRequest.newBuilder(URI.create(uri));
+        var u = URI.create(uri+"?req="+requestCount.incrementAndGet());
+        var builder = HttpRequest.newBuilder(u);
         if (uri.contains("h3")) {
             builder.version(HTTP_3);
         }
@@ -324,6 +335,24 @@ public class CancelRequestTest implements HttpServerAdapters {
         assertEquals(resp.statusCode(), 200);
     }
 
+    private static void releaseSemaphores() {
+        // release left over semaphores
+        for (var sem : semaphores.values()) {
+            sem.release(RELEASE_ALL);
+        }
+        semaphores.clear();
+    }
+
+    private static Semaphore addSemaphoreFor(HttpRequest req) {
+        // release left over semaphores
+        releaseSemaphores();
+        String key = Objects.requireNonNull(req.uri().getRawQuery(), "query");
+        var sem = new Semaphore(0);
+        semaphores.put(key, sem);
+        out.println(now() + "Semaphore " + sem + " added for " + req.uri());
+        return sem;
+    }
+
     @Test(dataProvider = "asyncurls")
     public void testGetSendAsync(String uri, boolean sameClient, boolean mayInterruptIfRunning)
             throws Exception {
@@ -343,26 +372,31 @@ public class CancelRequestTest implements HttpServerAdapters {
                     .GET()
                     .setOption(H3_DISCOVERY, config)
                     .build();
+            var sem = addSemaphoreFor(req);
+
             BodyHandler<String> handler = BodyHandlers.ofString();
             CountDownLatch latch = new CountDownLatch(1);
+            out.println(now() + "Sending (async): " + req.uri());
             CompletableFuture<HttpResponse<String>> response = client.sendAsync(req, handler);
             var cf1 = response.whenComplete((r,t) -> System.out.println(t));
             CompletableFuture<HttpResponse<String>> cf2 = cf1.whenComplete((r,t) -> latch.countDown());
-            out.println("iteration: " + i + ", req: " + req.uri());
+            out.println(now() + "iteration: " + i + ", req sent: " + req.uri());
             out.println("response: " + response);
             out.println("cf1: " + cf1);
             out.println("cf2: " + cf2);
             delay();
             cf1.cancel(mayInterruptIfRunning);
-            out.println("response after cancel: " + response);
+            out.println(now() + "response after cancel: " + response);
             out.println("cf1 after cancel: " + cf1);
             out.println("cf2 after cancel: " + cf2);
             try {
                 String body = cf2.get().body();
+                sem.release(RELEASE_ALL);
                 assertEquals(body, String.join("", BODY.split("\\|")));
                 throw new AssertionError("Expected CancellationException not received");
             } catch (ExecutionException x) {
-                out.println("Got expected exception: " + x);
+                sem.release(RELEASE_ALL);
+                out.println(now() + "Got expected exception: " + x);
                 assertTrue(isCancelled(x));
             }
 
@@ -371,7 +405,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             try {
                 cf1.get();
             } catch (CancellationException | ExecutionException x) {
-                out.println("Got expected exception: " + x);
+                out.println(now() + "Got expected exception: " + x);
                 assertTrue(isCancelled(x));
                 hasCancellationException = x instanceof CancellationException;
             }
@@ -393,7 +427,7 @@ public class CancelRequestTest implements HttpServerAdapters {
                 if (mayInterruptIfRunning) {
                     if (CancellationException.class.isAssignableFrom(wrapped.getClass())) {
                         cause = wrapped.getCause();
-                        out.println("CancellationException cause: " + x);
+                        out.println(now() + "CancellationException cause: " + x);
                     } else if (!isCancelled(cause)) {
                         throw new RuntimeException("Unexpected cause: " + cause);
                     }
@@ -403,15 +437,15 @@ public class CancelRequestTest implements HttpServerAdapters {
                     }
                 }
                 if (!IOException.class.isInstance(cause)) {
-                    out.println("Unexpected cause: " + cause.getClass());
+                    out.println(now() + "Unexpected cause: " + cause.getClass());
                     cause.printStackTrace(out);
                 }
                 assertTrue(IOException.class.isAssignableFrom(cause.getClass()));
                 if (mayInterruptIfRunning) {
-                    out.println("Got expected exception: " + wrapped);
+                    out.println(now() + "Got expected exception: " + wrapped);
                     out.println("\tcause: " + cause);
                 } else {
-                    out.println("Unexpected exception: " + wrapped);
+                    out.println(now() + "Unexpected exception: " + wrapped);
                     wrapped.printStackTrace(out);
                     throw x;
                 }
@@ -452,16 +486,17 @@ public class CancelRequestTest implements HttpServerAdapters {
             Iterable<byte[]> iterable = new Iterable<>() {
                 @Override
                 public Iterator<byte[]> iterator() {
-                    // this is dangerous
-                    out.println("waiting for completion on: " + cancelFuture);
+                    // this is dangerous - so we use a virtual thread
+                    // to avoid starving the executor
+                    out.println(now() + "waiting for completion on: " + cancelFuture);
                     boolean async = random.nextBoolean();
                     Runnable cancel = () -> {
-                        out.println("Cancelling from " + Thread.currentThread());
+                        out.println(now() + "Cancelling from " + Thread.currentThread());
                         var cf1 = cancelFuture.join();
                         cf1.cancel(mayInterruptIfRunning);
-                        out.println("cancelled " + cf1);
+                        out.println(now() + "cancelled " + cf1);
                     };
-                    if (async) executor.execute(cancel);
+                    if (async) Thread.ofVirtual().start(cancel);
                     else cancel.run();
                     return List.of(BODY.getBytes(UTF_8)).iterator();
                 }
@@ -474,24 +509,30 @@ public class CancelRequestTest implements HttpServerAdapters {
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
                     .setOption(H3_DISCOVERY, config)
                     .build();
+            var sem = addSemaphoreFor(req);
+
             BodyHandler<String> handler = BodyHandlers.ofString();
             CountDownLatch latch = new CountDownLatch(1);
+            out.println(now() + "Sending (async): " + req.uri());
             CompletableFuture<HttpResponse<String>> response = client.sendAsync(req, handler);
-            var cf1 = response.whenComplete((r,t) -> System.out.println(t));
+            var cf1 = response.whenComplete((r,t) -> System.out.println(now() + t));
             CompletableFuture<HttpResponse<String>> cf2 = cf1.whenComplete((r,t) -> latch.countDown());
+            out.println(now() + "iteration: " + i + ", req sent: " + req.uri());
             out.println("response: " + response);
             out.println("cf1: " + cf1);
             out.println("cf2: " + cf2);
             cancelFuture.complete(cf1);
-            out.println("response after cancel: " + response);
+            out.println(now() + "response after cancel: " + response);
             out.println("cf1 after cancel: " + cf1);
             out.println("cf2 after cancel: " + cf2);
             try {
                 String body = cf2.get().body();
+                sem.release(RELEASE_ALL);
                 assertEquals(body, String.join("", BODY.split("\\|")));
                 throw new AssertionError("Expected CancellationException not received");
             } catch (ExecutionException x) {
-                out.println("Got expected exception: " + x);
+                sem.release(RELEASE_ALL);
+                out.println(now() + "Got expected exception: " + x);
                 assertTrue(isCancelled(x));
             }
 
@@ -500,7 +541,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             try {
                 cf1.get();
             } catch (CancellationException | ExecutionException x) {
-                out.println("Got expected exception: " + x);
+                out.println(now() + "Got expected exception: " + x);
                 assertTrue(isCancelled(x));
                 hasCancellationException = x instanceof CancellationException;
             }
@@ -521,7 +562,7 @@ public class CancelRequestTest implements HttpServerAdapters {
                 Throwable cause = wrapped;
                 if (CancellationException.class.isAssignableFrom(wrapped.getClass())) {
                     cause = wrapped.getCause();
-                    out.println("CancellationException cause: " + x);
+                    out.println(now() + "CancellationException cause: " + x);
                 } else if (!isCancelled(cause)) {
                     throw new RuntimeException("Unexpected cause: " + cause);
                 }
@@ -531,10 +572,10 @@ public class CancelRequestTest implements HttpServerAdapters {
                     throw new RuntimeException("Unexpected timeout exception", cause);
                 }
                 if (mayInterruptIfRunning) {
-                    out.println("Got expected exception: " + wrapped);
+                    out.println(now() + "Got expected exception: " + wrapped);
                     out.println("\tcause: " + cause);
                 } else {
-                    out.println("Unexpected exception: " + wrapped);
+                    out.println(now() + "Unexpected exception: " + wrapped);
                     wrapped.printStackTrace(out);
                     throw x;
                 }
@@ -571,7 +612,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             Thread main = Thread.currentThread();
             CompletableFuture<Thread> interruptingThread = new CompletableFuture<>();
-            var uriStr = uri + "/post/req=" + i;
+            var uriStr = uri + "/post/i=" + i;
             Runnable interrupt = () -> {
                 Thread current = Thread.currentThread();
                 out.printf("%s Interrupting main from: %s (%s)%n", now(), current, uriStr);
@@ -581,7 +622,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             };
             Iterable<byte[]> iterable = () -> {
                 var async = random.nextBoolean();
-                if (async) executor.execute(interrupt);
+                if (async) Thread.ofVirtual().start(interrupt);
                 else interrupt.run();
                 return List.of(BODY.getBytes(UTF_8)).iterator();
             };
@@ -593,39 +634,42 @@ public class CancelRequestTest implements HttpServerAdapters {
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
                     .setOption(H3_DISCOVERY, config)
                     .build();
+            var sem = addSemaphoreFor(req);
+
             String body = null;
             Exception failed = null;
             try {
-                out.println("Sending: " + uriStr);
+                out.println(now() + "Sending: " + req.uri());
                 body = client.send(req, BodyHandlers.ofString()).body();
             } catch (Exception x) {
                 failed = x;
             }
-            out.println(uriStr + ": got result or exception");
+            sem.release(RELEASE_ALL);
+            out.println(now() + req.uri() + ": got result or exception");
             if (failed instanceof InterruptedException) {
-                out.println(uriStr + ": Got expected exception: " + failed);
+                out.println(now() + req.uri() + ": Got expected exception: " + failed);
             } else if (failed instanceof IOException) {
-                out.println(uriStr + ": got IOException: " + failed);
+                out.println(now() + req.uri() + ": got IOException: " + failed);
                 // that could be OK if the main thread was interrupted
                 // from the main thread: the interrupted status could have
                 // been caught by writing to the socket from the main
                 // thread.
                 if (interruptingThread.isDone() && interruptingThread.get() == main) {
-                    out.println(uriStr + ": Accepting IOException: " + failed);
+                    out.println(now() + req.uri() + ": Accepting IOException: " + failed);
                     failed.printStackTrace(out);
                 } else {
-                    out.println(uriStr + ": unexpected exception: " + failed);
+                    out.println(now() + req.uri() + ": unexpected exception: " + failed);
                     throw failed;
                 }
             } else if (failed != null) {
-                out.println(uriStr + ": unexpected exception: " + failed);
+                out.println(now() + req.uri() + ": unexpected exception: " + failed);
                 throw failed;
             } else {
                 assert failed == null;
-                out.println(uriStr + ": got body: " + body);
+                out.println(now() + req.uri() + ": got body: " + body);
                 assertEquals(body, String.join("", BODY.split("\\|")));
             }
-            out.println("next iteration");
+            out.println(now() + "next iteration");
 
             var error = TRACKER.check(tracker, 2000,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
@@ -700,7 +744,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         } finally {
             if (fail != null) {
                 if (sharedClientName != null) {
-                    System.err.println("Shared client name is: " + sharedClientName);
+                    System.err.println(now() + "Shared client name is: " + sharedClientName);
                 }
                 throw fail;
             }
@@ -719,9 +763,9 @@ public class CancelRequestTest implements HttpServerAdapters {
         @Override
         public void handle(HttpTestExchange t) throws IOException {
             try {
-                out.println("HTTPSlowHandler received request to " + t.getRequestURI());
-                System.err.println("HTTPSlowHandler received request to " + t.getRequestURI());
-
+                out.println(now() + "HTTPSlowHandler received request to " + t.getRequestURI());
+                System.err.println(now() + "HTTPSlowHandler received request to " + t.getRequestURI());
+                var sem = semaphores.get(t.getRequestURI().getRawQuery());
                 boolean isThreadInterrupt = isThreadInterrupt(t);
                 byte[] req;
                 try (InputStream is = t.getRequestBody()) {
@@ -729,7 +773,7 @@ public class CancelRequestTest implements HttpServerAdapters {
                 }
                 t.sendResponseHeaders(200, -1); // chunked/variable
                 try (OutputStream os = t.getResponseBody()) {
-                    // lets split the response in several chunks...
+                    // let's split the response in several chunks...
                     String msg = (req != null && req.length != 0)
                             ? new String(req, UTF_8)
                             : BODY;
@@ -743,16 +787,26 @@ public class CancelRequestTest implements HttpServerAdapters {
                         } catch (InterruptedException x) {
                             // OK
                         }
-                        out.printf("Server wrote %d bytes%n", req.length);
+                        out.printf(now() + "Server wrote %d bytes%n", req.length);
+                    }
+                    if (sem != null) {
+                        out.printf(now() + "Server waiting to acquire %s for %s%n",
+                                sem, t.getRequestURI());
+                        try {
+                            sem.acquire();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        out.printf(now() + " ...sem acquired%n");
                     }
                 }
             } catch (Throwable e) {
-                out.println("HTTPSlowHandler: unexpected exception: " + e);
+                out.println(now() + "HTTPSlowHandler: unexpected exception: " + e);
                 e.printStackTrace();
                 throw e;
             } finally {
-                out.printf("HTTPSlowHandler reply sent: %s%n", t.getRequestURI());
-                System.err.printf("HTTPSlowHandler reply sent: %s%n", t.getRequestURI());
+                out.printf(now() + "HTTPSlowHandler reply sent: %s%n", t.getRequestURI());
+                System.err.printf(now() + "HTTPSlowHandler reply sent: %s%n", t.getRequestURI());
             }
         }
     }
