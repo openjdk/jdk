@@ -210,17 +210,17 @@ private:
   ChunkAllocator _chunk_allocator;
 
   char _pad0[DEFAULT_PADDING_SIZE];
-  TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
+  Atomic<TaskQueueEntryChunk*> _free_list;  // Linked list of free chunks that can be allocated by users.
   char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
-  TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
+  Atomic<TaskQueueEntryChunk*> _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
   char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   // Atomically add the given chunk to the list.
-  void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
+  void add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQueueEntryChunk* elem);
   // Atomically remove and return a chunk from the given list. Returns null if the
   // list is empty.
-  TaskQueueEntryChunk* remove_chunk_from_list(TaskQueueEntryChunk* volatile* list);
+  TaskQueueEntryChunk* remove_chunk_from_list(Atomic<TaskQueueEntryChunk*>* list);
 
   void add_chunk_to_chunk_list(TaskQueueEntryChunk* elem);
   void add_chunk_to_free_list(TaskQueueEntryChunk* elem);
@@ -252,7 +252,7 @@ private:
 
   // Return whether the chunk list is empty. Racy due to unsynchronized access to
   // _chunk_list.
-  bool is_empty() const { return _chunk_list == nullptr; }
+  bool is_empty() const { return _chunk_list.load_relaxed() == nullptr; }
 
   size_t capacity() const  { return _chunk_allocator.capacity(); }
 
