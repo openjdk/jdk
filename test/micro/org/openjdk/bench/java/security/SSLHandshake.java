@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,9 @@ public class SSLHandshake {
 
     @Param({"true", "false"})
     boolean resume;
+
+    @Param({"true", "false"})
+    boolean certCompression;
 
     @Param({
             "TLSv1.2-secp256r1",
@@ -211,10 +214,12 @@ public class SSLHandshake {
         // Set the key exchange named group in client and server engines
         SSLParameters clientParams = clientEngine.getSSLParameters();
         clientParams.setNamedGroups(new String[]{namedGroup});
+        clientParams.setEnableCertificateCompression(certCompression);
         clientEngine.setSSLParameters(clientParams);
 
         SSLParameters serverParams = serverEngine.getSSLParameters();
         serverParams.setNamedGroups(new String[]{namedGroup});
+        serverParams.setEnableCertificateCompression(certCompression);
         serverEngine.setSSLParameters(serverParams);
     }
 }

@@ -30,7 +30,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.zip.CRC32C;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.HexDumpEncoder;
@@ -138,6 +141,18 @@ final class CompressedCertificate {
     private static final
     class CompressedCertProducer implements HandshakeProducer {
 
+        // Only local certificates are compressed, so it makes sense to store
+        // the deflated certificate data in a memory cache statically and avoid
+        // compressing local certificates repeatedly for every handshake.
+        private static final Map<Long, byte[]> CACHE =
+                new ConcurrentHashMap<>();
+
+        // Limit the size of the cache in case certificate_request_context is
+        // randomized (should only happen during post-handshake authentication
+        // and only on the client side). Allow 4 cache mappings per algorithm.
+        private static final int MAX_CACHE_SIZE =
+                CompressionAlgorithm.values().length * 4;
+
         // Prevent instantiation of this class.
         private CompressedCertProducer() {
             // blank
@@ -156,8 +171,27 @@ final class CompressedCertificate {
             HandshakeOutStream hos = new HandshakeOutStream(null);
             message.send(hos);
             byte[] certMsg = hos.toByteArray();
-            byte[] compressedCertMsg =
-                    hc.certDeflater.getValue().apply(certMsg);
+
+            long key = getCacheKey(certMsg, hc.certDeflater.getKey());
+            byte[] compressedCertMsg = CACHE.get(key);
+
+            if (compressedCertMsg == null) {
+                compressedCertMsg = hc.certDeflater.getValue().apply(certMsg);
+
+                if (CACHE.size() < MAX_CACHE_SIZE) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.fine("Caching CompressedCertificate message");
+                    }
+
+                    CACHE.put(key, compressedCertMsg);
+                } else {
+                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.warning("Certificate message cache size limit"
+                                + " of " + MAX_CACHE_SIZE + " reached");
+                    }
+                }
+            }
+
             if (compressedCertMsg == null || compressedCertMsg.length == 0) {
                 throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No compressed Certificate data");
@@ -178,6 +212,16 @@ final class CompressedCertificate {
 
             // The handshake message has been delivered.
             return null;
+        }
+
+        private static long getCacheKey(byte[] input, int algId) {
+            CRC32C crc32c = new CRC32C();
+            crc32c.update(input);
+            // Upper 32 bits of the 64 bit long returned by CRC32C are not used
+            // and set to zero, put input's length and algorithm id there.
+            return crc32c.getValue()              // 32 bits
+                    | (long) input.length << 32   // 16 bits
+                    | (long) algId << 48;         // 16 bits
         }
     }
 
