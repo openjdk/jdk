@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collection;
+import java.util.stream.Stream;
 import javax.sql.RowSet;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetMetaDataImpl;
@@ -53,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import test.rowset.CommonRowSetTests;
@@ -89,49 +91,43 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
     /*
      * DataProvider that uses a RowSet with the COFFEE_HOUSES Table
      */
-    protected Object[][] rowsetUsingCoffeeHouses() throws Exception {
-        RowSet rs = createCoffeeHousesRowSet();
-        return new Object[][]{
-            {rs}
-        };
+    protected Stream<RowSet> rowsetUsingCoffeeHouses() throws Exception {
+        return Stream.of(createCoffeeHousesRowSet());
     }
 
     /*
      * DataProvider that uses a RowSet with the COFFEES Table
      */
-    protected Object[][] rowsetUsingCoffees() throws Exception {
-        RowSet rs = createCoffeesRowSet();
-        return new Object[][]{
-            {rs}
-        };
+    protected Stream<RowSet> rowsetUsingCoffees() throws Exception {
+        return Stream.of(createCoffeesRowSet());
     }
 
     /*
      * DataProvider that uses a RowSet with the DATAYPES Table and
      * used to validate the various supported data types
      */
-    protected Object[][] rowsetUsingDataTypes() throws Exception {
+    protected Stream<Arguments> rowsetUsingDataTypes() throws Exception {
 
         CachedRowSet rs = createDataTypesRowSet();
-        return new Object[][]{
-            {rs, JDBCType.INTEGER},
-            {rs, JDBCType.CHAR},
-            {rs, JDBCType.VARCHAR},
-            {rs, JDBCType.BIGINT},
-            {rs, JDBCType.BOOLEAN},
-            {rs, JDBCType.SMALLINT},
-            {rs, JDBCType.DOUBLE},
-            {rs, JDBCType.DECIMAL},
-            {rs, JDBCType.REAL},
-            {rs, JDBCType.TINYINT},
-            {rs, JDBCType.DATE},
-            {rs, JDBCType.TIME},
-            {rs, JDBCType.TIMESTAMP},
-            {rs, JDBCType.VARBINARY},
-            {rs, JDBCType.ARRAY},
-            {rs, JDBCType.REF},
-            {rs, JDBCType.FLOAT}
-        };
+        return Stream.of(
+            Arguments.of(rs, JDBCType.INTEGER),
+            Arguments.of(rs, JDBCType.CHAR),
+            Arguments.of(rs, JDBCType.VARCHAR),
+            Arguments.of(rs, JDBCType.BIGINT),
+            Arguments.of(rs, JDBCType.BOOLEAN),
+            Arguments.of(rs, JDBCType.SMALLINT),
+            Arguments.of(rs, JDBCType.DOUBLE),
+            Arguments.of(rs, JDBCType.DECIMAL),
+            Arguments.of(rs, JDBCType.REAL),
+            Arguments.of(rs, JDBCType.TINYINT),
+            Arguments.of(rs, JDBCType.DATE),
+            Arguments.of(rs, JDBCType.TIME),
+            Arguments.of(rs, JDBCType.TIMESTAMP),
+            Arguments.of(rs, JDBCType.VARBINARY),
+            Arguments.of(rs, JDBCType.ARRAY),
+            Arguments.of(rs, JDBCType.REF),
+            Arguments.of(rs, JDBCType.FLOAT)
+        );
     }
 
     /*

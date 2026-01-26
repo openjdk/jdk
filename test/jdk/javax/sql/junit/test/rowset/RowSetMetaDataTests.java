@@ -25,6 +25,8 @@ package test.rowset;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.sql.RowSetMetaData;
 import javax.sql.rowset.RowSetMetaDataImpl;
 
@@ -34,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import org.junit.jupiter.params.provider.ValueSource;
@@ -567,69 +570,62 @@ public class RowSetMetaDataTests extends BaseTest {
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
      */
-    private Object[][] validSetNullableValues() {
-        return new Object[][]{
-            {ResultSetMetaData.columnNoNulls},
-            {ResultSetMetaData.columnNullable},
-            {ResultSetMetaData.columnNullableUnknown}
-        };
+    private Stream<Integer> validSetNullableValues() {
+        return Stream.of(
+            ResultSetMetaData.columnNoNulls,
+            ResultSetMetaData.columnNullable,
+            ResultSetMetaData.columnNullableUnknown
+        );
     }
 
     /*
      * DataProvider used to provide column indexes that are out of range so that
      * SQLException is thrown
      */
-    private Object[][] invalidColumnRanges() {
-        return new Object[][]{
-            {-1},
-            {0},
-            {MAX_COLUMNS + 1}
-        };
+    private Stream<Integer> invalidColumnRanges() {
+        return Stream.of(
+            -1,
+            0,
+            MAX_COLUMNS + 1
+        );
     }
 
     /*
      * DataProvider used to provide the valid column ranges for the
      * RowSetMetaDataImpl object
      */
-    private Object[][] columnRanges() {
-        Object[][] o = new Object[MAX_COLUMNS][1];
-        for (int i = 1; i <= MAX_COLUMNS; i++) {
-            o[i - 1][0] = i;
-        }
-        return o;
+    private Stream<Integer> columnRanges() {
+        return IntStream.rangeClosed(1, MAX_COLUMNS).boxed();
     }
 
     /*
      * DataProvider used to specify the value to set via setColumnType and
      * the expected value to be returned from getColumnClassName
      */
-    private Object[][] columnClassNames() {
-        return new Object[][]{
-            {Types.CHAR, "java.lang.String"},
-            {Types.NCHAR, "java.lang.String"},
-            {Types.VARCHAR, "java.lang.String"},
-            {Types.NVARCHAR, "java.lang.String"},
-            {Types.LONGVARCHAR, "java.lang.String"},
-            {Types.LONGNVARCHAR, "java.lang.String"},
-            {Types.NUMERIC, "java.math.BigDecimal"},
-            {Types.DECIMAL, "java.math.BigDecimal"},
-            {Types.BIT, "java.lang.Boolean"},
-            {Types.TINYINT, "java.lang.Byte"},
-            {Types.SMALLINT, "java.lang.Short"},
-            {Types.INTEGER, "java.lang.Integer"},
-            {Types.FLOAT, "java.lang.Double"},
-            {Types.DOUBLE, "java.lang.Double"},
-            {Types.BINARY, "byte[]"},
-            {Types.VARBINARY, "byte[]"},
-            {Types.LONGVARBINARY, "byte[]"},
-            {Types.DATE, "java.sql.Date"},
-            {Types.TIME, "java.sql.Time"},
-            {Types.TIMESTAMP, "java.sql.Timestamp"},
-            {Types.CLOB, "java.sql.Clob"},
-            {Types.BLOB, "java.sql.Blob"}
-
-        };
-
+    private Stream<Arguments> columnClassNames() {
+        return Stream.of(
+            Arguments.of(Types.CHAR, "java.lang.String"),
+            Arguments.of(Types.NCHAR, "java.lang.String"),
+            Arguments.of(Types.VARCHAR, "java.lang.String"),
+            Arguments.of(Types.NVARCHAR, "java.lang.String"),
+            Arguments.of(Types.LONGVARCHAR, "java.lang.String"),
+            Arguments.of(Types.LONGNVARCHAR, "java.lang.String"),
+            Arguments.of(Types.NUMERIC, "java.math.BigDecimal"),
+            Arguments.of(Types.DECIMAL, "java.math.BigDecimal"),
+            Arguments.of(Types.BIT, "java.lang.Boolean"),
+            Arguments.of(Types.TINYINT, "java.lang.Byte"),
+            Arguments.of(Types.SMALLINT, "java.lang.Short"),
+            Arguments.of(Types.INTEGER, "java.lang.Integer"),
+            Arguments.of(Types.FLOAT, "java.lang.Double"),
+            Arguments.of(Types.DOUBLE, "java.lang.Double"),
+            Arguments.of(Types.BINARY, "byte[]"),
+            Arguments.of(Types.VARBINARY, "byte[]"),
+            Arguments.of(Types.LONGVARBINARY, "byte[]"),
+            Arguments.of(Types.DATE, "java.sql.Date"),
+            Arguments.of(Types.TIME, "java.sql.Time"),
+            Arguments.of(Types.TIMESTAMP, "java.sql.Timestamp"),
+            Arguments.of(Types.CLOB, "java.sql.Clob"),
+            Arguments.of(Types.BLOB, "java.sql.Blob")
+        );
     }
-
 }

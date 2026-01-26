@@ -40,6 +40,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Calendar;
+import java.util.stream.Stream;
 import javax.sql.RowSet;
 import javax.sql.rowset.serial.SerialArray;
 import javax.sql.rowset.serial.SerialBlob;
@@ -50,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import util.StubArray;
@@ -304,7 +306,7 @@ public class BaseRowSetTests extends CommonRowSetTests {
     /*
      * DataProvider used to set parameters for basic types that are supported
      */
-    private Object[][] testBaseParameters() throws SQLException {
+    private Stream<Arguments> testBaseParameters() throws SQLException {
         Integer aInt = 1;
         Long aLong = Long.MAX_VALUE;
         Short aShort = Short.MIN_VALUE;
@@ -338,33 +340,32 @@ public class BaseRowSetTests extends CommonRowSetTests {
         brs.setObject(17, query, Types.CHAR);
         brs.setObject(18, query, Types.CHAR, 0);
 
-        return new Object[][]{
-            {1, aInt},
-            {2, query},
-            {3, aLong},
-            {4, aBoolean},
-            {5, aShort},
-            {6, aDouble},
-            {7, bd},
-            {8, aFloat},
-            {9, aByte},
-            {10, aDate},
-            {11, aTime},
-            {12, aTimeStamp},
-            {13, aDate},
-            {14, aTime},
-            {15, aTimeStamp},
-            {16, query},
-            {17, query},
-            {18, query}
-
-        };
+        return Stream.of(
+            Arguments.of(1, aInt),
+            Arguments.of(2, query),
+            Arguments.of(3, aLong),
+            Arguments.of(4, aBoolean),
+            Arguments.of(5, aShort),
+            Arguments.of(6, aDouble),
+            Arguments.of(7, bd),
+            Arguments.of(8, aFloat),
+            Arguments.of(9, aByte),
+            Arguments.of(10, aDate),
+            Arguments.of(11, aTime),
+            Arguments.of(12, aTimeStamp),
+            Arguments.of(13, aDate),
+            Arguments.of(14, aTime),
+            Arguments.of(15, aTimeStamp),
+            Arguments.of(16, query),
+            Arguments.of(17, query),
+            Arguments.of(18, query)
+        );
     }
 
     /*
      * DataProvider used to set advanced parameters for types that are supported
      */
-    private Object[][] testAdvancedParameters() throws SQLException {
+    private Stream<Arguments> testAdvancedParameters() throws SQLException {
 
         byte[] bytes = new byte[10];
         Ref aRef = new SerialRef(new StubRef("INTEGER", query));
@@ -384,17 +385,17 @@ public class BaseRowSetTests extends CommonRowSetTests {
         brs.setUnicodeStream(8, is, query.length());
         brs.setCharacterStream(9, rdr, query.length());
 
-        return new Object[][]{
-            {1, bytes},
-            {2, is},
-            {3, aRef},
-            {4, aArray},
-            {5, aBlob},
-            {6, aClob},
-            {7, is},
-            {8, is},
-            {9, rdr}
-        };
+        return Stream.of(
+            Arguments.of(1, bytes),
+            Arguments.of(2, is),
+            Arguments.of(3, aRef),
+            Arguments.of(4, aArray),
+            Arguments.of(5, aBlob),
+            Arguments.of(6, aClob),
+            Arguments.of(7, is),
+            Arguments.of(8, is),
+            Arguments.of(9, rdr)
+        );
     }
 
     /*

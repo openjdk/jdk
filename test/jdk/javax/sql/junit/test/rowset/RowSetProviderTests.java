@@ -27,6 +27,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.SQLException;
+import java.util.stream.Stream;
 import javax.sql.rowset.RowSetFactory;
 import javax.sql.rowset.RowSetProvider;
 
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import util.BaseTest;
@@ -185,15 +187,15 @@ public class RowSetProviderTests extends BaseTest {
      * DataProvider used to provide a RowSetFactory and the expected
      * RowSetFactory implementation that should be returned
      */
-    private Object[][] RowSetFactoryValues() throws SQLException {
+    private Stream<Arguments> RowSetFactoryValues() throws SQLException {
         RowSetFactory rsf = RowSetProvider.newFactory();
         RowSetFactory rsf1 = RowSetProvider.newFactory(STUB_FACTORY_CLASSNAME, null);
         RowSetFactory rsf2 = RowSetProvider.newFactory(DEFFAULT_FACTORY_CLASSNAME, null);
-        return new Object[][]{
-            {rsf, NO_VALADATE_IMPL},
-            {rsf, DEFFAULT_FACTORY_CLASSNAME},
-            {rsf1, STUB_FACTORY_CLASSNAME},
-            {rsf2, DEFFAULT_FACTORY_CLASSNAME}
-        };
+        return Stream.of(
+            Arguments.of(rsf, NO_VALADATE_IMPL),
+            Arguments.of(rsf, DEFFAULT_FACTORY_CLASSNAME),
+            Arguments.of(rsf1, STUB_FACTORY_CLASSNAME),
+            Arguments.of(rsf2, DEFFAULT_FACTORY_CLASSNAME)
+        );
     }
 }

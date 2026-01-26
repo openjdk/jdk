@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import javax.sql.RowSet;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.JoinRowSet;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import test.rowset.webrowset.CommonWebRowSetTests;
@@ -156,7 +158,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
     /*
      * DataProvider used to set parameters for basic types that are supported
      */
-    private Object[][] createCachedRowSetsToUse() throws SQLException {
+    private Stream<Arguments> createCachedRowSetsToUse() throws SQLException {
         CachedRowSet crs = rsf.createCachedRowSet();
         initCoffeesMetaData(crs);
         createCoffeesRows(crs);
@@ -167,9 +169,7 @@ public class JoinRowSetTests extends CommonWebRowSetTests {
         createSuppiersRows(crs1);
         // Make sure you are not on the insertRow
         crs1.moveToCurrentRow();
-        return new Object[][]{
-            {crs, crs1}
-        };
+        return Stream.of(Arguments.of(crs, crs1));
     }
 
     /*

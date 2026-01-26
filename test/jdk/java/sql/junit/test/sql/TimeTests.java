@@ -24,11 +24,13 @@ package test.sql;
 
 import java.sql.Time;
 import java.time.LocalTime;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import util.BaseTest;
@@ -304,28 +306,28 @@ public class TimeTests extends BaseTest {
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
      */
-    private Object[][] invalidTimeValues() {
-        return new Object[][]{
-            {"2009-11-01 10:50:01"},
-            {"1961-08-30 10:50:01.1"},
-            {"1961-08-30"},
-            {"00:00:00."},
-            {"10:50:0.1"},
-            {":00:00"},
-            {"00::00"},
-            {"00:00:"},
-            {"::"},
-            {" : : "},
-            {"0a:00:00"},
-            {"00:bb:00"},
-            {"00:01:cc"},
-            {"08:10:Batman"},
-            {"08:10:10:10"},
-            {"08:10"},
-            {"a:b:c"},
-            {null},
-            {"8:"}
-        };
+    private Stream<String> invalidTimeValues() {
+        return Stream.of(
+            "2009-11-01 10:50:01",
+            "1961-08-30 10:50:01.1",
+            "1961-08-30",
+            "00:00:00.",
+            "10:50:0.1",
+            ":00:00",
+            "00::00",
+            "00:00:",
+            "::",
+            " : : ",
+            "0a:00:00",
+            "00:bb:00",
+            "00:01:cc",
+            "08:10:Batman",
+            "08:10:10:10",
+            "08:10",
+            "a:b:c",
+            null,
+            "8:"
+        );
     }
 
     /*
@@ -334,18 +336,18 @@ public class TimeTests extends BaseTest {
      * valueOf method.  It also contains the expected return value from
      * toString()
      */
-    private Object[][] validTimeValues() {
-        return new Object[][]{
-            {"10:50:01", "10:50:01"},
-            {"01:1:1", "01:01:01"},
-            {"01:01:1", "01:01:01"},
-            {"1:01:1", "01:01:01"},
-            {"2:02:02", "02:02:02"},
-            {"2:02:2", "02:02:02"},
-            {"10:50:1", "10:50:01"},
-            {"00:00:00", "00:00:00"},
-            {"08:30:59", "08:30:59"},
-            {"9:0:1", "09:00:01"}
-        };
+    private Stream<Arguments> validTimeValues() {
+        return Stream.of(
+            Arguments.of("10:50:01", "10:50:01"),
+            Arguments.of("01:1:1", "01:01:01"),
+            Arguments.of("01:01:1", "01:01:01"),
+            Arguments.of("1:01:1", "01:01:01"),
+            Arguments.of("2:02:02", "02:02:02"),
+            Arguments.of("2:02:2", "02:02:02"),
+            Arguments.of("10:50:1", "10:50:01"),
+            Arguments.of("00:00:00", "00:00:00"),
+            Arguments.of("08:30:59", "08:30:59"),
+            Arguments.of("9:0:1", "09:00:01")
+        );
     }
 }

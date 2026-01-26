@@ -29,8 +29,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.sql.JDBCType;
 import java.sql.SQLException;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.provider.Arguments;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BaseTest {
@@ -77,13 +79,8 @@ public class BaseTest {
     /*
      * DataProvider used to specify the standard JDBC Types
      */
-    protected Object[][] jdbcTypes() {
-        Object[][] o = new Object[JDBCType.values().length][1];
-        int pos = 0;
-        for (JDBCType c : JDBCType.values()) {
-            o[pos++][0] = c.getVendorTypeNumber();
-        }
-        return o;
+    protected Stream<Integer> jdbcTypes() {
+        return Stream.of(JDBCType.values()).map(JDBCType::getVendorTypeNumber);
     }
 
     /*
@@ -91,14 +88,14 @@ public class BaseTest {
      * that enquoteLiteral converts a string to a literal and every instance of
      * a single quote will be converted into two single quotes in the literal.
      */
-    protected Object[][] validEnquotedLiteralValues() {
-        return new Object[][]{
-                {"Hello", "'Hello'"},
-                {"G'Day", "'G''Day'"},
-                {"'G''Day'", "'''G''''Day'''"},
-                {"I'''M", "'I''''''M'"},
-                {"The Dark Knight", "'The Dark Knight'"},
-        };
+    protected Stream<Arguments> validEnquotedLiteralValues() {
+        return Stream.of(
+                Arguments.of("Hello", "'Hello'"),
+                Arguments.of("G'Day", "'G''Day'"),
+                Arguments.of("'G''Day'", "'''G''''Day'''"),
+                Arguments.of("I'''M", "'I''''''M'"),
+                Arguments.of("The Dark Knight", "'The Dark Knight'")
+        );
     }
 
     /*
@@ -106,35 +103,37 @@ public class BaseTest {
      * that enqouteIdentifier returns a simple SQL Identifier or a
      * quoted identifier
      */
-    protected Object[][] validEnquotedIdentifierValues() {
-        return new Object[][]{
-                {"b", false, "b"},
-                {"b", true, "\"b\""},
-                {MAX_LENGTH_IDENTIFIER, false, MAX_LENGTH_IDENTIFIER},
-                {MAX_LENGTH_IDENTIFIER, true, "\"" + MAX_LENGTH_IDENTIFIER + "\""},
-                {"Hello", false, "Hello"},
-                {"Hello", true, "\"Hello\""},
-                {"G'Day", false, "\"G'Day\""},
-                {"G'Day", true, "\"G'Day\""},
-                {"Bruce Wayne", false, "\"Bruce Wayne\""},
-                {"Bruce Wayne", true, "\"Bruce Wayne\""},
-                {"select", false, "\"select\""},
-                {"table", true, "\"table\""},
-                {"GoodDay$", false, "\"GoodDay$\""},
-                {"GoodDay$", true, "\"GoodDay$\""},};
+    protected Stream<Arguments> validEnquotedIdentifierValues() {
+        return Stream.of(
+                Arguments.of("b", false, "b"),
+                Arguments.of("b", true, "\"b\""),
+                Arguments.of(MAX_LENGTH_IDENTIFIER, false, MAX_LENGTH_IDENTIFIER),
+                Arguments.of(MAX_LENGTH_IDENTIFIER, true, "\"" + MAX_LENGTH_IDENTIFIER + "\""),
+                Arguments.of("Hello", false, "Hello"),
+                Arguments.of("Hello", true, "\"Hello\""),
+                Arguments.of("G'Day", false, "\"G'Day\""),
+                Arguments.of("G'Day", true, "\"G'Day\""),
+                Arguments.of("Bruce Wayne", false, "\"Bruce Wayne\""),
+                Arguments.of("Bruce Wayne", true, "\"Bruce Wayne\""),
+                Arguments.of("select", false, "\"select\""),
+                Arguments.of("table", true, "\"table\""),
+                Arguments.of("GoodDay$", false, "\"GoodDay$\""),
+                Arguments.of("GoodDay$", true, "\"GoodDay$\"")
+        );
     }
 
     /*
      * DataProvider used to provide strings are invalid for enquoteIdentifier
      * resulting in a SQLException being thrown
      */
-    protected Object[][] invalidEnquotedIdentifierValues() {
-        return new Object[][]{
-                {"Hel\"lo", false},
-                {"\"Hel\"lo\"", true},
-                {"Hello" + '\0', false},
-                {"", false},
-                {MAX_LENGTH_IDENTIFIER + 'a', false},};
+    protected Stream<Arguments> invalidEnquotedIdentifierValues() {
+        return Stream.of(
+                Arguments.of("Hel\"lo", false),
+                Arguments.of("\"Hel\"lo\"", true),
+                Arguments.of("Hello" + '\0', false),
+                Arguments.of("", false),
+                Arguments.of(MAX_LENGTH_IDENTIFIER + 'a', false)
+        );
     }
 
     /*
@@ -142,21 +141,21 @@ public class BaseTest {
      * that isSimpleIdentifier returns the correct value based on the
      * identifier specified.
      */
-    protected Object[][] simpleIdentifierValues() {
-        return new Object[][]{
-                {"b", true},
-                {"Hello", true},
-                {"\"Gotham\"", false},
-                {"G'Day", false},
-                {"Bruce Wayne", false},
-                {"GoodDay$", false},
-                {"Dick_Grayson", true},
-                {"Batmobile1966", true},
-                {MAX_LENGTH_IDENTIFIER, true},
-                {MAX_LENGTH_IDENTIFIER + 'a', false},
-                {"", false},
-                {"select", false}
-            };
+    protected Stream<Arguments> simpleIdentifierValues() {
+        return Stream.of(
+                Arguments.of("b", true),
+                Arguments.of("Hello", true),
+                Arguments.of("\"Gotham\"", false),
+                Arguments.of("G'Day", false),
+                Arguments.of("Bruce Wayne", false),
+                Arguments.of("GoodDay$", false),
+                Arguments.of("Dick_Grayson", true),
+                Arguments.of("Batmobile1966", true),
+                Arguments.of(MAX_LENGTH_IDENTIFIER, true),
+                Arguments.of(MAX_LENGTH_IDENTIFIER + 'a', false),
+                Arguments.of("", false),
+                Arguments.of("select", false)
+            );
     }
 
     /*
@@ -165,14 +164,14 @@ public class BaseTest {
      * literal and every instance of
      * a single quote will be converted into two single quotes in the literal.
      */
-    protected Object[][] validEnquotedNCharLiteralValues() {
-        return new Object[][]{
-                {"Hello", "N'Hello'"},
-                {"G'Day", "N'G''Day'"},
-                {"'G''Day'", "N'''G''''Day'''"},
-                {"I'''M", "N'I''''''M'"},
-                {"N'Hello'", "N'N''Hello'''"},
-                {"The Dark Knight", "N'The Dark Knight'"}
-        };
+    protected Stream<Arguments> validEnquotedNCharLiteralValues() {
+        return Stream.of(
+                Arguments.of("Hello", "N'Hello'"),
+                Arguments.of("G'Day", "N'G''Day'"),
+                Arguments.of("'G''Day'", "N'''G''''Day'''"),
+                Arguments.of("I'''M", "N'I''''''M'"),
+                Arguments.of("N'Hello'", "N'N''Hello'''"),
+                Arguments.of("The Dark Knight", "N'The Dark Knight'")
+        );
     }
 }

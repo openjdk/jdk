@@ -43,6 +43,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import javax.sql.RowSet;
 import javax.sql.rowset.BaseRowSet;
 import javax.sql.rowset.CachedRowSet;
@@ -55,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import util.BaseTest;
@@ -115,78 +117,76 @@ public abstract class CommonRowSetTests extends BaseTest {
      * DataProvider used to specify the value to set and check for the
      * methods for fetch direction
      */
-    protected Object[][] rowSetFetchDirection() throws Exception {
+    protected Stream<Arguments> rowSetFetchDirection() throws Exception {
         RowSet rs = newInstance();
-        return new Object[][]{
-            {rs, ResultSet.FETCH_FORWARD},
-            {rs, ResultSet.FETCH_REVERSE},
-            {rs, ResultSet.FETCH_UNKNOWN}
-        };
+        return Stream.of(
+            Arguments.of(rs, ResultSet.FETCH_FORWARD),
+            Arguments.of(rs, ResultSet.FETCH_REVERSE),
+            Arguments.of(rs, ResultSet.FETCH_UNKNOWN)
+        );
     }
 
     /*
      * DataProvider used to specify the value to set and check for the
      * methods for Cursor Scroll Type
      */
-    protected Object[][] rowSetScrollTypes() throws Exception {
+    protected Stream<Arguments> rowSetScrollTypes() throws Exception {
         RowSet rs = newInstance();
 
-        return new Object[][]{
-            {rs, ResultSet.TYPE_FORWARD_ONLY},
-            {rs, ResultSet.TYPE_SCROLL_INSENSITIVE},
-            {rs, ResultSet.TYPE_SCROLL_SENSITIVE}
-        };
+        return Stream.of(
+            Arguments.of(rs, ResultSet.TYPE_FORWARD_ONLY),
+            Arguments.of(rs, ResultSet.TYPE_SCROLL_INSENSITIVE),
+            Arguments.of(rs, ResultSet.TYPE_SCROLL_SENSITIVE)
+        );
     }
 
     /*
      * DataProvider used to specify the value to set and check for
      * methods using transaction isolation types
      */
-    protected Object[][] rowSetIsolationTypes() throws Exception {
+    protected Stream<Arguments> rowSetIsolationTypes() throws Exception {
         RowSet rs = newInstance();
 
-        return new Object[][]{
-            {rs, Connection.TRANSACTION_NONE},
-            {rs, Connection.TRANSACTION_READ_COMMITTED},
-            {rs, Connection.TRANSACTION_READ_UNCOMMITTED},
-            {rs, Connection.TRANSACTION_REPEATABLE_READ},
-            {rs, Connection.TRANSACTION_SERIALIZABLE}
-        };
+        return Stream.of(
+            Arguments.of(rs, Connection.TRANSACTION_NONE),
+            Arguments.of(rs, Connection.TRANSACTION_READ_COMMITTED),
+            Arguments.of(rs, Connection.TRANSACTION_READ_UNCOMMITTED),
+            Arguments.of(rs, Connection.TRANSACTION_REPEATABLE_READ),
+            Arguments.of(rs, Connection.TRANSACTION_SERIALIZABLE)
+        );
     }
 
     /*
      * DataProvider used to specify the value to set and check for the
      * methods for Concurrency
      */
-    protected Object[][] rowSetConcurrencyTypes() throws Exception {
+    protected Stream<Arguments> rowSetConcurrencyTypes() throws Exception {
         RowSet rs = newInstance();
-        return new Object[][]{
-            {rs, ResultSet.CONCUR_READ_ONLY},
-            {rs, ResultSet.CONCUR_UPDATABLE}
-        };
+        return Stream.of(
+            Arguments.of(rs, ResultSet.CONCUR_READ_ONLY),
+            Arguments.of(rs, ResultSet.CONCUR_UPDATABLE)
+        );
     }
 
     /*
      * DataProvider used to specify the value to set and check for
      * methods using boolean values
      */
-    protected Object[][] rowSetTrueFalse() throws Exception {
+    protected Stream<Arguments> rowSetTrueFalse() throws Exception {
         RowSet rs = newInstance();
-        return new Object[][]{
-            {rs, true},
-            {rs, false}
-        };
+        return Stream.of(
+            Arguments.of(rs, true),
+            Arguments.of(rs, false)
+        );
     }
     /*
      * DataProvider used to specify the type of RowSet to use.  We also must
      * initialize the RowSet
      */
-    protected Object[][] rowSetType() throws Exception {
+    protected Stream<RowSet> rowSetType() throws Exception {
 
         RowSet rs = newInstance();
-        return new Object[][]{
-            {rs}
-        };
+        return Stream.of(rs);
     }
 
     /*

@@ -24,11 +24,13 @@ package test.sql;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import util.BaseTest;
@@ -331,31 +333,31 @@ public class DateTests extends BaseTest {
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
      */
-    private Object[][] invalidDateValues() {
-        return new Object[][]{
-            {"20009-11-01"},
-            {"09-11-01"},
-            {"-11-01"},
-            {"2009-111-01"},
-            {"2009--01"},
-            {"2009-13-01"},
-            {"2009-11-011"},
-            {"2009-11-"},
-            {"2009-11-00"},
-            {"2009-11-33"},
-            {"--"},
-            {""},
-            {null},
-            {"-"},
-            {"2009"},
-            {"2009-01"},
-            {"---"},
-            {"2009-13--1"},
-            {"1900-1-0"},
-            {"2009-01-01 10:50:01"},
-            {"1996-12-10 12:26:19.1"},
-            {"10:50:01"}
-        };
+    private Stream<String> invalidDateValues() {
+        return Stream.of(
+            "20009-11-01",
+            "09-11-01",
+            "-11-01",
+            "2009-111-01",
+            "2009--01",
+            "2009-13-01",
+            "2009-11-011",
+            "2009-11-",
+            "2009-11-00",
+            "2009-11-33",
+            "--",
+            "",
+            null,
+            "-",
+            "2009",
+            "2009-01",
+            "---",
+            "2009-13--1",
+            "1900-1-0",
+            "2009-01-01 10:50:01",
+            "1996-12-10 12:26:19.1",
+            "10:50:01"
+        );
     }
 
     /*
@@ -363,13 +365,12 @@ public class DateTests extends BaseTest {
      * to validate that an IllegalArgumentException will not be thrown from the
      * valueOf method and the corect value from toString() is returned
      */
-    private Object[][] validDateValues() {
-        return new Object[][]{
-            {"2009-08-30", "2009-08-30"},
-            {"2009-01-8", "2009-01-08"},
-            {"2009-1-01", "2009-01-01"},
-            {"2009-1-1", "2009-01-01"}
-
-        };
+    private Stream<Arguments> validDateValues() {
+        return Stream.of(
+            Arguments.of("2009-08-30", "2009-08-30"),
+            Arguments.of("2009-01-8", "2009-01-08"),
+            Arguments.of("2009-1-01", "2009-01-01"),
+            Arguments.of("2009-1-1", "2009-01-01")
+        );
     }
 }

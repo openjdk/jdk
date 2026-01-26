@@ -23,12 +23,14 @@
 package test.rowset;
 
 import java.sql.SQLException;
+import java.util.stream.Stream;
 import javax.sql.rowset.RowSetFactory;
 import javax.sql.rowset.RowSetProvider;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import util.BaseTest;
@@ -103,21 +105,20 @@ public class RowSetFactoryTests extends BaseTest {
      * DataProvider used to provide the RowSetFactory and the RowSet
      * implementation that should be returned
      */
-    private Object[][] RowSetValues() throws SQLException {
+    private Stream<Arguments> RowSetValues() throws SQLException {
         RowSetFactory rsf = RowSetProvider.newFactory();
         RowSetFactory rsf1 = RowSetProvider.newFactory(STUB_FACTORY_CLASSNAME, null);
-        return new Object[][]{
-            {rsf, DEFAULT_CACHEDROWSET_CLASSNAME},
-            {rsf, DEFAULT_FILTEREDROWSET_CLASSNAME},
-            {rsf, DEFAULT_JDBCROWSET_CLASSNAME},
-            {rsf, DEFAULT_JOINROWSET_CLASSNAME},
-            {rsf, DEFAULT_WEBROWSET_CLASSNAME},
-            {rsf1, STUB_CACHEDROWSET_CLASSNAME},
-            {rsf1, STUB_FILTEREDROWSET_CLASSNAME},
-            {rsf1, STUB_JDBCROWSET_CLASSNAME},
-            {rsf1, STUB_JOINROWSET_CLASSNAME},
-            {rsf1, STUB_WEBROWSET_CLASSNAME}
-
-        };
+        return Stream.of(
+            Arguments.of(rsf, DEFAULT_CACHEDROWSET_CLASSNAME),
+            Arguments.of(rsf, DEFAULT_FILTEREDROWSET_CLASSNAME),
+            Arguments.of(rsf, DEFAULT_JDBCROWSET_CLASSNAME),
+            Arguments.of(rsf, DEFAULT_JOINROWSET_CLASSNAME),
+            Arguments.of(rsf, DEFAULT_WEBROWSET_CLASSNAME),
+            Arguments.of(rsf1, STUB_CACHEDROWSET_CLASSNAME),
+            Arguments.of(rsf1, STUB_FILTEREDROWSET_CLASSNAME),
+            Arguments.of(rsf1, STUB_JDBCROWSET_CLASSNAME),
+            Arguments.of(rsf1, STUB_JOINROWSET_CLASSNAME),
+            Arguments.of(rsf1, STUB_WEBROWSET_CLASSNAME)
+        );
     }
 }
