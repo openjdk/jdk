@@ -183,7 +183,7 @@ public class TestFramework {
     private List<String> flags;
     private int defaultWarmup = -1;
     private boolean testClassesOnBootClassPath;
-    private boolean isAllowNotCompilable = false;
+    private boolean allowNotCompilable = false;
 
     /*
      * Public interface methods
@@ -498,7 +498,7 @@ public class TestFramework {
      * and else it is ignored silently.
      */
     public TestFramework allowNotCompilable() {
-        this.isAllowNotCompilable = true;
+        this.allowNotCompilable = true;
         return this;
     }
 
@@ -721,7 +721,7 @@ public class TestFramework {
             nonWhiteListedFlags.forEach((f) -> System.out.println("  - " + f));
         }
 
-        System.out.println("");
+        System.out.println();
     }
 
     /**
@@ -860,8 +860,8 @@ public class TestFramework {
     private List<String> anyNonWhitelistedJTregVMAndJavaOptsFlags() {
         List<String> flags = Arrays.stream(Utils.getTestJavaOpts())
                                    .map(s -> s.replaceFirst("-XX:[+|-]?|-(?=[^D|^e])", ""))
-                                   .collect(Collectors.toList());
-        List<String> nonWhiteListedFlags = new ArrayList();
+                                   .toList();
+        List<String> nonWhiteListedFlags = new ArrayList<>();
         for (String flag : flags) {
             if (flag.contains("agentpath")) {
                 throw new SkippedException("Can't run test with -javaagent");
@@ -877,10 +877,10 @@ public class TestFramework {
 
     private void runTestVM(List<String> additionalFlags) {
         TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
-                                                        isAllowNotCompilable, testClassesOnBootClassPath);
+                                                        allowNotCompilable, testClassesOnBootClassPath);
         if (shouldVerifyIR) {
             try {
-                TestClassParser testClassParser = new TestClassParser(testClass, isAllowNotCompilable);
+                TestClassParser testClassParser = new TestClassParser(testClass, allowNotCompilable);
                 Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
                                                                      testVMProcess.getApplicableIRRules());
                 IRMatcher matcher = new IRMatcher(testClassMatchable);

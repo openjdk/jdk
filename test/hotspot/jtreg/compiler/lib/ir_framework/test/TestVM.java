@@ -92,7 +92,7 @@ public class TestVM {
 
     static final boolean XCOMP = Platform.isComp();
     static final boolean VERBOSE = Boolean.getBoolean("Verbose");
-    private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes");
+    private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes") || VERBOSE;
     public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
     private static final String TESTLIST = System.getProperty("Test", "");
@@ -823,14 +823,14 @@ public class TestVM {
         forceCompileMap.forEach((key, value) -> builder.append("- ").append(key).append(" at CompLevel.").append(value)
                                                        .append(System.lineSeparator()));
         throw new TestRunException("Could not force compile the following @ForceCompile methods:"
-                                   + System.lineSeparator() + builder.toString());
+                                   + System.lineSeparator() + builder);
     }
 
     /**
      * Once all framework tests are collected, they are run in this method.
      */
     private void runTests() {
-        TreeMap<Long, String> durations = (PRINT_TIMES || VERBOSE) ? new TreeMap<>() : null;
+        TreeMap<Long, String> durations = PRINT_TIMES ? new TreeMap<>() : null;
         long startTime = System.nanoTime();
         List<AbstractTest> testList;
         boolean testFilterPresent = testFilterPresent();
@@ -867,11 +867,11 @@ public class TestVM {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
-                builder.append(test.toString()).append(":").append(System.lineSeparator()).append(sw.toString())
+                builder.append(test).append(":").append(System.lineSeparator()).append(sw)
                        .append(System.lineSeparator()).append(System.lineSeparator());
                 failures++;
             }
-            if (PRINT_TIMES || VERBOSE) {
+            if (PRINT_TIMES) {
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
                 durations.put(duration, test.getName());
@@ -886,7 +886,7 @@ public class TestVM {
         }
 
         // Print execution times
-        if (VERBOSE || PRINT_TIMES) {
+        if (PRINT_TIMES) {
             TestFrameworkSocket.write("Test execution times:", PRINT_TIMES_TAG, true);
             for (Map.Entry<Long, String> entry : durations.entrySet()) {
                 TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
@@ -898,7 +898,7 @@ public class TestVM {
             // Finally, report all occurred exceptions in a nice format.
             String msg = System.lineSeparator() + System.lineSeparator() + "Test Failures (" + failures + ")"
                          + System.lineSeparator() + "----------------" + "-".repeat(String.valueOf(failures).length());
-            throw new TestRunException(msg + System.lineSeparator() + builder.toString());
+            throw new TestRunException(msg + System.lineSeparator() + builder);
         }
     }
 
