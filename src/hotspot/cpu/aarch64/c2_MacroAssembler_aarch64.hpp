@@ -34,19 +34,44 @@
   void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
+  // Typedefs used to disambiguate overloaded member functions.
+  typedef void (Assembler::*neon_reduction2)
+    (FloatRegister, Assembler::SIMD_Arrangement, FloatRegister);
+  typedef void (Assembler::*sve_reduction3)
+    (FloatRegister, Assembler::SIMD_RegVariant, PRegister, FloatRegister);
+
   // Helper functions for min/max reduction operations
+  void decode_minmax_reduction_opc(int opc, bool* is_min, bool* is_unsigned, Condition* cond);
   void neon_minp(bool is_unsigned, FloatRegister dst, SIMD_Arrangement size,
-                 FloatRegister src1, FloatRegister src2);
+                 FloatRegister src1, FloatRegister src2) {
+    auto m = is_unsigned ? &Assembler::uminp : &Assembler::sminp;
+    (this->*m)(dst, size, src1, src2);
+  }
   void neon_maxp(bool is_unsigned, FloatRegister dst, SIMD_Arrangement size,
-                 FloatRegister src1, FloatRegister src2);
+                 FloatRegister src1, FloatRegister src2) {
+    auto m = is_unsigned ? &Assembler::umaxp : &Assembler::smaxp;
+    (this->*m)(dst, size, src1, src2);
+  }
   void neon_minv(bool is_unsigned, FloatRegister dst, SIMD_Arrangement size,
-                 FloatRegister src);
+                 FloatRegister src) {
+    auto m = is_unsigned ? (neon_reduction2)&Assembler::uminv : &Assembler::sminv;
+    (this->*m)(dst, size, src);
+  }
   void neon_maxv(bool is_unsigned, FloatRegister dst, SIMD_Arrangement size,
-                 FloatRegister src);
+                 FloatRegister src) {
+    auto m = is_unsigned ? (neon_reduction2)&Assembler::umaxv : &Assembler::smaxv;
+    (this->*m)(dst, size, src);
+  }
   void sve_minv(bool is_unsigned, FloatRegister dst, SIMD_RegVariant size,
-                PRegister pg, FloatRegister src);
+                PRegister pg, FloatRegister src) {
+    auto m = is_unsigned ? (sve_reduction3)&Assembler::sve_uminv : &Assembler::sve_sminv;
+    (this->*m)(dst, size, pg, src);
+  }
   void sve_maxv(bool is_unsigned, FloatRegister dst, SIMD_RegVariant size,
-                PRegister pg, FloatRegister src);
+                PRegister pg, FloatRegister src) {
+    auto m = is_unsigned ? (sve_reduction3)&Assembler::sve_umaxv : &Assembler::sve_smaxv;
+    (this->*m)(dst, size, pg, src);
+  }
 
   void select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                     FloatRegister src2, FloatRegister index,

@@ -1961,83 +1961,20 @@ void C2_MacroAssembler::neon_reduce_logical(int opc, Register dst, BasicType bt,
 }
 
 // Helper function to decode min/max reduction operation properties
-static void decode_minmax_reduction_opc(int opc, bool& is_min, bool& is_unsigned,
-                                        Assembler::Condition& cond) {
+void C2_MacroAssembler::decode_minmax_reduction_opc(int opc, bool* is_min,
+                                                    bool* is_unsigned,
+                                                    Condition* cond) {
   switch(opc) {
     case Op_MinReductionV:
-      is_min = true;  is_unsigned = false; cond = Assembler::LT; break;
+      *is_min = true;  *is_unsigned = false; *cond = LT; break;
     case Op_MaxReductionV:
-      is_min = false; is_unsigned = false; cond = Assembler::GT; break;
+      *is_min = false; *is_unsigned = false; *cond = GT; break;
     case Op_UMinReductionV:
-      is_min = true;  is_unsigned = true;  cond = Assembler::LO; break;
+      *is_min = true;  *is_unsigned = true;  *cond = LO; break;
     case Op_UMaxReductionV:
-      is_min = false; is_unsigned = true;  cond = Assembler::HI; break;
+      *is_min = false; *is_unsigned = true;  *cond = HI; break;
     default:
       ShouldNotReachHere();
-  }
-}
-
-// neon minp: pairwise minimum operation
-void C2_MacroAssembler::neon_minp(bool is_unsigned, FloatRegister dst,
-                                  SIMD_Arrangement size, FloatRegister src1,
-                                  FloatRegister src2) {
-  if (is_unsigned) {
-    uminp(dst, size, src1, src2);
-  } else {
-    sminp(dst, size, src1, src2);
-  }
-}
-
-// neon maxp: pairwise maximum operation
-void C2_MacroAssembler::neon_maxp(bool is_unsigned, FloatRegister dst,
-                                  SIMD_Arrangement size, FloatRegister src1,
-                                  FloatRegister src2) {
-  if (is_unsigned) {
-    umaxp(dst, size, src1, src2);
-  } else {
-    smaxp(dst, size, src1, src2);
-  }
-}
-
-// neon minv: reduction minimum operation
-void C2_MacroAssembler::neon_minv(bool is_unsigned, FloatRegister dst,
-                                  SIMD_Arrangement size, FloatRegister src) {
-  if (is_unsigned) {
-    uminv(dst, size, src);
-  } else {
-    sminv(dst, size, src);
-  }
-}
-
-// neon maxv: reduction maximum operation
-void C2_MacroAssembler::neon_maxv(bool is_unsigned, FloatRegister dst,
-                                  SIMD_Arrangement size, FloatRegister src) {
-  if (is_unsigned) {
-    umaxv(dst, size, src);
-  } else {
-    smaxv(dst, size, src);
-  }
-}
-
-// sve minv: reduction minimum operation
-void C2_MacroAssembler::sve_minv(bool is_unsigned, FloatRegister dst,
-                                 SIMD_RegVariant size, PRegister pg,
-                                 FloatRegister src) {
-  if (is_unsigned) {
-    sve_uminv(dst, size, pg, src);
-  } else {
-    sve_sminv(dst, size, pg, src);
-  }
-}
-
-// sve maxv: reduction maximum operation
-void C2_MacroAssembler::sve_maxv(bool is_unsigned, FloatRegister dst,
-                                 SIMD_RegVariant size, PRegister pg,
-                                 FloatRegister src) {
-  if (is_unsigned) {
-    sve_umaxv(dst, size, pg, src);
-  } else {
-    sve_smaxv(dst, size, pg, src);
   }
 }
 
@@ -2057,7 +1994,7 @@ void C2_MacroAssembler::neon_reduce_minmax_integral(int opc, Register dst, Basic
   bool is_min;
   bool is_unsigned;
   Condition cond;
-  decode_minmax_reduction_opc(opc, is_min, is_unsigned, cond);
+  decode_minmax_reduction_opc(opc, &is_min, &is_unsigned, &cond);
   BLOCK_COMMENT("neon_reduce_minmax_integral {");
     if (bt == T_LONG) {
       assert(vtmp == fnoreg, "should be");
@@ -2173,7 +2110,7 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
       bool is_min;
       bool is_unsigned;
       Condition cond;
-      decode_minmax_reduction_opc(opc, is_min, is_unsigned, cond);
+      decode_minmax_reduction_opc(opc, &is_min, &is_unsigned, &cond);
       is_min ? sve_minv(is_unsigned, tmp, size, pg, src2)
              : sve_maxv(is_unsigned, tmp, size, pg, src2);
       // Move result from vector to general register
