@@ -36,7 +36,7 @@ import jdk.jfr.internal.test.WhiteBox;
 import jdk.test.lib.jfr.EventNames;
 
 /**
- * @test id=dfs-only
+ * @test
  * @summary Test dumping with path-to-gc-roots and DFS only with a very small stacksize for the VM thread
  * @requires vm.hasJFR & vm.flagless
  * @modules jdk.jfr/jdk.jfr.internal.test
