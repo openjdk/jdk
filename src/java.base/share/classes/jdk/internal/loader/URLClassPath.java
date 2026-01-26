@@ -110,7 +110,7 @@ public class URLClassPath {
     /* List of URLs found during expansion of JAR 'Class-Path' attributes
      * Access is guarded by a monitor on 'searchPath'
      */
-    private final ArrayList<URL> expandedPath = new ArrayList<>();
+    private final ArrayList<URL> manifestClassPath = new ArrayList<>();
 
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
@@ -377,8 +377,8 @@ public class URLClassPath {
     private URL nextURL() {
         synchronized (searchPath) {
             // Check paths discovered during 'Class-Path' expansion first
-            if (!expandedPath.isEmpty()) {
-                return expandedPath.removeLast();
+            if (!manifestClassPath.isEmpty()) {
+                return manifestClassPath.removeLast();
             }
             // Check the regular search path
             if (nextURL < searchPath.size()) {
@@ -430,7 +430,7 @@ public class URLClassPath {
                 continue;
             }
             if (loaderClassPathURLs != null) {
-                addExpandedPaths(loaderClassPathURLs);
+                addManifestClassPaths(loaderClassPathURLs);
             }
             // Finally, add the Loader to the search path.
             loaders.add(loader);
@@ -485,10 +485,10 @@ public class URLClassPath {
     /*
      * Adds the specified URLs to the list of 'Class-Path' expanded URLs
      */
-    private void addExpandedPaths(URL[] urls) {
+    private void addManifestClassPaths(URL[] urls) {
         synchronized (searchPath) {
-            // Adding in reversed order since expandedPath is consumed tail-first
-            expandedPath.addAll(Arrays.asList(urls).reversed());
+            // Adding in reversed order since manifestClassPath is consumed tail-first
+            manifestClassPath.addAll(Arrays.asList(urls).reversed());
         }
     }
 
