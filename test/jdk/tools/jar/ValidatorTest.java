@@ -36,6 +36,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -318,14 +319,10 @@ class ValidatorTest {
                 Automatic-Module-Name: default
                 """);
         jar("--create --file " + file + " --manifest " + manifest);
-        try {
-            jar("--validate --file " + file.toString());
-            fail("Expecting non-zero exit code");
-        } catch (IOException e) {
-            var err = e.getMessage();
-            System.out.println(err);
-            assertTrue(err.contains("invalid module name of Automatic-Module-Name entry in manifest: default"), "missing warning for: default");
-        }
+        var e = assertThrows(IOException.class, () -> jar("--validate --file " + file.toString()));
+        var err = e.getMessage();
+        System.out.println(err);
+        assertTrue(err.contains("invalid module name of Automatic-Module-Name entry in manifest: default"), "missing warning for: default");
     }
 
     @Test
@@ -344,14 +341,10 @@ class ValidatorTest {
                 """);
         JAVAC_TOOL.run(System.out, System.err, foo.toString());
         jar("--create --file " + file + " --manifest " + manifest + " module-info.class");
-        try {
-            jar("--validate --file " + file.toString());
-            fail("Expecting non-zero exit code");
-        } catch (IOException e) {
-            var err = e.getMessage();
-            System.out.println(err);
-            assertTrue(err.contains("expected module name is: foo - but found Automatic-Module-Name entry in manifest: bar"), "missing warning for: foo/bar");
-        }
+        var e = assertThrows(IOException.class, () -> jar("--validate --file " + file.toString()));
+        var err = e.getMessage();
+        System.out.println(err);
+        assertTrue(err.contains("expected Automatic-Module-Name entry in manifest: bar to match name of compiled module: foo"), "missing warning for: foo/bar");
     }
 
     /**

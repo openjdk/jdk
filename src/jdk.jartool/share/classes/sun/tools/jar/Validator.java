@@ -102,6 +102,7 @@ final class Validator {
         this.zf = zf;
         this.zis = zis;
         checkModuleDescriptor(MODULE_INFO);
+        checkAutomaticModuleName();
     }
 
     static boolean validate(Main main, File zipFile) throws IOException {
@@ -273,26 +274,6 @@ final class Validator {
                     if (!"META-INF/".equals(firstName)) {
                         errorAndInvalid(formatMsg("error.validator.metainf.wrong.position", firstName));
                     }
-                }
-                // Check for a valid and consistent automatic module name
-                try (InputStream jis = zf.getInputStream(zf.getEntry(entryName))) {
-                    Manifest manifest = new Manifest(jis);
-                    Attributes global = manifest.getMainAttributes();
-                    String name = global.getValue("Automatic-Module-Name");
-                    if (name != null) {
-                        try {
-                            ModuleDescriptor.newAutomaticModule(name);
-                        } catch (IllegalArgumentException e) {
-                            errorAndInvalid(formatMsg("error.validator.manifest.invalid.automatic.module.name", name));
-                        }
-                        if (md != null) {
-                            if (!name.equals(md.name())) {
-                                errorAndInvalid(formatMsg("error.validator.manifest.inconsistent.automatic.module.name", name, md.name()));
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    errorAndInvalid(e.getMessage());
                 }
             }
         }
@@ -473,6 +454,36 @@ final class Validator {
 
             return;
         });
+    }
+
+    /**
+     * Checks whether an Automatic-Module-Name entry is valid
+     * and also verifies it to the name given by a compiled
+     * module descriptor.
+     */
+    private void checkAutomaticModuleName() {
+        var entry = zf.getEntry("META-INF/MANIFEST.MF");
+        if (entry == null) {
+            return;
+        }
+        try (InputStream jis = zf.getInputStream(entry)) {
+            Attributes attributes = new Manifest(jis).getMainAttributes();
+            String automaticModuleName = attributes.getValue("Automatic-Module-Name");
+            if (automaticModuleName == null) {
+                return;
+            }
+            try {
+                ModuleDescriptor.newAutomaticModule(automaticModuleName);
+            } catch (IllegalArgumentException e) {
+                errorAndInvalid(formatMsg("error.validator.manifest.invalid.automatic.module.name", automaticModuleName));
+            }
+            if (md == null || automaticModuleName.equals(md.name())) {
+                return;
+            }
+            errorAndInvalid(formatMsg("error.validator.manifest.inconsistent.automatic.module.name", automaticModuleName, md.name()));
+        } catch (IOException e) {
+            errorAndInvalid(e.getMessage());
+        }
     }
 
     /*
