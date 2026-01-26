@@ -30,8 +30,9 @@ import jdk.internal.util.StaticProperty;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.Map;
@@ -475,33 +476,35 @@ public final class NativeLibraries {
     private static final class NativeLibraryContext {
 
         // Maps thread object to the native library context stack, maintained by each thread
-        private static Map<Thread, Deque<NativeLibraryImpl>> nativeLibraryThreadContext =
+        private static Map<Thread, List<NativeLibraryImpl>> nativeLibraryThreadContext =
                 new ConcurrentHashMap<>();
 
         // returns a context associated with the current thread
-        private static Deque<NativeLibraryImpl> current() {
+        private static List<NativeLibraryImpl> current() {
             return nativeLibraryThreadContext.computeIfAbsent(
                     Thread.currentThread(),
                     new Function<>() {
-                        public Deque<NativeLibraryImpl> apply(Thread t) {
-                            return new ArrayDeque<>(8);
+                        public List<NativeLibraryImpl> apply(Thread t) {
+                            return new ArrayList<>(8);
                         }
                     });
         }
 
         private static NativeLibraryImpl peek() {
-            return current().peek();
+            List<NativeLibraryImpl> libs = current();
+            return libs.isEmpty() ? null : libs.getLast();
         }
 
         private static void push(NativeLibraryImpl lib) {
-            current().push(lib);
+            Objects.requireNonNull(lib);
+            current().addLast(lib);
         }
 
         private static void pop() {
             // this does not require synchronization since each
             // thread has its own context
-            Deque<NativeLibraryImpl> libs = current();
-            libs.pop();
+            List<NativeLibraryImpl> libs = current();
+            libs.removeLast();
             if (libs.isEmpty()) {
                 // context can be safely removed once empty
                 nativeLibraryThreadContext.remove(Thread.currentThread());
@@ -509,7 +512,7 @@ public final class NativeLibraries {
         }
 
         private static boolean isEmpty() {
-            Deque<NativeLibraryImpl> context =
+            List<NativeLibraryImpl> context =
                     nativeLibraryThreadContext.get(Thread.currentThread());
             return (context == null || context.isEmpty());
         }
