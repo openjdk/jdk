@@ -47,7 +47,7 @@ import jdk.test.lib.jfr.EventNames;
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  *
- * @run main/othervm -XX:TLABSize=2k -Xmx256m -Xlog:jfr+system+dfs jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS dfs-only
+ * @run main/othervm -XX:TLABSize=2k -Xmx256m jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS dfs-only
  */
 
 /**

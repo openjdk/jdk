@@ -23,6 +23,10 @@
 
 package jdk.jfr.jcmd;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
 import jdk.jfr.Enabled;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -31,65 +35,47 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.test.WhiteBox;
 import jdk.test.lib.jfr.EventNames;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-
-// This test tests that even with a rather small stack size we can execute path-to-gc-roots search in
-// leak profiler.
-// (Note: VMThreadStackSize dictates stack size for *all* VM threads, not just the VMThread; therefore
-//  we cannot go infinitly low)
-
 /**
  * @test id=dfs-only
- * @summary Test dumping with path-to-gc-roots and DFS only, with a very small VMThread stack size
+ * @summary Test dumping with path-to-gc-roots and DFS only with a very small stacksize for the VM thread
  * @requires vm.hasJFR & vm.flagless
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  *
- * @run main/othervm -Xmx1g -XX:VMThreadStackSize=128k -Xlog:jfr+system+dfs jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS dfs-only
- */
-
-/**
- * @test id=bfsdfs
- * @summary Test dumping with path-to-gc-roots and mixed BFS+DFS, with a very small VMThread stack size
- * @bug 8373490
- * @requires vm.hasJFR & vm.flagless
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @library /test/lib /test/jdk
- *
- * @run main/othervm -Xmx1g -XX:VMThreadStackSize=128k -Xlog:jfr+system+dfs jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsBFSDFS bfsdfs
+ * @run main/othervm -Xmx1g -XX:VMThreadStackSize=128 jdk.jfr.jcmd.TestJcmdDumpPathToGCRootsDFSWithSmallStack dfs-only
  */
 public class TestJcmdDumpPathToGCRootsDFSWithSmallStack {
 
-    // Note for BFS-DFS: in order to force the JVM to take the BFS-DFS path instead of just doing things BFS-only,
-    // we start with a small heap of 256M. That gives us a (low-capped) BFS edge queue size of 32M. We then build up
-    // a leak with > 2mio entries, which will exhaust the edge queue eventually and cause BFS to invoke the DFS fallback.
+    // Tests the new non-recursive implementation of the JFR leak profiler path-to-gc-roots-search.
 
-    // The minimum size of the edge queue in BFS (keep in sync with hotspot)
-    // see edge_queue_memory_reservation() in pathToGCRootsOperation.cpp
-    private final static int minimumEdgeQueueSizeCap = 32 * 1024 * 1024;
+    // We build up an array of linked lists, each containing enough entries for DFS search to
+    // max out max_dfs_depth (but not greatly surpass it).
+    // The old recursive implementation, started with such a small stack, will fail to reach
+    // max_dfs_depth, instead crashing with stack overflow.
+    // The new non-recursive implementation should work; the majority of the linked list items
+    // should be scanned (all those at the start of the lists, below max_dfs_depth) and contribute
+    // old object samples to the result.
 
-    private static List<Object[]> leak;
-    private final static int leakedObjectCount = 5_000_000;
+    // Note: VMThreadStackSize defines thread stack size for *all* VM-internal threads, not just the
+    // VM thread. Make sure that whatever small size we use in this test is still fine for the rest of
+    // the VM.
+
+    private static final int TOTAL_OBJECTS = 10_000_000;
+    private static final int OBJECTS_PER_LIST = 5_000;
+    private static LinkedList[] leak;
 
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
         String settingName = EventNames.OldObjectSample + "#" + "cutoff";
 
-        boolean skipBFS = switch (args[0]) {
-            case "bfsdfs" -> false;
-            case "dfs-only" -> true;
-            default -> {
-                throw new RuntimeException("Invalid argument");
-            }
-        };
+        int leakedObjectCount = 10_000_000;
+        boolean skipBFS = true;
 
         WhiteBox.setSkipBFS(skipBFS);
-        testDump(Collections.singletonMap(settingName, "infinity"));
+        testDump(Collections.singletonMap(settingName, "infinity"), leakedObjectCount);
     }
 
-    private static void testDump(Map<String, String> settings) throws Exception {
+    private static void testDump(Map<String, String> settings, int leakedObjectCount) throws Exception {
         final String pathToGcRoots = "path-to-gc-roots=true";
         int numTries = 3;
         while (--numTries >= 0) {
@@ -107,7 +93,7 @@ public class TestJcmdDumpPathToGCRootsDFSWithSmallStack {
                 buildLeak(leakedObjectCount);
                 System.gc();
                 System.gc();
-                File recording = new File("TestJcmdDumpPathToGCRoots" + r.getId() + ".jfr");
+                File recording = new File("TestJcmdDumpPathToGCRootsDFSWithSmallStack" + r.getId() + ".jfr");
                 recording.delete();
                 JcmdHelper.jcmd("JFR.dump", "name=dodo", pathToGcRoots, "filename=" + recording.getAbsolutePath());
                 r.setSettings(Collections.emptyMap());
@@ -117,7 +103,7 @@ public class TestJcmdDumpPathToGCRootsDFSWithSmallStack {
                     continue;
                 }
                 int chains = countChains(events);
-                final int minNumberOfChains = 20; // very conservative; normally 130-160
+                final int minNumberOfChains = 30; // very conservative; normally ~250
                 if (chains < minNumberOfChains) {
                     System.out.println(events);
                     System.out.println("Not enough chains found (" + chains + "), retrying.");
@@ -130,8 +116,8 @@ public class TestJcmdDumpPathToGCRootsDFSWithSmallStack {
     }
 
     private static void clearLeak() {
-      leak = null;
-      System.gc();
+        leak = null;
+        System.gc();
     }
 
     private static int countChains(List<RecordedEvent> events) throws IOException {
@@ -147,9 +133,12 @@ public class TestJcmdDumpPathToGCRootsDFSWithSmallStack {
     }
 
     private static void buildLeak(int objectCount) {
-        leak = new ArrayList<Object[]>(objectCount);
-        for (int i = 0; i < objectCount;i ++) {
-            leak.add(new Object[0]);
+        leak = new LinkedList[TOTAL_OBJECTS/OBJECTS_PER_LIST];
+        for (int i = 0; i < leak.length; i++) {
+            leak[i] = new LinkedList();
+            for (int j = 0; j < OBJECTS_PER_LIST; j++) {
+                leak[i].add(new Object());
+            }
         }
     }
 }
