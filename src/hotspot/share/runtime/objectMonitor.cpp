@@ -2096,7 +2096,7 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
     // _wait_set_lock protects the wait queue, not the entry_list.  We could
     // move the add-to-entry_list operation, above, outside the critical section
     // protected by _wait_set_lock.  In practice that's not useful.  With the
-    // exception of  wait() timeouts and interrupts the monitor owner
+    // exception of wait() timeouts and interrupts the monitor owner
     // is the only thread that grabs _wait_set_lock.  There's almost no contention
     // on _wait_set_lock so it's not profitable to reduce the length of the
     // critical section.
@@ -2239,7 +2239,9 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   // If this was an interrupted case, set the _interrupted boolean so that
   // once we re-acquire the monitor we know if we need to throw IE or not.
   ObjectWaiter::TStates state = node->TState;
-  assert(was_notified || state == ObjectWaiter::TS_RUN, "");
+  assert(was_notified || state == ObjectWaiter::TS_RUN,
+    "was not notified and is not in the right state: was_notified = %s, state = %s",
+    was_notified ? "true" : "false", node->getTStateName(state));
   node->_interrupted = node->_interruptible && !was_notified && current->is_interrupted(false);
 
   // Post JFR and JVMTI events. If non-interruptible we are in
@@ -2544,6 +2546,23 @@ ObjectWaiter::ObjectWaiter(JavaThread* current) {
   _interrupted = false;
   _do_timed_park = false;
   _active   = false;
+}
+
+const char* ObjectWaiter::getTStateName(ObjectWaiter::TStates state) {
+  switch (state) {
+  case ObjectWaiter::TS_UNDEF:
+    return "TS_UNDEF";
+  case ObjectWaiter::TS_READY:
+    return "TS_READY";
+  case ObjectWaiter::TS_RUN:
+    return "TS_RUN";
+  case ObjectWaiter::TS_WAIT:
+    return "TS_WAIT";
+  case ObjectWaiter::TS_ENTER:
+    return "TS_ENTER";
+  default:
+    ShouldNotReachHere();
+  }
 }
 
 ObjectWaiter::ObjectWaiter(oop vthread, ObjectMonitor* mon) : ObjectWaiter(nullptr) {

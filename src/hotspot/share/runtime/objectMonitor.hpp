@@ -71,7 +71,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
-
+  const char* getTStateName(TStates state);
   void set_bad_pointers() {
 #ifdef ASSERT
     this->_prev  = (ObjectWaiter*) badAddressVal;
