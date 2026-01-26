@@ -2770,10 +2770,14 @@ public final class Math {
      * same sign as the argument.
      *
      * <li>If the argument is positive infinity, then the result is
-     * positive infinity
+     * positive infinity.
      *
      * <li>If the argument is negative infinity, then the result is
-     * negative infinity
+     * negative infinity.
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <p>The computed result must be within 2.5 ulps of the exact result.
      *
      * </ul>
      * @param   x The number whose inverse hyperbolic sine is to be returned.

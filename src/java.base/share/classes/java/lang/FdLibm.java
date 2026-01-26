@@ -3537,24 +3537,24 @@ final class FdLibm {
         private static final double huge = 1.0e300;
 
         static double compute(double x) {
-            double t,w;
-            int hx,ix;
+            double t, w;
+            int hx, ix;
             hx = __HI(x);
-            ix = hx&0x7fffffff;
+            ix = hx & 0x7fffffff;
             if(ix >= 0x7ff00000) {
-                return x + x;                       /* x is inf or NaN */
+                return x + x;                       // x is inf or NaN
             }
-            if(ix < 0x3e300000) {                   /* |x| < 2**-28 */
+            if(ix < 0x3e300000) {                   // |x| < 2**-28
                 if(huge + x > 1.0) {
-                    return x;                       /* return x inexact except 0 */
+                    return x;                       // return x inexact except 0
                 }
             }
-            if(ix > 0x41b00000) {                   /* |x| > 2**28 */
+            if(ix > 0x41b00000) {                   // |x| > 2**28
                 w = Log.compute(Math.abs(x)) + ln2;
-            } else if (ix > 0x40000000) {           /* 2**28 > |x| > 2.0 */
+            } else if (ix > 0x40000000) {           // 2**28 > |x| > 2.0
                 t = Math.abs(x);
                 w = Log.compute(2.0 * t + 1.0 / (Sqrt.compute(x * x + 1.0) + t));
-            } else {                                /* 2.0 > |x| > 2**-28 */
+            } else {                                // 2.0 > |x| > 2**-28
                 t = x * x;
                 w = Log1p.compute(Math.abs(x) + t / (1.0 + Sqrt.compute(1.0 + t)));
             }

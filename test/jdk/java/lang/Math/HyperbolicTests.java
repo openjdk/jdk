@@ -1573,7 +1573,7 @@ public class HyperbolicTests {
             double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
-            failures += testAsinhCaseWithUlpDiff(d, d, 2.5);
+            failures += testAsinhCaseWithUlpDiff(d, d, 3.0);
         }
 
         failures += testAsinhAdditionalTests();

@@ -76,7 +76,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@code exp}, {@code log}, {@code log10},
  * {@code cbrt}, {@code atan2}, {@code pow},
  * {@code sinh}, {@code cosh}, {@code tanh},
- * {@code hypot}, {@code expm1}, and {@code log1p}.
+ * {@code asinh}, {@code hypot}, {@code expm1},
+ * and {@code log1p}.
  *
  * <p>
  * The platform uses signed two's complement integer arithmetic with
@@ -2186,6 +2187,8 @@ public final class StrictMath {
      *
      * <li>If the argument is negative infinity, then the result is
      * negative infinity
+     *
+     * <li>If the argument is NaN, then the result is NaN.
      *
      * </ul>
      * @param   x The number whose inverse hyperbolic sine is to be returned.
