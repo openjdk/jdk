@@ -168,19 +168,6 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   _most_recent_headroom_at_start_of_idle = adjusted_mutator_available;
   // _trigger_threshold is expressed in words
   _trigger_threshold = (bytes_allocated_at_start_of_idle_span + adjusted_mutator_available) / HeapWordSize;
-
-#define KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  // _free_set->available() should match mutator_available
-  log_info(gc)("mutator_available: %zu, adjusted_mutator_available: %zu, _free_set->available(): %zu, "
-               "bytes_allocated_at_start: %zu, threshold: %zu",
-               mutator_available, adjusted_mutator_available, _free_set->available(), bytes_allocated_at_start_of_idle_span,
-               _trigger_threshold);
-  // Throughout idle span, available() should equal (allocatable() + spike_headroom + penalties)
-  size_t available = _free_set->available();
-  log_info(gc)(" available: %zu should equal allocatable: %zu + spike_headroom: %zu + penalties: %zu",
-               available, this->allocatable(available) * HeapWordSize, spike_headroom, penalties);
-#endif
 }
 
 void ShenandoahAdaptiveHeuristics::start_idle_span() {
