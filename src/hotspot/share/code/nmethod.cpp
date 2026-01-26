@@ -2137,6 +2137,9 @@ void nmethod::make_deoptimized() {
   ResourceMark rm;
   RelocIterator iter(this, oops_reloc_begin());
 
+  // Assume there will be some calls to make deoptimized.
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   while (iter.next()) {
 
     switch (iter.type()) {
