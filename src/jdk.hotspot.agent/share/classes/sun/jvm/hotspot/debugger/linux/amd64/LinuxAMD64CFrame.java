@@ -115,60 +115,32 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
      }
    }
 
-   private boolean isValidFrame(Address nextCFA, boolean isNative) {
-     // CFA should never be null.
-     // nextCFA must be greater than current CFA, if frame is native.
-     // Java interpreter frames can share the CFA (frame pointer).
-     return nextCFA != null &&
-         (!isNative || (isNative && nextCFA.greaterThanOrEqual(cfa)));
+   private boolean isValidFrame(Address nextCFA, Address nextRBP) {
+     // Both CFA and RBP must not be null.
+     if (nextCFA == null && nextRBP == null) {
+       return false;
+     }
+
+     // RBP must not be null if CFA is null - it happens between Java frame and Native frame.
+     // We cannot validate RBP value because it might be used as GPR. Thus returns true
+     // if RBP is not null.
+     if (nextCFA == null && nextRBP != null) {
+       return true;
+     }
+
+     // nextCFA must be greater than current CFA.
+     if (nextCFA != null && nextCFA.greaterThanOrEqual(cfa)) {
+       return true;
+     }
+
+     // Otherwise, the frame is not valid.
+     return false;
    }
 
    private Address getNextRSP() {
      return dwarf == null ? rbp.addOffsetTo(2 * ADDRESS_SIZE) // Java frame - skip saved BP and RA
                           : cfa.addOffsetTo(dwarf.getReturnAddressOffsetFromCFA())
                                .addOffsetTo(ADDRESS_SIZE); // Native frame
-   }
-
-   private Address getNextCFA(DwarfParser nextDwarf, Address senderFP, Address senderPC) {
-     Address nextCFA;
-     boolean isNative = false;
-
-     if (nextDwarf == null) { // Next frame is Java
-       return null;
-     } else { // Next frame is Native
-       if (dwarf == null) { // Current frame is Java
-         int nextCFAReg = nextDwarf.getCFARegister();
-         if (nextCFAReg == AMD64ThreadContext.RBP) {
-           nextCFA = nextDwarf.isBPOffsetAvailable()
-                       ? rbp.getAddressAt(0) // We can use cfa as BP in Java frame
-                            .addOffsetTo(-nextDwarf.getBasePointerOffsetFromCFA())
-                       : rbp;
-         } else if (nextCFAReg == AMD64ThreadContext.RSP) {
-           nextCFA = senderFP.addOffsetTo(2 * ADDRESS_SIZE) // skip BP and RA to get caller SP
-                             .addOffsetTo(nextDwarf.getCFAOffset());
-         } else {
-           throw new DebuggerException("Unsupported CFA register: " + nextCFAReg);
-         }
-       } else { // Current frame is Native
-         isNative = true;
-         int nextCFAReg = nextDwarf.getCFARegister();
-         if (nextCFAReg == AMD64ThreadContext.RBP) {
-           Address nextRBP = getNextRBP(senderFP);
-           nextCFA = nextRBP.addOffsetTo(-nextDwarf.getBasePointerOffsetFromCFA());
-         } else if (nextCFAReg == AMD64ThreadContext.RSP) {
-           nextCFA = getNextRSP().addOffsetTo(nextDwarf.getCFAOffset());
-         } else {
-           throw new DebuggerException("Unsupported CFA register: " + nextCFAReg);
-         }
-       }
-     }
-
-     if (dbg.isSignalTrampoline(senderPC)) {
-       // Return without frame check if sender is signal trampoline.
-       return nextCFA;
-     } else {
-       return isValidFrame(nextCFA, isNative) ? nextCFA : null;
-     }
    }
 
    private Address getNextRBP(Address senderFP) {
@@ -181,6 +153,21 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
          ? cfa.getAddressAt(dwarf.getBasePointerOffsetFromCFA())
          : rbp;
      }
+   }
+
+   private Address getNextCFA(DwarfParser nextDwarf, Address senderFP, Address senderPC) {
+     if (nextDwarf == null) { // Next frame is Java
+       // CFA is not available on Java frame
+       return null;
+     }
+
+     // Next frame is Native
+     int nextCFAReg = nextDwarf.getCFARegister();
+     return switch(nextCFAReg){
+       case AMD64ThreadContext.RBP -> getNextRBP(senderFP).addOffsetTo(nextDwarf.getCFAOffset());
+       case AMD64ThreadContext.RSP -> getNextRSP().addOffsetTo(nextDwarf.getCFAOffset());
+       default -> throw new DebuggerException("Unsupported CFA register: " + nextCFAReg);
+     };
    }
 
    @Override
@@ -229,12 +216,19 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
 
      try {
        Address nextCFA = getNextCFA(nextDwarf, fp, nextPC);
-       return (nextCFA == null && nextRBP == null)
-         ? null
-         : new LinuxAMD64CFrame(dbg, nextRSP, nextRBP, nextCFA, nextPC, nextDwarf, fallback);
-     } catch (DebuggerException _) {
-       return nextRBP == null ? null
-                              : new LinuxAMD64CFrame(dbg, nextRSP, nextRBP, null, nextPC, null, fallback);
+       return isValidFrame(nextCFA, nextRBP)
+         ? new LinuxAMD64CFrame(dbg, nextRSP, nextRBP, nextCFA, nextPC, nextDwarf, fallback)
+         : null;
+     } catch (DebuggerException e) {
+       if (dbg.isSignalTrampoline(nextPC)) {
+         // We can through the caller frame if it is signal trampoline.
+         // getNextCFA() might fail because DwarfParser cannot find out CFA register.
+         return new LinuxAMD64CFrame(dbg, nextRSP, nextRBP, null, nextPC, nextDwarf, fallback);
+       }
+
+       // Rethrow the original exception if getNextCFA() failed
+       // and the caller is not signal trampoline.
+       throw e;
      }
    }
 
