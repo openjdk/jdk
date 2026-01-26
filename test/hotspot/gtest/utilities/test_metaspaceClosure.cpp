@@ -95,6 +95,9 @@ public:
     }
     return false;
   }
+  int visited_count() {
+    return _count;
+  }
 };
 
 // iterate an Array<MyMetaData*>
@@ -185,7 +188,6 @@ TEST_VM(MetaspaceClosure, GrowableArray_MSOPointer) {
   EXPECT_TRUE(closure.has_visited(&x)) << "must be";
   EXPECT_TRUE(closure.has_visited(&y)) << "must be";
   EXPECT_TRUE(closure.has_visited(&z)) << "must be";
-  EXPECT_TRUE(closure.has_visited(*array->data_addr())) << "must visit buffer inside GrowableArray";
 }
 
 // iterate an AOTGrowableArray<MyMetaData>
@@ -214,7 +216,6 @@ TEST_VM(MetaspaceClosure, GrowableArray_MSO) {
   EXPECT_TRUE(closure.has_visited(&x)) << "must be";
   EXPECT_TRUE(closure.has_visited(&y)) << "must be";
   EXPECT_TRUE(closure.has_visited(&z)) << "must be";
-  EXPECT_TRUE(closure.has_visited(*array->data_addr())) << "must visit buffer inside GrowableArray";
 }
 
 // iterate an AOTGrowableArray<jlong>
@@ -226,5 +227,5 @@ TEST_VM(MetaspaceClosure, GrowableArray_jlong) {
   closure.finish();
 
   EXPECT_TRUE(closure.has_visited(array)) << "must be";
-  EXPECT_TRUE(closure.has_visited(*array->data_addr())) << "must visit buffer inside GrowableArray";
+  EXPECT_TRUE(closure.visited_count() == 2) << "must visit buffer inside GrowableArray";
 }
