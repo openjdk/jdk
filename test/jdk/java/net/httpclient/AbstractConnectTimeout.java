@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,15 @@
  * questions.
  */
 
+import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.net.NoRouteToHostException;
+import java.net.Proxy;
 import java.net.ProxySelector;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
@@ -39,6 +44,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletionException;
+import java.util.stream.IntStream;
+
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -49,6 +57,75 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.testng.Assert.fail;
 
 public abstract class AbstractConnectTimeout {
+
+    private static final int BACKLOG = 1;
+
+    /**
+     * A {@link ServerSocket} whose admission will be blocked by exhausting all its backlog.
+     */
+    private static final ServerSocket SERVER_SOCKET = createServerSocket();
+
+    /**
+     * Client sockets exhausting the admission to {@link #SERVER_SOCKET}.
+     */
+    private static final List<Socket> CLIENT_SOCKETS = createClientSockets();
+
+    private static ServerSocket createServerSocket() {
+        try {
+            out.println("Creating server socket");
+            return new ServerSocket(0, BACKLOG, InetAddress.getLoopbackAddress());
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private static List<Socket> createClientSockets() {
+        int socketCount = BACKLOG   // to fill up the backlog
+                + 1;                // to connect
+        return IntStream
+                .range(0, socketCount)
+                .mapToObj(socketIndex -> {
+                    try {
+                        out.printf(
+                                "Creating client socket %s/%s to exhaust the server socket admission%n",
+                                (socketIndex + 1), socketCount);
+                        return new Socket(SERVER_SOCKET.getInetAddress(), SERVER_SOCKET.getLocalPort());
+                    } catch (IOException ioe) {
+                        String message = String.format(
+                                "Failed creating client socket %s/%s",
+                                (socketIndex + 1), socketCount);
+                        throw new RuntimeException(message, ioe);
+                    }
+                }).toList();
+    }
+
+    @AfterClass
+    public static void closeSockets() throws IOException {
+        for (Socket CLIENT_SOCKET : CLIENT_SOCKETS) {
+            CLIENT_SOCKET.close();
+        }
+        SERVER_SOCKET.close();
+    }
+
+    /**
+     * {@link ProxySelector} <em>always</em> pointing to {@link #SERVER_SOCKET}.
+     */
+    private static final ProxySelector PROXY_SELECTOR = new ProxySelector() {
+
+        private static final List<Proxy> PROXIES =
+                List.of(new Proxy(Proxy.Type.HTTP, SERVER_SOCKET.getLocalSocketAddress()));
+
+        @Override
+        public List<Proxy> select(URI uri) {
+            return PROXIES;
+        }
+
+        @Override
+        public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+            // Do nothing
+        }
+
+    };
 
     static final Duration NO_DURATION = null;
 
@@ -82,16 +159,13 @@ public abstract class AbstractConnectTimeout {
         return l.stream().toArray(Object[][]::new);
     }
 
-    static final ProxySelector EXAMPLE_DOT_COM_PROXY = ProxySelector.of(
-            InetSocketAddress.createUnresolved("example.com", 8080));
-
     //@Test(dataProvider = "variants")
     protected void timeoutNoProxySync(Version requestVersion,
                                       String scheme,
                                       String method,
                                       Duration connectTimeout,
                                       Duration requestTimeout)
-        throws Exception
+            throws Exception
     {
         timeoutSync(requestVersion, scheme, method, connectTimeout, requestTimeout, NO_PROXY);
     }
@@ -102,9 +176,9 @@ public abstract class AbstractConnectTimeout {
                                         String method,
                                         Duration connectTimeout,
                                         Duration requestTimeout)
-        throws Exception
+            throws Exception
     {
-        timeoutSync(requestVersion, scheme, method, connectTimeout, requestTimeout, EXAMPLE_DOT_COM_PROXY);
+        timeoutSync(requestVersion, scheme, method, connectTimeout, requestTimeout, PROXY_SELECTOR);
     }
 
     private void timeoutSync(Version requestVersion,
@@ -163,7 +237,7 @@ public abstract class AbstractConnectTimeout {
                                          String method,
                                          Duration connectTimeout,
                                          Duration requestTimeout) {
-        timeoutAsync(requestVersion, scheme, method, connectTimeout, requestTimeout, EXAMPLE_DOT_COM_PROXY);
+        timeoutAsync(requestVersion, scheme, method, connectTimeout, requestTimeout, PROXY_SELECTOR);
     }
 
     private void timeoutAsync(Version requestVersion,
@@ -217,9 +291,9 @@ public abstract class AbstractConnectTimeout {
                                   Version reqVersion,
                                   String method,
                                   Duration requestTimeout) {
-        // Resolvable address. Most tested environments just ignore the TCP SYN,
-        // or occasionally return ICMP no route to host
-        URI uri = URI.create(scheme +"://example.com:81/");
+        String hostAddress = SERVER_SOCKET.getInetAddress().getHostAddress();
+        int hostPort = SERVER_SOCKET.getLocalPort();
+        URI uri = URI.create(scheme + "://" + hostAddress + ':' + hostPort);
         HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(uri);
         reqBuilder = reqBuilder.version(reqVersion);
         switch (method) {
