@@ -21,6 +21,10 @@
  * questions.
  */
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -46,29 +50,24 @@ import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.stream.IntStream;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.time.Duration.*;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
  * @bug 8208391 8375352
  * @summary Verifies behavior on `connect()` timeouts
- * @run testng/othervm ${test.main.class}
- * @run testng/othervm -Dtest.proxy ${test.main.class}
- * @run testng/othervm -Dtest.async ${test.main.class}
- * @run testng/othervm -Dtest.async -Dtest.proxy ${test.main.class}
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Dtest.proxy ${test.main.class}
+ * @run junit/othervm -Dtest.async ${test.main.class}
+ * @run junit/othervm -Dtest.async -Dtest.proxy ${test.main.class}
  */
 
-public final class ConnectTimeoutTest {
+class ConnectTimeoutTest {
 
     private static final int BACKLOG = 1;
 
@@ -84,7 +83,7 @@ public final class ConnectTimeoutTest {
 
     private static ServerSocket createServerSocket() {
         try {
-            out.println("Creating server socket");
+            System.err.println("Creating server socket");
             return new ServerSocket(0, BACKLOG, InetAddress.getLoopbackAddress());
         } catch (Exception exception) {
             throw new RuntimeException(exception);
@@ -98,7 +97,7 @@ public final class ConnectTimeoutTest {
                 .range(0, socketCount)
                 .mapToObj(socketIndex -> {
                     try {
-                        out.printf(
+                        System.err.printf(
                                 "Creating client socket %s/%s to exhaust the server socket admission%n",
                                 (socketIndex + 1), socketCount);
                         return new Socket(SERVER_SOCKET.getInetAddress(), SERVER_SOCKET.getLocalPort());
@@ -111,7 +110,7 @@ public final class ConnectTimeoutTest {
                 }).toList();
     }
 
-    @AfterClass
+    @AfterAll
     public static void closeSockets() throws IOException {
         for (Socket CLIENT_SOCKET : CLIENT_SOCKETS) {
             CLIENT_SOCKET.close();
@@ -139,9 +138,9 @@ public final class ConnectTimeoutTest {
 
     };
 
-    static final Duration NO_DURATION = null;
+    private static final Duration NO_DURATION = null;
 
-    static List<List<Duration>> TIMEOUTS = List.of(
+    private static List<List<Duration>> TIMEOUTS = List.of(
                     // connectTimeout   HttpRequest timeout
             Arrays.asList( NO_DURATION,   ofMillis(100) ),
             Arrays.asList( NO_DURATION,   ofNanos(1)    ),
@@ -153,12 +152,11 @@ public final class ConnectTimeoutTest {
             Arrays.asList( ofNanos(1),    ofMinutes(1)  )
     );
 
-    static final List<String> METHODS = List.of("GET", "POST");
-    static final List<Version> VERSIONS = List.of(HTTP_2, HTTP_1_1);
-    static final List<String> SCHEMES = List.of("https", "http");
+    private static final List<String> METHODS = List.of("GET", "POST");
+    private static final List<Version> VERSIONS = List.of(HTTP_2, HTTP_1_1);
+    private static final List<String> SCHEMES = List.of("https", "http");
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    static Object[][] variants() {
         List<Object[]> l = new ArrayList<>();
         for (List<Duration> timeouts : TIMEOUTS) {
            Duration connectTimeout = timeouts.get(0);
@@ -171,8 +169,9 @@ public final class ConnectTimeoutTest {
         return l.stream().toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "variants")
-    public void test(
+    @ParameterizedTest
+    @MethodSource("variants")
+    void test(
             Version requestVersion,
             String scheme,
             String method,
@@ -196,15 +195,11 @@ public final class ConnectTimeoutTest {
                              ProxySelector proxy)
         throws Exception
     {
-        out.printf("%ntimeoutSync(requestVersion=%s, scheme=%s, method=%s,"
-                   + " connectTimeout=%s, requestTimeout=%s, proxy=%s)%n",
-                   requestVersion, scheme, method, connectTimeout, requestTimeout, proxy);
-
         HttpClient client = newClient(connectTimeout, proxy);
         HttpRequest request = newRequest(scheme, requestVersion, method, requestTimeout);
 
         for (int i = 0; i < 2; i++) {
-            out.printf("iteration %d%n", i);
+            System.err.printf("iteration %d%n", i);
             long startTime = System.nanoTime();
             try {
                 HttpResponse<?> resp = client.send(request, BodyHandlers.ofString());
@@ -212,17 +207,17 @@ public final class ConnectTimeoutTest {
                 fail("Unexpected response: " + resp);
             } catch (HttpConnectTimeoutException expected) { // blocking thread-specific exception
                 long elapsedTime = NANOSECONDS.toMillis(System.nanoTime() - startTime);
-                out.printf("Client: received in %d millis%n", elapsedTime);
+                System.err.printf("Client: received in %d millis%n", elapsedTime);
                 assertExceptionTypeAndCause(expected.getCause());
             } catch (ConnectException e) {
                 long elapsedTime = NANOSECONDS.toMillis(System.nanoTime() - startTime);
-                out.printf("Client: received in %d millis%n", elapsedTime);
+                System.err.printf("Client: received in %d millis%n", elapsedTime);
                 Throwable t = e.getCause().getCause();  // blocking thread-specific exception
                 if (!isAcceptableCause(t)) { // tolerate only NRTHE or UAE
-                    e.printStackTrace(out);
+                    e.printStackTrace(System.err);
                     fail("Unexpected exception:" + e);
                 } else {
-                    out.printf("Caught ConnectException with "
+                    System.err.printf("Caught ConnectException with "
                             + " cause: %s - skipping%n", t.getCause());
                 }
             }
@@ -235,14 +230,10 @@ public final class ConnectTimeoutTest {
                               Duration connectTimeout,
                               Duration requestTimeout,
                               ProxySelector proxy) {
-        out.printf("%ntimeoutAsync(requestVersion=%s, scheme=%s, method=%s, "
-                   + "connectTimeout=%s, requestTimeout=%s, proxy=%s)%n",
-                   requestVersion, scheme, method, connectTimeout, requestTimeout, proxy);
-
         HttpClient client = newClient(connectTimeout, proxy);
         HttpRequest request = newRequest(scheme, requestVersion, method, requestTimeout);
         for (int i = 0; i < 2; i++) {
-            out.printf("iteration %d%n", i);
+            System.err.printf("iteration %d%n", i);
             long startTime = System.nanoTime();
             try {
                 HttpResponse<?> resp = client.sendAsync(request, BodyHandlers.ofString()).join();
@@ -250,11 +241,11 @@ public final class ConnectTimeoutTest {
                 fail("Unexpected response: " + resp);
             } catch (CompletionException e) {
                 long elapsedTime = NANOSECONDS.toMillis(System.nanoTime() - startTime);
-                out.printf("Client: received in %d millis%n", elapsedTime);
+                System.err.printf("Client: received in %d millis%n", elapsedTime);
                 Throwable t = e.getCause();
                 if (t instanceof ConnectException && isAcceptableCause(t.getCause())) {
                     // tolerate only NRTHE and UAE
-                    out.printf("Caught ConnectException with "
+                    System.err.printf("Caught ConnectException with "
                             + "cause: %s - skipping%n", t.getCause());
                 } else {
                     assertExceptionTypeAndCause(t);
@@ -263,20 +254,20 @@ public final class ConnectTimeoutTest {
         }
     }
 
-    static boolean isAcceptableCause(Throwable cause) {
+    private static boolean isAcceptableCause(Throwable cause) {
         if (cause instanceof NoRouteToHostException) return true;
         if (cause instanceof UnresolvedAddressException) return true;
         return false;
     }
 
-    static HttpClient newClient(Duration connectTimeout, ProxySelector proxy) {
+    private static HttpClient newClient(Duration connectTimeout, ProxySelector proxy) {
         HttpClient.Builder builder = HttpClient.newBuilder().proxy(proxy);
         if (connectTimeout != NO_DURATION)
             builder.connectTimeout(connectTimeout);
         return builder.build();
     }
 
-    static HttpRequest newRequest(String scheme,
+    private static HttpRequest newRequest(String scheme,
                                   Version reqVersion,
                                   String method,
                                   Duration requestTimeout) {
@@ -295,17 +286,17 @@ public final class ConnectTimeoutTest {
         return reqBuilder.build();
     }
 
-    static void assertExceptionTypeAndCause(Throwable t) {
+    private static void assertExceptionTypeAndCause(Throwable t) {
         if (!(t instanceof HttpConnectTimeoutException)) {
-            t.printStackTrace(out);
+            t.printStackTrace(System.err);
             fail("Expected HttpConnectTimeoutException, got:" + t);
         }
         Throwable connEx = t.getCause();
         if (!(connEx instanceof ConnectException)) {
-            t.printStackTrace(out);
+            t.printStackTrace(System.err);
             fail("Expected ConnectException cause in:" + connEx);
         }
-        out.printf("Caught expected HttpConnectTimeoutException with ConnectException"
+        System.err.printf("Caught expected HttpConnectTimeoutException with ConnectException"
                 + " cause: %n%s%n%s%n", t, connEx);
         final String EXPECTED_MESSAGE = "HTTP connect timed out"; // impl dependent
         if (!connEx.getMessage().equals(EXPECTED_MESSAGE))
@@ -313,9 +304,9 @@ public final class ConnectTimeoutTest {
 
     }
 
-    static void printResponse(HttpResponse<?> response) {
-        out.println("Unexpected response: " + response);
-        out.println("Headers: " + response.headers());
-        out.println("Body: " + response.body());
+    private static void printResponse(HttpResponse<?> response) {
+        System.err.println("Unexpected response: " + response);
+        System.err.println("Headers: " + response.headers());
+        System.err.println("Body: " + response.body());
     }
 }
