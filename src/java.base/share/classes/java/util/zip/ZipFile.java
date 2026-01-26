@@ -714,7 +714,6 @@ public class ZipFile implements ZipConstants, Closeable {
          * a new one.
          */
         Inflater getInflater() {
-            Inflater inf;
             synchronized (inflaterCache) {
                 if (!inflaterCache.isEmpty()) {
                     return inflaterCache.removeLast();
