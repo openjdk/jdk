@@ -31,7 +31,6 @@ import java.nio.channels.SocketChannel;
 import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
-import org.opentest4j.TestAbortedException;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -87,7 +86,7 @@ class ConnectionRefusedMessage {
                     if (success) {
                         // this test checks the exception message of a ConnectException, so it's
                         // OK to skip the test if something unexpectedly accepted the connection
-                        throw new TestAbortedException("unexpectedly connected to " + destAddr);
+                        assumeTrue(success, "unexpectedly connected to " + destAddr);
                     }
                     fail("ConnectException was not thrown");
                 } catch (ConnectException ce) {
