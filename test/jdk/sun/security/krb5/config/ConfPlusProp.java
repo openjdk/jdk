@@ -41,7 +41,7 @@ public class ConfPlusProp {
         if (System.getenv("USERDNSDOMAIN") != null ||
                 System.getenv("LOGONSERVER") != null) {
             throw new SkippedException(
-                    "Looks like a Windows machine in a domain.");
+                    "Test cannot run in a domain.");
         }
         new ConfPlusProp().run();
     }
