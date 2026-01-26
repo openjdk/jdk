@@ -901,6 +901,7 @@
   /*****************************/                                         \
                                                                           \
   declare_toplevel_type(void*)                                            \
+  declare_toplevel_type(Atomic<HeapWord*>)                                \
   declare_toplevel_type(int*)                                             \
   declare_toplevel_type(char*)                                            \
   declare_toplevel_type(char**)                                           \
