@@ -218,10 +218,10 @@ final class CompressedCertificate {
             CRC32C crc32c = new CRC32C();
             crc32c.update(input);
             // Upper 32 bits of the 64 bit long returned by CRC32C are not used
-            // and set to zero, put input's length and algorithm id there.
+            // and set to zero, put algorithm id and input's length there.
             return crc32c.getValue()              // 32 bits
-                    | (long) input.length << 32   // 16 bits
-                    | (long) algId << 48;         // 16 bits
+                    | (long) algId << 32          // 8 bits
+                    | (long) input.length << 40;  // 24 bits
         }
     }
 

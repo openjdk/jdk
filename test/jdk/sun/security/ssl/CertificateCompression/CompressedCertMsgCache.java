@@ -21,6 +21,8 @@
  * questions.
  */
 
+import static jdk.test.lib.Asserts.assertEquals;
+
 /*
  * @test
  * @bug 8372526
@@ -31,43 +33,21 @@
  * @run main/othervm CompressedCertMsgCache
  */
 
-import static jdk.test.lib.Asserts.assertEquals;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
-public class CompressedCertMsgCache extends SSLSocketTemplate {
+public class CompressedCertMsgCache extends CompressedCertMsgBase {
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("javax.net.debug", "ssl");
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream err = new PrintStream(baos);
-        System.setErr(err);
 
         // Complete 2 handshakes with the same certificate.
-        new CompressedCertMsgCache().run();
-        new CompressedCertMsgCache().run();
-
-        err.close();
+        String log = runAndGetLog(() -> {
+            try {
+                new CompressedCertMsgCache().run();
+                new CompressedCertMsgCache().run();
+            } catch (Exception _) {
+            }
+        });
 
         // Make sure the same CompressedCertificate message is cached only once
-        assertEquals(1, countSubstringOccurrences(baos.toString(),
+        assertEquals(1, countSubstringOccurrences(log,
                 "Caching CompressedCertificate message"));
-    }
-
-    protected static int countSubstringOccurrences(String str, String sub) {
-        if (str == null || sub == null || sub.isEmpty()) {
-            return 0;
-        }
-
-        int count = 0;
-        int lastIndex = 0;
-
-        while ((lastIndex = str.indexOf(sub, lastIndex)) != -1) {
-            count++;
-            lastIndex += sub.length();
-        }
-
-        return count;
     }
 }

@@ -23,9 +23,7 @@
 
 import static jdk.test.lib.Asserts.assertEquals;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -55,9 +53,9 @@ import jdk.test.lib.security.CertificateBuilder;
  * @run main/othervm CompressedCertMsgCacheLimit
  */
 
-public class CompressedCertMsgCacheLimit extends CompressedCertMsgCache {
+public class CompressedCertMsgCacheLimit extends CompressedCertMsgBase {
 
-    // Make sure every certificate has random serial number.
+    // Every certificate has random serial number.
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final String protocol;
@@ -80,25 +78,24 @@ public class CompressedCertMsgCacheLimit extends CompressedCertMsgCache {
     }
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("javax.net.debug", "ssl");
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream err = new PrintStream(baos);
-        System.setErr(err);
 
         // Complete 6 handshakes, all with different certificates.
-        for (int i = 0; i < 6; i++) {
-            new CompressedCertMsgCacheLimit(
-                    "TLSv1.3", "EC", "SHA256withECDSA").run();
-        }
-
-        err.close();
+        String log = runAndGetLog(() -> {
+            try {
+                for (int i = 0; i < 6; i++) {
+                    new CompressedCertMsgCacheLimit(
+                            "TLSv1.3", "EC", "SHA256withECDSA").run();
+                }
+            } catch (Exception _) {
+            }
+        });
 
         // Make sure first 4 CompressedCertificate messages are cached.
-        assertEquals(4, countSubstringOccurrences(baos.toString(),
+        assertEquals(4, countSubstringOccurrences(log,
                 "Caching CompressedCertificate message"));
 
         // Last 2 CompressedCertificate messages must not be cached.
-        assertEquals(2, countSubstringOccurrences(baos.toString(),
+        assertEquals(2, countSubstringOccurrences(log,
                 "Certificate message cache size limit of 4 reached"));
     }
 
