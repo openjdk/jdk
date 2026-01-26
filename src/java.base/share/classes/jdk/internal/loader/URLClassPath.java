@@ -136,7 +136,7 @@ public class URLClassPath {
      */
     public URLClassPath(URL[] urls,
                         URLStreamHandlerFactory factory) {
-        // Reject null URLs
+        // Reject null URL array or any null element in the array
         this.searchPath = new ArrayList<>(List.of(urls));
 
         if (factory != null) {
