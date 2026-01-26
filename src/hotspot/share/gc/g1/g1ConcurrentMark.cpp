@@ -411,12 +411,13 @@ const MemRegion* G1CMRootMemRegions::claim_next() {
     return nullptr;
   }
 
-  if (_claimed_root_regions.load_relaxed() >= num_root_regions()) {
+  uint local_num_root_regions = num_root_regions();
+  if (_claimed_root_regions.load_relaxed() >= local_num_root_regions) {
     return nullptr;
   }
 
   size_t claimed_index = _claimed_root_regions.fetch_then_add(1u);
-  if (claimed_index < num_root_regions()) {
+  if (claimed_index < local_num_root_regions) {
     return &_root_regions[claimed_index];
   }
   return nullptr;
@@ -427,7 +428,8 @@ uint G1CMRootMemRegions::num_root_regions() const {
 }
 
 bool G1CMRootMemRegions::contains(const MemRegion mr) const {
-  for (uint i = 0; i < num_root_regions(); i++) {
+  uint local_num_root_regions = num_root_regions();
+  for (uint i = 0; i < local_num_root_regions; i++) {
     if (_root_regions[i].equals(mr)) {
       return true;
     }
