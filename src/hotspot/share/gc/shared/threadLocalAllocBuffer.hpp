@@ -116,9 +116,7 @@ public:
   HeapWord* end() const                          { return _end.load_relaxed(); }
   HeapWord* top() const                          { return _top.load_relaxed(); }
   HeapWord* hard_end();
-  //HeapWord* pf_top() const                       { return _pf_top.load_relaxed(); }
   size_t desired_size() const                    { return _desired_size; }
-  //size_t used() const                            { return pointer_delta(top(), start()); }
   size_t used_bytes() const                      { return pointer_delta(top(), start(), 1); }
   size_t free() const                            { return pointer_delta(end(), top()); }
   // Don't discard tlab if remaining space is larger than this.
