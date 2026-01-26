@@ -149,24 +149,38 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   size_t bytes_allocated_at_start_of_idle_span = _free_set->get_bytes_allocated_since_gc_start();
 
   // make headroom adjustments
-  size_t headroom_adjustments = spike_headroom + penalties;
-  if (mutator_available >= headroom_adjustments) {
-    mutator_available -= headroom_adjustments;;
+  _headroom_adjustment = spike_headroom + penalties;
+  size_t adjusted_mutator_available;
+  if (mutator_available >= _headroom_adjustment) {
+    adjusted_mutator_available = mutator_available - _headroom_adjustment;
   } else {
-    mutator_available = 0;
+    adjusted_mutator_available = 0;
   }
 
   assert(!_is_generational || !strcmp(_space_info->name(), "Young") || !strcmp(_space_info->name(), "Global"),
          "Assumed young or global space, but got: %s", _space_info->name());
   assert(_is_generational || !strcmp(_space_info->name(), ""), "Assumed global (unnamed) space, but got: %s", _space_info->name());
-  log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: " PROPERFMT
+  log_info(gc)("At start or resumption of idle gc span for %s, mutator available adjusted to: " PROPERFMT
                " after adjusting for spike_headroom: " PROPERFMT " and penalties: " PROPERFMT,
                _is_generational? _space_info->name(): "Global",
-               PROPERFMTARGS(mutator_available), PROPERFMTARGS(spike_headroom), PROPERFMTARGS(penalties));
+               PROPERFMTARGS(adjusted_mutator_available), PROPERFMTARGS(spike_headroom), PROPERFMTARGS(penalties));
 
-  _most_recent_headroom_at_start_of_idle = mutator_available;
+  _most_recent_headroom_at_start_of_idle = adjusted_mutator_available;
   // _trigger_threshold is expressed in words
-  _trigger_threshold = (bytes_allocated_at_start_of_idle_span + mutator_available) / HeapWordSize;
+  _trigger_threshold = (bytes_allocated_at_start_of_idle_span + adjusted_mutator_available) / HeapWordSize;
+
+#define KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  // _free_set->available() should match mutator_available
+  log_info(gc)("mutator_available: %zu, adjusted_mutator_available: %zu, _free_set->available(): %zu, "
+               "bytes_allocated_at_start: %zu, threshold: %zu",
+               mutator_available, adjusted_mutator_available, _free_set->available(), bytes_allocated_at_start_of_idle_span,
+               _trigger_threshold);
+  // Throughout idle span, available() should equal (allocatable() + spike_headroom + penalties)
+  size_t available = _free_set->available();
+  log_info(gc)(" available: %zu should equal allocatable: %zu + spike_headroom: %zu + penalties: %zu",
+               available, this->allocatable(available) * HeapWordSize, spike_headroom, penalties);
+#endif
 }
 
 void ShenandoahAdaptiveHeuristics::start_idle_span() {
@@ -545,9 +559,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   //  log_info(gc)("AppendTrigger(first_rejected: %zu, rejected_count: %zu) @%.6f",
   //               first_rejected_trigger, rejected_trigger_count, ts);
 
-
-
-#define AppendTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,      \
+#define ForceAppendTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,      \
                           irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda)      \
   if (rejected_trigger_count >= MaxRejectedTriggers) {                                      \
     first_rejected_trigger++;                                                               \
@@ -584,9 +596,17 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     rejected_trigger_log[__j].spike_time_to_deplete_available = sttda;                      \
   }
 
+  // We do not append trigger info for non-consequential sample periods
+#define AppendTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,      \
+                          irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda)      \
+  if (((absls) > 0) || ((sr) > 0)) {                                                        \
+    ForceAppendTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,     \
+                          irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda)      \
+  }
+
 #define DumpTriggerInfo(ts, cap, avail, alloced, mt, ls, aar, aw, act, pfagt, absls,        \
                         irwps, crba, ca, accel, pfgt, fpgt, attda, is, r, sr, sttda)        \
-  AppendTriggerInfo(ts, cap, avail, alloced, mt, ls,                                        \
+  ForceAppendTriggerInfo(ts, cap, avail, alloced, mt, ls,                                   \
                     aar, aw, act, pfagt, absls, irwps, crba, ca, accel,                     \
                     pfgt, fpgt, attda, is, r, sr, sttda);                                   \
   dumpTriggerInfo(first_rejected_trigger, rejected_trigger_count, rejected_trigger_log);    \
@@ -608,7 +628,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   double avg_cycle_time = 0;
   double avg_alloc_rate = 0;
   double now = get_most_recent_wake_time();
-  size_t allocatable_words = this->allocatable();
+  size_t allocatable_words = this->allocatable(available);
   double predicted_future_accelerated_gc_time = 0.0;
   size_t allocated_bytes_since_last_sample = 0;
   double instantaneous_rate_words_per_second = 0.0;
