@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
  * @test
  * @bug 8039951
  * @summary com.sun.security.auth.module missing classes on some platforms
+ * @modules java.base/jdk.internal.util
  * @run main/othervm AllPlatforms
  */
+import jdk.internal.util.OperatingSystem;
+
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import java.nio.file.Files;
@@ -39,14 +42,14 @@ public class AllPlatforms {
     private static final String NT_MODULE = "NTLoginModule";
 
     public static void main(String[] args) throws Exception {
-        login("cross-platform",
+        login(true, "cross-platform",
                 UNIX_MODULE, "optional",
                 NT_MODULE, "optional");
-        login("windows", NT_MODULE, "required");
-        login("unix", UNIX_MODULE, "required");
+        login(OperatingSystem.isWindows(), "windows", NT_MODULE, "required");
+        login(!OperatingSystem.isWindows(), "unix", UNIX_MODULE, "required");
     }
 
-    static void login(String test, String... conf) throws Exception {
+    static void login(boolean shouldSucceed, String test, String... conf) throws Exception {
         System.out.println("Testing " + test + "...");
 
         StringBuilder sb = new StringBuilder();
@@ -68,11 +71,19 @@ public class AllPlatforms {
             lc.login();
             System.out.println(lc.getSubject());
             lc.logout();
+            if (!shouldSucceed) {
+                throw new RuntimeException("Should not succeed");
+            }
         } catch (FailedLoginException e) {
+            if (shouldSucceed) {
+                throw new RuntimeException("Should succeed");
+            }
             // This exception can occur in other platform module than the running one.
-            if(e.getMessage().startsWith("Failed in attempt to import")) {
+            if (e.getMessage().startsWith("Failed in attempt to import")) {
                 System.out.println("Expected Exception found.");
                 e.printStackTrace(System.out);
+            } else {
+                throw new RuntimeException("Unexpected error", e);
             }
         }
     }

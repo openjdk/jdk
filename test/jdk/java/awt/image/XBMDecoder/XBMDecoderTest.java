@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,14 @@
  * @run main XBMDecoderTest
  */
 
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
 import javax.swing.ImageIcon;
 
 public class XBMDecoderTest {
@@ -57,21 +61,39 @@ public class XBMDecoderTest {
 
                 ImageIcon icon = new ImageIcon(fis.readAllBytes());
                 boolean isErrEmpty = errContent.toString().isEmpty();
+
                 if (!isErrEmpty) {
                     System.out.println("Expected ImageFormatException occurred.");
                     System.out.print(errContent);
                 }
-
                 if (validCase && !isErrEmpty) {
                     throw new RuntimeException("Test failed: Error stream not empty");
-                } else if (!validCase && isErrEmpty) {
+                } else if (!validCase && isErrEmpty && hasPixelData(icon.getImage())) {
                     throw new RuntimeException("Test failed: ImageFormatException"
                             + " expected but not thrown");
+                }
+                if (validCase && !hasPixelData(icon.getImage())) {
+                    throw new RuntimeException("Test failed: the parsed image " +
+                            "does not contain any pixel data");
                 }
                 System.out.println("PASSED\n");
             } finally {
                 System.setErr(originalErr);
             }
         }
+    }
+
+    private static boolean hasPixelData(Image img) {
+        int w = img.getWidth(null);
+        int h = img.getHeight(null);
+        BufferedImage bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = bi.createGraphics();
+        g.drawImage(img, 0, 0, null);
+        g.dispose();
+        int[] pixels = bi.getRGB(0, 0, w, h, null, 0, w);
+        if (Arrays.stream(pixels).allMatch(i -> i == 0)) {
+            return false;
+        }
+        return true;
     }
 }

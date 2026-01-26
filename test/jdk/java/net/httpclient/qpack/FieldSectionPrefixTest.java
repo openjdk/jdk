@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *          java.net.http/jdk.internal.net.http.http3.streams
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
- * @run testng FieldSectionPrefixTest
+ * @run junit FieldSectionPrefixTest
  */
 
 
@@ -41,21 +41,26 @@ import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.QPACK;
 import jdk.internal.net.http.qpack.readers.HeaderFrameReader;
 import jdk.internal.net.http.qpack.writers.FieldLineSectionPrefixWriter;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FieldSectionPrefixTest {
 
     private static final long DT_CAPACITY = 220L;
     private static final long MAX_ENTRIES = DT_CAPACITY / 32L;
 
-    @Test(dataProvider = "encodingCases")
+    @ParameterizedTest
+    @MethodSource("encodingCases")
     public void encodingTest(long base, long requiredInsertCount,
                              byte expectedRic, byte expectedBase) {
         var fieldSectionPrefix = new FieldSectionPrefix(requiredInsertCount, base);
@@ -64,23 +69,23 @@ public class FieldSectionPrefixTest {
         var byteBuffer = ByteBuffer.allocate(bytesNeeded);
         writer.write(byteBuffer);
         byteBuffer.flip();
-        Assert.assertEquals(byteBuffer.get(0), expectedRic);
-        Assert.assertEquals(byteBuffer.get(1), expectedBase);
+        Assertions.assertEquals(expectedRic, byteBuffer.get(0));
+        Assertions.assertEquals(expectedBase, byteBuffer.get(1));
     }
 
-    @DataProvider(name = "encodingCases")
-    public Object[][] encodingCases() {
-        var cases = new ArrayList<Object[]>();
-        // Simple with 0 values
-        cases.add(new Object[]{0L, 0L, (byte) 0x0, (byte) 0x0});
-        // Based on RFC-9204: "B.2. Dynamic Table example"
-        cases.add(new Object[]{0L, 2L, (byte) 0x3, (byte) 0x81});
-        // Based on RFC-9204: "Duplicate Instruction, Stream Cancellation"
-        cases.add(new Object[]{4L, 4L, (byte) 0x5, (byte) 0x0});
-        return cases.toArray(Object[][]::new);
+    public Stream<Arguments> encodingCases() {
+        return Stream.of(
+                // Simple with 0 values
+                Arguments.of(0L, 0L, (byte) 0x0, (byte) 0x0),
+                // Based on RFC-9204: "B.2. Dynamic Table example"
+                Arguments.of(0L, 2L, (byte) 0x3, (byte) 0x81),
+                // Based on RFC-9204: "Duplicate Instruction, Stream Cancellation"
+                Arguments.of(4L, 4L, (byte) 0x5, (byte) 0x0)
+        );
     }
 
-    @Test(dataProvider = "decodingCases")
+    @ParameterizedTest
+    @MethodSource("decodingCases")
     public void decodingTest(long expectedRIC, long expectedBase, byte... bytes) throws IOException {
         var logger = QPACK.getLogger().subLogger("decodingTest");
         var dt = new DynamicTable(logger, false);
@@ -117,17 +122,16 @@ public class FieldSectionPrefixTest {
 
         System.err.println("Required Insert Count:" + fsp.requiredInsertCount());
         System.err.println("Base:" + fsp.base());
-        Assert.assertEquals(fsp.requiredInsertCount(), expectedRIC);
-        Assert.assertEquals(fsp.base(), expectedBase);
+        Assertions.assertEquals(expectedRIC, fsp.requiredInsertCount());
+        Assertions.assertEquals(expectedBase, fsp.base());
 
     }
 
-    @DataProvider(name = "decodingCases")
-    public Object[][] decodingCases() {
-        var cases = new ArrayList<Object[]>();
-        cases.add(new Object[]{0L, 0L, (byte) 0x0, (byte) 0x0});
-        cases.add(new Object[]{4L, 4L, (byte) 0x5, (byte) 0x0});
-        cases.add(new Object[]{2L, 0L, (byte) 0x3, (byte) 0x81});
-        return cases.toArray(Object[][]::new);
+    public Stream<Arguments> decodingCases() {
+        return Stream.of(
+                Arguments.of(0L, 0L, new byte[]{0x0, 0x0}),
+                Arguments.of(4L, 4L, new byte[]{0x5, 0x0}),
+                Arguments.of(2L, 0L, new byte[]{0x3, (byte) 0x81})
+        );
     }
 }

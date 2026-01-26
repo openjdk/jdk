@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "jni.h"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
@@ -238,9 +239,9 @@ class Thread: public ThreadShadow {
 
   // Support for GlobalCounter
  private:
-  volatile uintx _rcu_counter;
+  Atomic<uintx> _rcu_counter;
  public:
-  volatile uintx* get_rcu_counter() {
+  Atomic<uintx>* get_rcu_counter() {
     return &_rcu_counter;
   }
 

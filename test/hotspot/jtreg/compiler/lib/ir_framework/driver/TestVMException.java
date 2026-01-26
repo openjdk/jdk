@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package compiler.lib.ir_framework.driver;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
 /**
- * Exception that is thrown if the test VM has thrown any kind of exception (except for {@link TestFormatException}).
+ * Exception that is thrown if the Test VM has thrown any kind of exception (except for {@link TestFormatException}).
  */
 public class TestVMException extends RuntimeException {
     private final String exceptionInfo;
@@ -37,9 +37,9 @@ public class TestVMException extends RuntimeException {
     }
 
     /**
-     * Get some more detailed information about the exception thrown in the test VM and how to reproduce it.
+     * Get some more detailed information about the exception thrown in the Test VM and how to reproduce it.
      *
-     * @return a formatted string containing information about the exception of the test VM and how to reproduce it.
+     * @return a formatted string containing information about the exception of the Test VM and how to reproduce it.
      */
     public String getExceptionInfo() {
         return exceptionInfo;

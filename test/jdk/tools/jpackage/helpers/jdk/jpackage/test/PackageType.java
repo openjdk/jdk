@@ -60,7 +60,7 @@ public enum PackageType {
     PackageType(String packageName, String bundleSuffix, OperatingSystem os) {
         type  = Objects.requireNonNull(packageName);
         suffix = Objects.requireNonNull(bundleSuffix);
-        supported = isSupported(new BundlingOperationDescriptor(os, type, "create"));
+        supported = isSupported(new BundlingOperationDescriptor(os, type));
         enabled = supported && !Inner.DISABLED_PACKAGERS.contains(getType());
 
         if (suffix != null && enabled) {
@@ -102,11 +102,13 @@ public enum PackageType {
     }
 
     private static boolean isSupported(BundlingOperationDescriptor op) {
-        try {
-            return Inner.BUNDLING_ENV.configurationErrors(op).isEmpty();
-        } catch (NoSuchElementException ex) {
-            return false;
-        }
+        return Inner.BUNDLING_ENV.filter(bundlingEnv -> {
+            try {
+                return bundlingEnv.configurationErrors(op).isEmpty();
+            } catch (NoSuchElementException ex) {
+                return false;
+            }
+        }).isPresent();
     }
 
     private static Set<PackageType> orderedSet(PackageType... types) {
@@ -129,13 +131,13 @@ public enum PackageType {
                 TKit.tokenizeConfigProperty("disabledPackagers")).orElse(
                 TKit.isLinuxAPT() ? Set.of("rpm") : Collections.emptySet());
 
-        private static final BundlingEnvironment BUNDLING_ENV = ServiceLoader.load(
+        private static final Optional<BundlingEnvironment> BUNDLING_ENV = ServiceLoader.load(
                 ThrowingSupplier.toSupplier(() -> {
                     @SuppressWarnings("unchecked")
                     var reply = (Class<BundlingEnvironment>)Class.forName("jdk.jpackage.internal.cli.CliBundlingEnvironment");
                     return reply;
                 }).get(),
                 BundlingEnvironment.class.getClassLoader()
-        ).findFirst().orElseThrow();
+        ).findFirst();
     }
 }

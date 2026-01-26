@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.test.lib.Platform;
 import jdk.test.lib.Platform;
 
 import static java.lang.System.err;
@@ -103,16 +102,11 @@ public class GetXSpace {
         private final long free;
         private final long available;
 
-        Space(String name) {
+        Space(String name) throws IOException {
             this.name = name;
             long[] sizes = new long[4];
             if (Platform.isWindows() && isCDDrive(name)) {
-                try {
-                    getCDDriveSpace(name, sizes);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException("can't get CDDrive sizes");
-                }
+                getCDDriveSpace(name, sizes);
             } else {
                 if (getSpace(name, sizes))
                     System.err.println("WARNING: total space is estimated");
@@ -170,7 +164,7 @@ public class GetXSpace {
         return al;
     }
 
-    private static void compare(Space s) {
+    private static void compare(Space s) throws IOException {
         File f = new File(s.name());
         long ts = f.getTotalSpace();
         long fs = f.getFreeSpace();
@@ -318,7 +312,7 @@ public class GetXSpace {
         }
     }
 
-    private static int testFile(Path dir) {
+    private static int testFile(Path dir) throws IOException {
         String dirName = dir.toString();
         out.format("--- Testing %s%n", dirName);
         compare(new Space(dir.getRoot().toString()));
@@ -333,10 +327,11 @@ public class GetXSpace {
         return fail != 0 ? 1 : 0;
     }
 
-    private static int testVolumes() {
+    private static int testVolumes() throws IOException {
         out.println("--- Testing volumes");
         // Find all of the partitions on the machine and verify that the sizes
-        // returned by File::getXSpace are equivalent to those from getSpace or getCDDriveSpace
+        // returned by File::getXSpace are equivalent to those from getSpace
+        // or getCDDriveSpace
         ArrayList<String> l;
         try {
             l = paths();
@@ -350,7 +345,18 @@ public class GetXSpace {
             throw new RuntimeException("no partitions?");
 
         for (var p : l) {
-            Space s = new Space(p);
+            Space s;
+            try {
+                s = new Space(p);
+            } catch (IOException x) {
+                // Avoid failing for transient file systems on Windows
+                if (Platform.isWindows()) {
+                    File f = new File(p);
+                    if (!f.exists())
+                        continue;
+                }
+                throw new IOException("Failure for volume " + p, x);
+            }
             compare(s);
             compareZeroNonExist();
             compareZeroExist();
@@ -408,19 +414,19 @@ public class GetXSpace {
     // size[2]  free space:   number of free bytes in the volume
     // size[3]  usable space: number of bytes available to the caller
     //
-    private static native boolean getSpace0(String root, long[] space);
+    private static native boolean getSpace0(String root, long[] space)
+        throws IOException;
 
     private static native boolean isCDDrive(String root);
 
-    private static boolean getSpace(String root, long[] space) {
+    private static boolean getSpace(String root, long[] space)
+        throws IOException {
         try {
             return getSpace0(root, space);
-        } catch (RuntimeException e) {
+        } catch (IOException e) {
             File f = new File(root);
-            boolean exists = f.exists();
-            boolean readable = f.canRead();
             System.err.printf("getSpace0 failed for %s (%s, %s)%n",
-                              root, exists, readable);
+                              root, f.exists(), f.canRead());
             throw e;
         }
     }

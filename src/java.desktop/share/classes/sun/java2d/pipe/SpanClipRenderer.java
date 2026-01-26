@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.java2d.pipe;
 
 import java.awt.Rectangle;
 import java.awt.Shape;
+
+import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 
 /**
@@ -67,7 +69,9 @@ public class SpanClipRenderer implements CompositePipe
     public Object startSequence(SunGraphics2D sg, Shape s, Rectangle devR,
                                 int[] abox) {
         RegionIterator ri = sg.clipRegion.getIterator();
-
+        if (ri.region.isRectangular()) {
+            throw new InvalidPipeException("Invalid clip data");
+        }
         return new SCRcontext(ri, outpipe.startSequence(sg, s, devR, abox));
     }
 

@@ -218,10 +218,14 @@ ifeq ($(call isTargetOs, windows), true)
   ifeq ($(SHIP_DEBUG_SYMBOLS), )
     JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.pdb,*.map}'
   else
-    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.map}'
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.map}'
   endif
 else
-  JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
+  ifeq ($(SHIP_DEBUG_SYMBOLS), )
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
+  else
+    JMOD_FLAGS += --exclude '**{_the.*,_*.marker*}'
+  endif
 endif
 
 # Unless we are creating a very large module, use the small tool JVM options

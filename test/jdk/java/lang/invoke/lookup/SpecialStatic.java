@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 8032400
  * @summary JSR292: invokeSpecial: InternalError attempting to lookup a method
  * @compile -XDignore.symbol.file SpecialStatic.java
- * @run testng test.java.lang.invoke.lookup.SpecialStatic
+ * @run junit test.java.lang.invoke.lookup.SpecialStatic
  */
 package test.java.lang.invoke.lookup;
 
@@ -38,13 +38,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessFlag;
 
-import org.testng.annotations.*;
 
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.SPECIAL;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case:
@@ -105,7 +105,7 @@ public class SpecialStatic {
     public void testConstant() throws Throwable {
         MethodHandle mh = (MethodHandle)t3.getDeclaredMethod("getMethodHandle").invoke(null);
         int result = (int)mh.invoke(t3.newInstance());
-        assertEquals(result, 1); // T1.m should be invoked.
+        assertEquals(1, result); // T1.m should be invoked.
     }
 
     @Test
@@ -113,7 +113,7 @@ public class SpecialStatic {
         MethodHandles.Lookup lookup = (MethodHandles.Lookup)t3.getDeclaredMethod("getLookup").invoke(null);
         MethodHandle mh = lookup.findSpecial(t1, "m", MethodType.methodType(int.class), t3);
         int result = (int)mh.invoke(t3.newInstance());
-        assertEquals(result, 1); // T1.m should be invoked.
+        assertEquals(1, result); // T1.m should be invoked.
     }
 
     public static byte[] dumpT1() {

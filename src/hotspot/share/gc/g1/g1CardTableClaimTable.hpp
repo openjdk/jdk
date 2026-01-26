@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CardTable.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class G1HeapRegionClosure;
 
@@ -45,7 +46,7 @@ class G1CardTableClaimTable : public CHeapObj<mtGC> {
 
   // Card table iteration claim values for every heap region, from 0 (completely unclaimed)
   // to (>=) G1HeapRegion::CardsPerRegion (completely claimed).
-  uint volatile* _card_claims;
+  Atomic<uint>* _card_claims;
 
   uint _cards_per_chunk;           // For conversion between card index and chunk index.
 

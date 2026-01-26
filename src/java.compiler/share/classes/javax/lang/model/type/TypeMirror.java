@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,15 @@ public interface TypeMirror extends AnnotatedConstruct {
      * {@link Types#isSameType(TypeMirror, TypeMirror)}.
      * The results of {@code t1.equals(t2)} and
      * {@code Types.isSameType(t1, t2)} may differ.
+     *
+     * @apiNote The identity of a {@code TypeMirror} involves implicit
+     * state not directly accessible from its methods, including state
+     * about the presence of unrelated types. {@code TypeMirror}
+     * objects created by different implementations of these
+     * interfaces should <i>not</i> be expected to compare as equal
+     * even if &quot;the same&quot; type is being modeled; this is
+     * analogous to the inequality of {@code Class} objects for the
+     * same class file loaded through different class loaders.
      *
      * @param obj  the object to be compared with this type
      * @return {@code true} if the specified object is equal to this one

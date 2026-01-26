@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,10 +134,11 @@ static OSStatus completeCertChain(
     CFArrayAppendValue(certArray, identity);
 
     /* the single element in certs-to-be-evaluated comes from the identity */
-       ortn = SecIdentityCopyCertificate(identity, &certRef);
-    if(ortn) {
+    ortn = SecIdentityCopyCertificate(identity, &certRef);
+    if (ortn) {
         /* should never happen */
         cssmPerror("SecIdentityCopyCertificate", ortn);
+        CFRelease(certArray);
         return ortn;
     }
 
@@ -283,6 +284,7 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
     OSStatus err = SecIdentitySearchCreate(NULL, 0, &identitySearch);
     SecIdentityRef theIdentity = NULL;
     OSErr searchResult = noErr;
+    CFArrayRef certChain = NULL;
 
     do {
         searchResult = SecIdentitySearchCopyNext(identitySearch, &theIdentity);
@@ -291,7 +293,6 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             // Get the cert from the identity, then generate a chain.
             SecCertificateRef certificate;
             SecIdentityCopyCertificate(theIdentity, &certificate);
-            CFArrayRef certChain = NULL;
 
             // *** Should do something with this error...
             err = completeCertChain(theIdentity, NULL, TRUE, &certChain);
@@ -357,12 +358,20 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             if ((*env)->ExceptionCheck(env)) {
                 goto errOut;
             }
+
+            if (certChain != NULL) {
+                CFRelease(certChain);
+                certChain = NULL;
+            }
         }
     } while (searchResult == noErr);
 
 errOut:
     if (identitySearch != NULL) {
         CFRelease(identitySearch);
+    }
+    if (certChain != NULL) {
+        CFRelease(certChain);
     }
 }
 

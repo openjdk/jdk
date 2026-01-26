@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,9 @@
 
 /*
  * @test
- * @run testng VarHandleTestReflection
+ * @run junit VarHandleTestReflection
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleInfo;
@@ -36,11 +34,16 @@ import java.lang.invoke.VarHandle;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestReflection extends VarHandleBaseTest {
     String string;
 
-    @DataProvider
     public static Object[][] accessModesProvider() {
         return Stream.of(VarHandle.AccessMode.values()).
                 map(am -> new Object[]{am}).
@@ -52,17 +55,19 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
                 findVarHandle(VarHandleTestReflection.class, "string", String.class);
     }
 
-    @Test(dataProvider = "accessModesProvider", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("accessModesProvider")
     public void methodInvocationArgumentMismatch(VarHandle.AccessMode accessMode) throws Exception {
         VarHandle v = handle();
 
         // Try a reflective invoke using a Method, with no arguments
 
         Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
-        vhm.invoke(v, new Object[]{});
+        assertThrows(IllegalArgumentException.class, () -> vhm.invoke(v, new Object[]{}));
     }
 
-    @Test(dataProvider = "accessModesProvider")
+    @ParameterizedTest
+    @MethodSource("accessModesProvider")
     public void methodInvocationMatchingArguments(VarHandle.AccessMode accessMode) throws Exception {
         VarHandle v = handle();
 
@@ -70,17 +75,15 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
 
         Method vhm = VarHandle.class.getMethod(accessMode.methodName(), Object[].class);
         Object arg = new Object[0];
-        try {
-            vhm.invoke(v, arg);
-        } catch (InvocationTargetException e) {
-            if (!(e.getCause() instanceof UnsupportedOperationException)) {
-                throw new RuntimeException("expected UnsupportedOperationException but got: "
-                                           + e.getCause().getClass().getName(), e);
-            }
+        var e = assertThrows(InvocationTargetException.class, () -> vhm.invoke(v, arg));
+        if (!(e.getCause() instanceof UnsupportedOperationException)) {
+            throw new RuntimeException("expected UnsupportedOperationException but got: "
+                    + e.getCause().getClass().getName(), e);
         }
     }
 
-    @Test(dataProvider = "accessModesProvider", expectedExceptions = UnsupportedOperationException.class)
+    @ParameterizedTest
+    @MethodSource("accessModesProvider")
     public void methodHandleInvoke(VarHandle.AccessMode accessMode) throws Throwable {
         VarHandle v = handle();
 
@@ -90,10 +93,13 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
                 VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
         // Use invoke to avoid WrongMethodTypeException for
         // non-signature-polymorphic return types
-        Object o = (Object) mh.invoke(v, new Object[]{});
+        assertThrows(UnsupportedOperationException.class, () -> {
+            Object o = (Object) mh.invoke(v, new Object[]{});
+        });
     }
 
-    @Test(dataProvider = "accessModesProvider", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("accessModesProvider")
     public void methodInvocationFromMethodInfo(VarHandle.AccessMode accessMode) throws Exception {
         VarHandle v = handle();
 
@@ -104,10 +110,13 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
                 VarHandle.class.getMethod(accessMode.methodName(), Object[].class));
         MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
         Method im = info.reflectAs(Method.class, MethodHandles.lookup());
-        im.invoke(v, new Object[]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            im.invoke(v, new Object[]{});
+        });
     }
 
-    @Test(dataProvider = "accessModesProvider", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("accessModesProvider")
     public void reflectAsFromVarHandleInvoker(VarHandle.AccessMode accessMode) throws Exception {
         VarHandle v = handle();
 
@@ -116,10 +125,11 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
 
         MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
 
-        info.reflectAs(Method.class, MethodHandles.lookup());
+        assertThrows(IllegalArgumentException.class, () -> info.reflectAs(Method.class, MethodHandles.lookup()));
     }
 
-    @Test(dataProvider = "accessModesProvider", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("accessModesProvider")
     public void reflectAsFromFindVirtual(VarHandle.AccessMode accessMode) throws Exception {
         VarHandle v = handle();
 
@@ -128,6 +138,6 @@ public class VarHandleTestReflection extends VarHandleBaseTest {
 
         MethodHandleInfo info = MethodHandles.lookup().revealDirect(mh);
 
-        info.reflectAs(Method.class, MethodHandles.lookup());
+        assertThrows(IllegalArgumentException.class, () -> info.reflectAs(Method.class, MethodHandles.lookup()));
     }
 }

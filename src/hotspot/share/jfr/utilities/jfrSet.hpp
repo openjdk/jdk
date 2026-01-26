@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #ifndef SHARE_JFR_UTILITIES_JFRSET_HPP
 #define SHARE_JFR_UTILITIES_JFRSET_HPP
 
+#include "cppstdlib/new.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
 
@@ -67,7 +69,9 @@ class JfrSetStorage : public AnyObj {
     } else {
       table = NEW_RESOURCE_ARRAY(K, table_size);
     }
-    memset(table, 0, table_size * sizeof(K));
+    for (unsigned i = 0; i < table_size; ++i) {
+      ::new (&table[i]) K{};
+    }
     return table;
   }
 
@@ -88,7 +92,7 @@ class JfrSetStorage : public AnyObj {
     assert(is_nonempty(), "invariant");
     for (unsigned i = 0; i < _table_size; ++i) {
       K k = _table[i];
-      if (k != 0) {
+      if (k != K{}) {
         functor(k);
       }
     }
@@ -107,7 +111,14 @@ class JfrSetStorage : public AnyObj {
   }
 
   void clear() {
-    memset(_table, 0, _table_size * sizeof(K));
+    for (unsigned i = 0; i < _table_size; ++i) {
+      if constexpr (std::is_copy_assignable_v<K>) {
+        _table[i] = K{};
+      } else {
+        _table[i].~K();
+        ::new (&_table[i]) K{};
+      }
+    }
   }
 };
 
@@ -136,11 +147,11 @@ class JfrSet : public JfrSetStorage<CONFIG> {
     _resize_threshold = old_table_size;
     for (unsigned i = 0; i < old_table_size; ++i) {
       const K k = old_table[i];
-      if (k != 0) {
+      if (k != K{}) {
         uint32_t idx = slot_idx(CONFIG::hash(k));
         do {
           K v = this->_table[idx];
-          if (v == 0) {
+          if (v == K{}) {
             this->_table[idx] = k;
             break;
           }
@@ -161,7 +172,7 @@ class JfrSet : public JfrSetStorage<CONFIG> {
     K* result = nullptr;
     while (true) {
       K v = this->_table[idx];
-      if (v == 0) {
+      if (v == K{}) {
         result = &this->_table[idx];
         break;
       }
@@ -196,7 +207,7 @@ class JfrSet : public JfrSetStorage<CONFIG> {
       // Already exists.
       return false;
     }
-    assert(*slot == 0, "invariant");
+    assert(*slot == K{}, "invariant");
     *slot = k;
     if (++this->_elements == _resize_threshold) {
       resize();

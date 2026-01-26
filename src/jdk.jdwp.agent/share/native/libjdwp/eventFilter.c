@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -976,7 +976,6 @@ eventFilter_setSourceNameMatchFilter(HandlerNode *node,
 
 jvmtiError eventFilter_setPlatformThreadsOnlyFilter(HandlerNode *node, jint index)
 {
-    PlatformThreadsFilter *filter = &FILTER(node, index).u.PlatformThreadsOnly;
     if (index >= FILTER_COUNT(node)) {
         return AGENT_ERROR_ILLEGAL_ARGUMENT;
     }

@@ -28,7 +28,8 @@
 # This file is generated automatically from the data in the public-domain
 # NIST/IERS format leap-seconds.list file, which can be copied from
 # <https://hpiers.obspm.fr/iers/bul/bulc/ntp/leap-seconds.list>
-# or, in a variant with different comments, from
+# or via a less-secure protocol and with different comments and
+# less volatile last-modified and expiration timestamps, from
 # <ftp://ftp.boulder.nist.gov/pub/time/leap-seconds.list>.
 # For more about leap-seconds.list, please see
 # The NTP Timescale and Leap Seconds
@@ -92,11 +93,17 @@ Leap	2016	Dec	31	23:59:60	+	S
 # Any additional leap seconds will come after this.
 # This Expires line is commented out for now,
 # so that pre-2020a zic implementations do not reject this file.
-#Expires 2025	Dec	28	00:00:00
+#Expires 2026	Jun	28	00:00:00
 
-# POSIX timestamps for the data in this file:
-#updated 1736208000 (2025-01-07 00:00:00 UTC)
-#expires 1766880000 (2025-12-28 00:00:00 UTC)
+# Here are POSIX timestamps for the data in this file.
+# "#updated" gives the last time the leap seconds data changed
+# or, if this file was derived from the IERS leap-seconds.list,
+# the last time that file changed in any way.
+# "#expires" gives the first time this file might be wrong;
+# if this file was derived from the IERS leap-seconds.list,
+# this is typically a bit less than one year after "updated".
+#updated 1751846400 (2025-07-07 00:00:00 UTC)
+#expires 1782604800 (2026-06-28 00:00:00 UTC)
 
 #	Updated through IERS Bulletin C (https://hpiers.obspm.fr/iers/bul/bulc/bulletinc.dat)
-#	File expires on 28 December 2025
+#	File expires on 28 June 2026

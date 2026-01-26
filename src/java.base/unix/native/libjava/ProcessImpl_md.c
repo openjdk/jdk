@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -729,12 +729,13 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
 
     if ((fds[0] == -1 && pipe(in)  < 0) ||
         (fds[1] == -1 && pipe(out) < 0) ||
-        (fds[2] == -1 && pipe(err) < 0) ||
+        (fds[2] == -1 && !redirectErrorStream && pipe(err) < 0) || // if not redirecting create the pipe
         (pipe(childenv) < 0) ||
         (pipe(fail) < 0)) {
         throwInternalIOException(env, errno, "Bad file descriptor", mode);
         goto Catch;
     }
+
     c->fds[0] = fds[0];
     c->fds[1] = fds[1];
     c->fds[2] = fds[2];
@@ -764,17 +765,19 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     assert(resultPid != 0);
 
     if (resultPid < 0) {
+        char * failMessage = "unknown";
         switch (c->mode) {
           case MODE_VFORK:
-            throwInternalIOException(env, errno, "vfork failed", c->mode);
+            failMessage = "vfork failed";
             break;
           case MODE_FORK:
-            throwInternalIOException(env, errno, "fork failed", c->mode);
+            failMessage = "fork failed";
             break;
           case MODE_POSIX_SPAWN:
-            throwInternalIOException(env, errno, "posix_spawn failed", c->mode);
+            failMessage = "posix_spawn failed";
             break;
         }
+        throwInternalIOException(env, errno, failMessage, c->mode);
         goto Catch;
     }
     close(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec  (childproc.c)  */

@@ -289,6 +289,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zvfh        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, &ext_v, &ext_Zfh, nullptr)) \
   /* Shorthand for Zvkned + Zvknhb + Zvkb + Zvkt */                                                    \
   decl(Zvkn        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, &ext_v, nullptr))           \
+  /* Zvkg crypto extension for ghash and gcm */                                                        \
+  decl(Zvkg        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkg, &ext_v, nullptr))           \
 
   #define DECLARE_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)                             \
   struct ext_##PRETTY##RVExtFeatureValue : public RVExtFeatureValue {                           \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ public class MotifBorders {
             this.lightShadow = lightShadow;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             g.setColor((isRaised) ? lightShadow : darkShadow);
             g.drawLine(x, y, x+w-1, y);           // top
@@ -77,6 +78,7 @@ public class MotifBorders {
             g.drawLine(x+w-1, y+h-1, x+w-1, y+1); // right
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1, 1, 1, 1);
             return insets;
@@ -99,6 +101,7 @@ public class MotifBorders {
             this.focus = focus;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             if (c.hasFocus()) {
                 g.setColor(focus);
@@ -109,6 +112,7 @@ public class MotifBorders {
             }
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1, 1, 1, 1);
             return insets;
@@ -130,6 +134,7 @@ public class MotifBorders {
             this.focus = focus;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             boolean isPressed = false;
             boolean hasFocus = false;
@@ -187,6 +192,7 @@ public class MotifBorders {
             g.drawLine(bx1+1, by2, bx2, by2);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             int thickness = (c instanceof JButton && ((JButton)c).isDefaultCapable())? 8 : 2;
             insets.set(thickness, thickness, thickness, thickness);
@@ -202,6 +208,7 @@ public class MotifBorders {
              super(shadow, highlight, darkShadow, focus);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                             int width, int height) {
             if (c instanceof AbstractButton) {
@@ -223,6 +230,7 @@ public class MotifBorders {
             }
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(2, 2, 3, 3);
             return insets;
@@ -236,6 +244,7 @@ public class MotifBorders {
             super(shadow, highlight, darkShadow, focus);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             if (!(c instanceof JMenuBar)) {
                 return;
@@ -249,6 +258,7 @@ public class MotifBorders {
             }
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(6, 6, 6, 6);
             return insets;
@@ -297,6 +307,7 @@ public class MotifBorders {
             return frameShadow;
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets newInsets) {
             newInsets.set(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE);
             return newInsets;
@@ -424,6 +435,7 @@ public class MotifBorders {
           * <b>drawTitleBar</b>, <b>drawLeftBorder</b>, <b>drawRightBorder</b> and
           * <b>drawBottomBorder</b>.
           */
+        @Override
         public void paintBorder(Component c, Graphics g,
                             int x, int y, int width, int height) {
             if (isActiveFrame()) {
@@ -487,6 +499,7 @@ public class MotifBorders {
 
         /** Draws the InternalFrameBorder's top border.
          */
+        @Override
         protected boolean drawTopBorder(Component c, Graphics g,
                                     int x, int y, int width, int height) {
             if (super.drawTopBorder(c, g, x, y, width, height) &&
@@ -506,6 +519,7 @@ public class MotifBorders {
 
         /** Draws the InternalFrameBorder's left border.
           */
+        @Override
         protected boolean drawLeftBorder(Component c, Graphics g, int x, int y,
                                      int width, int height) {
             if (super.drawLeftBorder(c, g, x, y, width, height) &&
@@ -525,6 +539,7 @@ public class MotifBorders {
 
         /** Draws the InternalFrameBorder's right border.
           */
+        @Override
         protected boolean drawRightBorder(Component c, Graphics g, int x, int y,
                                       int width, int height) {
             if (super.drawRightBorder(c, g, x, y, width, height) &&
@@ -545,6 +560,7 @@ public class MotifBorders {
 
         /** Draws the InternalFrameBorder's bottom border.
           */
+        @Override
         protected boolean drawBottomBorder(Component c, Graphics g, int x, int y,
                                        int width, int height) {
             if (super.drawBottomBorder(c, g, x, y, width, height) &&
@@ -567,6 +583,7 @@ public class MotifBorders {
         }
 
         // Returns true if the associated internal frame has focus.
+        @Override
         protected boolean isActiveFrame() {
             return frame.isSelected();
         }
@@ -667,6 +684,7 @@ public class MotifBorders {
          * @param width the width of the painted border
          * @param height the height of the painted border
          */
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             if (!(c instanceof JPopupMenu)) {
                 return;
@@ -713,6 +731,7 @@ public class MotifBorders {
          * @param c the component for which this border insets value applies
          * @param insets the object to be reinitialized
          */
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             if (!(c instanceof JPopupMenu)) {
                 return insets;

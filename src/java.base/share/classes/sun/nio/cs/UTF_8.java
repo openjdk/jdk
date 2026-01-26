@@ -452,7 +452,7 @@ public final class UTF_8 extends Unicode {
             int dl = dst.arrayOffset() + dst.limit();
 
             // Handle ASCII-only prefix
-            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
 

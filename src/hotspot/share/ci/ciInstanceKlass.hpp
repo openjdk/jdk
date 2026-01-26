@@ -59,6 +59,7 @@ private:
   bool                   _has_nonstatic_concrete_methods;
   bool                   _is_hidden;
   bool                   _is_record;
+  bool                   _trust_final_fields;
   bool                   _has_trusted_loader;
 
   ciFlags                _flags;
@@ -205,6 +206,10 @@ public:
 
   bool is_record() const {
     return _is_record;
+  }
+
+  bool trust_final_fields() const {
+    return _trust_final_fields;
   }
 
   ciInstanceKlass* get_canonical_holder(int offset);

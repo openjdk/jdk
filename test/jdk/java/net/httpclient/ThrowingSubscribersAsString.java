@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,16 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker ThrowingSubscribersAsString AbstractThrowingSubscribers
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm -Djdk.internal.httpclient.debug=true ThrowingSubscribersAsString
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ThrowingSubscribersAsString
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ThrowingSubscribersAsString extends AbstractThrowingSubscribers {
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testThrowingAsString(String uri, boolean sameClient, Thrower thrower)
             throws Exception {
         super.testThrowingAsStringImpl(uri, sameClient, thrower);

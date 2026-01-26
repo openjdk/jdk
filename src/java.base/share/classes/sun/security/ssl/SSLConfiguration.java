@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,6 @@ final class SSLConfiguration implements Cloneable {
 
     // the configured named groups for the "supported_groups" extensions
     String[]                   namedGroups;
-
-    // the maximum protocol version of enabled protocols
-    ProtocolVersion             maximumProtocolVersion;
 
     // Configurations per SSLSocket or SSLEngine instance.
     boolean                     isClientMode;
@@ -249,13 +246,6 @@ final class SSLConfiguration implements Cloneable {
                         CustomizedServerSignatureSchemes.signatureSchemes :
                         SupportedSigSchemes.DEFAULT;
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
-        this.maximumProtocolVersion = ProtocolVersion.NONE;
-        for (ProtocolVersion pv : enabledProtocols) {
-            if (pv.compareTo(maximumProtocolVersion) > 0) {
-                this.maximumProtocolVersion = pv;
-            }
-        }
-
         // Configurations per SSLSocket or SSLEngine instance.
         this.isClientMode = isClientMode;
         this.enableSessionCreation = true;
@@ -323,13 +313,6 @@ final class SSLConfiguration implements Cloneable {
         sa = params.getProtocols();
         if (sa != null) {
             this.enabledProtocols = ProtocolVersion.namesOf(sa);
-
-            this.maximumProtocolVersion = ProtocolVersion.NONE;
-            for (ProtocolVersion pv : enabledProtocols) {
-                if (pv.compareTo(maximumProtocolVersion) > 0) {
-                    this.maximumProtocolVersion = pv;
-                }
-            }
         }   // otherwise, use the default values
 
         if (params.getNeedClientAuth()) {

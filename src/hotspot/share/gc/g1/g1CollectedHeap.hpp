@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.hpp"
@@ -124,7 +125,7 @@ class G1JavaThreadsListClaimer : public StackObj {
   ThreadsListHandle _list;
   uint _claim_step;
 
-  volatile uint _cur_claim;
+  Atomic<uint> _cur_claim;
 
   // Attempts to claim _claim_step JavaThreads, returning an array of claimed
   // JavaThread* with count elements. Returns null (and a zero count) if there
@@ -1267,7 +1268,6 @@ public:
 
   bool is_marked(oop obj) const;
 
-  inline static bool is_obj_filler(const oop obj);
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const G1HeapRegion* hr) const;

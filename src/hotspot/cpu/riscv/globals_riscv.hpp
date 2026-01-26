@@ -123,6 +123,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZvkn, false, EXPERIMENTAL,                                    \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \
   product(bool, UseCtxFencei, false, EXPERIMENTAL,                               \
-          "Use PR_RISCV_CTX_SW_FENCEI_ON to avoid explicit icache flush")
+          "Use PR_RISCV_CTX_SW_FENCEI_ON to avoid explicit icache flush")        \
+  product(bool, UseZvkg, false, EXPERIMENTAL, "Use Zvkg instructions")
 
 #endif // CPU_RISCV_GLOBALS_RISCV_HPP

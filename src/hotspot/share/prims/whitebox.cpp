@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,6 @@
 #ifdef LINUX
 #include "cgroupSubsystem_linux.hpp"
 #include "os_linux.hpp"
-#include "osContainer_linux.hpp"
 #endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
@@ -197,6 +196,10 @@ WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))
   VMThread::execute(&force_safepoint_stuck_op);
   ShouldNotReachHere();
   return 0;
+WB_END
+
+WB_ENTRY(jlong, WB_GetMinimumJavaStackSize(JNIEnv* env, jobject o))
+  return os::get_minimum_java_stack_size();
 WB_END
 
 class WBIsKlassAliveClosure : public LockedClassesDo {
@@ -2578,14 +2581,12 @@ WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstri
 WB_END
 
 WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
-  LINUX_ONLY(return OSContainer::is_containerized();)
-  return false;
+  return os::is_containerized();
 WB_END
 
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
-  LINUX_ONLY(return static_cast<jlong>(os::Linux::physical_memory());)
-  return static_cast<jlong>(os::physical_memory());
+  return static_cast<jlong>(os::Machine::physical_memory());
 WB_END
 
 // Available memory of the host machine (container-aware)
@@ -3133,7 +3134,8 @@ static JNINativeMethod methods[] = {
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
-  {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"lockAndStuckInSafepoint", CC"()V",              (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"getMinimumJavaStackSize", CC"()J",              (void*)&WB_GetMinimumJavaStackSize},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
   {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
   {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked},

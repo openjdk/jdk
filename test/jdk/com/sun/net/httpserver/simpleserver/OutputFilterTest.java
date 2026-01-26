@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @modules java.base/sun.net.www:+open
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
- * @run testng/othervm -Djdk.httpclient.redirects.retrylimit=1 OutputFilterTest
+ * @run junit/othervm -Djdk.httpclient.redirects.retrylimit=1 OutputFilterTest
  */
 
 import java.io.ByteArrayOutputStream;
@@ -53,15 +53,17 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.*;
 import static com.sun.net.httpserver.SimpleFileServer.OutputLevel.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class OutputFilterTest {
     static final Class<NullPointerException> NPE = NullPointerException.class;
@@ -74,8 +76,8 @@ public class OutputFilterTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
 
-    @BeforeTest
-    public void setup() {
+    @BeforeAll
+    public static void setup() {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             logger.setLevel(Level.ALL);
@@ -94,10 +96,10 @@ public class OutputFilterTest {
     @Test
     public void testDescription() {
         var filter = SimpleFileServer.createOutputFilter(OUT, VERBOSE);
-        assertEquals(filter.description(), "HttpExchange OutputFilter (outputLevel: VERBOSE)");
+        assertEquals("HttpExchange OutputFilter (outputLevel: VERBOSE)", filter.description());
 
         filter = SimpleFileServer.createOutputFilter(OUT, INFO);
-        assertEquals(filter.description(), "HttpExchange OutputFilter (outputLevel: INFO)");
+        assertEquals("HttpExchange OutputFilter (outputLevel: INFO)", filter.description());
     }
 
     @Test
@@ -120,9 +122,9 @@ public class OutputFilterTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.headers().map().size(), 3);
-            assertEquals(response.body(), "hello world");
+            assertEquals(200, response.statusCode());
+            assertEquals(3, response.headers().map().size());
+            assertEquals("hello world", response.body());
         } finally {
             server.stop(0);
             baos.flush();
@@ -172,9 +174,9 @@ public class OutputFilterTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.headers().map().size(), 2);
-            assertEquals(response.body(), "hello world");
+            assertEquals(200, response.statusCode());
+            assertEquals(2, response.headers().map().size());
+            assertEquals("hello world", response.body());
         } finally {
             server.stop(0);
             baos.flush();
@@ -207,8 +209,7 @@ public class OutputFilterTest {
         }
     }
 
-    @DataProvider
-    public Object[][] throwingHandler() {
+    public static Object[][] throwingHandler() {
         return new Object[][] {
                 {VERBOSE, "Error: server exchange handling failed: IOE ThrowingHandler" + System.lineSeparator()},
                 {INFO, "Error: server exchange handling failed: IOE ThrowingHandler" + System.lineSeparator()},
@@ -223,7 +224,8 @@ public class OutputFilterTest {
      * prevent retries on the client side, which would result in more than one
      * error message.
      */
-    @Test(dataProvider = "throwingHandler")
+    @ParameterizedTest
+    @MethodSource("throwingHandler")
     public void testExchangeThrowingHandler(OutputLevel level,
                                             String expectedOutput) throws Exception {
         var baos = new ByteArrayOutputStream();
@@ -243,7 +245,7 @@ public class OutputFilterTest {
         } finally {
             server.stop(0);
             baos.flush();
-            assertEquals(baos.toString(UTF_8), expectedOutput);
+            assertEquals(expectedOutput, baos.toString(UTF_8));
         }
     }
 
@@ -264,8 +266,8 @@ public class OutputFilterTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "aFile\u0000.txt")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 404);
-            assertEquals(response.headers().map().size(), 3);
+            assertEquals(404, response.statusCode());
+            assertEquals(3, response.headers().map().size());
         } finally {
             server.stop(0);
             baos.flush();

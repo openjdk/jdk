@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public class MotifToggleButtonUI extends BasicToggleButtonUI
     // ********************************
     //          Install Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -80,6 +81,7 @@ public class MotifToggleButtonUI extends BasicToggleButtonUI
         LookAndFeel.installProperty(b, "opaque", Boolean.FALSE);
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;
@@ -96,6 +98,7 @@ public class MotifToggleButtonUI extends BasicToggleButtonUI
     // ********************************
     //         Paint Methods
     // ********************************
+    @Override
     protected void paintButtonPressed(Graphics g, AbstractButton b) {
         if (b.isContentAreaFilled()) {
             Color oldColor = g.getColor();

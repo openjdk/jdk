@@ -220,7 +220,7 @@ void Parse::array_store_check() {
 
   // Extract the array element class
   int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-  Node* p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
+  Node* p2 = basic_plus_adr(top(), array_klass, element_klass_offset);
   Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p2, tak));
   assert(array_klass->is_Con() == a_e_klass->is_Con() || StressReflectiveCode, "a constant array type must come with a constant element type");
 

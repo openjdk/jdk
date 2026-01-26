@@ -44,7 +44,7 @@ class ShenandoahGenerationalHeuristics : public ShenandoahAdaptiveHeuristics {
 public:
   explicit ShenandoahGenerationalHeuristics(ShenandoahGeneration* generation);
 
-  void choose_collection_set(ShenandoahCollectionSet* collection_set) override;
+  size_t choose_collection_set(ShenandoahCollectionSet* collection_set) override;
 protected:
   ShenandoahGeneration* _generation;
 

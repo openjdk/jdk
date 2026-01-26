@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,8 @@ inline bool is_KRegister() {
 }
 
 inline Register as_Register() {
-
-  assert( is_Register(), "must be");
-  // Yuk
-#ifdef AMD64
+  assert(is_Register(), "must be");
   return ::as_Register(value() >> 1);
-#else
-  return ::as_Register(value());
-#endif // AMD64
 }
 
 inline FloatRegister as_FloatRegister() {
@@ -82,9 +76,6 @@ inline KRegister as_KRegister() {
 
 inline   bool is_concrete() {
   assert(is_reg(), "must be");
-#ifndef AMD64
-  if (is_Register()) return true;
-#endif // AMD64
   // Do not use is_XMMRegister() here as it depends on the UseAVX setting.
   if (value() >= ConcreteRegisterImpl::max_fpr && value() < ConcreteRegisterImpl::max_xmm) {
     int base = value() - ConcreteRegisterImpl::max_fpr;

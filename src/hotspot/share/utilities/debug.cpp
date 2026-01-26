@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,17 @@
 #include "utilities/nativeStackPrinter.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 #include <stdarg.h>
 #include <stdio.h>
 
-// These functions needs to be exported on Windows only
-#define DEBUGEXPORT WINDOWS_ONLY(JNIEXPORT)
+// These functions needs to be exported on Windows
+// On Linux it is also beneficial to export them to avoid
+// losing them e.g. with linktime gc
+#define DEBUGEXPORT JNIEXPORT
 
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -262,6 +267,8 @@ void report_untested(const char* file, int line, const char* message) {
 void report_java_out_of_memory(const char* message) {
   static int out_of_memory_reported = 0;
 
+  JFR_ONLY(Jfr::on_report_java_out_of_memory();)
+
   // A number of threads may attempt to report OutOfMemoryError at around the
   // same time. To avoid dumping the heap or executing the data collection
   // commands multiple times we just do it once when the first threads reports
@@ -422,10 +429,8 @@ extern "C" DEBUGEXPORT void pp(void* p) {
     tty->print_cr("null");
     return;
   }
-  if (Universe::heap()->is_in(p)) {
-    oop obj = cast_to_oop(p);
-    obj->print();
-  } else {
+
+  if (!Universe::heap()->print_location(tty, p)) {
     // Ask NMT about this pointer.
     // GDB note: We will be using SafeFetch to access the supposed malloc header. If the address is
     // not readable, this will generate a signal. That signal will trip up the debugger: gdb will
@@ -648,13 +653,12 @@ extern "C" DEBUGEXPORT intptr_t u5p(intptr_t addr,
 void pp(intptr_t p)          { pp((void*)p); }
 void pp(oop p)               { pp((void*)p); }
 
-void help() {
+extern "C" DEBUGEXPORT void help() {
   Command c("help");
   tty->print_cr("basic");
   tty->print_cr("  pp(void* p)         - try to make sense of p");
   tty->print_cr("  ps()                - print current thread stack");
   tty->print_cr("  pss()               - print all thread stacks");
-  tty->print_cr("  pm(int pc)          - print Method* given compiled PC");
   tty->print_cr("  findnm(intptr_t pc) - find nmethod*");
   tty->print_cr("  findm(intptr_t pc)  - find Method*");
   tty->print_cr("  find(intptr_t x)    - find & print nmethod/stub/bytecode/oop based on pointer into it");

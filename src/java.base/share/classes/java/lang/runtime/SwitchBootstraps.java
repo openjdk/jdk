@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,13 +188,17 @@ public final class SwitchBootstraps {
                                       String invocationName,
                                       MethodType invocationType,
                                       Object... labels) {
+        requireNonNull(lookup);
+        requireNonNull(invocationType);
+        requireNonNull(labels);
+
         Class<?> selectorType = invocationType.parameterType(0);
         if (invocationType.parameterCount() != 2
             || (!invocationType.returnType().equals(int.class))
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
 
-        for (Object l : labels) { // implicit null-check
+        for (Object l : labels) {
             verifyLabel(l, selectorType);
         }
 
@@ -292,6 +296,10 @@ public final class SwitchBootstraps {
                                       String invocationName,
                                       MethodType invocationType,
                                       Object... labels) {
+        requireNonNull(lookup);
+        requireNonNull(invocationType);
+        requireNonNull(labels);
+
         if (invocationType.parameterCount() != 2
             || (!invocationType.returnType().equals(int.class))
             || invocationType.parameterType(0).isPrimitive()
@@ -299,7 +307,7 @@ public final class SwitchBootstraps {
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
 
-        labels = labels.clone(); // implicit null check
+        labels = labels.clone();
 
         Class<?> enumClass = invocationType.parameterType(0);
         boolean constantsOnly = true;
@@ -307,7 +315,7 @@ public final class SwitchBootstraps {
 
         for (int i = 0; i < len; i++) {
             Object convertedLabel =
-                    convertEnumConstants(lookup, enumClass, labels[i]);
+                    convertEnumConstants(enumClass, labels[i]);
             labels[i] = convertedLabel;
             if (constantsOnly)
                 constantsOnly = convertedLabel instanceof EnumDesc;
@@ -331,7 +339,7 @@ public final class SwitchBootstraps {
         return new ConstantCallSite(target);
     }
 
-    private static <E extends Enum<E>> Object convertEnumConstants(MethodHandles.Lookup lookup, Class<?> enumClassTemplate, Object label) {
+    private static <E extends Enum<E>> Object convertEnumConstants(Class<?> enumClassTemplate, Object label) {
         if (label == null) {
             throw new IllegalArgumentException("null label found");
         }

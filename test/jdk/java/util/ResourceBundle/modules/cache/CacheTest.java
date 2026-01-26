@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules jdk.compiler
  * @build CacheTest jdk.test.lib.compiler.CompilerUtils
- * @run testng CacheTest
+ * @run junit CacheTest
  */
 
 import java.nio.file.Files;
@@ -37,11 +37,12 @@ import java.nio.file.Paths;
 import static jdk.test.lib.process.ProcessTools.*;
 import jdk.test.lib.compiler.CompilerUtils;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CacheTest {
 
     private static final String TEST_SRC = System.getProperty("test.src");
@@ -55,7 +56,7 @@ public class CacheTest {
     private static final String MAIN = "test/jdk.test.Main";
     private static final String MAIN_CLASS = "jdk.test.Main";
 
-    @BeforeTest
+    @BeforeAll
     public void compileTestModules() throws Exception {
 
         for (String mn : new String[] {MAIN_BUNDLES_MODULE, TEST_MODULE}) {

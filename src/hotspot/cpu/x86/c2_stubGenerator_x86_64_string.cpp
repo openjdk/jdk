@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, 2026, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1330,10 +1330,12 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   // Clarification:  The BYTE_K compare above compares haystack[(n-32):(n-1)].  We need to
   // compare haystack[(k-1):(k-1+31)].  Subtracting either index gives shift value of
   // (k + 31 - n):  x = (k-1+31)-(n-1) = k-1+31-n+1 = k+31-n.
+  // When isU is set, similarly, shift is from haystack[(n-32):(n-1)] to [(k-2):(k-2+31)]
+
   if (sizeKnown) {
-    __ movl(temp2, 31 + size);
+    __ movl(temp2, (isU ? 30 : 31) + size);
   } else {
-    __ movl(temp2, 31);
+    __ movl(temp2, isU ? 30 : 31);
     __ addl(temp2, needleLen);
   }
   __ subl(temp2, hsLength);

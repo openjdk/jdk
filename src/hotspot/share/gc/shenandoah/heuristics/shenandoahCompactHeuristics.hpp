@@ -37,9 +37,9 @@ public:
 
   virtual bool should_start_gc();
 
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                     RegionData* data, size_t size,
-                                                     size_t actual_free);
+  virtual size_t choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                       RegionData* data, size_t size,
+                                                       size_t actual_free);
 
   virtual const char* name()     { return "Compact"; }
   virtual bool is_diagnostic()   { return false; }

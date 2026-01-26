@@ -76,7 +76,7 @@ public class Http3ExpectContinueTest implements HttpServerAdapters {
     static final String CONTINUE_100 = "100 Continue";
     static final String RESPONSE_BODY= "Verify response received";
     static final String BODY = "Post body";
-    private SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     @DataProvider(name = "uris")
     public Object[][] urisData() {
@@ -151,10 +151,6 @@ public class Http3ExpectContinueTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         final QuicServer quicServer = Http3TestServer.quicServerBuilder()
                 .sslContext(sslContext)
                 .build();

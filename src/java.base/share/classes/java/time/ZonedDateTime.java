@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2207,7 +2207,10 @@ public final class ZonedDateTime
      * Outputs this date-time as a {@code String}, such as
      * {@code 2007-12-03T10:15:30+01:00[Europe/Paris]}.
      * <p>
-     * The format consists of the {@code LocalDateTime} followed by the {@code ZoneOffset}.
+     * The format consists of the output of {@link LocalDateTime#toString()},
+     * followed by the output of {@link ZoneOffset#toString()}.
+     * If the time has zero seconds and/or nanoseconds, they are
+     * omitted to produce the shortest representation.
      * If the {@code ZoneId} is not the same as the offset, then the ID is output.
      * The output is compatible with ISO-8601 if the offset and ID are the same,
      * and the seconds in the offset are zero.

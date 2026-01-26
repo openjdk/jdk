@@ -90,15 +90,11 @@ public class ImmutableSSLSessionTest implements HttpServerAdapters {
     private String h1ReqURIBase;
     private String h2ReqURIBase;
     private String h3ReqURIBase;
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private final AtomicInteger counter = new AtomicInteger();
 
     @BeforeAll
     public void beforeAll() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         h1server = HttpTestServer.create(HTTP_1_1, sslContext);
         h1server.start();
         h1ReqURIBase = "https://" + h1server.serverAuthority() + "/h1ImmutableSSLSessionTest/";

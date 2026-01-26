@@ -64,16 +64,12 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 public class H3HeaderSizeLimitTest implements HttpServerAdapters {
 
     private static final long HEADER_SIZE_LIMIT_BYTES = 1024;
-    private SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private HttpTestServer h3Server;
     private String requestURIBase;
 
     @BeforeClass
     public void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         final QuicServer quicServer = Http3TestServer.quicServerBuilder()
                 .sslContext(sslContext)
                 .build();

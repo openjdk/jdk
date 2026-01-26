@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
+#include "cppstdlib/cstdlib.hpp"
+
 #include <alloca.h>
 #include <ctype.h>
 #include <dlfcn.h>
@@ -44,15 +46,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-// In stdlib.h on AIX malloc is defined as a macro causing
-// compiler errors when resolving them in different depths as it
-// happens in the log tags. This avoids the macro.
-#if (defined(__VEC__) || defined(__AIXVEC)) && defined(AIX) \
-    && defined(__open_xl_version__) && __open_xl_version__ >= 17
-  #undef malloc
-  extern void *malloc(size_t) asm("vec_malloc");
-#endif
 #include <string.h>
 #include <time.h>
 #include <wchar.h>

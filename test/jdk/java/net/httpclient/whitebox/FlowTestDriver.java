@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @compile/module=java.net.http ../../../../../../lib/jdk/test/lib/net/SimpleSSLContext.java
  * @modules java.net.http/jdk.internal.net.http
  * @run testng/timeout=480 java.net.http/jdk.internal.net.http.FlowTest
  */

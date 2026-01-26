@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,8 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
 
-    error = getaddrinfo(hostname, NULL, &hints, &res);
+    NET_RESTARTABLE(error, getaddrinfo(hostname, NULL, &hints, &res),
+                    error == EAI_SYSTEM && errno == EINTR);
 
     if (error) {
 #if defined(MACOSX)
@@ -229,17 +230,21 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     sa.sin_addr.s_addr = htonl(addr);
     sa.sin_family = AF_INET;
 
-    if (getnameinfo((struct sockaddr *)&sa, sizeof(struct sockaddr_in),
-                    host, sizeof(host), NULL, 0, NI_NAMEREQD)) {
-        JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
-    } else {
+    int r;
+
+    NET_RESTARTABLE(r, getnameinfo((struct sockaddr *)&sa, sizeof(struct sockaddr_in),
+                                   host, sizeof(host), NULL, 0, NI_NAMEREQD),
+                    r == EAI_SYSTEM && errno == EINTR);
+
+    if (r == 0) {
         ret = (*env)->NewStringUTF(env, host);
-        if (ret == NULL) {
-            JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
+        if (ret != NULL) {
+            return ret;
         }
     }
 
-    return ret;
+    JNU_ThrowByName(env, "java/net/UnknownHostException", NULL);
+    return NULL;
 }
 
 /**
@@ -283,7 +288,8 @@ tcp_ping4(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
     SET_NONBLOCKING(fd);
 
     sa->sa4.sin_port = htons(7); // echo port
-    connect_rv = connect(fd, &sa->sa, sizeof(struct sockaddr_in));
+    NET_RESTARTABLE(connect_rv, connect(fd, &sa->sa, sizeof(struct sockaddr_in)),
+                    connect_rv == -1 && errno == EINTR);
 
     // connection established or refused immediately, either way it means
     // we were able to reach the host!
@@ -397,8 +403,11 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
         icmp->icmp_cksum = 0;
         // manually calculate checksum
         icmp->icmp_cksum = in_cksum((u_short *)icmp, plen);
+
         // send it
-        n = sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in));
+        NET_RESTARTABLE(n, sendto(fd, sendbuf, plen, 0, &sa->sa, sizeof(struct sockaddr_in)),
+                        n == -1 && errno == EINTR)
+
         if (n < 0 && errno != EINPROGRESS) {
 #if defined(__linux__)
             /*
@@ -422,8 +431,9 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
             tmout2 = NET_Wait(env, fd, NET_WAIT_READ, tmout2);
             if (tmout2 >= 0) {
                 len = sizeof(sa_recv);
-                n = recvfrom(fd, recvbuf, sizeof(recvbuf), 0,
-                             (struct sockaddr *)&sa_recv, &len);
+                NET_RESTARTABLE(n, recvfrom(fd, recvbuf, sizeof(recvbuf), 0,
+                                      (struct sockaddr *)&sa_recv, &len),
+                                      n == -1 && errno == EINTR);
                 // check if we received enough data
                 if (n < (jint)sizeof(struct ip)) {
                     continue;

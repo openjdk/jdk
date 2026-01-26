@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class MotifMenuUI extends BasicMenuUI
 //      menuItem.removeChangeListener(changeListener);
 //    }
 
+    @Override
     protected ChangeListener createChangeListener(JComponent c) {
         return new MotifChangeHandler((JMenu)c, this);
     }
@@ -76,6 +77,7 @@ public class MotifMenuUI extends BasicMenuUI
         return false;
     }
 
+    @Override
     protected MouseInputListener createMouseInputListener(JComponent c) {
         return new MouseInputHandler();
     }
@@ -86,6 +88,7 @@ public class MotifMenuUI extends BasicMenuUI
         }
 
 
+        @Override
         public void stateChanged(ChangeEvent e) {
             JMenuItem c = (JMenuItem)e.getSource();
             if (c.isArmed() || c.isSelected()) {
@@ -100,7 +103,9 @@ public class MotifMenuUI extends BasicMenuUI
     }
 
     protected class MouseInputHandler implements MouseInputListener {
+        @Override
         public void mouseClicked(MouseEvent e) {}
+        @Override
         public void mousePressed(MouseEvent e) {
             MenuSelectionManager manager = MenuSelectionManager.defaultManager();
             JMenu menu = (JMenu)e.getComponent();
@@ -129,6 +134,7 @@ public class MotifMenuUI extends BasicMenuUI
             }
         }
 
+        @Override
         public void mouseReleased(MouseEvent e) {
             MenuSelectionManager manager =
                 MenuSelectionManager.defaultManager();
@@ -139,11 +145,15 @@ public class MotifMenuUI extends BasicMenuUI
                 manager.processMouseEvent(e);
             }
         }
+        @Override
         public void mouseEntered(MouseEvent e) {}
+        @Override
         public void mouseExited(MouseEvent e) {}
+        @Override
         public void mouseDragged(MouseEvent e) {
             MenuSelectionManager.defaultManager().processMouseEvent(e);
         }
+        @Override
         public void mouseMoved(MouseEvent e) { }
     }
 

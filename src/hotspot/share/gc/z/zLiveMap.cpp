@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/spinYield.hpp"
@@ -60,18 +59,18 @@ void ZLiveMap::reset(ZGenerationId id) {
 
   // Multiple threads can enter here, make sure only one of them
   // resets the marking information while the others busy wait.
-  for (uint32_t seqnum = AtomicAccess::load_acquire(&_seqnum);
+  for (uint32_t seqnum = _seqnum.load_acquire();
        seqnum != generation->seqnum();
-       seqnum = AtomicAccess::load_acquire(&_seqnum)) {
+       seqnum = _seqnum.load_acquire()) {
 
     if (seqnum != seqnum_initializing) {
       // No one has claimed initialization of the livemap yet
-      if (AtomicAccess::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum) {
+      if (_seqnum.compare_set(seqnum, seqnum_initializing)) {
         // This thread claimed the initialization
 
         // Reset marking information
-        _live_bytes = 0;
-        _live_objects = 0;
+        _live_bytes.store_relaxed(0u);
+        _live_objects.store_relaxed(0u);
 
         // Clear segment claimed/live bits
         segment_live_bits().clear();
@@ -81,13 +80,13 @@ void ZLiveMap::reset(ZGenerationId id) {
         // a bit is about to be set for the first time.
         initialize_bitmap();
 
-        assert(_seqnum == seqnum_initializing, "Invalid");
+        assert(_seqnum.load_relaxed() == seqnum_initializing, "Invalid");
 
         // Make sure the newly reset marking information is ordered
         // before the update of the page seqnum, such that when the
         // up-to-date seqnum is load acquired, the bit maps will not
         // contain stale information.
-        AtomicAccess::release_store(&_seqnum, generation->seqnum());
+        _seqnum.release_store(generation->seqnum());
         break;
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,17 @@
 package compiler.lib.ir_framework.shared;
 
 /**
- * Exception that is thrown by the test VM if no tests are run as a result of specifying {@code -DTest} and/or
- * {@code -DExclude} defining an empty set with the used test VM flags.
+ * Exception that is thrown by the Test VM if no tests are run as a result of specifying {@code -DTest} and/or
+ * {@code -DExclude} defining an empty set with the used Test VM flags.
  */
 public class NoTestsRunException extends RuntimeException {
     /**
-     * Default constructor used by test VM
+     * Default constructor used by Test VM
      */
     public NoTestsRunException() {}
 
     /**
-     * Constructor used to eventually throw the exception in the driver VM.
+     * Constructor used to eventually throw the exception in the Driver VM.
      */
     public NoTestsRunException(String message) {
         super(message);

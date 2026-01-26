@@ -6304,6 +6304,33 @@ Version 1.6.51 [November 21, 2025]
   Added GitHub Actions workflows for automated testing.
   Performed various refactorings and cleanups.
 
+Version 1.6.52 [December 3, 2025]
+  Fixed CVE-2025-66293 (high severity):
+    Out-of-bounds read in `png_image_read_composite`.
+    (Reported by flyfish101 <flyfish101@users.noreply.github.com>.)
+  Fixed the Paeth filter handling in the RISC-V RVV implementation.
+    (Reported by Filip Wasil; fixed by Liang Junzhao.)
+  Improved the performance of the RISC-V RVV implementation.
+    (Contributed by Liang Junzhao.)
+  Added allocation failure fuzzing to oss-fuzz.
+    (Contributed by Philippe Antoine.)
+
+Version 1.6.53 [December 5, 2025]
+  Fixed a build failure on RISC-V RVV caused by a misspelled intrinsic.
+    (Contributed by Alexander Smorkalov.)
+  Fixed a build failure with CMake 4.1 or newer, on Windows, when using
+    Visual C++ without MASM installed.
+
+Version 1.6.54 [January 12, 2026]
+  Fixed CVE-2026-22695 (medium severity):
+    Heap buffer over-read in `png_image_read_direct_scaled.
+    (Reported and fixed by Petr Simecek.)
+  Fixed CVE-2026-22801 (medium severity):
+    Integer truncation causing heap buffer over-read in `png_image_write_*`.
+  Implemented various improvements in oss-fuzz.
+    (Contributed by Philippe Antoine.)
+
+
 Send comments/corrections/commendations to png-mng-implement at lists.sf.net.
 Subscription is required; visit
 https://lists.sourceforge.net/lists/listinfo/png-mng-implement

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,7 @@ class OSContainer: AllStatic {
   static const char * container_type();
 
   static bool available_memory_in_bytes(physical_memory_size_type& value);
-  static bool available_swap_in_bytes(physical_memory_size_type host_free_swap,
-                                      physical_memory_size_type& value);
+  static bool available_swap_in_bytes(physical_memory_size_type& value);
   static bool memory_limit_in_bytes(physical_memory_size_type& value);
   static bool memory_and_swap_limit_in_bytes(physical_memory_size_type& value);
   static bool memory_and_swap_usage_in_bytes(physical_memory_size_type& value);
@@ -84,7 +83,7 @@ class OSContainer: AllStatic {
   static bool rss_usage_in_bytes(physical_memory_size_type& value);
   static bool cache_usage_in_bytes(physical_memory_size_type& value);
 
-  static bool active_processor_count(int& value);
+  static bool active_processor_count(double& value);
 
   static char * cpu_cpuset_cpus();
   static char * cpu_cpuset_memory_nodes();

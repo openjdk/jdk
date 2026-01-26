@@ -2811,7 +2811,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 // a CONNECTION_CLOSE frame is being sent to the peer when the local
                 // connection state is in DRAINING. This implies that the local endpoint
                 // is responding to an incoming CONNECTION_CLOSE frame from the peer.
-                // we remove the connection from the endpoint for such cases.
+                // we switch this connection to one that does not respond to incoming packets.
                 endpoint.pushClosedDatagram(this, peerAddress(), datagram);
             } else if (stateHandle.isMarked(QuicConnectionState.CLOSING)) {
                 // a CONNECTION_CLOSE frame is being sent to the peer when the local

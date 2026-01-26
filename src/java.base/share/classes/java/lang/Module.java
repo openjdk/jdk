@@ -69,6 +69,7 @@ import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -391,6 +392,7 @@ public final class Module implements AnnotatedElement {
     private static final Module EVERYONE_MODULE;
     private static final Set<Module> EVERYONE_SET;
 
+    @AOTSafeClassInitializer
     private static class ArchivedData {
         private static ArchivedData archivedData;
         private final Module allUnnamedModule;

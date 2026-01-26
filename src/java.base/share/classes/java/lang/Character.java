@@ -26,6 +26,7 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
@@ -9379,6 +9380,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         this.value = value;
     }
 
+    @AOTSafeClassInitializer
     private static final class CharacterCache {
         private CharacterCache(){}
 

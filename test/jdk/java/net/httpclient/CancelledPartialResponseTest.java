@@ -85,7 +85,7 @@ public class CancelledPartialResponseTest {
     URI warmup, h2PartialResponseResetNoError, h2PartialResponseResetError, h2FullResponseResetNoError, h2FullResponseResetError;
     URI h3PartialResponseStopSending, h3FullResponseStopSending;
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static PrintStream err = new PrintStream(System.err);
     static PrintStream out = System.out;
@@ -163,10 +163,6 @@ public class CancelledPartialResponseTest {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         http2TestServer = new Http2TestServer(false, 0);
         http3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
 

@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"

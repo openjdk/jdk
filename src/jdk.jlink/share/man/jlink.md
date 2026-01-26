@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ Developers are responsible for updating their custom runtime images.
     and zip-9 provides the best compression. Default is zip-6.
 
 :   Deprecated values to be removed in a future release:
+
     -   `0`: No compression. Use zip-0 instead.
     -   `1`: Constant string sharing
     -   `2`: ZIP. Use zip-6 instead.
@@ -182,6 +183,7 @@ Description
     and zip-9 provides the best compression. Default is zip-6.
 
 :   Deprecated values to be removed in a future release:
+
     -   Level 0: No compression. Use zip-0 instead.
     -   Level 1: Constant string sharing
     -   Level 2: ZIP. Use zip-6 instead.

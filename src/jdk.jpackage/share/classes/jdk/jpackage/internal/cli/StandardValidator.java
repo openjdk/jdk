@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.MacBundle;
 
 final public class StandardValidator {
 
@@ -136,6 +137,10 @@ final public class StandardValidator {
         }
 
         return true;
+    };
+
+    public static Predicate<Path> IS_VALID_MAC_BUNDLE = path -> {
+        return MacBundle.fromPath(path).isPresent();
     };
 
 

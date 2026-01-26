@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ ZForwardingAllocator::~ZForwardingAllocator() {
 }
 
 void ZForwardingAllocator::reset(size_t size) {
-  _start = _top = REALLOC_C_HEAP_ARRAY(char, _start, size, mtGC);
+  _start = REALLOC_C_HEAP_ARRAY(char, _start, size, mtGC);
+  _top.store_relaxed(_start);
   _end = _start + size;
 }

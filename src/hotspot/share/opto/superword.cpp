@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2479,6 +2479,11 @@ static bool can_subword_truncate(Node* in, const Type* type) {
 
   // Vector nodes should not truncate.
   if (type->isa_vect() != nullptr || type->isa_vectmask() != nullptr || in->is_Reduction()) {
+    return false;
+  }
+
+  // Since casts specifically change the type of a node, stay on the safe side and do not truncate them.
+  if (in->is_ConstraintCast()) {
     return false;
   }
 

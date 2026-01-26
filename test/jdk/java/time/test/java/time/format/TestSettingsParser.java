@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,29 +59,30 @@
  */
 package test.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.text.ParsePosition;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test SettingsParser.
  */
-@Test
 public class TestSettingsParser extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_print_sensitive() throws Exception {
         setCaseSensitive(true);
         getFormatter().formatTo(dta, buf);
-        assertEquals(buf.toString(), "");
+        assertEquals("", buf.toString());
     }
 
+    @Test
     public void test_print_strict() throws Exception {
         setStrict(true);
         getFormatter().formatTo(dta, buf);
-        assertEquals(buf.toString(), "");
+        assertEquals("", buf.toString());
     }
 
     /*
@@ -92,53 +93,61 @@ public class TestSettingsParser extends AbstractTestPrinterParser {
     */
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_parse_changeStyle_sensitive() throws Exception {
         setCaseSensitive(true);
         ParsePosition pos = new ParsePosition(0);
         getFormatter().parseUnresolved("a", pos);
-        assertEquals(pos.getIndex(), 0);
+        assertEquals(0, pos.getIndex());
     }
 
+    @Test
     public void test_parse_changeStyle_insensitive() throws Exception {
         setCaseSensitive(false);
         ParsePosition pos = new ParsePosition(0);
         getFormatter().parseUnresolved("a", pos);
-        assertEquals(pos.getIndex(), 0);
+        assertEquals(0, pos.getIndex());
     }
 
+    @Test
     public void test_parse_changeStyle_strict() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
         getFormatter().parseUnresolved("a", pos);
-        assertEquals(pos.getIndex(), 0);
+        assertEquals(0, pos.getIndex());
     }
 
+    @Test
     public void test_parse_changeStyle_lenient() throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
         getFormatter().parseUnresolved("a", pos);
-        assertEquals(pos.getIndex(), 0);
+        assertEquals(0, pos.getIndex());
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_toString_sensitive() throws Exception {
         setCaseSensitive(true);
-        assertEquals(getFormatter().toString(), "ParseCaseSensitive(true)");
+        assertEquals("ParseCaseSensitive(true)", getFormatter().toString());
     }
 
+    @Test
     public void test_toString_insensitive() throws Exception {
         setCaseSensitive(false);
-        assertEquals(getFormatter().toString(), "ParseCaseSensitive(false)");
+        assertEquals("ParseCaseSensitive(false)", getFormatter().toString());
     }
 
+    @Test
     public void test_toString_strict() throws Exception {
         setStrict(true);
-        assertEquals(getFormatter().toString(), "ParseStrict(true)");
+        assertEquals("ParseStrict(true)", getFormatter().toString());
     }
 
+    @Test
     public void test_toString_lenient() throws Exception {
         setStrict(false);
-        assertEquals(getFormatter().toString(), "ParseStrict(false)");
+        assertEquals("ParseStrict(false)", getFormatter().toString());
     }
 
 }

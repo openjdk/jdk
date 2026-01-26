@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 #ifndef SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
 #define SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
 
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "utilities/debug.hpp"
 
 class ConcurrentGCThread: public NamedThread {
 private:
-  volatile bool _should_terminate;
-  volatile bool _has_terminated;
+  Atomic<bool> _should_terminate;
+  Atomic<bool> _has_terminated;
 
 protected:
   void create_and_start(ThreadPriority prio = NearMaxPriority);

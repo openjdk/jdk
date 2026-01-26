@@ -260,6 +260,9 @@ public final class Float16
      * Float#toString(float)} in the handling of special values
      * (signed zeros, infinities, and NaN) and the generation of a
      * decimal string that will convert back to the argument value.
+     * However, the range for plain notation is defined to be the interval
+     * [10<sup>-3</sup>, 10<sup>3</sup>) rather than the interval used
+     * for {@code float} and {@code double}.
      *
      * @param   f16   the {@code Float16} to be converted.
      * @return a string representation of the argument.
@@ -2106,7 +2109,7 @@ public final class Float16
             int h = (int) (f * 107_375L >>> 30);
             int l = f - 10_000 * h;
 
-            if (0 < e && e <= 7) {
+            if (0 < e && e <= 3) {
                 return toChars1(h, l, e);
             }
             if (-3 < e && e <= 0) {

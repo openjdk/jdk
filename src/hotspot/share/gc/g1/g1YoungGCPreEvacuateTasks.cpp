@@ -23,7 +23,6 @@
  */
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"

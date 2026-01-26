@@ -27,12 +27,12 @@ import jdk.internal.net.http.http3.frames.SettingsFrame;
 import jdk.internal.net.http.qpack.TableEntry;
 import jdk.internal.net.http.qpack.writers.EncoderInstructionsWriter;
 import jdk.internal.net.http.qpack.writers.HeaderFrameWriter;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
- * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA
  *                     EncoderDecoderConnectionTest
  */
 public class EncoderDecoderConnectionTest {
@@ -77,17 +77,17 @@ public class EncoderDecoderConnectionTest {
         encoder.setTableCapacity(capacityToSet);
 
         // Check that no errors observed
-        Assert.assertNull(encoderErrorHandler.error.get());
-        Assert.assertNull(encoderErrorHandler.http3Error.get());
-        Assert.assertNull(decoderErrorHandler.error.get());
-        Assert.assertNull(decoderErrorHandler.http3Error.get());
+        Assertions.assertNull(encoderErrorHandler.error.get());
+        Assertions.assertNull(encoderErrorHandler.http3Error.get());
+        Assertions.assertNull(decoderErrorHandler.error.get());
+        Assertions.assertNull(decoderErrorHandler.http3Error.get());
 
         // Check that encoder's table capacity is updated
-        Assert.assertEquals(conn.encoderTable().capacity(), capacityToSet);
+        Assertions.assertEquals(capacityToSet, conn.encoderTable().capacity());
         // Since encoder/decoder streams are cross-wired we expect see dynamic
         // table capacity updated for the decoder too
-        Assert.assertEquals(conn.decoderTable().capacity(),
-                conn.encoderTable().capacity());
+        Assertions.assertEquals(conn.encoderTable().capacity(),
+                                conn.decoderTable().capacity());
     }
 
     @Test
@@ -122,10 +122,10 @@ public class EncoderDecoderConnectionTest {
         var encoderInstructionWriter = new EncoderInstructionsWriter();
 
         // Check that no errors observed
-        Assert.assertNull(encoderErrorHandler.error.get());
-        Assert.assertNull(encoderErrorHandler.http3Error.get());
-        Assert.assertNull(decoderErrorHandler.error.get());
-        Assert.assertNull(decoderErrorHandler.http3Error.get());
+        Assertions.assertNull(encoderErrorHandler.error.get());
+        Assertions.assertNull(encoderErrorHandler.http3Error.get());
+        Assertions.assertNull(decoderErrorHandler.error.get());
+        Assertions.assertNull(decoderErrorHandler.http3Error.get());
 
         // Issue the insert instruction on encoder stream
         conn.encoderTable().insertWithEncoderStreamUpdate(entryToInsert,
@@ -133,8 +133,8 @@ public class EncoderDecoderConnectionTest {
                 encoder.newEncodingContext(0, 0, new HeaderFrameWriter()));
         var encoderHeader = conn.encoderTable().get(0);
         var decoderHeader = conn.decoderTable().get(0);
-        Assert.assertEquals(encoderHeader.name(), decoderHeader.name());
-        Assert.assertEquals(encoderHeader.value(), decoderHeader.value());
+        Assertions.assertEquals(decoderHeader.name(), encoderHeader.name());
+        Assertions.assertEquals(decoderHeader.value(), encoderHeader.value());
     }
 
     @Test
@@ -160,12 +160,12 @@ public class EncoderDecoderConnectionTest {
 
         // QPACK_ENCODER_STREAM_ERROR is expected on the decoder side
         // since the decoder dynamic table capacity was not updated
-        Assert.assertEquals(decoderErrorHandler.http3Error.get(),
-                Http3Error.QPACK_ENCODER_STREAM_ERROR);
+        Assertions.assertEquals(Http3Error.QPACK_ENCODER_STREAM_ERROR,
+                                decoderErrorHandler.http3Error.get());
 
         // It is expected that http3 error reported to
         // the decoder error handler only
-        Assert.assertNull(encoderErrorHandler.http3Error.get());
+        Assertions.assertNull(encoderErrorHandler.http3Error.get());
     }
 
     @Test
@@ -208,13 +208,13 @@ public class EncoderDecoderConnectionTest {
         System.err.println("Decoder Http3 error: " + decoderHttp3Error);
 
         if (encoderError == null || !(encoderError instanceof IOException)) {
-            Assert.fail("Incorrect encoder error type", encoderError);
+            Assertions.fail("Incorrect encoder error type", encoderError);
         }
         if (decoderError == null || !(decoderError instanceof IOException)) {
-            Assert.fail("Incorrect decoder error type", decoderError);
+            Assertions.fail("Incorrect decoder error type", decoderError);
         }
-        Assert.assertEquals(encoderHttp3Error, Http3Error.QPACK_DECODER_STREAM_ERROR);
-        Assert.assertEquals(decoderHttp3Error, Http3Error.QPACK_ENCODER_STREAM_ERROR);
+        Assertions.assertEquals(Http3Error.QPACK_DECODER_STREAM_ERROR, encoderHttp3Error);
+        Assertions.assertEquals(Http3Error.QPACK_ENCODER_STREAM_ERROR, decoderHttp3Error);
     }
 
     private static ByteBuffer instructionWithOverflowInteger(int N, int payload) {

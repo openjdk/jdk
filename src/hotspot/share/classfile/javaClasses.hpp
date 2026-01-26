@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1179,13 +1179,6 @@ class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
   static oop        method_type(oop entry);
   static jlong      downcall_stub_address(oop entry);
 
-  // Testers
-  static bool is_subclass(Klass* klass) {
-    return vmClasses::NativeEntryPoint_klass() != nullptr &&
-      klass->is_subclass_of(vmClasses::NativeEntryPoint_klass());
-  }
-  static bool is_instance(oop obj);
-
   // Accessors for code generation:
   static int method_type_offset_in_bytes()           { return _method_type_offset; }
   static int downcall_stub_address_offset_in_bytes() { return _downcall_stub_address_offset; }
@@ -1216,13 +1209,6 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static jint        shadowSpace(oop entry);
   static oop         scratch1(oop entry);
   static oop         scratch2(oop entry);
-
-  // Testers
-  static bool is_subclass(Klass* klass) {
-    return vmClasses::ABIDescriptor_klass() != nullptr &&
-      klass->is_subclass_of(vmClasses::ABIDescriptor_klass());
-  }
-  static bool is_instance(oop obj);
 };
 
 class jdk_internal_foreign_abi_VMStorage: AllStatic {

@@ -71,7 +71,7 @@ public class BasicAuthTest implements HttpServerAdapters {
         ExecutorService e = Executors.newCachedThreadPool();
         Handler h = new Handler();
         SSLContext sslContext = secure || version == Version.HTTP_3
-                ? new SimpleSSLContext().get() : null;
+                ? SimpleSSLContext.findSSLContext() : null;
         HttpTestServer server = HttpTestServer.create(version, sslContext, e);
         HttpTestContext serverContext = server.addHandler(h,"/test/");
         ServerAuth sa = new ServerAuth("foo realm");

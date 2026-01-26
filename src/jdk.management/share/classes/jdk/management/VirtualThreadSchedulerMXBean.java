@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public interface VirtualThreadSchedulerMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if size is less than the minimum, or
      *         greater than the maximum, supported by the scheduler
      * @throws UnsupportedOperationException if changing the target
-     *         parallelism is not suppored by the scheduler
+     *         parallelism is not supported by the scheduler
      *
      * @see ForkJoinPool#setParallelism(int)
      */

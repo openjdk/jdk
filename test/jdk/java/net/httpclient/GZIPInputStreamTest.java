@@ -72,7 +72,7 @@ import static org.testng.Assert.assertEquals;
 
 public class GZIPInputStreamTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
     HttpTestServer httpsTestServer;   // HTTPS/1.1
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -489,10 +489,6 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         HttpTestHandler plainHandler = new LoremIpsumPlainHandler();
         HttpTestHandler gzipHandler  = new LoremIpsumGZIPHandler();
 

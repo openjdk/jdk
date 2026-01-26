@@ -61,7 +61,7 @@ public class H3Timeout implements HttpServerAdapters {
     private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     public static void main(String[] args) throws Exception {
-        SSLContext context = new SimpleSSLContext().get();
+        SSLContext context = SimpleSSLContext.findSSLContext();
         testConnect(context, false);
         testConnect(context, true);
         testTimeout(context, false);

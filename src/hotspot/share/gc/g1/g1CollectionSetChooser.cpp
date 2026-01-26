@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/shared/space.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/quickSort.hpp"
 
 // Determine collection set candidates (from marking): For all regions determine
@@ -50,7 +50,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
 
     G1HeapRegion** _data;
 
-    uint volatile _cur_claim_idx;
+    Atomic<uint> _cur_claim_idx;
 
     static int compare_region_gc_efficiency(G1HeapRegion** rr1, G1HeapRegion** rr2) {
       G1HeapRegion* r1 = *rr1;
@@ -105,7 +105,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
 
     // Claim a new chunk, returning its bounds [from, to[.
     void claim_chunk(uint& from, uint& to) {
-      uint result = AtomicAccess::add(&_cur_claim_idx, _chunk_size);
+      uint result = _cur_claim_idx.add_then_fetch(_chunk_size);
       assert(_max_size > result - 1,
              "Array too small, is %u should be %u with chunk size %u.",
              _max_size, result, _chunk_size);
@@ -121,14 +121,15 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     }
 
     void sort_by_gc_efficiency() {
-      if (_cur_claim_idx == 0) {
+      uint length = _cur_claim_idx.load_relaxed();
+      if (length == 0) {
         return;
       }
-      for (uint i = _cur_claim_idx; i < _max_size; i++) {
+      for (uint i = length; i < _max_size; i++) {
         assert(_data[i] == nullptr, "must be");
       }
-      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)compare_region_gc_efficiency);
-      for (uint i = _cur_claim_idx; i < _max_size; i++) {
+      qsort(_data, length, sizeof(_data[0]), (_sort_Fn)compare_region_gc_efficiency);
+      for (uint i = length; i < _max_size; i++) {
         assert(_data[i] == nullptr, "must be");
       }
     }
@@ -202,13 +203,13 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   G1CollectedHeap* _g1h;
   G1HeapRegionClaimer _hrclaimer;
 
-  uint volatile _num_regions_added;
+  Atomic<uint> _num_regions_added;
 
   G1BuildCandidateArray _result;
 
   void update_totals(uint num_regions) {
     if (num_regions > 0) {
-      AtomicAccess::add(&_num_regions_added, num_regions);
+      _num_regions_added.add_then_fetch(num_regions);
     }
   }
 
@@ -220,7 +221,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   void prune(G1HeapRegion** data) {
     G1Policy* p = G1CollectedHeap::heap()->policy();
 
-    uint num_candidates = AtomicAccess::load(&_num_regions_added);
+    uint num_candidates = _num_regions_added.load_relaxed();
 
     uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
     uint num_pruned = 0;
@@ -253,7 +254,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
                               wasted_bytes,
                               allowed_waste);
 
-    AtomicAccess::sub(&_num_regions_added, num_pruned, memory_order_relaxed);
+    _num_regions_added.sub_then_fetch(num_pruned, memory_order_relaxed);
   }
 
 public:
@@ -274,7 +275,7 @@ public:
     _result.sort_by_gc_efficiency();
     prune(_result.array());
     candidates->set_candidates_from_marking(_result.array(),
-                                            _num_regions_added);
+                                            _num_regions_added.load_relaxed());
   }
 };
 

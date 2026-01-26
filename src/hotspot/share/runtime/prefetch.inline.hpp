@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,24 @@
 #ifndef SHARE_RUNTIME_PREFETCH_INLINE_HPP
 #define SHARE_RUNTIME_PREFETCH_INLINE_HPP
 
-#include "runtime/prefetch.hpp"
-
+#include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
+
+// If calls to prefetch methods are in a loop, the loop should be cloned
+// such that if Prefetch{Scan,Copy}Interval and/or PrefetchFieldInterval
+// say not to do prefetching, these methods aren't called.  At the very
+// least, they take up a memory issue slot.  They should be implemented
+// as inline assembly code: doing an actual call isn't worth the cost.
+
+class Prefetch : AllStatic {
+ public:
+  // Prefetch anticipating read; must not fault, semantically a no-op
+  static void read(const void* loc, intx interval);
+
+  // Prefetch anticipating write; must not fault, semantically a no-op
+  static void write(void* loc, intx interval);
+};
+
 #include OS_CPU_HEADER_INLINE(prefetch)
 
 #endif // SHARE_RUNTIME_PREFETCH_INLINE_HPP

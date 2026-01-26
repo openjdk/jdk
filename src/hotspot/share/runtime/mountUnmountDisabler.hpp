@@ -58,6 +58,7 @@ class MountUnmountDisabler : public AnyObj {
  public:
   MountUnmountDisabler(bool exlusive = false);
   MountUnmountDisabler(oop thread_oop);
+  MountUnmountDisabler(jthread thread);
   ~MountUnmountDisabler();
 
   static int global_vthread_transition_disable_count();

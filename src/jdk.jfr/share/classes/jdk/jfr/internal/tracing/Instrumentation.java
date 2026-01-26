@@ -58,7 +58,13 @@ final class Instrumentation {
     }
 
     public void addMethod(long methodId, String name, String signature, int modification) {
-        modificationMap.put(name + signature, new Method(methodId, Modification.valueOf(modification), className + "::" + name));
+        Method method = new Method(
+            methodId,
+            Modification.valueOf(modification),
+            name.equals("<init>"),
+            className + "::" + name
+        );
+        modificationMap.put(name + signature, method);
     }
 
     public List<Method> getMethods() {
@@ -71,7 +77,7 @@ final class Instrumentation {
         ClassModel classModel = classFile.parse(bytecode);
         byte[] generated = classFile.build(classModel.thisClass().asSymbol(), classBuilder -> {
             for (var ce : classModel) {
-                if (modifyClassElement(classBuilder, ce)) {
+                if (modifyClassElement(classModel, classBuilder, ce)) {
                     modified[0] = true;
                 } else {
                     classBuilder.with(ce);
@@ -93,7 +99,7 @@ final class Instrumentation {
         }
     }
 
-    private boolean modifyClassElement(ClassBuilder classBuilder, ClassElement ce) {
+    private boolean modifyClassElement(ClassModel classModel, ClassBuilder classBuilder, ClassElement ce) {
         if (ce instanceof MethodModel mm) {
             String method = mm.methodName().stringValue();
             String signature = mm.methodType().stringValue();
@@ -102,15 +108,15 @@ final class Instrumentation {
             if (tm != null) {
                 Modification m = tm.modification();
                 if (m.tracing() || m.timing()) {
-                    return modifyMethod(classBuilder, mm, tm);
+                    return modifyMethod(classModel, classBuilder, mm, tm);
                 }
             }
         }
         return false;
     }
 
-    private boolean modifyMethod(ClassBuilder classBuilder, MethodModel m, Method method) {
-        var code = m.code();
+    private boolean modifyMethod(ClassModel classModel, ClassBuilder classBuilder, MethodModel methodModel, Method method) {
+        var code = methodModel.code();
         if (code.isPresent()) {
             if (classLoader == null && ExcludeList.containsMethod(method.name())) {
                 String msg = "Risk of recursion, skipping bytecode generation of " + method.name();
@@ -118,9 +124,9 @@ final class Instrumentation {
                 return false;
             }
             MethodTransform s = MethodTransform.ofStateful(
-                () -> MethodTransform.transformingCode(new Transform(method))
+                () -> MethodTransform.transformingCode(new Transform(classModel, code.get(), method))
             );
-            classBuilder.transformMethod(m, s);
+            classBuilder.transformMethod(methodModel, s);
             return true;
         }
         return false;

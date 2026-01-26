@@ -163,8 +163,7 @@ class LibraryCallKit : public GraphKit {
                              Node* array_length,
                              RegionNode* region);
   void  generate_string_range_check(Node* array, Node* offset,
-                                    Node* length, bool char_count,
-                                    bool halt_on_oob = false);
+                                    Node* length, bool char_count);
   Node* current_thread_helper(Node* &tls_output, ByteSize handle_offset,
                               bool is_immutable);
   Node* generate_current_thread(Node* &tls_output);

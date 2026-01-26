@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  *
  */
 
+#include "cppstdlib/new.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "unittest.hpp"
 
 class G1BatchedTaskWorkers : AllStatic {
@@ -49,26 +50,26 @@ WorkerThreads* G1BatchedTaskWorkers::_workers = nullptr;
 
 class G1TestSubTask : public G1AbstractSubTask {
   mutable uint _phase;
-  volatile uint _num_do_work; // Amount of do_work() has been called.
+  Atomic<uint> _num_do_work; // Amount of do_work() has been called.
 
   void check_and_inc_phase(uint expected) const {
     ASSERT_EQ(_phase, expected);
     _phase++;
   }
 
-  bool volatile* _do_work_called_by;
+  Atomic<bool>* _do_work_called_by;
 
 protected:
   uint _max_workers;
 
   void do_work_called(uint worker_id) {
-    AtomicAccess::inc(&_num_do_work);
-    bool orig_value = AtomicAccess::cmpxchg(&_do_work_called_by[worker_id], false, true);
+    _num_do_work.add_then_fetch(1u);
+    bool orig_value = _do_work_called_by[worker_id].compare_exchange(false, true);
     ASSERT_EQ(orig_value, false);
   }
 
   void verify_do_work_called_by(uint num_workers) {
-    ASSERT_EQ(AtomicAccess::load(&_num_do_work), num_workers);
+    ASSERT_EQ(_num_do_work.load_relaxed(), num_workers);
     // Do not need to check the _do_work_called_by array. The count is already verified
     // by above statement, and we already check that a given flag is only set once.
   }
@@ -86,7 +87,7 @@ public:
 
   ~G1TestSubTask() {
     check_and_inc_phase(3);
-    FREE_C_HEAP_ARRAY(bool, _do_work_called_by);
+    FREE_C_HEAP_ARRAY(Atomic<bool>, _do_work_called_by);
   }
 
   double worker_cost() const override {
@@ -100,9 +101,9 @@ public:
     assert(max_workers >= 1, "must be");
     check_and_inc_phase(2);
 
-    _do_work_called_by = NEW_C_HEAP_ARRAY(bool, max_workers, mtInternal);
+    _do_work_called_by = NEW_C_HEAP_ARRAY(Atomic<bool>, max_workers, mtInternal);
     for (uint i = 0; i < max_workers; i++) {
-      _do_work_called_by[i] = false;
+      ::new (&_do_work_called_by[i]) Atomic<bool>{false};
     }
     _max_workers = max_workers;
   }

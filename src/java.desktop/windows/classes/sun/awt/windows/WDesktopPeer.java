@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.swing.event.EventListenerList;
 
 import sun.awt.shell.ShellFolder;
@@ -50,9 +53,11 @@ import sun.awt.shell.ShellFolder;
  */
 final class WDesktopPeer implements DesktopPeer {
     /* Constants for the operation verbs */
-    private static String ACTION_OPEN_VERB = "open";
-    private static String ACTION_EDIT_VERB = "edit";
-    private static String ACTION_PRINT_VERB = "print";
+    private static final String ACTION_OPEN_VERB = "open";
+    private static final String ACTION_EDIT_VERB = "edit";
+    private static final String ACTION_PRINT_VERB = "print";
+    private static final String ACTION_BROWSE_VERB = "browse";
+    private static final String ACTION_MAIL_VERB = "mail";
 
     private static native void init();
 
@@ -95,12 +100,12 @@ final class WDesktopPeer implements DesktopPeer {
 
     @Override
     public void mail(URI uri) throws IOException {
-        this.ShellExecute(uri, ACTION_OPEN_VERB);
+        this.ShellExecute(uri, ACTION_MAIL_VERB);
     }
 
     @Override
     public void browse(URI uri) throws IOException {
-        this.ShellExecute(uri, ACTION_OPEN_VERB);
+        this.launchUriInBrowser(uri);
     }
 
     private void ShellExecute(File file, String verb) throws IOException {
@@ -120,6 +125,42 @@ final class WDesktopPeer implements DesktopPeer {
                                   ". Error message: " + errmsg);
         }
     }
+
+    private void launchUriInBrowser(URI uri) throws IOException {
+        String defaultBrowser = getDefaultBrowser();
+        if (defaultBrowser == null) {
+            throw new IOException("Failed to get default browser");
+        }
+
+        List<String> cmdLineTokens = getCmdLineTokens(uri, defaultBrowser);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(cmdLineTokens);
+            pb.start();
+        }  catch (Exception e) {
+            throw new IOException("Error launching Browser: ", e);
+        }
+    }
+
+    private static List<String> getCmdLineTokens(URI uri, String defaultBrowser) {
+        if (defaultBrowser.contains("%1")) {
+            defaultBrowser = defaultBrowser.replace("%1", uri.toString());
+        } else {
+            defaultBrowser = defaultBrowser + " " + uri.toString();
+        }
+
+        List<String> cmdLineTokens = new ArrayList<>();
+        int firstIndex = defaultBrowser.indexOf("\"");
+        int secondIndex = defaultBrowser.indexOf("\"", firstIndex + 1);
+
+        if (firstIndex == 0 && secondIndex != firstIndex) {
+            cmdLineTokens.add(defaultBrowser.substring(firstIndex, secondIndex + 1));
+            defaultBrowser = defaultBrowser.substring(secondIndex + 1).trim();
+        }
+        cmdLineTokens.addAll(Arrays.asList(defaultBrowser.split(" ")));
+        return cmdLineTokens;
+    }
+
+    private static native String getDefaultBrowser();
 
     private static native String ShellExecute(String fileOrUri, String verb);
 

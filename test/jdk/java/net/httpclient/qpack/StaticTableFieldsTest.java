@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,23 @@
 /*
  * @test
  * @modules java.net.http/jdk.internal.net.http.qpack
- * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL StaticTableFieldsTest
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL StaticTableFieldsTest
  */
 
 import jdk.internal.net.http.qpack.StaticTable;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class StaticTableFieldsTest {
 
-    @BeforeTest
+    @BeforeAll
     public void setUp() {
         // Populate expected table as defined by RFC
         expectedTable = new ArrayList<>();
@@ -66,10 +68,10 @@ public class StaticTableFieldsTest {
 
     @Test
     public void testStaticTable() {
-        assertEquals(actualTable.size(), expectedTable.size());
+        assertEquals(expectedTable.size(), actualTable.size());
         for (int i = 0; i < expectedTable.size(); i++) {
-            assertEquals(actualTable.get(i).name(), expectedTable.get(i).name());
-            assertEquals(actualTable.get(i).value(), expectedTable.get(i).value());
+            assertEquals(expectedTable.get(i).name(), actualTable.get(i).name());
+            assertEquals(expectedTable.get(i).value(), actualTable.get(i).value());
         }
     }
 

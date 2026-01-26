@@ -488,7 +488,7 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();
   Node* entry = multiversion_if->in(0);
   OpaqueMultiversioningNode* opaque = multiversion_if->in(1)->as_OpaqueMultiversioning();
-  IfFalseNode* multiversion_slow_proj = multiversion_if->proj_out(0)->as_IfFalse();
+  IfFalseNode* multiversion_slow_proj = multiversion_if->false_proj();
   Node* slow_path = multiversion_slow_proj->unique_ctrl_out();
 
   // The slow_loop may still be delayed, and waiting for runtime-checks to be added to the

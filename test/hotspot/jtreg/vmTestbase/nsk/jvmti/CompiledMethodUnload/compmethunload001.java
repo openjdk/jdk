@@ -47,7 +47,7 @@ public class compmethunload001 {
     private final static String CLS_TO_BE_UNLOADED =
         "nsk.jvmti.CompiledMethodUnload.compmethunload001u";
 
-    private final static int MAX_ITERATIONS = 5;
+    private final static int MAX_ITERATIONS = 10;
 
     static {
         try {
@@ -95,7 +95,6 @@ public class compmethunload001 {
 
         boolean clsUnloaded = clsUnLoader.unloadClass();
         clsUnLoader = null;
-        System.gc();
     }
 
     private int runThis(String argv[], PrintStream out) throws Exception {
@@ -110,12 +109,13 @@ public class compmethunload001 {
         int num = unloaded();
         int iter = 0;
         while (num == 0) {
-           System.gc();
-           num = unloaded();
-           iter++;
-           if (iter > MAX_ITERATIONS) {
-               throw new Failure("PRODUCT BUG: class was not unloaded in " + MAX_ITERATIONS);
-           }
+            // The unload is delayed because it happens async
+            Thread.sleep(1000);
+            num = unloaded();
+            iter++;
+            if (iter > MAX_ITERATIONS) {
+                throw new Failure("PRODUCT BUG: class was not unloaded in " + MAX_ITERATIONS);
+            }
         }
         System.out.println("Number of unloaded events " + num + " number of iterations " + iter);
         return check();

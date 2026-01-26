@@ -112,7 +112,7 @@ public class H3ConcurrentPush implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        server = HttpTestServer.create(ANY, new SimpleSSLContext().get());
+        server = HttpTestServer.create(ANY, SimpleSSLContext.findSSLContext());
         pushHandler = new ServerPushHandler(MAIN_RESPONSE_BODY, PUSH_PROMISES);
         server.addHandler(pushHandler, "/push/");
         server.addHandler(new HttpHeadOrGetHandler(), "/head/");
@@ -193,7 +193,7 @@ public class H3ConcurrentPush implements HttpServerAdapters {
         try (HttpClient client = newClientBuilderForH3()
                 .proxy(Builder.NO_PROXY)
                 .version(Version.HTTP_3)
-                .sslContext(new SimpleSSLContext().get())
+                .sslContext(SimpleSSLContext.findSSLContext())
                 .build()) {
 
             sendHeadRequest(client);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,60 @@
 #import "JNIUtilities.h"
 #import <CoreFoundation/CoreFoundation.h>
 #import <ApplicationServices/ApplicationServices.h>
+#import "sun_lwawt_macosx_CDesktopPeer.h"
 
 /*
  * Class:     sun_lwawt_macosx_CDesktopPeer
  * Method:    _lsOpenURI
- * Signature: (Ljava/lang/String;)I;
+ * Signature: (Ljava/lang/String;I)I
  */
 JNIEXPORT jint JNICALL Java_sun_lwawt_macosx_CDesktopPeer__1lsOpenURI
-(JNIEnv *env, jclass clz, jstring uri)
+(JNIEnv *env, jclass clz, jstring uri, jint action)
 {
-    OSStatus status = noErr;
+    __block OSStatus status = noErr;
 JNI_COCOA_ENTER(env);
 
-    // I would love to use NSWorkspace here, but it's not thread safe. Why? I don't know.
-    // So we use LaunchServices directly.
+    NSURL *urlToOpen = [NSURL URLWithString:JavaStringToNSString(env, uri)];
+    NSURL *appURI = nil;
 
-    NSURL *url = [NSURL URLWithString:JavaStringToNSString(env, uri)];
+    if (action == sun_lwawt_macosx_CDesktopPeer_BROWSE) {
+        // To get the defaultBrowser
+        NSURL *httpsURL = [NSURL URLWithString:@"https://"];
+        NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
+        appURI = [workspace URLForApplicationToOpenURL:httpsURL];
+    } else if (action == sun_lwawt_macosx_CDesktopPeer_MAIL) {
+        // To get the default mailer
+        NSURL *mailtoURL = [NSURL URLWithString:@"mailto://"];
+        NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
+        appURI = [workspace URLForApplicationToOpenURL:mailtoURL];
+    }
 
-    LSLaunchFlags flags = kLSLaunchDefaults;
+    if (appURI == nil) {
+        return -1;
+    }
 
-    LSApplicationParameters params = {0, flags, NULL, NULL, NULL, NULL, NULL};
-    status = LSOpenURLsWithRole((CFArrayRef)[NSArray arrayWithObject:url], kLSRolesAll, NULL, &params, NULL, 0);
+    // Prepare NSOpenConfig object
+    NSArray<NSURL *> *urls = @[urlToOpen];
+    NSWorkspaceOpenConfiguration *configuration = [NSWorkspaceOpenConfiguration configuration];
+    configuration.activates = YES; // To bring app to foreground
+    configuration.promptsUserIfNeeded = YES; // To allow macOS desktop prompts
+
+    // dispatch semaphores used to wait for the completion handler to update and return status
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(NSEC_PER_SEC)); // 1 second timeout
+
+    // Asynchronous call to openURL
+    [[NSWorkspace sharedWorkspace] openURLs:urls
+                                    withApplicationAtURL:appURI
+                                    configuration:configuration
+                                    completionHandler:^(NSRunningApplication *app, NSError *error) {
+        if (error) {
+            status = (OSStatus) error.code;
+        }
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    dispatch_semaphore_wait(semaphore, timeout);
 
 JNI_COCOA_EXIT(env);
     return status;
@@ -56,32 +89,73 @@ JNI_COCOA_EXIT(env);
 /*
  * Class:     sun_lwawt_macosx_CDesktopPeer
  * Method:    _lsOpenFile
- * Signature: (Ljava/lang/String;Z)I;
+ * Signature: (Ljava/lang/String;I;Ljava/lang/String;)I;
  */
 JNIEXPORT jint JNICALL Java_sun_lwawt_macosx_CDesktopPeer__1lsOpenFile
-(JNIEnv *env, jclass clz, jstring jpath, jboolean print)
+(JNIEnv *env, jclass clz, jstring jpath, jint action, jstring jtmpTxtPath)
 {
-    OSStatus status = noErr;
+    __block OSStatus status = noErr;
 JNI_COCOA_ENTER(env);
 
-    // I would love to use NSWorkspace here, but it's not thread safe. Why? I don't know.
-    // So we use LaunchServices directly.
-
     NSString *path  = NormalizedPathNSStringFromJavaString(env, jpath);
-
-    NSURL *url = [NSURL fileURLWithPath:(NSString *)path];
+    NSURL *urlToOpen = [NSURL fileURLWithPath:(NSString *)path];
 
     // This byzantine workaround is necessary, or else directories won't open in Finder
-    url = (NSURL *)CFURLCreateWithFileSystemPath(NULL, (CFStringRef)[url path], kCFURLPOSIXPathStyle, false);
+    urlToOpen = (NSURL *)CFURLCreateWithFileSystemPath(NULL, (CFStringRef)[urlToOpen path],
+                                                        kCFURLPOSIXPathStyle, false);
 
-    LSLaunchFlags flags = kLSLaunchDefaults;
-    if (print) flags |= kLSLaunchAndPrint;
+    NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
+    NSURL *appURI = [workspace URLForApplicationToOpenURL:urlToOpen];
+    NSURL *defaultTerminalApp = [workspace URLForApplicationToOpenURL:[NSURL URLWithString:@"file:///bin/sh"]];
 
-    LSApplicationParameters params = {0, flags, NULL, NULL, NULL, NULL, NULL};
-    status = LSOpenURLsWithRole((CFArrayRef)[NSArray arrayWithObject:url], kLSRolesAll, NULL, &params, NULL, 0);
-    [url release];
+    // Prepare NSOpenConfig object
+    NSArray<NSURL *> *urls = @[urlToOpen];
+    NSWorkspaceOpenConfiguration *configuration = [NSWorkspaceOpenConfiguration configuration];
+    configuration.activates = YES; // To bring app to foreground
+    configuration.promptsUserIfNeeded = YES;  // To allow macOS desktop prompts
+
+    // pre-checks for open/print/edit before calling openURLs API
+    if (action == sun_lwawt_macosx_CDesktopPeer_OPEN
+            || action == sun_lwawt_macosx_CDesktopPeer_PRINT) {
+        if (appURI == nil
+            || [[urlToOpen absoluteString] containsString:[appURI absoluteString]]
+            || [[defaultTerminalApp absoluteString] containsString:[appURI absoluteString]]) {
+            return -1;
+        }
+        // Additionally set forPrinting=TRUE for print
+        if (action == sun_lwawt_macosx_CDesktopPeer_PRINT) {
+            configuration.forPrinting = YES;
+        }
+    } else if (action == sun_lwawt_macosx_CDesktopPeer_EDIT) {
+        if (appURI == nil
+            || [[urlToOpen absoluteString] containsString:[appURI absoluteString]]) {
+            return -1;
+        }
+        // for EDIT: if (defaultApp = TerminalApp) then set appURI = DefaultTextEditor
+        if ([[defaultTerminalApp absoluteString] containsString:[appURI absoluteString]]) {
+            NSString *path  = NormalizedPathNSStringFromJavaString(env, jtmpTxtPath);
+            NSURL *tempFilePath = [NSURL fileURLWithPath:(NSString *)path];
+            appURI = [workspace URLForApplicationToOpenURL:tempFilePath];
+        }
+    }
+
+    // dispatch semaphores used to wait for the completion handler to update and return status
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(NSEC_PER_SEC)); // 1 second timeout
+
+    // Asynchronous call - openURLs:withApplicationAtURL
+    [[NSWorkspace sharedWorkspace] openURLs:urls
+                                   withApplicationAtURL:appURI
+                                   configuration:configuration
+                                   completionHandler:^(NSRunningApplication *app, NSError *error) {
+        if (error) {
+            status = (OSStatus) error.code;
+        }
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    dispatch_semaphore_wait(semaphore, timeout);
 
 JNI_COCOA_EXIT(env);
     return status;
 }
-

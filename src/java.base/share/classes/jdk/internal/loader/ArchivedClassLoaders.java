@@ -27,11 +27,13 @@ package jdk.internal.loader;
 import java.util.Map;
 import jdk.internal.misc.CDS;
 import jdk.internal.module.ServicesCatalog;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * Used to archive the built-in class loaders, their services catalogs, and the
  * package-to-module map used by the built-in class loaders.
  */
+@AOTSafeClassInitializer
 class ArchivedClassLoaders {
     private static ArchivedClassLoaders archivedClassLoaders;
 

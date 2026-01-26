@@ -59,6 +59,9 @@ public class Pem {
     // Pattern matching for stripping whitespace.
     private static final Pattern STRIP_WHITESPACE_PATTERN;
 
+    // Pattern matching for inserting line breaks.
+    private static final Pattern LINE_WRAP_64_PATTERN;
+
     // Lazy initialized PBES2 OID value
     private static ObjectIdentifier PBES2OID;
 
@@ -72,6 +75,7 @@ public class Pem {
         PBE_PATTERN = Pattern.compile("^PBEWith.*And.*",
             Pattern.CASE_INSENSITIVE);
         STRIP_WHITESPACE_PATTERN = Pattern.compile("\\s+");
+        LINE_WRAP_64_PATTERN = Pattern.compile("(.{64})");
     }
 
     public static final String CERTIFICATE = "CERTIFICATE";
@@ -359,7 +363,7 @@ public class Pem {
      * @return PEM in a string
      */
     public static String pemEncoded(PEM pem) {
-        String p = pem.content().replaceAll("(.{64})", "$1\r\n");
+        String p = LINE_WRAP_64_PATTERN.matcher(pem.content()).replaceAll("$1\r\n");
         return pemEncoded(pem.type(), p);
     }
 

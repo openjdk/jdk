@@ -76,7 +76,7 @@ public class H3HeadersEncoding {
 
     private static final int REQUESTS_COUNT = 500;
     private static final int HEADERS_PER_REQUEST = 20;
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer http3TestServer;
     HeadersHandler serverHeadersHandler;
     String http3URI;
@@ -84,10 +84,6 @@ public class H3HeadersEncoding {
     @BeforeTest
     public void setup() throws Exception {
         System.out.println("Creating servers");
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         http3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
         serverHeadersHandler = new HeadersHandler();
         http3TestServer.addHandler(serverHeadersHandler, "/http3/headers");

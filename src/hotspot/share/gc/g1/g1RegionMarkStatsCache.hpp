@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
@@ -40,20 +41,23 @@
 // * the number of incoming references found during marking. This is an approximate
 //   value because we do not mark through all objects.
 struct G1RegionMarkStats {
-  size_t _live_words;
-  size_t _incoming_refs;
+  Atomic<size_t> _live_words;
+  Atomic<size_t> _incoming_refs;
 
   // Clear all members.
   void clear() {
-    _live_words = 0;
-    _incoming_refs = 0;
+    _live_words.store_relaxed(0);
+    _incoming_refs.store_relaxed(0);
   }
   // Clear all members after a marking overflow. Only needs to clear the number of
   // incoming references as all objects will be rescanned, while the live words are
   // gathered whenever a thread can mark an object, which is synchronized.
   void clear_during_overflow() {
-    _incoming_refs = 0;
+    _incoming_refs.store_relaxed(0);
   }
+
+  size_t live_words() const { return _live_words.load_relaxed(); }
+  size_t incoming_refs() const { return _incoming_refs.load_relaxed(); }
 };
 
 // Per-marking thread cache for the region mark statistics.
@@ -112,12 +116,16 @@ public:
   void add_live_words(oop obj);
   void add_live_words(uint region_idx, size_t live_words) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
-    cur->_stats._live_words += live_words;
+    // This method is only ever called single-threaded, so we do not need atomic
+    // update here.
+    cur->_stats._live_words.store_relaxed(cur->_stats.live_words() + live_words);
   }
 
   void inc_incoming_refs(uint region_idx) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
-    cur->_stats._incoming_refs++;
+    // This method is only ever called single-threaded, so we do not need atomic
+    // update here.
+    cur->_stats._incoming_refs.store_relaxed(cur->_stats.incoming_refs() + 1u);
   }
 
   void reset(uint region_idx) {

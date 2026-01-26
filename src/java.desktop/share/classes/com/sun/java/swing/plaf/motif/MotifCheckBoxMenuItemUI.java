@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,14 @@ public class MotifCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI
         return new MotifCheckBoxMenuItemUI();
     }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
         changeListener = createChangeListener(menuItem);
         menuItem.addChangeListener(changeListener);
     }
 
+    @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
         menuItem.removeChangeListener(changeListener);
@@ -66,23 +68,28 @@ public class MotifCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI
     }
 
     protected class ChangeHandler implements ChangeListener {
+        @Override
         public void stateChanged(ChangeEvent e) {
             JMenuItem c = (JMenuItem)e.getSource();
             LookAndFeel.installProperty(c, "borderPainted", c.isArmed());
         }
     }
 
+    @Override
     protected MouseInputListener createMouseInputListener(JComponent c) {
         return new MouseInputHandler();
     }
 
 
     protected class MouseInputHandler implements MouseInputListener {
+        @Override
         public void mouseClicked(MouseEvent e) {}
+        @Override
         public void mousePressed(MouseEvent e) {
             MenuSelectionManager manager = MenuSelectionManager.defaultManager();
             manager.setSelectedPath(getPath());
         }
+        @Override
         public void mouseReleased(MouseEvent e) {
             MenuSelectionManager manager =
                 MenuSelectionManager.defaultManager();
@@ -99,11 +106,15 @@ public class MotifCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI
                 manager.processMouseEvent(e);
             }
         }
+        @Override
         public void mouseEntered(MouseEvent e) {}
+        @Override
         public void mouseExited(MouseEvent e) {}
+        @Override
         public void mouseDragged(MouseEvent e) {
             MenuSelectionManager.defaultManager().processMouseEvent(e);
         }
+        @Override
         public void mouseMoved(MouseEvent e) { }
     }
 

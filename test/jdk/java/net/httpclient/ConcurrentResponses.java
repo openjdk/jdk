@@ -89,7 +89,7 @@ import static org.testng.Assert.fail;
 
 public class ConcurrentResponses {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
     HttpsServer httpsTestServer;       // HTTPS/1.1
     Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
@@ -303,10 +303,6 @@ public class ConcurrentResponses {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);
         httpTestServer.createContext("/http1/fixed", new Http1FixedHandler());

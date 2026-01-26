@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public enum CompLevel {
      * Can only be used at {@link Test#compLevel()}. After the warm-up, the framework keeps invoking the test over a span
      * of 10s (configurable by setting the property flag {@code -DWaitForCompilationTimeout}) until HotSpot compiles the
      * {@link Test} method. If the method was not compiled after 10s, an exception is thrown. The framework does not wait
-     * for the compilation if the test VM is run with {@code -Xcomp}, {@code -XX:-UseCompiler}, or
+     * for the compilation if the Test VM is run with {@code -Xcomp}, {@code -XX:-UseCompiler}, or
      * {@code -DExcludeRandom=true}.
      */
     WAIT_FOR_COMPILATION(-4),

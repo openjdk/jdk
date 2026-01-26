@@ -71,7 +71,7 @@ public final class JVM {
     /**
      * Begin recording events
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      */
     public static native void beginRecording();
 
@@ -83,7 +83,7 @@ public final class JVM {
     /**
      * End recording events, which includes flushing data in thread buffers
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      */
     public static native void endRecording();
@@ -144,7 +144,7 @@ public final class JVM {
     /**
      * Return unique identifier for stack trace.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @param skipCount number of frames to skip, or 0 if no frames should be
      *                  skipped
@@ -295,7 +295,7 @@ public final class JVM {
     /**
      * Sets the file where data should be written.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * <pre>
      * Recording  Previous  Current  Action
@@ -380,7 +380,7 @@ public final class JVM {
      * chunk, data should be written after GMT offset and size of metadata event
      * should be adjusted
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @param bytes binary representation of metadata descriptor
      */
@@ -409,7 +409,7 @@ public final class JVM {
     /**
      * Destroys native part of JFR. If already destroy, call is ignored.
      *
-     * Requires that JFR has been started with {@link #createNativeJFR()}
+     * Requires that JFR has been started with {@link JVMSupport#createJFR()}
      *
      * @return if an instance was actually destroyed.
      *

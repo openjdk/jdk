@@ -86,11 +86,11 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 };
 
-class G1FollowStackClosure: public VoidClosure {
+class G1MarkStackClosure: public VoidClosure {
   G1FullGCMarker* _marker;
 
 public:
-  G1FollowStackClosure(G1FullGCMarker* marker) : _marker(marker) {}
+  G1MarkStackClosure(G1FullGCMarker* marker) : _marker(marker) {}
   virtual void do_void();
 };
 

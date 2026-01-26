@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@ package javax.lang.model.element;
 
 /**
  * A mixin interface for an element that has a qualified name.
+ *
+ * @jls 6.5.3.2 Qualified Package Names
+ * @jls 6.5.5.2 Qualified Type Names
+ * @jls 6.7 Fully Qualified Names and Canonical Names
  *
  * @since 1.7
  */

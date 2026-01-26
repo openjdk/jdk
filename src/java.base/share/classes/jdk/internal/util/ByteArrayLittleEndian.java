@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ public final class ByteArrayLittleEndian {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length]
+     *                                   the range [0, array.length - 1]
      * @see #getBoolean(byte[], int)
      */
     public static void setBoolean(byte[] array, int offset, boolean value) {
@@ -328,7 +328,7 @@ public final class ByteArrayLittleEndian {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
+     *                                   the range [0, array.length - 4]
      * @see #getFloat(byte[], int)
      */
     public static void setFloat(byte[] array, int offset, float value) {
@@ -350,7 +350,7 @@ public final class ByteArrayLittleEndian {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
+     *                                   the range [0, array.length - 4]
      * @see #getFloatRaw(byte[], int)
      */
     public static void setFloatRaw(byte[] array, int offset, float value) {
@@ -368,7 +368,7 @@ public final class ByteArrayLittleEndian {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 4]
+     *                                   the range [0, array.length - 8]
      * @see #getLong(byte[], int)
      */
     public static void setLong(byte[] array, int offset, long value) {
@@ -387,7 +387,7 @@ public final class ByteArrayLittleEndian {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
+     *                                   the range [0, array.length - 8]
      * @see #getDouble(byte[], int)
      */
     public static void setDouble(byte[] array, int offset, double value) {
@@ -409,7 +409,7 @@ public final class ByteArrayLittleEndian {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
+     *                                   the range [0, array.length - 8]
      * @see #getDoubleRaw(byte[], int)
      */
     public static void setDoubleRaw(byte[] array, int offset, double value) {

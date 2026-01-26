@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,10 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
       return false;
     }
   } else if (resolved_class->is_objArray_klass()) {
+    if (CDSConfig::is_dumping_dynamic_archive()) {
+      // This is difficult to handle. See JDK-8374639
+      return false;
+    }
     Klass* elem = ObjArrayKlass::cast(resolved_class)->bottom_klass();
     if (elem->is_instance_klass()) {
       return is_class_resolution_deterministic(cp_holder, InstanceKlass::cast(elem));

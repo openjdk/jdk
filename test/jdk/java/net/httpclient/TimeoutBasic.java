@@ -83,11 +83,7 @@ public class TimeoutBasic {
     static final List<String> SCHEMES = List.of("https", "http");
 
     static {
-        try {
-            SSLContext.setDefault(new SimpleSSLContext().get());
-        } catch (IOException x) {
-            throw new ExceptionInInitializerError(x);
-        }
+        SSLContext.setDefault(SimpleSSLContext.findSSLContext());
     }
 
     public static void main(String[] args) throws Exception {

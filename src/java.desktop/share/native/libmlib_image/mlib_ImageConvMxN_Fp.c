@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@
 #include "mlib_ImageCheck.h"
 #include "mlib_SysMath.h"
 #include "mlib_ImageConv.h"
+#include "safe_math.h"
 
 /***************************************************************/
 static void mlib_ImageConvMxNMulAdd_F32(mlib_f32       *dst,
@@ -272,6 +273,9 @@ mlib_status mlib_convMxNext_f32(mlib_image       *dst,
   mlib_s32 nch = mlib_ImageGetChannels(dst);
   mlib_s32 i, j, j1, k;
 
+  if (!SAFE_TO_MULT(3, wid_e) || !SAFE_TO_ADD(3 * wid_e, m)) {
+    return MLIB_FAILURE;
+  }
   if (3 * wid_e + m > 1024) {
     dsa = mlib_malloc((3 * wid_e + m) * sizeof(mlib_d64));
 
@@ -629,6 +633,9 @@ mlib_status mlib_convMxNext_d64(mlib_image       *dst,
   mlib_s32 nch = mlib_ImageGetChannels(dst);
   mlib_s32 i, j, j1, k;
 
+  if (!SAFE_TO_MULT(3, wid_e) || !SAFE_TO_ADD(3 * wid_e, m)) {
+    return MLIB_FAILURE;
+  }
   if (3 * wid_e + m > 1024) {
     dsa = mlib_malloc((3 * wid_e + m) * sizeof(mlib_d64));
 

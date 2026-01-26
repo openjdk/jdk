@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@
                              (MSGBIT(MSG_START))  |          \
                              (MSGBIT(MSG_CLONE_IN_MEMORY)) | \
                              (MSGBIT(MSG_VM_ERROR))        | \
-                             (MSGBIT(MSG_FLUSHPOINT))        \
+                             (MSGBIT(MSG_FLUSHPOINT))      | \
+                             (MSGBIT(MSG_EMIT_LEAKP_REFCHAINS)) \
                            )
 
 static JfrPostBox* _instance = nullptr;
@@ -165,7 +166,7 @@ void JfrPostBox::notify_waiters() {
   assert(JfrMsg_lock->owned_by_self(), "incrementing _msg_handled_serial is protected by JfrMsg_lock.");
   // Update made visible on release of JfrMsg_lock via fence instruction in Monitor::IUnlock.
   ++_msg_handled_serial;
-  JfrMsg_lock->notify();
+  JfrMsg_lock->notify_all();
 }
 
 // safeguard to ensure no threads are left waiting

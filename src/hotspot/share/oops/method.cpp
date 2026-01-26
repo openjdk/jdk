@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1898,15 +1898,15 @@ void Method::print_name(outputStream* st) const {
 #endif // !PRODUCT || INCLUDE_JVMTI
 
 
-void Method::print_codes_on(outputStream* st, int flags) const {
-  print_codes_on(0, code_size(), st, flags);
+void Method::print_codes_on(outputStream* st, int flags, bool buffered) const {
+  print_codes_on(0, code_size(), st, flags, buffered);
 }
 
-void Method::print_codes_on(int from, int to, outputStream* st, int flags) const {
+void Method::print_codes_on(int from, int to, outputStream* st, int flags, bool buffered) const {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
   methodHandle mh (thread, (Method*)this);
-  BytecodeTracer::print_method_codes(mh, from, to, st, flags);
+  BytecodeTracer::print_method_codes(mh, from, to, st, flags, buffered);
 }
 
 CompressedLineNumberReadStream::CompressedLineNumberReadStream(u_char* buffer) : CompressedReadStream(buffer) {

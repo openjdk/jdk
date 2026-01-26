@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 #include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
@@ -78,7 +78,9 @@ public:
 template <typename T, bool Parallel>
 class ZArrayIteratorImpl : public StackObj {
 private:
-  size_t         _next;
+  using NextType = std::conditional_t<Parallel, Atomic<size_t>, size_t>;
+
+  NextType       _next;
   const size_t   _end;
   const T* const _array;
 

@@ -40,7 +40,7 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
 }
 
 // !!! This is legacy support for enum classes before JEP 483. This file is not used when
-// !!! CDSConfig::is_initing_classes_at_dump_time()==true.
+// !!! CDSConfig::is_dumping_aot_linked_classes()==true.
 //
 // Java Enum classes have synthetic <clinit> methods that look like this
 //     enum MyEnum {FOO, BAR}
@@ -63,7 +63,7 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
 void CDSEnumKlass::handle_enum_obj(int level,
                                    KlassSubGraphInfo* subgraph_info,
                                    oop orig_obj) {
-  assert(!CDSConfig::is_initing_classes_at_dump_time(), "only for legacy support of enums");
+  assert(!CDSConfig::is_dumping_aot_linked_classes(), "only for legacy support of enums");
   assert(level > 1, "must never be called at the first (outermost) level");
   assert(is_enum_obj(orig_obj), "must be");
 

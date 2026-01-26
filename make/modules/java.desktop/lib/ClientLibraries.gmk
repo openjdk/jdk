@@ -164,7 +164,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
     LIBSPLASHSCREEN_HEADER_DIRS += libsplashscreen/libpng
-    LIBSPLASHSCREEN_CFLAGS += -DPNG_NO_MMX_CODE -DPNG_ARM_NEON_OPT=0
+    LIBSPLASHSCREEN_CFLAGS += -DPNG_NO_MMX_CODE -DPNG_ARM_NEON_OPT=0 \
       -DPNG_ARM_NEON_IMPLEMENTATION=0 -DPNG_LOONGARCH_LSX_OPT=0
 
     ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)

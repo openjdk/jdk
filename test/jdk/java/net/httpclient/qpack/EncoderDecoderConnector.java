@@ -44,7 +44,6 @@ import jdk.internal.net.http.quic.streams.QuicSenderStream;
 import jdk.internal.net.http.quic.streams.QuicStream;
 import jdk.internal.net.http.quic.streams.QuicStreamWriter;
 import jdk.internal.net.quic.QuicTLSEngine;
-import org.testng.Assert;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -58,6 +57,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Instance of this class provides a stubbed Quic Connection implementation that
@@ -175,7 +175,7 @@ public class EncoderDecoderConnector {
         try {
             return MethodHandles.privateLookupIn(clz, MethodHandles.lookup());
         } catch (IllegalAccessException e) {
-            Assert.fail("Failed to initialize private Lookup instance", e);
+            Assertions.fail("Failed to initialize private Lookup instance", e);
             return null;
         }
     }
@@ -185,7 +185,7 @@ public class EncoderDecoderConnector {
         try {
             return lookup.findVarHandle(recv, "dynamicTable", DynamicTable.class);
         } catch (Exception e) {
-            Assert.fail("Failed to acquire dynamic table VarHandle instance", e);
+            Assertions.fail("Failed to acquire dynamic table VarHandle instance", e);
             return null;
         }
     }

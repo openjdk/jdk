@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ import java.util.regex.Pattern;
 /*
  * @test
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler1.enabled & vm.compiler2.enabled & vm.flagless
- * @summary Test IR matcher with different default IR node regexes. Use -DPrintIREncoding.
+ * @summary Test IR matcher with different default IR node regexes. Use -DPrintApplicableIRRules.
  *          Normally, the framework should be called with driver.
  * @library /test/lib /testlibrary_tests /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=240 -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                               -XX:+WhiteBoxAPI -DPrintIREncoding=true  ir_framework.tests.TestIRMatching
+ *                               -XX:+WhiteBoxAPI -DPrintApplicableIRRules=true  ir_framework.tests.TestIRMatching
  */
 
 public class TestIRMatching {
@@ -440,7 +440,8 @@ public class TestIRMatching {
             }
         }
         if (!output.contains(builder.toString())) {
-            addException(new RuntimeException("Could not find encoding: \"" + builder + System.lineSeparator()));
+            addException(new RuntimeException("Could not find line in Applicable IR Rules: \"" + builder +
+                                                      System.lineSeparator()));
         }
     }
 }

@@ -63,9 +63,10 @@ private:
   // Compute evacuation budgets prior to choosing collection set.
   void compute_evacuation_budgets(ShenandoahHeap* heap);
 
-  // Adjust evacuation budgets after choosing collection set.
+  // Adjust evacuation budgets after choosing collection set.  The argument regions_to_xfer represents regions to be
+  // transfered to old based on decisions made in top_off_collection_set()
   void adjust_evacuation_budgets(ShenandoahHeap* heap,
-                                 ShenandoahCollectionSet* collection_set);
+                                 ShenandoahCollectionSet* collection_set, size_t regions_to_xfer);
 
   // Preselect for possible inclusion into the collection set exactly the most
   // garbage-dense regions, including those that satisfy criteria 1 & 2 below,
@@ -144,6 +145,22 @@ private:
   virtual void prepare_gc();
 
   // Called during final mark, chooses collection set, rebuilds free set.
+  // Upon return from prepare_regions_and_collection_set(), certain parameters have been established to govern the
+  // evacuation efforts that are about to begin.  In particular:
+  //
+  // old_generation->get_promoted_reserve() represents the amount of memory within old-gen's available memory that has
+  //   been set aside to hold objects promoted from young-gen memory.  This represents an estimated percentage
+  //   of the live young-gen memory within the collection set.  If there is more data ready to be promoted than
+  //   can fit within this reserve, the promotion of some objects will be deferred until a subsequent evacuation
+  //   pass.
+  //
+  // old_generation->get_evacuation_reserve() represents the amount of memory within old-gen's available memory that has been
+  //  set aside to hold objects evacuated from the old-gen collection set.
+  //
+  // young_generation->get_evacuation_reserve() represents the amount of memory within young-gen's available memory that has
+  //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
+  //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
+  //  will likely be promoted.
   virtual void prepare_regions_and_collection_set(bool concurrent);
 
   // Cancel marking (used by Full collect and when cancelling cycle).

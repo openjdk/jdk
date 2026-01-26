@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @build jdk.test.lib.process.*
  *        jdk.test.lib.util.JarUtils
  *        Basic Load FooService FooProvider1 FooProvider2 FooProvider3 BarProvider
- * @run testng ServiceLoaderBasicTest
+ * @run junit ServiceLoaderBasicTest
  */
 
 
@@ -44,13 +44,15 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Arrays.asList;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ServiceLoaderBasicTest {
 
@@ -79,8 +81,8 @@ public class ServiceLoaderBasicTest {
     private static final String XTESTXMETA_CP = XTEST_CP + XMETA;
     private static final String XTESTXMETAP2_CP = XTESTXMETA_CP + P2;
 
-    @BeforeClass
-    public void initialize() throws Exception {
+    @BeforeAll
+    public static void initialize() throws Exception {
         createProviderConfig(XTEST_CONFIG, "FooProvider1");
         createProviderConfig(XMETA_CONFIG, "FooProvider42");
         createJar(P2JAR, "FooProvider2", List.of("FooProvider2"));
@@ -88,8 +90,7 @@ public class ServiceLoaderBasicTest {
         Files.copy(P2JAR, P2DUPJAR, REPLACE_EXISTING);
     }
 
-    @DataProvider
-    public Object[][] testCases() {
+    private static Object[][] testCases() {
         return new Object[][]{
             //       CLI options,            Test,       Runtime arguments
             // Success cases
@@ -110,23 +111,14 @@ public class ServiceLoaderBasicTest {
         };
     }
 
-    @DataProvider
-    public Object[][] negativeTestCases() {
-        return new Object[][]{
-            {"blah blah"},
-            {"9234"},
-            {"X!"},
-            {"BarProvider"},
-            {"FooProvider42"}
-        };
-    }
-
-    @Test(dataProvider = "testCases")
+    @ParameterizedTest
+    @MethodSource("testCases")
     public void testProvider(List<String> args) throws Throwable {
         runJava(args);
     }
 
-    @Test(dataProvider = "negativeTestCases")
+    @ParameterizedTest // negative test cases
+    @ValueSource(strings = { "blah blah", "9234", "X!", "BarProvider", "FooProvider42" })
     public void testBadProvider(String providerName) throws Throwable {
         Files.write(XMETA_CONFIG, providerName.getBytes());
         runJava(List.of("-cp", XMETA_CP, "Load", "fail"));
@@ -144,12 +136,12 @@ public class ServiceLoaderBasicTest {
                     .shouldHaveExitValue(0);
     }
 
-    private void createProviderConfig(Path config, String providerName) throws Exception {
+    private static void createProviderConfig(Path config, String providerName) throws Exception {
         Files.createDirectories(config.getParent());
         Files.write(config, providerName.getBytes(), CREATE);
     }
 
-    private void createJar(Path jar, String provider, List<String> files) throws Exception {
+    private static void createJar(Path jar, String provider, List<String> files) throws Exception {
         Path xdir = Path.of(provider);
         createProviderConfig(xdir.resolve(METAINFO), provider);
 

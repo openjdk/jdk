@@ -223,7 +223,6 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   // We do not need to scan above TAMS because restored top equals tams
   assert(obj_addr == tams, "Expect loop to terminate when obj_addr equals tams");
 
-
   {
     ShenandoahHeapLocker locker(_heap->lock());
 
@@ -251,6 +250,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     // Transfer this region from young to old, increasing promoted_reserve if available space exceeds plab_min_size()
     _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
     region->set_affiliation(OLD_GENERATION);
+    region->set_promoted_in_place();
   }
 }
 
@@ -289,6 +289,7 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
               r->index(), p2i(r->bottom()), p2i(r->top()));
       // We mark the entire humongous object's range as dirty after loop terminates, so no need to dirty the range here
       r->set_affiliation(OLD_GENERATION);
+      r->set_promoted_in_place();
     }
 
     ShenandoahFreeSet* freeset = _heap->free_set();

@@ -40,7 +40,7 @@ DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
 
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::is_active() || !ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
-  if (!CDSConfig::is_initing_classes_at_dump_time()) {
+  if (!CDSConfig::is_dumping_aot_linked_classes()) {
     return false;
   }
 
@@ -64,7 +64,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   // Automatic selection for aot-inited classes
   // ==========================================
   //
-  // When CDSConfig::is_initing_classes_at_dump_time is enabled,
+  // When CDSConfig::is_dumping_aot_linked_classes is enabled,
   // AOTArtifactFinder::find_artifacts() finds the classes of all
   // heap objects that are reachable from HeapShared::_run_time_special_subgraph,
   // and mark these classes as aot-inited. This preserves the initialized
@@ -310,7 +310,7 @@ void AOTClassInitializer::init_test_class(TRAPS) {
   //
   // -XX:AOTInitTestClass is NOT a general mechanism for including user-defined objects into
   // the AOT cache. Therefore, this option is NOT available in product JVM.
-  if (AOTInitTestClass != nullptr && CDSConfig::is_initing_classes_at_dump_time()) {
+  if (AOTInitTestClass != nullptr && CDSConfig::is_dumping_aot_linked_classes()) {
     log_info(aot)("Debug build only: force initialization of AOTInitTestClass %s", AOTInitTestClass);
     TempNewSymbol class_name = SymbolTable::new_symbol(AOTInitTestClass);
     Handle app_loader(THREAD, SystemDictionary::java_system_loader());

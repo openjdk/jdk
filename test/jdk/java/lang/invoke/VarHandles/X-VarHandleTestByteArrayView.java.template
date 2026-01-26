@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +26,25 @@
  * @bug 8154556
  * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
  *          to hit compilation thresholds
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAs$Type$
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestByteArrayAs$Type$
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestByteArrayAs$Type$
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAs$Type$
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestByteArrayAs$Type$
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestByteArrayAs$Type$
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
     static final int SIZE = $BoxType$.BYTES;
 
@@ -111,7 +111,8 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         }
     }
 
-    @Test(dataProvider = "varHandlesProvider")
+    @ParameterizedTest
+    @MethodSource("VarHandleBaseByteArrayTest#varHandlesProvider")
     public void testIsAccessModeSupported(VarHandleSource vhs) {
         VarHandle vh = vhs.s;
 
@@ -206,17 +207,16 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
 #end[Bitwise]
     }
 
-    @Test(dataProvider = "typesProvider")
+    @ParameterizedTest
+    @MethodSource("typesProvider")
     public void testTypes(VarHandle vh, List<java.lang.Class<?>> pts) {
-        assertEquals(vh.varType(), $type$.class);
+        assertEquals($type$.class, vh.varType());
 
-        assertEquals(vh.coordinateTypes(), pts);
+        assertEquals(pts, vh.coordinateTypes());
 
         testTypes(vh);
     }
 
-
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -278,7 +278,8 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -286,7 +287,6 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             atc.testAccess(t);
         }
     }
-
 
     static void testArrayNPE(ByteArraySource bs, VarHandleSource vhs) {
         VarHandle vh = vhs.s;
@@ -1272,7 +1272,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             {
                 vh.set(array, i, VALUE_1);
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, VALUE_1, "get $type$ value");
+                assertEquals(VALUE_1, x, "get $type$ value");
             }
         }
     }
@@ -1291,7 +1291,7 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             {
                 vh.set(array, i, VALUE_1);
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, VALUE_1, "get $type$ value");
+                assertEquals(VALUE_1, x, "get $type$ value");
             }
 
             if (iAligned) {
@@ -1299,21 +1299,21 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                 {
                     vh.setVolatile(array, i, VALUE_2);
                     $type$ x = ($type$) vh.getVolatile(array, i);
-                    assertEquals(x, VALUE_2, "setVolatile $type$ value");
+                    assertEquals(VALUE_2, x, "setVolatile $type$ value");
                 }
 
                 // Lazy
                 {
                     vh.setRelease(array, i, VALUE_1);
                     $type$ x = ($type$) vh.getAcquire(array, i);
-                    assertEquals(x, VALUE_1, "setRelease $type$ value");
+                    assertEquals(VALUE_1, x, "setRelease $type$ value");
                 }
 
                 // Opaque
                 {
                     vh.setOpaque(array, i, VALUE_2);
                     $type$ x = ($type$) vh.getOpaque(array, i);
-                    assertEquals(x, VALUE_2, "setOpaque $type$ value");
+                    assertEquals(VALUE_2, x, "setOpaque $type$ value");
                 }
 #if[CAS]
 
@@ -1324,56 +1324,56 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_2);
                     assertEquals(r, true, "success compareAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success compareAndSet $type$ value");
+                    assertEquals(VALUE_2, x, "success compareAndSet $type$ value");
                 }
 
                 {
                     boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_3);
                     assertEquals(r, false, "failing compareAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing compareAndSet $type$ value");
+                    assertEquals(VALUE_2, x, "failing compareAndSet $type$ value");
                 }
 
                 {
                     $type$ r = ($type$) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
                     assertEquals(r, VALUE_2, "success compareAndExchange $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchange $type$ value");
+                    assertEquals(VALUE_1, x, "success compareAndExchange $type$ value");
                 }
 
                 {
                     $type$ r = ($type$) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
                     assertEquals(r, VALUE_1, "failing compareAndExchange $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchange $type$ value");
+                    assertEquals(VALUE_1, x, "failing compareAndExchange $type$ value");
                 }
 
                 {
                     $type$ r = ($type$) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_2);
                     assertEquals(r, VALUE_1, "success compareAndExchangeAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success compareAndExchangeAcquire $type$ value");
+                    assertEquals(VALUE_2, x, "success compareAndExchangeAcquire $type$ value");
                 }
 
                 {
                     $type$ r = ($type$) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_3);
                     assertEquals(r, VALUE_2, "failing compareAndExchangeAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing compareAndExchangeAcquire $type$ value");
+                    assertEquals(VALUE_2, x, "failing compareAndExchangeAcquire $type$ value");
                 }
 
                 {
                     $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_1);
                     assertEquals(r, VALUE_2, "success compareAndExchangeRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeRelease $type$ value");
+                    assertEquals(VALUE_1, x, "success compareAndExchangeRelease $type$ value");
                 }
 
                 {
                     $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_3);
                     assertEquals(r, VALUE_1, "failing compareAndExchangeRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeRelease $type$ value");
+                    assertEquals(VALUE_1, x, "failing compareAndExchangeRelease $type$ value");
                 }
 
                 {
@@ -1384,14 +1384,14 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     }
                     assertEquals(success, true, "success weakCompareAndSetPlain $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success weakCompareAndSetPlain $type$ value");
+                    assertEquals(VALUE_2, x, "success weakCompareAndSetPlain $type$ value");
                 }
 
                 {
                     boolean success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_3);
                     assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing weakCompareAndSetPlain $type$ value");
+                    assertEquals(VALUE_2, x, "failing weakCompareAndSetPlain $type$ value");
                 }
 
                 {
@@ -1402,14 +1402,14 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     }
                     assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success weakCompareAndSetAcquire $type$");
+                    assertEquals(VALUE_1, x, "success weakCompareAndSetAcquire $type$");
                 }
 
                 {
                     boolean success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_3);
                     assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing weakCompareAndSetAcquire $type$ value");
+                    assertEquals(VALUE_1, x, "failing weakCompareAndSetAcquire $type$ value");
                 }
 
                 {
@@ -1420,14 +1420,14 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     }
                     assertEquals(success, true, "success weakCompareAndSetRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success weakCompareAndSetRelease $type$");
+                    assertEquals(VALUE_2, x, "success weakCompareAndSetRelease $type$");
                 }
 
                 {
                     boolean success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_3);
                     assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing weakCompareAndSetRelease $type$ value");
+                    assertEquals(VALUE_2, x, "failing weakCompareAndSetRelease $type$ value");
                 }
 
                 {
@@ -1438,14 +1438,14 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     }
                     assertEquals(success, true, "success weakCompareAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success weakCompareAndSet $type$");
+                    assertEquals(VALUE_1, x, "success weakCompareAndSet $type$");
                 }
 
                 {
                     boolean success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_3);
                     assertEquals(success, false, "failing weakCompareAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing weakCompareAndSet $type$ value");
+                    assertEquals(VALUE_1, x, "failing weakCompareAndSet $type$ value");
                 }
 
                 // Compare set and get
@@ -1453,27 +1453,27 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndSet(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSet $type$");
+                    assertEquals(VALUE_1, o, "getAndSet $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSet $type$ value");
+                    assertEquals(VALUE_2, x, "getAndSet $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndSetAcquire(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSetAcquire $type$");
+                    assertEquals(VALUE_1, o, "getAndSetAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSetAcquire $type$ value");
+                    assertEquals(VALUE_2, x, "getAndSetAcquire $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndSetRelease(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSetRelease $type$");
+                    assertEquals(VALUE_1, o, "getAndSetRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSetRelease $type$ value");
+                    assertEquals(VALUE_2, x, "getAndSetRelease $type$ value");
                 }
 #end[CAS]
 
@@ -1483,27 +1483,27 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndAdd(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndAdd $type$");
+                    assertEquals(VALUE_1, o, "getAndAdd $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAdd $type$ value");
+                    assertEquals(VALUE_1 + VALUE_2, x,  "getAndAdd $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndAddAcquire(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndAddAcquire $type$");
+                    assertEquals(VALUE_1, o, "getAndAddAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAddAcquire $type$ value");
+                    assertEquals(VALUE_1 + VALUE_2, x,  "getAndAddAcquire $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndAddRelease(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndAddRelease $type$");
+                    assertEquals(VALUE_1, o, "getAndAddRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 + VALUE_2, "getAndAddRelease $type$ value");
+                    assertEquals(VALUE_1 + VALUE_2, x,  "getAndAddRelease $type$ value");
                 }
 #end[AtomicAdd]
 
@@ -1513,27 +1513,27 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseOr(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseOr $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseOr $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOr $type$ value");
+                    assertEquals(VALUE_1 | VALUE_2, x, "getAndBitwiseOr $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseOrAcquire(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseOrAcquire $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseOrAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOrAcquire $type$ value");
+                    assertEquals(VALUE_1 | VALUE_2, x, "getAndBitwiseOrAcquire $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseOrRelease(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseOrRelease $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseOrRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 | VALUE_2, "getAndBitwiseOrRelease $type$ value");
+                    assertEquals(VALUE_1 | VALUE_2, x, "getAndBitwiseOrRelease $type$ value");
                 }
 
                 // get and bitwise and
@@ -1541,27 +1541,27 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseAnd(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseAnd $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseAnd $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAnd $type$ value");
+                    assertEquals(VALUE_1 & VALUE_2, x, "getAndBitwiseAnd $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseAndAcquire(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseAndAcquire $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseAndAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAndAcquire $type$ value");
+                    assertEquals(VALUE_1 & VALUE_2, x, "getAndBitwiseAndAcquire $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseAndRelease(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseAndRelease $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseAndRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 & VALUE_2, "getAndBitwiseAndRelease $type$ value");
+                    assertEquals(VALUE_1 & VALUE_2, x, "getAndBitwiseAndRelease $type$ value");
                 }
 
                 // get and bitwise xor
@@ -1569,27 +1569,27 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseXor(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseXor $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseXor $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXor $type$ value");
+                    assertEquals(VALUE_1 ^ VALUE_2, x, "getAndBitwiseXor $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseXorAcquire(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseXorAcquire $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseXorAcquire $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXorAcquire $type$ value");
+                    assertEquals(VALUE_1 ^ VALUE_2, x, "getAndBitwiseXorAcquire $type$ value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     $type$ o = ($type$) vh.getAndBitwiseXorRelease(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndBitwiseXorRelease $type$");
+                    assertEquals(VALUE_1, o, "getAndBitwiseXorRelease $type$");
                     $type$ x = ($type$) vh.get(array, i);
-                    assertEquals(x, VALUE_1 ^ VALUE_2, "getAndBitwiseXorRelease $type$ value");
+                    assertEquals(VALUE_1 ^ VALUE_2, x, "getAndBitwiseXorRelease $type$ value");
                 }
 #end[Bitwise]
             }
@@ -1614,26 +1614,26 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             // Plain
             {
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, v, "get $type$ value");
+                assertEquals(v, x, "get $type$ value");
             }
 
             if (iAligned) {
                 // Volatile
                 {
                     $type$ x = ($type$) vh.getVolatile(array, i);
-                    assertEquals(x, v, "getVolatile $type$ value");
+                    assertEquals(v, x, "getVolatile $type$ value");
                 }
 
                 // Lazy
                 {
                     $type$ x = ($type$) vh.getAcquire(array, i);
-                    assertEquals(x, v, "getRelease $type$ value");
+                    assertEquals(v, x, "getRelease $type$ value");
                 }
 
                 // Opaque
                 {
                     $type$ x = ($type$) vh.getOpaque(array, i);
-                    assertEquals(x, v, "getOpaque $type$ value");
+                    assertEquals(v, x, "getOpaque $type$ value");
                 }
             }
         }

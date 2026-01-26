@@ -27,7 +27,7 @@
  * @summary SCDynamicStoreConfig works
  * @modules java.security.jgss/sun.security.krb5
  * @library /test/lib
- * @run main/manual/native/timeout=180 TestDynamicStore
+ * @run main/manual/native TestDynamicStore
  * @requires (os.family == "mac")
  */
 
