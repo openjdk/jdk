@@ -931,7 +931,8 @@ public final class ProcessBuilder
      * {@code system()}.
      *
      * @apiNote
-     * If {#code System.out} and/or {#code System.err} have been
+     * When the process is {@link #start started}, 
+     * if {#code System.out} and/or {#code System.err} have been
      * closed in the current process, the corresponding output
      * in the subprocess will be discarded.
      *
