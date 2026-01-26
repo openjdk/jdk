@@ -48,6 +48,8 @@ import java.util.stream.IntStream;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
@@ -56,7 +58,17 @@ import static java.time.Duration.*;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.testng.Assert.fail;
 
-public abstract class AbstractConnectTimeout {
+/*
+ * @test
+ * @bug 8208391 8375352
+ * @summary Verifies behavior on `connect()` timeouts
+ * @run testng/othervm ${test.main.class}
+ * @run testng/othervm -Dtest.proxy ${test.main.class}
+ * @run testng/othervm -Dtest.async ${test.main.class}
+ * @run testng/othervm -Dtest.async -Dtest.proxy ${test.main.class}
+ */
+
+public final class ConnectTimeoutTest {
 
     private static final int BACKLOG = 1;
 
@@ -159,26 +171,21 @@ public abstract class AbstractConnectTimeout {
         return l.stream().toArray(Object[][]::new);
     }
 
-    //@Test(dataProvider = "variants")
-    protected void timeoutNoProxySync(Version requestVersion,
-                                      String scheme,
-                                      String method,
-                                      Duration connectTimeout,
-                                      Duration requestTimeout)
-            throws Exception
-    {
-        timeoutSync(requestVersion, scheme, method, connectTimeout, requestTimeout, NO_PROXY);
-    }
-
-    //@Test(dataProvider = "variants")
-    protected void timeoutWithProxySync(Version requestVersion,
-                                        String scheme,
-                                        String method,
-                                        Duration connectTimeout,
-                                        Duration requestTimeout)
-            throws Exception
-    {
-        timeoutSync(requestVersion, scheme, method, connectTimeout, requestTimeout, PROXY_SELECTOR);
+    @Test(dataProvider = "variants")
+    public void test(
+            Version requestVersion,
+            String scheme,
+            String method,
+            Duration connectTimeout,
+            Duration requestTimeout)
+            throws Exception {
+        ProxySelector proxySelector = System.getProperty("test.proxy") != null ? PROXY_SELECTOR : NO_PROXY;
+        boolean async = System.getProperty("test.async") != null;
+        if (async) {
+            timeoutAsync(requestVersion, scheme, method, connectTimeout, requestTimeout, proxySelector);
+        } else {
+            timeoutSync(requestVersion, scheme, method, connectTimeout, requestTimeout, proxySelector);
+        }
     }
 
     private void timeoutSync(Version requestVersion,
@@ -220,24 +227,6 @@ public abstract class AbstractConnectTimeout {
                 }
             }
         }
-    }
-
-    //@Test(dataProvider = "variants")
-    protected void timeoutNoProxyAsync(Version requestVersion,
-                                       String scheme,
-                                       String method,
-                                       Duration connectTimeout,
-                                       Duration requestTimeout) {
-        timeoutAsync(requestVersion, scheme, method, connectTimeout, requestTimeout, NO_PROXY);
-    }
-
-    //@Test(dataProvider = "variants")
-    protected void timeoutWithProxyAsync(Version requestVersion,
-                                         String scheme,
-                                         String method,
-                                         Duration connectTimeout,
-                                         Duration requestTimeout) {
-        timeoutAsync(requestVersion, scheme, method, connectTimeout, requestTimeout, PROXY_SELECTOR);
     }
 
     private void timeoutAsync(Version requestVersion,
