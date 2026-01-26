@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,11 +172,11 @@ jobject ciObject::constant_encoding() {
 //
 // Cache constant value lookups to ensure that consistent values are observed
 // during compilation because fields may be (re-)initialized concurrently.
-ciConstant ciObject::check_constant_value_cache(int off, BasicType bt) {
+ciConstant ciObject::check_constant_value_cache(int key, BasicType bt) {
   if (_constant_values != nullptr) {
     for (int i = 0; i < _constant_values->length(); ++i) {
       ConstantValue cached_val = _constant_values->at(i);
-      if (cached_val.off() == off) {
+      if (cached_val.key() == key) {
         assert(cached_val.value().basic_type() == bt, "unexpected type");
         return cached_val.value();
       }
@@ -189,14 +189,14 @@ ciConstant ciObject::check_constant_value_cache(int off, BasicType bt) {
 // ciObject::add_to_constant_value_cache()
 //
 // Add a constant value to the cache.
-void ciObject::add_to_constant_value_cache(int off, ciConstant val) {
+void ciObject::add_to_constant_value_cache(int key, ciConstant val) {
   assert(val.is_valid(), "value must be valid");
-  assert(!check_constant_value_cache(off, val.basic_type()).is_valid(), "duplicate");
+  assert(!check_constant_value_cache(key, val.basic_type()).is_valid(), "duplicate");
   if (_constant_values == nullptr) {
     Arena* arena = CURRENT_ENV->arena();
     _constant_values = new (arena) GrowableArray<ConstantValue>(arena, 1, 0, ConstantValue());
   }
-  _constant_values->append(ConstantValue(off, val));
+  _constant_values->append(ConstantValue(key, val));
 }
 
 // ------------------------------------------------------------------
@@ -230,19 +230,21 @@ bool ciObject::should_be_constant() {
 // The identity hash code of an object or an empty constant if a hash is not computed yet.
 // Observed value is cached, so it doesn't change during compilation.
 ciConstant ciObject::identity_hash() {
-  if (!is_null_object()) {
-    // Handle identity hash as if it were a field.
-    ciConstant value = check_constant_value_cache(IDENTITY_HASH_OFFSET, T_INT);
-    if (!value.is_valid()) {
-      VM_ENTRY_MARK;
-      jint identity_hash = checked_cast<jint>(get_oop()->fast_identity_hash_or_no_hash());
-      value = ciConstant(T_INT, identity_hash);
-      // Cache observed state so it doesn't change during compilation.
-      add_to_constant_value_cache(IDENTITY_HASH_OFFSET, value);
-    }
-    if (value.as_int() != markWord::no_hash) {
-      return value;
-    }
+  if (is_null_object()) {
+    // Note: library_call already has a path for System.identityHashCode(null)
+    return ciConstant(T_INT, 0);
+  }
+  // Handle identity hash as if it were a field value.
+  ciConstant value = check_constant_value_cache(identityHashKey, T_INT);
+  if (!value.is_valid()) {
+    VM_ENTRY_MARK;
+    jint identity_hash = checked_cast<jint>(get_oop()->fast_identity_hash_or_no_hash());
+    value = ciConstant(T_INT, identity_hash);
+    // Cache observed state so it doesn't change during compilation.
+    add_to_constant_value_cache(identityHashKey, value);
+  }
+  if (value.as_int() != markWord::no_hash) {
+    return value;
   }
   return ciConstant(); // no hash computed
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,13 @@ public class IdentityHashCodeFold {
         TestFramework.run();
     }
 
-    static final Object a = new Object(), b = new Object();
+    static final Object a = new Object(), b = new Object(), NULL = null;
 
-    static final int expectedResult;
+    static final int expectedSum;
 
     static {
         // This code runs in the interpreter
-        expectedResult = System.identityHashCode(a) + System.identityHashCode(b);
+        expectedSum = System.identityHashCode(a) + System.identityHashCode(b);
     }
 
     @Test
@@ -60,9 +60,21 @@ public class IdentityHashCodeFold {
 
     @Check(test = "testSum")
     public void checkSum(int sum) {
-        if (sum != expectedResult) {
-            throw new IllegalStateException("Unexpected hash sum, expected %X actual %X".formatted(expectedResult, sum));
+        if (sum != expectedSum) {
+            throw new IllegalStateException("Unexpected hash sum, expected %X actual %X".formatted(expectedSum, sum));
         }
     }
 
+    @Test
+    @IR(failOn = {IRNode.ADD_I})
+    public int testNullSum() {
+        return 42 + System.identityHashCode(NULL);
+    }
+
+    @Check(test = "testNullSum")
+    public void checkNullSum(int sum) {
+        if (sum != 42) {
+            throw new IllegalStateException("Unexpected null hash sum, expected %X actual %X".formatted(42, sum));
+        }
+    }
 }
