@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaThread.hpp"
@@ -152,13 +151,14 @@ void ZMark::prepare_work() {
   _terminate.reset(_nworkers);
 
   // Reset flush counters
-  _work_nproactiveflush = _work_nterminateflush = 0;
+  _work_nproactiveflush.store_relaxed(0u);
+  _work_nterminateflush.store_relaxed(0u);
 }
 
 void ZMark::finish_work() {
   // Accumulate proactive/terminate flush counters
-  _nproactiveflush += _work_nproactiveflush;
-  _nterminateflush += _work_nterminateflush;
+  _nproactiveflush += _work_nproactiveflush.load_relaxed();
+  _nterminateflush += _work_nterminateflush.load_relaxed();
 }
 
 void ZMark::follow_work_complete() {
@@ -594,7 +594,7 @@ bool ZMark::flush() {
 }
 
 bool ZMark::try_terminate_flush() {
-  AtomicAccess::inc(&_work_nterminateflush);
+  _work_nterminateflush.add_then_fetch(1u);
   _terminate.set_resurrected(false);
 
   if (ZVerifyMarking) {
@@ -610,12 +610,12 @@ bool ZMark::try_proactive_flush() {
     return false;
   }
 
-  if (AtomicAccess::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax) {
+  if (_work_nproactiveflush.load_relaxed() == ZMarkProactiveFlushMax) {
     // Limit reached or we're trying to terminate
     return false;
   }
 
-  AtomicAccess::inc(&_work_nproactiveflush);
+  _work_nproactiveflush.add_then_fetch(1u);
 
   SuspendibleThreadSetLeaver sts_leaver;
   return flush();
