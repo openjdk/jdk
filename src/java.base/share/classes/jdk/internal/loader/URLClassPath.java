@@ -97,17 +97,17 @@ public class URLClassPath {
         DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
-    /* Search path of URLs passed to the constructor or by calls to addURL
+    /* Search path of URLs passed to the constructor or by calls to addURL.
      * Access is guarded by a monitor on 'searchPath' itself
      */
     private final ArrayList<URL> searchPath;
 
-    /* Index of the next URL in the search path to process
+    /* Index of the next URL in the search path to process.
      * Access is guarded by a monitor on 'searchPath'
      */
     private int nextURL = 0;
 
-    /* List of URLs found during expansion of JAR 'Class-Path' attributes
+    /* List of URLs found during expansion of JAR 'Class-Path' attributes.
      * Access is guarded by a monitor on 'searchPath'
      */
     private final ArrayList<URL> manifestClassPath = new ArrayList<>();
