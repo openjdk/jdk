@@ -26,6 +26,8 @@
  * @run junit/othervm ChainedReflection
  * @summary Test Method::invoke and Constructor::newInstance chained calls that
  *          should wrap NPE in InvocationTargetException properly
+ * @comment This test is not using assertThrows given lambdas may affect the
+ *          exception stack trace and therefore test anticipations
  */
 
 import java.lang.reflect.Constructor;
@@ -37,8 +39,10 @@ import org.junit.jupiter.api.Test;
 
 public class ChainedReflection {
 
+    // This inner class is declared with a constructor that ctorCallMethodInvoke
+    // reflects on. Such a constructor cannot be declared in ChainedReflection
+    // because JUnit does not allow a test class to declare multiple constructors.
     class Inner {
-        // JUnit does not allow test class to declare multiple constructors
         Inner() throws ReflectiveOperationException {
             Method m = ChainedReflection.class.getMethod("throwNPE");
             try {

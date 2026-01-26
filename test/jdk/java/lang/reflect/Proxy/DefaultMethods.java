@@ -236,7 +236,8 @@ public class DefaultMethods {
         assertArrayEquals(new Object[]{1, 2, 3, 4}, i12.concat(1, 2, 3, 4));
         Method m = I12.class.getMethod("concat", Object.class, Object[].class);
         assertTrue(m.isDefault());
-        assertArrayEquals(new Object[] {100, "foo", true, "bar"}, (Object[]) InvocationHandler.invokeDefault(i12, m, 100, new Object[] {"foo", true, "bar"}));
+        assertArrayEquals(new Object[] {100, "foo", true, "bar"}, (Object[])
+                InvocationHandler.invokeDefault(i12, m, 100, new Object[] {"foo", true, "bar"}));
     }
 
     // test a no-arg default method with and without arguments passed in the invocation

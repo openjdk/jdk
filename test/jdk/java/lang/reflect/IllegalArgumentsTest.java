@@ -25,6 +25,8 @@
  * @test
  * @bug 8277964
  * @summary Test IllegalArgumentException be thrown when an argument is invalid
+ * @comment Avoid using framework utilities; this is effectively a runtime test
+ *          sensitive to stack traces
  * @run junit/othervm/timeout=720 IllegalArgumentsTest
  */
 
