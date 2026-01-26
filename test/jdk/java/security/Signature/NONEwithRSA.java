@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import jdk.test.lib.security.SecurityUtils;
 public class NONEwithRSA {
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
 //      showProvider(Security.getProvider(System.getProperty("test.provider.name", "SUN")));
         Random random = new Random();
         byte[] b = new byte[16];

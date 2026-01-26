@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@
  *      unwrap()        ...             Finished
  */
 
+import java.security.Security;
+
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 import java.nio.*;
@@ -91,6 +93,7 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
 
         if (args.length == 0) {
             OutputAnalyzer output = ProcessTools.executeTestJava(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
     }
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         // Turn off the disabled Algorithms so we can also test SSLv3/TLSv1/etc.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,6 +197,7 @@ public class ShortRSAKeyGCM extends SSLContextTemplate {
         Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
         Security.setProperty("jdk.tls.disabledAlgorithms",
                 "SSLv3, RC4, DH keySize < 768");
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
 
         if (debug) {
             System.setProperty("javax.net.debug", "all");
