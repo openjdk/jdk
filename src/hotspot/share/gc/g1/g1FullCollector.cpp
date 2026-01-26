@@ -134,10 +134,10 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_num_regions(), mtGC);
-  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_num_regions(), mtGC);
+  _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
   for (uint j = 0; j < heap->max_num_regions(); j++) {
     _live_stats[j].clear();
-    _compaction_tops[j] = nullptr;
+    ::new (&_compaction_tops[j]) Atomic<HeapWord*>{};
   }
 
   _partial_array_state_manager = new PartialArrayStateManager(_num_workers);
@@ -167,7 +167,7 @@ G1FullCollector::~G1FullCollector() {
 
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
-  FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
+  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _compaction_tops);
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
