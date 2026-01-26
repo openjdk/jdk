@@ -74,7 +74,7 @@ private:
   };
 
   // The reserved key for identity hash code
-  static constexpr int identityHashKey = -1;
+  static constexpr int IdentityHashKey = -1;
   GrowableArray<ConstantValue>* _constant_values = nullptr;
 
 protected:

@@ -235,13 +235,13 @@ ciConstant ciObject::identity_hash() {
     return ciConstant(T_INT, 0);
   }
   // Handle identity hash as if it were a field value.
-  ciConstant value = check_constant_value_cache(identityHashKey, T_INT);
+  ciConstant value = check_constant_value_cache(IdentityHashKey, T_INT);
   if (!value.is_valid()) {
     VM_ENTRY_MARK;
     jint identity_hash = checked_cast<jint>(get_oop()->fast_identity_hash_or_no_hash());
     value = ciConstant(T_INT, identity_hash);
     // Cache observed state so it doesn't change during compilation.
-    add_to_constant_value_cache(identityHashKey, value);
+    add_to_constant_value_cache(IdentityHashKey, value);
   }
   if (value.as_int() != markWord::no_hash) {
     return value;
