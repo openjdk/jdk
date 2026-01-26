@@ -34,25 +34,22 @@
 class ThreadLocalAllocStats;
 
 // ThreadLocalAllocBuffer: a descriptor for thread-local storage used by
-// the threads for allocation.
-//            It is thread-private at any time, but maybe multiplexed over
-//            time across multiple threads. The park()/unpark() pair is
-//            used to make it available for such multiplexing.
+// the threads for allocation. It is thread-private at any time.
 //
-//            Heap sampling is performed via the end and allocation_end
-//            fields.
-//            allocation_end contains the real end of the tlab allocation,
-//            whereas end can be set to an arbitrary spot in the tlab to
-//            trip the return and sample the allocation.
+// Heap sampling is performed via the end and allocation_end
+// fields.
+// allocation_end contains the real end of the tlab allocation,
+// whereas end can be set to an arbitrary spot in the tlab to
+// trip the return and sample the allocation.
 class ThreadLocalAllocBuffer: public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 private:
   Atomic<HeapWord*> _start;                      // address of TLAB
   Atomic<HeapWord*> _top;                        // address after last allocation
-  HeapWord* _pf_top;                             // allocation prefetch watermark
-  HeapWord* _end;                                // allocation end (can be the sampling end point or _allocation_end)
-  HeapWord* _allocation_end;                     // end for allocations (actual TLAB end, excluding alignment_reserve)
+  Atomic<HeapWord*> _pf_top;                     // allocation prefetch watermark
+  Atomic<HeapWord*> _end;                        // allocation end (can be the sampling end point or _allocation_end)
+  Atomic<HeapWord*> _allocation_end;             // end for allocations (actual TLAB end, excluding alignment_reserve)
 
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
@@ -72,11 +69,13 @@ private:
 
   void reset_statistics();
 
+  HeapWord* allocation_end() const               { return _allocation_end.load_relaxed(); }
+
   void set_start(HeapWord* start)                { _start.store_relaxed(start); }
-  void set_end(HeapWord* end)                    { _end = end; }
-  void set_allocation_end(HeapWord* ptr)         { _allocation_end = ptr; }
+  void set_end(HeapWord* end)                    { _end.store_relaxed(end); }
+  void set_allocation_end(HeapWord* ptr)         { _allocation_end.store_relaxed(ptr); }
   void set_top(HeapWord* top)                    { _top.store_relaxed(top); }
-  void set_pf_top(HeapWord* pf_top)              { _pf_top = pf_top; }
+  void set_pf_top(HeapWord* pf_top)              { _pf_top.store_relaxed(pf_top); }
   void set_desired_size(size_t desired_size)     { _desired_size = desired_size; }
   void set_refill_waste_limit(size_t waste)      { _refill_waste_limit = waste;  }
 
@@ -114,12 +113,12 @@ public:
   static void set_max_size(size_t max_size)      { _max_size = max_size; }
 
   HeapWord* start() const                        { return _start.load_relaxed(); }
-  HeapWord* end() const                          { return _end; }
+  HeapWord* end() const                          { return _end.load_relaxed(); }
   HeapWord* top() const                          { return _top.load_relaxed(); }
   HeapWord* hard_end();
-  HeapWord* pf_top() const                       { return _pf_top; }
+  //HeapWord* pf_top() const                       { return _pf_top.load_relaxed(); }
   size_t desired_size() const                    { return _desired_size; }
-  size_t used() const                            { return pointer_delta(top(), start()); }
+  //size_t used() const                            { return pointer_delta(top(), start()); }
   size_t used_bytes() const                      { return pointer_delta(top(), start(), 1); }
   size_t free() const                            { return pointer_delta(end(), top()); }
   // Don't discard tlab if remaining space is larger than this.
