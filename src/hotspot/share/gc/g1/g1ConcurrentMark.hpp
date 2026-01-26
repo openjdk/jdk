@@ -676,7 +676,7 @@ public:
 
   uint completed_mark_cycles() const;
 
-  bool has_aborted()      { return _has_aborted.load_relaxed(); }
+  bool has_aborted() { return _has_aborted.load_relaxed(); }
 
   void print_summary_info();
 

@@ -24,6 +24,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
