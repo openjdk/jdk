@@ -29,14 +29,13 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.opentest4j.TestAbortedException;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /*
  * @test
@@ -60,10 +59,9 @@ class ConnectionRefusedMessage {
         // find a suitable address against which the connect() attempt
         // will result in a Connection refused exception
         final InetSocketAddress destAddr = findSuitableRefusedAddress();
-        // we don't want to skip the test, because we expect at least one port
-        // which would result in a connection refused
-        assertNotNull(destAddr, "couldn't find a suitable port which will generate" +
-                " a connection refused error");
+        // skip the test if we couldn't find a port which would raise a connection refused error
+        assumeTrue(destAddr != null,
+                "couldn't find a suitable port which will generate a connection refused error");
         try (Selector selector = Selector.open();
              SocketChannel sc = SocketChannel.open()) {
 
@@ -73,7 +71,9 @@ class ConnectionRefusedMessage {
 
             System.err.println("establishing connection to " + destAddr);
             boolean connected = sc.connect(destAddr);
-            assertFalse(connected, "unexpectedly connected to " + destAddr);
+            // this test checks the exception message of a ConnectException, so it's
+            // OK to skip the test if something unexpectedly accepted the connection
+            assumeFalse(connected, "unexpectedly connected to " + destAddr);
             // wait for ready ops
             int numReady = selector.select(Duration.ofMinutes(10).toMillis());
             System.err.println("Num ready keys = " + numReady);
@@ -82,16 +82,22 @@ class ConnectionRefusedMessage {
                 assertTrue(readyKey.isConnectable(), "unexpected key, readyOps = "
                         + readyKey.readyOps());
                 readyKey.cancel();
-
-                AtomicBoolean success = new AtomicBoolean();
-                // expect SocketChannel.finishConnect() to throw a ConnectException
-                ConnectException ce = assertThrows(ConnectException.class, () -> {
-                    success.set(sc.finishConnect());
-                }, "finishConnect() was expected to fail but didn't, connected = "
-                        + success.get());
-                System.err.println("got expected exception - " + ce);
-                // verify exception message
-                assertEquals("Connection refused", ce.getMessage());
+                try {
+                    boolean success = sc.finishConnect();
+                    if (success) {
+                        // this test checks the exception message of a ConnectException, so it's
+                        // OK to skip the test if something unexpectedly accepted the connection
+                        throw new TestAbortedException("unexpectedly connected to " + destAddr);
+                    }
+                    fail("ConnectException was not thrown");
+                } catch (ConnectException ce) {
+                    System.err.println("got (expected) ConnectException - " + ce);
+                    // verify exception message
+                    if (!"Connection refused".equals(ce.getMessage())) {
+                        // propagate the original exception
+                        fail("unexpected exception message: " + ce.getMessage(), ce);
+                    }
+                }
             }
         }
     }
