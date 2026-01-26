@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define CPU_X86_VMREG_X86_INLINE_HPP
 
 inline VMReg Register::RegisterImpl::as_VMReg() const {
-  return VMRegImpl::as_VMReg(encoding() LP64_ONLY( << 1 ));
+  return VMRegImpl::as_VMReg(encoding() << 1);
 }
 
 inline VMReg FloatRegister::FloatRegisterImpl::as_VMReg() const {
