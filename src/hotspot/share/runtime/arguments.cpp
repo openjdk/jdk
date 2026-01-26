@@ -2991,6 +2991,10 @@ jint Arguments::finalize_vm_init_args() {
     return JNI_ERR;
   }
 
+  // Called after ClassLoader::lookup_vm_options() but before class loading begins.
+  // TODO: Obtain and pass correct preview mode flag value here.
+  ClassLoader::set_preview_mode(false);
+
   if (!check_vm_args_consistency()) {
     return JNI_ERR;
   }

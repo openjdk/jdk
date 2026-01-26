@@ -37,8 +37,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import jdk.internal.jimage.decompressor.Decompressor;
 
 /**
@@ -315,6 +318,56 @@ public class BasicImageReader implements AutoCloseable {
                 .mapToObj(o -> ImageLocation.readFrom(this, o).getFullName())
                 .sorted()
                 .toArray(String[]::new);
+    }
+
+    /**
+     * Returns the "raw" API for accessing underlying jimage resource entries.
+     *
+     * <p>This is only meaningful for use by code dealing directly with jimage
+     * files, and cannot be used to reliably lookup resources used at runtime.
+     *
+     * <p>This API remains valid until the image reader from which it was
+     * obtained is closed.
+     */
+    // Package visible for use by ImageReader.
+    ResourceEntries getResourceEntries() {
+        return new ResourceEntries() {
+            @Override
+            public Stream<String> getEntryNames(String module) {
+                if (module.isEmpty() || module.equals("modules") || module.equals("packages")) {
+                    throw new IllegalArgumentException("Invalid module name: " + module);
+                }
+                return IntStream.range(0, offsets.capacity())
+                        .map(offsets::get)
+                        .filter(offset -> offset != 0)
+                        // Reusing a location instance or getting the module
+                        // offset directly would save a lot of allocations here.
+                        .mapToObj(offset -> ImageLocation.readFrom(BasicImageReader.this, offset))
+                        // Reverse lookup of module offset would be faster here.
+                        .filter(loc -> module.equals(loc.getModule()))
+                        .map(ImageLocation::getFullName);
+            }
+
+            private ImageLocation getResourceLocation(String name) {
+                if (!name.startsWith("/modules/") && !name.startsWith("/packages/")) {
+                    ImageLocation location = BasicImageReader.this.findLocation(name);
+                    if (location != null) {
+                        return location;
+                    }
+                }
+                throw new NoSuchElementException("No such resource entry: " + name);
+            }
+
+            @Override
+            public long getSize(String name) {
+                return getResourceLocation(name).getUncompressedSize();
+            }
+
+            @Override
+            public byte[] getBytes(String name) {
+                return BasicImageReader.this.getResource(getResourceLocation(name));
+            }
+        };
     }
 
     ImageLocation getLocation(int offset) {

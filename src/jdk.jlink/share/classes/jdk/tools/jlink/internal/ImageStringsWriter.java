@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import jdk.internal.jimage.ImageStringsReader;
 
 class ImageStringsWriter implements ImageStrings {
     private static final int NOT_FOUND = -1;
-    static final int EMPTY_OFFSET = 0;
 
     private final HashMap<String, Integer> stringToOffsetMap;
     private final ImageStream stream;
@@ -42,16 +41,20 @@ class ImageStringsWriter implements ImageStrings {
         this.stringToOffsetMap = new HashMap<>();
         this.stream = new ImageStream();
 
-        // Reserve 0 offset for empty string.
-        int offset = addString("");
-        if (offset != 0) {
-            throw new InternalError("Empty string not offset zero");
-        }
+        // Frequently used/special strings for which the offset is useful.
+        // New strings can be reserved after existing strings without having to
+        // change the jimage file version, but any change to existing entries
+        // requires the jimage file version to be increased at the same time.
+        reserveString("", ImageStrings.EMPTY_STRING_OFFSET);
+        reserveString("class", ImageStrings.CLASS_STRING_OFFSET);
+        reserveString("modules", ImageStrings.MODULES_STRING_OFFSET);
+        reserveString("packages", ImageStrings.PACKAGES_STRING_OFFSET);
+    }
 
-        // Reserve 1 offset for frequently used ".class".
-        offset = addString("class");
-        if (offset != 1) {
-            throw new InternalError("'class' string not offset one");
+    private void reserveString(String value, int expectedOffset) {
+        int offset = addString(value);
+        if (offset != expectedOffset) {
+            throw new InternalError("Reserved string \"" + value + "\" not at expected offset " + expectedOffset + "[was " + offset + "]");
         }
     }
 

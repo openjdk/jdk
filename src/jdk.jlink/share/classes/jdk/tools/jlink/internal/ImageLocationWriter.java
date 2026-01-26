@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,13 @@ public final class ImageLocationWriter extends ImageLocation {
         return addAttribute(kind, strings.add(value));
     }
 
-    static ImageLocationWriter newLocation(String fullName,
+    static ImageLocationWriter newLocation(
+            String fullName,
             ImageStringsWriter strings,
-            long contentOffset, long compressedSize, long uncompressedSize) {
+            long contentOffset,
+            long compressedSize,
+            long uncompressedSize,
+            int previewFlags) {
         String moduleName = "";
         String parentName = "";
         String baseName;
@@ -90,13 +94,14 @@ public final class ImageLocationWriter extends ImageLocation {
         }
 
         return new ImageLocationWriter(strings)
-               .addAttribute(ATTRIBUTE_MODULE, moduleName)
-               .addAttribute(ATTRIBUTE_PARENT, parentName)
-               .addAttribute(ATTRIBUTE_BASE, baseName)
-               .addAttribute(ATTRIBUTE_EXTENSION, extensionName)
-               .addAttribute(ATTRIBUTE_OFFSET, contentOffset)
-               .addAttribute(ATTRIBUTE_COMPRESSED, compressedSize)
-               .addAttribute(ATTRIBUTE_UNCOMPRESSED, uncompressedSize);
+                .addAttribute(ATTRIBUTE_MODULE, moduleName)
+                .addAttribute(ATTRIBUTE_PARENT, parentName)
+                .addAttribute(ATTRIBUTE_BASE, baseName)
+                .addAttribute(ATTRIBUTE_EXTENSION, extensionName)
+                .addAttribute(ATTRIBUTE_OFFSET, contentOffset)
+                .addAttribute(ATTRIBUTE_COMPRESSED, compressedSize)
+                .addAttribute(ATTRIBUTE_UNCOMPRESSED, uncompressedSize)
+                .addAttribute(ATTRIBUTE_PREVIEW_FLAGS, previewFlags);
     }
 
     @Override

@@ -24,6 +24,8 @@
  */
 package jdk.internal.jimage;
 
+import jdk.internal.jimage.ImageLocation.LocationType;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -34,15 +36,25 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import static jdk.internal.jimage.ImageLocation.LocationType.MODULES_DIR;
+import static jdk.internal.jimage.ImageLocation.LocationType.MODULES_ROOT;
+import static jdk.internal.jimage.ImageLocation.LocationType.PACKAGES_DIR;
+import static jdk.internal.jimage.ImageLocation.LocationType.RESOURCE;
+import static jdk.internal.jimage.ImageLocation.MODULES_PREFIX;
+import static jdk.internal.jimage.ImageLocation.PACKAGES_PREFIX;
+import static jdk.internal.jimage.ImageLocation.PREVIEW_INFIX;
 
 /**
  * A view over the entries of a jimage file with a unified namespace suitable
@@ -86,22 +98,27 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
-     * Opens an image reader for a jimage file at the specified path, using the
-     * given byte order.
+     * Opens an image reader for a jimage file at the specified path.
+     *
+     * @param imagePath file system path of the jimage file.
+     * @param mode whether to return preview resources.
      */
-    public static ImageReader open(Path imagePath, ByteOrder byteOrder) throws IOException {
-        Objects.requireNonNull(imagePath);
-        Objects.requireNonNull(byteOrder);
-
-        return SharedImageReader.open(imagePath, byteOrder);
+    public static ImageReader open(Path imagePath, PreviewMode mode) throws IOException {
+        return open(imagePath, ByteOrder.nativeOrder(), mode);
     }
 
     /**
-     * Opens an image reader for a jimage file at the specified path, using the
-     * platform native byte order.
+     * Opens an image reader for a jimage file at the specified path.
+     *
+     * @param imagePath file system path of the jimage file.
+     * @param byteOrder the byte-order to be used when reading the jimage file.
+     * @param mode controls whether preview resources are visible.
      */
-    public static ImageReader open(Path imagePath) throws IOException {
-        return open(imagePath, ByteOrder.nativeOrder());
+    public static ImageReader open(Path imagePath, ByteOrder byteOrder, PreviewMode mode)
+            throws IOException {
+        Objects.requireNonNull(imagePath);
+        Objects.requireNonNull(byteOrder);
+        return SharedImageReader.open(imagePath, byteOrder, mode.isPreviewModeEnabled());
     }
 
     @Override
@@ -200,14 +217,43 @@ public final class ImageReader implements AutoCloseable {
         return reader.getResourceBuffer(node.getLocation());
     }
 
+    // Package protected for use only by SystemImageReader.
+    ResourceEntries getResourceEntries() {
+        return reader.getResourceEntries();
+    }
+
     private static final class SharedImageReader extends BasicImageReader {
-        private static final Map<Path, SharedImageReader> OPEN_FILES = new HashMap<>();
-        private static final String MODULES_ROOT = "/modules";
-        private static final String PACKAGES_ROOT = "/packages";
         // There are >30,000 nodes in a complete jimage tree, and even relatively
         // common tasks (e.g. starting up javac) load somewhere in the region of
         // 1000 classes. Thus, an initial capacity of 2000 is a reasonable guess.
         private static final int INITIAL_NODE_CACHE_CAPACITY = 2000;
+
+        static final class ReaderKey {
+            private final Path imagePath;
+            private final boolean previewMode;
+
+            public ReaderKey(Path imagePath, boolean previewMode) {
+                this.imagePath = imagePath;
+                this.previewMode = previewMode;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                // No pattern variables here (Java 8 compatible source).
+                if (obj instanceof ReaderKey) {
+                    ReaderKey other = (ReaderKey) obj;
+                    return this.imagePath.equals(other.imagePath) && this.previewMode == other.previewMode;
+                }
+                return false;
+            }
+
+            @Override
+            public int hashCode() {
+                return imagePath.hashCode() ^ Boolean.hashCode(previewMode);
+            }
+        }
+
+        private static final Map<ReaderKey, SharedImageReader> OPEN_FILES = new HashMap<>();
 
         // List of openers for this shared image.
         private final Set<ImageReader> openers = new HashSet<>();
@@ -219,55 +265,139 @@ public final class ImageReader implements AutoCloseable {
 
         // Cache of all user visible nodes, guarded by synchronizing 'this' instance.
         private final Map<String, Node> nodes;
-        // Used to classify ImageLocation instances without string comparison.
-        private final int modulesStringOffset;
-        private final int packagesStringOffset;
 
-        private SharedImageReader(Path imagePath, ByteOrder byteOrder) throws IOException {
+        // Preview mode support.
+        private final boolean previewMode;
+        // A relativized mapping from non-preview name to directories containing
+        // preview-only nodes. This is used to add preview-only content to
+        // directories as they are completed.
+        private final HashMap<String, Directory> previewDirectoriesToMerge;
+
+        private SharedImageReader(Path imagePath, ByteOrder byteOrder, boolean previewMode) throws IOException {
             super(imagePath, byteOrder);
             this.imageFileAttributes = Files.readAttributes(imagePath, BasicFileAttributes.class);
             this.nodes = new HashMap<>(INITIAL_NODE_CACHE_CAPACITY);
-            // Pick stable jimage names from which to extract string offsets (we cannot
-            // use "/modules" or "/packages", since those have a module offset of zero).
-            this.modulesStringOffset = getModuleOffset("/modules/java.base");
-            this.packagesStringOffset = getModuleOffset("/packages/java.lang");
+            this.previewMode = previewMode;
 
             // Node creation is very lazy, so we can just make the top-level directories
             // now without the risk of triggering the building of lots of other nodes.
-            Directory packages = newDirectory(PACKAGES_ROOT);
-            nodes.put(packages.getName(), packages);
-            Directory modules = newDirectory(MODULES_ROOT);
-            nodes.put(modules.getName(), modules);
+            Directory packages = ensureCached(newDirectory(PACKAGES_PREFIX));
+            Directory modules = ensureCached(newDirectory(MODULES_PREFIX));
 
             Directory root = newDirectory("/");
             root.setChildren(Arrays.asList(packages, modules));
-            nodes.put(root.getName(), root);
+            ensureCached(root);
+
+            // By scanning the /packages directory information early we can determine
+            // which module/package pairs have preview resources, and build the (small)
+            // set of preview nodes early. This also ensures that preview-only entries
+            // in the /packages directory are not present in non-preview mode.
+            this.previewDirectoriesToMerge = previewMode ? new HashMap<>() : null;
+            packages.setChildren(processPackagesDirectory(previewMode));
         }
 
         /**
-         * Returns the offset of the string denoting the leading "module" segment in
-         * the given path (e.g. {@code <module>/<path>}). We can't just pass in the
-         * {@code /<module>} string here because that has a module offset of zero.
+         * Process {@code "/packages/xxx"} entries to build the child nodes for the
+         * root {@code "/packages"} node. Preview-only entries will be skipped if
+         * {@code previewMode == false}.
+         *
+         * <p>If {@code previewMode == true}, this method also populates the {@link
+         * #previewDirectoriesToMerge} map with any preview-only nodes, to be merged
+         * into directories as they are completed. It also caches preview resources
+         * and preview-only directories for direct lookup.
          */
-        private int getModuleOffset(String path) {
-            ImageLocation location = findLocation(path);
-            assert location != null : "Cannot find expected jimage location: " + path;
-            int offset = location.getModuleOffset();
-            assert offset != 0 : "Invalid module offset for jimage location: " + path;
-            return offset;
+        private ArrayList<Node> processPackagesDirectory(boolean previewMode) {
+            ImageLocation pkgRoot = findLocation(PACKAGES_PREFIX);
+            assert pkgRoot != null : "Invalid jimage file";
+            IntBuffer offsets = getOffsetBuffer(pkgRoot);
+            ArrayList<Node> pkgDirs = new ArrayList<>(offsets.capacity());
+            // Package path to module map, sorted in reverse order so that
+            // longer child paths get processed first.
+            Map<String, List<String>> previewPackagesToModules =
+                    new TreeMap<>(Comparator.reverseOrder());
+            for (int i = 0; i < offsets.capacity(); i++) {
+                ImageLocation pkgDir = getLocation(offsets.get(i));
+                int flags = pkgDir.getFlags();
+                // A package subdirectory is "preview only" if all the modules
+                // it references have that package marked as preview only.
+                // Skipping these entries avoids empty package subdirectories.
+                if (previewMode || !ImageLocation.isPreviewOnly(flags)) {
+                    pkgDirs.add(ensureCached(newDirectory(pkgDir.getFullName())));
+                }
+                if (previewMode && ImageLocation.hasPreviewVersion(flags)) {
+                    // Only do this in preview mode for the small set of packages with
+                    // preview versions (the number of preview entries should be small).
+                    List<String> moduleNames = new ArrayList<>();
+                    ModuleReference.readNameOffsets(getOffsetBuffer(pkgDir), /*normal*/ false, /*preview*/ true)
+                            .forEachRemaining(n -> moduleNames.add(getString(n)));
+                    previewPackagesToModules.put(pkgDir.getBase().replace('.', '/'), moduleNames);
+                }
+            }
+            // Reverse sorted map means child directories are processed first.
+            previewPackagesToModules.forEach((pkgPath, modules) ->
+                    modules.forEach(modName -> processPreviewDir(MODULES_PREFIX + "/" + modName, pkgPath)));
+            // We might have skipped some preview-only package entries.
+            pkgDirs.trimToSize();
+            return pkgDirs;
         }
 
-        private static ImageReader open(Path imagePath, ByteOrder byteOrder) throws IOException {
+        void processPreviewDir(String namePrefix, String pkgPath) {
+            String previewDirName = namePrefix + PREVIEW_INFIX + "/" + pkgPath;
+            ImageLocation previewLoc = findLocation(previewDirName);
+            assert previewLoc != null : "Missing preview directory location: " + previewDirName;
+            String nonPreviewDirName = namePrefix + "/" + pkgPath;
+            List<Node> previewOnlyChildren = createChildNodes(previewLoc, 0, childLoc -> {
+                String baseName = getBaseName(childLoc);
+                String nonPreviewChildName = nonPreviewDirName + "/" + baseName;
+                boolean isPreviewOnly = ImageLocation.isPreviewOnly(childLoc.getFlags());
+                LocationType type = childLoc.getType();
+                if (type == RESOURCE) {
+                    // Preview resources are cached to override non-preview versions.
+                    Node childNode = ensureCached(newResource(nonPreviewChildName, childLoc));
+                    return isPreviewOnly ? childNode : null;
+                } else {
+                    // Child directories are not cached here (they are either cached
+                    // already or have been added to previewDirectoriesToMerge).
+                    assert type == MODULES_DIR : "Invalid location type: " + childLoc;
+                    Node childNode = nodes.get(nonPreviewChildName);
+                    assert isPreviewOnly == (childNode != null) :
+                            "Inconsistent child node: " + nonPreviewChildName;
+                    return childNode;
+                }
+            });
+            Directory previewDir = newDirectory(nonPreviewDirName);
+            previewDir.setChildren(previewOnlyChildren);
+            if (ImageLocation.isPreviewOnly(previewLoc.getFlags())) {
+                // If we are preview-only, our children are also preview-only, so
+                // this directory is a complete hierarchy and should be cached.
+                assert !previewOnlyChildren.isEmpty() : "Invalid empty preview-only directory: " + nonPreviewDirName;
+                ensureCached(previewDir);
+            } else if (!previewOnlyChildren.isEmpty()) {
+                // A partial directory containing extra preview-only nodes
+                // to be merged when the non-preview directory is completed.
+                previewDirectoriesToMerge.put(nonPreviewDirName, previewDir);
+            }
+        }
+
+        // Adds a node to the cache, ensuring that no matching entry already existed.
+        private <T extends Node> T ensureCached(T node) {
+            Node existingNode = nodes.put(node.getName(), node);
+            assert existingNode == null : "Unexpected node already cached for: " + node;
+            return node;
+        }
+
+        private static ImageReader open(Path imagePath, ByteOrder byteOrder, boolean previewMode) throws IOException {
             Objects.requireNonNull(imagePath);
             Objects.requireNonNull(byteOrder);
 
             synchronized (OPEN_FILES) {
-                SharedImageReader reader = OPEN_FILES.get(imagePath);
+                ReaderKey key = new ReaderKey(imagePath, previewMode);
+                SharedImageReader reader = OPEN_FILES.get(key);
 
                 if (reader == null) {
                     // Will fail with an IOException if wrong byteOrder.
-                    reader =  new SharedImageReader(imagePath, byteOrder);
-                    OPEN_FILES.put(imagePath, reader);
+                    reader = new SharedImageReader(imagePath, byteOrder, previewMode);
+                    OPEN_FILES.put(key, reader);
                 } else if (reader.getByteOrder() != byteOrder) {
                     throw new IOException("\"" + reader.getName() + "\" is not an image file");
                 }
@@ -291,7 +421,7 @@ public final class ImageReader implements AutoCloseable {
                     close();
                     nodes.clear();
 
-                    if (!OPEN_FILES.remove(this.getImagePath(), this)) {
+                    if (!OPEN_FILES.remove(new ReaderKey(getImagePath(), previewMode), this)) {
                         throw new IOException("image file not found in open list");
                     }
                 }
@@ -309,20 +439,14 @@ public final class ImageReader implements AutoCloseable {
          *     "/modules" or "/packages".
          */
         synchronized Node findNode(String name) {
+            // Root directories "/", "/modules" and "/packages", as well
+            // as all "/packages/xxx" subdirectories are already cached.
             Node node = nodes.get(name);
             if (node == null) {
-                // We cannot get the root paths ("/modules" or "/packages") here
-                // because those nodes are already in the nodes cache.
-                if (name.startsWith(MODULES_ROOT + "/")) {
-                    // This may perform two lookups, one for a directory (in
-                    // "/modules/...") and one for a non-prefixed resource
-                    // (with "/modules" removed).
-                    node = buildModulesNode(name);
-                } else if (name.startsWith(PACKAGES_ROOT + "/")) {
-                    node = buildPackagesNode(name);
-                }
-                if (node != null) {
-                    nodes.put(node.getName(), node);
+                if (name.startsWith(MODULES_PREFIX + "/")) {
+                    node = buildAndCacheModulesNode(name);
+                } else if (name.startsWith(PACKAGES_PREFIX + "/")) {
+                    node = buildAndCacheLinkNode(name);
                 }
             } else if (!node.isCompleted()) {
                 // Only directories can be incomplete.
@@ -346,13 +470,13 @@ public final class ImageReader implements AutoCloseable {
             if (moduleName.indexOf('/') >= 0) {
                 throw new IllegalArgumentException("invalid module name: " + moduleName);
             }
-            String nodeName = MODULES_ROOT + "/" + moduleName + "/" + resourcePath;
+            String nodeName = MODULES_PREFIX + "/" + moduleName + "/" + resourcePath;
             // Synchronize as tightly as possible to reduce locking contention.
             synchronized (this) {
                 Node node = nodes.get(nodeName);
                 if (node == null) {
                     ImageLocation loc = findLocation(moduleName, resourcePath);
-                    if (loc != null && isResource(loc)) {
+                    if (loc != null && loc.getType() == RESOURCE) {
                         node = newResource(nodeName, loc);
                         nodes.put(node.getName(), node);
                     }
@@ -368,18 +492,29 @@ public final class ImageReader implements AutoCloseable {
          *
          * <p>This method is expected to be called frequently for resources
          * which do not exist in the given module (e.g. as part of classpath
-         * search). As such, it skips checking the nodes cache and only checks
-         * for an entry in the jimage file, as this is faster if the resource
-         * is not present. This also means it doesn't need synchronization.
+         * search). As such, it skips checking the nodes cache if possible, and
+         * only checks for an entry in the jimage file, as this is faster if the
+         * resource is not present. This also means it doesn't need
+         * synchronization most of the time.
          */
         boolean containsResource(String moduleName, String resourcePath) {
             if (moduleName.indexOf('/') >= 0) {
                 throw new IllegalArgumentException("invalid module name: " + moduleName);
             }
-            // If the given module name is 'modules', then 'isResource()'
-            // returns false to prevent false positives.
+            // In preview mode, preview-only resources are eagerly added to the
+            // cache, so we must check that first.
+            if (previewMode) {
+                String nodeName = MODULES_PREFIX + "/" + moduleName + "/" + resourcePath;
+                // Synchronize as tightly as possible to reduce locking contention.
+                synchronized (this) {
+                    Node node = nodes.get(nodeName);
+                    if (node != null) {
+                        return node.isResource();
+                    }
+                }
+            }
             ImageLocation loc = findLocation(moduleName, resourcePath);
-            return loc != null && isResource(loc);
+            return loc != null && loc.getType() == RESOURCE;
         }
 
         /**
@@ -388,55 +523,82 @@ public final class ImageReader implements AutoCloseable {
          * <p>Called by {@link #findNode(String)} if a {@code /modules/...} node
          * is not present in the cache.
          */
-        private Node buildModulesNode(String name) {
-            assert name.startsWith(MODULES_ROOT + "/") : "Invalid module node name: " + name;
+        private Node buildAndCacheModulesNode(String name) {
+            assert name.startsWith(MODULES_PREFIX + "/") : "Invalid module node name: " + name;
+            if (isPreviewName(name)) {
+                return null;
+            }
             // Returns null for non-directory resources, since the jimage name does not
             // start with "/modules" (e.g. "/java.base/java/lang/Object.class").
             ImageLocation loc = findLocation(name);
             if (loc != null) {
                 assert name.equals(loc.getFullName()) : "Mismatched location for directory: " + name;
-                assert isModulesSubdirectory(loc) : "Invalid modules directory: " + name;
-                return completeModuleDirectory(newDirectory(name), loc);
+                assert loc.getType() == MODULES_DIR : "Invalid modules directory: " + name;
+                return ensureCached(completeModuleDirectory(newDirectory(name), loc));
             }
             // Now try the non-prefixed resource name, but be careful to avoid false
             // positives for names like "/modules/modules/xxx" which could return a
             // location of a directory entry.
-            loc = findLocation(name.substring(MODULES_ROOT.length()));
-            return loc != null && isResource(loc) ? newResource(name, loc) : null;
+            loc = findLocation(name.substring(MODULES_PREFIX.length()));
+            return loc != null && loc.getType() == RESOURCE
+                    ? ensureCached(newResource(name, loc))
+                    : null;
         }
 
         /**
-         * Builds a node in the "/packages/..." namespace.
-         *
-         * <p>Called by {@link #findNode(String)} if a {@code /packages/...} node
-         * is not present in the cache.
+         * Returns whether a directory name in the "/modules/" directory could be referencing
+         * the "META-INF" directory".
          */
-        private Node buildPackagesNode(String name) {
-            // There are only locations for the root "/packages" or "/packages/xxx"
-            // directories, but not the symbolic links below them (the links can be
-            // entirely derived from the name information in the parent directory).
-            // However, unlike resources this means that we do not have a constant
-            // time lookup for link nodes when creating them.
-            int packageStart = PACKAGES_ROOT.length() + 1;
+        private boolean isMetaInf(Directory dir) {
+            String name = dir.getName();
+            int pathStart = name.indexOf('/', MODULES_PREFIX.length() + 1);
+            return name.length() == pathStart + "/META-INF".length()
+                    && name.endsWith("/META-INF");
+        }
+
+        /**
+         * Returns whether a node name in the "/modules/" directory could be referencing
+         * a preview resource or directory under "META-INF/preview".
+         */
+        private boolean isPreviewName(String name) {
+            int pathStart = name.indexOf('/', MODULES_PREFIX.length() + 1);
+            int previewEnd = pathStart + PREVIEW_INFIX.length();
+            return pathStart > 0
+                    && name.regionMatches(pathStart, PREVIEW_INFIX, 0, PREVIEW_INFIX.length())
+                    && (name.length() == previewEnd || name.charAt(previewEnd) == '/');
+        }
+
+        private String getBaseName(ImageLocation loc) {
+            // Matches logic in ImageLocation#getFullName() regarding extensions.
+            String trailingParts = loc.getBase()
+                    + ((loc.getExtensionOffset() != 0) ? "." + loc.getExtension() : "");
+            return trailingParts.substring(trailingParts.lastIndexOf('/') + 1);
+        }
+
+        /**
+         * Builds a link node of the form "/packages/xxx/yyy".
+         *
+         * <p>Called by {@link #findNode(String)} if a {@code /packages/...}
+         * node is not present in the cache (the name is not trusted).
+         */
+        private Node buildAndCacheLinkNode(String name) {
+            // There are only locations for "/packages" or "/packages/xxx"
+            // directories, but not the symbolic links below them (links are
+            // derived from the name information in the parent directory).
+            int packageStart = PACKAGES_PREFIX.length() + 1;
             int packageEnd = name.indexOf('/', packageStart);
-            if (packageEnd == -1) {
-                ImageLocation loc = findLocation(name);
-                return loc != null ? completePackageDirectory(newDirectory(name), loc) : null;
-            } else {
-                // We cannot assume that the parent directory exists for a link node, since
-                // the given name is untrusted and could reference a non-existent link.
-                // However, if the parent directory is present, we can conclude that the
-                // given name was not a valid link (or else it would already be cached).
+            // We already built the 2-level "/packages/xxx" directories,
+            // so if this is a 2-level name, it cannot reference a node.
+            if (packageEnd >= 0) {
                 String dirName = name.substring(0, packageEnd);
-                if (!nodes.containsKey(dirName)) {
-                    ImageLocation loc = findLocation(dirName);
-                    // If the parent location doesn't exist, the link node cannot exist.
-                    if (loc != null) {
-                        nodes.put(dirName, completePackageDirectory(newDirectory(dirName), loc));
-                        // When the parent is created its child nodes are created and cached,
-                        // but this can still return null if given name wasn't a valid link.
-                        return nodes.get(name);
+                // If no parent exists here, the name cannot be valid.
+                Directory parent = (Directory) nodes.get(dirName);
+                if (parent != null) {
+                    if (!parent.isCompleted()) {
+                        // This caches all child links of the parent directory.
+                        completePackageSubdirectory(parent, findLocation(dirName));
                     }
+                    return nodes.get(name);
                 }
             }
             return null;
@@ -448,125 +610,123 @@ public final class ImageReader implements AutoCloseable {
             // Since the node exists, we can assert that its name starts with
             // either "/modules" or "/packages", making differentiation easy.
             // It also means that the name is valid, so it must yield a location.
-            assert name.startsWith(MODULES_ROOT) || name.startsWith(PACKAGES_ROOT);
+            assert name.startsWith(MODULES_PREFIX) || name.startsWith(PACKAGES_PREFIX);
             ImageLocation loc = findLocation(name);
             assert loc != null && name.equals(loc.getFullName()) : "Invalid location for name: " + name;
-            // We cannot use 'isXxxSubdirectory()' methods here since we could
-            // be given a top-level directory (for which that test doesn't work).
-            // The string MUST start "/modules" or "/packages" here.
-            if (name.charAt(1) == 'm') {
+            LocationType type = loc.getType();
+            if (type == MODULES_DIR || type == MODULES_ROOT) {
                 completeModuleDirectory(dir, loc);
             } else {
-                completePackageDirectory(dir, loc);
+                assert type == PACKAGES_DIR : "Invalid location type: " + loc;
+                completePackageSubdirectory(dir, loc);
             }
             assert dir.isCompleted() : "Directory must be complete by now: " + dir;
         }
 
-        /**
-         * Completes a modules directory by setting the list of child nodes.
-         *
-         * <p>The given directory can be the top level {@code /modules} directory,
-         * so it is NOT safe to use {@code isModulesSubdirectory(loc)} here.
-         */
+        /** Completes a modules directory by setting the list of child nodes. */
         private Directory completeModuleDirectory(Directory dir, ImageLocation loc) {
             assert dir.getName().equals(loc.getFullName()) : "Mismatched location for directory: " + dir;
-            List<Node> children = createChildNodes(loc, childLoc -> {
-                if (isModulesSubdirectory(childLoc)) {
-                    return nodes.computeIfAbsent(childLoc.getFullName(), this::newDirectory);
+            List<Node> previewOnlyNodes = getPreviewNodesToMerge(dir);
+            // We hide preview names from direct lookup, but must also prevent
+            // the preview directory from appearing in any META-INF directories.
+            boolean parentIsMetaInfDir = isMetaInf(dir);
+            List<Node> children = createChildNodes(loc, previewOnlyNodes.size(), childLoc -> {
+                LocationType type = childLoc.getType();
+                if (type == MODULES_DIR) {
+                    String name = childLoc.getFullName();
+                    return parentIsMetaInfDir && name.endsWith("/preview")
+                            ? null
+                            : nodes.computeIfAbsent(name, this::newDirectory);
                 } else {
+                    assert type == RESOURCE : "Invalid location type: " + loc;
                     // Add "/modules" prefix to image location paths to get node names.
                     String resourceName = childLoc.getFullName(true);
                     return nodes.computeIfAbsent(resourceName, n -> newResource(n, childLoc));
                 }
             });
+            children.addAll(previewOnlyNodes);
             dir.setChildren(children);
             return dir;
         }
 
-        /**
-         * Completes a package directory by setting the list of child nodes.
-         *
-         * <p>The given directory can be the top level {@code /packages} directory,
-         * so it is NOT safe to use {@code isPackagesSubdirectory(loc)} here.
-         */
-        private Directory completePackageDirectory(Directory dir, ImageLocation loc) {
+        /** Completes a package directory by setting the list of child nodes. */
+        private void completePackageSubdirectory(Directory dir, ImageLocation loc) {
             assert dir.getName().equals(loc.getFullName()) : "Mismatched location for directory: " + dir;
-            // The only directories in the "/packages" namespace are "/packages" or
-            // "/packages/<package>". However, unlike "/modules" directories, the
-            // location offsets mean different things.
-            List<Node> children;
-            if (dir.getName().equals(PACKAGES_ROOT)) {
-                // Top-level directory just contains a list of subdirectories.
-                children = createChildNodes(loc, c -> nodes.computeIfAbsent(c.getFullName(), this::newDirectory));
-            } else {
-                // A package directory's content is array of offset PAIRS in the
-                // Strings table, but we only need the 2nd value of each pair.
-                IntBuffer intBuffer = getOffsetBuffer(loc);
-                int offsetCount = intBuffer.capacity();
-                assert (offsetCount & 0x1) == 0 : "Offset count must be even: " + offsetCount;
-                children = new ArrayList<>(offsetCount / 2);
-                // Iterate the 2nd offset in each pair (odd indices).
-                for (int i = 1; i < offsetCount; i += 2) {
-                    String moduleName = getString(intBuffer.get(i));
-                    children.add(nodes.computeIfAbsent(
-                            dir.getName() + "/" + moduleName,
-                            n -> newLinkNode(n, MODULES_ROOT + "/" + moduleName)));
+            assert !dir.isCompleted() : "Directory already completed: " + dir;
+            assert loc.getType() == PACKAGES_DIR : "Invalid location type: " + loc.getType();
+
+            // In non-preview mode we might skip a very small number of preview-only
+            // entries, but it's not worth "right-sizing" the array for that.
+            IntBuffer offsets = getOffsetBuffer(loc);
+            List<Node> children = new ArrayList<>(offsets.capacity() / 2);
+            ModuleReference.readNameOffsets(offsets, /*normal*/ true, previewMode)
+                    .forEachRemaining(n -> {
+                        String modName = getString(n);
+                        Node link = newLinkNode(dir.getName() + "/" + modName, MODULES_PREFIX + "/" + modName);
+                        children.add(ensureCached(link));
+                    });
+            // If the parent directory exists, there must be at least one child node.
+            assert !children.isEmpty() : "Invalid empty package directory: " + dir;
+            dir.setChildren(children);
+        }
+
+        /**
+         * Returns the list of child preview nodes to be merged into the given directory.
+         *
+         * <p>Because this is only called once per-directory (since the result is cached
+         * indefinitely) we can remove any entries we find from the cache. If ever the
+         * node cache allowed entries to expire, this would have to be changed so that
+         * directories could be completed more than once.
+         */
+        List<Node> getPreviewNodesToMerge(Directory dir) {
+            if (previewDirectoriesToMerge != null) {
+                Directory mergeDir = previewDirectoriesToMerge.remove(dir.getName());
+                if (mergeDir != null) {
+                    return mergeDir.children;
                 }
             }
-            // This only happens once and "completes" the directory.
-            dir.setChildren(children);
-            return dir;
+            return Collections.emptyList();
         }
 
         /**
-         * Creates the list of child nodes for a {@code Directory} based on a given
+         * Creates the list of child nodes for a modules {@code Directory} from
+         * its parent location.
          *
-         * <p>Note: This cannot be used for package subdirectories as they have
-         * child offsets stored differently to other directories.
+         * <p>The {@code getChildFn} may return existing cached nodes rather
+         * than creating them, and if newly created nodes are to be cached,
+         * it is the job of {@code getChildFn}, or the caller of this method,
+         * to do that.
+         *
+         * @param loc a location relating to a "/modules" directory.
+         * @param extraNodesCount a known number of preview-only child nodes
+         *     which will be merged onto the end of the returned list later.
+         * @param getChildFn a function to return a node for each child location
+         *     (or null to skip putting anything in the list).
+         * @return the list of the non-null child nodes, returned by
+         *     {@code getChildFn}, in the order of the locations entries.
          */
-        private List<Node> createChildNodes(ImageLocation loc, Function<ImageLocation, Node> newChildFn) {
+        private List<Node> createChildNodes(ImageLocation loc, int extraNodesCount, Function<ImageLocation, Node> getChildFn) {
+            LocationType type = loc.getType();
+            assert type == MODULES_DIR || type == MODULES_ROOT : "Invalid location type: " + loc;
             IntBuffer offsets = getOffsetBuffer(loc);
             int childCount = offsets.capacity();
-            List<Node> children = new ArrayList<>(childCount);
+            List<Node> children = new ArrayList<>(childCount + extraNodesCount);
             for (int i = 0; i < childCount; i++) {
-                children.add(newChildFn.apply(getLocation(offsets.get(i))));
+                Node childNode = getChildFn.apply(getLocation(offsets.get(i)));
+                if (childNode != null) {
+                    children.add(childNode);
+                }
             }
             return children;
         }
 
         /** Helper to extract the integer offset buffer from a directory location. */
         private IntBuffer getOffsetBuffer(ImageLocation dir) {
-            assert !isResource(dir) : "Not a directory: " + dir.getFullName();
+            assert dir.getType() != RESOURCE : "Not a directory: " + dir.getFullName();
             byte[] offsets = getResource(dir);
             ByteBuffer buffer = ByteBuffer.wrap(offsets);
             buffer.order(getByteOrder());
             return buffer.asIntBuffer();
-        }
-
-        /**
-         * Efficiently determines if an image location is a resource.
-         *
-         * <p>A resource must have a valid module associated with it, so its
-         * module offset must be non-zero, and not equal to the offsets for
-         * "/modules/..." or "/packages/..." entries.
-         */
-        private boolean isResource(ImageLocation loc) {
-            int moduleOffset = loc.getModuleOffset();
-            return moduleOffset != 0
-                    && moduleOffset != modulesStringOffset
-                    && moduleOffset != packagesStringOffset;
-        }
-
-        /**
-         * Determines if an image location is a directory in the {@code /modules}
-         * namespace (if so, the location name is the node name).
-         *
-         * <p>In jimage, every {@code ImageLocation} under {@code /modules/} is a
-         * directory and has the same value for {@code getModule()}, and {@code
-         * getModuleOffset()}.
-         */
-        private boolean isModulesSubdirectory(ImageLocation loc) {
-            return loc.getModuleOffset() == modulesStringOffset;
         }
 
         /**
@@ -584,7 +744,6 @@ public final class ImageReader implements AutoCloseable {
          * In image files, resource locations are NOT prefixed by {@code /modules}.
          */
         private Resource newResource(String name, ImageLocation loc) {
-            assert name.equals(loc.getFullName(true)) : "Mismatched location for resource: " + name;
             return new Resource(name, loc, imageFileAttributes);
         }
 
@@ -816,11 +975,12 @@ public final class ImageReader implements AutoCloseable {
             throw new IllegalStateException("Cannot get child nodes of an incomplete directory: " + getName());
         }
 
-        private void setChildren(List<Node> children) {
+        private void setChildren(List<? extends Node> children) {
             assert this.children == null : this + ": Cannot set child nodes twice!";
             this.children = Collections.unmodifiableList(children);
         }
     }
+
     /**
      * Resource node (e.g. a ".class" entry, or any other data resource).
      *

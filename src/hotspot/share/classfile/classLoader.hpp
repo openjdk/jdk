@@ -99,7 +99,8 @@ class ClassPathZipEntry: public ClassPathEntry {
 };
 
 
-// For java image files
+// A singleton path entry which takes ownership of the initialized JImageFile
+// reference. Not used for exploded builds.
 class ClassPathImageEntry: public ClassPathEntry {
 private:
   const char* _name;
@@ -107,11 +108,12 @@ private:
 public:
   bool is_modules_image() const;
   const char* name() const { return _name == nullptr ? "" : _name; }
-  JImageFile* jimage() const;
-  JImageFile* jimage_non_null() const;
+  // Called to close the JImage during os::abort (normally not called).
   void close_jimage();
-  ClassPathImageEntry(JImageFile* jimage, const char* name);
+  // Takes effective ownership of the static JImageFile pointer.
+  ClassPathImageEntry(const char* name);
   virtual ~ClassPathImageEntry() { ShouldNotReachHere(); }
+
   ClassFileStream* open_stream(JavaThread* current, const char* name);
   ClassFileStream* open_stream_for_loader(JavaThread* current, const char* name, ClassLoaderData* loader_data);
 };
@@ -200,10 +202,10 @@ class ClassLoader: AllStatic {
   static GrowableArray<ModuleClassPathList*>* _patch_mod_entries;
 
   // 2. the base piece
-  //    Contains the ClassPathEntry of the modular java runtime image.
+  //    Contains the ClassPathImageEntry of the modular java runtime image.
   //    If no java runtime image is present, this indicates a
   //    build with exploded modules is being used instead.
-  static ClassPathEntry* _jrt_entry;
+  static ClassPathImageEntry* _jrt_entry;
   static GrowableArray<ModuleClassPathList*>* _exploded_entries;
   enum { EXPLODED_ENTRY_SIZE = 80 }; // Initial number of exploded modules
 
@@ -350,14 +352,19 @@ class ClassLoader: AllStatic {
   static void append_boot_classpath(ClassPathEntry* new_entry);
 #endif
 
+  // Retrieves additional VM options prior to flags processing. Options held
+  // in the JImage file are retrieved without fully initializing it. (this is
+  // the only JImage lookup which can succeed before init_jimage() is called).
   static char* lookup_vm_options();
+
+  // Called once, after all flags are processed, to finish initializing the
+  // JImage file. Until this is called, jimage_find_resource(), and any other
+  // JImage resource lookups or access will fail.
+  static void set_preview_mode(bool enable_preview);
 
   // Determines if the named module is present in the
   // modules jimage file or in the exploded modules directory.
   static bool is_module_observable(const char* module_name);
-
-  static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
-                                                const char* file_name, jlong &size);
 
   static void  trace_class_path(const char* msg, const char* name = nullptr);
 
