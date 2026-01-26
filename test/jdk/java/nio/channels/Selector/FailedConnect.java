@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
+ * @bug 8376290
  * @summary Verify that when a SocketChannel is registered with a Selector
  *          with an interest in CONNECT operation, then SocketChannel.finishConnect()
  *          throws the correct exception message, if the connect() fails
