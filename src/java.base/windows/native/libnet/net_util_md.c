@@ -158,10 +158,10 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
         excP = (char *)winsock_errors[i].exc;
         if (msg == NULL) {
             jio_snprintf(fullMsg, sizeof(fullMsg), "%s",
-                                     (char *)winsock_errors[i].errString);
+                         (char *)winsock_errors[i].errString);
         } else {
             jio_snprintf(fullMsg, sizeof(fullMsg), "%s: %s",
-                             (char *)winsock_errors[i].errString, msg);
+                         (char *)winsock_errors[i].errString, msg);
         }
     } else {
         if (msg == NULL) {
