@@ -43,7 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @bug 8375580
  * @summary Verify that URLClassPath discovers JAR Class-Path URLs in the expected order
  * @run junit JarManifestClassPathOrder
  */
