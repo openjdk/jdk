@@ -566,7 +566,12 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
       }
       if (is_excluded(klass)) {
         ResourceMark rm;
-        log_debug(cds, dynamic)("Skipping class (excluded): %s", klass->external_name());
+        aot_log_trace(aot)("pointer set to null: class (excluded): %s", klass->external_name());
+        return set_to_null;
+      }
+      if (klass->is_array_klass() && CDSConfig::is_dumping_dynamic_archive()) {
+        ResourceMark rm;
+        aot_log_trace(aot)("pointer set to null: array class not supported in dynamic region: %s", klass->external_name());
         return set_to_null;
       }
     }
@@ -961,8 +966,6 @@ void ArchiveBuilder::make_klasses_shareable() {
 
 #undef STATS_FORMAT
 #undef STATS_PARAMS
-
-  DynamicArchive::make_array_klasses_shareable();
 }
 
 void ArchiveBuilder::make_training_data_shareable() {

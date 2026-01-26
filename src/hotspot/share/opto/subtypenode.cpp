@@ -182,7 +182,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
         return verify_helper(phase, load_klass(phase), cached_t);
       }
       case Compile::SSC_full_test: {
-        Node* p1 = phase->transform(new AddPNode(superklass, superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
+        Node* p1 = phase->transform(new AddPNode(C->top(), superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
         Node* chk_off = phase->transform(new LoadINode(nullptr, C->immutable_memory(), p1, phase->type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
         record_for_cleanup(chk_off, phase);
 
@@ -194,7 +194,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
 #ifdef _LP64
           chk_off_X = phase->transform(new ConvI2LNode(chk_off_X));
 #endif
-          Node* p2 = phase->transform(new AddPNode(subklass, subklass, chk_off_X));
+          Node* p2 = phase->transform(new AddPNode(C->top(), subklass, chk_off_X));
           Node* nkls = phase->transform(LoadKlassNode::make(*phase, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
 
           return verify_helper(phase, nkls, cached_t);
