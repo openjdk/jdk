@@ -212,9 +212,8 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
     ShenandoahDirtyRememberedSetClosure make_cards_dirty;
     while (address < end) {
 
-      register_object_without_lock(address);
       const oop obj = cast_to_oop(address);
-      object_end_address += obj->oop_iterate_size(&make_cards_dirty);
+      object_end_address = address + obj->oop_iterate_size(&make_cards_dirty);
 
       const size_t object_card_index = _rs->card_index_for_addr(address);
       const HeapWord* card_start_address = _rs->addr_for_card_index(object_card_index);
@@ -227,7 +226,7 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
       }
 
       assert(card_end_address != nullptr, "Card end address cannot be null here");
-      if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::lab_alignment_reserve()) {
+      if (object_end_address > card_end_address || pointer_delta(card_end_address, object_end_address) < CollectedHeap::min_dummy_object_size()) {
         set_last_start(object_card_index, offset_in_card);
       }
 
