@@ -446,41 +446,28 @@ typedef struct gc_start_info {
 static void dumpTriggerInfo(size_t first_trigger, size_t rejected_triggers, TriggerInfo* trigger_log) {
   static const char* const header[] = {
     "\n",
-    "TimeStamp, Capacity (Bytes), Available (Bytes), Allocated (Bytes), "
-    "Min Threshold (Bytes), Learned Steps, Average Allocation Rate (MB/s), "
-    "Allocatable (Words), Average Cycle Time (seconds), "
-    "Predicted Accelerated GC Time (seconds), "
-    "Allocated Since Last Sample (bytes), "
-    "Instantaneous Allocation Rate (MB/s), "
-    "Current Allocation Rate by Acceleration (MB/s), "
-    "Accelerated Consumption (bytes), "
-    "Acceleration (MB/s/s), Predicted Future GC Time (seconds), "
-    "Future Planned GC Time (seconds), "
-    "Average Time to Deplete Available (seconds), "
-    "Is Spiking, Rate (MB/s), Spike Rate (MB/s), "
-    "Spike Time to Deplete Available (s)",
-    "                                                Min         Learned      Allocatable        Predicted                     Current                              Planned                          Spike",
-    "TimeStamp Capacity     Available    Allocated   Threshold   Steps        (bytes)            Accelerated                   Rate by                              GC     Avg                       Time",
-    "|         (Bytes)      (Bytes)      (Bytes)     (Bytes)     |  Avg       |           Avg    GC     Allocated              Accel      Accelerated               Time   Time                      to",
-    "|         |            |            |           |           |  Alloc     |           Cycle  Time   Since                  (MB/s)     Consumption               (s)    to                        Deplete",
-    "|         |            |            |           |           |  Rate      |           Time   (s)    Last                   |          (bytes)                   |      Deplete                   Available",
-    "|         |            |            |           |           |  (MB/s)    |           (s)    |      Sample                 |          |           Accel         |      Avail   Is                (s)",
-    "|         |            |            |           |           |  |         |           |      |      (bytes)                |          |           MB/s^2)       |      (s)     Spiking           |",
-    "|         |            |            |           |           |  |         |           |      |      |           Spike      |          |           |      Future |      |       |   Rate   Spike  |",
-    "|         |            |            |           |           |  |         |           |      |      |           Alloc      |          |           |      GC     |      |       |   (MB/s) Rate   |",
-    "|         |            |            |           |           |  |         |           |      |      |           Rate       |          |           |      Time   |      |       |   |      (MB/s) |",
-    "|         |            |            |           |           |  |         |           |      |      |           (MB/s)     |          |           |      (s)    |      |       |   |      |      |",
-    "|         |            |            |           |           |  |         |           |      |      |           |          |          |           |      |      |      |       |   |      |      |",
-    "v         v            v            v           v           v  v         v           v      v      v           v          v          v           v      v      v      v       v   v      v      v"
+    "                                                  Min          Learned        Allocatable               Predicted                         Current                              Planned                       Spike",
+    "  TimeStamp             Available    Allocated    Threshold    Steps          (bytes)                   Accelerated                       Rate by                              GC      Avg                   Time",
+    "  |       Capacity      (Bytes)      (Bytes)      (Bytes)      |     Avg       |              Avg       GC     Allocated                  Accel      Accelerated               Time    Time                  to",
+    "  |       (Bytes)       |            |            |            |     Alloc     |              Cycle     Time   Since                      (MB/s)     Consumption               (s)     to                    Deplete",
+    "  |       |             |            |            |            |     Rate      |              Time      (s)    Last                       |          (bytes)                   |       Deplete               Available",
+    "  |       |             |            |            |            |     (MB/s)    |              (s)       |      Sample                     |          |           Accel         |       Avail   Is            (s)",
+    "  |       |             |            |            |            |     |         |              |         |      (bytes)                    |          |           MB/s^2)       |       (s)     Spiking       |",
+    "  |       |             |            |            |            |     |         |              |         |      |              Spike       |          |           |      Future |       |       |   Rate      |",
+    "  |       |             |            |            |            |     |         |              |         |      |              Alloc       |          |           |      GC     |       |       |   (MB/s)    |",
+    "  |       |             |            |            |            |     |         |              |         |      |              Rate        |          |           |      Time   |       |       |   |         |",
+    "  |       |             |            |            |            |     |         |              |         |      |              (MB/s)      |          |           |      (s)    |       |       |   |         |",
+    "  |       |             |            |            |            |     |         |              |         |      |              |           |          |           |      |      |       |       |   |         |",
+    "  v       v             v            v            v            v     v         v              v         v      v              v           v          v           v      v      v       v       v   v         v"
   };
   for (unsigned int i = 0; i < sizeof(header) / sizeof(void*); i++) {
     log_info(gc)("%s", header[i]);
   }
   for (unsigned int i = 0; i < rejected_triggers; i++) {
     size_t __index = (first_trigger + i) % MaxRejectedTriggers;
-    log_info(gc)("%.6f, %zu, %zu, %zu, %zu, %zu, "
-                 "%.3f, %zu, %.3f, %.3f, %zu, %.3f, %.3f, %zu, %.3f, %.3f, %.3f, %.3f, "
-                 "%s, %.3f, %.3f, %.3f",
+    log_info(gc)("%8.3f %12zu %12zu %12zu %12zu %4zu "
+                 "%9.3f %12zu %8.3f %8.3f %12zu %9.3f %9.3f %12zu %9.3f %8.3f %8.3f %8.3f "
+                 "%3s %8.3f %8.3f",
                  trigger_log[__index].time_stamp,
                  trigger_log[__index].capacity,
                  trigger_log[__index].available,
@@ -501,7 +488,6 @@ static void dumpTriggerInfo(size_t first_trigger, size_t rejected_triggers, Trig
                  trigger_log[__index].avg_time_to_deplete_available,
                  trigger_log[__index].is_spiking? "yes": "no",
                  trigger_log[__index].rate / (1024*1024),
-                 trigger_log[__index].spike_rate / (1024*1024),
                  trigger_log[__index].spike_time_to_deplete_available);
   }
 }
