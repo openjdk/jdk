@@ -29,19 +29,16 @@ import javax.sql.rowset.Predicate;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import test.rowset.webrowset.CommonWebRowSetTests;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FilteredRowSetTests extends CommonWebRowSetTests {
 
     private FilteredRowSet frs;

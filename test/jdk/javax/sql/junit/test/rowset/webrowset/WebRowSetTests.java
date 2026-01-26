@@ -25,9 +25,6 @@ package test.rowset.webrowset;
 import java.sql.SQLException;
 import javax.sql.rowset.WebRowSet;
 
-import org.junit.jupiter.api.TestInstance;
-
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class WebRowSetTests extends CommonWebRowSetTests {
 
     @Override

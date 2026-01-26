@@ -29,7 +29,6 @@ import javax.sql.rowset.RowSetProvider;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 /**
  * @test
@@ -38,7 +37,6 @@ import org.junit.jupiter.api.TestInstance;
  * @throws SQLException if an unexpected error occurs
  * @run junit/othervm
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ValidateResourceBundleAccess{
     // Expected JDBCResourceBundle message, jdbcrowsetimpl.invalstate
     private static final String INVALIDSTATE = "Invalid state";
@@ -47,7 +45,7 @@ public class ValidateResourceBundleAccess{
 
     // Checking against English messages, set to US Locale
     @BeforeAll
-    public void setEnglishEnvironment() {
+    public static void setEnglishEnvironment() {
         Locale.setDefault(Locale.US);
     }
 

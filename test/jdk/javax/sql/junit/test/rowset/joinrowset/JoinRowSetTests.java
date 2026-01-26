@@ -34,16 +34,13 @@ import javax.sql.rowset.RowSetMetaDataImpl;
 import javax.sql.rowset.WebRowSet;
 
 import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import test.rowset.webrowset.CommonWebRowSetTests;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class JoinRowSetTests extends CommonWebRowSetTests {
 
     private final String SUPPLIERS_TABLE = "SUPPLIERS";

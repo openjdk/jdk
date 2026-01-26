@@ -54,7 +54,6 @@ import javax.sql.rowset.RowSetProvider;
 import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -65,7 +64,6 @@ import util.StubClob;
 import util.StubNClob;
 import util.StubSQLXML;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class CommonRowSetTests extends BaseTest {
 
     protected final String stubProvider = "util.StubSyncProvider";

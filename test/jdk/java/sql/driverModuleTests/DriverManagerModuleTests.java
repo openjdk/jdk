@@ -28,7 +28,6 @@ import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 /*
  * @test
@@ -38,7 +37,6 @@ import org.junit.jupiter.api.TestInstance;
  * @summary Tests that a JDBC Driver that is a module can be loaded
  * via the service-provider loading mechanism.
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DriverManagerModuleTests {
 
     private final String LUCKYDOGDRIVER_URL = "jdbc:tennis:myDB";

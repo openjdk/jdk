@@ -25,9 +25,6 @@ package test.rowset.cachedrowset;
 import java.sql.SQLException;
 import javax.sql.rowset.CachedRowSet;
 
-import org.junit.jupiter.api.TestInstance;
-
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CachedRowSetTests extends CommonCachedRowSetTests {
 
     @Override

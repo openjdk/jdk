@@ -52,7 +52,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -63,7 +62,6 @@ import util.StubRef;
 import util.StubSyncProvider;
 import util.TestRowSetListener;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
 
     /*
