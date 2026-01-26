@@ -28,7 +28,7 @@
  *          on systems with AVX-512 support
  * @library /test/lib /
  * @requires vm.flagless
- * @requires os.arch == "amd64" | os.arch == "x86_64"
+ * @requires os.simpleArch == "x64"
  * @requires vm.cpu.features ~= ".*avx512f.*" & vm.cpu.features ~= ".*avx512bw.*"
  *
  * @build jdk.test.whitebox.WhiteBox
