@@ -65,8 +65,8 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  *
  * <pre>{@code
  * <dt>See <i>Java Language Specification</i>:
- * <dd><a href="../../specs/jls/jls-3.html#jls-3.4">3.4. Line terminators</a>
- * <dd><a href="../../specs/primitive-types-in-patterns-instanceof-switch-jls.html#jls-5.7.1">5.7.1. Exact Testing Conversions</a>
+ * <dd><a href="../../specs/jls/jls-3.html#jls-3.4">3.4 Line terminators</a>
+ * <dd><a href="../../specs/primitive-types-in-patterns-instanceof-switch-jls.html#jls-5.7.1">5.7.1 Exact Testing Conversions</a>
  * }</pre>
  *
  * In inline tags (note you need manual JLS/JVMS prefix):
@@ -186,10 +186,10 @@ public class JSpec implements Taglet  {
                 var literal = expand(contents).trim();
                 var prefix = (preview == null ? "" : preview) + chapter + section;
                 if (literal.startsWith(prefix)) {
-                    var needsTrailingDot = literal.length() > prefix.length();
-                    if (needsTrailingDot) {
-                        // Change prefix to "chapter.x. Display"
-                        literal = chapter + section + "." + literal.substring(prefix.length());
+                    var hasFullTitle = literal.length() > prefix.length();
+                    if (hasFullTitle) {
+                        // Drop the preview part
+                        literal = chapter + section + literal.substring(prefix.length());
                     } else {
                         // No section sign if the tag refers to a chapter, like {@jvms 4}
                         String sectionSign = section.isEmpty() ? "" : "§";
