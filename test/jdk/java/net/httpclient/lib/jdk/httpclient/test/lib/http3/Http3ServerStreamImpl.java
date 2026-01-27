@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,45 +292,46 @@ final class Http3ServerStreamImpl {
     }
 
     class RequestBodyInputStream extends InputStream {
+        // non-null if the QUIC stream was reset, or an exception occurred
         volatile IOException error;
+        // true if close() was called
         volatile boolean closed;
         // uses an unbounded blocking queue in which the readrLoop
         // publishes the DataFrames payload...
         ByteBuffer current;
-        // Use lock to avoid pinned threads on the blocking queue
-        final ReentrantLock lock = new ReentrantLock();
 
         ByteBuffer current() throws IOException {
-            lock.lock();
-            try {
-                while (true) {
-                    if (current != null && current.hasRemaining()) {
-                        return current;
-                    }
-                    if (current == QuicStreamReader.EOF) return current;
-                    try {
-                        if (debug.on())
-                            debug.log("Taking buffer from queue");
-                        // Blocking call
-                        current = requestBodyQueue.take();
-                    } catch (InterruptedException e) {
-                        var io = new InterruptedIOException();
-                        Thread.currentThread().interrupt();
-                        io.initCause(e);
-                        close(io);
-                        var error = this.error;
-                        if (error != null) throw error;
-                    }
+            while (true) {
+                if (current != null && current.hasRemaining()) {
+                    return current;
                 }
-            } finally {
-                lock.unlock();
+                if (current == QuicStreamReader.EOF) return current;
+                try {
+                    if (debug.on())
+                        debug.log("Taking buffer from queue");
+                    // Blocking call
+                    current = requestBodyQueue.take();
+                } catch (InterruptedException e) {
+                    var io = new InterruptedIOException();
+                    Thread.currentThread().interrupt();
+                    io.initCause(e);
+                    close(io);
+                    var error = this.error;
+                    if (error != null) throw error;
+                }
             }
         }
 
         @Override
         public int read() throws IOException {
+            if (closed) {
+                throw new IOException("Stream is closed");
+            }
             ByteBuffer buffer = current();
             if (buffer == QuicStreamReader.EOF) {
+                if (closed) {
+                    throw new IOException("Stream is closed");
+                }
                 var error = this.error;
                 if (error == null) return -1;
                 throw error;
@@ -341,11 +342,17 @@ final class Http3ServerStreamImpl {
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
             Objects.checkFromIndexSize(off, len, b.length);
+            if (closed) {
+                throw new IOException("Stream is closed");
+            }
             int remaining = len;
             while (remaining > 0) {
                 ByteBuffer buffer = current();
                 if (buffer == QuicStreamReader.EOF) {
                     if (len == remaining) {
+                        if (closed) {
+                            throw new IOException("Stream is closed");
+                        }
                         var error = this.error;
                         if (error == null) return -1;
                         throw error;
@@ -360,32 +367,19 @@ final class Http3ServerStreamImpl {
 
         @Override
         public void close() throws IOException {
-            lock.lock();
-            try {
-                if (closed) return;
-                closed = true;
-
-            } finally {
-                lock.unlock();
-            }
+            if (closed) return;
+            closed = true;
             if (debug.on())
                 debug.log("Closing request body input stream");
             requestBodyQueue.add(QuicStreamReader.EOF);
         }
 
         void close(IOException io) {
-            lock.lock();
-            try {
-                if (closed) return;
-                closed = true;
-                error = io;
-            } finally {
-                lock.unlock();
-            }
+            if (error != null) return;
+            error = io;
             if (debug.on()) {
                 debug.log("Closing request body input stream: " + io);
             }
-            requestBodyQueue.clear();
             requestBodyQueue.add(QuicStreamReader.EOF);
         }
     }
