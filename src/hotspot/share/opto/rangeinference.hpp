@@ -512,16 +512,16 @@ public:
       // In other words:
       // min_carry[i - 1] == 1 iff either:
       // + (st1._bits._ones[i] & st2._bits._ones[i]) == 1
-      // + ((st1._bits._ones[i] | st2._bits._ones[i]) & (~tmp[i])) == 1
+      // + ((st1._bits._ones[i] ^ st2._bits._ones[i]) & (~tmp[i])) == 1
       //
       // As a result, we can calculate min_carry:
-      // min_carry = ((st1._bits._ones & st2._bits._ones) | ((st1._bits._ones | st2._bits._ones) & (~(st1._bits._ones + st2._bits._ones)))) << 1
+      // min_carry = ((st1._bits._ones & st2._bits._ones) | ((st1._bits._ones ^ st2._bits._ones) & (~(st1._bits._ones + st2._bits._ones)))) << 1
       U<CTP> min_carry = ((st1._bits._ones & st2._bits._ones) |
-                          ((st1._bits._ones | st2._bits._ones) & (~(st1._bits._ones + st2._bits._ones))));
+                          ((st1._bits._ones ^ st2._bits._ones) & (~(st1._bits._ones + st2._bits._ones))));
       min_carry = min_carry << 1;
       // Similarly, we can calculate max_carry from ~st1._bits._zeros and ~st2._bits._zeros
       U<CTP> max_carry = ((~st1._bits._zeros & ~st2._bits._zeros) |
-                          ((~st1._bits._zeros | ~st2._bits._zeros) & (~(~st1._bits._zeros + ~st2._bits._zeros))));
+                          ((~st1._bits._zeros ^ ~st2._bits._zeros) & (~(~st1._bits._zeros + ~st2._bits._zeros))));
       max_carry = max_carry << 1;
       // A bit carry[i] is known iff min_carry[i] == max_carry[i], or (min_carry[i] ^ max_carry[i]) == 0
       U<CTP> carry_known_bits = ~(min_carry ^ max_carry);
@@ -533,7 +533,7 @@ public:
       U<CTP> res = st1._bits._ones ^ st2._bits._ones ^ min_carry;
       U<CTP> zeros = known_bits & ~res;
       U<CTP> ones = known_bits & res;
-      return CT<CTP>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, MAX2(t1->_widen, t2->_widen));
+      return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
     });
   }
 
@@ -604,7 +604,7 @@ public:
       U<CTP> res = st1._bits._ones ^ st2._bits._ones ^ min_carry;
       U<CTP> zeros = known_bits & ~res;
       U<CTP> ones = known_bits & res;
-      return CT<CTP>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, MAX2(t1->_widen, t2->_widen));
+      return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
     });
   }
 };
