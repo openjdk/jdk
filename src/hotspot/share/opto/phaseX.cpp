@@ -1089,9 +1089,7 @@ void PhaseIterGVN::verify_optimize() {
       // in PhaseIterGVN::add_users_to_worklist to update it again or add an exception
       // in the verification methods below if that is not possible for some reason (like Load nodes).
       if (is_verify_Value()) {
-        stringStream st;
-        st.print("Missed Value optimization opportunity in PhaseIterGVN for %s", n->Name());
-        verify_Value_for(n, st.as_string());
+        verify_Value_for(n);
       }
       if (is_verify_Ideal()) {
         verify_Ideal_for(n, false);
@@ -1143,7 +1141,7 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-void PhaseIterGVN::verify_Value_for(const Node* n, const char* failure_msg, bool strict) {
+void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
@@ -1201,7 +1199,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, const char* failure_msg, bool
   ss.cr();
   tty->print_cr("%s", ss.as_string());
 
-  //assert(false, failure_msg);
+  assert(false, "Missed Value optimization opportunity in PhaseIterGVN for %s", n->Name());
 }
 
 // Check that all Ideal optimizations that could be done were done.
@@ -2925,9 +2923,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
     // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
     // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
     // them at the end of the round.
-    stringStream st;
-    st.print("PhaseCCP not at fixpoint: analysis result may be unsound for %s", n->Name());
-    verify_Value_for(n, st.as_string(), true);
+    verify_Value_for(n, true);
   }
 }
 #endif
