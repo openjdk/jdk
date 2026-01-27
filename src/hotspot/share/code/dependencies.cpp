@@ -1124,7 +1124,7 @@ class AbstractClassHierarchyWalker {
   Klass* find_witness(InstanceKlass* context_type, KlassDepChange* changes = nullptr);
 
   static void init();
-  static void print_statistics();
+  NOT_PRODUCT(static void print_statistics();)
 };
 
 PerfCounter* AbstractClassHierarchyWalker::_perf_find_witness_anywhere_calls_count = nullptr;
