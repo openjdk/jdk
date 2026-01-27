@@ -113,6 +113,7 @@ public:
 class ShenandoahHeapRegionClosure : public StackObj {
 public:
   virtual void heap_region_do(ShenandoahHeapRegion* r) = 0;
+  virtual size_t parallel_region_stride() { return ShenandoahParallelRegionStride; }
   virtual bool is_thread_safe() { return false; }
 };
 
@@ -480,7 +481,9 @@ private:
   void rendezvous_threads(const char* name);
   void recycle_trash();
 public:
+  // The following two functions rebuild the free set at the end of GC, in preparation for an idle phase.
   void rebuild_free_set(bool concurrent);
+  void rebuild_free_set_within_phase();
   void notify_gc_progress();
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;

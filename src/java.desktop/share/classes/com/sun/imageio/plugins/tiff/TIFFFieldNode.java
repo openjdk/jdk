@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,7 @@ public class TIFFFieldNode extends IIOMetadataNode {
 
     // Need to override this method to avoid a stack overflow exception
     // which will occur if super.appendChild is called from initialize().
+    @Override
     public Node appendChild(Node newChild) {
         if (newChild == null) {
             throw new NullPointerException("newChild == null!");
@@ -172,53 +173,63 @@ public class TIFFFieldNode extends IIOMetadataNode {
 
     // Override all methods which refer to child nodes.
 
+    @Override
     public boolean hasChildNodes() {
         initialize();
         return super.hasChildNodes();
     }
 
+    @Override
     public int getLength() {
         initialize();
         return super.getLength();
     }
 
+    @Override
     public Node getFirstChild() {
         initialize();
         return super.getFirstChild();
     }
 
+    @Override
     public Node getLastChild() {
         initialize();
         return super.getLastChild();
     }
 
+    @Override
     public Node getPreviousSibling() {
         initialize();
         return super.getPreviousSibling();
     }
 
+    @Override
     public Node getNextSibling() {
         initialize();
         return super.getNextSibling();
     }
 
+    @Override
     public Node insertBefore(Node newChild,
                              Node refChild) {
         initialize();
         return super.insertBefore(newChild, refChild);
     }
 
+    @Override
     public Node replaceChild(Node newChild,
                              Node oldChild) {
         initialize();
         return super.replaceChild(newChild, oldChild);
     }
 
+    @Override
     public Node removeChild(Node oldChild) {
         initialize();
         return super.removeChild(oldChild);
     }
 
+    @Override
     public Node cloneNode(boolean deep) {
         initialize();
         return super.cloneNode(deep);

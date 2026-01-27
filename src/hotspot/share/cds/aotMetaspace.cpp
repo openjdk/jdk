@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
+#include "services/management.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/defaultStream.hpp"
@@ -697,6 +698,9 @@ public:
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
     TrainingData::iterate_roots(it);
+    if (CDSConfig::is_dumping_full_module_graph()) {
+      ClassLoaderDataShared::iterate_roots(it);
+    }
 
     // The above code should find all the symbols that are referenced by the
     // archived classes. We just need to add the extra symbols which
@@ -793,6 +797,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   log_info(aot)("Make classes shareable");
   _builder.make_klasses_shareable();
   AOTMetaspace::make_method_handle_intrinsics_shareable();
+
+  if (CDSConfig::is_dumping_full_module_graph()) {
+    ClassLoaderDataShared::remove_unshareable_info();
+  }
 
   dump_java_heap_objects();
   dump_shared_symbol_table(_builder.symbols());
@@ -1134,13 +1142,14 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     HeapShared::init_heap_writer();
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
+      ClassLoaderDataShared::build_tables(CHECK);
       HeapShared::reset_archived_object_states(CHECK);
     }
 
     AOTReferenceObjSupport::initialize(CHECK);
     AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
 
-    if (CDSConfig::is_initing_classes_at_dump_time()) {
+    if (CDSConfig::is_dumping_aot_linked_classes()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
       // to null, and it will be initialized again at runtime.
       log_debug(aot)("Resetting Class::reflectionFactory");
@@ -2158,7 +2167,6 @@ void AOTMetaspace::initialize_shared_spaces() {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     DynamicArchive::serialize(&rc);
-    DynamicArchive::setup_array_klasses();
   }
 
   LogStreamHandle(Info, aot) lsh;
@@ -2204,7 +2212,7 @@ void AOTMetaspace::initialize_shared_spaces() {
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
     tty->print_cr("Number of shared symbols: %zu", cl.total());
-    if (HeapShared::is_loading_mapping_mode()) {
+    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
       tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     }
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());

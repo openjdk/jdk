@@ -25,12 +25,14 @@
 
 package jdk.internal.net.http;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
+import java.net.ProtocolException;
+import java.net.ProtocolException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpConnectTimeoutException;
+import java.net.http.HttpHeaders;
 import java.net.http.StreamLimitException;
 import java.time.Duration;
 import java.util.List;
@@ -48,7 +50,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodySubscriber;
@@ -63,6 +64,7 @@ import jdk.internal.net.http.common.Utils;
 import static jdk.internal.net.http.common.MinimalFuture.completedFuture;
 import static jdk.internal.net.http.common.MinimalFuture.failedFuture;
 import static jdk.internal.net.http.AltSvcProcessor.processAltSvcHeader;
+import static jdk.internal.net.http.common.Utils.readContentLength;
 
 
 /**
@@ -254,7 +256,7 @@ class MultiExchange<T> implements Cancelable {
                 .map(ConnectTimeoutTracker::getRemaining);
     }
 
-    private void cancelTimer() {
+    void cancelTimer() {
         if (responseTimerEvent != null) {
             client.cancelTimer(responseTimerEvent);
             responseTimerEvent = null;
@@ -359,13 +361,22 @@ class MultiExchange<T> implements Cancelable {
         return r.statusCode == 204;
     }
 
-    private boolean bodyIsPresent(Response r) {
-        HttpHeaders headers = r.headers();
-        if (headers.firstValueAsLong("Content-length").orElse(0L) != 0L)
-            return true;
-        if (headers.firstValue("Transfer-encoding").isPresent())
-            return true;
-        return false;
+    private void ensureNoBody(HttpHeaders headers) throws ProtocolException {
+
+        // Check `Content-Length`
+        var contentLength = readContentLength(headers, "", 0);
+        if (contentLength > 0) {
+            throw new ProtocolException(
+                    "Unexpected \"Content-Length\" header in a 204 response: " + contentLength);
+        }
+
+        // Check `Transfer-Encoding`
+        var transferEncoding = headers.firstValue("Transfer-Encoding");
+        if (transferEncoding.isPresent()) {
+            throw new ProtocolException(
+                    "Unexpected \"Transfer-Encoding\" header in a 204 response: " + transferEncoding.get());
+        }
+
     }
 
     // Call the user's body handler to get an empty body object
@@ -404,13 +415,15 @@ class MultiExchange<T> implements Cancelable {
                         processAltSvcHeader(r, client(), currentreq);
                         Exchange<T> exch = getExchange();
                         if (bodyNotPermitted(r)) {
-                            if (bodyIsPresent(r)) {
-                                IOException ioe = new IOException(
-                                    "unexpected content length header with 204 response");
-                                exch.cancel(ioe);
-                                return MinimalFuture.failedFuture(ioe);
-                            } else
-                                return handleNoBody(r, exch);
+                            // No response body consumption is expected, we can cancel the timer right away
+                            cancelTimer();
+                            try {
+                                ensureNoBody(r.headers);
+                            } catch (ProtocolException pe) {
+                                exch.cancel(pe);
+                                return MinimalFuture.failedFuture(pe);
+                            }
+                            return handleNoBody(r, exch);
                         }
                         return exch.readBodyAsync(responseHandler)
                             .thenApply((T body) -> setNewResponse(r.request, r, body, exch));
@@ -467,6 +480,8 @@ class MultiExchange<T> implements Cancelable {
 
     private CompletableFuture<Response> responseAsyncImpl(final boolean applyReqFilters) {
         if (currentreq.timeout().isPresent()) {
+            // Retried/Forwarded requests should reset the timer, if present
+            cancelTimer();
             responseTimerEvent = ResponseTimerEvent.of(this);
             client.registerTimer(responseTimerEvent);
         }
@@ -502,7 +517,6 @@ class MultiExchange<T> implements Cancelable {
                         }
                         return completedFuture(response);
                     } else {
-                        cancelTimer();
                         setNewResponse(currentreq, response, null, exch);
                         if (currentreq.isWebSocket()) {
                             // need to close the connection and open a new one.
@@ -520,11 +534,18 @@ class MultiExchange<T> implements Cancelable {
                     } })
                 .handle((response, ex) -> {
                     // 5. handle errors and cancel any timer set
-                    cancelTimer();
                     if (ex == null) {
                         assert response != null;
                         return completedFuture(response);
                     }
+
+                    // Cancel the timer. Note that we only do so if the
+                    // response has completed exceptionally. That is, we don't
+                    // cancel the timer if there are no exceptions, since the
+                    // response body might still get consumed, and it is
+                    // still subject to the response timer.
+                    cancelTimer();
+
                     // all exceptions thrown are handled here
                     final RetryContext retryCtx = checkRetryEligible(ex, exch);
                     assert retryCtx != null : "retry context is null";

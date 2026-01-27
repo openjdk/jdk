@@ -110,7 +110,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 // -Djava.security.debug=all
 class H2SelectorVTTest implements HttpServerAdapters {
 
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private static HttpTestServer h2Server;
     private static String requestURI;
 
@@ -135,10 +135,6 @@ class H2SelectorVTTest implements HttpServerAdapters {
 
     @BeforeAll
     static void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         // create a h2 server
         h2Server = HttpTestServer.create(HTTP_2, sslContext);
         h2Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");

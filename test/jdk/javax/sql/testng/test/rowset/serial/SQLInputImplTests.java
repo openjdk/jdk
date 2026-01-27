@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ public class SQLInputImplTests extends BaseTest {
     private final String sqlType = "SUPERHERO";
 
     @BeforeMethod
-    @Override
     public void setUpMethod() throws Exception {
         map = new HashMap<>();
         impl = new TestSQLDataImpl("TestSQLData");
@@ -120,7 +119,6 @@ public class SQLInputImplTests extends BaseTest {
         SQLInputImpl sqli = new SQLInputImpl(values, map);
         Object o = sqli.readObject();
         assertTrue(hero.equals(o));
-
     }
 
     /*
@@ -204,8 +202,6 @@ public class SQLInputImplTests extends BaseTest {
         Object[] values = {struct};
         SQLInputImpl sqli = new SQLInputImpl(values, map);
         Object o = sqli.readObject();
-
         assertTrue(hero.equals(o));
-
     }
 }

@@ -544,7 +544,7 @@ void Universe::genesis(TRAPS) {
       // Only modify the global variable inside the mutex.
       // If we had a race to here, the other dummy_array instances
       // and their elements just get dropped on the floor, which is fine.
-      MutexLocker ml(THREAD, FullGCALot_lock);
+      MutexLocker ml(THREAD, FullGCALot_lock, Mutex::_no_safepoint_check_flag);
       if (_fullgc_alot_dummy_array.is_empty()) {
         _fullgc_alot_dummy_array = OopHandle(vm_global(), dummy_array());
       }
@@ -1458,7 +1458,7 @@ uintptr_t Universe::verify_mark_bits() {
 #ifdef ASSERT
 // Release dummy object(s) at bottom of heap
 bool Universe::release_fullgc_alot_dummy() {
-  MutexLocker ml(FullGCALot_lock);
+  MutexLocker ml(FullGCALot_lock, Mutex::_no_safepoint_check_flag);
   objArrayOop fullgc_alot_dummy_array = (objArrayOop)_fullgc_alot_dummy_array.resolve();
   if (fullgc_alot_dummy_array != nullptr) {
     if (_fullgc_alot_dummy_next >= fullgc_alot_dummy_array->length()) {

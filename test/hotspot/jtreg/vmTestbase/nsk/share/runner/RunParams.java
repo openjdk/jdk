@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,8 +221,13 @@ public class RunParams {
                                 numberOfThreads = Integer.parseInt(args[++i]);
                         else if (args[i].equals("-it"))
                                 interruptThreads = true;
-                        else if (args[i].equals("-iterations"))
+                        else if (args[i].equals("-iterations")) {
+                                // e.g. "-iterations 3"
                                 iterations = Integer.parseInt(args[++i]);
+                        } else if (args[i].startsWith("-iterations=")) {
+                                // e.g. "-iterations=3"
+                                iterations = Integer.parseInt(args[i].substring(12));
+                        }
                 }
                 // Allow to force using vthreads using wrapper property
                 if ("Virtual".equals(System.getProperty("test.thread.factory"))) {

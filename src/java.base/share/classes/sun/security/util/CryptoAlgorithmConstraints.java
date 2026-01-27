@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,8 +120,10 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     CryptoAlgorithmConstraints(String propertyName) {
         super(null);
         affectedServices = getAlgorithms(propertyName, true);
-        debug("Before " + Arrays.deepToString(affectedServices.toArray()));
-        for (String k : affectedServices) {
+        String[] entries = affectedServices.toArray(new String[0]);
+        debug("Before " + Arrays.deepToString(entries));
+
+        for (String k : entries) {
             int idx = k.indexOf(".");
             if (idx < 1 || idx == k.length() - 1) {
                 // wrong syntax: missing "." or empty service or algorithm

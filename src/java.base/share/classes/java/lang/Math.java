@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2378,6 +2378,20 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static double fma(double a, double b, double c) {
+        // Implementation note: this method is intentionally coded in
+        // a straightforward manner relying on BigDecimal for the
+        // heavy-lifting of the numerical computation. It would be
+        // possible for the computation to be done solely using binary
+        // floating-point and integer operations, at the cost of more
+        // complicated logic. Since most processors have hardware
+        // support for fma and this method is an intrinsic candidate,
+        // the software implementation below would only be used on
+        // processors without native fma support (and also possibly on
+        // processors with native fma support while running in the
+        // interpreter). Therefore, the direct performance of the code
+        // is less of a concern than the code's simplicity,
+        // maintainability, and testability.
+
         /*
          * Infinity and NaN arithmetic is not quite the same with two
          * roundings as opposed to just one so the simple expression
@@ -2492,6 +2506,8 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float fma(float a, float b, float c) {
+        // See implementation note in fma(double, double, double).
+
         if (Float.isFinite(a) && Float.isFinite(b) && Float.isFinite(c)) {
             if (a == 0.0 || b == 0.0) {
                 return a * b + c; // Handled signed zero cases

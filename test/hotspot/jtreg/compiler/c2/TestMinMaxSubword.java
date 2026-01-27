@@ -31,6 +31,7 @@ import java.util.Random;
 /*
  * @test
  * @bug 8294816
+ * @key randomness
  * @summary Test Math.min/max vectorization miscompilation for integer subwords
  * @library /test/lib /
  * @requires vm.compiler2.enabled

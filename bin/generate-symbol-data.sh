@@ -38,7 +38,7 @@
 #   directory.
 # - open a terminal program and run these commands:
 #     cd "${JDK_CHECKOUT}"/src/jdk.compiler/share/data/symbols
-#     bash ../../../../../make/scripts/generate-symbol-data.sh "${JDK_N_INSTALL}"
+#     bash ../../../../../bin/generate-symbol-data.sh "${JDK_N_INSTALL}"
 # - this command will generate or update data for "--release N" into the ${JDK_CHECKOUT}/src/jdk.compiler/share/data/symbols
 #   directory, updating all registration necessary. If the goal was to update the data, and there are no
 #   new or changed files in the ${JDK_CHECKOUT}/src/jdk.compiler/share/data/symbols directory after running this script,

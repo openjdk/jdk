@@ -5634,12 +5634,16 @@ public class Attr extends JCTree.Visitor {
                 chk.validateRepeatable(c, repeatable, cbPos);
             }
         } else {
-            // Check that all extended classes and interfaces
-            // are compatible (i.e. no two define methods with same arguments
-            // yet different return types).  (JLS 8.4.8.3)
-            chk.checkCompatibleSupertypes(tree.pos(), c.type);
-            chk.checkDefaultMethodClashes(tree.pos(), c.type);
-            chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
+            try {
+                // Check that all extended classes and interfaces
+                // are compatible (i.e. no two define methods with same arguments
+                // yet different return types).  (JLS 8.4.8.3)
+                chk.checkCompatibleSupertypes(tree.pos(), c.type);
+                chk.checkDefaultMethodClashes(tree.pos(), c.type);
+                chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
+            } catch (CompletionFailure cf) {
+                chk.completionError(tree.pos(), cf);
+            }
         }
 
         // Check that class does not import the same parameterized interface

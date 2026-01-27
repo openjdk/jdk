@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,9 @@
  */
 package test.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -69,13 +69,15 @@ import java.time.LocalTime;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test LocalDateTime.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestLocalDateTime extends AbstractTest {
 
     private LocalDateTime TEST_2007_07_15_12_30_40_987654321 = LocalDateTime.of(2007, 7, 15, 12, 30, 40, 987654321);
@@ -87,7 +89,6 @@ public class TestLocalDateTime extends AbstractTest {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="sampleDates")
     Object[][] provider_sampleDates() {
         return new Object[][] {
             {2008, 7, 5},
@@ -99,7 +100,6 @@ public class TestLocalDateTime extends AbstractTest {
         };
     }
 
-    @DataProvider(name="sampleTimes")
     Object[][] provider_sampleTimes() {
         return new Object[][] {
             {0, 0, 0, 0},
@@ -444,7 +444,7 @@ public class TestLocalDateTime extends AbstractTest {
     @Test
     public void test_minusSeconds_noChange_oneDay() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusSeconds(24 * 60 * 60);
-        assertEquals(t.toLocalDate(), TEST_2007_07_15_12_30_40_987654321.toLocalDate().minusDays(1));
+        assertEquals(TEST_2007_07_15_12_30_40_987654321.toLocalDate().minusDays(1), t.toLocalDate());
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
@@ -469,7 +469,7 @@ public class TestLocalDateTime extends AbstractTest {
     @Test
     public void test_minusNanos_noChange_oneDay() {
         LocalDateTime t = TEST_2007_07_15_12_30_40_987654321.minusNanos(24 * 60 * 60 * 1000000000L);
-        assertEquals(t.toLocalDate(), TEST_2007_07_15_12_30_40_987654321.toLocalDate().minusDays(1));
+        assertEquals(TEST_2007_07_15_12_30_40_987654321.toLocalDate().minusDays(1), t.toLocalDate());
         assertSame(t.toLocalTime(), TEST_2007_07_15_12_30_40_987654321.toLocalTime());
     }
 
@@ -488,7 +488,8 @@ public class TestLocalDateTime extends AbstractTest {
     //-----------------------------------------------------------------------
     // toLocalDate()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="sampleDates")
+    @ParameterizedTest
+    @MethodSource("provider_sampleDates")
     public void test_getDate(int year, int month, int day) {
         LocalDate d = LocalDate.of(year, month, day);
         LocalDateTime dt = LocalDateTime.of(d, LocalTime.MIDNIGHT);
@@ -498,7 +499,8 @@ public class TestLocalDateTime extends AbstractTest {
     //-----------------------------------------------------------------------
     // toLocalTime()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="sampleTimes")
+    @ParameterizedTest
+    @MethodSource("provider_sampleTimes")
     public void test_getTime(int h, int m, int s, int ns) {
         LocalTime t = LocalTime.of(h, m, s, ns);
         LocalDateTime dt = LocalDateTime.of(LocalDate.of(2011, 7, 30), t);
@@ -549,19 +551,19 @@ public class TestLocalDateTime extends AbstractTest {
                 LocalDateTime b = localDateTimes[j];
                 if (i < j) {
                     assertTrue(a.compareTo(b) < 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), true, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertEquals(true, a.isBefore(b), a + " <=> " + b);
+                    assertEquals(false, a.isAfter(b), a + " <=> " + b);
+                    assertEquals(false, a.equals(b), a + " <=> " + b);
                 } else if (i > j) {
                     assertTrue(a.compareTo(b) > 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), true, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertEquals(false, a.isBefore(b), a + " <=> " + b);
+                    assertEquals(true, a.isAfter(b), a + " <=> " + b);
+                    assertEquals(false, a.equals(b), a + " <=> " + b);
                 } else {
-                    assertEquals(a.compareTo(b), 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), true, a + " <=> " + b);
+                    assertEquals(0, a.compareTo(b), a + " <=> " + b);
+                    assertEquals(false, a.isBefore(b), a + " <=> " + b);
+                    assertEquals(false, a.isAfter(b), a + " <=> " + b);
+                    assertEquals(true, a.equals(b), a + " <=> " + b);
                 }
             }
         }

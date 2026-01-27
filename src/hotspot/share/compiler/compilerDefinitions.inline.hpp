@@ -29,6 +29,7 @@
 
 #include "compiler/compiler_globals.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 
 inline bool CompilerConfig::is_interpreter_only() {
   return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;

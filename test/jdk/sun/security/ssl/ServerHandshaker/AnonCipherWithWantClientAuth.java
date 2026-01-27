@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @modules jdk.crypto.ec
  * @library /javax/net/ssl/templates
  * @summary Calling setWantClientAuth(true) disables anonymous suites
- * @run main/othervm -Djavax.net.debug=all AnonCipherWithWantClientAuth
+ * @run main/othervm AnonCipherWithWantClientAuth
  */
 
 import java.io.InputStream;
@@ -41,10 +41,27 @@ import java.security.Security;
 import javax.net.ssl.SSLSocket;
 
 public class AnonCipherWithWantClientAuth extends SSLSocketTemplate {
+
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=all
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
     /*
      * Run the test case.
      */
     public static void main(String[] args) throws Exception {
+
+        if (debug) {
+            System.setProperty("javax.net.debug", "all");
+        }
+
         // reset the security property to make sure that the algorithms
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");

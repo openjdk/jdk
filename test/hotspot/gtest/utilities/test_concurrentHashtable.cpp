@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "gc/shared/workerThread.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
@@ -97,7 +98,6 @@ struct Config : public AllStatic {
 };
 
 typedef ConcurrentHashTable<Pointer, mtInternal> SimpleTestTable;
-typedef ConcurrentHashTable<Pointer, mtInternal>::MultiGetHandle SimpleTestGetHandle;
 typedef ConcurrentHashTable<Config, mtInternal> CustomTestTable;
 
 struct SimpleTestLookup {
@@ -345,10 +345,6 @@ static void cht_scope(Thread* thr) {
   SimpleTestLookup stl(val);
   SimpleTestTable* cht = new SimpleTestTable();
   EXPECT_TRUE(cht->insert(thr, stl, val)) << "Insert unique value failed.";
-  {
-    SimpleTestGetHandle get_handle(thr, cht);
-    EXPECT_EQ(*get_handle.get(stl), val) << "Getting a pre-existing value failed.";
-  }
   // We do remove here to make sure the value-handle 'unlocked' the table when leaving the scope.
   EXPECT_TRUE(cht->remove(thr, stl)) << "Removing a pre-existing value failed.";
   EXPECT_FALSE(cht_get_copy(cht, thr, stl) == val) << "Got a removed value.";
@@ -556,7 +552,6 @@ public:
 };
 
 typedef ConcurrentHashTable<TestInterface, mtInternal> TestTable;
-typedef ConcurrentHashTable<TestInterface, mtInternal>::MultiGetHandle TestGetHandle;
 
 struct TestLookup {
   uintptr_t _val;
@@ -788,15 +783,8 @@ public:
   bool test_loop() {
     for (uintptr_t v = 0x1; v < 0xFFF; v++ ) {
       uintptr_t tv;
-      if (v & 0x1) {
-        TestLookup tl(v);
-        tv = cht_get_copy(_cht, this, tl);
-      } else {
-        TestLookup tl(v);
-        TestGetHandle value_handle(this, _cht);
-        uintptr_t* tmp = value_handle.get(tl);
-        tv = tmp != nullptr ? *tmp : 0;
-      }
+      TestLookup tl(v);
+      tv = cht_get_copy(_cht, this, tl);
       EXPECT_TRUE(tv == 0 || tv == v) << "Got unknown value.";
     }
     return true;
@@ -1182,12 +1170,12 @@ TEST_VM(ConcurrentHashTable, concurrent_mt_bulk_delete) {
 class CHTParallelScanTask: public WorkerTask {
   TestTable* _cht;
   TestTable::ScanTask* _scan_task;
-  size_t *_total_scanned;
+  Atomic<size_t>* _total_scanned;
 
 public:
   CHTParallelScanTask(TestTable* cht,
                       TestTable::ScanTask* bc,
-                      size_t *total_scanned) :
+                      Atomic<size_t>* total_scanned) :
     WorkerTask("CHT Parallel Scan"),
     _cht(cht),
     _scan_task(bc),
@@ -1197,7 +1185,7 @@ public:
   void work(uint worker_id) {
     ChtCountScan par_scan;
     _scan_task->do_safepoint_scan(par_scan);
-    AtomicAccess::add(_total_scanned, par_scan._count);
+    _total_scanned->add_then_fetch(par_scan._count);
   }
 };
 
@@ -1230,13 +1218,14 @@ public:
   {}
 
   void doit() {
-    size_t total_scanned = 0;
+    Atomic<size_t> total_scanned{0};
     TestTable::ScanTask scan_task(_cht, 64);
 
     CHTParallelScanTask task(_cht, &scan_task, &total_scanned);
     CHTWorkers::run_task(&task);
 
-     EXPECT_TRUE(total_scanned == (size_t)_num_items) << " Should scan all inserted items: " << total_scanned;
+    EXPECT_TRUE(total_scanned.load_relaxed() == (size_t)_num_items)
+        << " Should scan all inserted items: " << total_scanned.load_relaxed();
   }
 };
 

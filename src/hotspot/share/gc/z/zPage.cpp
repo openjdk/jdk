@@ -41,7 +41,8 @@ ZPage::ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, ZMultiPar
     _top(to_zoffset_end(start())),
     _livemap(object_max_count()),
     _remembered_set(),
-    _multi_partition_tracker(multi_partition_tracker) {
+    _multi_partition_tracker(multi_partition_tracker),
+    _relocate_promoted(false) {
   assert(!_virtual.is_null(), "Should not be null");
   assert((_type == ZPageType::small && size() == ZPageSizeSmall) ||
          (_type == ZPageType::medium && ZPageSizeMediumMin <= size() && size() <= ZPageSizeMediumMax) ||
@@ -68,6 +69,14 @@ ZPage* ZPage::clone_for_promotion() const {
   page->_top = _top;
 
   return page;
+}
+
+bool ZPage::allows_raw_null() const {
+  return is_young() && !AtomicAccess::load(&_relocate_promoted);
+}
+
+void ZPage::set_is_relocate_promoted() {
+  AtomicAccess::store(&_relocate_promoted, true);
 }
 
 ZGeneration* ZPage::generation() {

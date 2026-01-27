@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,7 +478,9 @@ private:
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
-  uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
+  bool                          _has_mh_late_inlines; // Can there still be a method handle late inlining pending?
+                                                      // false: there can't be one
+                                                      // true: we've enqueued one at some point so there may still be one
 
   // "MemLimit" directive was specified and the memory limit was hit during compilation
   bool                          _oom;
@@ -664,7 +666,7 @@ public:
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
   void          print_phase(const char* phase_name);
-  void          print_ideal_ir(const char* phase_name);
+  void          print_ideal_ir(const char* compile_phase_name) const;
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
@@ -678,7 +680,7 @@ public:
   void begin_method();
   void end_method();
 
-  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
+  void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   bool should_print_igv(int level);
@@ -982,7 +984,8 @@ public:
                                    JVMState* jvms, bool allow_inline, float profile_factor, ciKlass* speculative_receiver_type = nullptr,
                                    bool allow_intrinsics = true);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
-    return should_delay_string_inlining(call_method, jvms) ||
+    return C->directive()->should_delay_inline(call_method) ||
+           should_delay_string_inlining(call_method, jvms) ||
            should_delay_boxing_inlining(call_method, jvms) ||
            should_delay_vector_inlining(call_method, jvms);
   }
@@ -1096,9 +1099,8 @@ public:
     }
   }
 
-  void inc_number_of_mh_late_inlines() { _number_of_mh_late_inlines++; }
-  void dec_number_of_mh_late_inlines() { assert(_number_of_mh_late_inlines > 0, "_number_of_mh_late_inlines < 0 !"); _number_of_mh_late_inlines--; }
-  bool has_mh_late_inlines() const     { return _number_of_mh_late_inlines > 0; }
+  void mark_has_mh_late_inlines() { _has_mh_late_inlines = true; }
+  bool has_mh_late_inlines() const { return _has_mh_late_inlines; }
 
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);

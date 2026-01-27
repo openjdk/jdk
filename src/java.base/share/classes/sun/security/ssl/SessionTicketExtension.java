@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,7 @@ final class SessionTicketExtension {
      */
     static final class SessionTicketSpec implements SSLExtensionSpec {
         private static final int GCM_TAG_LEN = 128;
+        private static final int GCM_IV_LEN = 12;
         ByteBuffer data;
         static final ByteBuffer zero = ByteBuffer.wrap(new byte[0]);
 
@@ -215,7 +216,7 @@ final class SessionTicketExtension {
 
             try {
                 StatelessKey key = KeyState.getCurrentKey(hc);
-                byte[] iv = new byte[16];
+                byte[] iv = new byte[GCM_IV_LEN];
 
                 SecureRandom random = hc.sslContext.getSecureRandom();
                 random.nextBytes(iv);
@@ -269,7 +270,7 @@ final class SessionTicketExtension {
                     return null;
                 }
 
-                iv = new byte[16];
+                iv = new byte[GCM_IV_LEN];
                 data.get(iv);
                 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
                 c.init(Cipher.DECRYPT_MODE, key.key,

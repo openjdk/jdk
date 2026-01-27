@@ -245,10 +245,6 @@ class SerializeClosure;
                                                                                                   \
   /* Concurrency support */                                                                       \
   template(java_util_concurrent_locks_AbstractOwnableSynchronizer,           "java/util/concurrent/locks/AbstractOwnableSynchronizer") \
-  template(java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl,       "java/util/concurrent/atomic/AtomicIntegerFieldUpdater$AtomicIntegerFieldUpdaterImpl") \
-  template(java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater,    "java/util/concurrent/atomic/AtomicLongFieldUpdater$CASUpdater") \
-  template(java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater, "java/util/concurrent/atomic/AtomicLongFieldUpdater$LockedUpdater") \
-  template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
   template(jdk_internal_vm_annotation_Contended_signature,                   "Ljdk/internal/vm/annotation/Contended;")    \
   template(jdk_internal_vm_annotation_ReservedStackAccess_signature,         "Ljdk/internal/vm/annotation/ReservedStackAccess;") \
   template(jdk_internal_ValueBased_signature,                                "Ljdk/internal/ValueBased;") \
@@ -302,6 +298,7 @@ class SerializeClosure;
   template(jdk_internal_misc_Scoped_signature,               "Ljdk/internal/misc/ScopedMemoryAccess$Scoped;") \
   template(jdk_internal_vm_annotation_IntrinsicCandidate_signature, "Ljdk/internal/vm/annotation/IntrinsicCandidate;") \
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
+  template(jdk_internal_vm_annotation_TrustFinalFields_signature, "Ljdk/internal/vm/annotation/TrustFinalFields;") \
                                                                                                   \
   template(jdk_internal_vm_annotation_ChangesCurrentThread_signature,  "Ljdk/internal/vm/annotation/ChangesCurrentThread;")  \
   template(jdk_internal_vm_annotation_JvmtiHideEvents_signature,       "Ljdk/internal/vm/annotation/JvmtiHideEvents;")  \
@@ -395,10 +392,10 @@ class SerializeClosure;
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
-  template(notifyJvmtiStart_name,                     "notifyJvmtiStart")                         \
-  template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
-  template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
-  template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
+  template(startTransition_name,                      "startTransition")                          \
+  template(endTransition_name,                        "endTransition")                            \
+  template(startFinalTransition_name,                 "startFinalTransition")                     \
+  template(endFirstTransition_name,                   "endFirstTransition")                       \
   template(notifyJvmtiDisableSuspend_name,            "notifyJvmtiDisableSuspend")                \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
@@ -497,8 +494,8 @@ class SerializeClosure;
   template(java_lang_Boolean_signature,               "Ljava/lang/Boolean;")                      \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(jvmti_thread_state_name,                   "jvmti_thread_state")                       \
-  template(jvmti_VTMS_transition_disable_count_name,  "jvmti_VTMS_transition_disable_count")      \
-  template(jvmti_is_in_VTMS_transition_name,          "jvmti_is_in_VTMS_transition")              \
+  template(vthread_transition_disable_count_name,     "vthread_transition_disable_count")         \
+  template(is_in_vthread_transition_name,             "is_in_vthread_transition")                 \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \
