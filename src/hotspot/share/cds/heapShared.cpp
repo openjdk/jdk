@@ -413,6 +413,8 @@ void HeapShared::materialize_thread_object() {
 void HeapShared::add_to_dumped_interned_strings(oop string) {
   assert(HeapShared::is_writing_mapping_mode(), "Only used by this mode");
   AOTMappedHeapWriter::add_to_dumped_interned_strings(string);
+  bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, string);
+  assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
 }
 
 void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
@@ -831,14 +833,6 @@ static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
   return nullptr;
 }
 
-void HeapShared::archive_strings() {
-  assert(HeapShared::is_writing_mapping_mode(), "should not reach here");
-  oop shared_strings_array = StringTable::init_shared_strings_array();
-  bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, shared_strings_array);
-  assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
-  StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
-}
-
 int HeapShared::archive_exception_instance(oop exception) {
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, exception);
   assert(success, "sanity");
@@ -890,7 +884,7 @@ void HeapShared::start_scanning_for_oops() {
 
 void HeapShared::end_scanning_for_oops() {
   if (is_writing_mapping_mode()) {
-    archive_strings();
+    StringTable::init_shared_table();
   }
   delete_seen_objects_table();
 }

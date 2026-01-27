@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,8 +465,6 @@ void AOTMappedHeapLoader::finish_initialization(FileMapInfo* info) {
       assert(segment_oop->is_objArray(), "Must be");
       add_root_segment((objArrayOop)segment_oop);
     }
-
-    StringTable::load_shared_strings_array();
   }
 }
 
