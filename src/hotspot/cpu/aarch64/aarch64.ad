@@ -1638,14 +1638,7 @@ bool needs_acquiring_load_exclusive(const Node *n)
 {
   assert(is_CAS(n->Opcode(), true), "expecting a compare and swap");
   LoadStoreNode* ldst = n->as_LoadStore();
-  if (is_CAS(n->Opcode(), false)) {
-    assert(ldst->trailing_membar() != nullptr, "expected trailing membar");
-  } else {
-    return ldst->trailing_membar() != nullptr;
-  }
-
-  // so we can just return true here
-  return true;
+  return ldst->trailing_membar() != nullptr;
 }
 
 #define __ masm->

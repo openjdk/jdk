@@ -795,8 +795,8 @@ bool C2Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
     assert(bt == T_OBJECT, "");
     assert(op == vmIntrinsics::OP_SWAP, "");
     switch (btn) {
-    case T_OBJECT:      return false; // matchop = Op_GetAndSetP; break;
-    case T_NARROWOOP:   return false; // matchop = Op_GetAndSetN; break;
+    case T_OBJECT:      matchop = Op_GetAndSetP; break;
+    case T_NARROWOOP:   matchop = Op_GetAndSetN; break;
     default:  ShouldNotReachHere();
     }
     break;
@@ -807,8 +807,8 @@ bool C2Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
       switch (btn) {
       case T_BYTE:        matchop = Op_GetAndSetB; break;
       case T_SHORT:       matchop = Op_GetAndSetS; break;
-      case T_INT:         return false; // matchop = Op_GetAndSetI; break; // FIXME: aarch64: missing trailing barrier
-      case T_LONG:        return false; // matchop = Op_GetAndSetL; break; // FIXME: aarch64: missing trailing barrier
+      case T_INT:         matchop = Op_GetAndSetI; break;
+      case T_LONG:        matchop = Op_GetAndSetL; break;
       default:  ShouldNotReachHere();
       }
       break;
@@ -816,8 +816,8 @@ bool C2Compiler::is_intrinsic_supported_nv(vmIntrinsics::ID id,
       switch (btn) {
       case T_BYTE:        matchop = Op_GetAndAddB; break;
       case T_SHORT:       matchop = Op_GetAndAddS; break;
-      case T_INT:         return false; // matchop = Op_GetAndAddI; break; // FIXME: aarch64: missing trailing barrier
-      case T_LONG:        return false; // matchop = Op_GetAndAddL; break; // FIXME: aarch64: missing trailing barrier
+      case T_INT:         matchop = Op_GetAndAddI; break;
+      case T_LONG:        matchop = Op_GetAndAddL; break;
       default:  ShouldNotReachHere();
       }
       break;
