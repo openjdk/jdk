@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,16 @@
  *
  */
 
-#ifndef SHARE_CDS_CPPVTABLES_HPP
-#define SHARE_CDS_CPPVTABLES_HPP
+#ifndef SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
+#define SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
 
-#include "memory/allocation.hpp"
-#include "memory/allStatic.hpp"
-#include "memory/metaspaceClosureType.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "cds/aotGrowableArray.hpp"
 
-class ArchiveBuilder;
-class Method;
-class SerializeClosure;
-class CppVtableInfo;
+#include "memory/metaspaceClosure.hpp"
 
-// Support for C++ vtables in CDS archive.
-class CppVtables : AllStatic {
-  static char* _vtables_serialized_base;
-public:
-  static void dumptime_init(ArchiveBuilder* builder);
-  static void zero_archived_vtables();
-  static intptr_t* get_archived_vtable(MetaspaceClosureType type, address obj);
-  static void serialize(SerializeClosure* sc);
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
-  static char* vtables_serialized_base() { return _vtables_serialized_base; }
-};
+template <typename E>
+void AOTGrowableArray<E>::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push_c_array(AOTGrowableArray<E>::data_addr(), AOTGrowableArray<E>::capacity());
+}
 
-#endif // SHARE_CDS_CPPVTABLES_HPP
+#endif // SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
