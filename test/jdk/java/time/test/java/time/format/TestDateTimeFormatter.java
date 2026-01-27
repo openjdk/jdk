@@ -349,7 +349,9 @@ public class TestDateTimeFormatter {
             Arguments.of("2026-01-23T11:30:59-01", ISO_OFFSET_DATE_TIME),
             Arguments.of("11:30:59-01", ISO_OFFSET_TIME),
             Arguments.of("2026-023-01", ISO_ORDINAL_DATE),
-            Arguments.of("2026-W04-5-01", ISO_WEEK_DATE)
+            Arguments.of("2026-W04-5-01", ISO_WEEK_DATE),
+            Arguments.of("2026-01-23T11:30:59-01", ISO_ZONED_DATE_TIME),
+            Arguments.of("2026-01-23T11:30:59-01", ISO_INSTANT)
         );
     }
 
@@ -358,7 +360,10 @@ public class TestDateTimeFormatter {
     @MethodSource("data_iso_short_offset_parse")
     public void test_iso_short_offset_parse(String text, DateTimeFormatter formatter) {
         var formatted = formatter.format(formatter.parse(text));
-        var expected = text + (formatter == BASIC_ISO_DATE ? "00" : ":00");
+        var expected =
+            formatter == BASIC_ISO_DATE ? text + "00" :
+            formatter == ISO_INSTANT ? text.replace("11:30:59-01", "12:30:59Z") :
+            text + ":00";
         assertEquals(expected, formatted);
     }
 }
