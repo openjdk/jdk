@@ -806,7 +806,7 @@ The following commands are available:
           - `W` = methods rewritten,
           - `C` = marked with `@Contended` annotation,
           - `R` = has been redefined,
-          - `S` = is shared class (if -location 's' is static and 'd' is dynamic AOT cache location)
+          - `S` = is shared class (if -location is specified then either 's' (for static) or 'd' (for dynamic) AOT cache origin is appended)
         (BOOLEAN, false)
 
     -   `-location`: (Optional) Print the location of the class file from which the class is loaded (if available)
@@ -816,9 +816,11 @@ The following commands are available:
          Note: JDK (and other classes) loaded by a ClassLoader that does not provide a location URL to the JVM will omit this field.
 
          Note: if any classes are loaded from an AOT cache, their location reported is that of the original
-               url from which they were loaded at the time of the training run that created the AOT cache.
+               url from which they were loaded at the time of the training run that created the AOT cache,
+               additionally the flags will also be annotated to indicate the AOT cache origin (static or dynamic).
 
-               The total number of classes loaded from any AOT cache (and its name) are summarized. 
+               The total number of classes loaded (if any) from either AOT cache (and the associated cache filepath) are summarized. 
+
 `VM.classloader_stats`
 :   Print statistics about all ClassLoaders.
 
