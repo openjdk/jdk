@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -947,10 +947,6 @@ void HeapShared::archive_subgraphs() {
       archive_object_subgraphs(fmg_archive_subgraph_entry_fields,
                                true /* is_full_module_graph */);
     }
-  }
-
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    Modules::verify_archived_modules();
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,14 @@ import sun.jvm.hotspot.debugger.cdbg.*;
     by the architecture-specific subpackages. */
 
 public interface LinuxDebugger extends JVMDebugger {
+  // SIGHANDLER_NAMES holds the name of signal handler.
+  public static final List<String> SIGHANDLER_NAMES = List.of(
+    // For AMD64
+    //   - sysdeps/unix/sysv/linux/x86_64/libc_sigaction.c in glibc
+    //   - gdb/amd64-linux-tdep.c in GDB
+    "__restore_rt"
+  );
+
   public String       addressValueToString(long address) throws DebuggerException;
   public boolean      readJBoolean(long address) throws DebuggerException;
   public byte         readJByte(long address) throws DebuggerException;
@@ -52,6 +60,7 @@ public interface LinuxDebugger extends JVMDebugger {
   public long[]       getThreadIntegerRegisterSet(int lwp_id) throws DebuggerException;
   public long         getAddressValue(Address addr) throws DebuggerException;
   public Address      findLibPtrByAddress(Address pc);
+  public boolean      isSignalTrampoline(Address pc);
 
   // For LinuxCDebugger
   public List<ThreadProxy> getThreadList();

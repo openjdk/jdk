@@ -31,6 +31,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/space.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/atomic.hpp"
 #include "services/memoryManager.hpp"
 
 class EpsilonHeap : public CollectedHeap {
@@ -45,8 +46,8 @@ private:
   size_t _step_counter_update;
   size_t _step_heap_print;
   int64_t _decay_time_ns;
-  volatile size_t _last_counter_update;
-  volatile size_t _last_heap_print;
+  Atomic<size_t> _last_counter_update;
+  Atomic<size_t> _last_heap_print;
 
   void print_tracing_info() const override;
   void stop() override {};
@@ -83,7 +84,7 @@ public:
   bool requires_barriers(stackChunkOop obj) const override { return false; }
 
   // Allocation
-  HeapWord* allocate_work(size_t size, bool verbose = true);
+  HeapWord* allocate_work(size_t size);
   HeapWord* mem_allocate(size_t size) override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,

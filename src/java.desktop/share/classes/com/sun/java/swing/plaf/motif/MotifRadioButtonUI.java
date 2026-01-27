@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public class MotifRadioButtonUI extends BasicRadioButtonUI {
     // ********************************
     //          Install Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -76,6 +77,7 @@ public class MotifRadioButtonUI extends BasicRadioButtonUI {
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;
@@ -92,6 +94,7 @@ public class MotifRadioButtonUI extends BasicRadioButtonUI {
     // ********************************
     //         Paint Methods
     // ********************************
+    @Override
     protected void paintFocus(Graphics g, Rectangle t, Dimension d){
         g.setColor(getFocusColor());
         g.drawRect(0,0,d.width-1,d.height-1);

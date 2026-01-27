@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,13 @@
 #define SHARE_GC_G1_G1PARALLELCLEANING_HPP
 
 #include "gc/shared/parallelCleaning.hpp"
+#if INCLUDE_JVMCI
+#include "runtime/atomic.hpp"
+#endif
 
 #if INCLUDE_JVMCI
 class JVMCICleaningTask : public StackObj {
-  volatile bool _cleaning_claimed;
+  Atomic<bool> _cleaning_claimed;
 
 public:
   JVMCICleaningTask();

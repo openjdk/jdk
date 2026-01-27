@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,10 @@ static void save_memory_to_file(char* addr, size_t size) {
     result = ::close(fd);
     if (result == OS_ERR) {
       warning("Could not close %s: %s\n", destfile, os::strerror(errno));
+    } else {
+      if (!successful_write) {
+        remove(destfile);
+      }
     }
   }
   FREE_C_HEAP_ARRAY(char, destfile);
@@ -946,9 +950,10 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     if (result == -1 ) break;
     if (!os::write(fd, &zero_int, 1)) {
       if (errno == ENOSPC) {
-        warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
+        warning("Insufficient space for shared memory file: %s/%s\n", dirname, filename);
       }
       result = OS_ERR;
+      remove(filename);
       break;
     }
   }

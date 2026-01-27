@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
 
 /* @test
  * @bug 8177146
- * @run testng/othervm TestMethodHandleBind
+ * @run junit/othervm TestMethodHandleBind
  */
-
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodHandles.lookup;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestMethodHandleBind extends pkg.A {
     static class B extends TestMethodHandleBind {}
@@ -42,7 +41,7 @@ public class TestMethodHandleBind extends pkg.A {
     public void testInstanceOfCallerClass() throws Throwable {
         MethodHandle bound = lookup().bind(new TestMethodHandleBind() , "m1", MethodType.methodType(String.class));
         String x = (String)bound.invoke();
-        assertEquals(x, this.getClass().getSimpleName());
+        assertEquals(this.getClass().getSimpleName(), x);
     }
 
     @Test
@@ -50,47 +49,37 @@ public class TestMethodHandleBind extends pkg.A {
         MethodHandle bound = lookup().bind(new B() , "m1", MethodType.methodType(String.class));
         // MethodHandle bound = lookup().findVirtual(B.class,  "m1", MethodType.methodType(String.class)).bindTo(new B());
         String x = (String)bound.invoke();
-        assertEquals(x, "B");
+        assertEquals("B", x);
     }
 
     @Test
     public void testInstanceOfReceiverClass() throws Throwable {
-        try {
-            MethodHandle bound = lookup().bind(new pkg.A() , "m1", MethodType.methodType(String.class));
-            bound.invoke();
-            fail("IllegalAccessException expected");
-        } catch (IllegalAccessException e) {
-        }
+        assertThrows(IllegalAccessException.class, () -> lookup().bind(new pkg.A() , "m1", MethodType.methodType(String.class)));
     }
 
     @Test
     public void testPublicMethod() throws Throwable {
         MethodHandle bound = lookup().bind(new pkg.A() , "m2", MethodType.methodType(String.class));
         String x = (String)bound.invoke();
-        assertEquals(x, "A");
+        assertEquals("A", x);
     }
 
     @Test
     public void testPublicMethod2() throws Throwable {
         MethodHandle bound = lookup().bind(new TestMethodHandleBind(), "m2", MethodType.methodType(String.class));
         String x = (String)bound.invoke();
-        assertEquals(x, this.getClass().getSimpleName());
+        assertEquals(this.getClass().getSimpleName(), x);
     }
 
     @Test
     public void testInstanceOfCallerClassVarargs() throws Throwable {
         MethodHandle bound = lookup().bind(new TestMethodHandleBind() , "m3", MethodType.methodType(String.class, String[].class));
         String x = (String)bound.invoke("a", "b", "c");
-        assertEquals(x, this.getClass().getSimpleName() + "abc");
+        assertEquals(this.getClass().getSimpleName() + "abc", x);
     }
 
     @Test
     public void testInstanceOfReceiverClassVarargs() throws Throwable {
-        try {
-            MethodHandle bound = lookup().bind(new pkg.A(), "m3", MethodType.methodType(String.class, String[].class));
-            bound.invoke();
-            fail("IllegalAccessException expected");
-        } catch (IllegalAccessException e) {
-        }
+        assertThrows(IllegalAccessException.class, () -> lookup().bind(new pkg.A(), "m3", MethodType.methodType(String.class, String[].class)));
     }
 }

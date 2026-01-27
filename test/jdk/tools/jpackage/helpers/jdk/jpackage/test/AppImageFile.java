@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,7 +47,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public record AppImageFile(String mainLauncherName, Optional<String> mainLauncherClassName,
-        String version, boolean macSigned, boolean macAppStore, Map<String, Map<String, String>> launchers) {
+        String version, boolean macAppStore, Map<String, Map<String, String>> launchers) {
 
     public static Path getPathInAppImage(Path appImageDir) {
         return ApplicationLayout.platformAppImage()
@@ -67,7 +66,7 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     }
 
     public AppImageFile(String mainLauncherName, Optional<String> mainLauncherClassName) {
-        this(mainLauncherName, mainLauncherClassName, "1.0", false, false, Map.of(mainLauncherName, Map.of()));
+        this(mainLauncherName, mainLauncherClassName, "1.0", false, Map.of(mainLauncherName, Map.of()));
     }
 
     public AppImageFile(String mainLauncherName, String mainLauncherClassName) {
@@ -104,10 +103,6 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
                 xml.writeEndElement();
             }));
 
-            xml.writeStartElement("signed");
-            xml.writeCharacters(Boolean.toString(macSigned));
-            xml.writeEndElement();
-
             xml.writeStartElement("app-store");
             xml.writeCharacters(Boolean.toString(macAppStore));
             xml.writeEndElement();
@@ -132,7 +127,7 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     public static AppImageFile load(Path appImageDir) {
         return toSupplier(() -> {
             Document doc = XmlUtils.initDocumentBuilder().parse(
-                    Files.newInputStream(getPathInAppImage(appImageDir)));
+                    getPathInAppImage(appImageDir).toFile());
 
             XPath xPath = XPathFactory.newInstance().newXPath();
 
@@ -140,10 +135,6 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
 
             var mainLauncherClassName = Optional.ofNullable(xPath.evaluate(
                     "/jpackage-state/main-class/text()", doc));
-
-            var macSigned = Optional.ofNullable(xPath.evaluate(
-                    "/jpackage-state/signed/text()", doc)).map(
-                            Boolean::parseBoolean).orElse(false);
 
             var macAppStore = Optional.ofNullable(xPath.evaluate(
                     "/jpackage-state/app-store/text()", doc)).map(
@@ -172,7 +163,6 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
                     mainLauncherName,
                     mainLauncherClassName,
                     version,
-                    macSigned,
                     macAppStore,
                     Collections.unmodifiableMap(launchers));
 

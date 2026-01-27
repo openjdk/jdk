@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,16 @@
  * questions.
  */
 
+import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_IDENTITY;
+import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_USER_FULL_NAME;
+import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME;
+import static jdk.jpackage.test.MacHelper.SignKeyOption.Type.SIGN_KEY_IDENTITY_APP_IMAGE;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -37,8 +41,11 @@ import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacHelper.NamedCertificateRequestSupplier;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
+import jdk.jpackage.test.MacHelper.SignKeyOption;
+import jdk.jpackage.test.MacHelper.SignKeyOptionWithKeychain;
 import jdk.jpackage.test.MacSign;
-import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.PackageType;
@@ -48,10 +55,9 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --mac-sign
  * @library /test/jdk/tools/jpackage/helpers
- * @library base
- * @build SigningBase
  * @build jdk.jpackage.test.*
- * @build MacSignTest
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @compile -Xlint:all -Werror MacSignTest.java
  * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacSignTest
@@ -79,22 +85,28 @@ public class MacSignTest {
         }
 
         MacSign.withKeychain(keychain -> {
+
+            var signingKeyOption = new SignKeyOptionWithKeychain(
+                    SIGN_KEY_IDENTITY,
+                    SigningBase.StandardCertificateRequest.CODESIGN,
+                    keychain);
+
             // --app-content and --type app-image
             // Expect `message.codesign.failed.reason.app.content` message in the log.
             // This is not a fatal error, just a warning.
             // To make jpackage fail, specify bad additional content.
-            final var cmd = JPackageCommand.helloAppImage()
+            JPackageCommand.helloAppImage()
                     .ignoreDefaultVerbose(true)
                     .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
                     .addArguments("--app-content", appContent)
-                    .addArguments("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN.spec().name());
+                    .mutate(signingKeyOption::addTo)
+                    .mutate(cmd -> {
+                        if (MacHelper.isXcodeDevToolsInstalled()) {
+                            // Check there is no warning about missing xcode command line developer tools.
+                            cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
+                        }
+                    }).execute(1);
 
-            if (MacHelper.isXcodeDevToolsInstalled()) {
-                // Check there is no warning about missing xcode command line developer tools.
-                cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
-            }
-
-            MacHelper.useKeychain(cmd, keychain).execute(1);
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
     }
 
@@ -116,13 +128,19 @@ public class MacSignTest {
         expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("error.tool.failed.with.output", "codesign"));
 
         MacSign.withKeychain(keychain -> {
-            final var cmd = new JPackageCommand().setPackageType(PackageType.IMAGE)
+
+            var signingKeyOption = new SignKeyOptionWithKeychain(
+                    SIGN_KEY_IDENTITY,
+                    SigningBase.StandardCertificateRequest.CODESIGN,
+                    keychain);
+
+            new JPackageCommand().setPackageType(PackageType.IMAGE)
                     .ignoreDefaultVerbose(true)
                     .validateOutput(expectedStrings.toArray(CannedFormattedString[]::new))
                     .addArguments("--app-image", appImageCmd.outputBundle())
-                    .addArguments("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN.spec().name());
+                    .mutate(signingKeyOption::addTo)
+                    .execute(1);
 
-            MacHelper.useKeychain(cmd, keychain).execute(1);
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
     }
 
@@ -189,71 +207,78 @@ public class MacSignTest {
     @Test
     @ParameterSupplier
     @ParameterSupplier("testSelectSigningIdentity_JDK_8371094")
-    public static void testSelectSigningIdentity(String signingKeyUserName, CertificateRequest certRequest) {
+    public static void testSelectSigningIdentity(SignKeyOptionWithKeychain signKeyOption) {
 
         MacSign.withKeychain(keychain -> {
-            final var cmd = MacHelper.useKeychain(JPackageCommand.helloAppImage(), keychain)
-                    .setFakeRuntime()
-                    .addArguments("--mac-signing-key-user-name", signingKeyUserName);
+            final var cmd = JPackageCommand.helloAppImage().setFakeRuntime().mutate(signKeyOption::addTo);
 
-            cmd.executeAndAssertHelloAppImageCreated();
+            cmd.executeAndAssertImageCreated();
 
-            MacSignVerify.assertSigned(cmd.outputBundle(), certRequest);
+            MacSignVerify.verifyAppImageSigned(cmd, signKeyOption.certRequest());
         }, MacSign.Keychain.UsageBuilder::addToSearchList, SigningBase.StandardKeychain.MAIN.keychain());
     }
 
     public static Collection<Object[]> testSelectSigningIdentity() {
+        var keychain = SigningBase.StandardKeychain.MAIN.keychain();
         return Stream.of(
                 SigningBase.StandardCertificateRequest.CODESIGN,
                 SigningBase.StandardCertificateRequest.CODESIGN_UNICODE
-        ).map(SigningBase.StandardCertificateRequest::spec).<Object[]>mapMulti((certRequest, acc) -> {
-            acc.accept(new Object[] {certRequest.shortName(), certRequest});
-            acc.accept(new Object[] {certRequest.name(), certRequest});
+        ).map(certRequest -> {
+            return Stream.of(
+                    SIGN_KEY_USER_FULL_NAME,
+                    SIGN_KEY_USER_SHORT_NAME
+            ).map(type -> {
+                return new SignKeyOptionWithKeychain(type, certRequest, keychain);
+            });
+        }).flatMap(x -> x).map(v -> {
+            return new Object[] {v};
         }).toList();
     }
 
     public static Collection<Object[]> testSelectSigningIdentity_JDK_8371094() {
         return List.<Object[]>of(new Object[] {
-                "ACME Technologies Limited", SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.spec()
+                new SignKeyOptionWithKeychain(
+                        "ACME Technologies Limited",
+                        SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD,
+                        SigningBase.StandardKeychain.MAIN.keychain())
         });
     }
 
     enum SignOption {
-        EXPIRED_SIGNING_KEY_USER_NAME("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED.spec(), true, false),
-        EXPIRED_SIGNING_KEY_USER_NAME_PKG("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.PKG_EXPIRED.spec(), true, false),
-        EXPIRED_SIGN_IDENTITY("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED.spec(), false, false),
-        EXPIRED_CODESIGN_SIGN_IDENTITY("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED.spec(), false, true),
-        EXPIRED_PKG_SIGN_IDENTITY("--mac-installer-sign-identity", SigningBase.StandardCertificateRequest.PKG_EXPIRED.spec(), false, true),
-        GOOD_SIGNING_KEY_USER_NAME("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.CODESIGN.spec(), true, false),
-        GOOD_SIGNING_KEY_USER_NAME_PKG("--mac-signing-key-user-name", SigningBase.StandardCertificateRequest.PKG.spec(), true, false),
-        GOOD_CODESIGN_SIGN_IDENTITY("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.CODESIGN.spec(), false, true),
-        GOOD_PKG_SIGN_IDENTITY("--mac-app-image-sign-identity", SigningBase.StandardCertificateRequest.PKG.spec(), false, true);
+        EXPIRED_SIGNING_KEY_USER_NAME(SIGN_KEY_USER_SHORT_NAME, SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED),
+        EXPIRED_SIGNING_KEY_USER_NAME_PKG(SIGN_KEY_USER_SHORT_NAME, SigningBase.StandardCertificateRequest.PKG_EXPIRED),
+        EXPIRED_SIGN_IDENTITY(SIGN_KEY_USER_FULL_NAME, SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED),
+        EXPIRED_CODESIGN_SIGN_IDENTITY(SIGN_KEY_IDENTITY, SigningBase.StandardCertificateRequest.CODESIGN_EXPIRED),
+        EXPIRED_PKG_SIGN_IDENTITY(SIGN_KEY_IDENTITY, SigningBase.StandardCertificateRequest.PKG_EXPIRED),
+        GOOD_SIGNING_KEY_USER_NAME(SIGN_KEY_USER_SHORT_NAME, SigningBase.StandardCertificateRequest.CODESIGN),
+        GOOD_SIGNING_KEY_USER_NAME_PKG(SIGN_KEY_USER_SHORT_NAME, SigningBase.StandardCertificateRequest.PKG),
+        GOOD_CODESIGN_SIGN_IDENTITY(SIGN_KEY_IDENTITY, SigningBase.StandardCertificateRequest.CODESIGN),
+        GOOD_PKG_SIGN_IDENTITY(SIGN_KEY_IDENTITY_APP_IMAGE, SigningBase.StandardCertificateRequest.PKG);
 
-        SignOption(String option, MacSign.CertificateRequest cert, boolean shortName, boolean passThrough) {
-            this.option = Objects.requireNonNull(option);
-            this.cert = Objects.requireNonNull(cert);
-            this.shortName = shortName;
-            this.passThrough = passThrough;
+        SignOption(SignKeyOption.Type optionType, NamedCertificateRequestSupplier certRequestSupplier) {
+            this.option = new SignKeyOption(optionType, new ResolvableCertificateRequest(certRequestSupplier.certRequest(), _ -> {
+                throw new UnsupportedOperationException();
+            }, certRequestSupplier.name()));
         }
 
         boolean passThrough() {
-            return passThrough;
+            return option.type().mapOptionName(option.certRequest().type()).orElseThrow().passThrough();
         }
 
         boolean expired() {
-            return cert.expired();
+            return option.certRequest().expired();
         }
 
         String identityName() {
-            return cert.name();
+            return option.certRequest().name();
         }
 
         CertificateType identityType() {
-            return cert.type();
+            return option.certRequest().type();
         }
 
         List<String> args() {
-            return List.of(option, shortName ? cert.shortName() : cert.name());
+            return option.asCmdlineArgs();
         }
 
         static JPackageCommand configureOutputValidation(JPackageCommand cmd, List<SignOption> options,
@@ -274,9 +299,6 @@ public class MacSignTest {
             return cmd;
         }
 
-        private final String option;
-        private final MacSign.CertificateRequest cert;
-        private final boolean shortName;
-        private final boolean passThrough;
+        private final SignKeyOption option;
     }
 }

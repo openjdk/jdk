@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,8 @@ public class XbmImageDecoder extends ImageDecoder {
         byte[] raster = null;
         IndexColorModel model = null;
 
-        String matchRegex = "(0[xX])?[0-9a-fA-F]+[\\s+]?[,|};]";
-        String replaceRegex = "(0[xX])|,|[\\s+]|[};]";
+        String matchRegex = "\\s*(0[xX])?((?:(?!,|\\};).)+)(,|\\};)";
+        String replaceRegex = "0[xX]|,|\\s+|\\};";
 
         String line;
         int lineNum = 0;
@@ -111,11 +111,19 @@ public class XbmImageDecoder extends ImageDecoder {
                     }
                     try {
                         if (!token[2].isBlank() && state == 0) {
-                            W = Integer.parseInt(token[2]);
-                            state = 1; // after width is set
+                            if (token[1].endsWith("th")) {
+                                W = Integer.parseInt(token[2]);
+                            } else if (token[1].endsWith("t")) {
+                                H = Integer.parseInt(token[2]);
+                            }
+                            state = 1; // after first dimension is set
                         } else if (!token[2].isBlank() && state == 1) {
-                            H = Integer.parseInt(token[2]);
-                            state = 2; // after height is set
+                            if (token[1].endsWith("th")) {
+                                W = Integer.parseInt(token[2]);
+                            } else if (token[1].endsWith("t")) {
+                                H = Integer.parseInt(token[2]);
+                            }
+                            state = 2; // after second dimension is set
                         }
                     } catch (NumberFormatException nfe) {
                         // parseInt() can throw NFE
@@ -147,58 +155,80 @@ public class XbmImageDecoder extends ImageDecoder {
                 error("Width or Height of XBM file not defined");
             }
 
+            boolean contFlag = false;
+            StringBuilder sb = new StringBuilder();
+
             // loop to process image data
             while (!aborted && (line = br.readLine()) != null) {
                 lineNum++;
 
-                if (line.contains("[]")) {
-                    Matcher matcher = Pattern.compile(matchRegex).matcher(line);
-                    while (matcher.find()) {
-                        if (y >= H) {
-                            error("Scan size of XBM file exceeds"
-                                    + " the defined width x height");
-                        }
-
-                        int startIndex = matcher.start();
-                        int endIndex = matcher.end();
-                        String hexByte = line.substring(startIndex, endIndex);
-
-                        if (!(hexByte.startsWith("0x")
-                                || hexByte.startsWith("0X"))) {
-                            error("Invalid hexadecimal number at Ln#:" + lineNum
-                                    + " Col#:" + (startIndex + 1));
-                        }
-                        hexByte = hexByte.replaceAll(replaceRegex, "");
-                        if (hexByte.length() != 2) {
-                            error("Invalid hexadecimal number at Ln#:" + lineNum
-                                    + " Col#:" + (startIndex + 1));
-                        }
-
-                        try {
-                            n = Integer.parseInt(hexByte, 16);
-                        } catch (NumberFormatException nfe) {
-                            error("Error parsing hexadecimal at Ln#:" + lineNum
-                                    + " Col#:" + (startIndex + 1));
-                        }
-                        for (int mask = 1; mask <= 0x80; mask <<= 1) {
-                            if (x < W) {
-                                if ((n & mask) != 0)
-                                    raster[x] = 1;
-                                else
-                                    raster[x] = 0;
-                            }
-                            x++;
-                        }
-
-                        if (x >= W) {
-                            int result = setPixels(0, y, W, 1, model, raster, 0, W);
-                            if (result <= 0) {
-                                error("Unexpected error occurred during setPixel()");
-                            }
-                            x = 0;
-                            y++;
-                        }
+                if (!contFlag) {
+                    if (line.contains("[]")) {
+                        contFlag = true;
+                    } else {
+                        continue;
                     }
+                }
+
+                int end = line.indexOf(';');
+                if (end >= 0) {
+                    sb.append(line, 0, end + 1);
+                    break;
+                } else {
+                    sb.append(line).append(System.lineSeparator());
+                }
+            }
+
+            String resultLine = sb.toString();
+            int cutOffIndex = resultLine.indexOf('{');
+            resultLine = resultLine.substring(cutOffIndex + 1);
+
+            Matcher matcher = Pattern.compile(matchRegex).matcher(resultLine);
+            while (matcher.find()) {
+                if (y >= H) {
+                    error("Scan size of XBM file exceeds"
+                            + " the defined width x height");
+                }
+
+                int startIndex = matcher.start();
+                int endIndex = matcher.end();
+                String hexByte = resultLine.substring(startIndex, endIndex);
+                hexByte = hexByte.replaceAll("^\\s+", "");
+
+                if (!(hexByte.startsWith("0x")
+                        || hexByte.startsWith("0X"))) {
+                    error("Invalid hexadecimal number at Ln#:" + lineNum
+                            + " Col#:" + (startIndex + 1));
+                }
+                hexByte = hexByte.replaceAll(replaceRegex, "");
+                if (hexByte.length() != 2) {
+                    error("Invalid hexadecimal number at Ln#:" + lineNum
+                            + " Col#:" + (startIndex + 1));
+                }
+
+                try {
+                    n = Integer.parseInt(hexByte, 16);
+                } catch (NumberFormatException nfe) {
+                    error("Error parsing hexadecimal at Ln#:" + lineNum
+                            + " Col#:" + (startIndex + 1));
+                }
+                for (int mask = 1; mask <= 0x80; mask <<= 1) {
+                    if (x < W) {
+                        if ((n & mask) != 0)
+                            raster[x] = 1;
+                        else
+                            raster[x] = 0;
+                    }
+                    x++;
+                }
+
+                if (x >= W) {
+                    int result = setPixels(0, y, W, 1, model, raster, 0, W);
+                    if (result <= 0) {
+                        error("Unexpected error occurred during setPixel()");
+                    }
+                    x = 0;
+                    y++;
                 }
             }
             imageComplete(ImageConsumer.STATICIMAGEDONE, true);

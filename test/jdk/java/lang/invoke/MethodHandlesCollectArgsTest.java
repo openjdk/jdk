@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,17 @@
 
 /* @test
  * @bug 8259922
- * @run testng/othervm MethodHandlesCollectArgsTest
+ * @run junit/othervm MethodHandlesCollectArgsTest
  */
-
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import static java.lang.invoke.MethodType.methodType;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class MethodHandlesCollectArgsTest {
 
@@ -43,7 +42,6 @@ public class MethodHandlesCollectArgsTest {
     private static final MethodHandle FILTER_INT = MethodHandles.empty(methodType(int.class, String.class));
     private static final MethodHandle FILTER_VOID = MethodHandles.empty(methodType(void.class, String.class));
 
-    @DataProvider(name = "illegalPos")
     public static Object[][] illegalPos() {
         return new Object[][] {
             {TARGET_II_I, 2, FILTER_INT},
@@ -57,7 +55,6 @@ public class MethodHandlesCollectArgsTest {
         };
     }
 
-    @DataProvider(name = "validPos")
     public static Object[][] validPos() {
         return new Object[][] {
             {TARGET_II_I, 0, FILTER_INT, methodType(int.class, String.class, int.class)},
@@ -69,14 +66,16 @@ public class MethodHandlesCollectArgsTest {
         };
     }
 
-    @Test(dataProvider="illegalPos", expectedExceptions = {IllegalArgumentException.class})
+    @ParameterizedTest
+    @MethodSource("illegalPos")
     public void illegalPosition(MethodHandle target, int position, MethodHandle filter) {
-        MethodHandles.collectArguments(target, position, filter);
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.collectArguments(target, position, filter));
     }
 
-    @Test(dataProvider="validPos")
+    @ParameterizedTest
+    @MethodSource("validPos")
     public void legalPosition(MethodHandle target, int position, MethodHandle filter, MethodType expectedType) {
         MethodHandle result = MethodHandles.collectArguments(target, position, filter);
-        assertEquals(result.type(), expectedType);
+        assertEquals(expectedType, result.type());
     }
 }

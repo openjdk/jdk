@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,15 +23,15 @@
  *
  */
 
+#include "cppstdlib/cstdlib.hpp"
 #include "libodm_aix.hpp"
 #include "misc_aix.hpp"
-#include <stdlib.h>
-#include <dlfcn.h>
-#include <string.h>
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 
+#include <dlfcn.h>
+#include <string.h>
 
 dynamicOdm::dynamicOdm() {
   const char* libodmname = "/usr/lib/libodm.a(shr_64.o)";

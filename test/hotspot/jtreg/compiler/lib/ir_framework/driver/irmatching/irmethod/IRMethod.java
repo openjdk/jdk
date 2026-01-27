@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
+import compiler.lib.ir_framework.driver.network.testvm.java.IRRuleIds;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
@@ -53,14 +54,14 @@ public class IRMethod implements IRMethodMatchable {
     private final Method method;
     private final MatchableMatcher matcher;
 
-    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Compilation compilation, VMInfo vmInfo) {
+    public IRMethod(Method method, IRRuleIds irRuleIds, IR[] irAnnos, Compilation compilation, VMInfo vmInfo) {
         this.method = method;
-        this.matcher = new MatchableMatcher(createIRRules(method, ruleIds, irAnnos, compilation, vmInfo));
+        this.matcher = new MatchableMatcher(createIRRules(method, irRuleIds, irAnnos, compilation, vmInfo));
     }
 
-    private List<Matchable> createIRRules(Method method, int[] ruleIds, IR[] irAnnos, Compilation compilation, VMInfo vmInfo) {
+    private List<Matchable> createIRRules(Method method, IRRuleIds irRuleIds, IR[] irAnnos, Compilation compilation, VMInfo vmInfo) {
         List<Matchable> irRules = new ArrayList<>();
-        for (int ruleId : ruleIds) {
+        for (int ruleId : irRuleIds) {
             try {
                 irRules.add(new IRRule(ruleId, irAnnos[ruleId - 1], compilation, vmInfo));
             } catch (TestFormatException e) {
@@ -89,13 +90,12 @@ public class IRMethod implements IRMethodMatchable {
             return new IRMethodMatchResult(method, matcher.match());
         }
 
-        List<MatchResult> match;
         for (int i = 0; i < 10; i++) {  // warm up
-            match = matcher.match();
+            matcher.match();
         }
 
         long startTime = System.nanoTime();
-        match = matcher.match();
+        List<MatchResult> match = matcher.match();
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
         System.out.println("Verifying IR rules for " + name() + ": " + duration + " ns = " + (duration / 1000000) + " ms");

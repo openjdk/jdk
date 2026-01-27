@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,23 @@
  *
  */
 
-#include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/globals.hpp"
+
+void G1EvacStats::reset() {
+  PLABStats::reset();
+  _region_end_waste.store_relaxed(0);
+  _regions_filled.store_relaxed(0);
+  _num_plab_filled.store_relaxed(0);
+  _direct_allocated.store_relaxed(0);
+  _num_direct_allocated.store_relaxed(0);
+  _failure_used.store_relaxed(0);
+  _failure_waste.store_relaxed(0);
+}
 
 void G1EvacStats::log_plab_allocation() {
   log_debug(gc, plab)("%s PLAB allocation: "
@@ -51,13 +62,13 @@ void G1EvacStats::log_plab_allocation() {
                       "failure used: %zuB, "
                       "failure wasted: %zuB",
                       _description,
-                      _region_end_waste * HeapWordSize,
-                      _regions_filled,
-                      _num_plab_filled,
-                      _direct_allocated * HeapWordSize,
-                      _num_direct_allocated,
-                      _failure_used * HeapWordSize,
-                      _failure_waste * HeapWordSize);
+                      region_end_waste() * HeapWordSize,
+                      regions_filled(),
+                      num_plab_filled(),
+                      direct_allocated() * HeapWordSize,
+                      num_direct_allocated(),
+                      failure_used() * HeapWordSize,
+                      failure_waste() * HeapWordSize);
 }
 
 void G1EvacStats::log_sizing(size_t calculated_words, size_t net_desired_words) {
@@ -109,7 +120,7 @@ size_t G1EvacStats::compute_desired_plab_size() const {
   // threads do not allocate anything but a few rather large objects. In this
   // degenerate case the PLAB size would simply quickly tend to minimum PLAB size,
   // which is an okay reaction.
-  size_t const used_for_waste_calculation = used() > _region_end_waste ? used() - _region_end_waste : 0;
+  size_t const used_for_waste_calculation = used() > region_end_waste() ? used() - region_end_waste() : 0;
 
   size_t const total_waste_allowed = used_for_waste_calculation * TargetPLABWastePct;
   return (size_t)((double)total_waste_allowed / (100 - G1LastPLABAverageOccupancy));

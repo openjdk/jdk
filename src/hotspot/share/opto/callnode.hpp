@@ -758,6 +758,7 @@ public:
   virtual uint match_edge(uint idx) const;
 
   bool is_call_to_arraycopystub() const;
+  bool is_call_to_multianewarray_stub() const;
 
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
@@ -1100,7 +1101,7 @@ public:
   void compute_MemBar_redundancy(ciMethod* initializer);
   bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 
-  Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
+  Node* make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem);
 
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };

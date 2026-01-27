@@ -2813,14 +2813,10 @@ void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Regist
 
 // Intrinsic for
 //
-// - sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes char[] to byte[] in ISO-8859-1
-//
-// - java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes byte[] (containing UTF-16) to byte[] in ISO-8859-1
-//
-// - java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes char[] to byte[] in ASCII
+// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
+//     return the number of characters copied.
+// - java/lang/StringUTF16.compress
+//     return index of non-latin1 character if copy fails, otherwise 'len'.
 //
 // This version always returns the number of characters copied. A successful
 // copy will complete with the post-condition: 'res' == 'len', while an

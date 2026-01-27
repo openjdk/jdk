@@ -4,7 +4,6 @@ ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--app-version, 1.]; errors=[mess
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--app-version, 1.b.3]; errors=[message.error-header+[error.version-string-invalid-component, 1.b.3, b.3]])
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--app-version, ]; errors=[message.error-header+[error.version-string-empty]])
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--jlink-options, --add-modules]; errors=[message.error-header+[error.blocked.option, --add-modules]])
-ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--jlink-options, --foo]; errors=[message.error-header+[error.jlink.failed, Error: unknown option: --foo]])
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--jlink-options, --module-path]; errors=[message.error-header+[error.blocked.option, --module-path]])
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--jlink-options, --output]; errors=[message.error-header+[error.blocked.option, --output]])
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--main-jar, non-existent.jar]; errors=[message.error-header+[error.main-jar-does-not-exist, non-existent.jar]])

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -83,10 +83,6 @@ void ImageDecompressor::image_decompressor_init() {
         _decompressors[0] = new ZipDecompressor("zip");
         _decompressors[1] = new SharedStringDecompressor("compact-cp");
     }
-}
-
-void ImageDecompressor::image_decompressor_close() {
-    delete[] _decompressors;
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package jdk.jpackage.internal.model;
 
 
 /**
- * Generic package type. E.g.: application image, rpm, msi are all package types.
+ * Native package type. E.g.: dmg, rpm, msi are all package types.
  *
  * @see jdk.jpackage.internal.model.Package
  */
-public interface PackageType {}
+public non-sealed interface PackageType extends BundleType {}

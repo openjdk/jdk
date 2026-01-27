@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,6 @@ import javax.swing.text.ViewFactory;
 import javax.swing.text.html.parser.ParserDelegator;
 
 import sun.swing.SwingAccessor;
-import sun.awt.AppContext;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
@@ -432,11 +431,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param s a StyleSheet
      */
     public void setStyleSheet(StyleSheet s) {
-        if (s == null) {
-            AppContext.getAppContext().remove(DEFAULT_STYLES_KEY);
-        } else {
-            AppContext.getAppContext().put(DEFAULT_STYLES_KEY, s);
-        }
+        defaultStyles = s;
     }
 
     /**
@@ -448,12 +443,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @return the StyleSheet
      */
     public StyleSheet getStyleSheet() {
-        AppContext appContext = AppContext.getAppContext();
-        StyleSheet defaultStyles = (StyleSheet) appContext.get(DEFAULT_STYLES_KEY);
-
         if (defaultStyles == null) {
             defaultStyles = new StyleSheet();
-            appContext.put(DEFAULT_STYLES_KEY, defaultStyles);
             try (InputStream is = HTMLEditorKit.getResourceAsStream(DEFAULT_CSS);
                  InputStreamReader isr = new InputStreamReader(is, ISO_8859_1);
                  Reader r = new BufferedReader(isr))
@@ -692,6 +683,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
     private static final ViewFactory defaultFactory = new HTMLFactory();
 
     MutableAttributeSet input;
+    private static StyleSheet defaultStyles = null;
     private static final Object DEFAULT_STYLES_KEY = new Object();
     private LinkController linkHandler = new LinkController();
     private static Parser defaultParser = null;

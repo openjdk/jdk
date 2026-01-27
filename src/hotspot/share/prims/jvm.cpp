@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,9 +114,6 @@
 #endif
 #if INCLUDE_MANAGEMENT
 #include "services/finalizerService.hpp"
-#endif
-#ifdef LINUX
-#include "osContainer_linux.hpp"
 #endif
 
 #include <errno.h>
@@ -500,11 +497,9 @@ JVM_LEAF(jboolean, JVM_IsUseContainerSupport(void))
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsContainerized(void))
-#ifdef LINUX
-  if (OSContainer::is_containerized()) {
+  if (os::is_containerized()) {
     return JNI_TRUE;
   }
-#endif
   return JNI_FALSE;
 JVM_END
 

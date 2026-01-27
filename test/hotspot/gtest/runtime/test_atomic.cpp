@@ -162,6 +162,35 @@ TEST_VM(AtomicIntegerTest, cmpxchg_int64) {
   Support().test();
 }
 
+template<typename T>
+struct AtomicIntegerCmpsetTestSupport {
+  Atomic<T> _test_value;
+
+  AtomicIntegerCmpsetTestSupport() : _test_value{} {}
+
+  void test() {
+    T zero = 0;
+    T five = 5;
+    T ten = 10;
+    _test_value.store_relaxed(zero);
+    EXPECT_FALSE(_test_value.compare_set(five, ten));
+    EXPECT_EQ(zero, _test_value.load_relaxed());
+    EXPECT_TRUE(_test_value.compare_set(zero, ten));
+    EXPECT_EQ(ten, _test_value.load_relaxed());
+  }
+};
+
+TEST_VM(AtomicIntegerTest, cmpset_int32) {
+  using Support = AtomicIntegerCmpsetTestSupport<int32_t>;
+  Support().test();
+}
+
+TEST_VM(AtomicIntegerTest, cmpset_int64) {
+  // Check if 64-bit atomics are available on the machine.
+  using Support = AtomicIntegerCmpsetTestSupport<int64_t>;
+  Support().test();
+}
+
 struct AtomicXchgAndCmpxchg1ByteStressSupport {
   char _default_val;
   int  _base;

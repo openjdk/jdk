@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,14 @@
  *
  */
 
+#include "cds/aotGrowableArray.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
@@ -53,6 +55,19 @@
 // + at run time:   we clone the actual contents of the vtables from libjvm.so
 //                  into our own tables.
 
+
+#ifndef PRODUCT
+
+// AOTGrowableArray has a vtable only when in non-product builds (due to
+// the virtual printing functions in AnyObj).
+
+using GrowableArray_ModuleEntry_ptr = AOTGrowableArray<ModuleEntry*>;
+
+#define DEBUG_CPP_VTABLE_TYPES_DO(f) \
+  f(GrowableArray_ModuleEntry_ptr) \
+
+#endif
+
 // Currently, the archive contains ONLY the following types of objects that have C++ vtables.
 #define CPP_VTABLE_TYPES_DO(f) \
   f(ConstantPool) \
@@ -68,7 +83,8 @@
   f(TypeArrayKlass) \
   f(KlassTrainingData) \
   f(MethodTrainingData) \
-  f(CompileTrainingData)
+  f(CompileTrainingData) \
+  NOT_PRODUCT(DEBUG_CPP_VTABLE_TYPES_DO(f))
 
 class CppVtableInfo {
   intptr_t _vtable_size;
@@ -86,7 +102,7 @@ public:
   }
 };
 
-static inline intptr_t* vtable_of(const Metadata* m) {
+static inline intptr_t* vtable_of(const void* m) {
   return *((intptr_t**)m);
 }
 
@@ -116,6 +132,7 @@ CppVtableInfo* CppVtableCloner<T>::allocate_and_initialize(const char* name) {
 
 template <class T>
 void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
+  ResourceMark rm;
   T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
   int n = info->vtable_size();
   intptr_t* srcvtable = vtable_of(&tmp);
@@ -268,7 +285,7 @@ void CppVtables::serialize(SerializeClosure* soc) {
   }
 }
 
-intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address obj) {
+intptr_t* CppVtables::get_archived_vtable(MetaspaceClosureType type, address obj) {
   if (!_orig_cpp_vtptrs_inited) {
     CPP_VTABLE_TYPES_DO(INIT_ORIG_CPP_VTPTRS);
     _orig_cpp_vtptrs_inited = true;
@@ -276,19 +293,23 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
 
   assert(CDSConfig::is_dumping_archive(), "sanity");
   int kind = -1;
-  switch (msotype) {
-  case MetaspaceObj::SymbolType:
-  case MetaspaceObj::TypeArrayU1Type:
-  case MetaspaceObj::TypeArrayU2Type:
-  case MetaspaceObj::TypeArrayU4Type:
-  case MetaspaceObj::TypeArrayU8Type:
-  case MetaspaceObj::TypeArrayOtherType:
-  case MetaspaceObj::ConstMethodType:
-  case MetaspaceObj::ConstantPoolCacheType:
-  case MetaspaceObj::AnnotationsType:
-  case MetaspaceObj::RecordComponentType:
-  case MetaspaceObj::AdapterHandlerEntryType:
-  case MetaspaceObj::AdapterFingerPrintType:
+  switch (type) {
+  case MetaspaceClosureType::SymbolType:
+  case MetaspaceClosureType::TypeArrayU1Type:
+  case MetaspaceClosureType::TypeArrayU2Type:
+  case MetaspaceClosureType::TypeArrayU4Type:
+  case MetaspaceClosureType::TypeArrayU8Type:
+  case MetaspaceClosureType::TypeArrayOtherType:
+  case MetaspaceClosureType::CArrayType:
+  case MetaspaceClosureType::ConstMethodType:
+  case MetaspaceClosureType::ConstantPoolCacheType:
+  case MetaspaceClosureType::AnnotationsType:
+  case MetaspaceClosureType::ModuleEntryType:
+  case MetaspaceClosureType::PackageEntryType:
+  case MetaspaceClosureType::RecordComponentType:
+  case MetaspaceClosureType::AdapterHandlerEntryType:
+  case MetaspaceClosureType::AdapterFingerPrintType:
+  PRODUCT_ONLY(case MetaspaceClosureType::GrowableArrayType:)
     // These have no vtables.
     break;
   default:

@@ -25,7 +25,7 @@
 
 package java.util;
 
-import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -62,6 +62,7 @@ import java.util.stream.Stream;
  * @since 1.8
  */
 @jdk.internal.ValueBased
+@TrustFinalFields
 public final class Optional<T> {
     /**
      * Common instance for {@code empty()}.
@@ -71,7 +72,6 @@ public final class Optional<T> {
     /**
      * If non-null, the value; if null, indicates no value is present
      */
-    @Stable
     private final T value;
 
     /**

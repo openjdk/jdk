@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,8 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Override
     protected List<TemporalAccessor> samples() {
-        TemporalAccessor[] array = {TEST_11_30_59_500_PONE, OffsetTime.MIN, OffsetTime.MAX};
+        TemporalAccessor[] array = {OffsetTime.of(11, 30, 59, 500, OFFSET_PONE),
+                OffsetTime.MIN, OffsetTime.MAX};
         return Arrays.asList(array);
     }
 
