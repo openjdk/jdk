@@ -2052,16 +2052,6 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     return false;
   }
 
-  if (n->is_ReachabilityFence()) {
-    // ReachabilityFencesNode::Identity() walks CFG to determine whether the node is redundant or not.
-    // But since there's no accurate dominance information avaialble, it reports a conservative answer.
-    // So, any change in CFG can potentially expose a ReachabilityFence node as redundant.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=1000 -Xcomp -XX:+StressReachabilityFences
-    return false;
-  }
-
   Node* i = n->Identity(this);
   // If we cannot find any other Identity, we are happy.
   if (i == n) {
