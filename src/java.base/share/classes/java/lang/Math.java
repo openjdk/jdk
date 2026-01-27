@@ -2782,6 +2782,7 @@ public final class Math {
      * </ul>
      * @param   x The number whose inverse hyperbolic sine is to be returned.
      * @return  The inverse hyperbolic sine of {@code x}.
+     * @since 27
      */
     public static double asinh(double x) {
         return StrictMath.asinh(x);
