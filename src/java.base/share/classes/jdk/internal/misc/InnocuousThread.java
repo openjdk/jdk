@@ -113,7 +113,7 @@ public final class InnocuousThread extends Thread {
     private InnocuousThread(ThreadGroup group, Runnable target, String name,
                             long stackSize, ClassLoader tccl) {
         super(group, target, name, stackSize, false);
-        UNSAFE.putReferenceMO(Unsafe.MO_RELEASE, this, CONTEXTCLASSLOADER, tccl);
+        UNSAFE.putReferenceRelease(this, CONTEXTCLASSLOADER, tccl);
     }
 
     @Override

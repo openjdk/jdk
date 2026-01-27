@@ -277,8 +277,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     private JvmConstant getTagAt(int index) {
         checkBounds(index);
         HotSpotVMConfig config = config();
-        final long metaspaceConstantPoolTags = UNSAFE.getAddress(null, getConstantPoolPointer() + config.constantPoolTagsOffset);
-        final int tag = UNSAFE.getByteMO(UnsafeAccess.MO_VOLATILE, null, metaspaceConstantPoolTags + config.arrayU1DataOffset + index);
+        final long metaspaceConstantPoolTags = UNSAFE.getAddress(getConstantPoolPointer() + config.constantPoolTagsOffset);
+        final int tag = UNSAFE.getByteVolatile(null, metaspaceConstantPoolTags + config.arrayU1DataOffset + index);
         if (tag == 0) {
             return null;
         }

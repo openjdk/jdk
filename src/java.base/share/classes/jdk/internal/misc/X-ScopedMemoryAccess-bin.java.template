@@ -99,7 +99,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.get$Type$MO(Unsafe.MO_VOLATILE, base, offset);
+            return UNSAFE.get$Type$Volatile(base, offset);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -120,7 +120,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            UNSAFE.put$Type$MO(Unsafe.MO_VOLATILE, base, offset, value);
+            UNSAFE.put$Type$Volatile(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -141,7 +141,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.get$Type$MO(Unsafe.MO_ACQUIRE, base, offset);
+            return UNSAFE.get$Type$Acquire(base, offset);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -162,7 +162,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            UNSAFE.put$Type$MO(Unsafe.MO_RELEASE, base, offset, value);
+            UNSAFE.put$Type$Release(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -183,7 +183,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.get$Type$MO(Unsafe.MO_OPAQUE, base, offset);
+            return UNSAFE.get$Type$Opaque(base, offset);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -203,7 +203,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            UNSAFE.put$Type$MO(Unsafe.MO_OPAQUE, base, offset, value);
+            UNSAFE.put$Type$Opaque(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -266,7 +266,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.compareAndExchange$Type$MO(Unsafe.MO_ACQUIRE, base, offset, expected, value);
+            return UNSAFE.compareAndExchange$Type$Acquire(base, offset, expected, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -287,7 +287,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.compareAndExchange$Type$MO(Unsafe.MO_RELEASE, base, offset, expected, value);
+            return UNSAFE.compareAndExchange$Type$Release(base, offset, expected, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -308,7 +308,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.compareAndSet$Type$MO(Unsafe.MO_WEAK_CAS_PLAIN, base, offset, expected, value);
+            return UNSAFE.weakCompareAndSet$Type$Plain(base, offset, expected, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -329,7 +329,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.compareAndSet$Type$MO(Unsafe.MO_WEAK_CAS_VOLATILE, base, offset, expected, value);
+            return UNSAFE.weakCompareAndSet$Type$(base, offset, expected, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -350,7 +350,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.compareAndSet$Type$MO(Unsafe.MO_WEAK_CAS_ACQUIRE, base, offset, expected, value);
+            return UNSAFE.weakCompareAndSet$Type$Acquire(base, offset, expected, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -371,7 +371,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.compareAndSet$Type$MO(Unsafe.MO_WEAK_CAS_RELEASE, base, offset, expected, value);
+            return UNSAFE.weakCompareAndSet$Type$Release(base, offset, expected, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -413,7 +413,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndSet$Type$MO(Unsafe.MO_ACQUIRE, base, offset, value);
+            return UNSAFE.getAndSet$Type$Acquire(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -434,7 +434,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndSet$Type$MO(Unsafe.MO_RELEASE, base, offset, value);
+            return UNSAFE.getAndSet$Type$Release(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -478,7 +478,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndAdd$Type$MO(Unsafe.MO_ACQUIRE, base, offset, delta);
+            return UNSAFE.getAndAdd$Type$Acquire(base, offset, delta);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -499,7 +499,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndAdd$Type$MO(Unsafe.MO_RELEASE, base, offset, delta);
+            return UNSAFE.getAndAdd$Type$Release(base, offset, delta);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -543,7 +543,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndBitwiseOr$Type$MO(Unsafe.MO_ACQUIRE, base, offset, value);
+            return UNSAFE.getAndBitwiseOr$Type$Acquire(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -564,7 +564,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndBitwiseOr$Type$MO(Unsafe.MO_RELEASE, base, offset, value);
+            return UNSAFE.getAndBitwiseOr$Type$Release(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -606,7 +606,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndBitwiseAnd$Type$MO(Unsafe.MO_ACQUIRE, base, offset, value);
+            return UNSAFE.getAndBitwiseAnd$Type$Acquire(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -627,7 +627,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndBitwiseAnd$Type$MO(Unsafe.MO_RELEASE, base, offset, value);
+            return UNSAFE.getAndBitwiseAnd$Type$Release(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -669,7 +669,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndBitwiseXor$Type$MO(Unsafe.MO_ACQUIRE, base, offset, value);
+            return UNSAFE.getAndBitwiseXor$Type$Acquire(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }
@@ -690,7 +690,7 @@
             if (session != null) {
                 session.checkValidStateRaw();
             }
-            return UNSAFE.getAndBitwiseXor$Type$MO(Unsafe.MO_RELEASE, base, offset, value);
+            return UNSAFE.getAndBitwiseXor$Type$Release(base, offset, value);
         } finally {
             Reference.reachabilityFence(session);
         }

@@ -455,17 +455,17 @@ public abstract class AtomicLongFieldUpdater<T> {
 
         public final void set(T obj, long newValue) {
             accessCheck(obj);
-            U.putLongMO(Unsafe.MO_VOLATILE, obj, offset, newValue);
+            U.putLongVolatile(obj, offset, newValue);
         }
 
         public final void lazySet(T obj, long newValue) {
             accessCheck(obj);
-            U.putLongMO(Unsafe.MO_RELEASE, obj, offset, newValue);
+            U.putLongRelease(obj, offset, newValue);
         }
 
         public final long get(T obj) {
             accessCheck(obj);
-            return U.getLongMO(Unsafe.MO_VOLATILE, obj, offset);
+            return U.getLongVolatile(obj, offset);
         }
 
         public final long getAndSet(T obj, long newValue) {

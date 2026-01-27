@@ -109,7 +109,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(int newValue) {
-        U.putIntMO(Unsafe.MO_RELEASE, this, VALUE, newValue);
+        U.putIntRelease(this, VALUE, newValue);
     }
 
     /**
@@ -155,7 +155,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      */
     @Deprecated(since="9")
     public final boolean weakCompareAndSet(int expectedValue, int newValue) {
-        return U.compareAndSetIntMO(Unsafe.MO_WEAK_CAS_PLAIN, this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetIntPlain(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -169,7 +169,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetPlain(int expectedValue, int newValue) {
-        return U.compareAndSetIntMO(Unsafe.MO_WEAK_CAS_PLAIN, this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetIntPlain(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -421,7 +421,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final int getOpaque() {
-        return U.getIntMO(Unsafe.MO_OPAQUE, this, VALUE);
+        return U.getIntOpaque(this, VALUE);
     }
 
     /**
@@ -432,7 +432,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final void setOpaque(int newValue) {
-        U.putIntMO(Unsafe.MO_OPAQUE, this, VALUE, newValue);
+        U.putIntOpaque(this, VALUE, newValue);
     }
 
     /**
@@ -443,7 +443,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final int getAcquire() {
-        return U.getIntMO(Unsafe.MO_ACQUIRE, this, VALUE);
+        return U.getIntAcquire(this, VALUE);
     }
 
     /**
@@ -454,7 +454,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final void setRelease(int newValue) {
-        U.putIntMO(Unsafe.MO_RELEASE, this, VALUE, newValue);
+        U.putIntRelease(this, VALUE, newValue);
     }
 
     /**
@@ -486,7 +486,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final int compareAndExchangeAcquire(int expectedValue, int newValue) {
-        return U.compareAndExchangeIntMO(Unsafe.MO_ACQUIRE, this, VALUE, expectedValue, newValue);
+        return U.compareAndExchangeIntAcquire(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -502,7 +502,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final int compareAndExchangeRelease(int expectedValue, int newValue) {
-        return U.compareAndExchangeIntMO(Unsafe.MO_RELEASE, this, VALUE, expectedValue, newValue);
+        return U.compareAndExchangeIntRelease(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -517,7 +517,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetVolatile(int expectedValue, int newValue) {
-        return U.compareAndSetIntMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetInt(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -532,7 +532,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetAcquire(int expectedValue, int newValue) {
-        return U.compareAndSetIntMO(Unsafe.MO_WEAK_CAS_ACQUIRE, this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetIntAcquire(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -547,7 +547,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetRelease(int expectedValue, int newValue) {
-        return U.compareAndSetIntMO(Unsafe.MO_WEAK_CAS_RELEASE, this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetIntRelease(this, VALUE, expectedValue, newValue);
     }
 
 }

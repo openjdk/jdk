@@ -370,7 +370,7 @@ public class StampedLock implements java.io.Serializable {
             U.putInt(this, STATUS, s);
         }
         final void clearStatus() {               // for reducing unneeded signals
-            U.putIntMO(Unsafe.MO_OPAQUE, this, STATUS, 0);
+            U.putIntOpaque(this, STATUS, 0);
         }
 
         private static final long STATUS
@@ -473,7 +473,7 @@ public class StampedLock implements java.io.Serializable {
     @ReservedStackAccess
     public long writeLock() {
         // try unconditional CAS confirming weak read
-        long s = U.getLongMO(Unsafe.MO_OPAQUE, this, STATE) & ~ABITS, nextState;
+        long s = U.getLongOpaque(this, STATE) & ~ABITS, nextState;
         if (casState(s, nextState = s | WBIT)) {
             U.storeStoreFence();
             return nextState;
@@ -548,7 +548,7 @@ public class StampedLock implements java.io.Serializable {
     @ReservedStackAccess
     public long readLock() {
         // unconditionally optimistically try non-overflow case once
-        long s = U.getLongMO(Unsafe.MO_OPAQUE, this, STATE) & RSAFE, nextState;
+        long s = U.getLongOpaque(this, STATE) & RSAFE, nextState;
         if (casState(s, nextState = s + RUNIT))
             return nextState;
         else

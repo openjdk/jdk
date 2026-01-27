@@ -42,7 +42,6 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -4424,8 +4423,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     private static class UnsafeHolder {
-        private static final Unsafe unsafe
-                = Unsafe.getUnsafe();
+        private static final jdk.internal.misc.Unsafe unsafe
+                = jdk.internal.misc.Unsafe.getUnsafe();
         private static final long intCompactOffset
                 = unsafe.objectFieldOffset(BigDecimal.class, "intCompact");
         private static final long intValOffset
@@ -4440,7 +4439,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
 
         static void setIntValVolatile(BigDecimal bd, BigInteger val) {
-            unsafe.putReferenceMO(Unsafe.MO_VOLATILE, bd, intValOffset, val);
+            unsafe.putReferenceVolatile(bd, intValOffset, val);
         }
     }
 

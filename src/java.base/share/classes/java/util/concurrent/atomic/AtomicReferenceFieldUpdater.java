@@ -459,19 +459,19 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
         public final void set(T obj, V newValue) {
             accessCheck(obj);
             valueCheck(newValue);
-            U.putReferenceMO(Unsafe.MO_VOLATILE, obj, offset, newValue);
+            U.putReferenceVolatile(obj, offset, newValue);
         }
 
         public final void lazySet(T obj, V newValue) {
             accessCheck(obj);
             valueCheck(newValue);
-            U.putReferenceMO(Unsafe.MO_RELEASE, obj, offset, newValue);
+            U.putReferenceRelease(obj, offset, newValue);
         }
 
         @SuppressWarnings("unchecked")
         public final V get(T obj) {
             accessCheck(obj);
-            return (V)U.getReferenceMO(Unsafe.MO_VOLATILE, obj, offset);
+            return (V)U.getReferenceVolatile(obj, offset);
         }
 
         @SuppressWarnings("unchecked")

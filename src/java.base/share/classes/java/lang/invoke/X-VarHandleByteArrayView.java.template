@@ -487,8 +487,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(session(bb), base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.compareAndSet$RawType$MO(Unsafe.MO_WEAK_CAS_VOLATILE,
-                    base, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
             return expectedValue;
         }
@@ -545,8 +544,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(session(bb), base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.compareAndSet$RawType$MO(Unsafe.MO_WEAK_CAS_VOLATILE,
-                    base, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue | value)));
             return expectedValue;
         }
@@ -601,8 +599,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(session(bb), base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.compareAndSet$RawType$MO(Unsafe.MO_WEAK_CAS_VOLATILE,
-                    base, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue & value)));
             return expectedValue;
         }
@@ -658,8 +655,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(session(bb), base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.compareAndSet$RawType$MO(Unsafe.MO_WEAK_CAS_VOLATILE,
-                    base, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue ^ value)));
             return expectedValue;
         }

@@ -107,7 +107,7 @@ public abstract class AbstractQueuedLongSynchronizer
             U.putInt(this, STATUS, s);
         }
         final void clearStatus() {               // for reducing unneeded signals
-            U.putIntMO(Unsafe.MO_OPAQUE, this, STATUS, 0);
+            U.putIntOpaque(this, STATUS, 0);
         }
 
         private static final long STATUS
