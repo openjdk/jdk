@@ -133,6 +133,13 @@ protected:
 #endif
     }
 
+    inline void update_livedata(size_t live) {
+      _region_union._live_data = live;
+#ifdef ASSERT
+      _union_tag = is_live_data;
+#endif
+    }
+
     inline ShenandoahHeapRegion* get_region() const {
       assert(_union_tag != is_uninitialized, "Cannot fetch region from uninitialized RegionData");
       return _region;
@@ -181,9 +188,12 @@ protected:
 
   static int compare_by_garbage(RegionData a, RegionData b);
 
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
-                                                     RegionData* data, size_t data_size,
-                                                     size_t free) = 0;
+  // This is a helper function to choose_collection_set(), returning the number of regions that need to be transferred to
+  // the old reserve from the young reserve in order to effectively evacuate the chosen collection set.  In non-generational
+  // mode, the return value is 0.
+  virtual size_t choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                                       RegionData* data, size_t data_size,
+                                                       size_t free) = 0;
 
   virtual void adjust_penalty(intx step);
 
@@ -250,7 +260,9 @@ public:
 
   virtual void record_requested_gc();
 
-  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
+  // Choose the collection set, returning the number of regions that need to be transferred to the old reserve from the young
+  // reserve in order to effectively evacuate the chosen collection set.  In non-generational mode, the return value is 0.
+  virtual size_t choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
 

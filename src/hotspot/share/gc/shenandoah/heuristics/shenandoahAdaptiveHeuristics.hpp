@@ -114,9 +114,9 @@ public:
 
   virtual void post_initialize() override;
 
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                     RegionData* data, size_t size,
-                                                     size_t actual_free) override;
+  virtual size_t choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                       RegionData* data, size_t size,
+                                                       size_t actual_free) override;
 
   virtual void adjust_penalty(intx step) override;
 

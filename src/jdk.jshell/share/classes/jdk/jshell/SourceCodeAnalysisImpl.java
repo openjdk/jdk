@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
-import static com.sun.source.tree.Tree.Kind.METHOD;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.YieldTree;
@@ -81,6 +80,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.TreeSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -114,7 +114,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
@@ -149,14 +148,10 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo;
-import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
 import static jdk.jshell.TreeDissector.printType;
 
 import static java.util.stream.Collectors.joining;
-import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
-import static javax.lang.model.element.ElementKind.MODULE;
-import static javax.lang.model.element.ElementKind.PACKAGE;
 
 import javax.lang.model.type.IntersectionType;
 import javax.lang.model.util.Elements;
@@ -815,7 +810,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         };
         String wrappedCode = codeWrap.wrapped();
         return this.proc.taskFactory.analyze(codeWrap, task -> {
-            List<Highlight> result = new ArrayList<>();
+            TreeSet<Highlight> result = new TreeSet<>(Comparator.comparing(Highlight::start).thenComparing(Highlight::end));
             CompilationUnitTree cut = task.cuTrees().iterator().next();
             Trees trees = task.trees();
             SourcePositions sp = trees.getSourcePositions();
@@ -1050,8 +1045,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 }
             }.scan(cut, null);
             result.removeIf(h -> h.start() == h.end());
-            Collections.sort(result, (h1, h2) -> h1.start() - h2.start());
-            return result;
+            return new ArrayList<>(result);
         });
     }
 

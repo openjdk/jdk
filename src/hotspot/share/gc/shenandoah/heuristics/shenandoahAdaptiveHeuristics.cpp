@@ -191,9 +191,9 @@ void ShenandoahAdaptiveHeuristics::adjust_penalty(intx step) {
   ShenandoahHeuristics::adjust_penalty(step);
 }
 
-void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                         RegionData* data, size_t size,
-                                                                         size_t actual_free) {
+size_t ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                           RegionData* data, size_t size,
+                                                                           size_t actual_free) {
   size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
 
   // The logic for cset selection in adaptive is as follows:
@@ -248,6 +248,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
       cur_garbage = new_garbage;
     }
   }
+  return 0;
 }
 
 void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double timestamp, double gc_time) {

@@ -523,6 +523,7 @@ public:
   void heap_region_do(ShenandoahHeapRegion* r) override {
     if (r->is_trash()) {
       r->try_recycle_under_lock();
+      // No need to adjust_interval_for_recycled_old_region.  That will be taken care of during freeset rebuild.
     }
     if (r->is_cset()) {
       // Leave affiliation unchanged
@@ -967,6 +968,7 @@ public:
     if (r->is_trash()) {
       live = 0;
       r->try_recycle_under_lock();
+      // No need to adjust_interval_for_recycled_old_region.  That will be taken care of during freeset rebuild.
     } else {
       if (r->is_old()) {
         ShenandoahGenerationalFullGC::account_for_region(r, _old_regions, _old_usage, _old_humongous_waste);
@@ -1114,16 +1116,16 @@ void ShenandoahFullGC::phase5_epilog() {
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
     heap->collection_set()->clear();
-    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
-    ShenandoahFreeSet* free_set = heap->free_set();
     {
-      free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+      ShenandoahFreeSet* free_set = heap->free_set();
+      size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
+      free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
       // We also do not expand old generation size following Full GC because we have scrambled age populations and
       // no longer have objects separated by age into distinct regions.
       if (heap->mode()->is_generational()) {
         ShenandoahGenerationalFullGC::compute_balances();
       }
-      size_t mutator_free = heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+      size_t mutator_free = heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
       heap->set_mutator_free_after_updaterefs(mutator_free);
     }
 
