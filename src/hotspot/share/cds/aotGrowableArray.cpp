@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,13 @@
  *
  */
 
-#ifndef SHARE_CDS_CPPVTABLES_HPP
-#define SHARE_CDS_CPPVTABLES_HPP
+#include "cds/aotGrowableArray.hpp"
+#include "cds/aotMetaspace.hpp"
+#include "memory/allocation.inline.hpp"
+#include "utilities/growableArray.hpp"
 
-#include "memory/allocation.hpp"
-#include "memory/allStatic.hpp"
-#include "memory/metaspaceClosureType.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class ArchiveBuilder;
-class Method;
-class SerializeClosure;
-class CppVtableInfo;
-
-// Support for C++ vtables in CDS archive.
-class CppVtables : AllStatic {
-  static char* _vtables_serialized_base;
-public:
-  static void dumptime_init(ArchiveBuilder* builder);
-  static void zero_archived_vtables();
-  static intptr_t* get_archived_vtable(MetaspaceClosureType type, address obj);
-  static void serialize(SerializeClosure* sc);
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
-  static char* vtables_serialized_base() { return _vtables_serialized_base; }
-};
-
-#endif // SHARE_CDS_CPPVTABLES_HPP
+void AOTGrowableArrayHelper::deallocate(void* mem) {
+  if (!AOTMetaspace::in_aot_cache(mem)) {
+    GrowableArrayCHeapAllocator::deallocate(mem);
+  }
+}
