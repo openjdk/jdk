@@ -202,7 +202,7 @@ static void test_canonicalize_constraints_random() {
   }
 }
 
-TEST(opto, canonicalize_constraints) {
+TEST_VM(opto, canonicalize_constraints) {
   test_canonicalize_constraints_trivial();
   test_canonicalize_constraints_exhaustive<intn_t<1>, uintn_t<1>>();
   test_canonicalize_constraints_exhaustive<intn_t<2>, uintn_t<2>>();
@@ -216,13 +216,13 @@ TEST(opto, canonicalize_constraints) {
 
 // Implementations of TypeIntMirror methods for testing purposes
 template <class S, class U>
-const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
-  return this;
+TypeIntMirror<S, U> TypeIntMirror<S, U>::make(const TypeIntMirror<S, U>& t, int widen) {
+  return t;
 }
 
 template <class S, class U>
-TypeIntMirror<S, U> TypeIntMirror<S, U>::meet(const TypeIntMirror& o) const {
-  return TypeIntHelper::int_type_union(*this, o);
+const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
+  return this;
 }
 
 template <class S, class U>

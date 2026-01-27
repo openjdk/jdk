@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @requires !java.enablePreview
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.compiler.CompilerUtils
- * @run testng PreviewHiddenClass
+ * @run junit PreviewHiddenClass
  * @summary verify UnsupportedClassVersionError thrown when defining a hidden class
  *         with preview minor version but --enable-preview is not set
  * @comment This test itself cannot enablePreview, or hidden class definition
@@ -46,15 +46,15 @@ import java.nio.file.Paths;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class PreviewHiddenClass {
 
     private static final Path SRC_DIR = Paths.get(Utils.TEST_SRC, "src");
     private static final Path CLASSES_DIR = Paths.get("classes");
 
-    @Test(expectedExceptions = { UnsupportedClassVersionError.class })
+    @Test
     public void previewNotEnabled() throws Exception {
         // compile a class with --enable-preview
         Path sourceFile = SRC_DIR.resolve("HiddenInterface.java");
@@ -67,7 +67,7 @@ public class PreviewHiddenClass {
         byte[] bytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenInterface.class"));
         var dis = new DataInputStream(new ByteArrayInputStream(bytes));
         dis.skipBytes(4); // 0xCAFEBABE
-        assertEquals(dis.readUnsignedShort(), 65535); // Minor version
-        MethodHandles.lookup().defineHiddenClass(bytes, false);
+        assertEquals(65535, dis.readUnsignedShort()); // Minor version
+        assertThrows(UnsupportedClassVersionError.class, () -> MethodHandles.lookup().defineHiddenClass(bytes, false));
     }
 }
