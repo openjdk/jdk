@@ -1,0 +1,390 @@
+class MyRecord {
+  0xCAFEBABE;
+  0;                                       // minor version
+  69;                                      // version
+  [] {                                     // Constant Pool
+    ;                                      // first element is empty
+    Method #2 #3;                          // #1
+    Class #4;                              // #2
+    NameAndType #5 #6;                     // #3
+    Utf8 "java/lang/Record";               // #4
+    Utf8 "<init>";                         // #5
+    Utf8 "()V";                            // #6
+    Field #8 #9;                           // #7
+    Class #11;                             // #8
+    NameAndType #10 #12;                   // #9
+    Utf8 "filter";                         // #10
+    Utf8 "MyRecord";                       // #11
+    Utf8 "Ljava/lang/String;";             // #12
+    Class #34;                             // #13
+    Utf8 "LMyTypeUseAnnotation;";          // #14
+    String #16;                            // #15
+    Utf8 "Filter cannot be null";          // #16
+    Method #13 #18;                        // #17
+    NameAndType #5 #19;                    // #18
+    Utf8 "(Ljava/lang/String;)V";          // #19
+    Method #8 #18;                         // #20
+    InvokeDynamic 0s #22;                  // #21
+    NameAndType #23 #24;                   // #22
+    Utf8 "toString";                       // #23
+    Utf8 "(LMyRecord;)Ljava/lang/String;";  // #24
+    InvokeDynamic 0s #26;                  // #25
+    NameAndType #27 #28;                   // #26
+    Utf8 "hashCode";                       // #27
+    Utf8 "(LMyRecord;)I";                  // #28
+    InvokeDynamic 0s #30;                  // #29
+    NameAndType #31 #32;                   // #30
+    Utf8 "equals";                         // #31
+    Utf8 "(LMyRecord;Ljava/lang/Object;)Z";  // #32
+    Utf8 "RuntimeVisibleTypeAnnotations";  // #33
+    Utf8 "java/lang/IllegalArgumentException";  // #34
+    Utf8 "Code";                           // #35
+    Utf8 "LineNumberTable";                // #36
+    Utf8 "LocalVariableTable";             // #37
+    Utf8 "this";                           // #38
+    Utf8 "LMyRecord;";                     // #39
+    Utf8 "MethodParameters";               // #40
+    Utf8 "parse";                          // #41
+    Utf8 "(Ljava/lang/String;)LMyRecord;";  // #42
+    Utf8 "param";                          // #43
+    Utf8 "StackMapTable";                  // #44
+    Utf8 "()Ljava/lang/String;";           // #45
+    Utf8 "()I";                            // #46
+    Utf8 "(Ljava/lang/Object;)Z";          // #47
+    Utf8 "o";                              // #48
+    Utf8 "Ljava/lang/Object;";             // #49
+    Utf8 "SourceFile";                     // #50
+    Utf8 "MyRecord.java";                  // #51
+    Utf8 "RuntimeVisibleAnnotations";      // #52
+    Utf8 "LMyTypeAnnotation;";             // #53
+    Utf8 "Record";                         // #54
+    Utf8 "BootstrapMethods";               // #55
+    String #10;                            // #56
+    MethodHandle 1b #7;                    // #57
+    MethodHandle 6b #59;                   // #58
+    Method #60 #61;                        // #59
+    Class #62;                             // #60
+    NameAndType #63 #64;                   // #61
+    Utf8 "java/lang/runtime/ObjectMethods";  // #62
+    Utf8 "bootstrap";                      // #63
+    Utf8 "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;";  // #64
+    Utf8 "InnerClasses";                   // #65
+    Class #67;                             // #66
+    Utf8 "java/lang/invoke/MethodHandles$Lookup";  // #67
+    Class #69;                             // #68
+    Utf8 "java/lang/invoke/MethodHandles";  // #69
+    Utf8 "Lookup";                         // #70
+  }
+
+  0x0031;                                  // access
+  #8;                                      // this_cpx
+  #2;                                      // super_cpx
+
+  [] {                                     // Interfaces
+  }                                        // end of Interfaces
+
+  [] {                                     // Fields
+    {                                      // field
+      0x0012;                              // access
+      #10;                                 // name_index
+      #12;                                 // descriptor_index
+      [] {                                 // Attributes
+        Attr(#33) {                        // RuntimeVisibleTypeAnnotations
+          [] {                             // annotations
+            {                              // type_annotation
+              0x13;                        // target_type: FIELD
+              []b {                        // type_paths
+              }
+              #14;
+              [] {                         // element_value_pairs
+              }                            // element_value_pairs
+            }                              // type_annotation
+          }
+        }                                  // end of RuntimeVisibleTypeAnnotations
+      }                                    // end of Attributes
+    }
+  }                                        // end of Fields
+
+  [] {                                     // Methods
+    {                                      // method
+      0x0001;                              // access
+      #5;                                  // name_index
+      #19;                                 // descriptor_index
+      [] {                                 // Attributes
+        Attr(#35) {                        // Code
+          2;                               // max_stack
+          2;                               // max_locals
+          Bytes[]{
+            0x2A 0xB7 0x00 0x01 0x2A 0x2B 0xB5 0x00 0x07 0xB1;
+          }
+          [] {                             // Traps
+          }                                // end of Traps
+          [] {                             // Attributes
+            Attr(#36) {                    // LineNumberTable
+              [] {                         // line_number_table
+                   0    7;
+              }
+            }                              // end of LineNumberTable
+            ;
+            Attr(#37) {                    // LocalVariableTable
+              [] {                         // LocalVariableTable
+                   0   10   38   39   0;
+                   0   10   11   12   1;
+              }
+            }                              // end of LocalVariableTable
+          }                                // end of Attributes
+        }                                  // end of Code
+        ;
+        Attr(#40) {                        // MethodParameters
+          []b {                            // MethodParameters
+            #10  0x0000;
+          }
+        }                                  // end of MethodParameters
+        ;
+        Attr(#33) {                        // RuntimeVisibleTypeAnnotations
+          [] {                             // annotations
+            {                              // type_annotation
+              0x16;                        // target_type: METHOD_FORMAL_PARAMETER
+              0x00;                        // parameter_index
+              []b {                        // type_paths
+              }
+              #14;
+              [] {                         // element_value_pairs
+              }                            // element_value_pairs
+            }                              // type_annotation
+          }
+        }                                  // end of RuntimeVisibleTypeAnnotations
+      }                                    // end of Attributes
+    }
+    ;
+    {                                      // method
+      0x0009;                              // access
+      #41;                                 // name_index
+      #42;                                 // descriptor_index
+      [] {                                 // Attributes
+        Attr(#35) {                        // Code
+          3;                               // max_stack
+          1;                               // max_locals
+          Bytes[]{
+            0x2A 0xC7 0x00 0x0D 0xBB 0x00 0x0D 0x59 0x12 0x0F 0xB7 0x00;
+            0x11 0xBF 0xBB 0x00 0x08 0x59 0x2A 0xB7 0x00 0x14 0xB0;
+          }
+          [] {                             // Traps
+          }                                // end of Traps
+          [] {                             // Attributes
+            Attr(#36) {                    // LineNumberTable
+              [] {                         // line_number_table
+                   0    9;
+                   4   10;
+                  14   12;
+              }
+            }                              // end of LineNumberTable
+            ;
+            Attr(#37) {                    // LocalVariableTable
+              [] {                         // LocalVariableTable
+                   0   23   43   12   0;
+              }
+            }                              // end of LocalVariableTable
+            ;
+            Attr(#44) {                    // StackMapTable
+              [] {                         // 
+                14b;                       // same_frame
+              }
+            }                              // end of StackMapTable
+          }                                // end of Attributes
+        }                                  // end of Code
+      }                                    // end of Attributes
+    }
+    ;
+    {                                      // method
+      0x0011;                              // access
+      #23;                                 // name_index
+      #45;                                 // descriptor_index
+      [] {                                 // Attributes
+        Attr(#35) {                        // Code
+          1;                               // max_stack
+          1;                               // max_locals
+          Bytes[]{
+            0x2A 0xBA 0x00 0x15 0x00 0x00 0xB0;
+          }
+          [] {                             // Traps
+          }                                // end of Traps
+          [] {                             // Attributes
+            Attr(#36) {                    // LineNumberTable
+              [] {                         // line_number_table
+                   0    6;
+              }
+            }                              // end of LineNumberTable
+            ;
+            Attr(#37) {                    // LocalVariableTable
+              [] {                         // LocalVariableTable
+                   0    7   38   39   0;
+              }
+            }                              // end of LocalVariableTable
+          }                                // end of Attributes
+        }                                  // end of Code
+      }                                    // end of Attributes
+    }
+    ;
+    {                                      // method
+      0x0011;                              // access
+      #27;                                 // name_index
+      #46;                                 // descriptor_index
+      [] {                                 // Attributes
+        Attr(#35) {                        // Code
+          1;                               // max_stack
+          1;                               // max_locals
+          Bytes[]{
+            0x2A 0xBA 0x00 0x19 0x00 0x00 0xAC;
+          }
+          [] {                             // Traps
+          }                                // end of Traps
+          [] {                             // Attributes
+            Attr(#36) {                    // LineNumberTable
+              [] {                         // line_number_table
+                   0    6;
+              }
+            }                              // end of LineNumberTable
+            ;
+            Attr(#37) {                    // LocalVariableTable
+              [] {                         // LocalVariableTable
+                   0    7   38   39   0;
+              }
+            }                              // end of LocalVariableTable
+          }                                // end of Attributes
+        }                                  // end of Code
+      }                                    // end of Attributes
+    }
+    ;
+    {                                      // method
+      0x0011;                              // access
+      #31;                                 // name_index
+      #47;                                 // descriptor_index
+      [] {                                 // Attributes
+        Attr(#35) {                        // Code
+          2;                               // max_stack
+          2;                               // max_locals
+          Bytes[]{
+            0x2A 0x2B 0xBA 0x00 0x1D 0x00 0x00 0xAC          }
+          [] {                             // Traps
+          }                                // end of Traps
+          [] {                             // Attributes
+            Attr(#36) {                    // LineNumberTable
+              [] {                         // line_number_table
+                   0    6;
+              }
+            }                              // end of LineNumberTable
+            ;
+            Attr(#37) {                    // LocalVariableTable
+              [] {                         // LocalVariableTable
+                   0    8   38   39   0;
+                   0    8   48   49   1;
+              }
+            }                              // end of LocalVariableTable
+          }                                // end of Attributes
+        }                                  // end of Code
+      }                                    // end of Attributes
+    }
+    ;
+    {                                      // method
+      0x0001;                              // access
+      #10;                                 // name_index
+      #45;                                 // descriptor_index
+      [] {                                 // Attributes
+        Attr(#35) {                        // Code
+          1;                               // max_stack
+          1;                               // max_locals
+          Bytes[]{
+            0x2A 0xB4 0x00 0x07 0xB0;
+          }
+          [] {                             // Traps
+          }                                // end of Traps
+          [] {                             // Attributes
+            Attr(#36) {                    // LineNumberTable
+              [] {                         // line_number_table
+                   0    6;
+              }
+            }                              // end of LineNumberTable
+            ;
+            Attr(#37) {                    // LocalVariableTable
+              [] {                         // LocalVariableTable
+                   0    5   38   39   0;
+              }
+            }                              // end of LocalVariableTable
+          }                                // end of Attributes
+        }                                  // end of Code
+        ;
+        Attr(#33) {                        // RuntimeVisibleTypeAnnotations
+          [] {                             // annotations
+            {                              // type_annotation
+              0x14;                        // target_type: METHOD_RETURN
+              []b {                        // type_paths
+              }
+              #14;
+              [] {                         // element_value_pairs
+              }                            // element_value_pairs
+            }                              // type_annotation
+          }
+        }                                  // end of RuntimeVisibleTypeAnnotations
+      }                                    // end of Attributes
+    }
+  }                                        // end of Methods
+
+  [] {                                     // Attributes
+    Attr(#50) {                            // SourceFile
+      #51;
+    }                                      // end of SourceFile
+    ;
+    Attr(#52) {                            // RuntimeVisibleAnnotations
+      [] {                                 // annotations
+        {                                  // annotation
+          #53;
+          [] {                             // element_value_pairs
+          }                                // element_value_pairs
+        }                                  // annotation
+      }
+    }                                      // end of RuntimeVisibleAnnotations
+    ;
+    Attr(#54) {                            // Record
+      [] {                                 // components
+        {                                  // component
+          #10;                             // name_index
+          #12;                             // descriptor_index
+          [] {                             // Attributes
+            Attr(#33) {                    // RuntimeVisibleTypeAnnotations
+              [] {                         // annotations
+                {                          // type_annotation
+                  0x13;                    // target_type: FIELD
+                  []b {                    // type_paths
+                  }
+                  #14;
+                  [] {                     // element_value_pairs
+                  }                        // element_value_pairs
+                }                          // type_annotation
+              }
+            }                              // end of RuntimeVisibleTypeAnnotations
+          }                                // end of Attributes
+        }
+      }
+    }                                      // end of Record
+    ;
+    Attr(#55) {                            // BootstrapMethods
+      [] {                                 // bootstrap_methods
+        {                                  // bootstrap_method
+          #58;                             // bootstrap_method_ref
+          [] {                             // bootstrap_arguments
+            #8;
+            #56;
+            #57;
+          }                                // bootstrap_arguments
+        }                                  // bootstrap_method
+      }
+    }                                      // end of BootstrapMethods
+    ;
+    Attr(#65) {                            // InnerClasses
+      [] {                                 // classes
+          #66   #68   #70  25;
+      }
+    }                                      // end of InnerClasses
+  }                                        // end of Attributes
+}
