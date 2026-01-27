@@ -22,7 +22,6 @@
  *
  */
 
-#include "cppstdlib/new.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
