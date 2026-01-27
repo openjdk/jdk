@@ -951,16 +951,16 @@ void ClassHierarchyDCmd::execute(DCmdSource source, TRAPS) {
 ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _verbose("-verbose",
-           "Dump the detailed content of a Java class. "
-           "Some classes are annotated with flags: "
-           "F = has, or inherits, a non-empty finalize method, "
-           "f = has final method, "
-           "W = methods rewritten, "
-           "C = marked with @Contended annotation, "
-           "R = has been redefined, "
-           "S = is shared class (if -location then 's' indicates static 'd' indicates dynamic AOT cache)",
+           "Dump the detailed content of a Java class.\n"
+           "\t\tclasses are annotated with flags:\n"
+           "\t\tF = has, or inherits, a non-empty finalize method,\n"
+           "\t\tf = has final method,\n"
+           "\t\tW = methods rewritten,\n"
+           "\t\tC = marked with @Contended annotation,\n"
+           "\t\tR = has been redefined,\n"
+           "\t\tS = is an (App)CDS shared class (if -location is also specified, (either) 's' indicating static (or) 'd' indicating dynamic AOT cache locations, are appended)",
            "BOOLEAN", false, "false"),
-  _location("-location", "Print class file (and AOT cache) location url (if available)", "BOOLEAN", false, "false") {
+  _location("-location", "Print class file location url (if available)", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_location);
 }
